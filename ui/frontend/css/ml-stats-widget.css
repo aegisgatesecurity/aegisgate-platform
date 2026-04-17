@@ -1,0 +1,333 @@
+/* ML Stats Widget Styles
+ * =====================
+ * Real-time ML anomaly detection dashboard widget
+ */
+
+.ml-stats-widget {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ml-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ml-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ml-header h3 i {
+    color: #4CAF50;
+}
+
+.ml-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+}
+
+.status-dot.active {
+    background: #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Summary Cards */
+.ml-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.ml-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+}
+
+.ml-card.warning .ml-card-value {
+    color: #FF9800;
+}
+
+.ml-card.danger .ml-card-value {
+    color: #F44336;
+}
+
+.ml-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+}
+
+.ml-card-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Charts */
+.ml-charts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.ml-chart-section {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.ml-chart-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.ml-chart-section canvas {
+    width: 100% !important;
+}
+
+/* Details */
+.ml-details {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.ml-detail-section {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.ml-detail-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Sensitivity Badge */
+.sensitivity-badge .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge.low {
+    background: #E8F5E9;
+    color: #4CAF50;
+}
+
+.badge.medium {
+    background: #FFF3E0;
+    color: #FF9800;
+}
+
+.badge.high {
+    background: #FFEBEE;
+    color: #F44336;
+}
+
+.badge.paranoid {
+    background: #F3E5F5;
+    color: #9C27B0;
+}
+
+/* Anomaly List */
+.anomaly-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.anomaly-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    background: #fff;
+    border-left: 3px solid #ccc;
+    font-size: 13px;
+}
+
+.anomaly-item.severity-5,
+.anomaly-item.severity-4 {
+    border-left-color: #F44336;
+    background: #FFEBEE;
+}
+
+.anomaly-item.severity-3 {
+    border-left-color: #FF9800;
+    background: #FFF3E0;
+}
+
+.anomaly-item.severity-2 {
+    border-left-color: #FFC107;
+    background: #FFFDE7;
+}
+
+.anomaly-item.severity-1 {
+    border-left-color: #4CAF50;
+    background: #E8F5E9;
+}
+
+.anomaly-type {
+    font-weight: 600;
+    color: #333;
+}
+
+.anomaly-score {
+    color: #666;
+    font-size: 12px;
+}
+
+.anomaly-time {
+    color: #999;
+    font-size: 11px;
+}
+
+/* Controls */
+.ml-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.ml-controls .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ml-controls .btn-primary {
+    background: #4CAF50;
+    color: white;
+}
+
+.ml-controls .btn-primary:hover {
+    background: #43A047;
+}
+
+.ml-controls .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.ml-controls .btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ml-summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ml-details {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .ml-stats-widget {
+    background: #1e1e1e;
+}
+
+[data-theme="dark"] .ml-header {
+    border-bottom-color: #333;
+}
+
+[data-theme="dark"] .ml-header h3 {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .ml-card {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .ml-card-value {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .ml-card-label {
+    color: #999;
+}
+
+[data-theme="dark"] .ml-chart-section {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .ml-chart-section h4 {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .ml-detail-section {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .ml-detail-section h4 {
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .anomaly-item {
+    background: #252525;
+}
+
+[data-theme="dark"] .anomaly-item.severity-5,
+[data-theme="dark"] .anomaly-item.severity-4 {
+    background: #3d2020;
+}
+
+[data-theme="dark"] .anomaly-type {
+    color: #e0e0e0;
+}

@@ -1,0 +1,28 @@
+.policy-console { display: flex; flex-direction: column; min-height: 100vh; }
+.policy-section { flex: 1; padding: 30px; background-color: #1a1a2e; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.policy-actions { display: flex; gap: 10px; }
+.btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+.btn.primary { background-color: #4ecca3; color: #1a1a2e; }
+.btn.secondary { background-color: #16213e; color: #eaeaea; border: 1px solid #4ecca3; }
+.btn.danger { background-color: #e94560; color: white; }
+.btn-icon { background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 5px 10px; }
+.btn-icon:hover { background-color: #16213e; border-radius: 4px; }
+.policy-filter { display: flex; gap: 15px; margin-bottom: 20px; }
+.policy-filter input { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #4ecca3; background-color: #16213e; color: #eaeaea; }
+.policy-filter select { padding: 10px; border-radius: 5px; border: 1px solid #4ecca3; background-color: #16213e; color: #eaeaea; }
+.policy-table-container { overflow-x: auto; }
+.policy-table { width: 100%; border-collapse: collapse; background-color: #16213e; border-radius: 10px; overflow: hidden; }
+.policy-table th { background-color: #0f3460; padding: 15px; text-align: left; color: #4ecca3; font-weight: bold; }
+.policy-table td { padding: 12px 15px; border-bottom: 1px solid #1a1a2e; color: #eaeaea; }
+.compliance-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+.compliance-badge.MITRE_ATLAS { background-color: #4ecca3; color: #1a1a2e; }
+.compliance-badge.OWASP_AI { background-color: #e94560; color: white; }
+.compliance-badge.NIST_AI_RMF { background-color: #6c5ce7; color: white; }
+.severity-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+.severity-badge.high { background-color: #e94560; color: white; }
+.severity-badge.medium { background-color: #f4d03f; color: #1a1a2e; }
+.severity-badge.low { background-color: #3498db; color: white; }
+.status-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+.status-badge.active { background-color: #4ecca3; color: #1a1a2e; }
+.status-badge.inactive { background-color: #6c5ce7; color: white; }

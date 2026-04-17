@@ -1,0 +1,12 @@
+.certificates-console { display: flex; flex-direction: column; min-height: 100vh; }
+.certificate-section { flex: 1; padding: 30px; background-color: #1a1a2e; }
+.certificate-info { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }
+.info-card { flex: 1; min-width: 200px; background: linear-gradient(135deg, #16213e 0%, #0f3460 100%); padding: 20px; border-radius: 10px; border: 1px solid #4ecca3; }
+.info-label { color: #888; font-size: 12px; margin-bottom: 10px; }
+.info-value { color: #4ecca3; font-size: 18px; font-weight: bold; }
+.certificate-table { width: 100%; border-collapse: collapse; background-color: #16213e; border-radius: 10px; overflow: hidden; margin-top: 20px; }
+.certificate-table th { background-color: #0f3460; padding: 15px; text-align: left; color: #4ecca3; font-weight: bold; }
+.certificate-table td { padding: 12px 15px; border-bottom: 1px solid #1a1a2e; color: #eaeaea; }
+.status-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+.status-badge.active { background-color: #4ecca3; color: #1a1a2e; }
+.status-badge.expired { background-color: #e94560; color: white; }

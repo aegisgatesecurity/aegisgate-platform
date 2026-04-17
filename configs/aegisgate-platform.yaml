@@ -1,0 +1,19 @@
+# AegisGate Security Platform Configuration
+server:
+  host: "0.0.0.0"
+  proxy_port: 8080
+  mcp_port: 8081
+  dashboard_port: 8443
+tier: community
+scanner:
+  address: "localhost:8081"
+  timeout: 30s
+bridge:
+  enabled: true
+  aegisgate_url: "http://localhost:8080"
+  timeout: 30s
+logging:
+  level: info
+  format: json
+redis:
+  url: "redis://localhost:6379"

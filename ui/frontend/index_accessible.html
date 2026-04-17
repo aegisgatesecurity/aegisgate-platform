@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate - AI Security Gateway Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Skip Navigation Link for Keyboard Users -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Live Region for Screen Reader Announcements -->
+    <div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Alert Region for Critical Announcements -->
+    <div id="alert-region" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+    <header class="header" role="banner">
+        <h1>
+            <span aria-hidden="true">🔒</span>
+            <span class="header-title">AegisGate</span>
+            <span class="version" aria-label="Version 0.15.1">v0.15.1</span>
+        </h1>
+        <nav aria-label="User menu">
+            <button id="logout-btn" type="button" aria-label="Logout">
+                <span aria-hidden="true">🚪</span>
+                <span class="sr-only">Logout</span>
+            </button>
+        </nav>
+    </header>
+
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+        <a href="#dashboard" class="nav-link active" role="tab" aria-selected="true" aria-controls="dashboard-panel" id="dashboard-tab">
+            <span aria-hidden="true">📊</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="#logs" class="nav-link" role="tab" aria-selected="false" aria-controls="logs-panel" id="logs-tab">
+            <span aria-hidden="true">📋</span>
+            <span>Audit Logs</span>
+        </a>
+        <a href="#compliance" class="nav-link" role="tab" aria-selected="false" aria-controls="compliance-panel" id="compliance-tab">
+            <span aria-hidden="true">✅</span>
+            <span>Compliance</span>
+        </a>
+        <a href="#settings" class="nav-link" role="tab" aria-selected="false" aria-controls="settings-panel" id="settings-tab">
+            <span aria-hidden="true">⚙️</span>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <main id="main-content" class="main-content" role="main">
+        <!-- Dashboard Panel -->
+        <section id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
+            <h2 class="section-title">Security Dashboard</h2>
+
+            <!-- Metrics Summary -->
+            <div class="metrics-grid" role="region" aria-label="Security metrics summary">
+                <article class="metric-card" aria-labelledby="metric-requests-label">
+                    <div class="metric-icon" aria-hidden="true">📈</div>
+                    <div class="metric-content">
+                        <div id="metric-requests-value" class="metric-value">-</div>
+                        <div id="metric-requests-label" class="metric-label">Total Requests</div>
+                    </div>
+                </article>
+
+                <article class="metric-card metric-card-warning" aria-labelledby="metric-blocked-label">
+                    <div class="metric-icon" aria-hidden="true">🚫</div>
+                    <div class="metric-content">
+                        <div id="metric-blocked-value" class="metric-value">-</div>
+                        <div id="metric-blocked-label" class="metric-label">Blocked Requests</div>
+                    </div>
+                </article>
+
+                <article class="metric-card metric-card-danger" aria-labelledby="metric-threats-label">
+                    <div class="metric-icon" aria-hidden="true">⚠️</div>
+                    <div class="metric-content">
+                        <div id="metric-threats-value" class="metric-value">-</div>
+                        <div id="metric-threats-label" class="metric-label">Threats Detected</div>
+                    </div>
+                </article>
+
+                <article class="metric-card metric-card-success" aria-labelledby="metric-uptime-label">
+                    <div class="metric-icon" aria-hidden="true">✅</div>
+                    <div class="metric-content">
+                        <div id="metric-uptime-value" class="metric-value">-</div>
+                        <div id="metric-uptime-label" class="metric-label">Uptime</div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Recent Activity -->
+            <section class="activity-section" aria-labelledby="recent-activity-title">
+                <h3 id="recent-activity-title">Recent Activity</h3>
+                <table class="activity-table" role="table" aria-label="Recent security events">
+                    <thead>
+                        <tr>
+                            <th scope="col">Time</th>
+                            <th scope="col">Event</th>
+                            <th scope="col">Severity</th>
+                            <th scope="col">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activity-table-body">
+                        <tr>
+                            <td colspan="4" class="loading-message">Loading activity...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </section>
+
+        <!-- Audit Logs Panel -->
+        <section id="logs-panel" role="tabpanel" aria-labelledby="logs-tab" hidden>
+            <h2 class="section-title">Audit Logs</h2>
+
+            <!-- Search and Filter -->
+            <div class="filter-bar" role="search" aria-label="Filter audit logs">
+                <label for="log-search" class="filter-label">Search logs:</label>
+                <input type="search" id="log-search" class="filter-input"
+                       placeholder="Search by event, severity, or details..."
+                       aria-describedby="search-help">
+                <span id="search-help" class="sr-only">Enter text to filter the audit log entries</span>
+
+                <label for="severity-filter" class="filter-label">Severity:</label>
+                <select id="severity-filter" class="filter-select" aria-label="Filter by severity level">
+                    <option value="all">All Levels</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                    <option value="info">Info</option>
+                </select>
+
+                <button type="button" id="apply-filter-btn" class="filter-button">
+                    Apply Filter
+                </button>
+            </div>
+
+            <!-- Audit Log Table -->
+            <div class="table-container" role="region" aria-label="Audit log entries" tabindex="0">
+                <table class="audit-table" role="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Timestamp</th>
+                            <th scope="col">Event Type</th>
+                            <th scope="col">Severity</th>
+                            <th scope="col">Source IP</th>
+                            <th scope="col">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-log-body">
+                        <tr>
+                            <td colspan="5" class="loading-message">Loading audit logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Compliance Panel -->
+        <section id="compliance-panel" role="tabpanel" aria-labelledby="compliance-tab" hidden>
+            <h2 class="section-title">Compliance Reports</h2>
+
+            <div class="compliance-grid" role="region" aria-label="Compliance frameworks">
+                <article class="compliance-card" aria-labelledby="mitre-title">
+                    <h3 id="mitre-title">MITRE ATLAS</h3>
+                    <p>Adversarial Threat Landscape for AI Systems</p>
+                    <a href="#" class="card-link" aria-describedby="mitre-title">View Report</a>
+                </article>
+
+                <article class="compliance-card" aria-labelledby="nist-title">
+                    <h3 id="nist-title">NIST AI RMF</h3>
+                    <p>AI Risk Management Framework</p>
+                    <a href="#" class="card-link" aria-describedby="nist-title">View Report</a>
+                </article>
+
+                <article class="compliance-card" aria-labelledby="iso-title">
+                    <h3 id="iso-title">ISO/IEC 42001</h3>
+                    <p>AI Management System Standard</p>
+                    <a href="#" class="card-link" aria-describedby="iso-title">View Report</a>
+                </article>
+
+                <article class="compliance-card" aria-labelledby="hipaa-title">
+                    <h3 id="hipaa-title">HIPAA</h3>
+                    <p>Healthcare AI Compliance</p>
+                    <a href="#" class="card-link" aria-describedby="hipaa-title">View Report</a>
+                </article>
+
+                <article class="compliance-card" aria-labelledby="pci-title">
+                    <h3 id="pci-title">PCI-DSS</h3>
+                    <p>Payment Card Industry Compliance</p>
+                    <a href="#" class="card-link" aria-describedby="pci-title">View Report</a>
+                </article>
+
+                <article class="compliance-card" aria-labelledby="soc-title">
+                    <h3 id="soc-title">SOC 2 Type II</h3>
+                    <p>Service Organization Controls</p>
+                    <a href="#" class="card-link" aria-describedby="soc-title">View Report</a>
+                </article>
+            </div>
+        </section>
+
+        <!-- Settings Panel -->
+        <section id="settings-panel" role="tabpanel" aria-labelledby="settings-tab" hidden>
+            <h2 class="section-title">Settings</h2>
+
+            <form class="settings-form" aria-label="Dashboard settings">
+                <!-- Language Selection -->
+                <div class="form-group">
+                    <label for="language-select" id="language-label">Language:</label>
+                    <select id="language-select" class="form-select"
+                            aria-labelledby="language-label"
+                            aria-describedby="language-help">
+                        <option value="en" selected>English</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="zh">中文</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                    <span id="language-help" class="form-help">Select your preferred display language</span>
+                </div>
+
+                <!-- Auto-refresh Toggle -->
+                <fieldset class="form-group">
+                    <legend>Auto-refresh</legend>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="auto-refresh" class="toggle-input"
+                               aria-describedby="refresh-help" checked>
+                        <label for="auto-refresh" class="toggle-label">
+                            <span class="toggle-text">Enable automatic data refresh</span>
+                        </label>
+                    </div>
+                    <span id="refresh-help" class="form-help">
+                        Automatically update dashboard data every 5 seconds
+                    </span>
+                </div>
+
+                <!-- Refresh Interval (conditionally shown) -->
+                <div class="form-group" id="refresh-interval-group">
+                    <label for="refresh-interval" id="interval-label">Refresh Interval:</label>
+                    <select id="refresh-interval" class="form-select"
+                            aria-labelledby="interval-label"
+                            aria-describedby="interval-help">
+                        <option value="1000">1 second</option>
+                        <option value="5000" selected>5 seconds</option>
+                        <option value="10000">10 seconds</option>
+                        <option value="30000">30 seconds</option>
+                        <option value="60000">1 minute</option>
+                    </select>
+                    <span id="interval-help" class="form-help">
+                        How often to refresh dashboard data
+                    </span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <button type="reset" class="btn btn-secondary">Reset to Defaults</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+        <p>AegisGate AI Security Gateway</p>
+        <p><small>Developed by <a href="https://github.com/aegisgatesecurity/aegisgate" target="_blank" rel="noopener noreferrer">aegisgatesecurity</a></small></p>
+    </footer>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

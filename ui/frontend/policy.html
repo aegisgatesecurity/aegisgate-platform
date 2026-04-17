@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Console - AegisGate</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="policy.css">
+</head>
+<body>
+    <div class="policy-console">
+        <header class="dashboard-header">
+            <h1>AegisGate Security Gateway</h1>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>Policy Console</span>
+            </div>
+        </header>
+
+        <nav class="dashboard-nav">
+            <button class="nav-btn" onclick="navigateTo('overview')">Overview</button>
+            <button class="nav-btn" onclick="navigateTo('metrics')">Metrics</button>
+            <button class="nav-btn active">Policy Console</button>
+            <button class="nav-btn" onclick="navigateTo('certificates')">Certificates</button>
+        </nav>
+
+        <main class="dashboard-content">
+            <section class="policy-section">
+                <div class="section-header">
+                    <h2>Security Policy Console</h2>
+                    <div class="policy-actions">
+                        <button class="btn primary" onclick="openPolicyModal()">+ New Policy</button>
+                        <button class="btn secondary" onclick="exportPolicies()">Export Policies</button>
+                        <button class="btn danger" onclick="resetPolicies()">Reset to Default</button>
+                    </div>
+                </div>
+
+                <div class="policy-filter">
+                    <input type="text" id="policy-search" placeholder="Search policies..." oninput="filterPolicies()">
+                    <select id="policy-filter-compliance" onchange="filterByCompliance(this.value)">
+                        <option value="all">All Frameworks</option>
+                        <option value="MITRE_ATLAS">MITRE ATLAS</option>
+                        <option value="NIST_AI_RMF">NIST AI RMF</option>
+                        <option value="OWASP_AI">OWASP AI</option>
+                    </select>
+                    <select id="policy-filter-status" onchange="filterByStatus(this.value)">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div class="policy-table-container">
+                    <table class="policy-table">
+                        <thead>
+                            <tr>
+                                <th>Policy Name</th>
+                                <th>Compliance Framework</th>
+                                <th>Severity</th>
+                                <th>Enabled</th>
+                                <th>Violations</th>
+                                <th>Last Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="policy-table-body">
+                            <tr>
+                                <td>SQL Injection Prevention</td>
+                                <td><span class="compliance-badge MITRE_ATLAS">MITRE ATLAS</span></td>
+                                <td><span class="severity-badge high">High</span></td>
+                                <td><span class="status-badge active">Active</span></td>
+                                <td>0</td>
+                                <td>2026-02-10 14:30</td>
+                                <td>
+                                    <button class="btn-icon edit">✏️</button>
+                                    <button class="btn-icon delete">🗑️</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="dashboard-footer">
+            <p>AegisGate Security Gateway v0.2.0 | Policy Console Module</p>
+        </footer>
+    </div>
+
+    <script src="policy-client.js"></script>
+</body>
+</html>

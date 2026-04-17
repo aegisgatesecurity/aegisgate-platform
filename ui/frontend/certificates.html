@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate - Certificates</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .header .version {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+        .nav {
+            background: rgba(255,255,255,0.95);
+            padding: 0;
+            display: flex;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav a {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .nav a:hover {
+            background: rgba(30,60,114,0.05);
+            color: #1e3c72;
+        }
+        .nav a.active {
+            color: #1e3c72;
+            border-bottom-color: #1e3c72;
+            background: rgba(30,60,114,0.1);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #1e3c72;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #333;
+            font-family: monospace;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-all;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: #1e3c72;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2a5298;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #1b5e20;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            color: #e65100;
+        }
+        .cert-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .cert-valid {
+            background: #d4edda;
+            color: #155724;
+        }
+        .cert-warning {
+            background: #fff3e0;
+            color: #856404;
+        }
+        .cert-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .expiry-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .expiry-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50 0%, #ff9800 70%, #f44336 100%);
+            transition: width 0.3s;
+        }
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+            }
+            .info-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .info-value {
+                text-align: left;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C9.243 2 7 4.243 7 7v3H5v11h14V10h-2V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3z"/>
+            </svg>
+            AegisGate Security Gateway
+        </h1>
+        <span class="version">MVP v1.0.0</span>
+    </header>
+
+    <nav class="nav">
+        <a href="index.html">Dashboard</a>
+        <a href="certificates.html" class="active">Certificates</a>
+        <a href="settings.html">Settings</a>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>TLS Certificate Status</h2>
+            <div id="certStatus" class="cert-status cert-valid">
+                <span class="status-dot"></span>
+                <span>Loading...</span>
+            </div>
+            <div class="expiry-bar">
+                <div class="expiry-progress" id="expiryProgress" style="width: 0%"></div>
+            </div>
+            <p style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+                Certificate expires in <span id="daysRemaining">...</span> days
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Certificate Details</h2>
+            <div class="info-row">
+                <span class="info-label">Subject</span>
+                <span class="info-value" id="subject">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Issuer</span>
+                <span class="info-value" id="issuer">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Serial Number</span>
+                <span class="info-value" id="serial">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Valid From</span>
+                <span class="info-value" id="validFrom">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Valid Until</span>
+                <span class="info-value" id="validUntil">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">DNS Names</span>
+                <span class="info-value" id="dnsNames">Loading...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Certificate Type</span>
+                <span class="info-value" id="certType">Loading...</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Certificate Actions</h2>
+            <p style="color: #666; margin-bottom: 1rem;">
+                Manage your TLS certificates. Self-signed certificates are automatically generated on first run.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="regenerateBtn">
+                    Generate New Self-Signed Certificate
+                </button>
+                <button class="btn btn-secondary" id="viewCertBtn">
+                    View Certificate File
+                </button>
+            </div>
+            <div class="alert alert-warning" style="margin-top: 1rem;">
+                <strong>Note:</strong> For production use, consider using certificates from a trusted Certificate Authority (CA).
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch certificate info
+        async function fetchCertInfo() {
+            try {
+                const response = await fetch('/api/certificate');
+                const data = await response.json();
+
+                // Update certificate details
+                document.getElementById('subject').textContent = data.subject || 'Unknown';
+                document.getElementById('issuer').textContent = data.issuer || 'Unknown';
+                document.getElementById('serial').textContent = data.serial_number || 'Unknown';
+                document.getElementById('validFrom').textContent = data.not_before || 'Unknown';
+                document.getElementById('validUntil').textContent = data.not_after || 'Unknown';
+                document.getElementById('dnsNames').textContent =
+                    (data.dns_names || []).join(', ') || 'None';
+                document.getElementById('certType').textContent =
+                    data.auto_generated ? 'Self-Signed (Auto-Generated)' : 'External';
+
+                // Calculate expiry
+                if (data.not_after) {
+                    const expiryDate = new Date(data.not_after);
+                    const now = new Date();
+                    const daysRemaining = Math.floor((expiryDate - now) / (1000 * 60 * 60 * 24));
+
+                    document.getElementById('daysRemaining').textContent = daysRemaining;
+
+                    // Update status
+                    const statusEl = document.getElementById('certStatus');
+                    const progressEl = document.getElementById('expiryProgress');
+
+                    if (daysRemaining < 0) {
+                        statusEl.className = 'cert-status cert-expired';
+                        statusEl.innerHTML = '<span class="status-dot"></span><span>Expired</span>';
+                        progressEl.style.width = '0%';
+                    } else if (daysRemaining < 30) {
+                        statusEl.className = 'cert-status cert-warning';
+                        statusEl.innerHTML = '<span class="status-dot"></span><span>Expiring Soon</span>';
+                        progressEl.style.width = '30%';
+                    } else {
+                        statusEl.className = 'cert-status cert-valid';
+                        statusEl.innerHTML = '<span class="status-dot"></span><span>Valid</span>';
+                        progressEl.style.width = '100%';
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch certificate info:', err);
+                document.getElementById('certStatus').className = 'cert-status cert-expired';
+                document.getElementById('certStatus').innerHTML =
+                    '<span class="status-dot"></span><span>Error Loading</span>';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('regenerateBtn').addEventListener('click', async () => {
+            if (confirm('Generate new self-signed certificate? This will restart the proxy.')) {
+                try {
+                    const response = await fetch('/api/certificate/regenerate', { method: 'POST' });
+                    if (response.ok) {
+                        alert('Certificate regenerated successfully');
+                        fetchCertInfo();
+                    } else {
+                        alert('Failed to regenerate certificate');
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            }
+        });
+
+        document.getElementById('viewCertBtn').addEventListener('click', () => {
+            window.open('/api/certificate/download', '_blank');
+        });
+
+        // Initial load
+        fetchCertInfo();
+        setInterval(fetchCertInfo, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+</html>

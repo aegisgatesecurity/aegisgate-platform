@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  # Unified platform - runs proxy + MCP server + bridge + dashboard in one process
+  platform:
+    build:
+      context: ..
+      dockerfile: aegisgate-platform/Dockerfile
+    ports:
+      - "8080:8080"  # AegisGate proxy
+      - "8081:8081"  # AegisGuard MCP
+      - "8443:8443"  # Dashboard & API
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TIER=${TIER:-community}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8443/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    command: ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp", "--tier=community"]
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Standalone AegisGuard for testing (not needed when using --embedded-mcp)
+  aegisguard-standalone:
+    build:
+      context: ../aegisguard-source
+      dockerfile: Dockerfile
+    profiles:
+      - separate
+    ports:
+      - "9081:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Standalone AegisGate for testing (not needed when using platform)
+  aegisgate-standalone:
+    build:
+      context: ../aegisgate-source
+      dockerfile: Dockerfile
+    profiles:
+      - separate
+    ports:
+      - "9080:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate - Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .header .version {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+        .nav {
+            background: rgba(255,255,255,0.95);
+            padding: 0;
+            display: flex;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav a {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .nav a:hover {
+            background: rgba(30,60,114,0.05);
+            color: #1e3c72;
+        }
+        .nav a.active {
+            color: #1e3c72;
+            border-bottom-color: #1e3c72;
+            background: rgba(30,60,114,0.1);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #1e3c72;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+        .form-group small {
+            display: block;
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: #1e3c72;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2a5298;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            color: #0d47a1;
+        }
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            color: #1b5e20;
+        }
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            color: #e65100;
+        }
+        .read-only {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        .restart-notice {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .restart-notice strong {
+            color: #e65100;
+        }
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C9.243 2 7 4.243 7 7v3H5v11h14V10h-2V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3z"/>
+            </svg>
+            AegisGate Security Gateway
+        </h1>
+        <span class="version">MVP v1.0.0</span>
+    </header>
+
+    <nav class="nav">
+        <a href="index.html">Dashboard</a>
+        <a href="certificates.html">Certificates</a>
+        <a href="settings.html" class="active">Settings</a>
+    </nav>
+
+    <div class="container">
+        <div class="alert alert-info">
+            <strong>Note:</strong> Settings are configured via environment variables.
+            Changes require a proxy restart to take effect.
+        </div>
+
+        <div class="card">
+            <h2>Proxy Configuration</h2>
+            <div class="form-group">
+                <label for="bindAddress">Bind Address</label>
+                <input type="text" id="bindAddress" class="read-only" readonly
+                       value="Loading...">
+                <small>The address and port where AegisGate listens for connections.
+                       Set via AEGISGATE_BIND_ADDRESS environment variable.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="upstream">Upstream Server</label>
+                <input type="text" id="upstream" class="read-only" readonly
+                       value="Loading...">
+                <small>The backend server URL that AegisGate proxies to.
+                       Set via AEGISGATE_UPSTREAM environment variable.</small>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Security Settings</h2>
+            <div class="form-group">
+                <label for="rateLimit">Rate Limit (requests per minute)</label>
+                <input type="text" id="rateLimit" class="read-only" readonly
+                       value="Loading...">
+                <small>Maximum number of requests allowed per minute from a single client.
+                       Set via AEGISGATE_RATE_LIMIT environment variable. Default: 100</small>
+            </div>
+
+            <div class="form-group">
+                <label for="maxBodySize">Max Request Body Size</label>
+                <input type="text" id="maxBodySize" class="read-only" readonly
+                       value="Loading...">
+                <small>Maximum allowed size for request bodies (e.g., 10MB, 1GB).
+                       Set via AEGISGATE_MAX_BODY_SIZE environment variable. Default: 10MB</small>
+            </div>
+
+            <div class="form-group">
+                <label for="timeout">Request Timeout</label>
+                <input type="text" id="timeout" class="read-only" readonly
+                       value="Loading...">
+                <small>Maximum time allowed for processing a request.
+                       Set via AEGISGATE_TIMEOUT environment variable. Default: 30s</small>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>TLS & Certificates</h2>
+            <div class="form-group">
+                <label for="certDir">Certificate Directory</label>
+                <input type="text" id="certDir" class="read-only" readonly
+                       value="Loading...">
+                <small>Directory where TLS certificates are stored.
+                       Set via AEGISGATE_CERT_DIR environment variable. Default: ./certs</small>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Logging</h2>
+            <div class="form-group">
+                <label for="logLevel">Log Level</label>
+                <input type="text" id="logLevel" class="read-only" readonly
+                       value="Loading...">
+                <small>Logging verbosity level (debug, info, warn, error).
+                       Set via AEGISGATE_LOG_LEVEL environment variable. Default: info</small>
+            </div>
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>Restart Required:</strong> To apply any configuration changes,
+            you must restart the AegisGate proxy. Use the Dashboard to stop and restart the proxy.
+        </div>
+    </div>
+
+    <script>
+        // Fetch current settings
+        async function fetchSettings() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+
+                document.getElementById('bindAddress').value = data.bind_address || ':8080';
+                document.getElementById('upstream').value = data.upstream || 'http://127.0.0.1:3000';
+                document.getElementById('rateLimit').value = data.rate_limit || '100';
+                document.getElementById('maxBodySize').value = formatBytes(data.max_body_size) || '10MB';
+                document.getElementById('timeout').value = data.timeout || '30s';
+                document.getElementById('certDir').value = data.cert_dir || './certs';
+                document.getElementById('logLevel').value = data.log_level || 'info';
+            } catch (err) {
+                console.error('Failed to fetch settings:', err);
+                // Set defaults
+                document.getElementById('bindAddress').value = ':8080';
+                document.getElementById('upstream').value = 'http://127.0.0.1:3000';
+                document.getElementById('rateLimit').value = '100';
+                document.getElementById('maxBodySize').value = '10MB';
+                document.getElementById('timeout').value = '30s';
+                document.getElementById('certDir').value = './certs';
+                document.getElementById('logLevel').value = 'info';
+            }
+        }
+
+        // Format bytes to human readable
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Initial load
+        fetchSettings();
+    </script>
+</body>
+</html>

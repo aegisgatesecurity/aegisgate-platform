@@ -1,0 +1,96 @@
+<!-- ML Stats Widget Container
+     =========================
+     Add this to your dashboard HTML to include the ML anomaly detection widget
+-->
+
+<!-- ML Stats Widget -->
+<div id="ml-stats-widget" class="widget-container">
+    <!-- Widget will be rendered here by JavaScript -->
+</div>
+
+<!-- Include required scripts and styles -->
+<link rel="stylesheet" href="/css/ml-stats-widget.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/js/ml-stats-widget.js"></script>
+
+<!-- Initialize widget -->
+<script>
+    // Wait for DOM and Chart.js to load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if Chart.js is available
+        if (typeof Chart !== 'undefined') {
+            MLStatsWidget.init('ml-stats-widget', {
+                sensitivity: 'medium',
+                showPromptInjection: true,
+                showContentAnalysis: true,
+                showBehavioral: true,
+                refreshInterval: 5000
+            });
+        } else {
+            // Fallback: load Chart.js first
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+            script.onload = function() {
+                MLStatsWidget.init('ml-stats-widget', {
+                    sensitivity: 'medium',
+                    showPromptInjection: true,
+                    showContentAnalysis: true,
+                    showBehavioral: true
+                });
+            };
+            document.head.appendChild(script);
+        }
+    });
+</script>
+
+<!-- Widget API Endpoints Required:
+     GET  /api/v1/ml/stats      - Returns ML statistics
+     POST /api/v1/ml/stats/reset - Resets ML statistics
+
+     Expected response format for GET /api/v1/ml/stats:
+     {
+         "middleware": {
+             "total_requests": 1000,
+             "analyzed_requests": 1000,
+             "blocked_requests": 5,
+             "anomaly_counts": {
+                 "total": 25,
+                 "traffic_spike": 10,
+                 "path_traversal": 5,
+                 "high_entropy": 10
+             }
+         },
+         "prompt_injection": {
+             "total_scanned": 500,
+             "threats_detected": 3,
+             "blocked_count": 2,
+             "sensitivity": 75,
+             "by_pattern": {
+                 "ignore_previous": 2,
+                 "dan_mode": 1
+             }
+         },
+         "content_analysis": {
+             "total_analyzed": 500,
+             "violations_found": 2,
+             "by_type": {
+                 "ssn": 1,
+                 "credit_card": 1
+             }
+         },
+         "behavioral_analysis": {
+             "total_clients": 50,
+             "anomalous_clients": 3,
+             "total_anomalies": 5
+         },
+         "sensitivity": "medium",
+         "recent_anomalies": [
+             {
+                 "type": "prompt_injection",
+                 "severity": 4,
+                 "score": 85.0,
+                 "timestamp": "2024-01-15T10:30:00Z"
+             }
+         ]
+     }
+-->

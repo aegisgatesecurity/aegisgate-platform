@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate Consolidated Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 0 0 20px 20px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        .section { background: white; border-radius: 12px; padding: 30px; margin: 20px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .section h2 { color: #667eea; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: #f8f9fa; padding: 20px; border-radius: 8px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card h3 { color: #333; margin-bottom: 10px; }
+        .card p { color: #666; font-size: 14px; }
+        .tier { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin: 10px 0; }
+        .tier h3 { font-size: 1.3em; margin-bottom: 10px; }
+        .tier-features { list-style: none; }
+        .tier-features li { padding: 5px 0; }
+        .tier-features li::before { content: "✓ "; color: #66ff66; font-weight: bold; }
+        .btn { display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: transform 0.2s; }
+        .btn:hover { transform: scale(1.05); }
+        .feature-badge { display: inline-block; padding: 4px 12px; background: #667eea; color: white; border-radius: 20px; font-size: 12px; margin: 2px; }
+        .status-active { color: #4caf50; }
+        .status-expired { color: #f44336; }
+        .status-revoked { color: #ff9800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #667eea; }
+        .demo-config { background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        .demo-config code { color: #4caf50; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Admin Login Modal -->
+        <div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000;">
+            <div style="background: white; width: 400px; margin: 100px auto; padding: 30px; border-radius: 12px; text-align: center;">
+                <h2>🚀 Admin Login</h2>
+                <p style="margin: 10px 0; color: #666;">Demo credentials</p>
+                <form id="loginForm">
+                    <div style="margin: 15px 0;">
+                        <input type="text" id="username" placeholder="Username" style="width: 90%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" value="admin">
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <input type="password" id="password" placeholder="Password" style="width: 90%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" value="admin">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Login</button>
+                </form>
+                <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                    Demo credentials (hardcoded):<br>
+                    <strong>Username:</strong> admin<br>
+                    <strong>Password:</strong> admin
+                </p>
+                <button onclick="document.getElementById('loginModal').style.display='none'" style="margin-top: 15px; padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+
+        <div class="header">
+            <h1>🚀 AegisGate Consolidated Demo</h1>
+            <p>Unified 4-Tier System • Server-Side License Validation • Enterprise Features</p>
+            <p style="margin-top: 15px;">
+                <button onclick="showLogin()" style="padding: 8px 16px; background: #66ff66; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🔒 Admin Login</button>
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Overview</h2>
+            <p>Welcome to the AegisGate Consolidated Demo. This demonstrates our unified 4-tier licensing system with server-side validation and enterprise capabilities.</p>
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn" onclick="showAPIKeys()">📋 Show API Keys</button>
+                <button class="btn" onclick="showLicenses()">📋 ShowLicenses</button>
+                <button class="btn" onclick="showTierFeatures()">📋 Show Tier Features</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Supported Markets</h2>
+            <p>Our unified platform serves multiple markets with consistent licensing:</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>🏢 Enterprise</h3>
+                    <p>Large organizations need comprehensive security and advanced features.</p>
+                </div>
+                <div class="card">
+                    <h3>🏢 Professional</h3>
+                    <p>Businesses need robust features with moderate scale.</p>
+                </div>
+                <div class="card">
+                    <h3>💻 Developer</h3>
+                    <p>Individual developers need affordable, capable tools.</p>
+                </div>
+                <div class="card">
+                    <h3>🎓 Community</h3>
+                    <p>Open source and educational projects need free access.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4-Tier License System</h2>
+            <div id="tiers-container"></div>
+        </div>
+
+        <div class="section">
+            <h2>Enterprise Features</h2>
+            <p>The Enterprise tier includes 35+ advanced features:</p>
+            <div class="grid" id="enterprise-features"></div>
+        </div>
+
+        <div class="section">
+            <h2>Quick Start</h2>
+            <div class="demo-config">
+                <h3>Start the Demo Server</h3>
+                <code>cd consolidated-demo && go run cmd/aegisgate-consolidated/main.go</code>
+                <p style="margin-top: 10px; color: #666;">Server runs on port 8443 by default</p>
+            </div>
+
+            <div class="demo-config">
+                <h3>API Endpoints</h3>
+                <code>GET  /api/health</code><br>
+                <code>GET  /api/keys/public</code><br>
+                <code>POST /api/license/create</code><br>
+                <code>POST /api/license/validate</code><br>
+                <code>GET  /api/license/list</code><br>
+                <code>GET  /api/features</code><br>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Status</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>License</h3>
+                    <p><strong>Server-side validation:</strong> ✅ Implemented</p>
+                    <p><strong>RSA-4096 signatures:</strong> ✅ Verified</p>
+                    <p><strong>Tier validation:</strong> ✅ Working</p>
+                </div>
+                <div class="card">
+                    <h3>Features</h3>
+                    <p><strong>Feature gates:</strong> ✅ Working</p>
+                    <p><strong>Enterprise APIs:</strong> ✅ Implemented</p>
+                    <p><strong>Feature matrix:</strong> ✅ Complete</p>
+                </div>
+                <div class="card">
+                    <h3>Multimarket</h3>
+                    <p><strong>Enterprise tier:</strong> ✅ Ready</p>
+                    <p><strong>Professional tier:</strong> ✅ Ready</p>
+                    <p><strong>Multi-market config:</strong> ✅ Ready</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Documentation</h2>
+            <p>Visit <a href="https://github.com/aegisguard/aegisgate-consolidated-demo" target="_blank">GitHub</a> for full documentation.</p>
+            <p style="margin-top: 10px; color: #666;">Demo last updated: April 7, 2026</p>
+        </div>
+    </div>
+
+    <script>
+        const tiers = [
+            {
+                name: "Community",
+                id: "community",
+                description: "Free tier for open source and personal use",
+                price: "$0",
+                features: ["Core features", "Basic RBAC", "Security scanning", "Audit logging"]
+            },
+            {
+                name: "Developer",
+                id: "developer",
+                description: "Low-cost tier for individual developers",
+                price: "$49/mo",
+                features: ["All Community features", "Enhanced RBAC", "API access", "5 daily tool executions"]
+            },
+            {
+                name: "Professional",
+                id: "professional",
+                description: "Business tier for teams",
+                price: "$199/mo",
+                features: ["All Developer features", "ML analytics", "SIEM integration", "20 daily tool executions", "Threat intelligence"]
+            },
+            {
+                name: "Enterprise",
+                id: "enterprise",
+                description: "Premium tier for large organizations",
+                price: "Custom",
+                features: ["All Professional features", "Unlimited tool execution", "Advanced threat intelligence", "ML behavioral analytics", "Multi-tenancy", "35+ enterprise features"]
+            }
+        ];
+
+        function renderTiers() {
+            const tiersContainer = document.getElementById('tiers-container');
+            tiersContainer.innerHTML = tiers.map(tier => `
+                <div class="tier">
+                    <h3>${tier.name}</h3>
+                    <p>${tier.description}</p>
+                    <p><strong>Price:</strong> ${tier.price}</p>
+                    <ul class="tier-features">
+                        ${tier.features.map(f => `<li>${f}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        const enterpriseFeatures = [
+            "Unlimited Tool Execution",
+            "Advanced Threat Intelligence",
+            "ML Behavioral Analytics",
+            "Custom SIEM Integration",
+            "Multi-tenancy Support",
+            "Team Management",
+            "SLA Monitoring",
+            "Automated Security Response",
+            "Custom Reporting",
+            "Predictive Analytics",
+            "Data Residency Controls",
+            "Compliance Frameworks",
+            "Audit Trail Retention"
+        ];
+
+        function renderEnterpriseFeatures() {
+            const container = document.getElementById('enterprise-features');
+            container.innerHTML = enterpriseFeatures.map(f => `
+                <div class="card">
+                    <span class="feature-badge">${f}</span>
+                </div>
+            `).join('');
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function showAPIKeys() {
+            fetch('/api/api-keys')
+                .then(r => r.json())
+                .then(data => {
+                    const keys = data.api_keys || [];
+                    alert('API Keys:\n' + keys.map(k => `${k.desc} (${k.level}): ${k.key}`).join('\n'));
+                })
+                .catch(() => alert('API keys demo (requires local server)'));
+        }
+
+        function showLicenses() {
+            fetch('/api/license/list')
+                .then(r => r.json())
+                .then(data => {
+                    alert('Licenses: ' + JSON.stringify(data, null, 2));
+                })
+                .catch(() => alert('Licenses: Demo mode'));
+        }
+
+        function showTierFeatures() {
+            fetch('/api/features')
+                .then(r => r.json())
+                .then(data => {
+                    alert('Tier Features:\n' + JSON.stringify(data, null, 2));
+                })
+                .catch(() => alert('Tier Features: Demo mode'));
+        }
+
+        renderTiers();
+        renderEnterpriseFeatures();
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Demo login (in production, this would call /api/auth/login)
+            if (username === 'admin' && password === 'admin') {
+                alert('Login Successful!\n\nWelcome to AegisGate Consolidated Demo Admin Panel\n\nFeature access:\n- License Management\n- Tier Configuration\n- Feature Gates\n- Enterprise API');
+                document.getElementById('loginModal').style.display = 'none';
+            } else {
+                alert('Invalid credentials!\n\nDemo credentials:\nUsername: admin\nPassword: admin');
+            }
+        });
+    </script>
+</body>
+</html>
