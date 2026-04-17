@@ -30,11 +30,13 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
 )
 
 var (
@@ -66,6 +68,12 @@ func main() {
 	}
 	log.Printf("Tier: %s (%s)", platformTier.DisplayName(), platformTier.String())
 
+	// Load unified platform configuration
+	cfg, err := platformconfig.Load(*configFile)
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -75,23 +83,7 @@ func main() {
 	// Initializes file-backed audit storage with tier-based retention.
 	// This MUST start before any component that produces audit events.
 
-	persistenceCfg := persistence.DefaultConfig()
-	if *configFile != "" {
-		// If a config file was provided, try to load persistence settings from it
-		// (platformconfig handles file loading, but for --embedded-mcp standalone
-		// we allow persistence to work without a config file)
-		if _, err := os.Stat(*configFile); err == nil {
-			// Config file exists — platformconfig.Parse would load it,
-			// but we do a lightweight load here for persistence only
-			log.Printf("Loading persistence config from %s", *configFile)
-		}
-	}
-
-	// Override data dir from environment if set (e.g., Docker: AEGISGATE_DATA_DIR=/data)
-	if dataDir := os.Getenv("AEGISGATE_DATA_DIR"); dataDir != "" {
-		persistenceCfg.DataDir = dataDir
-		persistenceCfg.AuditDir = dataDir + "/audit"
-	}
+	persistenceCfg := cfg.Persistence
 
 	// Ensure the data directory structure exists
 	if err := persistence.EnsureDataDirs(persistenceCfg.DataDir); err != nil {
@@ -109,6 +101,34 @@ func main() {
 
 	log.Printf("Persistence: audit_dir=%s, retention=%d days",
 		persistenceCfg.AuditDir, platformTier.LogRetentionDays())
+
+	// ============================================================
+	// Component 0b: Certificate Initialization (first-run TLS setup)
+	// ============================================================
+	// Generates self-signed CA + server certificates on first startup.
+	// Idempotent — skips if valid certs already exist in cert_dir.
+
+	certCfg := certinit.DefaultConfig()
+	certCfg.CertDir = cfg.TLS.CertDir
+	certCfg.AutoGenerate = cfg.TLS.AutoGenerate
+
+	certResult, err := certinit.EnsureCerts(certCfg)
+	if err != nil {
+		log.Fatalf("Certificate initialization failed: %v", err)
+	}
+	if certResult.Generated {
+		log.Printf("Certificates: generated in %s (CA expires %s, server expires %s)",
+			certCfg.CertDir,
+			certResult.CAExpiry.Format("2006-01-02"),
+			certResult.ServerExpiry.Format("2006-01-02"))
+	} else if certResult.Existing {
+		log.Printf("Certificates: reusing existing in %s", certCfg.CertDir)
+	} else {
+		log.Printf("Certificates: auto_generate disabled — using manual certs")
+	}
+	for _, w := range certResult.Warnings {
+		log.Printf("Certificate warning: %s", w)
+	}
 
 	// ============================================================
 	// Component 1: AegisGate HTTP Proxy
@@ -410,6 +430,23 @@ func main() {
 		w.Write(data)
 	})
 
+	// Certificate status endpoint — validate and inspect TLS certificates
+	dashMux.HandleFunc("/api/v1/certs", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		validation, err := certinit.ValidateCerts(certCfg)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
+			return
+		}
+		data, err := json.Marshal(validation)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(data)
+	})
+
 	// Static UI file server
 	dashMux.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui/frontend"))))
 
@@ -460,6 +497,7 @@ func main() {
 	}
 	log.Printf("  Bridge:   AegisGuard -> AegisGate (%s)", bridgeStatus)
 	log.Printf("  Persistence: %s (retention: %d days)", persistenceCfg.AuditDir, platformTier.LogRetentionDays())
+	log.Printf("  Certs:    %s (auto_generate: %v)", certCfg.CertDir, certCfg.AutoGenerate)
 	log.Printf("  Dashboard: http://localhost:%d/health", *dashPort)
 	log.Printf("  API:      http://localhost:%d/api/v1/scan", *dashPort)
 
