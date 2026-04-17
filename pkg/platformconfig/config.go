@@ -16,12 +16,14 @@ package platformconfig
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/config"
 	agconfig "github.com/aegisguardsecurity/aegisguard/pkg/config"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,6 +50,9 @@ type Config struct {
 
 	// Logging configuration
 	Logging LoggingConfig `yaml:"logging"`
+
+	// Persistence configuration (audit storage, retention, pruning)
+	Persistence persistence.Config `yaml:"persistence"`
 }
 
 // PlatformConfig holds platform-specific settings not in either upstream
@@ -167,6 +172,7 @@ func DefaultConfig() *Config {
 			Level:  "info",
 			Format: "json",
 		},
+		Persistence: persistence.DefaultConfig(),
 	}
 }
 
@@ -270,6 +276,18 @@ func (c *Config) applyEnvOverrides() {
 	// FIPS overrides
 	if v := os.Getenv("AEGISGATE_FIPS_ENABLED"); v != "" {
 		c.TLS.FIPS.Enabled = strings.ToLower(v) == "true"
+	}
+
+	// Persistence overrides
+	if v := os.Getenv("AEGISGATE_PERSISTENCE_ENABLED"); v != "" {
+		c.Persistence.Enabled = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_DATA_DIR"); v != "" {
+		c.Persistence.DataDir = v
+		c.Persistence.AuditDir = filepath.Join(v, "audit")
+		if c.TLS.CertDir == "" || c.TLS.CertDir == "./certs" {
+			c.TLS.CertDir = filepath.Join(v, "certs")
+		}
 	}
 }
 

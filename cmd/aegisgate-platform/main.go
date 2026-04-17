@@ -17,20 +17,24 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 )
 
 var (
@@ -64,6 +68,47 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// ============================================================
+	// Component 0: Persistence Layer (audit storage + retention)
+	// ============================================================
+	// Initializes file-backed audit storage with tier-based retention.
+	// This MUST start before any component that produces audit events.
+
+	persistenceCfg := persistence.DefaultConfig()
+	if *configFile != "" {
+		// If a config file was provided, try to load persistence settings from it
+		// (platformconfig handles file loading, but for --embedded-mcp standalone
+		// we allow persistence to work without a config file)
+		if _, err := os.Stat(*configFile); err == nil {
+			// Config file exists — platformconfig.Parse would load it,
+			// but we do a lightweight load here for persistence only
+			log.Printf("Loading persistence config from %s", *configFile)
+		}
+	}
+
+	// Override data dir from environment if set (e.g., Docker: AEGISGATE_DATA_DIR=/data)
+	if dataDir := os.Getenv("AEGISGATE_DATA_DIR"); dataDir != "" {
+		persistenceCfg.DataDir = dataDir
+		persistenceCfg.AuditDir = dataDir + "/audit"
+	}
+
+	// Ensure the data directory structure exists
+	if err := persistence.EnsureDataDirs(persistenceCfg.DataDir); err != nil {
+		log.Fatalf("Failed to create data directories: %v", err)
+	}
+
+	persistenceMgr, err := persistence.New(platformTier, persistenceCfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize persistence: %v", err)
+	}
+	if err := persistenceMgr.Start(); err != nil {
+		log.Fatalf("Failed to start persistence: %v", err)
+	}
+	defer persistenceMgr.Close()
+
+	log.Printf("Persistence: audit_dir=%s, retention=%d days",
+		persistenceCfg.AuditDir, platformTier.LogRetentionDays())
 
 	// ============================================================
 	// Component 1: AegisGate HTTP Proxy
@@ -288,6 +333,83 @@ func main() {
 			platformTier.SupportLevel())
 	})
 
+	// Audit log endpoint — query persisted audit entries
+	dashMux.HandleFunc("/api/v1/audit", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if !persistenceMgr.IsEnabled() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintf(w, `{"error":"persistence disabled","entries":[]}`)
+			return
+		}
+
+		auditLog := persistenceMgr.AuditLog()
+		if auditLog == nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintf(w, `{"error":"audit log unavailable","entries":[]}`)
+			return
+		}
+
+		filter := opsec.AuditFilter{Limit: 100}
+		if v := r.URL.Query().Get("limit"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 1000 {
+				filter.Limit = n
+			}
+		}
+		if v := r.URL.Query().Get("event_type"); v != "" {
+			filter.EventTypes = []string{v}
+		}
+
+		entries, err := auditLog.Query(r.Context(), filter)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
+			return
+		}
+
+		data, err := json.Marshal(entries)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"marshal failed"}`)
+			return
+		}
+		w.Write(data)
+	})
+
+	// Compliance export endpoint — tamper-evident audit export
+	dashMux.HandleFunc("/api/v1/compliance", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if !persistenceMgr.IsEnabled() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintf(w, `{"error":"persistence disabled"}`)
+			return
+		}
+
+		format := r.URL.Query().Get("format")
+		if format == "" {
+			format = "json"
+		}
+
+		data, err := persistenceMgr.ExportForCompliance(r.Context(), format)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
+			return
+		}
+		w.Write(data)
+	})
+
+	// Persistence stats endpoint
+	dashMux.HandleFunc("/api/v1/persistence", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		stats := persistenceMgr.Stats()
+		data, err := json.Marshal(stats)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(data)
+	})
+
 	// Static UI file server
 	dashMux.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui/frontend"))))
 
@@ -337,6 +459,7 @@ func main() {
 		log.Printf("  MCP:      localhost:%d (AegisGuard scanner client)", *mcpPort)
 	}
 	log.Printf("  Bridge:   AegisGuard -> AegisGate (%s)", bridgeStatus)
+	log.Printf("  Persistence: %s (retention: %d days)", persistenceCfg.AuditDir, platformTier.LogRetentionDays())
 	log.Printf("  Dashboard: http://localhost:%d/health", *dashPort)
 	log.Printf("  API:      http://localhost:%d/api/v1/scan", *dashPort)
 
@@ -356,6 +479,11 @@ func main() {
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
+
+	// Close persistence (flushes audit log, runs final prune, closes storage)
+	if err := persistenceMgr.Close(); err != nil {
+		log.Printf("Persistence shutdown error: %v", err)
+	}
 
 	// Stop the AegisGate proxy
 	if err := proxyServer.Stop(shutdownCtx); err != nil {

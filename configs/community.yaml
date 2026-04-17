@@ -98,6 +98,16 @@ logging:
   level: "info"
   format: "json"
 
+# Persistence — file-backed audit storage with tier-based retention
+# Community tier: 7-day retention, file storage (no database required)
+# Override: AEGISGATE_PERSISTENCE_ENABLED, AEGISGATE_DATA_DIR
+persistence:
+  enabled: true
+  data_dir: "/data"
+  audit_dir: "/data/audit"
+  prune_interval: "24h"
+  max_file_size: 52428800  # 50 MB
+
 # FIPS (Community: disabled)
 fips:
   enabled: false
