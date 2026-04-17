@@ -1,6 +1,8 @@
 version: '3.8'
 services:
   # Unified platform - runs proxy + MCP server + bridge + dashboard in one process
+  # Zero-config: all defaults embedded, no config file or env vars required
+  # Community tier: file-based persistence (no Redis needed)
   platform:
     build:
       context: ..
@@ -9,20 +11,34 @@ services:
       - "8080:8080"  # AegisGate proxy
       - "8081:8081"  # AegisGuard MCP
       - "8443:8443"  # Dashboard & API
+    # Immutable container — only /data is writable
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+      - /run:noexec,nosuid,size=1m
+    volumes:
+      - aegisgate-data:/data
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - TIER=${TIER:-community}
+      - AEGISGATE_DATA_DIR=/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8443/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
     command: ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp", "--tier=community"]
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+  # Redis is NOT needed for Community tier (file-based persistence is the default).
+  # Enable for Developer+ tiers when you need distributed caching/shared state.
+  # Uncomment below to start Redis for higher tiers:
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
 
   # Standalone AegisGuard for testing (not needed when using --embedded-mcp)
   aegisguard-standalone:
@@ -33,6 +49,9 @@ services:
       - separate
     ports:
       - "9081:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 30s
@@ -48,6 +67,9 @@ services:
       - separate
     ports:
       - "9080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     healthcheck:
@@ -55,3 +77,9 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+volumes:
+  aegisgate-data:
+    driver: local
+  # redis-data:
+  #   driver: local
