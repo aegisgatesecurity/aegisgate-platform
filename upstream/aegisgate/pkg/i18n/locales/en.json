@@ -1,0 +1,124 @@
+{
+  "locale": "en",
+  "language": "English",
+  "messages": {
+    "error.filesystem_sealed": "filesystem is sealed: modifications are not allowed",
+    "error.already_sealed": "filesystem is already sealed",
+    "error.entry_not_found": "entry {{.ID}} not found",
+    "error.no_configs": "no configurations available",
+    "error.checksum_mismatch": "checksum mismatch for entry {{.ID}}",
+    "error.wal_load_failed": "failed to load WAL: {{.Error}}",
+    "error.wal_directory": "failed to create WAL directory: {{.Error}}",
+    "error.not_found": "not found",
+    "error.invalid_locale": "invalid locale: {{.Locale}}",
+    "error.unauthorized": "unauthorized access",
+    "error.forbidden": "access forbidden",
+    "error.invalid_config": "invalid configuration",
+    "error.operation_failed": "operation failed: {{.Operation}}",
+    "error.method_not_allowed": "Method not allowed",
+    "error.rate_limit_exceeded": "Rate limit exceeded. Please try again later.",
+    "error.internal": "Internal server error: {{.Error}}",
+    "error.invalid_request": "Invalid request: {{.Error}}",
+    "error.websocket_unavailable": "WebSocket server unavailable",
+
+    "http.method_not_allowed": "Method not allowed",
+    "http.rate_limit_exceeded": "Rate limit exceeded",
+    "http.unauthorized": "Unauthorized",
+    "http.forbidden": "Forbidden",
+    "http.not_found": "Not found",
+    "http.bad_request": "Bad request",
+    "http.internal_error": "Internal server error",
+    "http.service_unavailable": "Service unavailable",
+    "http.request_timeout": "Request timeout",
+    "http.too_many_requests": "Too many requests",
+
+    "log.starting": "Starting AegisGate Security Proxy",
+    "log.shutting_down": "Shutting down server",
+    "log.server_stopped": "Server stopped",
+    "log.tls_initialized": "TLS manager initialized",
+    "log.mitm_enabled": "MITM mode enabled - initializing HTTPS interception proxy",
+    "log.mitm_ca_initialized": "MITM CA initialized",
+    "log.upstream_proxy": "Using upstream proxy for MITM",
+    "log.dashboard_started": "Dashboard server started",
+    "log.dashboard_stopped": "Dashboard server stopped",
+    "log.auth_enabled": "Authentication enabled",
+    "log.auth_disabled": "Authentication disabled - running in anonymous mode",
+    "log.config_loaded": "Configuration loaded successfully",
+    "log.config_failed": "Failed to load configuration",
+
+    "health.status_healthy": "healthy",
+    "health.status_unhealthy": "unhealthy",
+    "health.status_degraded": "degraded",
+    "health.status_ok": "OK",
+    "health.metrics_connected": "connected",
+    "health.metrics_disconnected": "disconnected",
+    "health.check_passed": "health check passed",
+    "health.check_failed": "health check failed: {{.Reason}}",
+    "health.check_ok": "OK",
+    "health.connected": "connected",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "Proxy bound to {{.Address}}",
+    "config.upstream_set": "Upstream proxy configured: {{.Upstream}}",
+    "config.tls_dir": "TLS certificate directory: {{.Dir}}",
+    "config.max_connections": "Max connections: {{.Max}}",
+
+    "audit.operation_logged": "Operation logged: {{.Operation}}",
+    "audit.modification_blocked": "Modification blocked: {{.Operation}}",
+    "audit.snapshot_created": "Snapshot created: {{.ID}}",
+    "audit.seal_applied": "Seal applied at {{.Time}}",
+    "audit.unseal_applied": "Seal removed at {{.Time}}",
+
+    "proxy.started": "Proxy server started",
+    "proxy.stopped": "Proxy server stopped",
+    "proxy.connection_accepted": "Connection accepted from {{.Remote}}",
+    "proxy.connection_closed": "Connection closed",
+    "proxy.request_forwarded": "Request forwarded to {{.Target}}",
+
+    "certificate.generated": "Certificate generated for {{.Host}}",
+    "certificate.ca_created": "Certificate authority created",
+    "certificate.expired": "Certificate has expired",
+    "certificate.invalid": "Invalid certificate",
+
+    "compliance.violation": "Compliance violation detected: {{.Rule}}",
+    "compliance.check_passed": "Compliance check passed",
+    "compliance.framework_loaded": "Compliance framework loaded: {{.Framework}}",
+
+    "metrics.collector_started": "Metrics collector started",
+    "metrics.export": "Metrics exported successfully",
+
+    "locale.en": "English",
+    "locale.fr": "French",
+    "locale.de": "German",
+    "locale.es": "Spanish",
+    "locale.ja": "Japanese",
+    "locale.zh": "Chinese Simplified"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "one": "{{.Count}} entry not found",
+      "other": "{{.Count}} entries not found"
+    },
+    "items.count": {
+      "one": "{{.Count}} item",
+      "other": "{{.Count}} items"
+    },
+    "violations.count": {
+      "one": "{{.Count}} violation",
+      "other": "{{.Count}} violations"
+    },
+    "connections.active": {
+      "one": "{{.Count}} active connection",
+      "other": "{{.Count}} active connections"
+    },
+    "requests.processed": {
+      "one": "{{.Count}} request processed",
+      "other": "{{.Count}} requests processed"
+    },
+    "errors.occurred": {
+      "one": "{{.Count}} error occurred",
+      "other": "{{.Count}} errors occurred"
+    }
+  },
+  "copyright": "AegisGate Security Proxy - Enterprise Configuration Management"
+}

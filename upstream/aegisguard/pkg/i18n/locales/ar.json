@@ -1,0 +1,124 @@
+{
+  "locale": "ar",
+  "language": "العربية",
+  "messages": {
+    "error.filesystem_sealed": "نظام الملفات مُحكم: التعديلات غير مسموحة",
+    "error.already_sealed": "نظام الملفات مُحكم بالفعل",
+    "error.entry_not_found": "الإدخال {{.ID}} غير موجود",
+    "error.no_configs": "لا توجد إعدادات متاحة",
+    "error.checksum_mismatch": "عدم تطابق المجموع الاختباري للإدخال {{.ID}}",
+    "error.wal_load_failed": "فشل تحميل WAL: {{.Error}}",
+    "error.wal_directory": "فشل إنشاء مجلد WAL: {{.Error}}",
+    "error.not_found": "غير موجود",
+    "error.invalid_locale": "لغة غير صالحة: {{.Locale}}",
+    "error.unauthorized": "وصول غير مصرح",
+    "error.forbidden": "الدخول محظور",
+    "error.invalid_config": "إعداد غير صالح",
+    "error.operation_failed": "فشل العملية: {{.Operation}}",
+    "error.method_not_allowed": "الطريقة غير مسموحة",
+    "error.rate_limit_exceeded": "تم تجاوز حد المعدل. يرجى المحاولة لاحقاً.",
+    "error.internal": "خطأ داخلي في الخادم: {{.Error}}",
+    "error.invalid_request": "طلب غير صالح: {{.Error}}",
+    "error.websocket_unavailable": "خادم WebSocket غير متاح",
+
+    "http.method_not_allowed": "الطريقة غير مسموحة",
+    "http.rate_limit_exceeded": "تم تجاوز حد المعدل",
+    "http.unauthorized": "غير مصرح",
+    "http.forbidden": "محظور",
+    "http.not_found": "غير موجود",
+    "http.bad_request": "طلب سيئ",
+    "http.internal_error": "خطأ داخلي في الخادم",
+    "http.service_unavailable": "الخدمة غير متاحة",
+    "http.request_timeout": "انتهت مهلة الطلب",
+    "http.too_many_requests": "طلبات كثيرة جداً",
+
+    "log.starting": "بدء AegisGuard Security Proxy",
+    "log.shutting_down": "إيقاف الخادم",
+    "log.server_stopped": "تم إيقاف الخادم",
+    "log.tls_initialized": "تم تهيئة مدير TLS",
+    "log.mitm_enabled": "تم تمكين وضع MITM - تهيئة وكيل اعتراض HTTPS",
+    "log.mitm_ca_initialized": "تم تهيئة MITM CA",
+    "log.upstream_proxy": "استخدام وكيل upstream لـ MITM",
+    "log.dashboard_started": "تم بدء خادم لوحة التحكم",
+    "log.dashboard_stopped": "تم إيقاف خادم لوحة التحكم",
+    "log.auth_enabled": "تم تمكين المصادقة",
+    "log.auth_disabled": "تم تعطيل المصادقة - العمل في الوضع المجهول",
+    "log.config_loaded": "تم تحميل الإعدادات بنجاح",
+    "log.config_failed": "فشل تحميل الإعدادات",
+
+    "health.status_healthy": "سليم",
+    "health.status_unhealthy": "غير سليم",
+    "health.status_degraded": "متدهور",
+    "health.status_ok": "موافق",
+    "health.metrics_connected": "متصل",
+    "health.metrics_disconnected": "غير متصل",
+    "health.check_passed": "تم اجتياز فحص الصحة",
+    "health.check_failed": "فشل فحص الصحة: {{.Reason}}",
+    "health.check_ok": "موافق",
+    "health.connected": "متصل",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "الوكيل مرتبط بـ {{.Address}}",
+    "config.upstream_set": "تم تكوين الوكيل upstream: {{.Upstream}}",
+    "config.tls_dir": "مجلد شهادات TLS: {{.Dir}}",
+    "config.max_connections": "أقصى اتصالات: {{.Max}}",
+
+    "audit.operation_logged": "تم تسجيل العملية: {{.Operation}}",
+    "audit.modification_blocked": "تم حظر التعديل: {{.Operation}}",
+    "audit.snapshot_created": "تم إنشاء لقطة: {{.ID}}",
+    "audit.seal_applied": "تم تطبيق الختم في {{.Time}}",
+    "audit.unseal_applied": "تم إزالة الختم في {{.Time}}",
+
+    "proxy.started": "تم بدء خادم الوكيل",
+    "proxy.stopped": "تم إيقاف خادم الوكيل",
+    "proxy.connection_accepted": "تم قبول الاتصال من {{.Remote}}",
+    "proxy.connection_closed": "تم إغلاق الاتصال",
+    "proxy.request_forwarded": "تم توجيه الطلب إلى {{.Target}}",
+
+    "certificate.generated": "تم إنشاء الشهادة لـ {{.Host}}",
+    "certificate.ca_created": "تم إنشاء هيئة التصديق",
+    "certificate.expired": "انتهت صلاحية الشهادة",
+    "certificate.invalid": "شهادة غير صالحة",
+
+    "compliance.violation": "تم اكتشاف انتهاك الامتثال: {{.Rule}}",
+    "compliance.check_passed": "تم اجتياز فحص الامتثال",
+    "compliance.framework_loaded": "تم تحميل إطار الامتثال: {{.Framework}}",
+
+    "metrics.collector_started": "تم بدء جامع المقاييس",
+    "metrics.export": "تم تصدير المقاييس بنجاح",
+
+    "locale.en": "الإنجليزية",
+    "locale.fr": "الفرنسية",
+    "locale.de": "الألمانية",
+    "locale.es": "الإسبانية",
+    "locale.ja": "اليابانية",
+    "locale.zh": "الصينية المبسطة"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "one": "الإدخال {{.Count}} غير موجود",
+      "other": "الإدخالات {{.Count}} غير موجودة"
+    },
+    "items.count": {
+      "one": "{{.Count}} عنصر",
+      "other": "{{.Count}} عناصر"
+    },
+    "violations.count": {
+      "one": "انتهاك {{.Count}}",
+      "other": "انتهاكات {{.Count}}"
+    },
+    "connections.active": {
+      "one": "اتصال نشط {{.Count}}",
+      "other": "اتصالات نشطة {{.Count}}"
+    },
+    "requests.processed": {
+      "one": "تم معالجة {{.Count}} طلب",
+      "other": "تم معالجة {{.Count}} طلبات"
+    },
+    "errors.occurred": {
+      "one": "حدث {{.Count}} خطأ",
+      "other": "حدث {{.Count}} أخطاء"
+    }
+  },
+  "copyright": "AegisGuard Security Proxy - إدارة الإعدادات للمؤسسات"
+}

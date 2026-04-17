@@ -3,13 +3,13 @@ module github.com/aegisgatesecurity/aegisgate-platform
 go 1.25.8
 
 replace (
-	// Main upstream modules
-	github.com/aegisgatesecurity/aegisgate => ../aegisgate-source
+	// Vendored upstream modules — self-contained, no external repo needed
+	github.com/aegisgatesecurity/aegisgate => ./upstream/aegisgate
 
 	// AegisGate submodules (have their own go.mod)
-	github.com/aegisgatesecurity/aegisgate/pkg/resilience => ../aegisgate-source/pkg/resilience
-	github.com/aegisgatesecurity/aegisgate/pkg/resilience/ratelimit => ../aegisgate-source/pkg/resilience/ratelimit
-	github.com/aegisguardsecurity/aegisguard => ../aegisguard-source
+	github.com/aegisgatesecurity/aegisgate/pkg/resilience => ./upstream/aegisgate/pkg/resilience
+	github.com/aegisgatesecurity/aegisgate/pkg/resilience/ratelimit => ./upstream/aegisgate/pkg/resilience/ratelimit
+	github.com/aegisguardsecurity/aegisguard => ./upstream/aegisguard
 )
 
 require (

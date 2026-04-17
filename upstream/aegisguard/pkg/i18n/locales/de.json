@@ -1,0 +1,124 @@
+{
+  "locale": "de",
+  "language": "Deutsch",
+  "messages": {
+    "error.filesystem_sealed": "Dateisystem ist versiegelt: Änderungen sind nicht erlaubt",
+    "error.already_sealed": "Dateisystem ist bereits versiegelt",
+    "error.entry_not_found": "Eintrag {{.ID}} nicht gefunden",
+    "error.no_configs": "keine Konfigurationen verfügbar",
+    "error.checksum_mismatch": "Prüfsummenfehler für Eintrag {{.ID}}",
+    "error.wal_load_failed": "WAL-Laden fehlgeschlagen: {{.Error}}",
+    "error.wal_directory": "WAL-Verzeichnis konnte nicht erstellt werden: {{.Error}}",
+    "error.not_found": "nicht gefunden",
+    "error.invalid_locale": "ungültiges Gebietsschema: {{.Locale}}",
+    "error.unauthorized": "unbefugter Zugriff",
+    "error.forbidden": "Zugriff verboten",
+    "error.invalid_config": "ungültige Konfiguration",
+    "error.operation_failed": "Operation fehlgeschlagen: {{.Operation}}",
+    "error.method_not_allowed": "Methode nicht erlaubt",
+    "error.rate_limit_exceeded": "Ratenlimit überschritten. Bitte versuchen Sie es später erneut.",
+    "error.internal": "Interner Serverfehler: {{.Error}}",
+    "error.invalid_request": "Ungültige Anfrage: {{.Error}}",
+    "error.websocket_unavailable": "WebSocket-Server nicht verfügbar",
+
+    "http.method_not_allowed": "Methode nicht erlaubt",
+    "http.rate_limit_exceeded": "Ratenlimit überschritten",
+    "http.unauthorized": "Nicht autorisiert",
+    "http.forbidden": "Verboten",
+    "http.not_found": "Nicht gefunden",
+    "http.bad_request": "Ungültige Anfrage",
+    "http.internal_error": "Interner Serverfehler",
+    "http.service_unavailable": "Dienst nicht verfügbar",
+    "http.request_timeout": "Anfrage-Timeout",
+    "http.too_many_requests": "Zu viele Anfragen",
+
+    "log.starting": "AegisGate Security Proxy wird gestartet",
+    "log.shutting_down": "Server wird heruntergefahren",
+    "log.server_stopped": "Server gestoppt",
+    "log.tls_initialized": "TLS-Manager initialisiert",
+    "log.mitm_enabled": "MITM-Modus aktiviert - HTTPS-Abfang-Proxy wird initialisiert",
+    "log.mitm_ca_initialized": "MITM-CA initialisiert",
+    "log.upstream_proxy": "Upstream-Proxy für MITM wird verwendet",
+    "log.dashboard_started": "Dashboard-Server gestartet",
+    "log.dashboard_stopped": "Dashboard-Server gestoppt",
+    "log.auth_enabled": "Authentifizierung aktiviert",
+    "log.auth_disabled": "Authentifizierung deaktiviert - läuft im anonymen Modus",
+    "log.config_loaded": "Konfiguration erfolgreich geladen",
+    "log.config_failed": "Konfiguration konnte nicht geladen werden",
+
+    "health.status_healthy": "gesund",
+    "health.status_unhealthy": "ungesund",
+    "health.status_degraded": "beeinträchtigt",
+    "health.status_ok": "OK",
+    "health.metrics_connected": "verbunden",
+    "health.metrics_disconnected": "getrennt",
+    "health.check_passed": "Gesundheitsprüfung bestanden",
+    "health.check_failed": "Gesundheitsprüfung fehlgeschlagen: {{.Reason}}",
+    "health.check_ok": "OK",
+    "health.connected": "verbunden",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "Proxy gebunden an {{.Address}}",
+    "config.upstream_set": "Upstream-Proxy konfiguriert: {{.Upstream}}",
+    "config.tls_dir": "TLS-Zertifikatsverzeichnis: {{.Dir}}",
+    "config.max_connections": "Max Verbindungen: {{.Max}}",
+
+    "audit.operation_logged": "Operation protokolliert: {{.Operation}}",
+    "audit.modification_blocked": "Änderung blockiert: {{.Operation}}",
+    "audit.snapshot_created": "Snapshot erstellt: {{.ID}}",
+    "audit.seal_applied": "Siegel angewendet um {{.Time}}",
+    "audit.unseal_applied": "Siegel entfernt um {{.Time}}",
+
+    "proxy.started": "Proxy-Server gestartet",
+    "proxy.stopped": "Proxy-Server gestoppt",
+    "proxy.connection_accepted": "Verbindung akzeptiert von {{.Remote}}",
+    "proxy.connection_closed": "Verbindung geschlossen",
+    "proxy.request_forwarded": "Anfrage weitergeleitet an {{.Target}}",
+
+    "certificate.generated": "Zertifikat generiert für {{.Host}}",
+    "certificate.ca_created": "Zertifizierungsstelle erstellt",
+    "certificate.expired": "Zertifikat ist abgelaufen",
+    "certificate.invalid": "Ungültiges Zertifikat",
+
+    "compliance.violation": "Compliance-Verletzung erkannt: {{.Rule}}",
+    "compliance.check_passed": "Compliance-Prüfung bestanden",
+    "compliance.framework_loaded": "Compliance-Framework geladen: {{.Framework}}",
+
+    "metrics.collector_started": "Metrik-Sammler gestartet",
+    "metrics.export": "Metriken erfolgreich exportiert",
+
+    "locale.en": "Englisch",
+    "locale.fr": "Französisch",
+    "locale.de": "Deutsch",
+    "locale.es": "Spanisch",
+    "locale.ja": "Japanisch",
+    "locale.zh": "Chinesisch Vereinfacht"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "one": "{{.Count}} Eintrag nicht gefunden",
+      "other": "{{.Count}} Einträge nicht gefunden"
+    },
+    "items.count": {
+      "one": "{{.Count}} Element",
+      "other": "{{.Count}} Elemente"
+    },
+    "violations.count": {
+      "one": "{{.Count}} Verletzung",
+      "other": "{{.Count}} Verletzungen"
+    },
+    "connections.active": {
+      "one": "{{.Count}} aktive Verbindung",
+      "other": "{{.Count}} aktive Verbindungen"
+    },
+    "requests.processed": {
+      "one": "{{.Count}} Anfrage verarbeitet",
+      "other": "{{.Count}} Anfragen verarbeitet"
+    },
+    "errors.occurred": {
+      "one": "{{.Count}} Fehler aufgetreten",
+      "other": "{{.Count}} Fehler aufgetreten"
+    }
+  },
+  "copyright": "AegisGate Security Proxy - Enterprise-Konfigurationsverwaltung"
+}

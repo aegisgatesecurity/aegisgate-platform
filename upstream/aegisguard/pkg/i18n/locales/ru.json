@@ -1,0 +1,139 @@
+{
+  "locale": "ru",
+  "language": "Русский",
+  "direction": "ltr",
+  "messages": {
+    "error.filesystem_sealed": "Файловая система запечатана: изменения не разрешены",
+    "error.already_sealed": "Файловая система уже запечатана",
+    "error.entry_not_found": "Запись {{.ID}} не найдена",
+    "error.no_configs": "Нет доступных конфигураций",
+    "error.checksum_mismatch": "Несовпадение контрольной суммы для записи {{.ID}}",
+    "error.wal_load_failed": "Не удалось загрузить WAL: {{.Error}}",
+    "error.wal_directory": "Не удалось создать каталог WAL: {{.Error}}",
+    "error.not_found": "Не найдено",
+valid_locale":    "error.in "Неверная локаль: {{.Locale}}",
+    "error.unauthorized": "Неавторизованный доступ",
+    "error.forbidden": "Доступ запрещён",
+    "error.invalid_config": "Неверная конфигурация",
+    "error.operation_failed": "Операция не удалась: {{.Operation}}",
+    "error.method_not_allowed": "Метод не разрешён",
+    "error.rate_limit_exceeded": "Превышен лимит запросов. Пожалуйста, попробуйте позже.",
+    "error.internal": "Внутренняя ошибка сервера: {{.Error}}",
+    "error.invalid_request": "Неверный запрос: {{.Error}}",
+    "error.websocket_unavailable": "WebSocket сервер недоступен",
+
+    "http.method_not_allowed": "Метод не разрешён",
+    "http.rate_limit_exceeded": "Превышен лимит запросов",
+    "http.unauthorized": "Неавторизован",
+    "http.forbidden": "Запрещено",
+    "http.not_found": "Не найдено",
+    "http.bad_request": "Неверный запрос",
+    "http.internal_error": "Внутренняя ошибка сервера",
+    "http.service_unavailable": "Сервис недоступен",
+    "http.request_timeout": "Время ожидания запроса истекло",
+    "http.too_many_requests": "Слишком много запросов",
+
+    "log.starting": "Запуск прокси-сервера безопасности AegisGate",
+    "log.shutting_down": "Остановка сервера",
+    "log.server_stopped": "Сервер остановлен",
+    "log.tls_initialized": "TLS менеджер инициализирован",
+    "log.mitm_enabled": "MITM режим включён - инициализация прокси-перехватчика HTTPS",
+    "log.mitm_ca_initialized": "MITM CA инициализирован",
+    "log.upstream_proxy": "Использование вышестоящего прокси для MITM",
+    "log.dashboard_started": "Сервер панели управления запущен",
+    "log.dashboard_stopped": "Сервер панели управления остановлен",
+    "log.auth_enabled": "Аутентификация включена",
+    "log.auth_disabled": "Аутентификация отключена - работа в анонимном режиме",
+    "log.config_loaded": "Конфигурация успешно загружена",
+    "log.config_failed": "Не удалось загрузить конфигурацию",
+
+    "health.status_healthy": "здоров",
+    "health.status_unhealthy": "нездоров",
+    "health.status_degraded": "снижен",
+    "health.status_ok": "ОК",
+    "health.metrics_connected": "подключён",
+    "health.metrics_disconnected": "отключён",
+    "health.check_passed": "проверка здоровья пройдена",
+    "health.check_failed": "проверка здоровья не пройдена: {{.Reason}}",
+    "health.check_ok": "ОК",
+    "health.connected": "подключено",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "Прокси привязан к {{.Address}}",
+    "config.upstream_set": "Настроен вышестоящий прокси: {{.Upstream}}",
+    "config.tls_dir": "Каталог TLS сертификатов: {{.Dir}}",
+    "config.max_connections": "Максимум соединений: {{.Max}}",
+
+    "audit.operation_logged": "Операция записана: {{.Operation}}",
+    "audit.modification_blocked": "Модификация заблокирована: {{.Operation}}",
+    "audit.snapshot_created": "Снимок создан: {{.ID}}",
+    "audit.seal_applied": "Печать применена в {{.Time}}",
+    "audit.unseal_applied": "Печать снята в {{.Time}}",
+
+    "proxy.started": "Прокси-сервер запущен",
+    "proxy.stopped": "Прокси-сервер остановлен",
+    "proxy.connection_accepted": "Соединение принято от {{.Remote}}",
+    "proxy.connection_closed": "Соединение закрыто",
+    "proxy.request_forwarded": "Запрос перенаправлен на {{.Target}}",
+
+    "certificate.generated": "Сертификат сгенерирован для {{.Host}}",
+    "certificate.ca_created": "Центр сертификации создан",
+    "certificate.expired": "Срок действия сертификата истёк",
+    "certificate.invalid": "Недействительный сертификат",
+
+    "compliance.violation": "Обнаружено нарушение соответствия: {{.Rule}}",
+    "compliance.check_passed": "Проверка соответствия пройдена",
+    "compliance.framework_loaded": "Фреймворк соответствия загружен: {{.Framework}}",
+
+    "metrics.collector_started": "Сборщик метрик запущен",
+    "metrics.export": "Метрики успешно экспортированы",
+
+    "locale.en": "Английский",
+    "locale.fr": "Французский",
+    "locale.de": "Немецкий",
+    "locale.es": "Испанский",
+    "locale.ja": "Японский",
+    "locale.zh": "Китайский (упрощённый)",
+    "locale.ru": "Русский",
+    "locale.ar": "Арабский"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "one": "{{.Count}} запись не найдена",
+      "few": "{{.Count}} записи не найдены",
+      "many": "{{.Count}} записей не найдено",
+      "other": "{{.Count}} записей не найдено"
+    },
+    "items.count": {
+      "one": "{{.Count}} элемент",
+      "few": "{{.Count}} элемента",
+      "many": "{{.Count}} элементов",
+      "other": "{{.Count}} элементов"
+    },
+    "violations.count": {
+      "one": "{{.Count}} нарушение",
+      "few": "{{.Count}} нарушения",
+      "many": "{{.Count}} нарушений",
+      "other": "{{.Count}} нарушений"
+    },
+    "connections.active": {
+      "one": "{{.Count}} активное соединение",
+      "few": "{{.Count}} активных соединения",
+      "many": "{{.Count}} активных соединений",
+      "other": "{{.Count}} активных соединений"
+    },
+    "requests.processed": {
+      "one": "{{.Count}} запрос обработан",
+      "few": "{{.Count}} запроса обработано",
+      "many": "{{.Count}} запросов обработано",
+      "other": "{{.Count}} запросов обработано"
+    },
+    "errors.occurred": {
+      "one": "{{.Count}} ошибка произошла",
+      "few": "{{.Count}} ошибки произошли",
+      "many": "{{.Count}} ошибок произошло",
+      "other": "{{.Count}} ошибок произошло"
+    }
+  },
+  "copyright": "AegisGate Security Proxy - Enterprise Configuration Management"
+}
