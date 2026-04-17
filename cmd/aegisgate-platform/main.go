@@ -225,6 +225,7 @@ func main() {
 	// Otherwise, connect to an external AegisGuard instance as a scanner client.
 
 	var embeddedServer *mcpserver.EmbeddedServer
+	var mcpGuardrails *mcpserver.GuardrailMiddleware
 	var mcpScanner *scanner.AegisGuardMCPScanner
 
 	if *embeddedMCP {
@@ -236,11 +237,20 @@ func main() {
 			IdleTimeout:  5 * time.Minute,
 		}
 		embeddedServer = mcpserver.NewEmbeddedServer(mcpCfg)
+
+		// Initialize tier-aware MCP guardrails
+		mcpGuardrails = mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier))
+		mcpserver.RegisterBuiltInTools(embeddedServer.Handler(), platformTier)
+
 		if err := embeddedServer.Start(); err != nil {
 			log.Fatalf("Failed to start embedded MCP server: %v", err)
 		}
 		defer embeddedServer.Stop()
+		defer mcpGuardrails.Close()
 		log.Printf("Embedded MCP server started on :%d (standalone mode)", *mcpPort)
+		log.Printf("MCP Guardrails active: max_sessions=%d, max_tools/session=%d, timeout=%ds, sandbox_mem=%dMB",
+			platformTier.MaxConcurrentMCP(), platformTier.MaxMCPToolsPerSession(),
+			platformTier.MCPExecTimeoutSeconds(), platformTier.MaxMCPSandboxMemoryMB())
 
 		// In standalone mode, the scanner connects to our own MCP server
 		scannerCfg := &scanner.AegisGuardMCPConfig{
@@ -444,6 +454,21 @@ func main() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.Write(data)
+	})
+
+	// MCP Guardrails stats endpoint
+	dashMux.HandleFunc("/api/v1/guardrails", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if mcpGuardrails == nil {
+			w.Write([]byte(`{"error": "guardrails not active (run with --embedded-mcp)"}`))
+			return
+		}
+		stats := mcpGuardrails.Stats()
+		data, _ := json.Marshal(map[string]interface{}{
+			"success": true,
+			"data":    stats,
+		})
 		w.Write(data)
 	})
 
