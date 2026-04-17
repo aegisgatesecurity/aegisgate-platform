@@ -41,6 +41,7 @@ import (
 
 var (
 	version     = "2.0.0-dev"
+	startTime   = time.Now()
 	configFile  = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort   = flag.Int("proxy-port", 8080, "AegisGate proxy port")
 	mcpPort     = flag.Int("mcp-port", 8081, "AegisGuard MCP port")
@@ -304,8 +305,8 @@ func main() {
 		}
 
 		w.WriteHeader(code)
-		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","bridge":"%s","scanner":"%v","timestamp":"%s"}`,
-			status, version, platformTier.String(), bridgeStatus, scannerHealthy, time.Now().UTC().Format(time.RFC3339))
+		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","bridge":"%s","scanner":"%v","uptime":%.0f,"timestamp":"%s"}`,
+			status, version, platformTier.String(), bridgeStatus, scannerHealthy, time.Since(startTime).Seconds(), time.Now().UTC().Format(time.RFC3339))
 	})
 
 	dashMux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
@@ -469,6 +470,76 @@ func main() {
 			"success": true,
 			"data":    stats,
 		})
+		w.Write(data)
+	})
+
+	// Aggregated dashboard stats endpoint
+	dashMux.HandleFunc("/api/v1/stats", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		stats := map[string]interface{}{
+			"success": true,
+			"data": map[string]interface{}{
+				"tier":           platformTier.String(),
+				"version":        version,
+				"uptime_seconds": time.Since(startTime).Seconds(),
+				"persistence":    persistenceMgr.Stats(),
+			},
+		}
+		if mcpGuardrails != nil {
+			stats["data"].(map[string]interface{})["guardrails"] = mcpGuardrails.Stats()
+		}
+		certInfo, _ := certinit.ValidateCerts(certCfg)
+		if certInfo != nil {
+			stats["data"].(map[string]interface{})["certificates"] = certInfo
+		}
+		data, _ := json.Marshal(stats)
+		w.Write(data)
+	})
+
+	// Policy info endpoint — returns tier features and security policy
+	dashMux.HandleFunc("/api/v1/policies", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		policies := map[string]interface{}{
+			"success": true,
+			"data": []map[string]interface{}{
+				{
+					"name":      "rate_limiting",
+					"framework": "ATLAS",
+					"severity":  "medium",
+					"enabled":   true,
+					"details":   fmt.Sprintf("Proxy: %d RPM, MCP: %d RPM", platformTier.RateLimitProxy(), platformTier.RateLimitMCP()),
+				},
+				{
+					"name":      "mcp_guardrails",
+					"framework": "NIST-AI-RMF",
+					"severity":  "high",
+					"enabled":   mcpGuardrails != nil,
+					"details":   fmt.Sprintf("Max %d concurrent MCP sessions", platformTier.MaxConcurrentMCP()),
+				},
+				{
+					"name":      "audit_logging",
+					"framework": "SOC2",
+					"severity":  "medium",
+					"enabled":   true,
+					"details":   fmt.Sprintf("Retention: %d days", platformTier.LogRetentionDays()),
+				},
+				{
+					"name":      "certificate_automation",
+					"framework": "PCI-DSS",
+					"severity":  "high",
+					"enabled":   certCfg.AutoGenerate,
+					"details":   "Self-signed CA with auto-generation",
+				},
+				{
+					"name":      "persistence",
+					"framework": "HIPAA",
+					"severity":  "low",
+					"enabled":   true,
+					"details":   fmt.Sprintf("File-backed audit storage, %d day retention", platformTier.LogRetentionDays()),
+				},
+			},
+		}
+		data, _ := json.Marshal(policies)
 		w.Write(data)
 	})
 

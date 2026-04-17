@@ -7,7 +7,7 @@ class CertificateConsole {
 
     async loadCertificates() {
         try {
-            const response = await fetch('/api/v1/certificates');
+            const response = await fetch('/api/v1/certs');
             if (response.ok) {
                 this.certs = await response.json();
                 this.renderTable();

@@ -58,36 +58,53 @@
             <!-- Metrics Summary -->
             <div class="metrics-grid" role="region" aria-label="Security metrics summary">
                 <article class="metric-card" aria-labelledby="metric-requests-label">
-                    <div class="metric-icon" aria-hidden="true">📈</div>
+                    <div class="metric-icon" aria-hidden="true">📊</div>
                     <div class="metric-content">
-                        <div id="metric-requests-value" class="metric-value">-</div>
-                        <div id="metric-requests-label" class="metric-label">Total Requests</div>
+                        <div id="metric-requests-value" class="metric-value">—</div>
+                        <div id="metric-requests-label" class="metric-label">Audit Entries</div>
                     </div>
                 </article>
 
-                <article class="metric-card metric-card-warning" aria-labelledby="metric-blocked-label">
-                    <div class="metric-icon" aria-hidden="true">🚫</div>
+                <article class="metric-card metric-card-success" aria-labelledby="metric-blocked-label">
+                    <div class="metric-icon" aria-hidden="true">🔒</div>
                     <div class="metric-content">
-                        <div id="metric-blocked-value" class="metric-value">-</div>
-                        <div id="metric-blocked-label" class="metric-label">Blocked Requests</div>
+                        <div id="metric-blocked-value" class="metric-value">—</div>
+                        <div id="metric-blocked-label" class="metric-label">Persistence Status</div>
                     </div>
                 </article>
 
-                <article class="metric-card metric-card-danger" aria-labelledby="metric-threats-label">
-                    <div class="metric-icon" aria-hidden="true">⚠️</div>
+                <article class="metric-card metric-card-warning" aria-labelledby="metric-threats-label">
+                    <div class="metric-icon" aria-hidden="true">🧹</div>
                     <div class="metric-content">
-                        <div id="metric-threats-value" class="metric-value">-</div>
-                        <div id="metric-threats-label" class="metric-label">Threats Detected</div>
+                        <div id="metric-threats-value" class="metric-value">—</div>
+                        <div id="metric-threats-label" class="metric-label">Entries Pruned</div>
                     </div>
                 </article>
 
-                <article class="metric-card metric-card-success" aria-labelledby="metric-uptime-label">
-                    <div class="metric-icon" aria-hidden="true">✅</div>
+                <article class="metric-card metric-card-info" aria-labelledby="metric-uptime-label">
+                    <div class="metric-icon" aria-hidden="true">📁</div>
                     <div class="metric-content">
-                        <div id="metric-uptime-value" class="metric-value">-</div>
-                        <div id="metric-uptime-label" class="metric-label">Uptime</div>
+                        <div id="metric-uptime-value" class="metric-value">—</div>
+                        <div id="metric-uptime-label" class="metric-label">Audit Directory</div>
                     </div>
                 </article>
+            </div>
+
+            <!-- Tier Info -->
+            <div class="tier-info-bar" role="region" aria-label="License tier information">
+                <span class="tier-badge" id="tier-name">Community</span>
+                <span class="tier-detail">Proxy: <strong id="tier-proxy-rpm">—</strong> RPM</span>
+                <span class="tier-detail">MCP: <strong id="tier-mcp-rpm">—</strong> RPM</span>
+                <span class="tier-detail" id="tier-features">—</span>
+            </div>
+
+            <!-- Guardrails Summary -->
+            <div class="guardrails-bar" role="region" aria-label="MCP guardrails status">
+                <span class="guardrails-status-label">Guardrails:</span>
+                <span id="guardrails-status" class="guardrails-badge">—</span>
+                <span class="guardrails-detail">Sessions: <strong id="guardrails-sessions">—</strong></span>
+                <span class="guardrails-detail">Tool calls: <strong id="guardrails-tool-calls">—</strong></span>
+                <span class="guardrails-detail">Rejected: <strong id="guardrails-rejected">—</strong></span>
             </div>
 
             <!-- Recent Activity -->

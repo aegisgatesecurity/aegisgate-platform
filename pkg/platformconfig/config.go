@@ -181,8 +181,10 @@ func LoadFromFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Config file doesn't exist — use defaults
-			return DefaultConfig(), nil
+			// Config file doesn't exist — use defaults with env overrides
+			cfg := DefaultConfig()
+			cfg.applyEnvOverrides()
+			return cfg, nil
 		}
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}

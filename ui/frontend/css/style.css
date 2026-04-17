@@ -748,3 +748,76 @@ tbody tr:focus-within {
     border-radius: var(--border-radius-sm);
     font-weight: 600;
 }
+
+/* ========================================
+   Tier Info & Guardrails Bars
+   ======================================== */
+.tier-info-bar,
+.guardrails-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 16px);
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+    background: var(--color-surface, #fff);
+    border-radius: var(--border-radius-md, 8px);
+    margin-bottom: var(--spacing-sm, 8px);
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.tier-info-bar {
+    border-left: 4px solid #667eea;
+}
+
+.guardrails-bar {
+    border-left: 4px solid #48bb78;
+}
+
+.tier-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+}
+
+.tier-detail,
+.guardrails-detail {
+    color: var(--color-text-secondary, #666);
+}
+
+.tier-detail strong,
+.guardrails-detail strong {
+    color: var(--color-text-primary, #333);
+}
+
+.guardrails-status-label {
+    font-weight: 600;
+    color: var(--color-text-primary, #333);
+}
+
+.guardrails-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.guardrails-badge.status-healthy,
+.guardrails-badge.status-active {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.guardrails-badge.status-inactive {
+    background: #fed7d7;
+    color: #9b2c2c;
+}
+
+.metric-card-info {
+    border-left: 4px solid #4299e1;
+}
