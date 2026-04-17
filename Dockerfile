@@ -1,8 +1,9 @@
 # AegisGate Security Platform - Multi-stage Production Build
-# Build:  docker build -t aegisgate-platform:latest ..
+# Build:  docker build -t aegisgate-platform:latest .
 # Run:    docker run -p 8080:8080 -p 8081:8081 -p 8443:8443 aegisgate-platform:latest
-# Note:   Build context must be the parent directory containing all three source trees
 #
+# Self-contained: upstream packages vendored in ./upstream/
+# No external repositories required at build time.
 # Zero-config: binary runs with no config file, no environment variables.
 # All defaults are embedded. Override with --config, --tier, or env vars.
 # Data persistence: mount /data volume for audit logs, certificates, etc.
@@ -11,10 +12,8 @@ FROM golang:1.25-alpine AS builder
 RUN apk add --no-cache git ca-certificates
 WORKDIR /build
 
-# Copy all source trees (go.mod uses relative replace directives)
-COPY aegisgate-platform/ ./aegisgate-platform/
-COPY aegisgate-source/  ./aegisgate-source/
-COPY aegisguard-source/  ./aegisguard-source/
+# Copy the self-contained platform source (includes vendored upstream packages)
+COPY . ./aegisgate-platform/
 
 # Build the unified platform binary
 WORKDIR /build/aegisgate-platform

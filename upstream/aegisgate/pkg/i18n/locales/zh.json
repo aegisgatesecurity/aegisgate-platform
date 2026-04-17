@@ -1,0 +1,118 @@
+{
+  "locale": "zh",
+  "language": "简体中文",
+  "messages": {
+    "error.filesystem_sealed": "文件系统已密封：不允许修改",
+    "error.already_sealed": "文件系统已经密封",
+    "error.entry_not_found": "未找到条目 {{.ID}}",
+    "error.no_configs": "没有可用的配置",
+    "error.checksum_mismatch": "条目 {{.ID}} 的校验和不匹配",
+    "error.wal_load_failed": "加载WAL失败：{{.Error}}",
+    "error.wal_directory": "创建WAL目录失败：{{.Error}}",
+    "error.not_found": "未找到",
+    "error.invalid_locale": "无效的区域设置：{{.Locale}}",
+    "error.unauthorized": "未授权访问",
+    "error.forbidden": "访问被禁止",
+    "error.invalid_config": "无效的配置",
+    "error.operation_failed": "操作失败：{{.Operation}}",
+    "error.method_not_allowed": "方法不允许",
+    "error.rate_limit_exceeded": "速率限制已超出。请稍后重试。",
+    "error.internal": "内部服务器错误：{{.Error}}",
+    "error.invalid_request": "无效的请求：{{.Error}}",
+    "error.websocket_unavailable": "WebSocket服务器不可用",
+
+    "http.method_not_allowed": "方法不允许",
+    "http.rate_limit_exceeded": "速率限制已超出",
+    "http.unauthorized": "未授权",
+    "http.forbidden": "禁止",
+    "http.not_found": "未找到",
+    "http.bad_request": "错误请求",
+    "http.internal_error": "内部服务器错误",
+    "http.service_unavailable": "服务不可用",
+    "http.request_timeout": "请求超时",
+    "http.too_many_requests": "请求过多",
+
+    "log.starting": "正在启动AegisGate安全代理",
+    "log.shutting_down": "正在关闭服务器",
+    "log.server_stopped": "服务器已停止",
+    "log.tls_initialized": "TLS管理器已初始化",
+    "log.mitm_enabled": "MITM模式已启用 - 正在初始化HTTPS拦截代理",
+    "log.mitm_ca_initialized": "MITM CA已初始化",
+    "log.upstream_proxy": "正在使用上游代理进行MITM",
+    "log.dashboard_started": "仪表板服务器已启动",
+    "log.dashboard_stopped": "仪表板服务器已停止",
+    "log.auth_enabled": "认证已启用",
+    "log.auth_disabled": "认证已禁用 - 以匿名模式运行",
+    "log.config_loaded": "配置已成功加载",
+    "log.config_failed": "加载配置失败",
+
+    "health.status_healthy": "健康",
+    "health.status_unhealthy": "不健康",
+    "health.status_degraded": "降级",
+    "health.status_ok": "正常",
+    "health.metrics_connected": "已连接",
+    "health.metrics_disconnected": "已断开",
+    "health.check_passed": "健康检查通过",
+    "health.check_failed": "健康检查失败：{{.Reason}}",
+    "health.check_ok": "正常",
+    "health.connected": "已连接",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "代理绑定到 {{.Address}}",
+    "config.upstream_set": "上游代理已配置：{{.Upstream}}",
+    "config.tls_dir": "TLS证书目录：{{.Dir}}",
+    "config.max_connections": "最大连接数：{{.Max}}",
+
+    "audit.operation_logged": "操作已记录：{{.Operation}}",
+    "audit.modification_blocked": "修改已阻止：{{.Operation}}",
+    "audit.snapshot_created": "快照已创建：{{.ID}}",
+    "audit.seal_applied": "封印已于 {{.Time}} 应用",
+    "audit.unseal_applied": "封印已于 {{.Time}} 移除",
+
+    "proxy.started": "代理服务器已启动",
+    "proxy.stopped": "代理服务器已停止",
+    "proxy.connection_accepted": "已接受来自 {{.Remote}} 的连接",
+    "proxy.connection_closed": "连接已关闭",
+    "proxy.request_forwarded": "请求已转发到 {{.Target}}",
+
+    "certificate.generated": "已为 {{.Host}} 生成证书",
+    "certificate.ca_created": "证书颁发机构已创建",
+    "certificate.expired": "证书已过期",
+    "certificate.invalid": "无效的证书",
+
+    "compliance.violation": "检测到合规违规：{{.Rule}}",
+    "compliance.check_passed": "合规检查通过",
+    "compliance.framework_loaded": "合规框架已加载：{{.Framework}}",
+
+    "metrics.collector_started": "指标收集器已启动",
+    "metrics.export": "指标已成功导出",
+
+    "locale.en": "英语",
+    "locale.fr": "法语",
+    "locale.de": "德语",
+    "locale.es": "西班牙语",
+    "locale.ja": "日语",
+    "locale.zh": "简体中文"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "other": "未找到 {{.Count}} 个条目"
+    },
+    "items.count": {
+      "other": "{{.Count}} 个项目"
+    },
+    "violations.count": {
+      "other": "{{.Count}} 个违规"
+    },
+    "connections.active": {
+      "other": "{{.Count}} 个活动连接"
+    },
+    "requests.processed": {
+      "other": "已处理 {{.Count}} 个请求"
+    },
+    "errors.occurred": {
+      "other": "发生了 {{.Count}} 个错误"
+    }
+  },
+  "copyright": "AegisGate安全代理 - 企业配置管理"
+}

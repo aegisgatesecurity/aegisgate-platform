@@ -5,8 +5,8 @@ services:
   # Community tier: file-based persistence (no Redis needed)
   platform:
     build:
-      context: ..
-      dockerfile: aegisgate-platform/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"  # AegisGate proxy
       - "8081:8081"  # AegisGuard MCP

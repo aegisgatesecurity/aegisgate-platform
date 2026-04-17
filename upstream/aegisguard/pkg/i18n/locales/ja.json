@@ -1,0 +1,118 @@
+{
+  "locale": "ja",
+  "language": "日本語",
+  "messages": {
+    "error.filesystem_sealed": "ファイルシステムは封印されています: 変更は許可されていません",
+    "error.already_sealed": "ファイルシステムは既に封印されています",
+    "error.entry_not_found": "エントリ {{.ID}} が見つかりません",
+    "error.no_configs": "利用可能な設定がありません",
+    "error.checksum_mismatch": "エントリ {{.ID}} のチェックサムが一致しません",
+    "error.wal_load_failed": "WALの読み込みに失敗しました: {{.Error}}",
+    "error.wal_directory": "WALディレクトリの作成に失敗しました: {{.Error}}",
+    "error.not_found": "見つかりません",
+    "error.invalid_locale": "無効なロケール: {{.Locale}}",
+    "error.unauthorized": "認証されていないアクセス",
+    "error.forbidden": "アクセス禁止",
+    "error.invalid_config": "無効な設定",
+    "error.operation_failed": "操作が失敗しました: {{.Operation}}",
+    "error.method_not_allowed": "メソッドは許可されていません",
+    "error.rate_limit_exceeded": "レート制限を超えました。後でもう一度お試しください。",
+    "error.internal": "内部サーバーエラー: {{.Error}}",
+    "error.invalid_request": "無効なリクエスト: {{.Error}}",
+    "error.websocket_unavailable": "WebSocketサーバーが利用できません",
+
+    "http.method_not_allowed": "メソッドは許可されていません",
+    "http.rate_limit_exceeded": "レート制限を超えました",
+    "http.unauthorized": "認証されていません",
+    "http.forbidden": "禁止",
+    "http.not_found": "見つかりません",
+    "http.bad_request": "不正なリクエスト",
+    "http.internal_error": "内部サーバーエラー",
+    "http.service_unavailable": "サービス利用不可",
+    "http.request_timeout": "リクエストタイムアウト",
+    "http.too_many_requests": "リクエストが多すぎます",
+
+    "log.starting": "AegisGate Security Proxyを起動中",
+    "log.shutting_down": "サーバーをシャットダウン中",
+    "log.server_stopped": "サーバーが停止しました",
+    "log.tls_initialized": "TLSマネージャーが初期化されました",
+    "log.mitm_enabled": "MITMモードが有効 - HTTPS傍受プロキシを初期化中",
+    "log.mitm_ca_initialized": "MITM CAが初期化されました",
+    "log.upstream_proxy": "MITM用のアップストリームプロキシを使用",
+    "log.dashboard_started": "ダッシュボードサーバーが起動しました",
+    "log.dashboard_stopped": "ダッシュボードサーバーが停止しました",
+    "log.auth_enabled": "認証が有効です",
+    "log.auth_disabled": "認証が無効です - 匿名モードで実行中",
+    "log.config_loaded": "設定が正常に読み込まれました",
+    "log.config_failed": "設定の読み込みに失敗しました",
+
+    "health.status_healthy": "正常",
+    "health.status_unhealthy": "異常",
+    "health.status_degraded": "劣化",
+    "health.status_ok": "OK",
+    "health.metrics_connected": "接続済み",
+    "health.metrics_disconnected": "切断済み",
+    "health.check_passed": "ヘルスチェック合格",
+    "health.check_failed": "ヘルスチェック失敗: {{.Reason}}",
+    "health.check_ok": "OK",
+    "health.connected": "接続済み",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "プロキシが {{.Address}} にバインドされました",
+    "config.upstream_set": "アップストリームプロキシが設定されました: {{.Upstream}}",
+    "config.tls_dir": "TLS証明書ディレクトリ: {{.Dir}}",
+    "config.max_connections": "最大接続数: {{.Max}}",
+
+    "audit.operation_logged": "操作が記録されました: {{.Operation}}",
+    "audit.modification_blocked": "変更がブロックされました: {{.Operation}}",
+    "audit.snapshot_created": "スナップショットが作成されました: {{.ID}}",
+    "audit.seal_applied": "封印が {{.Time}} に適用されました",
+    "audit.unseal_applied": "封印が {{.Time}} に解除されました",
+
+    "proxy.started": "プロキシサーバーが起動しました",
+    "proxy.stopped": "プロキシサーバーが停止しました",
+    "proxy.connection_accepted": "{{.Remote}} からの接続を受け入れました",
+    "proxy.connection_closed": "接続が閉じられました",
+    "proxy.request_forwarded": "リクエストが {{.Target}} に転送されました",
+
+    "certificate.generated": "{{.Host}} の証明書が生成されました",
+    "certificate.ca_created": "認証局が作成されました",
+    "certificate.expired": "証明書の有効期限が切れています",
+    "certificate.invalid": "無効な証明書",
+
+    "compliance.violation": "コンプライアンス違反が検出されました: {{.Rule}}",
+    "compliance.check_passed": "コンプライアンスチェック合格",
+    "compliance.framework_loaded": "コンプライアンスフレームワークが読み込まれました: {{.Framework}}",
+
+    "metrics.collector_started": "メトリクスコレクターが起動しました",
+    "metrics.export": "メトリクスが正常にエクスポートされました",
+
+    "locale.en": "英語",
+    "locale.fr": "フランス語",
+    "locale.de": "ドイツ語",
+    "locale.es": "スペイン語",
+    "locale.ja": "日本語",
+    "locale.zh": "簡体字中国語"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "other": "{{.Count}}件のエントリが見つかりません"
+    },
+    "items.count": {
+      "other": "{{.Count}}個のアイテム"
+    },
+    "violations.count": {
+      "other": "{{.Count}}件の違反"
+    },
+    "connections.active": {
+      "other": "{{.Count}}個のアクティブな接続"
+    },
+    "requests.processed": {
+      "other": "{{.Count}}件のリクエストを処理"
+    },
+    "errors.occurred": {
+      "other": "{{.Count}}件のエラーが発生"
+    }
+  },
+  "copyright": "AegisGate Security Proxy - エンタープライズ設定管理"
+}

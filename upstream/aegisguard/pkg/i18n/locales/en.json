@@ -1,0 +1,142 @@
+{
+  "locale": "en",
+  "language": "English",
+  "messages": {
+    "error.filesystem_sealed": "filesystem is sealed: modifications are not allowed",
+    "error.already_sealed": "filesystem is already sealed",
+    "error.entry_not_found": "entry {{.ID}} not found",
+    "error.no_configs": "no configurations available",
+    "error.checksum_mismatch": "checksum mismatch for entry {{.ID}}",
+    "error.wal_load_failed": "failed to load WAL: {{.Error}}",
+    "error.wal_directory": "failed to create WAL directory: {{.Error}}",
+    "error.not_found": "not found",
+    "error.invalid_locale": "invalid locale: {{.Locale}}",
+    "error.unauthorized": "unauthorized access",
+    "error.forbidden": "access forbidden",
+    "error.invalid_config": "invalid configuration",
+    "error.operation_failed": "operation failed: {{.Operation}}",
+    "error.method_not_allowed": "Method not allowed",
+    "error.rate_limit_exceeded": "Rate limit exceeded. Please try again later.",
+    "error.internal": "Internal server error: {{.Error}}",
+    "error.invalid_request": "Invalid request: {{.Error}}",
+    "error.websocket_unavailable": "WebSocket server unavailable",
+
+    "agent.session_invalid": "agent session is invalid or expired",
+    "agent.not_registered": "agent not registered: {{.AgentID}}",
+    "agent.disabled": "agent is disabled",
+    "agent.max_sessions": "maximum sessions reached for agent",
+    "agent.unauthorized": "agent not authorized for tool: {{.Tool}}",
+    "agent.rbac_denied": "RBAC policy denied: {{.Reason}}",
+
+    "tool.not_found": "tool not found: {{.Tool}}",
+    "tool.execution_timeout": "tool execution timeout",
+    "tool.validation_failed": "tool validation failed: {{.Error}}",
+    "tool.execution_failed": "tool execution failed: {{.Error}}",
+    "tool.requires_approval": "tool requires approval: {{.Tool}}",
+    "tool.blocked": "tool blocked by policy: {{.Tool}}",
+
+    "mcp.initialize_success": "MCP server initialized successfully",
+    "mcp.connection_accepted": "MCP connection accepted from {{.Remote}}",
+    "mcp.connection_closed": "MCP connection closed",
+    "mcp.request_forwarded": "MCP request forwarded",
+    "mcp.response_ready": "MCP response ready",
+
+    "http.method_not_allowed": "Method not allowed",
+    "http.rate_limit_exceeded": "Rate limit exceeded",
+    "http.unauthorized": "Unauthorized",
+    "http.forbidden": "Forbidden",
+    "http.not_found": "Not found",
+    "http.bad_request": "Bad request",
+    "http.internal_error": "Internal server error",
+    "http.service_unavailable": "Service unavailable",
+    "http.request_timeout": "Request timeout",
+    "http.too_many_requests": "Too many requests",
+
+    "log.starting": "Starting AegisGuard AI Agent Security Platform",
+    "log.shutting_down": "Shutting down AegisGuard",
+    "log.server_stopped": "AegisGuard stopped",
+    "log.tls_initialized": "TLS manager initialized",
+    "log.auth_enabled": "Authentication enabled",
+    "log.auth_disabled": "Authentication disabled - running in anonymous mode",
+    "log.config_loaded": "Configuration loaded successfully",
+    "log.config_failed": "Failed to load configuration",
+    "log.agent_registered": "Agent registered: {{.AgentID}}",
+    "log.agent_unregistered": "Agent unregistered: {{.AgentID}}",
+    "log.session_created": "Session created for agent: {{.AgentID}}",
+    "log.session_expired": "Session expired: {{.SessionID}}",
+    "log.tool_executed": "Tool executed: {{.Tool}} by {{.AgentID}}",
+
+    "health.status_healthy": "healthy",
+    "health.status_unhealthy": "unhealthy",
+    "health.status_degraded": "degraded",
+    "health.status_ok": "OK",
+    "health.metrics_connected": "connected",
+    "health.metrics_disconnected": "disconnected",
+    "health.check_passed": "health check passed",
+    "health.check_failed": "health check failed: {{.Reason}}",
+    "health.check_ok": "OK",
+    "health.connected": "connected",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "Server bound to {{.Address}}",
+    "config.mcp_enabled": "MCP server enabled on {{.Address}}",
+    "config.tls_dir": "TLS certificate directory: {{.Dir}}",
+    "config.max_agents": "Maximum agents: {{.Max}}",
+    "config.max_sessions": "Maximum sessions: {{.Max}}",
+
+    "audit.operation_logged": "Operation logged: {{.Operation}}",
+    "audit.modification_blocked": "Modification blocked: {{.Operation}}",
+    "audit.snapshot_created": "Snapshot created: {{.ID}}",
+    "audit.seal_applied": "Seal applied at {{.Time}}",
+    "audit.unseal_applied": "Seal removed at {{.Time}}",
+    "audit.tool_call": "Tool call: {{.Tool}} by {{.AgentID}}",
+    "audit.tool_denied": "Tool denied: {{.Tool}} for {{.AgentID}}",
+
+    "compliance.violation": "Compliance violation detected: {{.Rule}}",
+    "compliance.check_passed": "Compliance check passed",
+    "compliance.framework_loaded": "Compliance framework loaded: {{.Framework}}",
+    "compliance.atlas_mapped": "MITRE ATLAS technique detected: {{.Technique}}",
+    "compliance.nist_evaluated": "NIST AI RMF evaluation complete",
+    "compliance.iso42001_audited": "ISO 42001 audit complete",
+
+    "metrics.collector_started": "Metrics collector started",
+    "metrics.export": "Metrics exported successfully",
+    "metrics.agents_active": "{{.Count}} active agents",
+    "metrics.sessions_active": "{{.Count}} active sessions",
+    "metrics.tools_executed": "{{.Count}} tools executed",
+
+    "locale.en": "English",
+    "locale.fr": "French",
+    "locale.de": "German",
+    "locale.es": "Spanish",
+    "locale.ja": "Japanese",
+    "locale.zh": "Chinese Simplified"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "one": "{{.Count}} entry not found",
+      "other": "{{.Count}} entries not found"
+    },
+    "items.count": {
+      "one": "{{.Count}} item",
+      "other": "{{.Count}} items"
+    },
+    "violations.count": {
+      "one": "{{.Count}} violation",
+      "other": "{{.Count}} violations"
+    },
+    "connections.active": {
+      "one": "{{.Count}} active connection",
+      "other": "{{.Count}} active connections"
+    },
+    "requests.processed": {
+      "one": "{{.Count}} request processed",
+      "other": "{{.Count}} requests processed"
+    },
+    "errors.occurred": {
+      "one": "{{.Count}} error occurred",
+      "other": "{{.Count}} errors occurred"
+    }
+  },
+  "copyright": "AegisGuard AI Agent Security Platform - Enterprise Security Management"
+}
