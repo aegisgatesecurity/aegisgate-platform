@@ -1,0 +1,48 @@
+# Trivy Configuration
+# https://aquasecurity.github.io/trivy/latest/docs/configuration/
+
+scan:
+  security-checks:
+    - vuln
+    - config
+    - secret
+
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+vulnerability:
+  types:
+    - os
+    - library
+
+# Ignore certain paths
+skip-dirs:
+  - tests/
+  - docs/
+  - "*.md"
+
+# Scan IaC files
+iac:
+  include:
+    - Dockerfile
+    - docker-compose.yml
+    - ".github/workflows/*.yml"
+
+# Secret scanning
+secret:
+  enabled: true
+  config:
+    # Additional patterns to scan for
+    show-secrets: false
+
+# Report format
+format: table
+
+# Exit codes
+exit-code: 0
+
+# Cache
+cache:
+  backend: fs

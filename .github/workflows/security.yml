@@ -1,0 +1,305 @@
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.25.8'
+
+jobs:
+  # Job 1: Vulnerability Scanning
+  govulncheck:
+    name: govulncheck - Go Vulnerability Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        id: govulncheck
+        run: |
+          echo "## govulncheck Results" >> $GITHUB_STEP_SUMMARY
+          govulncheck ./... 2>&1 | tee govulncheck-results.txt
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "⚠️ Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ No Go vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: govulncheck-results
+          path: govulncheck-results.txt
+          retention-days: 30
+
+  # Job 2: Static Analysis
+  gosec:
+    name: Gosec - Security Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install and run Gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -fmt sarif -out gosec-results.sarif ./... 2>&1 | tee gosec-results.txt
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec
+
+      - name: Upload Gosec results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gosec-results
+          path: gosec-results.*
+          retention-days: 30
+
+      - name: Check Gosec findings
+        run: |
+          if grep -q "Issues" gosec-results.txt; then
+            echo "⚠️ Gosec found potential security issues"
+            cat gosec-results.txt
+            exit 1
+          fi
+
+  # Job 3: Trivy Container & Filesystem Scan
+  trivy:
+    name: Trivy - Container & Filesystem Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          config: '.trivy.yaml'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
+
+      - name: Upload Trivy FS SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-fs
+
+      - name: Build Docker image for scan
+        run: docker build -t aegisgate-platform:scan .
+
+      - name: Run Trivy image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'aegisgate-platform:scan'
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy Image SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-image-results.sarif
+          category: trivy-image
+
+  # Job 4: Secret Detection
+  trufflehog:
+    name: TruffleHog - Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Scan entire history
+        run: |
+          docker run --rm -v "$PWD:/pwd" \
+            trufflesecurity/trufflehog:latest filesystem /pwd \
+            --only-verified --json > trufflehog-results.json 2>&1 || true
+          cat trufflehog-results.json
+
+      - name: Upload TruffleHog results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-results
+          path: trufflehog-results.json
+
+  # Job 5: Dependency Review
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Generate dependency report
+        run: |
+          go list -m -json all > dependencies.json
+          go mod download
+          go list -m -versions -json all > dependency-versions.json
+
+      - name: Check for known vulnerable dependencies
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck -json ./... | jq -r '.Finding | select(. != null) | "\(.OSV): \(.Trace[0].Module)"' || true
+
+      - name: Upload dependency report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: dependencies.json
+
+  # Job 6: Standard Go Tools
+  standard-tools:
+    name: Go Standard Security Tools
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run go vet
+        run: |
+          echo "## go vet Results" >> $GITHUB_STEP_SUMMARY
+          if go vet ./... 2>&1; then
+            echo "✅ go vet passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ go vet found issues" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Check Go formatting
+        run: |
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            echo "❌ Go files need formatting:"
+            gofmt -l .
+            exit 1
+          fi
+          echo "✅ All Go files properly formatted" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./... 2>&1 | tee staticcheck-results.txt || true
+
+      - name: Upload staticcheck results
+        uses: actions/upload-artifact@v4
+        with:
+          name: staticcheck-results
+          path: staticcheck-results.txt
+
+  # Job 7: SBOM Generation
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    needs: [govulncheck, gosec, trivy]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifacts
+          path: |
+            sbom.cyclonedx.json
+            sbom.spdx.json
+
+      - name: Upload SBOM to release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sbom.cyclonedx.json
+            sbom.spdx.json
+
+  # Job 8: Security Summary
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [govulncheck, gosec, trivy, trufflehog, standard-tools]
+    if: always()
+    steps:
+      - name: Generate Security Report
+        run: |
+          echo "## 🔒 Security Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| govulncheck | ${{ needs.govulncheck.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gosec | ${{ needs.gosec.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TruffleHog | ${{ needs.trufflehog.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Standard Tools | ${{ needs.standard-tools.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
