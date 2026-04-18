@@ -58,6 +58,21 @@ Your App → [ HTTP Proxy | MCP Server | Dashboard ] → Secure AI
 
 ---
 
+## 🔒 Security
+
+Our code security matches our product security:
+
+- **8 security tools** run on every commit
+- **0 known CVEs** in production dependencies
+- **SARIF reporting** to GitHub Security tab
+- **SBOM generation** (CycloneDX + SPDX)
+- **Secret scanning** with TruffleHog
+- **Vulnerability scanning** with govulncheck + Trivy
+
+See [SECURITY.md](SECURITY.md) for details.
+
+---
+
 ## 📦 License & Contribution Model
 
 ### Apache License 2.0
