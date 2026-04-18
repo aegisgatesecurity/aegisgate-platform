@@ -275,7 +275,7 @@ func StatusClass(code int) string {
 		return Status3xx
 	case code >= 400 && code < 500:
 		return Status4xx
-	case code >= 500:
+	case code >= 500 && code < 600:
 		return Status5xx
 	default:
 		return StatusUnknown

@@ -53,20 +53,29 @@ const CardinalityLimit = 1000
 // endpointPatterns maps URL patterns to sanitized, low-cardinality equivalents.
 // These patterns are ordered by specificity - more specific patterns must
 // come first to ensure proper matching.
+//
+// Token patterns (UUIDs, IDs) are applied globally across the path.
+// Prefix patterns (health, metrics, api/*) are applied using first-match-wins
+// so that versioned patterns (/api/v1/...) take priority over catch-alls (/api/*).
 var endpointPatterns = []struct {
 	pattern *regexp.Regexp
 	replace string
 }{
-	// API version patterns - specific service endpoints
-	{regexp.MustCompile(`^/v\d+/api/[^/]+`), "/vN/api/:resource"},
-	{regexp.MustCompile(`^/api/v\d+/[^/]+`), "/api/vN/:resource"},
-
-	// Resource ID patterns - collapse UUIDs and numeric IDs
+	// Token patterns - applied globally to any path segment
 	{regexp.MustCompile(`/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(/|$)`), "/:uuid$1"},
 	{regexp.MustCompile(`/[0-9a-f]{24}(/|$)`), "/:objid$1"}, // MongoDB ObjectIDs
 	{regexp.MustCompile(`/[0-9]+(/|$)`), "/:id$1"},         // Numeric IDs
+}
 
-	// Common path segments - preserve structure
+// endpointPrefixPatterns maps full-path prefix patterns to sanitized equivalents.
+// Applied using first-match-wins so more specific patterns (versioned APIs)
+// take priority over catch-all patterns.
+var endpointPrefixPatterns = []struct {
+	pattern *regexp.Regexp
+	replace string
+}{
+	{regexp.MustCompile(`^/v\d+/api/[^/]+`), "/vN/api/:resource"},
+	{regexp.MustCompile(`^/api/v\d+`), "/api/vN"},
 	{regexp.MustCompile(`^/health(/.*)?$`), "/health"},
 	{regexp.MustCompile(`^/metrics(/.*)?$`), "/metrics"},
 	{regexp.MustCompile(`^/api/[^/]+`), "/api/:service"},
@@ -128,10 +137,24 @@ func (s *Sanitizer) SanitizeEndpoint(rawPath string) string {
 	}
 	s.mu.RUnlock()
 
-	// Apply pattern replacements in order of specificity
+	// Apply pattern replacements in two passes:
+	//
+	// Pass 1: Apply token patterns (UUIDs, numeric IDs, ObjectIDs) globally
+	// to collapse identifiable path segments regardless of position.
 	sanitized := path
 	for _, p := range endpointPatterns {
 		sanitized = p.pattern.ReplaceAllString(sanitized, p.replace)
+	}
+
+	// Pass 2: Apply prefix patterns using first-match-wins. Only the first
+	// matching prefix pattern is applied, preventing catch-all patterns from
+	// re-matching the output of more specific patterns (e.g., /api/vN should
+	// not be re-matched by /api/:service).
+	for _, p := range endpointPrefixPatterns {
+		if p.pattern.MatchString(sanitized) {
+			sanitized = p.pattern.ReplaceAllString(sanitized, p.replace)
+			break // first match wins for prefix patterns
+		}
 	}
 
 	// Collapse multiple consecutive slashes
