@@ -34,6 +34,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
@@ -299,6 +300,9 @@ func main() {
 	// Component 4: Admin Dashboard & API Server
 	// ============================================================
 	dashMux := http.NewServeMux()
+
+	// Metrics endpoint (Prometheus)
+	dashMux.Handle("/metrics", metrics.Handler())
 
 	// Dashboard health endpoint
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
