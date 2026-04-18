@@ -29,6 +29,8 @@ import (
 	"syscall"
 	"time"
 
+	"runtime"
+
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
@@ -63,6 +65,9 @@ func main() {
 	}
 
 	log.Printf("AegisGate Security Platform v%s starting...", version)
+
+	// Set build info for Prometheus metrics
+	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOARCH)
 
 	// Parse platform tier (our unified tier system)
 	platformTier, err := tier.ParseTier(*tierName)
@@ -188,12 +193,13 @@ func main() {
 
 	// Forward all other requests to the proxy handler
 	proxyMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		metrics.RecordTierRequest(platformTier.String())
 		proxyServer.ServeHTTP(w, r)
 	})
 
 	proxyHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%d", *proxyPort),
-		Handler:      proxyMux,
+		Handler:      metrics.WrapHandler("proxy", proxyMux),
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -578,7 +584,7 @@ func main() {
 
 	dashHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *dashPort),
-		Handler:      dashMux,
+		Handler:      metrics.WrapHandler("dashboard", dashMux),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
