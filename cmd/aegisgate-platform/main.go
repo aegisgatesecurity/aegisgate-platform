@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -40,7 +41,7 @@ import (
 )
 
 var (
-	version     = "2.0.0-dev"
+	version     = "1.3.0"
 	startTime   = time.Now()
 	configFile  = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort   = flag.Int("proxy-port", 8080, "AegisGate proxy port")
@@ -197,12 +198,23 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
+	// Start proxy server with proper synchronization
+	proxyReady := make(chan error, 1)
 	go func() {
+		proxyListener, err := net.Listen("tcp", proxyHTTPServer.Addr)
+		if err != nil {
+			proxyReady <- fmt.Errorf("failed to bind proxy: %w", err)
+			return
+		}
+		proxyReady <- nil
 		log.Printf("AegisGate proxy listening on :%d -> %s", *proxyPort, *targetURL)
-		if err := proxyHTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := proxyHTTPServer.Serve(proxyListener); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("AegisGate proxy server error: %v", err)
 		}
 	}()
+	if err := <-proxyReady; err != nil {
+		log.Fatalf("Proxy startup failed: %v", err)
+	}
 
 	// ============================================================
 	// Component 2: Bridge (AegisGuard -> AegisGate routing)
@@ -568,12 +580,23 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Start dashboard server with proper synchronization
+	dashReady := make(chan error, 1)
 	go func() {
+		dashListener, err := net.Listen("tcp", dashHTTPServer.Addr)
+		if err != nil {
+			dashReady <- fmt.Errorf("failed to bind dashboard: %w", err)
+			return
+		}
+		dashReady <- nil
 		log.Printf("Dashboard/API server listening on :%d", *dashPort)
-		if err := dashHTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := dashHTTPServer.Serve(dashListener); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Dashboard server error: %v", err)
 		}
 	}()
+	if err := <-dashReady; err != nil {
+		log.Fatalf("Dashboard startup failed: %v", err)
+	}
 
 	// ============================================================
 	// Ready
@@ -583,7 +606,13 @@ func main() {
 		bridgeStatus = "enabled"
 	}
 
+	// Verify all services are actually listening
+	if err := verifyServicesReady(); err != nil {
+		log.Printf("Warning: Service verification: %v", err)
+	}
+
 	log.Printf("AegisGate Security Platform ready (v%s)", version)
+	log.Printf("[STARTUP-COMPLETE] All services initialized")
 	log.Printf("Components:")
 	log.Printf("  Proxy:    http://0.0.0.0:%d -> %s (tier: %s)", *proxyPort, *targetURL, platformTier.String())
 	if *embeddedMCP {
@@ -640,4 +669,23 @@ func main() {
 	}
 
 	log.Println("Platform stopped gracefully")
+}
+
+// verifyServicesReady checks that all required services are listening
+func verifyServicesReady() error {
+	ports := []int{*proxyPort, *dashPort}
+	if *embeddedMCP {
+		ports = append(ports, *mcpPort)
+	}
+	
+	for _, port := range ports {
+		addr := fmt.Sprintf("localhost:%d", port)
+		conn, err := net.DialTimeout("tcp", addr, time.Second)
+		if err != nil {
+			return fmt.Errorf("port %d not ready: %w", port, err)
+		}
+		conn.Close()
+		log.Printf("[STARTUP-CONFIRM] Port %d ready", port)
+	}
+	return nil
 }
