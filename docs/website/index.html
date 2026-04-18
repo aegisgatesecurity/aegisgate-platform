@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate Platform™ — Enterprise AI Security Gateway</title>
+    <meta name="description" content="Unified AI security gateway combining HTTP proxy, MCP security, and compliance automation. 11K RPS, 2.44ms latency, 0 CVEs.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .tagline {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+        .cta-buttons {
+            margin-top: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            margin: 10px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary {
+            background: #fff;
+            color: #667eea;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .metrics {
+            background: white;
+            padding: 60px 0;
+            margin-top: -40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+        .metric h3 {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .metric p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        .features {
+            padding: 80px 0;
+        }
+        h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+        .feature-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        .code-block code {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .install-section {
+            background: white;
+            padding: 80px 0;
+        }
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        .footer .email {
+            margin: 20px 0;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🛡️ AegisGate Platform™</h1>
+            <p class="tagline">Enterprise AI Security Gateway — Unified. Simplified. Open.</p>
+            <p>HTTP Proxy + MCP Security + Dashboard in one 14MB binary</p>
+            <div class="cta-buttons">
+                <a href="#install" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/aegisgatesecurity/aegisgate-platform" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="metrics">
+            <div class="metrics-grid">
+                <div class="metric">
+                    <h3>11,681</h3>
+                    <p>Peak Requests/Second</p>
+                </div>
+                <div class="metric">
+                    <h3>2.44ms</h3>
+                    <p>Average Latency</p>
+                </div>
+                <div class="metric">
+                    <h3>19.1MB</h3>
+                    <p>Docker Image Size</p>
+                </div>
+                <div class="metric">
+                    <h3>2,350+</h3>
+                    <p>Tests Passing</p>
+                </div>
+                <div class="metric">
+                    <h3>0</h3>
+                    <p>Known CVEs</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="features">
+        <div class="container">
+            <h2>Enterprise Security, Zero Complexity</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🛡️ Unified Gateway</h3>
+                    <p>One binary runs HTTP proxy (8080), MCP server (8081), and dashboard (8443). No separate deployments. No configuration drift.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔒 MITRE ATLAS + NIST AI RMF</h3>
+                    <p>Free, forever. Advanced threat detection for AI systems. No "enterprise edition" artificial gating.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚡ Lightning Performance</h3>
+                    <p>Sub-5ms latency. 11K+ RPS. Proven with k6 load testing. Self-hosted means zero network latency.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📝 Complete Audit Logging</h3>
+                    <p>RFC5424-compliant syslog. Tamper-evident audit trails. Compliance-ready out of the box.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🚀 Zero Configuration</h3>
+                    <p>Auto-detects OpenAI, Anthropic, Azure, AWS Bedrock. Auto-generates TLS certificates. Works in 60 seconds.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🏢 Production Ready</h3>
+                    <p>85%+ test coverage. Docker + Kubernetes ready. Health checks. Graceful shutdown. 24/7 ready.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="install" class="install-section">
+        <div class="container">
+            <h2>Get Started in 60 Seconds</h2>
+            
+            <h3>Docker (Recommended)</h3>
+            <div class="code-block">
+                <code>docker run -d \
+  -p 8080:8080 \
+  -p 8081:8081 \
+  -p 8443:8443 \
+  -v $(pwd)/data:/data \
+  aegisgatesecurity/aegisgate-platform:latest \
+  --embedded-mcp --tier=community</code>
+            </div>
+
+            <h3>One-Line Install</h3>
+            <div class="code-block">
+                <code>curl -fsSL https://raw.githubusercontent.com/aegisgatesecurity/aegisgate-platform/main/install.sh | bash</code>
+            </div>
+
+            <h3>Verify</h3>
+            <div class="code-block">
+                <code>curl http://localhost:8443/health
+open https://localhost:8443  # Dashboard</code>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>
+                <a href="https://github.com/aegisgatesecurity/aegisgate-platform">GitHub</a>
+                <a href="https://docs.aegisgatesecurity.io">Documentation</a>
+                <a href="https://discord.gg/aegisgate">Discord</a>
+            </p>
+            <div class="email">
+                <p>sales@aegisgatesecurity.io | security@aegisgatesecurity.io | support@aegisgatesecurity.io</p>
+            </div>
+            <p>© 2026 AegisGate Security, Inc. Released under Apache 2.0 License.</p>
+            <p>Built with ❤️ by the AegisGate Security team</p>
+        </div>
+    </footer>
+</body>
+</html>
