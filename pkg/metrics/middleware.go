@@ -1,4 +1,5 @@
-// Package metrics provides HTTP middleware for metrics collection.
+// Package metrics provides HTTP middleware for metrics collection
+// with cardinality-safe label values using the Phase 2 label system.
 package metrics
 
 import (
@@ -23,20 +24,20 @@ func NewMiddleware(name string, next http.Handler) *Middleware {
 // ServeHTTP implements http.Handler
 func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	
+
 	// Create a response wrapper to capture status code
 	wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-	
+
 	// Increment active connections
 	IncActiveConnections(m.name)
 	defer DecActiveConnections(m.name)
-	
+
 	// Call the next handler
 	m.next.ServeHTTP(wrapped, r)
-	
-	// Record metrics
+
+	// Record metrics with cardinality-safe labels
 	duration := time.Since(start)
-	RecordHTTPRequest(r.Method, m.name, wrapped.statusCode, duration)
+	RecordHTTPRequest(r.Method, r.URL.Path, wrapped.statusCode, duration)
 }
 
 // responseWriter wraps http.ResponseWriter to capture status code

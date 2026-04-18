@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
@@ -95,6 +96,11 @@ func New(platformTier tier.Tier, cfg Config) (*Manager, error) {
 
 	// Create the compliance audit log (wires storage + retention + hash chain)
 	auditLog := opsec.NewComplianceAuditLog(retention, storage, "")
+
+	// Wire audit events to Prometheus metrics
+	auditLog.SetCallback(func(_ *opsec.AuditEntry) {
+		metrics.RecordAuditEvent()
+	})
 
 	return &Manager{
 		cfg:        cfg,

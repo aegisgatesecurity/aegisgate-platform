@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
 )
@@ -163,6 +164,8 @@ func (g *GuardrailMiddleware) OnSessionDestroy(sessionID string) {
 	if _, exists := g.sessions[sessionID]; exists {
 		delete(g.sessions, sessionID)
 		atomic.AddInt64(&g.activeSessions, -1)
+		metrics.DecActiveConnections(metrics.ServiceMCP)
+		metrics.SetMCPConnections(int(atomic.LoadInt64(&g.activeSessions)))
 		g.logger.Debug("Session destroyed", "session_id", sessionID)
 	}
 }
@@ -179,6 +182,8 @@ func (g *GuardrailMiddleware) trackSession(sessionID, agentID string) {
 		LastSeen:  time.Now(),
 	}
 	atomic.AddInt64(&g.activeSessions, 1)
+	metrics.IncActiveConnections(metrics.ServiceMCP)
+	metrics.SetMCPConnections(int(atomic.LoadInt64(&g.activeSessions)))
 
 	g.logger.Info("Session created",
 		"session_id", sessionID,
@@ -269,6 +274,10 @@ func (g *GuardrailMiddleware) incrementToolCount(sessionID, toolName string) {
 	}
 
 	atomic.AddInt64(&g.totalRequests, 1)
+
+	// Record MCP tool call metric
+	tool := metrics.SanitizeToolName(toolName, nil)
+	metrics.RecordMCPRequest(tool, metrics.ResultSuccess)
 }
 
 // --------------------------------------------------------------------------

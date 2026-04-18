@@ -118,8 +118,8 @@ func init() {
 
 // RecordHTTPRequest records an HTTP request
 func RecordHTTPRequest(method, endpoint string, status int, duration time.Duration) {
-	httpRequestsTotal.WithLabelValues(method, endpoint, http.StatusText(status)).Inc()
-	httpRequestDuration.WithLabelValues(method, endpoint).Observe(duration.Seconds())
+	httpRequestsTotal.WithLabelValues(method, SanitizeEndpoint(endpoint), StatusClass(status)).Inc()
+	httpRequestDuration.WithLabelValues(method, SanitizeEndpoint(endpoint)).Observe(duration.Seconds())
 }
 
 // SetActiveConnections sets the active connections gauge
