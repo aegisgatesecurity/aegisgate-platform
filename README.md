@@ -1,435 +1,355 @@
-# AegisGate Security Platform
+<div align="center">
 
-**Complete AI Security — API Gateway + Agent Security in One Platform**
+# 🛡️ AegisGate Platform™ — Enterprise AI Security Gateway
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://golang.org/)
-[![Security](https://img.shields.io/badge/Security-Enterprise%20Ready-green)](https://aegisgatesecurity.io/security)
+[![Version](https://img.shields.io/badge/version-v1.3.0-green?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.25.8+-00ADD8?logo=go)](https://golang.org/)
+[![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
+[![Test Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen?logo=codecov)](PERFORMANCE.md)
 
----
+[![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
+[![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](docs/DEPLOYMENT.md)
+[![Performance](https://img.shields.io/badge/Performance-11K_RPS-orange?logo=lightning)](PERFORMANCE.md)
+[![Community](https://img.shields.io/badge/Community-Active-7289DA?logo=discord)](https://discord.gg/aegisgate)
 
-## What is AegisGate Platform?
+[📚 Docs](https://docs.aegisgatesecurity.io) &nbsp;•&nbsp; [✨ Features](#features) &nbsp;•&nbsp; [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗️ Architecture](#-architecture) &nbsp;•&nbsp; [⚡ Performance](PERFORMANCE.md) &nbsp;•&nbsp; [🔒 Security](SECURITY.md)
 
-AegisGate Platform is a **comprehensive AI security solution** that protects both:
+</div>
 
-1. **AI API Traffic** — Your LLM APIs, OpenAI/Anthropic connections, AI inference endpoints
-2. **AI Agent Operations** — Your MCP servers, autonomous agents, tool-using AI systems
-
-Previously offered as separate products (AegisGate and AegisGuard), now unified into a single platform for simplified deployment, maintenance, and enterprise security.
-
----
-
-## Key Capabilities
-
-### API Security (formerly AegisGate)
-- HTTP/1.1, HTTP/2, HTTP/3 (QUIC) proxy support
-- gRPC and WebSocket proxying
-- LLM provider routing (OpenAI, Anthropic, Azure, AWS Bedrock, Google Vertex)
-- Rate limiting and request throttling
-- ML-based anomaly detection
-- Prompt injection detection
-- Data exfiltration prevention
-- PII detection and redaction
-
-### Agent Security (formerly AegisGuard)
-- Model Context Protocol (MCP) security
-- Tool call authorization matrix
-- Workflow approval system (human-in-the-loop)
-- Agent-to-agent communication security
-- Sandbox isolation for tool execution
-- Risk-based permission controls
-- Audit trail for all agent actions
-
-### Enterprise Features
-- **SIEM Integrations**: Splunk, QRadar, Azure Sentinel, Elastic, Sumo Logic, ArcSight, LogRhythm, Syslog
-- **SSO/SAML/OIDC**: Enterprise identity provider integration
-- **Compliance Frameworks**: OWASP, MITRE ATLAS, SOC2, HIPAA, PCI-DSS, GDPR, ISO 27001, ISO 42001, NIST AI RMF
-- **ML Anomaly Detection**: Traffic pattern analysis, behavioral analytics, zero-day detection
-- **Threat Intelligence**: STIX/TAXII feeds, IOC correlation
-- **Multi-Tenancy**: Complete tenant isolation with granular permissions
+> **30-Second Pitch**: Your AI applications need enterprise-grade security — but shouldn't require enterprise budgets. AegisGate Platform™ provides unified AI traffic inspection, MCP security guardrails, and compliance automation in a single 19MB binary. Deploy in 60 seconds. Sleep better tonight.
 
 ---
 
-## Architecture
+## ⚡ TL;DR
 
+**AegisGate Platform™** is a unified AI security gateway that consolidates HTTP proxy security, MCP protocol protection, and administrative dashboard into a single high-performance binary.
+
+| 🛡️ **Security** | 📋 **Compliance** | 🚀 **Performance** |
+|-----------------|------------------|-------------------|
+| Real-time threat scanning | **MITRE ATLAS** (free) | **2.44ms avg latency** |
+| Prompt injection prevention | **NIST AI RMF** (free) | **11,681 RPS peak** |
+| MCP tool authorization | SOC2, GDPR, HIPAA | **19.1MB Docker image** |
+| Data leakage protection | OWASP LLM Top 10 | **0 CVEs** |
+| RBAC & audit logging | ISO 27001/42001 | **2,350+ tests passing** |
+
+**Zero Configuration Required.** Download, run, secure. No external dependencies. No paid services. Ever.
+
+---
+
+## 🎯 What Makes AegisGate Platform Different?
+
+### Traditional Approach
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    AegisGate Security Platform                  │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   API Proxy │  │   Agent     │  │  Dashboard  │             │
-│  │   Module    │  │  Security   │  │    & UI     │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         │                │                │                      │
-├─────────┴────────────────┴────────────────┴────────────────────┤
-│                      Core Security Layer                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │    ML       │  │   SIEM      │  │    SSO      │             │
-│  │ Anomaly    │  │ Integration │  │  /SAML/OIDC │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         │                │                │                      │
-├─────────┴────────────────┴────────────────┴────────────────────┤
-│                      Shared Infrastructure                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Audit     │  │   Policy    │  │   Tier      │             │
-│  │   Logging   │  │   Engine    │  │   System    │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-└─────────────────────────────────────────────────────────────────┘
+Your App → Proxy (security) → MCP Server (tools) → Audit System (compliance)
+         ↓                    ↓                      ↓
+       3 separate          3 separate            3 separate
+       deployments         configs               dashboards
 ```
 
----
+### AegisGate Platform Approach
+```
+Your App → [ HTTP Proxy | MCP Server | Dashboard ] → Secure AI
+              ↓                ↓              ↓
+           One binary    One config    One view
+```
 
-## Tier System
-
-| Feature | Community | Developer | Professional | Enterprise |
-|---------|-----------|-----------|--------------|------------|
-| **API Proxy** | ✅ | ✅ | ✅ | ✅ |
-| **Agent Security** | ✅ | ✅ | ✅ | ✅ |
-| **MCP Protocol** | ✅ | ✅ | ✅ | ✅ |
-| **Rate Limiting** | 200/min | 1000/min | 5000/min | Unlimited |
-| **Anomaly Detection** | Basic | Advanced | Advanced | ML+Predictive |
-| **SIEM Integration** | - | - | ✅ | ✅ |
-| **SSO/SAML** | - | - | ✅ | ✅ |
-| **Multi-Tenancy** | - | - | ✅ | ✅ |
-| **HA Deployment** | - | - | - | ✅ |
-| **HSM Integration** | - | - | - | ✅ |
-| **Air-Gapped** | - | - | - | ✅ |
+**Unified. Simplified. Enterprise-grade.**
 
 ---
 
-## Quick Start
+## 📦 License & Contribution Model
 
-### Docker Compose (Recommended for Testing)
+### Apache License 2.0
+
+AegisGate Platform™ is released under the Apache License 2.0, a permissive open-source license that allows you to:
+
+- ✅ Use the software for any purpose
+- ✅ Modify and distribute the software
+- ✅ Use in proprietary software
+- ✅ Distribute copies to others
+
+### Contribution Model
+
+We welcome community contributions, especially for the **Community** and **Developer** tiers. However:
+
+- **Community contributions** are gratefully accepted and will be reviewed promptly
+- **All contributions** are subject to our [CLA](CLA.md) (Contributor License Agreement)
+- **Intellectual property rights** for contributions remain with AegisGate Security, Inc.
+- **Exclusive features** in paid tiers are reserved — contributions may inform but not replicate Enterprise functionality
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## ✨ Features
+
+### Unified Security Gateway
+
+| Component | Port | Purpose |
+|-----------|------|---------|
+| **HTTP Proxy** | `:8080` | AI API traffic inspection, PII scanning, rate limiting |
+| **MCP Server** | `:8081` | Model Context Protocol security, tool authorization |
+| **Dashboard** | `:8443` | Real-time monitoring, compliance status, audit logs |
+
+### Security Protection
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Prompt Injection Prevention** | Blocks OWASP LLM Top 10 attacks | ✅ |
+| **Data Leakage Protection** | PII, secrets, credentials detection | ✅ |
+| **Adversarial Attack Defense** | Jailbreaks, DoS, manipulation detection | ✅ |
+| **MCP Tool Guardrails** | Per-tool authorization policies | ✅ |
+| **RBAC Access Control** | Role-based permissions | ✅ |
+| **Audit Logging** | RFC5424-compliant, tamper-evident | ✅ |
+| **Circuit Breaker** | Automatic failure recovery | ✅ |
+| **Auto-Certificate Generation** | Built-in CA, zero-config TLS | ✅ |
+
+### Compliance Frameworks (Community Tier)
+
+| Framework | Coverage | Availability |
+|-----------|----------|--------------|
+| **MITRE ATLAS** | All AI-specific attack patterns | ✅ **Community (Free)** |
+| **NIST AI RMF** | Complete AI risk management | ✅ **Community (Free)** |
+| **OWASP LLM Top 10** | LLM01-LLM10 coverage | ✅ |
+| **SOC 2** | Security controls | 🔶 Developer+ |
+| **HIPAA** | Healthcare data protection | 🔶 Developer+ |
+| **GDPR** | EU data protection | 🔶 Developer+ |
+| **ISO 27001** | Information security | 🔶 Professional+ |
+| **ISO 42001** | AI management systems | 🔶 Professional+ |
+| **PCI-DSS** | Payment card security | 🔶 Professional+ |
+
+---
+
+## 🚀 Quick Start
+
+### One-Line Install (Linux/macOS)
 
 ```bash
-# Clone the repository
-git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
-cd aegisgate-platform
-
-# Start the platform
-docker-compose up -d
-
-# Check health
-curl http://localhost:8080/health
+curl -fsSL https://raw.githubusercontent.com/aegisgatesecurity/aegisgate-platform/main/install.sh | bash
 ```
 
-### Kubernetes (Production)
+### Docker (Recommended)
 
 ```bash
-# Add the Helm repository
-helm repo add aegisgate https://helm.aegisgatesecurity.io
+docker run -d \
+  -p 8080:8080 \
+  -p 8081:8081 \
+  -p 8443:8443 \
+  -v $(pwd)/data:/data \
+  aegisgatesecurity/aegisgate-platform:latest \
+  --embedded-mcp --tier=community
+```
 
-# Install the platform
-helm install aegisgate-platform aegisgate/aegisgate-platform \
-  --set tier=developer \
-  --set license.key=YOUR_LICENSE_KEY
+### Binary Download
+
+```bash
+# Download latest release
+wget https://github.com/aegisgatesecurity/aegisgate-platform/releases/download/v1.3.0/aegisgate-platform-linux-amd64
+chmod +x aegisgate-platform-linux-amd64
+
+# Run with zero configuration
+./aegisgate-platform-linux-amd64 --embedded-mcp --tier=community
+```
+
+### Verify Installation
+
+```bash
+# Health check
+curl http://localhost:8443/health
+
+# Dashboard (self-signed cert OK)
+open https://localhost:8443
+
+# MCP server test
+nc -zv localhost 8081
 ```
 
 ---
 
-## Configuration
+## 🏗️ Architecture
 
-### Minimal Configuration
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AEGISGATE PLATFORM                        │
+│                     (Single Binary)                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  HTTP Proxy  │  │ MCP Server   │  │  Dashboard   │    │
+│  │  :8080       │  │  :8081       │  │  :8443       │    │
+│  │              │  │              │  │              │    │
+│  │ • Scanning   │  │ • Guardrails │  │ • Health     │    │
+│  │ • PII detect │  │ • RBAC       │  │ • Metrics    │    │
+│  │ • Rate limit │  │ • Audit      │  │ • Compliance │    │
+│  │ • Circuit    │  │ • Tools      │  │ • Logs       │    │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
+│         │                  │                  │           │
+│         └──────────────────┼──────────────────┘           │
+│                            │                              │
+│                   ┌────────┴────────┐                      │
+│                   │  Tier Adapter   │                      │
+│                   │  (91 Features)  │                      │
+│                   └────────┬────────┘                      │
+│                            │                              │
+│         ┌──────────────────┼──────────────────┐           │
+│         │                  │                  │           │
+│  ┌──────▼───────┐  ┌──────▼───────┐  ┌──────▼───────┐   │
+│  │ Persistence  │  │   CertInit   │  │   Scanner    │   │
+│  │ /data/audit  │  │  Auto-CA     │  │   PII/Secret │   │
+│  └──────────────┘  └──────────────┘  └──────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📊 Performance
+
+**Load tested with k6. See [PERFORMANCE.md](PERFORMANCE.md) for full details.**
+
+| Metric | Result | Grade |
+|--------|--------|-------|
+| **Peak Throughput** | 11,681 RPS | ✅ Outstanding |
+| **Average Latency** | 2.44ms | ✅ Excellent |
+| **P95 Latency** | 3.64ms | ✅ Excellent |
+| **P99 Latency** | 8.17ms | ✅ Excellent |
+| **Error Rate** | 0.00% | ✅ Perfect |
+| **Binary Size** | 14.3MB | ✅ Optimized |
+| **Docker Image** | 19.1MB | ✅ Minimal |
+| **Test Coverage** | 85%+ | ✅ Comprehensive |
+
+**Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
+
+---
+
+## 🛠️ Configuration
+
+### Zero-Config (Just Run)
+
+```bash
+aegisgate-platform --embedded-mcp --tier=community
+```
+
+### With Custom Config
 
 ```yaml
 # aegisgate-platform.yaml
+proxy:
+  bind_address: :8080
+  upstream_url: https://api.openai.com
+  
 server:
-  host: "0.0.0.0"
-  port: 8080
-
+  port: 8443
+  dashboard_port: 8443
+  
+mcp:
+  enabled: true
+  port: 8081
+  
+persistence:
+  data_dir: /data
+  audit_dir: /data/audit
+  enabled: true
+  
 tier: community
-
-modules:
-  api_proxy:
-    enabled: true
-  agent_security:
-    enabled: true
-
-logging:
-  level: info
-  format: json
+log_level: info
 ```
 
-### Enterprise Configuration
+### Environment Variables
 
-```yaml
-# aegisgate-platform.yaml
-server:
-  host: "0.0.0.0"
-  port: 8080
-  tls:
-    enabled: true
-    cert_file: /etc/aegisgate/tls/server.crt
-    key_file: /etc/aegisgate/tls/server.key
-
-tier: enterprise
-
-license:
-  key: ${LICENSE_KEY}
-  admin_panel_url: "https://admin.aegisgatesecurity.io"
-
-modules:
-  api_proxy:
-    enabled: true
-    providers:
-      - openai
-      - anthropic
-      - azure_openai
-  agent_security:
-    enabled: true
-    mcp:
-      enabled: true
-    authorization:
-      strict_mode: true
-    workflow:
-      approval_required:
-        - shell_exec
-        - file_delete
-        - database_write
-
-database:
-  type: postgres
-  url: ${DATABASE_URL}
-
-redis:
-  url: ${REDIS_URL}
-
-siem:
-  enabled: true
-  platforms:
-    - type: splunk
-      url: ${SPLUNK_URL}
-      token: ${SPLUNK_TOKEN}
-    - type: sentinel
-      tenant_id: ${AZURE_TENANT_ID}
-      client_id: ${AZURE_CLIENT_ID}
-
-sso:
-  enabled: true
-  provider: oidc
-  issuer: ${OIDC_ISSUER}
-  client_id: ${OIDC_CLIENT_ID}
-  client_secret: ${OIDC_CLIENT_SECRET}
-
-ml_anomaly:
-  enabled: true
-  sensitivity: high
-
-audit:
-  retention_days: 90
-  hash_chain: true
+```bash
+export AEGISGATE_PROXY_BIND_ADDRESS=:8080
+export AEGISGATE_DASHBOARD_PORT=8443
+export AEGISGATE_TIER=community
+export AEGISGATE_LOG_LEVEL=info
 ```
 
 ---
 
-## API Reference
+## 🔄 Integration Examples
 
-### REST API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check |
-| `/ready` | GET | Readiness probe |
-| `/api/v1/proxy` | POST | Proxy AI API request |
-| `/api/v1/agent/authorize` | POST | Authorize agent tool call |
-| `/api/v1/agent/workflow` | POST | Create approval workflow |
-| `/api/v1/audit` | GET | Query audit logs |
-| `/api/v1/metrics` | GET | Prometheus metrics |
-
-### GraphQL
-
-```graphql
-query GetThreats($timeRange: TimeRange!) {
-  threats(timeRange: $timeRange) {
-    id
-    type
-    severity
-    source
-    agentId
-    timestamp
-  }
-}
-```
-
-### gRPC
-
-See `proto/` directory for protobuf definitions.
-
----
-
-## SDK
-
-### Go
-
-```go
-import "github.com/aegisgatesecurity/aegisgate-platform/sdk/go"
-
-client, err := aegisgate.NewClient("http://localhost:8080")
-if err != nil {
-    log.Fatal(err)
-}
-
-// Authorize agent tool call
-authz, err := client.AuthorizeTool(ctx, &aegisgate.ToolRequest{
-    AgentID:    "agent-001",
-    ToolName:   "shell_exec",
-    Parameters: map[string]interface{}{"command": "ls"},
-})
-```
-
-### Python
+### OpenAI Client
 
 ```python
-from aegisgate import Client
+import openai
 
-client = Client("http://localhost:8080")
+# Point to AegisGate instead of OpenAI directly
+openai.api_base = "http://localhost:8080"
 
-# Authorize agent tool call
-result = client.authorize_tool(
-    agent_id="agent-001",
-    tool_name="shell_exec",
-    parameters={"command": "ls"}
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello, world!"}]
 )
 ```
 
-### LangChain Integration
+### MCP Client
 
-```python
-from langchain.agents import initialize_agent
-from aegisgate.langchain import AegisGateToolAuthorizer
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
-# Wrap tools with AegisGate authorization
-authorizer = AegisGateToolAuthorizer(client)
-tools = authorizer.wrap_tools(existing_tools)
+const client = new Client(
+  { name: 'my-app', version: '1.0.0' },
+  { capabilities: {} }
+);
 
-agent = initialize_agent(tools, llm, agent="zero-shot-react-description")
+// Connect through AegisGate security layer
+await client.connect({
+  command: 'node',
+  args: ['-e', 'require("net").connect(8081)'],
+});
 ```
 
 ---
 
-## Compliance
+## 📚 Documentation
 
-AegisGate Platform supports the following compliance frameworks:
-
-| Framework | Tier |
-|-----------|------|
-| OWASP Top 10 | Community |
-| MITRE ATLAS | Community |
-| SOC 2 (View) | Community |
-| SOC 2 (Full) | Professional |
-| HIPAA | Professional |
-| PCI-DSS | Professional |
-| GDPR | Professional |
-| ISO 27001 | Professional |
-| ISO 42001 | Enterprise |
-| NIST AI RMF | Enterprise |
-| FedRAMP | Enterprise |
+| Document | Description |
+|----------|-------------|
+| [README.md](README.md) | This file — overview and quick start |
+| [PERFORMANCE.md](PERFORMANCE.md) | Load testing results and benchmarks |
+| [SECURITY.md](SECURITY.md) | Security policies and vulnerability reporting |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute and CLA |
+| [CLA.md](CLA.md) | Contributor License Agreement |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
+| [LICENSE](LICENSE) | Apache 2.0 license text |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
 
 ---
 
-## Documentation
+## 🤝 Community
 
-- [Getting Started](docs/getting-started.md)
-- [Architecture](docs/architecture.md)
-- [Configuration Guide](docs/CONFIGURATION.md)
-- [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
-- [API Reference](docs/API.md)
-- [Compliance Guide](docs/COMPLIANCE_GUIDE.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- **Discord**: [discord.gg/aegisgate](https://discord.gg/aegisgate)
+- **GitHub Discussions**: [github.com/aegisgatesecurity/aegisgate-platform/discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
+- **Issues**: [github.com/aegisgatesecurity/aegisgate-platform/issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues)
 
 ---
 
-## Contributing
+## 📧 Contact
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Setup
-
-```bash
-# Clone and setup
-git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
-cd aegisgate-platform
-make setup
-
-# Run tests
-make test
-
-# Run linting
-make lint
-
-# Build
-make build
-```
+| Purpose | Email |
+|---------|-------|
+| Sales | sales@aegisgatesecurity.io |
+| Security | security@aegisgatesecurity.io |
+| Support | support@aegisgatesecurity.io |
 
 ---
 
-## Security
+## 🙏 Acknowledgments
 
-For security concerns, please email security@aegisgatesecurity.io.
-
-See [SECURITY.md](SECURITY.md) for our security policy.
-
----
-
-## License
-
-Apache License 2.0 - See [LICENSE](LICENSE) for details.
-
-Enterprise features are available under a commercial license. Contact sales@aegisgatesecurity.io for details.
+- [MCP Protocol](https://modelcontextprotocol.io) — Model Context Protocol
+- [MITRE ATLAS](https://atlas.mitre.org) — AI threat framework
+- [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) — AI risk management
+- [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — LLM security
 
 ---
 
-## Support
+<div align="center">
 
-| Tier | Support Level |
-|------|---------------|
-| Community | GitHub Issues |
-| Developer | Email (48h response) |
-| Professional | Priority Email (24h response) |
-| Enterprise | 24/7 Dedicated Support |
+**[aegisgatesecurity.io](https://aegisgatesecurity.io)**
 
----
+Built with ❤️ by the AegisGate Security team
 
-## Migration from v1.x
+© 2026 AegisGate Security, Inc. All rights reserved.
 
-If you're migrating from AegisGate v1.x or AegisGuard v1.x, see our [Migration Guide](docs/MIGRATION.md).
-
-Key changes:
-- Single binary serves both API proxy and agent security
-- Unified configuration format
-- Shared audit log format
-- Consolidated tier features
-
----
-
-## Roadmap
-
-### v2.0.0 (Current)
-- ✅ Unified platform (AegisGate + AegisGuard)
-- ✅ Single configuration format
-- ✅ Shared tier system
-- ✅ Consolidated documentation
-
-### v2.1.0 (Planned)
-- 🔲 GraphQL API
-- 🔲 Unified Python SDK
-- 🔲 Enhanced ML anomaly detection for agents
-
-### v2.2.0 (Planned)
-- 🔲 Browser extension for admin
-- 🔲 Advanced threat hunting
-- 🔲 Custom compliance frameworks
-
----
-
-## Acknowledgments
-
-AegisGate Platform is the consolidation of:
-- **AegisGate** — AI API Security Gateway
-- **AegisGuard** — AI Agent Security Platform
-
-Both projects contributed significantly to this unified platform.
-
----
-
-**[AegisGate Security](https://aegisgatesecurity.io)** — Protecting AI Infrastructure
+</div>
