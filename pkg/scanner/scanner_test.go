@@ -281,7 +281,7 @@ func TestAegisGuardMCPScanner_WithConfig(t *testing.T) {
 	}
 }
 
-func TestAegisGuardMCPScanner_DefaultConfig(t *testing.T) {
+func TestAegisGuardMCPScanner_WithNilConfig(t *testing.T) {
 	scanner := NewAegisGuardMCPScanner(nil)
 	if scanner == nil {
 		t.Fatal("NewAegisGuardMCPScanner(nil) returned nil")
