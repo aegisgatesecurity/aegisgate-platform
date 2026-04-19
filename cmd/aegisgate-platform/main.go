@@ -31,17 +31,17 @@ import (
 
 	"runtime"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
-	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
+	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
+	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 )
 
 var (
@@ -53,8 +53,8 @@ var (
 	dashPort    = flag.Int("dashboard-port", 8443, "Admin dashboard port")
 	targetURL   = flag.String("target", "https://api.openai.com", "Upstream LLM provider URL")
 	tierName    = flag.String("tier", "community", "License tier (community|developer|professional|enterprise)")
-	showVersion   = flag.Bool("version", false, "Show version information")
-	embeddedMCP    = flag.Bool("embedded-mcp", false, "Start embedded AegisGuard MCP server (standalone mode)")
+	showVersion = flag.Bool("version", false, "Show version information")
+	embeddedMCP = flag.Bool("embedded-mcp", false, "Start embedded AegisGuard MCP server (standalone mode)")
 )
 
 func main() {
@@ -435,9 +435,9 @@ func main() {
 			return
 		}
 		w.Write(data)
-	})
+	}))
 
-	// Compliance export endpoint — tamper-evident audit export
+	// Compliance export endpoint — secure audit*
 	dashMux.HandleFunc("/api/v1/compliance", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if !persistenceMgr.IsEnabled() {
@@ -458,7 +458,7 @@ func main() {
 			return
 		}
 		w.Write(data)
-	})))
+	}))
 
 	// Persistence stats endpoint
 	dashMux.HandleFunc("/api/v1/persistence", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -472,7 +472,7 @@ func main() {
 		w.Write(data)
 	}))
 
-	// Certificate status endpoint — validate and inspect TLS certificates
+	// Certificate status endpoint — validate & inspect TLS certificates
 	dashMux.HandleFunc("/api/v1/certs", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		validation, err := certinit.ValidateCerts(certCfg)
@@ -487,7 +487,7 @@ func main() {
 			return
 		}
 		w.Write(data)
-	})
+	}))
 
 	// MCP Guardrails stats endpoint
 	dashMux.HandleFunc("/api/v1/guardrails", func(w http.ResponseWriter, r *http.Request) {
@@ -525,9 +525,9 @@ func main() {
 		}
 		data, _ := json.Marshal(stats)
 		w.Write(data)
-	})
+	}))
 
-	// Policy info endpoint — returns tier features and security policy
+	// Policy info endpoint — returns policy settings
 	dashMux.HandleFunc("/api/v1/policies", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		policies := map[string]interface{}{
@@ -696,7 +696,7 @@ func verifyServicesReady() error {
 	if *embeddedMCP {
 		ports = append(ports, *mcpPort)
 	}
-	
+
 	for _, port := range ports {
 		addr := fmt.Sprintf("localhost:%d", port)
 		conn, err := net.DialTimeout("tcp", addr, time.Second)
