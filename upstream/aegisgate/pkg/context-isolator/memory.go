@@ -12,22 +12,22 @@ import (
 
 // MemoryStore provides isolated memory storage per session
 type MemoryStore struct {
-	mu       sync.RWMutex
-	memory   map[string]map[string]interface{}
-	config   *MemoryConfig
-	stats    *MemoryStats
+	mu     sync.RWMutex
+	memory map[string]map[string]interface{}
+	config *MemoryConfig
+	stats  *MemoryStats
 }
 
 // MemoryConfig holds memory store configuration
 type MemoryConfig struct {
-	MaxMemoryPerSession int64  // Maximum bytes per session
-	MaxKeysPerSession   int    // Maximum keys per session
-	EnableSwap          bool   // Enable swap to disk for overflow
+	MaxMemoryPerSession int64 // Maximum bytes per session
+	MaxKeysPerSession   int   // Maximum keys per session
+	EnableSwap          bool  // Enable swap to disk for overflow
 }
 
 // MemoryStats holds memory store statistics
 type MemoryStats struct {
-	TotalSessions   int64
+	TotalSessions  int64
 	TotalKeys      int64
 	TotalBytesUsed int64
 	hits           int64
@@ -260,11 +260,11 @@ func (ms *MemoryStore) GetAllMemoryUsage() map[string]*MemoryUsage {
 // GetStats returns global memory store statistics
 func (ms *MemoryStore) GetStats() *MemoryStats {
 	return &MemoryStats{
-		TotalSessions:   atomic.LoadInt64(&ms.stats.TotalSessions),
-		TotalKeys:       atomic.LoadInt64(&ms.stats.TotalKeys),
-		TotalBytesUsed:  atomic.LoadInt64(&ms.stats.TotalBytesUsed),
-		hits:            atomic.LoadInt64(&ms.stats.hits),
-		misses:          atomic.LoadInt64(&ms.stats.misses),
+		TotalSessions:  atomic.LoadInt64(&ms.stats.TotalSessions),
+		TotalKeys:      atomic.LoadInt64(&ms.stats.TotalKeys),
+		TotalBytesUsed: atomic.LoadInt64(&ms.stats.TotalBytesUsed),
+		hits:           atomic.LoadInt64(&ms.stats.hits),
+		misses:         atomic.LoadInt64(&ms.stats.misses),
 	}
 }
 
@@ -555,7 +555,7 @@ var (
 	ErrInvalidKey          = &MemoryError{"invalid key"}
 	ErrMaxKeysReached      = &MemoryError{"maximum keys per session reached"}
 	ErrMemoryLimitExceeded = &MemoryError{"memory limit exceeded for session"}
-	ErrKeyNotFound        = &MemoryError{"key not found"}
+	ErrKeyNotFound         = &MemoryError{"key not found"}
 )
 
 // MemoryError represents a memory store error

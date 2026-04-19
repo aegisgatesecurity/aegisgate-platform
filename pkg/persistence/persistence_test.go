@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 )
 
 // tempDir creates a temporary directory for test isolation
@@ -49,7 +49,7 @@ func TestNewPersistenceCreatesDirectories(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      auditDir,
 		PruneInterval: 1 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)
@@ -101,7 +101,7 @@ func TestNewPersistenceAllTiers(t *testing.T) {
 				DataDir:       dir,
 				AuditDir:      filepath.Join(dir, "audit"),
 				PruneInterval: 24 * time.Hour,
-				MaxFileSize:    1024 * 1024,
+				MaxFileSize:   1024 * 1024,
 			}
 
 			mgr, err := New(tierVal, cfg)
@@ -129,7 +129,7 @@ func TestStartAndClose(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 100 * time.Millisecond, // Fast for testing
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)
@@ -178,7 +178,7 @@ func TestAuditLogWriteAndRead(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)
@@ -239,7 +239,7 @@ func TestPruneOldEntries(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	// Use Developer tier (30-day retention) for a deterministic test
@@ -287,7 +287,7 @@ func TestHashChainIntegrity(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)
@@ -337,7 +337,7 @@ func TestStats(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)
@@ -418,7 +418,7 @@ func TestDoubleCloseIsSafe(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)
@@ -446,7 +446,7 @@ func TestExportForCompliance(t *testing.T) {
 		DataDir:       dir,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	mgr, err := New(tier.TierCommunity, cfg)

@@ -65,13 +65,13 @@ type Config struct {
 // DefaultConfig returns the default certificate initialization configuration.
 func DefaultConfig() Config {
 	return Config{
-		CertDir:     "./certs",
+		CertDir:      "./certs",
 		AutoGenerate: true,
-		Hostnames:   []string{"localhost"},
-		CertFile:    "server.crt",
-		KeyFile:     "server.key",
-		CACertFile:  "ca.crt",
-		CAKeyFile:   "ca.key",
+		Hostnames:    []string{"localhost"},
+		CertFile:     "server.crt",
+		KeyFile:      "server.key",
+		CACertFile:   "ca.crt",
+		CAKeyFile:    "ca.key",
 	}
 }
 

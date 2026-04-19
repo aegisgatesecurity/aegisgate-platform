@@ -185,8 +185,8 @@ func (b *TokenBucket) AllowN(ctx context.Context, n int) Decision {
 	if b.tokens >= float64(n) {
 		b.tokens -= float64(n)
 		return Decision{
-			Allowed:    true,
-			Remaining:  int(b.tokens),
+			Allowed:   true,
+			Remaining: int(b.tokens),
 		}
 	}
 
@@ -305,8 +305,8 @@ func (sw *SlidingWindowLimiter) Reset(ctx context.Context, key string) {
 
 // Errors
 var (
-	ErrRateLimited       = &RateLimitError{"rate limit exceeded"}
-	ErrInvalidLimit      = &RateLimitError{"invalid rate limit configuration"}
+	ErrRateLimited  = &RateLimitError{"rate limit exceeded"}
+	ErrInvalidLimit = &RateLimitError{"invalid rate limit configuration"}
 )
 
 // RateLimitError represents a rate limit error

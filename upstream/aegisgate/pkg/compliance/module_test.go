@@ -320,8 +320,8 @@ func TestBaseComplianceModule_AssessmentScore(t *testing.T) {
 	// Test score calculation for all compliant
 	for i := 0; i < 4; i++ {
 		module.RegisterControl(ControlDefinition{
-			ID:        string(rune('a' + i)),
-			Name:      "Control",
+			ID:   string(rune('a' + i)),
+			Name: "Control",
 			CheckFunc: func(ctx context.Context, input []byte) (*ControlCheckResult, error) {
 				return &ControlCheckResult{Status: StatusCompliant}, nil
 			},

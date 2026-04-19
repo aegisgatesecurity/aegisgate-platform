@@ -22,16 +22,16 @@ func testRegistry() *Registry {
 
 func TestMetricNameConstants(t *testing.T) {
 	names := map[string]string{
-		"http_requests_total":               MetricHTTPRequestsTotal,
-		"http_request_duration_seconds":     MetricHTTPRequestDuration,
-		"active_connections":                MetricActiveConnections,
-		"rate_limit_hits_total":             MetricRateLimitHits,
-		"security_scans_total":              MetricSecurityScansTotal,
-		"mcp_connections":                    MetricMCPConnections,
-		"mcp_requests_total":                MetricMCPRequestsTotal,
-		"tier_requests_total":               MetricTierRequests,
-		"audit_events_total":                MetricAuditEventsTotal,
-		"build_info":                        MetricBuildInfo,
+		"http_requests_total":           MetricHTTPRequestsTotal,
+		"http_request_duration_seconds": MetricHTTPRequestDuration,
+		"active_connections":            MetricActiveConnections,
+		"rate_limit_hits_total":         MetricRateLimitHits,
+		"security_scans_total":          MetricSecurityScansTotal,
+		"mcp_connections":               MetricMCPConnections,
+		"mcp_requests_total":            MetricMCPRequestsTotal,
+		"tier_requests_total":           MetricTierRequests,
+		"audit_events_total":            MetricAuditEventsTotal,
+		"build_info":                    MetricBuildInfo,
 	}
 
 	for expected, actual := range names {

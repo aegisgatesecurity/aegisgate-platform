@@ -64,7 +64,7 @@ var endpointPatterns = []struct {
 	// Token patterns - applied globally to any path segment
 	{regexp.MustCompile(`/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(/|$)`), "/:uuid$1"},
 	{regexp.MustCompile(`/[0-9a-f]{24}(/|$)`), "/:objid$1"}, // MongoDB ObjectIDs
-	{regexp.MustCompile(`/[0-9]+(/|$)`), "/:id$1"},         // Numeric IDs
+	{regexp.MustCompile(`/[0-9]+(/|$)`), "/:id$1"},          // Numeric IDs
 }
 
 // endpointPrefixPatterns maps full-path prefix patterns to sanitized equivalents.
@@ -88,9 +88,9 @@ var endpointPrefixPatterns = []struct {
 // Sanitizer provides thread-safe cardinality protection for dynamic label values.
 type Sanitizer struct {
 	mu        sync.RWMutex
-	seenPaths map[string]bool      // Tracks known safe path patterns
-	knownIDs  map[string]string    // Cache for ID normalization
-	hitCount  map[string]uint64    // Tracks endpoint frequency for aggregation decisions
+	seenPaths map[string]bool   // Tracks known safe path patterns
+	knownIDs  map[string]string // Cache for ID normalization
+	hitCount  map[string]uint64 // Tracks endpoint frequency for aggregation decisions
 }
 
 // NewSanitizer creates a new cardinality sanitizer with initialized caches.
@@ -260,5 +260,5 @@ func ValidateLabelValue(value string, maxLen int) string {
 var globalSanitizer = NewSanitizer()
 
 // package-level convenience functions
-func SanitizeEndpoint(path string) string      { return globalSanitizer.SanitizeEndpoint(path) }
-func ValidateLabel(value string) string         { return ValidateLabelValue(value, 128) }
+func SanitizeEndpoint(path string) string { return globalSanitizer.SanitizeEndpoint(path) }
+func ValidateLabel(value string) string   { return ValidateLabelValue(value, 128) }

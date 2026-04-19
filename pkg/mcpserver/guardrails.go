@@ -96,8 +96,8 @@ type mcpClientBucket struct {
 // GuardrailMiddleware wraps an MCP RequestHandler and enforces tier-based
 // limits before delegating to the inner handler.
 type GuardrailMiddleware struct {
-	config  GuardrailConfig
-	logger  *slog.Logger
+	config GuardrailConfig
+	logger *slog.Logger
 
 	// Session tracking
 	mu             sync.RWMutex
@@ -124,7 +124,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 		return &GuardrailMiddleware{
 			config:       cfg,
 			logger:       slog.Default().With("component", "mcp-guardrails"),
-			sessions:    make(map[string]*sessionState),
+			sessions:     make(map[string]*sessionState),
 			rateLimits:   make(map[string]*mcpClientBucket),
 			rateLimitRPM: rpm,
 		}
@@ -133,9 +133,9 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 	return &GuardrailMiddleware{
 		config:       cfg,
 		logger:       slog.Default().With("component", "mcp-guardrails", "tier", cfg.PlatformTier.String()),
-		sessions:    make(map[string]*sessionState),
+		sessions:     make(map[string]*sessionState),
 		rateLimits:   make(map[string]*mcpClientBucket),
-			rateLimitRPM: rpm,
+		rateLimitRPM: rpm,
 	}
 }
 

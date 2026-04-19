@@ -85,12 +85,12 @@ var DefaultConfig = guardbridge.DefaultConfig
 // PlatformBridge is the unified bridge for the AegisGate Security Platform.
 // It wraps AegisGuard's Gateway with platform-level lifecycle management.
 type PlatformBridge struct {
-	gateway  *guardbridge.Gateway
-	config   *Config
-	logger   *slog.Logger
-	mu       sync.RWMutex
-	enabled  bool
-	stats    *Stats
+	gateway *guardbridge.Gateway
+	config  *Config
+	logger  *slog.Logger
+	mu      sync.RWMutex
+	enabled bool
+	stats   *Stats
 }
 
 // NewPlatformBridge creates a new bridge that routes LLM calls through

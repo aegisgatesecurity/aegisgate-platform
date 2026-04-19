@@ -112,14 +112,14 @@ const (
 	StatusUnknown = "unknown"
 
 	// Result values
-	ResultSuccess        = "success"
-	ResultFailure        = "failure"
-	ResultBlocked        = "blocked"
-	ResultError          = "error"
-	ResultTimeout        = "timeout"
-	ResultRateLimited    = "rate_limited"
-	ResultUnauthorized   = "unauthorized"
-	ResultAuthenticated  = "authenticated"
+	ResultSuccess       = "success"
+	ResultFailure       = "failure"
+	ResultBlocked       = "blocked"
+	ResultError         = "error"
+	ResultTimeout       = "timeout"
+	ResultRateLimited   = "rate_limited"
+	ResultUnauthorized  = "unauthorized"
+	ResultAuthenticated = "authenticated"
 
 	// Service component names
 	ServiceProxy       = "proxy"
@@ -137,12 +137,12 @@ const (
 	GuardrailAudit      = "audit"
 
 	// Actions
-	ActionAllow     = "allow"
-	ActionBlock     = "block"
-	ActionLog       = "log"
-	ActionAlert     = "alert"
-	ActionThrottle  = "throttle"
-	ActionSanitize  = "sanitize"
+	ActionAllow    = "allow"
+	ActionBlock    = "block"
+	ActionLog      = "log"
+	ActionAlert    = "alert"
+	ActionThrottle = "throttle"
+	ActionSanitize = "sanitize"
 
 	// Scan types
 	ScanVuln       = "vulnerability"
@@ -172,18 +172,18 @@ const (
 	ProtocolGRPC  = "grpc"
 
 	// Tier names
-	TierCommunity     = "community"
-	TierProfessional  = "professional"
-	TierEnterprise    = "enterprise"
-	TierUnknown       = "unknown"
+	TierCommunity    = "community"
+	TierProfessional = "professional"
+	TierEnterprise   = "enterprise"
+	TierUnknown      = "unknown"
 
 	// Special values
-	ValueUnknown    = "unknown"
-	ValueEmpty      = "empty"
-	ValueError      = "error"
-	ValueAnonymous  = "anonymous"
-	ValueInternal   = "internal"
-	ValueExternal   = "external"
+	ValueUnknown   = "unknown"
+	ValueEmpty     = "empty"
+	ValueError     = "error"
+	ValueAnonymous = "anonymous"
+	ValueInternal  = "internal"
+	ValueExternal  = "external"
 )
 
 // LabelSet provides a type-safe builder for metric labels

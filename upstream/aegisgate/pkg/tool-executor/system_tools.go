@@ -134,17 +134,17 @@ func parseUnixProcessList(output string) []map[string]interface{} {
 		parts := strings.Fields(line)
 		if len(parts) >= 11 {
 			processes = append(processes, map[string]interface{}{
-				"user":     parts[0],
-				"pid":      parts[1],
-				"cpu":      parts[2],
-				"mem":      parts[3],
-				"vsz":      parts[4],
-				"rss":      parts[5],
-				"tty":      parts[6],
-				"stat":     parts[7],
-				"start":    parts[8],
-				"time":     parts[9],
-				"command":  strings.Join(parts[10:], " "),
+				"user":    parts[0],
+				"pid":     parts[1],
+				"cpu":     parts[2],
+				"mem":     parts[3],
+				"vsz":     parts[4],
+				"rss":     parts[5],
+				"tty":     parts[6],
+				"stat":    parts[7],
+				"start":   parts[8],
+				"time":    parts[9],
+				"command": strings.Join(parts[10:], " "),
 			})
 		}
 	}
@@ -250,14 +250,14 @@ func getGoMemoryStats() map[string]interface{} {
 	runtime.ReadMemStats(&memStats)
 
 	return map[string]interface{}{
-		"total":       memStats.Alloc,
-		"used":        memStats.Alloc,
-		"available":   memStats.Sys - memStats.Alloc,
-		"system":      memStats.Sys,
-		"heapAlloc":   memStats.HeapAlloc,
-		"heapSys":     memStats.HeapSys,
-		"numGC":       memStats.NumGC,
-		"goroutines":  runtime.NumGoroutine(),
+		"total":      memStats.Alloc,
+		"used":       memStats.Alloc,
+		"available":  memStats.Sys - memStats.Alloc,
+		"system":     memStats.Sys,
+		"heapAlloc":  memStats.HeapAlloc,
+		"heapSys":    memStats.HeapSys,
+		"numGC":      memStats.NumGC,
+		"goroutines": runtime.NumGoroutine(),
 	}
 }
 
@@ -404,11 +404,11 @@ func parseNetworkConnections(output, osName string) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"tcp_count":          tcpCount,
-		"udp_count":          udpCount,
-		"tcp_connections":    tcpConnections,
-		"udp_connections":    udpConnections,
-		"platform":           osName,
+		"tcp_count":       tcpCount,
+		"udp_count":       udpCount,
+		"tcp_connections": tcpConnections,
+		"udp_connections": udpConnections,
+		"platform":        osName,
 	}
 }
 
@@ -436,7 +436,7 @@ func (e *SystemInfoExecutor) Execute(ctx context.Context, params map[string]inte
 
 	info := map[string]interface{}{
 		"hostname":     getHostname(),
-		"platform":    runtime.GOOS,
+		"platform":     runtime.GOOS,
 		"arch":         runtime.GOARCH,
 		"num_cpu":      runtime.NumCPU(),
 		"go_version":   runtime.Version(),

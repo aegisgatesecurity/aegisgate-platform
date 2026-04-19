@@ -13,14 +13,14 @@ import (
 // DatabaseTools provides database operation tools
 type DatabaseTools struct {
 	allowedConnections map[string]*sql.DB
-	timeout          time.Duration
+	timeout            time.Duration
 }
 
 // NewDatabaseTools creates a new database tools executor
 func NewDatabaseTools(timeout time.Duration) *DatabaseTools {
 	return &DatabaseTools{
 		allowedConnections: make(map[string]*sql.DB),
-		timeout:          timeout,
+		timeout:            timeout,
 	}
 }
 
@@ -126,7 +126,7 @@ func (e *DatabaseQueryExecutor) Execute(ctx context.Context, params map[string]i
 		lastID, _ := resultExec.LastInsertId()
 
 		result = map[string]interface{}{
-			"rows_affected": rowsAffected,
+			"rows_affected":  rowsAffected,
 			"last_insert_id": lastID,
 		}
 	}
@@ -207,7 +207,7 @@ func (e *DatabaseListExecutor) Execute(ctx context.Context, params map[string]in
 
 	return map[string]interface{}{
 		"connections": connections,
-		"count":      len(connections),
+		"count":       len(connections),
 	}, nil
 }
 

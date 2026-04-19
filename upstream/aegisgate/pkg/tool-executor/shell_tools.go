@@ -14,7 +14,7 @@ import (
 type ShellTools struct {
 	allowedCommands []string
 	blockedCommands []string
-	timeout        time.Duration
+	timeout         time.Duration
 }
 
 // NewShellTools creates a new shell tools executor
@@ -22,7 +22,7 @@ func NewShellTools(allowedCommands, blockedCommands []string, timeout time.Durat
 	return &ShellTools{
 		allowedCommands: allowedCommands,
 		blockedCommands: blockedCommands,
-		timeout:        timeout,
+		timeout:         timeout,
 	}
 }
 
@@ -96,7 +96,7 @@ func (e *ShellCommandExecutor) Execute(ctx context.Context, params map[string]in
 		return nil, errors.New("command timeout")
 	case err := <-done:
 		result := map[string]interface{}{
-			"command":  command,
+			"command":   command,
 			"exit_code": -1,
 		}
 
@@ -353,7 +353,7 @@ func (e *PingExecutor) Execute(ctx context.Context, params map[string]interface{
 		return nil, errors.New("ping timeout")
 	case err := <-done:
 		result := map[string]interface{}{
-			"host": host,
+			"host":  host,
 			"count": count,
 		}
 

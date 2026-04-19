@@ -16,8 +16,8 @@ import (
 // WebTools provides web-related tool executors
 type WebTools struct {
 	allowedDomains []string
-	client        *http.Client
-	timeout       time.Duration
+	client         *http.Client
+	timeout        time.Duration
 }
 
 // NewWebTools creates a new web tools executor
@@ -176,7 +176,7 @@ var urlParse = func(rawURL string) (*urlInfo, error) {
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
 		rawURL = "https://" + rawURL
 	}
-	
+
 	// Basic validation
 	if len(rawURL) > 4096 {
 		return nil, errors.New("URL too long")
@@ -287,7 +287,7 @@ func (e *WebSearchExecutor) Description() string {
 // parseSearchResults extracts search results from HTML (simplified)
 func (e *WebSearchExecutor) parseSearchResults(html string) []map[string]string {
 	results := make([]map[string]string, 0, 10)
-	
+
 	// Simple link extraction - in production use proper HTML parsing
 	// Look for <a href="..." class="result__a">...</a>
 	lines := strings.Split(html, "\n")
@@ -309,7 +309,7 @@ func (e *WebSearchExecutor) parseSearchResults(html string) []map[string]string 
 							title = line[titleStart+1 : titleEnd]
 							title = strings.TrimSpace(title)
 						}
-						
+
 						if len(results) < 10 {
 							results = append(results, map[string]string{
 								"url":   url,
@@ -321,7 +321,7 @@ func (e *WebSearchExecutor) parseSearchResults(html string) []map[string]string 
 			}
 		}
 	}
-	
+
 	return results
 }
 

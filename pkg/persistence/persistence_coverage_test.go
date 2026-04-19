@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 )
 
 // ---------------------------------------------------------------------------
@@ -30,10 +30,10 @@ import (
 
 func TestDoPrune_AuditLogNil(t *testing.T) {
 	m := &Manager{
-		cfg:        Config{Enabled: true},
+		cfg:          Config{Enabled: true},
 		platformTier: tier.TierCommunity,
-		auditLog:   nil, // nil auditLog — should return immediately
-		storage:    nil,
+		auditLog:     nil, // nil auditLog — should return immediately
+		storage:      nil,
 	}
 
 	// Should not panic and should return immediately
@@ -49,10 +49,10 @@ func TestDoPrune_StorageNil(t *testing.T) {
 	_ = storage.Close()
 
 	m := &Manager{
-		cfg:        Config{Enabled: true},
+		cfg:          Config{Enabled: true},
 		platformTier: tier.TierCommunity,
-		auditLog:   opsec.NewComplianceAuditLog(opsec.Retention90Days, storage, ""),
-		storage:    nil, // nil storage — should return immediately
+		auditLog:     opsec.NewComplianceAuditLog(opsec.Retention90Days, storage, ""),
+		storage:      nil, // nil storage — should return immediately
 	}
 
 	// Should not panic and should return immediately
@@ -62,8 +62,8 @@ func TestDoPrune_StorageNil(t *testing.T) {
 func TestDoPrune_PruneError(t *testing.T) {
 	dir := t.TempDir()
 	cfg := Config{
-		Enabled:    true,
-		AuditDir:   filepath.Join(dir, "audit"),
+		Enabled:     true,
+		AuditDir:    filepath.Join(dir, "audit"),
 		MaxFileSize: 1024 * 1024,
 	}
 
@@ -89,7 +89,7 @@ func TestDoPrune_PruneSuccessWithEntries(t *testing.T) {
 		Enabled:       true,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	m, err := New(tier.TierProfessional, cfg)
@@ -197,7 +197,7 @@ func TestClose_WithoutStart_CancelIsNil(t *testing.T) {
 		Enabled:       true,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	m, err := New(tier.TierCommunity, cfg)
@@ -240,7 +240,7 @@ func TestNew_AuditDirCreationFailure(t *testing.T) {
 		Enabled:       true,
 		AuditDir:      filepath.Join(readOnlyDir, "audit", "nested"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	_, err := New(tier.TierCommunity, cfg)
@@ -289,7 +289,7 @@ func TestPruneLoop_ContextCancelledImmediately(t *testing.T) {
 		Enabled:       true,
 		AuditDir:      filepath.Join(dir, "audit"),
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    1024 * 1024,
+		MaxFileSize:   1024 * 1024,
 	}
 
 	m, err := New(tier.TierCommunity, cfg)

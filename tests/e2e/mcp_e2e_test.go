@@ -41,20 +41,20 @@ type MCPError struct {
 }
 
 type MCPE2ESuite struct {
-	platform    *exec.Cmd
-	workDir     string
-	binaryPath  string
-	configPath  string
-	dataDir     string
-	auditDir    string
+	platform      *exec.Cmd
+	workDir       string
+	binaryPath    string
+	configPath    string
+	dataDir       string
+	auditDir      string
 	dashboardPort int
-	mcpPort     int
+	mcpPort       int
 }
 
 func setupMCPE2E(t *testing.T) *MCPE2ESuite {
 	suite := &MCPE2ESuite{
 		dashboardPort: 28443,
-		mcpPort:     28081,
+		mcpPort:       28081,
 	}
 
 	// Create temp directory
@@ -131,14 +131,14 @@ func (s *MCPE2ESuite) startPlatform(t *testing.T) {
 	// Capture logs
 	stdoutPipe, _ := cmd.StdoutPipe()
 	stderrPipe, _ := cmd.StderrPipe()
-	
+
 	go func() {
 		scanner := bufio.NewScanner(stdoutPipe)
 		for scanner.Scan() {
 			t.Logf("[PLATFORM-OUT] %s", scanner.Text())
 		}
 	}()
-	
+
 	go func() {
 		scanner := bufio.NewScanner(stderrPipe)
 		for scanner.Scan() {
@@ -317,11 +317,11 @@ func TestMCPE2E_ToolCall_Echo_Allowed(t *testing.T) {
 
 	assert.Equal(t, "2.0", resp.JSONRPC)
 	assert.Equal(t, 3, resp.ID)
-	
+
 	// Based on actual implementation, echo should work
 	// or be blocked by guardrails - both are valid test outcomes
 	t.Logf("Echo response: %+v", resp)
-	
+
 	// If it succeeded, verify the echo
 	if resp.Error == nil && resp.Result != nil {
 		// Success case
@@ -379,7 +379,7 @@ func TestMCPE2E_ToolCall_FilesystemWrite_Blocked(t *testing.T) {
 	// Either blocked by tool not existing, or blocked by guardrail
 	hasResult := resp.Result != nil
 	hasError := resp.Error != nil
-	
+
 	if hasResult {
 		// If not blocked, verify it's the filesystem_write result
 		result := resp.Result.(map[string]interface{})
@@ -388,7 +388,7 @@ func TestMCPE2E_ToolCall_FilesystemWrite_Blocked(t *testing.T) {
 			first := content[0].(map[string]interface{})
 			text := first["text"].(string)
 			// Should contain guardrail block info
-			assert.False(t, strings.Contains(text, "/etc/passwd"), 
+			assert.False(t, strings.Contains(text, "/etc/passwd"),
 				"Write to /etc/passwd should have been blocked")
 		}
 	} else if hasError {

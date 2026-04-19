@@ -30,9 +30,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 )
 
 // Config holds persistence configuration (loaded from YAML or defaults)
@@ -41,7 +41,7 @@ type Config struct {
 	DataDir       string        `yaml:"data_dir"`
 	AuditDir      string        `yaml:"audit_dir"`
 	PruneInterval time.Duration `yaml:"prune_interval"`
-	MaxFileSize    int64         `yaml:"max_file_size"`
+	MaxFileSize   int64         `yaml:"max_file_size"`
 }
 
 // DefaultConfig returns sensible defaults for persistence
@@ -51,7 +51,7 @@ func DefaultConfig() Config {
 		DataDir:       "/data",
 		AuditDir:      "/data/audit",
 		PruneInterval: 24 * time.Hour,
-		MaxFileSize:    50 * 1024 * 1024, // 50 MB per audit file
+		MaxFileSize:   50 * 1024 * 1024, // 50 MB per audit file
 	}
 }
 
@@ -59,14 +59,14 @@ func DefaultConfig() Config {
 // It owns the FileStorageBackend, ComplianceAuditLog, and a background
 // pruning goroutine that runs on a configurable interval.
 type Manager struct {
-	cfg        Config
+	cfg          Config
 	platformTier tier.Tier
-	storage    *opsec.FileStorageBackend
-	auditLog   *opsec.ComplianceAuditLog
-	cancel     context.CancelFunc
-	done       chan struct{}
-	mu         sync.RWMutex
-	started    bool
+	storage      *opsec.FileStorageBackend
+	auditLog     *opsec.ComplianceAuditLog
+	cancel       context.CancelFunc
+	done         chan struct{}
+	mu           sync.RWMutex
+	started      bool
 }
 
 // New creates a new persistence Manager.
@@ -74,9 +74,9 @@ type Manager struct {
 func New(platformTier tier.Tier, cfg Config) (*Manager, error) {
 	if !cfg.Enabled {
 		return &Manager{
-			cfg:        cfg,
+			cfg:          cfg,
 			platformTier: platformTier,
-			started:    false,
+			started:      false,
 		}, nil
 	}
 
@@ -103,11 +103,11 @@ func New(platformTier tier.Tier, cfg Config) (*Manager, error) {
 	})
 
 	return &Manager{
-		cfg:        cfg,
+		cfg:          cfg,
 		platformTier: platformTier,
-		storage:    storage,
-		auditLog:   auditLog,
-		done:       make(chan struct{}),
+		storage:      storage,
+		auditLog:     auditLog,
+		done:         make(chan struct{}),
 	}, nil
 }
 
@@ -203,10 +203,10 @@ func (m *Manager) Stats() map[string]interface{} {
 	defer m.mu.RUnlock()
 
 	stats := map[string]interface{}{
-		"enabled":       m.cfg.Enabled,
-		"audit_dir":     m.cfg.AuditDir,
+		"enabled":        m.cfg.Enabled,
+		"audit_dir":      m.cfg.AuditDir,
 		"retention_days": m.platformTier.LogRetentionDays(),
-		"started":       m.started,
+		"started":        m.started,
 	}
 
 	if m.auditLog != nil {

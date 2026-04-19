@@ -444,7 +444,7 @@ func TestTierDifferentiation(t *testing.T) {
 		{"Community", tier.TierCommunity, 5, 20, 30, 256, 60},
 		{"Developer", tier.TierDeveloper, 25, 50, 60, 512, 300},
 		{"Professional", tier.TierProfessional, 100, 0, 300, 2048, 1500}, // 0 = unlimited
-		{"Enterprise", tier.TierEnterprise, 0, 0, -1, -1, 0},          // 0 = unlimited (shown as 0)
+		{"Enterprise", tier.TierEnterprise, 0, 0, -1, -1, 0},             // 0 = unlimited (shown as 0)
 	}
 
 	for _, tt := range tests {

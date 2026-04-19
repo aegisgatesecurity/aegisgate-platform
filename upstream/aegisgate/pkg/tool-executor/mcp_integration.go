@@ -28,7 +28,7 @@ func NewMCPIntegration(manager *Manager) *MCPIntegration {
 func (m *MCPIntegration) RegisterAllTools() error {
 	// File tools
 	fileTools := NewFileTools([]string{}, 10*1024*1024) // 10MB default
-	
+
 	fileToolsExecutors := []ToolExecutor{
 		NewFileReadExecutor(fileTools),
 		NewFileWriteExecutor(fileTools),
@@ -126,7 +126,7 @@ func (m *MCPIntegration) ExecuteTool(ctx context.Context, req *MCPExecutionReque
 
 	// Format as MCP response
 	mcpResult := &MCPExecutionResult{
-		RequestID:  result.RequestID,
+		RequestID: result.RequestID,
 		ToolName:  result.ToolName,
 		Success:   result.Success,
 		Error:     result.Error,
@@ -162,9 +162,9 @@ func (m *MCPIntegration) GetToolInfo(name string) (*ToolExecutorInfo, bool) {
 	}
 
 	return &ToolExecutorInfo{
-		Name:      exec.Name(),
-		RiskLevel: exec.RiskLevel(),
-		Timeout:   exec.Timeout(),
+		Name:        exec.Name(),
+		RiskLevel:   exec.RiskLevel(),
+		Timeout:     exec.Timeout(),
 		Description: exec.Description(),
 	}, true
 }
@@ -340,15 +340,15 @@ type MCPExecutionRequest struct {
 }
 
 type MCPExecutionResult struct {
-	RequestID  string
-	ToolName   string
-	Success    bool
-	Content    []MCPContentBlock
-	IsError    bool
-	Error      string
-	ErrorCode  string
-	Duration   interface{}
-	Timestamp  interface{}
+	RequestID string
+	ToolName  string
+	Success   bool
+	Content   []MCPContentBlock
+	IsError   bool
+	Error     string
+	ErrorCode string
+	Duration  interface{}
+	Timestamp interface{}
 }
 
 type MCPContentBlock struct {
@@ -357,15 +357,15 @@ type MCPContentBlock struct {
 }
 
 type MCPTool struct {
-	Name         string                 `json:"name"`
+	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
 	InputSchema map[string]interface{} `json:"inputSchema,omitempty"`
 }
 
 type ToolExecutorInfo struct {
-	Name         string
-	RiskLevel    int
-	Timeout      interface{}
+	Name        string
+	RiskLevel   int
+	Timeout     interface{}
 	Description string
 }
 

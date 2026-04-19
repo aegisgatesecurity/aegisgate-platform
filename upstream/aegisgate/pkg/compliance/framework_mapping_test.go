@@ -174,13 +174,13 @@ func TestConsolidatedFinding(t *testing.T) {
 
 func TestUnifiedComplianceReport(t *testing.T) {
 	report := UnifiedComplianceReport{
-		Frameworks:        []string{"NIST", "SOC2", "HIPAA"},
-		TotalFindings:     10,
-		CriticalFindings:  2,
-		HighFindings:      3,
-		MediumFindings:    3,
-		LowFindings:       2,
-		ComplianceScore:   85.5,
+		Frameworks:       []string{"NIST", "SOC2", "HIPAA"},
+		TotalFindings:    10,
+		CriticalFindings: 2,
+		HighFindings:     3,
+		MediumFindings:   3,
+		LowFindings:      2,
+		ComplianceScore:  85.5,
 	}
 
 	if len(report.Frameworks) != 3 {

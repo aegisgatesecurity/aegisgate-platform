@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // =========================================================================
-// PROPRIETARY - AegisGate Security  
+// PROPRIETARY - AegisGate Security
 // Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //

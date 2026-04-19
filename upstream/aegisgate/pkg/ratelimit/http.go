@@ -349,10 +349,10 @@ func NormalizeIP(ip string) string {
 type Tier string
 
 const (
-	TierFree       Tier = "free"
-	TierStarter    Tier = "starter"
+	TierFree         Tier = "free"
+	TierStarter      Tier = "starter"
 	TierProfessional Tier = "professional"
-	TierEnterprise Tier = "enterprise"
+	TierEnterprise   Tier = "enterprise"
 )
 
 // TierConfig holds rate limits for a specific tier
@@ -401,8 +401,8 @@ func GetTierConfig(tier Tier) TierConfig {
 
 // TieredHTTPRateLimiter manages rate limiters for multiple tiers
 type TieredHTTPRateLimiter struct {
-	tiers      map[Tier]*HTTPRateLimiter
-	tierFunc   func(r *http.Request) Tier
+	tiers       map[Tier]*HTTPRateLimiter
+	tierFunc    func(r *http.Request) Tier
 	defaultTier Tier
 }
 
@@ -421,8 +421,8 @@ func NewTieredHTTPRateLimiter(tierFunc func(r *http.Request) Tier) *TieredHTTPRa
 	}
 
 	return &TieredHTTPRateLimiter{
-		tiers:      tiers,
-		tierFunc:   tierFunc,
+		tiers:       tiers,
+		tierFunc:    tierFunc,
 		defaultTier: TierFree,
 	}
 }

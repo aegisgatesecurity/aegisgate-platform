@@ -42,9 +42,9 @@ type Options struct {
 func DefaultOptions() *Options {
 	return &Options{
 		Registry:             nil, // use global default
-		HTTPBuckets:         DefaultHTTPBuckets,
-		MCPBuckets:          DefaultMCPBuckets,
-		Namespace:           "aegisgate",
+		HTTPBuckets:          DefaultHTTPBuckets,
+		MCPBuckets:           DefaultMCPBuckets,
+		Namespace:            "aegisgate",
 		EnableDefaultMetrics: true,
 	}
 }
@@ -129,31 +129,31 @@ func (o *Options) registerCollector(c prometheus.Collector) {
 // DefaultHTTPBuckets defines sensible defaults for HTTP request duration histograms.
 // These cover the range from fast cache hits (5ms) to slow upstream responses (10s).
 var DefaultHTTPBuckets = []float64{
-	0.005,  // 5ms   - cache hits, health checks
-	0.01,   // 10ms  - fast proxy passes
-	0.025,  // 25ms  - typical API calls
-	0.05,   // 50ms  - proxy with light scanning
-	0.1,    // 100ms - proxy with moderate scanning
-	0.25,   // 250ms - proxy with full security stack
-	0.5,    // 500ms - MCP tool calls, slow upstream
-	1.0,    // 1s    - very slow upstream, MCP inference
-	2.5,    // 2.5s  - timeout territory
-	5.0,    // 5s    - extreme latency
-	10.0,   // 10s   - near timeout
+	0.005, // 5ms   - cache hits, health checks
+	0.01,  // 10ms  - fast proxy passes
+	0.025, // 25ms  - typical API calls
+	0.05,  // 50ms  - proxy with light scanning
+	0.1,   // 100ms - proxy with moderate scanning
+	0.25,  // 250ms - proxy with full security stack
+	0.5,   // 500ms - MCP tool calls, slow upstream
+	1.0,   // 1s    - very slow upstream, MCP inference
+	2.5,   // 2.5s  - timeout territory
+	5.0,   // 5s    - extreme latency
+	10.0,  // 10s   - near timeout
 }
 
 // DefaultMCPBuckets defines sensible defaults for MCP request duration histograms.
 // MCP tool calls (especially LLM operations) have higher latency than
 // typical HTTP requests, so the buckets extend to longer durations.
 var DefaultMCPBuckets = []float64{
-	0.05,   // 50ms  - fast tool lookups
-	0.1,    // 100ms - simple tool execution
-	0.25,   // 250ms - moderate tool execution
-	0.5,    // 500ms - typical MCP operation
-	1.0,    // 1s    - LLM inference (small model)
-	2.5,    // 2.5s  - LLM inference (medium model)
-	5.0,    // 5s    - LLM inference (large model)
-	10.0,   // 10s   - complex multi-step operations
-	30.0,   // 30s   - very slow operations, near timeout
-	60.0,   // 60s   - streaming completions, timeouts
+	0.05, // 50ms  - fast tool lookups
+	0.1,  // 100ms - simple tool execution
+	0.25, // 250ms - moderate tool execution
+	0.5,  // 500ms - typical MCP operation
+	1.0,  // 1s    - LLM inference (small model)
+	2.5,  // 2.5s  - LLM inference (medium model)
+	5.0,  // 5s    - LLM inference (large model)
+	10.0, // 10s   - complex multi-step operations
+	30.0, // 30s   - very slow operations, near timeout
+	60.0, // 60s   - streaming completions, timeouts
 }

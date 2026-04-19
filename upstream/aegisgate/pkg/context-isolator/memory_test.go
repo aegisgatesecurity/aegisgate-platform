@@ -209,7 +209,7 @@ func TestMemoryStoreHitRate(t *testing.T) {
 
 	// First get - should be a hit
 	store.Get(ctx, sessionID, "key1")
-	// Second get - should be a hit  
+	// Second get - should be a hit
 	store.Get(ctx, sessionID, "key1")
 	// Get nonexistent - should be a miss
 	store.Get(ctx, sessionID, "nonexistent")

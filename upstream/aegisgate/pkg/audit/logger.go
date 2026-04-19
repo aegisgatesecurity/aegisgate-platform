@@ -15,38 +15,38 @@ type Logger struct {
 	mu         sync.RWMutex
 	output     *os.File
 	encoder    *json.Encoder
-	entries    []Action       // In-memory log storage
-	maxEntries int            // Maximum entries to retain (0 = unlimited)
-	retention  time.Duration  // Log retention period (0 = forever)
+	entries    []Action      // In-memory log storage
+	maxEntries int           // Maximum entries to retain (0 = unlimited)
+	retention  time.Duration // Log retention period (0 = forever)
 }
 
 // QueryFilter for filtering audit logs
 type QueryFilter struct {
-	SessionID string
-	AgentID   string
-	ToolName  string
+	SessionID  string
+	AgentID    string
+	ToolName   string
 	ActionType string
-	Allowed   *bool
-	FromTime  *time.Time
-	ToTime    *time.Time
-	RiskAbove int
+	Allowed    *bool
+	FromTime   *time.Time
+	ToTime     *time.Time
+	RiskAbove  int
 }
 
 // Action represents an auditable action
 type Action struct {
-	ID           string                 `json:"id"`
-	Type         string                 `json:"type"` // "tool_call", "session_start", "policy_denial", etc.
-	Timestamp    time.Time              `json:"timestamp"`
-	SessionID    string                 `json:"session_id"`
-	AgentID      string                 `json:"agent_id"`
-	ToolName     string                 `json:"tool_name,omitempty"`
-	Parameters   map[string]interface{} `json:"parameters,omitempty"`
-	Allowed      bool                   `json:"allowed"`
-	Reason       string                 `json:"reason,omitempty"`
-	RiskScore    int                    `json:"risk_score,omitempty"`
-	PolicyMatch  []string               `json:"policy_match,omitempty"`
-	Duration     time.Duration          `json:"duration,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	ID          string                 `json:"id"`
+	Type        string                 `json:"type"` // "tool_call", "session_start", "policy_denial", etc.
+	Timestamp   time.Time              `json:"timestamp"`
+	SessionID   string                 `json:"session_id"`
+	AgentID     string                 `json:"agent_id"`
+	ToolName    string                 `json:"tool_name,omitempty"`
+	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Allowed     bool                   `json:"allowed"`
+	Reason      string                 `json:"reason,omitempty"`
+	RiskScore   int                    `json:"risk_score,omitempty"`
+	PolicyMatch []string               `json:"policy_match,omitempty"`
+	Duration    time.Duration          `json:"duration,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // NewLogger creates a new audit logger
@@ -296,7 +296,7 @@ func formatCSV(action *Action) ([]byte, error) {
 		boolToString(action.Allowed),
 		action.Reason,
 	}
-	
+
 	// Return JSON for now (CSV implementation would be more complex)
 	return json.Marshal(csv)
 }
@@ -310,8 +310,8 @@ func boolToString(b bool) string {
 
 // Exporter exports audit logs to external systems
 type Exporter struct {
-	target  string // "file", "syslog", "elasticsearch", etc.
-	format  string
+	target string // "file", "syslog", "elasticsearch", etc.
+	format string
 }
 
 // NewExporter creates a new exporter

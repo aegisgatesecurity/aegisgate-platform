@@ -11,19 +11,19 @@ import (
 type ToolExecutor interface {
 	// Name returns the tool name this executor handles
 	Name() string
-	
+
 	// Execute runs the tool with given parameters
 	Execute(ctx context.Context, params map[string]interface{}) (interface{}, error)
-	
+
 	// Validate checks if parameters are valid before execution
 	Validate(params map[string]interface{}) error
-	
+
 	// Timeout returns the maximum execution time allowed
 	Timeout() time.Duration
-	
+
 	// RiskLevel returns the risk level (1-100)
 	RiskLevel() int
-	
+
 	// Description returns a human-readable description
 	Description() string
 }
@@ -39,14 +39,14 @@ type ExecutionRequest struct {
 
 // ExecutionResult represents the result of tool execution
 type ExecutionResult struct {
-	RequestID   string
-	ToolName   string
-	Success    bool
-	Result     interface{}
-	Error      string
-	ErrorCode  string
-	Duration   time.Duration
-	Timestamp  time.Time
+	RequestID string
+	ToolName  string
+	Success   bool
+	Result    interface{}
+	Error     string
+	ErrorCode string
+	Duration  time.Duration
+	Timestamp time.Time
 }
 
 // ExecutionContext contains context for tool execution
@@ -62,12 +62,12 @@ type ExecutionContext struct {
 type ToolCategory string
 
 const (
-	CategoryFile    ToolCategory = "file"
-	CategoryWeb    ToolCategory = "web"
-	CategoryShell  ToolCategory = "shell"
-	CategoryCode   ToolCategory = "code"
+	CategoryFile     ToolCategory = "file"
+	CategoryWeb      ToolCategory = "web"
+	CategoryShell    ToolCategory = "shell"
+	CategoryCode     ToolCategory = "code"
 	CategoryDatabase ToolCategory = "database"
-	CategorySystem ToolCategory = "system"
+	CategorySystem   ToolCategory = "system"
 )
 
 // RiskLevel represents tool risk levels
@@ -75,8 +75,8 @@ type RiskLevel int
 
 const (
 	RiskLow      RiskLevel = 25
-	RiskMedium  RiskLevel = 50
-	RiskHigh    RiskLevel = 75
+	RiskMedium   RiskLevel = 50
+	RiskHigh     RiskLevel = 75
 	RiskCritical RiskLevel = 100
 )
 

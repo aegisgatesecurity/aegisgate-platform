@@ -76,13 +76,13 @@ func TestMain(m *testing.M) {
 			os.Exit(1)
 		}
 	}
-	
+
 	suite = &TestSuite{
 		TestOutput: &testOutputCapture{},
 	}
-	
+
 	code := m.Run()
-	
+
 	// Final cleanup
 	if suite != nil && suite.PlatformPID != 0 {
 		if proc, _ := os.FindProcess(suite.PlatformPID); proc != nil {
@@ -92,7 +92,7 @@ func TestMain(m *testing.M) {
 	if suite != nil && suite.WorkDir != "" {
 		os.RemoveAll(suite.WorkDir)
 	}
-	
+
 	os.Exit(code)
 }
 
@@ -100,7 +100,7 @@ func TestMain(m *testing.M) {
 func TestPlatformLifecycle(t *testing.T) {
 	suiteMutex.Lock()
 	defer suiteMutex.Unlock()
-	
+
 	// Step 1: Build binary
 	t.Run("BuildBinary", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -369,7 +369,7 @@ func waitForServices(t *testing.T) error {
 		"mcp":       mcpPort,
 		"dashboard": dashboardPort,
 	}
-		timeout := time.After(startupTimeout)
+	timeout := time.After(startupTimeout)
 
 	for name, port := range ports {
 		t.Logf("Waiting for %s on port %d...", name, port)
@@ -403,7 +403,7 @@ func captureLogs(pipe io.ReadCloser, prefix string, t *testing.T) {
 			// Ignore panics from logging after test ends
 		}
 	}()
-	
+
 	scanner := bufio.NewScanner(pipe)
 	for scanner.Scan() {
 		line := scanner.Text()

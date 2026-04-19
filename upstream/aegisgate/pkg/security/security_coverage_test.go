@@ -461,7 +461,7 @@ func TestCSRFWithLogger(t *testing.T) {
 
 	// Create a proper logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	
+
 	middlewareWithLogger := middleware.WithLogger(logger)
 	if middlewareWithLogger == nil {
 		t.Error("WithLogger should return middleware")
@@ -796,7 +796,7 @@ func TestPanicRecoveryMiddlewareWithLogger(t *testing.T) {
 
 	// Create a proper logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	
+
 	middlewareWithLogger := middleware.WithLogger(logger)
 	if middlewareWithLogger == nil {
 		t.Error("WithLogger should return middleware")
@@ -1137,15 +1137,15 @@ func TestNewXSSProtectionMiddleware(t *testing.T) {
 
 	// With custom config
 	customConfig := &XSSConfig{
-		EnableCSP:             false,
-		XSSProtection:         true,
-		ContentTypeOptions:    false,
-		FrameOptions:         "SAMEORIGIN",
-		ReferrerPolicy:        "no-referrer",
-		PermissionsPolicy:     "",
-		CSPReportURI:         "/csp-report",
-		EnableCSPReportOnly:   true,
-		AllowInlineScripts:    false,
+		EnableCSP:           false,
+		XSSProtection:       true,
+		ContentTypeOptions:  false,
+		FrameOptions:        "SAMEORIGIN",
+		ReferrerPolicy:      "no-referrer",
+		PermissionsPolicy:   "",
+		CSPReportURI:        "/csp-report",
+		EnableCSPReportOnly: true,
+		AllowInlineScripts:  false,
 	}
 	middleware2 := NewXSSProtectionMiddleware(customConfig)
 	if middleware2 == nil {
@@ -1219,10 +1219,10 @@ func TestXSSProtectionMiddlewareCacheControl(t *testing.T) {
 
 func TestXSSProtectionMiddlewareWithCSPReportURI(t *testing.T) {
 	config := &XSSConfig{
-		EnableCSP:           true,
+		EnableCSP:             true,
 		ContentSecurityPolicy: "default-src 'self'",
-		CSPReportURI:        "/csp-report",
-		EnableCSPReportOnly: false,
+		CSPReportURI:          "/csp-report",
+		EnableCSPReportOnly:   false,
 	}
 	middleware := NewXSSProtectionMiddleware(config)
 
@@ -1342,7 +1342,6 @@ func TestSafeRedirect(t *testing.T) {
 		})
 	}
 }
-
 
 func TestIsValidURL(t *testing.T) {
 	tests := []struct {

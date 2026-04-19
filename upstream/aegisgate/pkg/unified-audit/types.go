@@ -4,12 +4,12 @@ import "time"
 
 // AuditEvent represents a unified audit event.
 type AuditEvent struct {
-	EventID      string        `json:"event_id"`
-	Timestamp    time.Time     `json:"timestamp"`
-	Source       string        `json:"source"` // "aegisguard" or "aegisgate"
-	Action       string        `json:"action"`
-	UserID       string        `json:"user_id,omitempty"`
-	GDPRMetadata *GDPRMetadata `json:"gdpr_metadata,omitempty"`
+	EventID       string         `json:"event_id"`
+	Timestamp     time.Time      `json:"timestamp"`
+	Source        string         `json:"source"` // "aegisguard" or "aegisgate"
+	Action        string         `json:"action"`
+	UserID        string         `json:"user_id,omitempty"`
+	GDPRMetadata  *GDPRMetadata  `json:"gdpr_metadata,omitempty"`
 	HIPAAMetadata *HIPAAMetadata `json:"hipaa_metadata,omitempty"`
 }
 
@@ -22,7 +22,7 @@ type GDPRMetadata struct {
 
 // HIPAAMetadata contains HIPAA-specific audit metadata.
 type HIPAAMetadata struct {
-	PHIType        string `json:"phi_type,omitempty"`
+	PHIType       string `json:"phi_type,omitempty"`
 	AccessPurpose string `json:"access_purpose,omitempty"`
-	PatientID      string `json:"patient_id,omitempty"`
+	PatientID     string `json:"patient_id,omitempty"`
 }

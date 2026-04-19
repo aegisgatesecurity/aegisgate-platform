@@ -114,7 +114,7 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "NIST AI RMF for AI system governance",
 		Pricing: PricingInfo{
 			MonthlyPrice: 0,
-			AnnualPrice: 0,
+			AnnualPrice:  0,
 			PerUser:      false,
 			Description:  "Contact sales",
 		},
@@ -133,7 +133,7 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "NITRD AI Risk Management Framework Controls",
 		Pricing: PricingInfo{
 			MonthlyPrice: 0,
-			AnnualPrice: 0,
+			AnnualPrice:  0,
 			PerUser:      false,
 			Description:  "Contact sales",
 		},
@@ -151,7 +151,7 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "ISO/IEC 42001 AI Management System",
 		Pricing: PricingInfo{
 			MonthlyPrice: 0,
-			AnnualPrice: 0,
+			AnnualPrice:  0,
 			PerUser:      false,
 			Description:  "Contact sales",
 		},
@@ -170,7 +170,7 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "SOC 2 Type II controls for service organizations",
 		Pricing: PricingInfo{
 			MonthlyPrice: 0,
-			AnnualPrice: 0,
+			AnnualPrice:  0,
 			PerUser:      false,
 			Description:  "Contact sales",
 		},
@@ -189,7 +189,7 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "Health Insurance Portability and Accountability Act",
 		Pricing: PricingInfo{
 			MonthlyPrice: 0,
-			AnnualPrice: 0,
+			AnnualPrice:  0,
 			PerUser:      false,
 			Description:  "Contact sales",
 		},
@@ -207,7 +207,7 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "Payment Card Industry Data Security Standard",
 		Pricing: PricingInfo{
 			MonthlyPrice: 0,
-			AnnualPrice: 0,
+			AnnualPrice:  0,
 			PerUser:      false,
 			Description:  "Contact sales",
 		},

@@ -19,7 +19,7 @@ import (
 type Tier int
 
 const (
-	TierCommunity   Tier = iota // Free tier
+	TierCommunity    Tier = iota // Free tier
 	TierDeveloper                // $29/mo
 	TierProfessional             // $79/mo
 	TierEnterprise               // Custom pricing
@@ -271,13 +271,13 @@ const (
 	FeatureStreaming Feature = "streaming"
 
 	// Security Core
-	FeatureTLS              Feature = "tls_termination"
-	FeatureBuiltInCA        Feature = "builtin_ca"         // Self-signed cert + built-in CA
-	FeatureSecretScanning   Feature = "secret_scanning"    // 44-regex secret detection
-	FeaturePIIScanning      Feature = "pii_scanning"       // PII detection (GDPR view)
-	FeaturePromptInjection  Feature = "prompt_injection"   // Prompt injection detection
-	FeatureBidirectional    Feature = "bidirectional_inspection" // Request + response scanning
-	FeatureCircuitBreaker   Feature = "circuit_breaker"     // Circuit breaker pattern
+	FeatureTLS             Feature = "tls_termination"
+	FeatureBuiltInCA       Feature = "builtin_ca"               // Self-signed cert + built-in CA
+	FeatureSecretScanning  Feature = "secret_scanning"          // 44-regex secret detection
+	FeaturePIIScanning     Feature = "pii_scanning"             // PII detection (GDPR view)
+	FeaturePromptInjection Feature = "prompt_injection"         // Prompt injection detection
+	FeatureBidirectional   Feature = "bidirectional_inspection" // Request + response scanning
+	FeatureCircuitBreaker  Feature = "circuit_breaker"          // Circuit breaker pattern
 
 	// Compliance — MANDATE: ATLAS + NIST AI RMF are Community (non-negotiable)
 	FeatureATLAS     Feature = "compliance_atlas"       // MITRE ATLAS 18 techniques / 40+ patterns
@@ -286,8 +286,8 @@ const (
 	FeatureGDPRView  Feature = "compliance_gdpr_view"   // GDPR view-only (detection, not full compliance)
 
 	// ML Detection
-	FeatureBasicAnomaly    Feature = "ml_basic_anomaly"
-	FeatureTrafficPattern  Feature = "ml_traffic_pattern"
+	FeatureBasicAnomaly   Feature = "ml_basic_anomaly"
+	FeatureTrafficPattern Feature = "ml_traffic_pattern"
 
 	// Observability
 	FeatureMetrics      Feature = "metrics"
@@ -300,13 +300,13 @@ const (
 
 	// Deployment
 	FeatureDocker  Feature = "deploy_docker"  // Docker container
-	FeatureCompose Feature = "deploy_compose"  // docker-compose
+	FeatureCompose Feature = "deploy_compose" // docker-compose
 
 	// Platform
 	FeatureAdminDashboard Feature = "admin_dashboard"
 	FeatureRESTAPI        Feature = "rest_api"
-	FeatureSBOM           Feature = "sbom_tracking"       // SBOM generation/tracking
-	FeatureI18N           Feature = "i18n"               // Internationalization
+	FeatureSBOM           Feature = "sbom_tracking" // SBOM generation/tracking
+	FeatureI18N           Feature = "i18n"          // Internationalization
 
 	// MCP Core
 	FeatureMCPSessionIsolation Feature = "mcp_session_isolation" // Per-session isolation
@@ -315,29 +315,29 @@ const (
 	// ====================================================================
 	// Developer ($29/mo)
 	// ====================================================================
-	FeatureOAuthSSO       Feature = "oauth_sso"
-	FeatureOIDC           Feature = "oidc"
-	FeatureCohere         Feature = "cohere"
-	FeatureAzureOpenAI    Feature = "azure_openai"
-	FeatureRequestCache   Feature = "request_caching"
-	FeatureRequestDedup   Feature = "request_dedup"
-	FeatureMTLS           Feature = "mtls"
-	FeatureRuntimeHarden  Feature = "runtime_hardening"
-	FeatureCostAnomaly    Feature = "ml_cost_anomaly"
-	FeatureUsageAnomaly   Feature = "ml_usage_anomaly"
-	FeatureNISTView       Feature = "compliance_nist_view"  // Enhanced NIST view
-	FeatureBasicSecurity  Feature = "compliance_basic_security"
-	FeatureCustomRoles    Feature = "custom_roles"
-	FeatureGranularPerms  Feature = "granular_permissions"
-	FeatureGrafana        Feature = "grafana"
-	FeatureWebhooks       Feature = "webhooks"
-	FeatureTerraform      Feature = "deploy_terraform"
-	FeatureSQLite         Feature = "storage_sqlite"
-	FeatureRedis          Feature = "storage_redis"
-	FeatureDataEncryption Feature = "data_encryption"
-	FeatureAdminAdvanced  Feature = "admin_advanced"
+	FeatureOAuthSSO         Feature = "oauth_sso"
+	FeatureOIDC             Feature = "oidc"
+	FeatureCohere           Feature = "cohere"
+	FeatureAzureOpenAI      Feature = "azure_openai"
+	FeatureRequestCache     Feature = "request_caching"
+	FeatureRequestDedup     Feature = "request_dedup"
+	FeatureMTLS             Feature = "mtls"
+	FeatureRuntimeHarden    Feature = "runtime_hardening"
+	FeatureCostAnomaly      Feature = "ml_cost_anomaly"
+	FeatureUsageAnomaly     Feature = "ml_usage_anomaly"
+	FeatureNISTView         Feature = "compliance_nist_view" // Enhanced NIST view
+	FeatureBasicSecurity    Feature = "compliance_basic_security"
+	FeatureCustomRoles      Feature = "custom_roles"
+	FeatureGranularPerms    Feature = "granular_permissions"
+	FeatureGrafana          Feature = "grafana"
+	FeatureWebhooks         Feature = "webhooks"
+	FeatureTerraform        Feature = "deploy_terraform"
+	FeatureSQLite           Feature = "storage_sqlite"
+	FeatureRedis            Feature = "storage_redis"
+	FeatureDataEncryption   Feature = "data_encryption"
+	FeatureAdminAdvanced    Feature = "admin_advanced"
 	FeatureContextIsolation Feature = "mcp_context_isolation" // Full context isolation
-	FeatureCodeExecSandbox Feature = "code_execute_sandbox"  // Sandboxed code exec (Dev+)
+	FeatureCodeExecSandbox  Feature = "code_execute_sandbox"  // Sandboxed code exec (Dev+)
 
 	// ====================================================================
 	// Professional ($79/mo)
@@ -357,33 +357,33 @@ const (
 	FeatureDeptSeparation Feature = "department_separation"
 	FeatureKubernetes     Feature = "deploy_kubernetes"
 	FeatureHelm           Feature = "deploy_helm"
-	FeaturePostgreSQL    Feature = "storage_postgres"
-	FeatureS3            Feature = "storage_s3"
+	FeaturePostgreSQL     Feature = "storage_postgres"
+	FeatureS3             Feature = "storage_s3"
 	FeatureRetentionPol   Feature = "retention_policies"
 	FeatureVaultSecrets   Feature = "vault_secrets"       // HashiCorp Vault integration
-	FeatureProcessSandbox Feature = "mcp_process_sandbox"  // Process-level sandboxing
+	FeatureProcessSandbox Feature = "mcp_process_sandbox" // Process-level sandboxing
 
 	// ====================================================================
 	// Enterprise (Custom pricing)
 	// ====================================================================
 	FeatureISO42001     Feature = "compliance_iso42001"
-	FeatureFedRAMP     Feature = "compliance_fedramp"
-	FeatureSOC2Type2   Feature = "compliance_soc2_type2"
-	FeatureHITRUST     Feature = "compliance_hitrust"
-	FeatureMLCustom    Feature = "ml_custom_models"
-	FeatureMLZeroDay   Feature = "ml_zeroday"
-	FeatureMLRealtime  Feature = "ml_realtime_response"
-	FeatureHSM         Feature = "hsm_integration"
-	FeatureLDAP        Feature = "ldap_integration"
-	FeatureFIPS       Feature = "fips_compliance"
-	FeatureHA          Feature = "deploy_ha"
-	FeatureAirGapped   Feature = "deploy_airgapped"
-	FeatureAutoScale   Feature = "deploy_autoscale"
-	FeatureMultiRegion Feature = "deploy_multiregion"
-	FeatureMongoDB     Feature = "storage_mongo"
-	FeatureWhitelabel  Feature = "whitelabel"
+	FeatureFedRAMP      Feature = "compliance_fedramp"
+	FeatureSOC2Type2    Feature = "compliance_soc2_type2"
+	FeatureHITRUST      Feature = "compliance_hitrust"
+	FeatureMLCustom     Feature = "ml_custom_models"
+	FeatureMLZeroDay    Feature = "ml_zeroday"
+	FeatureMLRealtime   Feature = "ml_realtime_response"
+	FeatureHSM          Feature = "hsm_integration"
+	FeatureLDAP         Feature = "ldap_integration"
+	FeatureFIPS         Feature = "fips_compliance"
+	FeatureHA           Feature = "deploy_ha"
+	FeatureAirGapped    Feature = "deploy_airgapped"
+	FeatureAutoScale    Feature = "deploy_autoscale"
+	FeatureMultiRegion  Feature = "deploy_multiregion"
+	FeatureMongoDB      Feature = "storage_mongo"
+	FeatureWhitelabel   Feature = "whitelabel"
 	FeatureCustomDomain Feature = "custom_domain"
-	FeatureVMSandbox   Feature = "mcp_vm_sandbox" // VM-level sandboxing
+	FeatureVMSandbox    Feature = "mcp_vm_sandbox" // VM-level sandboxing
 )
 
 // RequiredTier returns the minimum tier required for a feature
