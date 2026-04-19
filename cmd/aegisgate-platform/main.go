@@ -396,7 +396,7 @@ func main() {
 	})
 
 	// Audit log endpoint — query persisted audit entries
-	dashMux.HandleFunc("/api/v1/audit", func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/audit", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if !persistenceMgr.IsEnabled() {
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -461,7 +461,7 @@ func main() {
 	}))
 
 	// Persistence stats endpoint
-	dashMux.HandleFunc("/api/v1/persistence", func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/persistence", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		stats := persistenceMgr.Stats()
 		data, err := json.Marshal(stats)
@@ -470,10 +470,10 @@ func main() {
 			return
 		}
 		w.Write(data)
-	})
+	}))
 
 	// Certificate status endpoint — validate and inspect TLS certificates
-	dashMux.HandleFunc("/api/v1/certs", func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/certs", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		validation, err := certinit.ValidateCerts(certCfg)
 		if err != nil {
@@ -505,7 +505,7 @@ func main() {
 	})
 
 	// Aggregated dashboard stats endpoint
-	dashMux.HandleFunc("/api/v1/stats", func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/stats", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		stats := map[string]interface{}{
 			"success": true,
