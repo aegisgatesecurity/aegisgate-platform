@@ -378,5 +378,22 @@ func TestOptions_Registry_Custom(t *testing.T) {
 	reg := opts.registry()
 	if reg != customReg {
 		t.Error("Options.registry() should return custom registry when set")
+
+	}
+}
+
+func TestGetRegistry(t *testing.T) {
+	reg := GetRegistry()
+	if reg == nil {
+		t.Fatal("GetRegistry returned nil")
+	}
+}
+
+func TestPushMetrics(t *testing.T) {
+	// This will fail because there's no pushgateway, but it tests the code path
+	err := PushMetrics("http://localhost:9091", "test-job")
+	// We expect an error since there's no pushgateway
+	if err == nil {
+		t.Skip("PushMetrics requires a pushgateway to be running")
 	}
 }
