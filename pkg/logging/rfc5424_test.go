@@ -239,15 +239,15 @@ func TestMapEventToMsgID_FullCoverage(t *testing.T) {
 // Comprehensive test to push coverage over 80%
 func TestSyslogFormatter_MapFunctions(t *testing.T) {
 	f := &SyslogFormatter{}
-	
+
 	// Test all severity levels
-	severities := []Severity{"emergency", "alert", "critical", "error", "warning", 
+	severities := []Severity{"emergency", "alert", "critical", "error", "warning",
 		"notice", "info", "debug", "unknown", ""}
 	for _, sev := range severities {
 		event := &Event{Severity: sev, Type: "test", Message: "test"}
 		_ = f.mapEventToSeverity(event)
 	}
-	
+
 	// Test message ID mappings for all event types
 	events := []struct {
 		typ     string
@@ -255,7 +255,7 @@ func TestSyslogFormatter_MapFunctions(t *testing.T) {
 		message string
 	}{
 		{"auth", "", "success"}, {"auth", "", "failure"}, {"login", "", ""},
-		{"request", "allowed", ""}, {"request", "blocked", ""}, 
+		{"request", "allowed", ""}, {"request", "blocked", ""},
 		{"threat", "", ""}, {"anomaly", "", ""}, {"policy", "", ""},
 		{"rate_limit", "", ""}, {"mitm", "", ""}, {"tls", "", ""},
 		{"proxy", "", ""}, {"config", "", ""}, {"policy_update", "", ""},
@@ -273,4 +273,3 @@ func TestSyslogFormatter_Simple(t *testing.T) {
 		t.Errorf("Expected facility 16, got %d", f.Facility)
 	}
 }
-

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: '1.25.8'
+  GO_VERSION: '1.25.9'
 
 jobs:
   test:
@@ -88,6 +88,20 @@ jobs:
         run: |
           echo "## govulncheck Results" >> $GITHUB_STEP_SUMMARY
           cd upstream/aegisgate && govulncheck ./... 2>&1 | tee govulncheck-results.txt
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "⚠️ Vulnerabilities found - see results" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ No Go vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload govulncheck results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: govulncheck-results
+          path: upstream/aegisgate/govulncheck-results.txt
+          retention-days: 30
 
   docker-push:
     name: Docker Push to GHCR

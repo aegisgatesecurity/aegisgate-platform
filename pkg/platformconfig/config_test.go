@@ -142,7 +142,7 @@ func TestConfig_MCPPort(t *testing.T) {
 
 func TestConfig_IsStandaloneMode(t *testing.T) {
 	config := DefaultConfig()
-	
+
 	result := config.IsStandaloneMode(false)
 	if !result {
 		t.Error("IsStandaloneMode should return true for standalone mode")
@@ -167,14 +167,14 @@ func TestConfig_IsStandaloneMode(t *testing.T) {
 
 func TestConfig_applyEnvOverrides(t *testing.T) {
 	savedVars := map[string]string{
-		"AEGISGATE_PLATFORM_MODE":     os.Getenv("AEGISGATE_PLATFORM_MODE"),
-		"AEGISGATE_BIND_ADDRESS":      os.Getenv("AEGISGATE_BIND_ADDRESS"),
-		"AEGISGATE_UPSTREAM":          os.Getenv("AEGISGATE_UPSTREAM"),
-		"AEGISGATE_RATE_LIMIT":        os.Getenv("AEGISGATE_RATE_LIMIT"),
-		"AEGISGATE_LOG_LEVEL":         os.Getenv("AEGISGATE_LOG_LEVEL"),
-		"AEGISGATE_TLS_ENABLED":       os.Getenv("AEGISGATE_TLS_ENABLED"),
+		"AEGISGATE_PLATFORM_MODE": os.Getenv("AEGISGATE_PLATFORM_MODE"),
+		"AEGISGATE_BIND_ADDRESS":  os.Getenv("AEGISGATE_BIND_ADDRESS"),
+		"AEGISGATE_UPSTREAM":      os.Getenv("AEGISGATE_UPSTREAM"),
+		"AEGISGATE_RATE_LIMIT":    os.Getenv("AEGISGATE_RATE_LIMIT"),
+		"AEGISGATE_LOG_LEVEL":     os.Getenv("AEGISGATE_LOG_LEVEL"),
+		"AEGISGATE_TLS_ENABLED":   os.Getenv("AEGISGATE_TLS_ENABLED"),
 	}
-	
+
 	defer func() {
 		for k, v := range savedVars {
 			if v == "" {
@@ -184,23 +184,23 @@ func TestConfig_applyEnvOverrides(t *testing.T) {
 			}
 		}
 	}()
-	
+
 	for k := range savedVars {
 		os.Unsetenv(k)
 	}
-	
+
 	os.Setenv("AEGISGATE_PLATFORM_MODE", "connected")
 	os.Setenv("AEGISGATE_BIND_ADDRESS", "0.0.0.0:8080")
 	os.Setenv("AEGISGATE_UPSTREAM", "http://upstream:9090")
 	os.Setenv("AEGISGATE_RATE_LIMIT", "500")
 	os.Setenv("AEGISGATE_LOG_LEVEL", "debug")
 	os.Setenv("AEGISGATE_TLS_ENABLED", "true")
-	
+
 	config, err := Load("")
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
-	
+
 	if config.Platform.Mode != "connected" {
 		t.Errorf("Platform.Mode = %v, want connected", config.Platform.Mode)
 	}
@@ -227,14 +227,14 @@ func TestConfig_applyEnvOverrides(t *testing.T) {
 func TestConfig_applyEnvOverrides_InvalidRateLimit(t *testing.T) {
 	oldRateLimit := os.Getenv("AEGISGATE_RATE_LIMIT")
 	defer os.Setenv("AEGISGATE_RATE_LIMIT", oldRateLimit)
-	
+
 	os.Setenv("AEGISGATE_RATE_LIMIT", "invalid")
-	
+
 	config, err := Load("")
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
-	
+
 	_ = config.Proxy.RateLimit
 }
 
@@ -242,12 +242,12 @@ func TestConfig_applyEnvOverrides_RateLimitInvalid(t *testing.T) {
 	saved := os.Getenv("AEGISGATE_RATE_LIMIT")
 	os.Setenv("AEGISGATE_RATE_LIMIT", "invalid")
 	defer os.Setenv("AEGISGATE_RATE_LIMIT", saved)
-	
+
 	config, err := Load("")
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
-	
+
 	// Should still load with invalid rate limit - uses default
 	if config == nil {
 		t.Error("Should still return config with invalid rate limit")
@@ -257,13 +257,13 @@ func TestConfig_applyEnvOverrides_RateLimitInvalid(t *testing.T) {
 // Test MCPPort additional coverage
 func TestConfig_MCPPort_Extended(t *testing.T) {
 	config := DefaultConfig()
-	
+
 	// Test default MCP port
 	port := config.MCPPort()
 	if port == 0 {
 		t.Error("MCPPort should return non-zero")
 	}
-	
+
 	// Check that it's a valid port number
 	if port < 1 || port > 65535 {
 		t.Errorf("MCPPort %d is not a valid port number", port)
