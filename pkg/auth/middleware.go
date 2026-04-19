@@ -59,7 +59,7 @@ func ConfigFromEnv() *Config {
 	if token := os.Getenv("API_AUTH_TOKEN"); token != "" {
 		cfg.APIAuthToken = token
 	}
-	if os.Getenv("REQUIRE_AUTH") == "true" {
+	if strings.ToLower(os.Getenv("REQUIRE_AUTH")) == "true" {
 		cfg.RequireAuth = true
 	}
 
@@ -190,6 +190,7 @@ func (m *Middleware) GenerateToken(userID, tier string) (string, error) {
 		UserID: userID,
 		Tier:   tier,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(m.config.TokenExpiryHours) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "aegisgate-platform",

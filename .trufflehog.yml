@@ -1,0 +1,14 @@
+# TruffleHog secret detection configuration
+# Excludes test fixtures containing known development keys/tokens
+# These are intentionally embedded for integration testing and are never
+# used in production configurations.
+
+allowlist:
+  - description: "Test fixtures with intentional dev keys (never used in production)"
+    paths:
+      - pkg/auth/middleware_test.go
+      - upstream/aegisgate/pkg/security/integration_test.go
+      - tests/integration/**
+    regexes:
+      - "dev-key-change-in-production"
+      - "dev-token-change-in-production"
