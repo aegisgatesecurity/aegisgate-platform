@@ -219,3 +219,4 @@ jobs:
           echo "| Build | ${{ needs.build.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Build | ${{ needs.docker.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Publish to GHCR | ${{ needs.publish-ghcr.result == 'skipped' && '⏭️ SKIPPED' || (needs.publish-ghcr.result == 'success' && '✅ PUBLISHED' || '❌ FAIL') }} |" >> $GITHUB_STEP_SUMMARY
+# Workflow trigger - Sun Apr 19 05:50:28 PM CDT 2026
