@@ -8,6 +8,7 @@ package mcpserver
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"testing"
 	"time"
 
@@ -438,11 +439,12 @@ func TestTierDifferentiation(t *testing.T) {
 		maxTools     int
 		timeoutSec   int
 		sandboxMemMB int
+		rateLimitRPM int
 	}{
-		{"Community", tier.TierCommunity, 5, 20, 30, 256},
-		{"Developer", tier.TierDeveloper, 25, 50, 60, 512},
-		{"Professional", tier.TierProfessional, 100, 0, 300, 2048}, // 0 = unlimited
-		{"Enterprise", tier.TierEnterprise, 0, 0, -1, -1},          // 0 = unlimited
+		{"Community", tier.TierCommunity, 5, 20, 30, 256, 60},
+		{"Developer", tier.TierDeveloper, 25, 50, 60, 512, 300},
+		{"Professional", tier.TierProfessional, 100, 0, 300, 2048, 1500}, // 0 = unlimited
+		{"Enterprise", tier.TierEnterprise, 0, 0, -1, -1, 0},          // 0 = unlimited (shown as 0)
 	}
 
 	for _, tt := range tests {
@@ -463,7 +465,231 @@ func TestTierDifferentiation(t *testing.T) {
 			if stats.SandboxMemoryMB != tt.sandboxMemMB {
 				t.Errorf("%s: sandbox memory = %d, expected %d", tt.name, stats.SandboxMemoryMB, tt.sandboxMemMB)
 			}
+			if stats.RateLimitRPM != tt.rateLimitRPM {
+				t.Errorf("%s: rate limit RPM = %d, expected %d", tt.name, stats.RateLimitRPM, tt.rateLimitRPM)
+			}
 		})
+	}
+}
+
+// --------------------------------------------------------------------------
+// Guard 5: Per-client RPM rate limiting
+// --------------------------------------------------------------------------
+
+func TestRateLimit_Allowed(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
+	g := NewGuardrailMiddleware(cfg)
+
+	// Requests within RPM should pass
+	for i := 0; i < 60; i++ {
+		err := g.OnRateLimitCheck("192.168.1.100:1234")
+		if err != nil {
+			t.Fatalf("Request %d should be allowed, got: %v", i+1, err)
+		}
+	}
+}
+
+func TestRateLimit_Exceeded(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
+	g := NewGuardrailMiddleware(cfg)
+
+	// Fill up to RPM limit
+	for i := 0; i < 60; i++ {
+		g.OnRateLimitCheck("10.0.0.1:5678")
+	}
+
+	// Request over limit should be blocked
+	err := g.OnRateLimitCheck("10.0.0.1:5678")
+	if err == nil {
+		t.Error("Expected error when RPM exceeded")
+	}
+
+	stats := g.Stats()
+	if stats.RateLimitedReqs != 1 {
+		t.Errorf("Expected 1 rate-limited request, got %d", stats.RateLimitedReqs)
+	}
+	if stats.BlockedRequests < 1 {
+		t.Errorf("Expected blocked request counter incremented, got %d", stats.BlockedRequests)
+	}
+}
+
+func TestRateLimit_DifferentClients(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM per client
+	g := NewGuardrailMiddleware(cfg)
+
+	// Each client gets their own bucket — use different subnets so
+	// SanitizeClientID produces distinct keys (it masks last 2 octets,
+	// so 10.x.x.x and 192.168.x.x become different buckets)
+	for i := 0; i < 60; i++ {
+		g.OnRateLimitCheck("10.0.0.1:1234")
+	}
+
+	// Client 1 is at limit, but client 2 should be fine (different sanitized bucket)
+	err := g.OnRateLimitCheck("192.168.0.1:5678")
+	if err != nil {
+		t.Errorf("Different client should be allowed, got: %v", err)
+	}
+
+	// Client 1 should still be blocked (same sanitized bucket)
+	err = g.OnRateLimitCheck("10.0.0.1:1234")
+	if err == nil {
+		t.Error("Original client should still be rate-limited")
+	}
+}
+
+func TestRateLimit_Unlimited(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierEnterprise) // -1 = unlimited
+	g := NewGuardrailMiddleware(cfg)
+
+	// Enterprise should never be rate limited
+	for i := 0; i < 500; i++ {
+		err := g.OnRateLimitCheck("10.0.0.1:1234")
+		if err != nil {
+			t.Fatalf("Enterprise request %d should never be limited, got: %v", i, err)
+		}
+	}
+
+	stats := g.Stats()
+	if stats.RateLimitedReqs != 0 {
+		t.Errorf("Enterprise should have 0 rate-limited requests, got %d", stats.RateLimitedReqs)
+	}
+}
+
+func TestRateLimit_DisabledMiddleware(t *testing.T) {
+	cfg := GuardrailConfig{Enabled: false, PlatformTier: tier.TierCommunity}
+	g := NewGuardrailMiddleware(cfg)
+
+	// Disabled middleware should never rate limit
+	for i := 0; i < 200; i++ {
+		err := g.OnRateLimitCheck("10.0.0.1:1234")
+		if err != nil {
+			t.Errorf("Disabled middleware should not limit, got: %v", err)
+		}
+	}
+}
+
+func TestRateLimit_StatsRPM(t *testing.T) {
+	tests := []struct {
+		name string
+		t    tier.Tier
+		rpm  int
+	}{
+		{"Community", tier.TierCommunity, 60},
+		{"Developer", tier.TierDeveloper, 300},
+		{"Professional", tier.TierProfessional, 1500},
+		{"Enterprise", tier.TierEnterprise, 0}, // 0 = unlimited (shown as 0 in stats)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := DefaultGuardrailConfig(tt.t)
+			g := NewGuardrailMiddleware(cfg)
+			stats := g.Stats()
+			if stats.RateLimitRPM != tt.rpm {
+				t.Errorf("%s: RateLimitRPM = %d, expected %d", tt.name, stats.RateLimitRPM, tt.rpm)
+			}
+		})
+	}
+}
+
+func TestRateLimitCleanup(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity)
+	g := NewGuardrailMiddleware(cfg)
+
+	// Create a rate limit bucket with an expired window
+	g.rateMu.Lock()
+	g.rateLimits["expired_client"] = &mcpClientBucket{
+		count:   1,
+		resetAt: time.Now().Add(-time.Minute), // expired
+	}
+	g.rateLimits["active_client"] = &mcpClientBucket{
+		count:   1,
+		resetAt: time.Now().Add(time.Minute), // still active
+	}
+	g.rateMu.Unlock()
+
+	g.RateLimitCleanup()
+
+	g.rateMu.Lock()
+	_, expiredExists := g.rateLimits["expired_client"]
+	_, activeExists := g.rateLimits["active_client"]
+	g.rateMu.Unlock()
+
+	if expiredExists {
+		t.Error("Expired bucket should have been cleaned up")
+	}
+	if !activeExists {
+		t.Error("Active bucket should still exist")
+	}
+}
+
+func TestExpireRateLimitBuckets(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity)
+	g := NewGuardrailMiddleware(cfg)
+
+	// Exhaust the limit
+	for i := 0; i < 60; i++ {
+		g.OnRateLimitCheck("10.0.0.1:1111")
+	}
+
+	// Should be limited
+	err := g.OnRateLimitCheck("10.0.0.1:1111")
+	if err == nil {
+		t.Fatal("Should be rate-limited")
+	}
+
+	// Force expire all buckets
+	g.ExpireRateLimitBuckets()
+
+	// Cleanup to remove expired entries
+	g.RateLimitCleanup()
+
+	// Should now be allowed (new window)
+	err = g.OnRateLimitCheck("10.0.0.1:1111")
+	if err != nil {
+		t.Errorf("After ExpireRateLimitBuckets + cleanup, request should be allowed, got: %v", err)
+	}
+}
+
+func TestGuardrailHandler_RateLimited(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
+	g := NewGuardrailMiddleware(cfg)
+
+	innerHandler := mcp.NewRequestHandler(nil, nil, nil)
+	wrapped := g.GuardrailHandler(innerHandler)
+
+	// Create a fake connection with a net.Conn
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	defer listener.Close()
+
+	serverConn, clientConn := net.Pipe()
+	defer serverConn.Close()
+	defer clientConn.Close()
+
+	conn := &mcp.Connection{
+		ID:   "test-conn",
+		Conn: serverConn,
+	}
+
+	// Fill up to RPM limit
+	for i := 0; i < 60; i++ {
+		req := &mcp.JSONRPCRequest{
+			JSONRPC: "2.0",
+			ID:      i,
+			Method:  "ping",
+		}
+		wrapped(conn, req)
+	}
+
+	// 61st request should be rate-limited
+	req := &mcp.JSONRPCRequest{
+		JSONRPC: "2.0",
+		ID:      99,
+		Method:  "ping",
+	}
+	resp := wrapped(conn, req)
+	if resp.Error == nil {
+		t.Error("Expected error when rate limit exceeded via GuardrailHandler")
 	}
 }
 
@@ -492,6 +718,12 @@ func TestGuardrailErrorResponse(t *testing.T) {
 	}
 	if resp.Error.Code != -32000 {
 		t.Errorf("Expected error code -32000, got %d", resp.Error.Code)
+	}
+
+	// Also verify rate limit error response
+	rlResp := guardrailErrorResponse(99, ErrRateLimitExceeded, "rate limit hit")
+	if rlResp.Error == nil {
+		t.Fatal("Expected non-nil rate limit error")
 	}
 }
 

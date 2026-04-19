@@ -56,6 +56,11 @@ type Options struct {
 	PromptInjectionSensitivity     int
 	EnableContentAnalysis          bool
 	EnableBehavioralAnalysis       bool
+
+	// OnRateLimited is called when a request is rejected by rate limiting.
+	// The callback receives the client remote address for metrics/accounting.
+	// If nil, no callback is invoked (backward compatible).
+	OnRateLimited func(client string)
 }
 
 // TLSConfig holds TLS settings
@@ -261,6 +266,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Check rate limit
 	if !p.rateLimiter.Allow() {
 		slog.Warn("Rate limit exceeded", "client", req.RemoteAddr, "path", req.URL.Path)
+		if p.options.OnRateLimited != nil {
+			p.options.OnRateLimited(req.RemoteAddr)
+		}
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("Rate limit exceeded. Please try again later."))
 		return

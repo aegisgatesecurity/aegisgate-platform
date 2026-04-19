@@ -72,6 +72,7 @@ out/
 *.o
 *.obj
 coverage.out
+coverage_*.out
 coverage/
 *.coverprofile
 *.prof

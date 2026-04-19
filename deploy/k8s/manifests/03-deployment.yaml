@@ -1,0 +1,108 @@
+# =========================================================================
+# AegisGate Security Platform — Deployment
+# =========================================================================
+# Single replica (Community tier). Scale up for Professional/Enterprise.
+# Ports: 8080 (proxy), 8081 (MCP), 8443 (dashboard/API)
+# Zero-config: all defaults embedded in the binary
+# =========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aegisgate-platform
+  namespace: aegisgate
+  labels:
+    app.kubernetes.io/name: aegisgate-platform
+    app.kubernetes.io/version: "1.3.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aegisgate-platform
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aegisgate-platform
+        app.kubernetes.io/version: "1.3.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8443"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: aegisgate-platform
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: aegisgate-platform
+          image: aegisgate/platform:1.3.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--proxy-port=8080"
+            - "--mcp-port=8081"
+            - "--dashboard-port=8443"
+            - "--embedded-mcp"
+            - "--tier=community"
+          env:
+            - name: AEGISGATE_DATA_DIR
+              value: /data
+            - name: TIER
+              value: "community"
+          ports:
+            - name: proxy
+              containerPort: 8080
+              protocol: TCP
+            - name: mcp
+              containerPort: 8081
+              protocol: TCP
+            - name: dashboard
+              containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: dashboard
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: dashboard
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        - name: data
+          persistentVolumeClaim:
+            claimName: aegisgate-data

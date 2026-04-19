@@ -34,10 +34,11 @@ import (
 // --------------------------------------------------------------------------
 
 const (
-	ErrMaxSessions      = "max_sessions_reached"
-	ErrSessionToolLimit = "session_tool_limit_reached"
-	ErrExecTimeout      = "execution_timeout"
-	ErrMemoryLimit      = "sandbox_memory_limit"
+	ErrMaxSessions       = "max_sessions_reached"
+	ErrSessionToolLimit  = "session_tool_limit_reached"
+	ErrExecTimeout       = "execution_timeout"
+	ErrMemoryLimit       = "sandbox_memory_limit"
+	ErrRateLimitExceeded = "rate_limit_exceeded"
 )
 
 // --------------------------------------------------------------------------
@@ -85,6 +86,13 @@ func DefaultGuardrailConfig(t tier.Tier) GuardrailConfig {
 // GuardrailMiddleware enforces tier-based MCP limits
 // --------------------------------------------------------------------------
 
+// mcpClientBucket is a token-bucket rate limiter for a single client.
+// It tracks requests per minute in a sliding 60-second window.
+type mcpClientBucket struct {
+	count   int64
+	resetAt time.Time
+}
+
 // GuardrailMiddleware wraps an MCP RequestHandler and enforces tier-based
 // limits before delegating to the inner handler.
 type GuardrailMiddleware struct {
@@ -96,26 +104,38 @@ type GuardrailMiddleware struct {
 	sessions       map[string]*sessionState // sessionID -> state
 	activeSessions int64                    // atomic counter for fast concurrent-session checks
 
+	// Rate limiting (Guard 5: per-client RPM)
+	rateMu       sync.Mutex
+	rateLimits   map[string]*mcpClientBucket // sanitized clientAddr -> bucket
+	rateLimitRPM int                         // cached from tier.RateLimitMCP()
+
 	// Metrics
 	totalRequests   int64
 	blockedRequests int64
 	timeoutRequests int64
+	rateLimitedReqs int64
 }
 
 // NewGuardrailMiddleware creates a new guardrail middleware for the given tier
 func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
+	rpm := cfg.PlatformTier.RateLimitMCP()
+
 	if !cfg.Enabled {
 		return &GuardrailMiddleware{
-			config:  cfg,
-			logger:  slog.Default().With("component", "mcp-guardrails"),
-			sessions: make(map[string]*sessionState),
+			config:       cfg,
+			logger:       slog.Default().With("component", "mcp-guardrails"),
+			sessions:    make(map[string]*sessionState),
+			rateLimits:   make(map[string]*mcpClientBucket),
+			rateLimitRPM: rpm,
 		}
 	}
 
 	return &GuardrailMiddleware{
-		config:  cfg,
-		logger:  slog.Default().With("component", "mcp-guardrails", "tier", cfg.PlatformTier.String()),
-		sessions: make(map[string]*sessionState),
+		config:       cfg,
+		logger:       slog.Default().With("component", "mcp-guardrails", "tier", cfg.PlatformTier.String()),
+		sessions:    make(map[string]*sessionState),
+		rateLimits:   make(map[string]*mcpClientBucket),
+			rateLimitRPM: rpm,
 	}
 }
 
@@ -319,6 +339,88 @@ func (g *GuardrailMiddleware) OnMemoryUsage(sessionID string, memoryMB int64) {
 }
 
 // --------------------------------------------------------------------------
+// Guard 5: Per-client RPM rate limiting
+// --------------------------------------------------------------------------
+
+// OnRateLimitCheck enforces per-client requests-per-minute limits.
+// Returns an error if the client has exceeded their tier's RPM allowance.
+// A return of nil means the request is allowed.
+func (g *GuardrailMiddleware) OnRateLimitCheck(clientAddr string) error {
+	if !g.config.Enabled {
+		return nil
+	}
+
+	rpm := g.rateLimitRPM
+	if rpm < 0 {
+		// Unlimited (-1 from Enterprise tier)
+		return nil
+	}
+
+	sanitized := metrics.SanitizeClientID(clientAddr)
+
+	g.rateMu.Lock()
+	defer g.rateMu.Unlock()
+
+	now := time.Now()
+	bucket, exists := g.rateLimits[sanitized]
+	if !exists || now.After(bucket.resetAt) {
+		// New window: reset or create bucket
+		bucket = &mcpClientBucket{
+			count:   0,
+			resetAt: now.Add(time.Minute),
+		}
+		g.rateLimits[sanitized] = bucket
+	}
+
+	bucket.count++
+	if bucket.count > int64(rpm) {
+		atomic.AddInt64(&g.blockedRequests, 1)
+		atomic.AddInt64(&g.rateLimitedReqs, 1)
+		metrics.RecordRateLimitHit(metrics.ServiceMCP, sanitized)
+		err := fmt.Errorf("MCP rate limit exceeded (%d/%d RPM for %s tier, client %s)",
+			bucket.count, rpm, g.config.PlatformTier.DisplayName(), sanitized)
+		if g.config.LogViolations {
+			g.logger.Warn("MCP request rate-limited",
+				"client", sanitized,
+				"reason", ErrRateLimitExceeded,
+				"count", bucket.count,
+				"limit", rpm,
+				"error", err)
+		}
+		return err
+	}
+
+	return nil
+}
+
+// RateLimitCleanup removes stale rate limit entries for clients whose
+// window has expired. Call periodically (e.g., every 5 minutes).
+func (g *GuardrailMiddleware) RateLimitCleanup() {
+	g.rateMu.Lock()
+	defer g.rateMu.Unlock()
+
+	now := time.Now()
+	for addr, bucket := range g.rateLimits {
+		if now.After(bucket.resetAt) {
+			delete(g.rateLimits, addr)
+		}
+	}
+}
+
+// ExpireRateLimitBuckets is a test helper that forces all rate limit
+// buckets to expire immediately. This allows integration tests to verify
+// window-reset behavior without waiting for the full 60-second window.
+func (g *GuardrailMiddleware) ExpireRateLimitBuckets() {
+	g.rateMu.Lock()
+	defer g.rateMu.Unlock()
+
+	past := time.Now().Add(-time.Second)
+	for _, bucket := range g.rateLimits {
+		bucket.resetAt = past
+	}
+}
+
+// --------------------------------------------------------------------------
 // GuardrailHandler wraps HandleRequest with guardrail enforcement
 // --------------------------------------------------------------------------
 
@@ -330,6 +432,15 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 		// Skip guardrails if disabled
 		if !g.config.Enabled {
 			return inner.HandleRequest(conn, req)
+		}
+
+		// --- Guard 5: Per-client RPM rate limiting ---
+		// Applies to ALL incoming MCP requests, not just tool calls.
+		if conn != nil && conn.Conn != nil {
+			clientAddr := conn.Conn.RemoteAddr().String()
+			if err := g.OnRateLimitCheck(clientAddr); err != nil {
+				return guardrailErrorResponse(req.ID, ErrRateLimitExceeded, err.Error())
+			}
 		}
 
 		// --- Guard 1: Concurrent session limit ---
@@ -402,6 +513,8 @@ type GuardrailStats struct {
 	TotalRequests     int64  `json:"total_requests"`
 	BlockedRequests   int64  `json:"blocked_requests"`
 	TimeoutRequests   int64  `json:"timeout_requests"`
+	RateLimitRPM      int    `json:"rate_limit_rpm"`
+	RateLimitedReqs   int64  `json:"rate_limited_requests"`
 	ToolsPerSession   int    `json:"tools_per_session"`
 	ExecTimeoutSec    int    `json:"exec_timeout_sec"`
 	SandboxMemoryMB   int    `json:"sandbox_memory_mb"`
@@ -423,6 +536,11 @@ func (g *GuardrailMiddleware) Stats() GuardrailStats {
 	timeoutSec := g.config.PlatformTier.MCPExecTimeoutSeconds()
 	memMB := g.config.PlatformTier.MaxMCPSandboxMemoryMB()
 
+	rateLimitRPM := g.rateLimitRPM
+	if rateLimitRPM < 0 {
+		rateLimitRPM = 0 // represents unlimited
+	}
+
 	return GuardrailStats{
 		Tier:              g.config.PlatformTier.String(),
 		ActiveSessions:    atomic.LoadInt64(&g.activeSessions),
@@ -430,6 +548,8 @@ func (g *GuardrailMiddleware) Stats() GuardrailStats {
 		TotalRequests:     atomic.LoadInt64(&g.totalRequests),
 		BlockedRequests:   atomic.LoadInt64(&g.blockedRequests),
 		TimeoutRequests:   atomic.LoadInt64(&g.timeoutRequests),
+		RateLimitRPM:      rateLimitRPM,
+		RateLimitedReqs:   atomic.LoadInt64(&g.rateLimitedReqs),
 		ToolsPerSession:   maxTools,
 		ExecTimeoutSec:    timeoutSec,
 		SandboxMemoryMB:   memMB,
@@ -443,7 +563,8 @@ func (g *GuardrailMiddleware) Close() {
 	g.logger.Info("Guardrail middleware shutting down",
 		"active_sessions", stats.ActiveSessions,
 		"total_requests", stats.TotalRequests,
-		"blocked_requests", stats.BlockedRequests)
+		"blocked_requests", stats.BlockedRequests,
+		"rate_limited_requests", stats.RateLimitedReqs)
 }
 
 // --------------------------------------------------------------------------
