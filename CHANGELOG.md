@@ -1,124 +1,95 @@
 # Changelog
 
-All notable changes to the AegisGate Security Platform will be documented in this file.
+## [1.3.0] - 2026-04-18
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Phase C Complete: Rate Limiting, Metrics, Deployment
 
-## [1.3.0] - 2026-04-17
+#### C1 — Proxy Rate Limit Callback Pattern
+- Added `OnRateLimited func(client string)` callback to proxy
+- Wired in main.go: `proxy.OnRateLimited = metrics.RecordRateLimitHit`
+- Avoids circular dependency; proxy doesn't import metrics package
 
-### MVP Release - "Foundation Complete"
+#### C2-C5 — Metrics & UI Alignment
+- All UI version strings aligned to v1.3.0:
+  - `ui/frontend/index.html`
+  - `ui/frontend/certificates.html`
+  - `ui/frontend/settings.html`
+  - `ui/frontend/js/dashboard.js`
+- Cleaned 23 coverage files from repository
+- Added `*.out` to `.gitignore`
+- Complete rewrite of `docs/METRICS.md` documenting all 10 canonical Prometheus metrics
 
-This release marks the completion of the MVP for the AegisGate Security Platform Community tier. All launch blockers have been resolved, comprehensive test coverage achieved, and the platform is ready for production deployment.
+#### C6-C8 — Deployment Artifacts
+- **Docker Compose**: Full rewrite with profiles
+  - Core: `docker compose up`
+  - With Redis: `--profile redis`
+  - With Monitoring: `--profile monitoring`
+- **Helm Chart** (`deploy/helm/aegisgate-platform/`):
+  - Chart.yaml, values.yaml
+  - 8 templates: deployment, service, ingress, servicemonitor, pvc, hpa, sa
+- **Kubernetes Manifests** (`deploy/k8s/manifests/`):
+  - 00-namespace.yaml
+  - 01-serviceaccount.yaml
+  - 02-pvc.yaml
+  - 03-deployment.yaml
+  - 04-service.yaml
+  - 05-hpa.yaml
+  - 06-networkpolicy.yaml
+- **Documentation**: `deploy/README.md`
 
-### Added
+#### C9-C10 — Integration Tests
+- `tests/integration/metrics_scrape_test.go` (5 tests):
+  - Without service discovery
+  - With custom registry
+  - When metrics registered
+  - Endpoint discovery
+  - Empty registry handling
+- `tests/integration/ratelimit_counter_test.go` (9 tests):
+  - Empty buckets
+  - Basic counting
+  - Tier limit enforcement
+  - Failure scenarios
+  - Concurrent clients
+  - Bucket expiration
+  - Tier changes
+  - ExpireRateLimitBuckets helper
+  - Per-client isolation
 
-#### E2E Test Suite
-- **Full platform lifecycle testing**: Build → Start → Health Checks → MCP → API → Graceful Shutdown
-- **6 comprehensive E2E tests** covering:
-  - Binary build from source
-  - Platform startup with persistence, proxy, MCP, and dashboard
-  - Health endpoint validation
-  - MCP TCP connection establishment
-  - API endpoint testing (version, tier info)
-  - Graceful shutdown on SIGINT
-- **E2E test runtime**: ~4.5 seconds
-- **Port collision avoidance**: Uses 28xxx range for testing
+#### Guardrails Enhancement
+- **Guard 5**: Per-client RPM rate limiting added to MCP server
+- Token bucket implementation with 60s sliding windows
+- `SanitizeClientID()` for cardinality control (IPv4→/16)
+- `ExpireRateLimitBuckets()` exported test helper
+- `ErrRateLimitExceeded` error type
 
-#### Binary Synchronization
-- **Synchronous port binding**: Proxy and dashboard servers now bind explicitly before goroutine launch
-- **Startup verification**: Added `verifyServicesReady()` to confirm all ports are listening
-- **Startup confirmations**: Added `[STARTUP-COMPLETE]` and `[STARTUP-CONFIRM]` log markers
+#### Metrics (10 Canonical)
+| Metric | Type | Description |
+|--------|------|-------------|
+| http_requests_total | Counter | HTTP requests by status code and endpoint |
+| http_request_duration_seconds | Histogram | Request latency distribution |
+| active_connections | Gauge | Current connection count |
+| rate_limit_hits_total | Counter | Rate limit violations |
+| security_scans_total | Counter | Security scan results |
+| mcp_connections | Gauge | Active MCP sessions |
+| mcp_requests_total | Summary | MCP request statistics |
+| tier_requests_total | Histogram | Requests by tier and endpoint |
+| audit_events_total | Summary | Audit log buffer |
+| build_info | Gauge | Version metadata |
 
-#### Coverage Test Suite
-- **58 new coverage tests** across security-critical packages:
-  - `certinit_coverage_test.go` - 11 tests (certificate lifecycle, validation, edge cases)
-  - `tier_coverage_test.go` - 12 tests (tier parsing, limits, inheritance)
-  - `tieradapter_adapter_coverage_test.go` - 8 tests (cross-system tier mapping)
-  - `persistence_coverage_test.go` - 11 tests (audit writing, retention, integrity)
-  - `server_coverage_test.go` - 8 tests (embedded server startup, shutdown, config)
-  - `tools_coverage_test.go` - 8 tests (tool registry, execution, listing)
-- **Platform coverage increased**: From ~71.5% to ~85%
-- **Security-critical packages**: 90-100% coverage achieved
+#### Dependencies
+- `github.com/prometheus/client_golang v1.19.0`
+- `github.com/prometheus/client_model v0.6.1`
 
-### Changed
-
-#### Version
-- Updated from `2.0.0-dev` → `1.3.0` (stable release)
-- Semantic versioning now in effect
-
-#### Build System
-- Improved synchronization in `main.go` for reliable startup
-- Added proper error handling for service startup failures
-
-### Test Results Summary
-
-| Suite | Count | Pass | Fail | Skip | Coverage |
-|-------|-------|------|------|------|----------|
-| Unit Tests | ~150 | 150 | 0 | 0 | ~85% |
-| Integration Tests | 60 | 58 | 0 | 1 | ~85% |
-| E2E Tests | 6 | 6 | 0 | 0 | N/A |
-| Upstream Tests | 2,134 | 2,134 | 0 | - | 65-70% |
-| **TOTAL** | **2,350** | **2,348** | **0** | **1** | **~85%** |
-
-### Fixed
-
-- Fixed service startup race condition in proxy and dashboard servers
-- Fixed E2E test configuration to include `data_dir` and `audit_dir` for persistence
-- Fixed binary command arguments to include `--embedded-mcp` flag
-
-### Security
-
-- **Mandate compliance verified**: ATLAS and NIST AI RMF remain in Community tier
-- Build-failing tests protect tier assignments (`TestMandateCompliance`, `TestOtherMandateCommunityFeatures`)
-- All security-critical packages have ≥90% test coverage
-- Immutable root filesystem in Docker (read-only root)
-
-### Documentation
-
-- Updated ANCHOR.md with comprehensive test results
-- Added this CHANGELOG.md
-- Updated release notes and milestones
-
----
-
-## [1.2.0] - 2026-04-15
-
-### Pre-MVP Release
-
-### Added
-- Persistence layer with tier-based retention
-- Certificate automation with auto-generation
-- MCP guardrails (session, tool, timeout, memory limits)
-- Platform configuration system
-- Docker containerization with immutable root
-- Integration test suite (60 tests)
-- Tier system with 91 features across 4 tiers
-
-### Changed
-- Consolidated two upstream projects into single binary
-- Unified tier system replacing legacy systems
-- configs/community.yaml fixed (rate_limit split)
+#### Tests
+- **Unit Tests**: 320 across 7 packages
+- **Integration Tests**: 74 across 3 files
+- **E2E Tests**: 7
+- **Total Platform Tests**: 401
 
 ---
 
-## [1.1.0] - 2026-04-10
-
-### Integration Phase
-
-### Added
-- Bridge between AegisGate proxy and AegisGuard MCP
-- Platform adapter for tier/feature mapping
-- Docker Compose support
-
----
-
-## [1.0.0] - 2026-04-05
-
-### Initial Consolidation
-
-### Added
-- Project structure from two upstream repos
-- Basic proxy and MCP functionality
-- Initial tier system prototype
-
+## [1.2.0] - Previous Release
+- Initial consolidated platform
+- HTTP proxy with MITM scanning
+- MCP server with basic guardrails (Guards 1-4)
+- Web dashboard
