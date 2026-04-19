@@ -253,3 +253,19 @@ func TestConfig_applyEnvOverrides_RateLimitInvalid(t *testing.T) {
 		t.Error("Should still return config with invalid rate limit")
 	}
 }
+
+// Test MCPPort additional coverage
+func TestConfig_MCPPort_Extended(t *testing.T) {
+	config := DefaultConfig()
+	
+	// Test default MCP port
+	port := config.MCPPort()
+	if port == 0 {
+		t.Error("MCPPort should return non-zero")
+	}
+	
+	// Check that it's a valid port number
+	if port < 1 || port > 65535 {
+		t.Errorf("MCPPort %d is not a valid port number", port)
+	}
+}
