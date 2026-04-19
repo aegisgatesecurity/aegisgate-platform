@@ -131,7 +131,7 @@ func (e *GitStatusExecutor) validatePath(path string) error {
 
 func parseGitStatus(output, repoPath string) map[string]interface{} {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
-	
+
 	status := map[string]interface{}{
 		"repo_path": repoPath,
 		"is_clean":  true,
@@ -186,7 +186,7 @@ func parseGitStatus(output, repoPath string) map[string]interface{} {
 
 // GitLogExecutor handles git log operations
 type GitLogExecutor struct {
-	maxCommits int
+	maxCommits   int
 	allowedPaths []string
 	blockedPaths []string
 }
@@ -200,7 +200,7 @@ func NewGitLogExecutor(maxCommits int, allowedPaths, blockedPaths []string) *Git
 		maxCommits = 100
 	}
 	return &GitLogExecutor{
-		maxCommits:  maxCommits,
+		maxCommits:   maxCommits,
 		allowedPaths: allowedPaths,
 		blockedPaths: blockedPaths,
 	}
@@ -320,7 +320,7 @@ func (e *GitLogExecutor) validateLogPath(path string) error {
 
 func parseGitLog(output, repoPath string, limit int) map[string]interface{} {
 	var commits []map[string]interface{}
-	
+
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -339,10 +339,10 @@ func parseGitLog(output, repoPath string, limit int) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"repo_path":  repoPath,
-		"count":      len(commits),
-		"limit":      limit,
-		"commits":    commits,
+		"repo_path": repoPath,
+		"count":     len(commits),
+		"limit":     limit,
+		"commits":   commits,
 	}
 }
 

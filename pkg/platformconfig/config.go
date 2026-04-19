@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate/pkg/config"
 	agconfig "github.com/aegisguardsecurity/aegisguard/pkg/config"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"gopkg.in/yaml.v3"
 )
 
@@ -57,8 +57,8 @@ type Config struct {
 
 // PlatformConfig holds platform-specific settings not in either upstream
 type PlatformConfig struct {
-	Version     string        `yaml:"version"`
-	Mode        string        `yaml:"mode"` // "standalone" or "connected"
+	Version         string        `yaml:"version"`
+	Mode            string        `yaml:"mode"` // "standalone" or "connected"
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout"`
 }
 
@@ -86,15 +86,15 @@ type TLSConfig struct {
 
 // MutualTLSConfig holds mTLS configuration
 type MutualTLSConfig struct {
-	Enabled     bool   `yaml:"enabled"`
-	Mode        string `yaml:"mode"` // "optional" or "required"
+	Enabled      bool   `yaml:"enabled"`
+	Mode         string `yaml:"mode"` // "optional" or "required"
 	ClientCAFile string `yaml:"client_ca_file"`
 }
 
 // FIPSConfig holds FIPS compliance settings for the platform
 type FIPSConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	Level    string `yaml:"level"` // "140-2" or "140-3"
+	Enabled bool   `yaml:"enabled"`
+	Level   string `yaml:"level"` // "140-2" or "140-3"
 }
 
 // SecurityConfig holds security middleware settings
@@ -103,7 +103,7 @@ type SecurityConfig struct {
 	EnableCSRF            bool     `yaml:"enable_csrf"`
 	EnableXSS             bool     `yaml:"enable_xss"`
 	EnablePanicRecovery   bool     `yaml:"enable_panic_recovery"`
-	EnableAuditMiddleware  bool     `yaml:"enable_audit_middleware"`
+	EnableAuditMiddleware bool     `yaml:"enable_audit_middleware"`
 	AllowedOrigins        []string `yaml:"allowed_origins"`
 	AllowedMethods        []string `yaml:"allowed_methods"`
 	AllowedHeaders        []string `yaml:"allowed_headers"`
@@ -163,7 +163,7 @@ func DefaultConfig() *Config {
 			EnableCSRF:            true,
 			EnableXSS:             true,
 			EnablePanicRecovery:   true,
-			EnableAuditMiddleware:  true,
+			EnableAuditMiddleware: true,
 			AllowedOrigins:        []string{},
 			AllowedMethods:        []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"},
 			AllowedHeaders:        []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},

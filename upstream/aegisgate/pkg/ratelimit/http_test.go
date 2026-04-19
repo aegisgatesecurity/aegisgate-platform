@@ -335,9 +335,9 @@ func TestHTTPRateLimiter_Middleware_BlocksOnExhaustion(t *testing.T) {
 
 func TestGetTierConfig(t *testing.T) {
 	tests := []struct {
-		tier         Tier
-		minRPM       int
-		minBurst     int
+		tier     Tier
+		minRPM   int
+		minBurst int
 	}{
 		{TierFree, 20, 10},
 		{TierStarter, 60, 30},

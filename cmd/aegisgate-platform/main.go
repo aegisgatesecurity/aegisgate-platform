@@ -458,7 +458,7 @@ func main() {
 			return
 		}
 		w.Write(data)
-	}))
+	})))
 
 	// Persistence stats endpoint
 	dashMux.HandleFunc("/api/v1/persistence", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {

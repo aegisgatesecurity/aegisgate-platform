@@ -24,8 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	mcp "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
 )
@@ -39,7 +39,8 @@ import (
 // counter increments in the metrics endpoint.
 //
 // This validates the C1 wiring:
-//   main.go: OnRateLimited: func(client string) { RecordRateLimitHit(ServiceProxy, client) }
+//
+//	main.go: OnRateLimited: func(client string) { RecordRateLimitHit(ServiceProxy, client) }
 func TestRateLimitCounter_ProxyOnRateLimited(t *testing.T) {
 	// Simulate the proxy's OnRateLimited callback (as wired in main.go)
 	onRateLimited := func(client string) {
@@ -128,7 +129,8 @@ func TestRateLimitCounter_ProxyMultipleHits(t *testing.T) {
 // counter increments in the metrics endpoint.
 //
 // This validates the C2 wiring:
-//   guardrails.go OnRateLimitCheck → metrics.RecordRateLimitHit(ServiceMCP, sanitized)
+//
+//	guardrails.go OnRateLimitCheck → metrics.RecordRateLimitHit(ServiceMCP, sanitized)
 func TestRateLimitCounter_MCPRateLimit(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
 	g := mcpserver.NewGuardrailMiddleware(cfg)
@@ -327,10 +329,10 @@ func TestRateLimitCounter_ServiceSeparation(t *testing.T) {
 // records rate limit hits.
 func TestRateLimitCounter_TierDifferentiation(t *testing.T) {
 	tests := []struct {
-		name         string
-		t            tier.Tier
-		rpm          int
-		expectLimit  bool
+		name        string
+		t           tier.Tier
+		rpm         int
+		expectLimit bool
 	}{
 		{"Community_60RPM", tier.TierCommunity, 60, true},
 		{"Developer_300RPM", tier.TierDeveloper, 300, true},

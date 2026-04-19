@@ -27,16 +27,16 @@ import (
 // Metric name constants following Prometheus naming conventions.
 // All metrics are prefixed with "aegisgate_" to avoid collision.
 const (
-	MetricHTTPRequestsTotal        = "aegisgate_http_requests_total"
-	MetricHTTPRequestDuration      = "aegisgate_http_request_duration_seconds"
-	MetricActiveConnections        = "aegisgate_active_connections"
-	MetricRateLimitHits            = "aegisgate_rate_limit_hits_total"
-	MetricSecurityScansTotal       = "aegisgate_security_scans_total"
-	MetricMCPConnections           = "aegisgate_mcp_connections"
-	MetricMCPRequestsTotal         = "aegisgate_mcp_requests_total"
-	MetricTierRequests             = "aegisgate_tier_requests_total"
-	MetricAuditEventsTotal         = "aegisgate_audit_events_total"
-	MetricBuildInfo                = "aegisgate_build_info"
+	MetricHTTPRequestsTotal   = "aegisgate_http_requests_total"
+	MetricHTTPRequestDuration = "aegisgate_http_request_duration_seconds"
+	MetricActiveConnections   = "aegisgate_active_connections"
+	MetricRateLimitHits       = "aegisgate_rate_limit_hits_total"
+	MetricSecurityScansTotal  = "aegisgate_security_scans_total"
+	MetricMCPConnections      = "aegisgate_mcp_connections"
+	MetricMCPRequestsTotal    = "aegisgate_mcp_requests_total"
+	MetricTierRequests        = "aegisgate_tier_requests_total"
+	MetricAuditEventsTotal    = "aegisgate_audit_events_total"
+	MetricBuildInfo           = "aegisgate_build_info"
 )
 
 var (

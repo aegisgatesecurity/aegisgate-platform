@@ -21,17 +21,17 @@ type Registry struct {
 
 // Tool represents a registered tool
 type Tool struct {
-	Name          string                 `json:"name"`
-	Description   string                 `json:"description"`
-	Category      string                 `json:"category"`
-	Parameters    []Parameter            `json:"parameters"`
-	Handler       ToolHandler            `json:"-"`
-	Enabled       bool                   `json:"enabled"`
-	RiskLevel     int                    `json:"risk_level"` // 0-100
-	RateLimit     *RateLimitConfig       `json:"rate_limit,omitempty"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt     time.Time              `json:"created_at"`
-	UpdatedAt     time.Time              `json:"updated_at"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Category    string                 `json:"category"`
+	Parameters  []Parameter            `json:"parameters"`
+	Handler     ToolHandler            `json:"-"`
+	Enabled     bool                   `json:"enabled"`
+	RiskLevel   int                    `json:"risk_level"` // 0-100
+	RateLimit   *RateLimitConfig       `json:"rate_limit,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
 }
 
 // Parameter defines a tool parameter
@@ -61,10 +61,10 @@ type ToolHandler interface {
 
 // DiscoveryResult represents tool search results
 type DiscoveryResult struct {
-	Tools       []*Tool
-	TotalCount  int
-	Query       string
-	Category    string
+	Tools      []*Tool
+	TotalCount int
+	Query      string
+	Category   string
 }
 
 // NewRegistry creates a new tool registry
@@ -313,7 +313,7 @@ func (r *Registry) ListCategories() map[string]int {
 func (r *Registry) GetStats() *Stats {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	enabled := 0
 	totalRisk := 0
 	for _, tool := range r.tools {

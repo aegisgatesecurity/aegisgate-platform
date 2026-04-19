@@ -6,9 +6,9 @@ func TestInvalidTierDefaults(t *testing.T) {
 	invalid := Tier(255)
 
 	tests := []struct {
-		name     string
-		got      interface{}
-		want     interface{}
+		name string
+		got  interface{}
+		want interface{}
 	}{
 		{"RateLimitProxy default", invalid.RateLimitProxy(), 120},
 		{"RateLimitMCP default", invalid.RateLimitMCP(), 60},

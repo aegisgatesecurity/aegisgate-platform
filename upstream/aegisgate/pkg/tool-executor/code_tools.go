@@ -89,7 +89,7 @@ func (e *GoExecutor) Execute(ctx context.Context, params map[string]interface{})
 		return nil, errors.New("execution timeout")
 	case err := <-done:
 		result := map[string]interface{}{
-			"language": "go",
+			"language":  "go",
 			"exit_code": -1,
 		}
 
@@ -196,7 +196,7 @@ func (e *PythonExecutor) Execute(ctx context.Context, params map[string]interfac
 		return nil, errors.New("execution timeout")
 	case err := <-done:
 		result := map[string]interface{}{
-			"language": "python",
+			"language":  "python",
 			"exit_code": -1,
 		}
 
@@ -304,7 +304,7 @@ func (e *JavaScriptExecutor) Execute(ctx context.Context, params map[string]inte
 	}
 
 	result := map[string]interface{}{
-		"language": "javascript",
+		"language":  "javascript",
 		"exit_code": -1,
 	}
 
@@ -413,19 +413,19 @@ func (e *CodeSearchExecutor) Execute(ctx context.Context, params map[string]inte
 		parts := strings.SplitN(line, ":", 3)
 		if len(parts) >= 3 {
 			results = append(results, map[string]string{
-				"file":   parts[0],
-				"line":   parts[1],
-				"match":  parts[2],
+				"file":  parts[0],
+				"line":  parts[1],
+				"match": parts[2],
 			})
 		}
 	}
 
 	return map[string]interface{}{
-		"pattern":    pattern,
-		"path":       path,
-		"results":    results,
-		"count":      len(results),
-		"exit_code":  0,
+		"pattern":   pattern,
+		"path":      path,
+		"results":   results,
+		"count":     len(results),
+		"exit_code": 0,
 	}, nil
 }
 

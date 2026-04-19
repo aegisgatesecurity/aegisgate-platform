@@ -88,7 +88,7 @@ func NewLicenseValidator(config *LicenseConfig) *LicenseValidator {
 		config = DefaultLicenseConfig()
 	}
 	return &LicenseValidator{
-		config: config,
+		config:     config,
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 		cache:      make(map[string]cachedValidation),
 	}
@@ -104,14 +104,14 @@ func (v *LicenseValidator) Validate(ctx context.Context) (*ValidationResult, err
 
 	if v.config.LicenseKey == "" {
 		return &ValidationResult{
-			Valid:      true,
-			Status:     "community",
-			Message:    "No license key - using Community tier",
-			Tier:       core.TierCommunity,
+			Valid:       true,
+			Status:      "community",
+			Message:     "No license key - using Community tier",
+			Tier:        core.TierCommunity,
 			ValidatedAt: time.Now(),
-			RateLimit:  60,
-			MaxServers: 1,
-			MaxUsers:   3,
+			RateLimit:   60,
+			MaxServers:  1,
+			MaxUsers:    3,
 		}, nil
 	}
 
@@ -230,8 +230,8 @@ func LicenseMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.URL.Path, "/health") ||
-			   strings.HasPrefix(r.URL.Path, "/version") ||
-			   strings.HasPrefix(r.URL.Path, "/stats") {
+				strings.HasPrefix(r.URL.Path, "/version") ||
+				strings.HasPrefix(r.URL.Path, "/stats") {
 				next.ServeHTTP(w, r)
 				return
 			}

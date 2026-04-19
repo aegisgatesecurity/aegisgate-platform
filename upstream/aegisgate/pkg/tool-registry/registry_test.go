@@ -8,7 +8,7 @@ import (
 )
 
 type mockHandler struct {
-	execFunc func(context.Context, map[string]interface{}) (interface{}, error)
+	execFunc     func(context.Context, map[string]interface{}) (interface{}, error)
 	validateFunc func(map[string]interface{}) error
 }
 

@@ -19,15 +19,15 @@ type mockFramework struct {
 	enabled     bool
 }
 
-func (m *mockFramework) GetFrameworkID() string          { return m.id }
-func (m *mockFramework) GetName() string                 { return m.name }
-func (m *mockFramework) GetVersion() string              { return m.version }
-func (m *mockFramework) GetDescription() string          { return m.description }
-func (m *mockFramework) IsEnabled() bool                 { return m.enabled }
-func (m *mockFramework) Enable()                         { m.enabled = true }
-func (m *mockFramework) Disable()                        { m.enabled = false }
-func (m *mockFramework) GetPatternCount() int            { return 0 }
-func (m *mockFramework) GetSeverityLevels() []common.Severity { return nil }
+func (m *mockFramework) GetFrameworkID() string                        { return m.id }
+func (m *mockFramework) GetName() string                               { return m.name }
+func (m *mockFramework) GetVersion() string                            { return m.version }
+func (m *mockFramework) GetDescription() string                        { return m.description }
+func (m *mockFramework) IsEnabled() bool                               { return m.enabled }
+func (m *mockFramework) Enable()                                       { m.enabled = true }
+func (m *mockFramework) Disable()                                      { m.enabled = false }
+func (m *mockFramework) GetPatternCount() int                          { return 0 }
+func (m *mockFramework) GetSeverityLevels() []common.Severity          { return nil }
 func (m *mockFramework) Configure(config map[string]interface{}) error { return nil }
 func (m *mockFramework) Check(ctx context.Context, input common.CheckInput) (*common.CheckResult, error) {
 	return &common.CheckResult{Framework: m.id, Passed: true}, nil

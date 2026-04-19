@@ -24,19 +24,19 @@ import (
 type contextKey string
 
 const (
-	ContextKeyUserID    contextKey = "auth_user_id"
-	ContextKeyTier      contextKey = "auth_tier"
-	ContextKeyAuthType  contextKey = "auth_type"
-	AuthTypeJWT         string     = "jwt"
-	AuthTypeAPIToken    string     = "api_token"
+	ContextKeyUserID   contextKey = "auth_user_id"
+	ContextKeyTier     contextKey = "auth_tier"
+	ContextKeyAuthType contextKey = "auth_type"
+	AuthTypeJWT        string     = "jwt"
+	AuthTypeAPIToken   string     = "api_token"
 )
 
 // Config holds authentication configuration
 type Config struct {
-	JWTSigningKey     []byte
-	APIAuthToken      string
-	TokenExpiryHours  int
-	RequireAuth       bool
+	JWTSigningKey    []byte
+	APIAuthToken     string
+	TokenExpiryHours int
+	RequireAuth      bool
 }
 
 // DefaultConfig returns development-safe config (RequireAuth=false)
@@ -52,7 +52,7 @@ func DefaultConfig() *Config {
 // ConfigFromEnv creates config from environment variables
 func ConfigFromEnv() *Config {
 	cfg := DefaultConfig()
-	
+
 	if key := os.Getenv("JWT_SIGNING_KEY"); key != "" {
 		cfg.JWTSigningKey = []byte(key)
 	}
@@ -62,7 +62,7 @@ func ConfigFromEnv() *Config {
 	if os.Getenv("REQUIRE_AUTH") == "true" {
 		cfg.RequireAuth = true
 	}
-	
+
 	return cfg
 }
 
@@ -158,7 +158,7 @@ func (m *Middleware) handleJWT(w http.ResponseWriter, r *http.Request, tokenStri
 func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, token string, next http.HandlerFunc) {
 	// Use constant-time comparison to prevent timing attacks
 	expectedToken := m.config.APIAuthToken
-	
+
 	// Try base64 decoding in case token is base64 encoded
 	decoded, err := base64.StdEncoding.DecodeString(token)
 	if err == nil {

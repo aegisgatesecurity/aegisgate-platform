@@ -3,9 +3,9 @@ package tieradapter_test
 import (
 	"testing"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/core"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tieradapter"
+	"github.com/aegisgatesecurity/aegisgate/pkg/core"
 	aglicense "github.com/aegisguardsecurity/aegisguard/pkg/license"
 )
 

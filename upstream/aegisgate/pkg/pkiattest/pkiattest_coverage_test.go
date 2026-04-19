@@ -396,10 +396,10 @@ func TestOCSPManagerAddOCSPResponse(t *testing.T) {
 	om := NewOCSPManager(5*time.Minute, 5*time.Second)
 	resp := &OCSPResponse{
 		CertificateID: "test-cert-123",
-		Status:         OCSPStatusGood,
-		ProducedAt:     time.Now(),
-		ThisUpdate:     time.Now(),
-		NextUpdate:     time.Now().Add(5 * time.Minute),
+		Status:        OCSPStatusGood,
+		ProducedAt:    time.Now(),
+		ThisUpdate:    time.Now(),
+		NextUpdate:    time.Now().Add(5 * time.Minute),
 	}
 
 	err := om.AddOCSPResponse("test-cert-123", resp)
@@ -423,10 +423,10 @@ func TestOCSPManagerGetOCSPResponse(t *testing.T) {
 	// So we need NextUpdate - 5min > Now(), meaning NextUpdate should be > 5min from now
 	resp := &OCSPResponse{
 		CertificateID: "cert-1",
-		Status:         OCSPStatusGood,
-		ProducedAt:     time.Now(),
-		ThisUpdate:     time.Now(),
-		NextUpdate:     time.Now().Add(10 * time.Minute), // 10min to avoid stale check with 5min cacheTTL
+		Status:        OCSPStatusGood,
+		ProducedAt:    time.Now(),
+		ThisUpdate:    time.Now(),
+		NextUpdate:    time.Now().Add(10 * time.Minute), // 10min to avoid stale check with 5min cacheTTL
 	}
 	om.AddOCSPResponse("cert-1", resp)
 
@@ -451,10 +451,10 @@ func TestOCSPManagerGetOCSPResponseExpired(t *testing.T) {
 	om := NewOCSPManager(5*time.Minute, 5*time.Second)
 	resp := &OCSPResponse{
 		CertificateID: "expired-cert",
-		Status:         OCSPStatusGood,
-		ProducedAt:     time.Now().Add(-10 * time.Minute),
-		ThisUpdate:     time.Now().Add(-10 * time.Minute),
-		NextUpdate:     time.Now().Add(-5 * time.Minute),
+		Status:        OCSPStatusGood,
+		ProducedAt:    time.Now().Add(-10 * time.Minute),
+		ThisUpdate:    time.Now().Add(-10 * time.Minute),
+		NextUpdate:    time.Now().Add(-5 * time.Minute),
 	}
 	om.AddOCSPResponse("expired-cert", resp)
 
@@ -671,7 +671,7 @@ func TestSignatureVerificationNoSignature(t *testing.T) {
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
 		Raw:          []byte{},
-		Signature:     []byte{},
+		Signature:    []byte{},
 	}
 
 	_, err := sv.VerifyCertificateSignature(cert)

@@ -364,7 +364,7 @@ func TestLoggerQueryAllFields(t *testing.T) {
 	logger := NewLogger()
 
 	now := time.Now()
-	
+
 	logger.LogAction(context.Background(), &Action{
 		Type:      "tool_call",
 		SessionID: "sess-1",
@@ -380,12 +380,12 @@ func TestLoggerQueryAllFields(t *testing.T) {
 	riskAbove := 70
 
 	results := logger.Query(&QueryFilter{
-		SessionID:  "sess-1",
-		AgentID:    "agent-1",
-		ToolName:   "file_read",
-		FromTime:   &fromTime,
-		ToTime:     &toTime,
-		RiskAbove:  riskAbove,
+		SessionID: "sess-1",
+		AgentID:   "agent-1",
+		ToolName:  "file_read",
+		FromTime:  &fromTime,
+		ToTime:    &toTime,
+		RiskAbove: riskAbove,
 	})
 
 	if len(results) != 1 {

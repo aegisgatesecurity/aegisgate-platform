@@ -267,9 +267,9 @@ func (s *AegisGuardMCPScanner) Stats() (*StatsResponse, error) {
 		if err := s.Initialize(); err != nil {
 			s.logger.Warn("failed to initialize scanner for stats", "error", err)
 			return &StatsResponse{
-				TotalRequests:  0,
+				TotalRequests:   0,
 				SuccessfulScans: 0,
-				FailedScans:    0,
+				FailedScans:     0,
 			}, nil
 		}
 	}
@@ -303,17 +303,17 @@ func (s *AegisGuardMCPScanner) Stats() (*StatsResponse, error) {
 	if toolsList, ok := resp.Result.(map[string]interface{}); ok {
 		if tools, ok := toolsList["tools"].([]interface{}); ok {
 			return &StatsResponse{
-				TotalRequests:  int64(len(tools)),
+				TotalRequests:   int64(len(tools)),
 				SuccessfulScans: 0,
-				FailedScans:    0,
+				FailedScans:     0,
 			}, nil
 		}
 	}
 
 	return &StatsResponse{
-		TotalRequests:  0,
+		TotalRequests:   0,
 		SuccessfulScans: 0,
-		FailedScans:    0,
+		FailedScans:     0,
 	}, nil
 }
 

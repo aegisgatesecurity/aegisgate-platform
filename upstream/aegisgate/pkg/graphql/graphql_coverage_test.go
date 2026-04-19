@@ -59,7 +59,7 @@ func TestNewServerWithConfig(t *testing.T) {
 	cfg := &ServerConfig{
 		Enabled:         false,
 		ListenAddress:   "0.0.0.0",
-		Port:           5000,
+		Port:            5000,
 		Playground:      false,
 		DepthLimit:      20,
 		ComplexityLimit: 200,
@@ -97,7 +97,7 @@ func TestTimeMarshalJSON(t *testing.T) {
 func TestTimeUnmarshalJSON(t *testing.T) {
 	now := time.Now()
 	jsonData, _ := now.MarshalJSON()
-	
+
 	var testTime Time
 	err := testTime.UnmarshalJSON(jsonData)
 	if err != nil {
@@ -466,7 +466,7 @@ func TestUser(t *testing.T) {
 		ID:        "user-1",
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Role:       Role("USER"),
+		Role:      Role("USER"),
 		Enabled:   true,
 		CreatedAt: Time(now),
 	}
@@ -509,8 +509,8 @@ func TestProxyStats(t *testing.T) {
 		RequestsTotal:     1000,
 		RequestsBlocked:   50,
 		RequestsAllowed:   950,
-		BytesIn:          10000,
-		BytesOut:         50000,
+		BytesIn:           10000,
+		BytesOut:          50000,
 		ActiveConnections: 10,
 		AvgLatencyMs:      25.5,
 	}
@@ -522,11 +522,11 @@ func TestProxyStats(t *testing.T) {
 
 func TestViolation(t *testing.T) {
 	violation := Violation{
-		ID:        "violation-1",
-		Type:      ViolationType("RATE_LIMIT"),
-		Severity:  Severity("HIGH"),
-		Message:   "Rate limit exceeded",
-		Blocked:   true,
+		ID:       "violation-1",
+		Type:     ViolationType("RATE_LIMIT"),
+		Severity: Severity("HIGH"),
+		Message:  "Rate limit exceeded",
+		Blocked:  true,
 	}
 
 	if violation.ID != "violation-1" {
@@ -619,12 +619,12 @@ func TestMTLSConfig(t *testing.T) {
 
 func TestModule(t *testing.T) {
 	module := Module{
-		ID:          "module-1",
-		Name:        "Test Module",
-		Version:     "1.0.0",
-		Category:    "Security",
-		Tier:        ModuleTier("PREMIUM"),
-		Status:      ModuleStatus("ACTIVE"),
+		ID:       "module-1",
+		Name:     "Test Module",
+		Version:  "1.0.0",
+		Category: "Security",
+		Tier:     ModuleTier("PREMIUM"),
+		Status:   ModuleStatus("ACTIVE"),
 	}
 
 	if module.ID != "module-1" {
@@ -768,8 +768,8 @@ func TestWebhookStats(t *testing.T) {
 func TestAuthConfig(t *testing.T) {
 	config := AuthConfig{
 		Provider:           "LOCAL",
-		SessionTimeout:      3600,
-		MaxSessionsPerUser:  5,
+		SessionTimeout:     3600,
+		MaxSessionsPerUser: 5,
 		RequireMFA:         true,
 		MFAMethods:         []string{"TOTP", "SMS"},
 		LoginAttempts:      5,
@@ -1142,7 +1142,7 @@ func TestRegistryStatus(t *testing.T) {
 		ActiveModules:  8,
 		HealthyModules: 7,
 		ModuleStatuses: map[string]string{
-			"auth":      "active",
+			"auth":       "active",
 			"compliance": "active",
 		},
 	}

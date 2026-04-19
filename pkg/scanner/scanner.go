@@ -118,16 +118,16 @@ func NewScanner(config *AegisGuardMCPConfig) Scanner {
 
 // CallToolResult represents the result of a tool execution
 type CallToolResult struct {
-	Content     []ContentBlock `json:"content"`
-	IsError     bool           `json:"isError,omitempty"`
-	DurationMs  int64          `json:"duration_ms,omitempty"`
+	Content    []ContentBlock `json:"content"`
+	IsError    bool           `json:"isError,omitempty"`
+	DurationMs int64          `json:"duration_ms,omitempty"`
 }
 
 // ContentBlock represents a content block in MCP response
 type ContentBlock struct {
-	Type  string `json:"type"`
-	Text  string `json:"text,omitempty"`
-	Data  string `json:"data,omitempty"`
+	Type string `json:"type"`
+	Text string `json:"text,omitempty"`
+	Data string `json:"data,omitempty"`
 }
 
 // JSONRPCResponse represents a JSON-RPC 2.0 response

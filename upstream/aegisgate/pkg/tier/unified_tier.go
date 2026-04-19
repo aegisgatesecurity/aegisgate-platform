@@ -15,7 +15,7 @@ const (
 	TierCommunity Tier = iota
 	// TierDeveloper represents the developer tier
 	TierDeveloper
-	// TierProfessional represents the professional tier  
+	// TierProfessional represents the professional tier
 	TierProfessional
 	// TierEnterprise represents the enterprise tier
 	TierEnterprise
@@ -78,41 +78,41 @@ type Features struct {
 	AuditLogging      bool
 	Certificate       bool
 	// RBAC Features
-	RBAC              bool
-	RBACGroups        bool
-	RBACPermissions   bool
+	RBAC            bool
+	RBACGroups      bool
+	RBACPermissions bool
 	// Tool Features
-	ToolRegistry      bool
-	ToolExecution     bool
+	ToolRegistry       bool
+	ToolExecution      bool
 	ToolExecutionLimit int
 	// Network Features
-	Proxy             bool
-	Websocket         bool
+	Proxy     bool
+	Websocket bool
 	// Security Features
-	SecurityScanning  bool
+	SecurityScanning   bool
 	ThreatIntelligence bool
-	MachineLearning   bool
+	MachineLearning    bool
 	// Reporting Features
-	Reporting         bool
-	SIEMIntegration   bool
+	Reporting       bool
+	SIEMIntegration bool
 	// Admin Features
-	AdminPanel        bool
-	AdminAPI          bool
+	AdminPanel bool
+	AdminAPI   bool
 	// Migration Features
-	Migration         bool
+	Migration bool
 }
 
 // GetFeatures returns the features available for a given tier
 func GetFeatures(tier Tier) Features {
 	var f Features
-	
+
 	// Base features (all tiers)
 	f.LicenseValidation = true
 	f.Compliance = true
 	f.Metrics = true
 	f.AuditLogging = true
 	f.Certificate = true
-	
+
 	switch tier {
 	case TierCommunity:
 		// Community tier features
@@ -178,14 +178,14 @@ func GetFeatures(tier Tier) Features {
 		f.AdminPanel = true
 		f.AdminAPI = true
 	}
-	
+
 	return f
 }
 
 // HasFeature checks if a tier has a specific feature
 func HasFeature(tier Tier, feature string) bool {
 	features := GetFeatures(tier)
-	
+
 	switch feature {
 	case "RBAC":
 		return features.RBAC
@@ -225,7 +225,7 @@ func HasFeature(tier Tier, feature string) bool {
 // TierLimit returns the limit for a feature in a tier
 func TierLimit(tier Tier, feature string) int {
 	features := GetFeatures(tier)
-	
+
 	switch feature {
 	case "ToolExecutionLimit":
 		return features.ToolExecutionLimit

@@ -141,12 +141,12 @@ func TestExecutorInfo(t *testing.T) {
 
 // testExecutor is a test implementation of ToolExecutor
 type testExecutor struct {
-	name         string
-	riskLevel    int
+	name          string
+	riskLevel     int
 	sleepDuration time.Duration
-	validateErr  bool
-	executeErr  bool
-	result      interface{}
+	validateErr   bool
+	executeErr    bool
+	result        interface{}
 }
 
 func (e *testExecutor) Name() string { return e.name }

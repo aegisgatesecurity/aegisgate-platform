@@ -89,7 +89,7 @@ func (m *Manager) Execute(ctx context.Context, req *ExecutionRequest) *Execution
 	startTime := time.Now()
 
 	result := &ExecutionResult{
-		RequestID:  req.RequestID,
+		RequestID: req.RequestID,
 		ToolName:  req.ToolName,
 		Timestamp: startTime,
 	}

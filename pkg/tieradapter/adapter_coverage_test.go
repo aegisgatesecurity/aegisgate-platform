@@ -13,8 +13,8 @@ package tieradapter
 import (
 	"testing"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/core"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate/pkg/core"
 	aglicense "github.com/aegisguardsecurity/aegisguard/pkg/license"
 )
 
@@ -22,7 +22,7 @@ import (
 func TestPlatformFeatureToAegisGate_KnownFeatures(t *testing.T) {
 	tests := []struct {
 		feature tier.Feature
-		wantOK bool
+		wantOK  bool
 	}{
 		{tier.FeatureAIProxy, true},
 		{tier.FeatureOpenAI, true},
@@ -52,7 +52,7 @@ func TestPlatformFeatureToAegisGate_UnknownFeature(t *testing.T) {
 func TestPlatformFeatureToAegisGuard_KnownFeatures(t *testing.T) {
 	tests := []struct {
 		feature tier.Feature
-		wantOK bool
+		wantOK  bool
 	}{
 		{tier.FeatureMCPSessionIsolation, true},
 		{tier.FeatureAuditLogging, true},
