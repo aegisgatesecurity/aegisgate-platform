@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -421,5 +419,187 @@ func TestContextExtraction(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("Expected OK, got %d", rec.Code)
+	}
+}
+
+// ============================================================================
+// GetUserID, GetTier, GetAuthType — direct function tests
+// ============================================================================
+
+func TestGetUserID(t *testing.T) {
+	t.Run("value present", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), ContextKeyUserID, "user-42")
+		if got := GetUserID(ctx); got != "user-42" {
+			t.Errorf("GetUserID = %q, want %q", got, "user-42")
+		}
+	})
+	t.Run("value absent", func(t *testing.T) {
+		if got := GetUserID(context.Background()); got != "" {
+			t.Errorf("GetUserID with empty ctx = %q, want empty", got)
+		}
+	})
+}
+
+func TestGetTier(t *testing.T) {
+	t.Run("value present", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), ContextKeyTier, "professional")
+		if got := GetTier(ctx); got != "professional" {
+			t.Errorf("GetTier = %q, want %q", got, "professional")
+		}
+	})
+	t.Run("value absent returns community default", func(t *testing.T) {
+		if got := GetTier(context.Background()); got != "community" {
+			t.Errorf("GetTier with empty ctx = %q, want %q", got, "community")
+		}
+	})
+}
+
+func TestGetAuthType(t *testing.T) {
+	t.Run("value present", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), ContextKeyAuthType, "jwt")
+		if got := GetAuthType(ctx); got != "jwt" {
+			t.Errorf("GetAuthType = %q, want %q", got, "jwt")
+		}
+	})
+	t.Run("value absent", func(t *testing.T) {
+		if got := GetAuthType(context.Background()); got != "" {
+			t.Errorf("GetAuthType with empty ctx = %q, want empty", got)
+		}
+	})
+}
+
+// ============================================================================
+// ReadOnly — write-method rejection
+// ============================================================================
+
+func TestReadOnly_WriteMethodsBlocked(t *testing.T) {
+	cfg := DefaultConfig()
+	m := NewMiddleware(cfg)
+	handler := m.ReadOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	writeMethods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+	for _, method := range writeMethods {
+		t.Run(method, func(t *testing.T) {
+			req := httptest.NewRequest(method, "/test", nil)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			if rec.Code != http.StatusUnauthorized {
+				t.Errorf("ReadOnly with %s: expected 401, got %d", method, rec.Code)
+			}
+		})
+	}
+}
+
+func TestReadOnly_ReadMethodsAllowed(t *testing.T) {
+	cfg := DefaultConfig()
+	m := NewMiddleware(cfg)
+	handler := m.ReadOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	readMethods := []string{http.MethodGet, http.MethodHead, http.MethodOptions}
+	for _, method := range readMethods {
+		t.Run(method, func(t *testing.T) {
+			req := httptest.NewRequest(method, "/test", nil)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			if rec.Code != http.StatusOK {
+				t.Errorf("ReadOnly with %s: expected 200, got %d", method, rec.Code)
+			}
+		})
+	}
+}
+
+// ============================================================================
+// AdminOnly — authenticated community tier rejected
+// ============================================================================
+
+func TestAdminOnly_CommunityTierForbidden(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Generate a community-tier JWT
+	tokenString, err := m.GenerateToken("community-user", "community")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/admin", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("AdminOnly with community tier: expected 403, got %d", rec.Code)
+	}
+}
+
+func TestAdminOnly_ProfessionalTierAllowed(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("pro-user", "professional")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/admin", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("AdminOnly with professional tier: expected 200, got %d", rec.Code)
+	}
+}
+
+func TestAdminOnly_EnterpriseTierAllowed(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("ent-user", "enterprise")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/admin", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("AdminOnly with enterprise tier: expected 200, got %d", rec.Code)
 	}
 }

@@ -8,14 +8,28 @@
 ## 🎯 Executive Summary
 
 **v1.3.0 Status:** PRODUCTION READY ✅  
-**CI/CD Status:** PARTIAL - Known failures documented ✅  
-**Security Posture:** COMPLETE - All 6 endpoints protected ✅
+**v1.3.0 Release Tag:** Created and published to GitHub ✅  
+**CI/CD Status:** BLOCKED - GitHub Actions failures preventing Docker publishing to GHCR ❌  
+**Security Posture:** COMPLETE - All 6 endpoints protected ✅  
+**Docker Publishing:** BLOCKED by CI workflow failures ❌
 
-This document tracks CI/CD pipeline debt for the v1.3.0 release. The platform code is **functionally complete** and **production-ready**, but has known CI/CD pipeline gaps that should be addressed in v1.3.1.
+This document tracks CI/CD pipeline debt for the v1.3.0/v1.3.1 release. The platform code is **functionally complete** and **production-ready**, but has CI/CD pipeline failures that block Docker image publishing to GHCR.
+
+### Current CI Failure Status (as of April 19, 2026 - v1.3.1 Planning)
+- **gofmt violations:** 50+ files require formatting (including test files)
+- **Illegal rune literals:** 8 occurrences in integration_test.go files (4 in each of aegisgate and aegisgate-source)
+- **Build Status:** `go build` succeeds ✅ but format checks fail ❌
+- **Cover Status:** Below 80% threshold in critical packages (pkg/auth, pkg/scanner)
+- **Secret Scanning:** Test keys in middleware_test.go may trigger false positives
 
 ---
 
-## 🔴 Active CI Failures (v1.3.0)
+## 🔴 Active CI Failures (v1.3.1 - Current Status)
+
+### Status Alert (April 19, 2026)
+**GitHub Actions Workflows BLOCKED** - Docker package publishing to GHCR cannot proceed until CI failures are resolved.
+
+### Workflow 1: CI (`.github/workflows/ci.yml`)
 
 ### Workflow 1: CI (`.github/workflows/ci.yml`)
 **Status:** ❌ FAILURE  

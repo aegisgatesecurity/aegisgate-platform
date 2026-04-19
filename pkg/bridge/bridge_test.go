@@ -46,6 +46,19 @@ func TestNewPlatformBridgeWithConfig(t *testing.T) {
 	}
 }
 
+func TestNewPlatformBridgeWithConfig_NilConfig(t *testing.T) {
+	// Test with nil config - should use defaults
+	pb, err := bridge.NewPlatformBridgeWithConfig(nil)
+	if err != nil {
+		t.Fatalf("NewPlatformBridgeWithConfig(nil) failed: %v", err)
+	}
+	defer pb.Close()
+
+	if !pb.IsEnabled() {
+		t.Error("expected bridge to be enabled with default config")
+	}
+}
+
 func TestPlatformBridgeRouteWhenDisabled(t *testing.T) {
 	cfg := bridge.DefaultConfig()
 	cfg.Enabled = false
@@ -129,6 +142,24 @@ func TestPlatformBridgeIsLLMCall(t *testing.T) {
 			args:     map[string]interface{}{"prompt": "explain this"},
 			want:     true,
 		},
+		{
+			name:     "anthropic_tool",
+			toolName: "anthropic",
+			args:     map[string]interface{}{"content": "hello"},
+			want:     true,
+		},
+		{
+			name:     "gemini_tool",
+			toolName: "gemini",
+			args:     map[string]interface{}{"messages": []string{"hello"}},
+			want:     true,
+		},
+		{
+			name:     "command_exec_tool",
+			toolName: "command",
+			args:     map[string]interface{}{"cmd": "ls -la"},
+			want:     false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -157,6 +188,15 @@ func TestUpstreamTypeCompatibility(t *testing.T) {
 	if bridge.SeverityCritical != guardbridge.SeverityCritical {
 		t.Error("SeverityCritical mismatch")
 	}
+	if bridge.SeverityLow != guardbridge.SeverityLow {
+		t.Error("SeverityLow mismatch")
+	}
+	if bridge.SeverityMedium != guardbridge.SeverityMedium {
+		t.Error("SeverityMedium mismatch")
+	}
+	if bridge.SeverityHigh != guardbridge.SeverityHigh {
+		t.Error("SeverityHigh mismatch")
+	}
 }
 
 func TestPlatformBridgeGetStats(t *testing.T) {
@@ -182,5 +222,108 @@ func TestPlatformBridgeGatewayAccess(t *testing.T) {
 	gw := pb.Gateway()
 	if gw == nil {
 		t.Error("expected non-nil gateway")
+	}
+}
+
+func TestPlatformBridgeClose(t *testing.T) {
+	pb, err := bridge.NewPlatformBridge("http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewPlatformBridge failed: %v", err)
+	}
+
+	// First close should succeed
+	if err := pb.Close(); err != nil {
+		t.Errorf("first Close() failed: %v", err)
+	}
+
+	// Second close on already-closed bridge should not panic
+	if err := pb.Close(); err != nil {
+		// May error if already closed, which is acceptable
+		t.Logf("second Close() returned: %v (acceptable)", err)
+	}
+}
+
+func TestDefaultConfig(t *testing.T) {
+	cfg := bridge.DefaultConfig()
+	if cfg == nil {
+		t.Fatal("DefaultConfig returned nil")
+	}
+
+	// Verify default values
+	if cfg.Enabled != true {
+		t.Error("expected Enabled = true by default")
+	}
+	if cfg.Timeout <= 0 {
+		t.Error("expected positive Timeout")
+	}
+	if cfg.MaxRetries < 0 {
+		t.Error("expected non-negative MaxRetries")
+	}
+}
+
+func TestSeverityConstants(t *testing.T) {
+	// Test all severity levels are properly exported
+	_ = bridge.SeverityInfo
+	_ = bridge.SeverityLow
+	_ = bridge.SeverityMedium
+	_ = bridge.SeverityHigh
+	_ = bridge.SeverityCritical
+}
+
+func TestBridgeWithDifferentURLSchemes(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+	}{
+		{"http", "http://localhost:8080"},
+		{"https", "https://localhost:8443"},
+		{"with_path", "http://localhost:8080/proxy"},
+		{"with_auth", "http://user:pass@localhost:8080"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pb, err := bridge.NewPlatformBridge(tt.url)
+			if err != nil {
+				t.Fatalf("NewPlatformBridge(%q) failed: %v", tt.url, err)
+			}
+			defer pb.Close()
+
+			if !pb.IsEnabled() {
+				t.Error("expected bridge to be enabled")
+			}
+		})
+	}
+}
+
+func TestBridgeConcurrentOperations(t *testing.T) {
+	pb, err := bridge.NewPlatformBridge("http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewPlatformBridge failed: %v", err)
+	}
+	defer pb.Close()
+
+	// Test concurrent enabled state reads/writes
+	done := make(chan bool, 10)
+	for i := 0; i < 5; i++ {
+		go func(id int) {
+			for j := 0; j < 10; j++ {
+				pb.SetEnabled(id%2 == 0)
+				_ = pb.IsEnabled()
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines
+	for i := 0; i < 5; i++ {
+		<-done
+	}
+
+	// Verify final state is consistent
+	finalState := pb.IsEnabled()
+	pb.SetEnabled(!finalState)
+	if pb.IsEnabled() == finalState {
+		t.Error("bridge state toggle failed")
 	}
 }
