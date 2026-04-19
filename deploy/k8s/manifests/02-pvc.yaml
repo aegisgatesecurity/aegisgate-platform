@@ -1,0 +1,19 @@
+# =========================================================================
+# AegisGate Security Platform — Persistent Volume Claim
+# =========================================================================
+# Stores audit logs, certificates, and persistent data in /data
+# Community tier: 1Gi is sufficient; scale up for Professional+
+# =========================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aegisgate-data
+  namespace: aegisgate
+  labels:
+    app.kubernetes.io/name: aegisgate-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

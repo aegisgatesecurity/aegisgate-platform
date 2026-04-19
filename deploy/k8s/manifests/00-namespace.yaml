@@ -1,0 +1,13 @@
+# =========================================================================
+# AegisGate Security Platform — Kubernetes Namespace
+# =========================================================================
+# Apply: kubectl apply -f deploy/k8s/manifests/
+# ============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aegisgate
+  labels:
+    app.kubernetes.io/name: aegisgate-platform
+    app.kubernetes.io/managed-by: kubectl

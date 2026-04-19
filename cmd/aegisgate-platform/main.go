@@ -159,6 +159,9 @@ func main() {
 		EnablePromptInjectionDetection: tier.HasFeature(platformTier, tier.FeaturePromptInjection),
 		EnableContentAnalysis:          tier.HasFeature(platformTier, tier.FeatureTrafficPattern),
 		EnableBehavioralAnalysis:       tier.HasFeature(platformTier, tier.FeatureMLBehavioral),
+		OnRateLimited: func(client string) {
+			metrics.RecordRateLimitHit(metrics.ServiceProxy, client)
+		},
 	}
 
 	proxyServer := proxy.New(proxyOpts)

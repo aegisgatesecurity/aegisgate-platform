@@ -1,16 +1,30 @@
+# =========================================================================
+# AegisGate Security Platform — Docker Compose
+# =========================================================================
+# Quick start:  docker compose up
+# With Redis:   docker compose --profile redis up
+# Separate:     docker compose --profile separate up
+#
+# Ports: 8080 (proxy), 8081 (MCP), 8443 (dashboard+metrics)
+# Zero-config: all defaults embedded, no config file or env vars required
+# =========================================================================
+
 version: '3.8'
+
 services:
-  # Unified platform - runs proxy + MCP server + bridge + dashboard in one process
-  # Zero-config: all defaults embedded, no config file or env vars required
-  # Community tier: file-based persistence (no Redis needed)
+  # =========================================================================
+  # Unified platform — proxy + MCP server + bridge + dashboard in one process
+  # =========================================================================
   platform:
     build:
       context: .
       dockerfile: Dockerfile
+    image: aegisgate/platform:1.3.0
+    container_name: aegisgate-platform
     ports:
-      - "8080:8080"  # AegisGate proxy
-      - "8081:8081"  # AegisGuard MCP
-      - "8443:8443"  # Dashboard & API
+      - "8080:8080"  # AegisGate proxy (AI API gateway)
+      - "8081:8081"  # AegisGuard MCP server
+      - "8443:8443"  # Dashboard, API, and Prometheus metrics (/metrics)
     # Immutable container — only /data is writable
     read_only: true
     tmpfs:
@@ -29,24 +43,95 @@ services:
       retries: 3
       start_period: 10s
     command: ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp", "--tier=community"]
+    restart: unless-stopped
+    # Resource limits (align with K8s requests)
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
 
-  # Redis is NOT needed for Community tier (file-based persistence is the default).
-  # Enable for Developer+ tiers when you need distributed caching/shared state.
-  # Uncomment below to start Redis for higher tiers:
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis-data:/data
+  # =========================================================================
+  # Redis — Optional, for Developer+ tiers that need distributed state
+  # Enable: docker compose --profile redis up
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - redis
+    container_name: aegisgate-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
 
-  # Standalone AegisGuard for testing (not needed when using --embedded-mcp)
+  # =========================================================================
+  # Prometheus — Optional, for local metrics scraping
+  # Enable: docker compose --profile monitoring up
+  # =========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    profiles:
+      - monitoring
+    container_name: aegisgate-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    restart: unless-stopped
+    depends_on:
+      - platform
+
+  # =========================================================================
+  # Grafana — Optional, for dashboard visualization
+  # Enable: docker compose --profile monitoring up
+  # =========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    profiles:
+      - monitoring
+    container_name: aegisgate-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docs/grafana:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # =========================================================================
+  # Standalone AegisGuard — for testing (not needed with --embedded-mcp)
+  # =========================================================================
   aegisguard-standalone:
     build:
       context: ../aegisguard-source
       dockerfile: Dockerfile
     profiles:
       - separate
+    container_name: aegisguard-standalone
     ports:
       - "9081:8080"
     read_only: true
@@ -58,13 +143,16 @@ services:
       timeout: 5s
       retries: 3
 
-  # Standalone AegisGate for testing (not needed when using platform)
+  # =========================================================================
+  # Standalone AegisGate — for testing (not needed with platform binary)
+  # =========================================================================
   aegisgate-standalone:
     build:
       context: ../aegisgate-source
       dockerfile: Dockerfile
     profiles:
       - separate
+    container_name: aegisgate-standalone
     ports:
       - "9080:8080"
     read_only: true
@@ -81,5 +169,9 @@ services:
 volumes:
   aegisgate-data:
     driver: local
-  # redis-data:
-  #   driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

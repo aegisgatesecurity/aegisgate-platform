@@ -1,0 +1,27 @@
+# =========================================================================
+# AegisGate Security Platform — Prometheus Scrape Config
+# =========================================================================
+# Used by the monitoring stack: docker compose --profile monitoring up
+# =========================================================================
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: 'aegisgate-local'
+    replica: '1'
+
+scrape_configs:
+  - job_name: 'aegisgate-platform'
+    static_configs:
+      - targets: ['platform:8443']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+rule_files: []
+  # - "alerts.yml"
+
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
