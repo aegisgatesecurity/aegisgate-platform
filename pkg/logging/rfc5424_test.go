@@ -265,3 +265,12 @@ func TestSyslogFormatter_MapFunctions(t *testing.T) {
 		_ = f.mapEventToMsgID(event)
 	}
 }
+
+// Additional coverage tests for RFC5424
+func TestSyslogFormatter_Simple(t *testing.T) {
+	f := &SyslogFormatter{Facility: int(SyslogFacilityLocal0)}
+	if f.Facility != 16 {
+		t.Errorf("Expected facility 16, got %d", f.Facility)
+	}
+}
+
