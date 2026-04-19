@@ -45,3 +45,5 @@ replace github.com/aegisgatesecurity/aegisgate/pkg/grpc => ./pkg/grpc
 replace github.com/aegisgatesecurity/aegisgate/pkg/dashboard => ./pkg/dashboard
 
 replace github.com/aegisgatesecurity/aegisgate/pkg/crypto/enhanced => ./pkg/crypto/enhanced
+
+replace github.com/aegisgatesecurity/aegisgate/pkg/tls => ./pkg/tls
