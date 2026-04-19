@@ -33,6 +33,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
@@ -308,6 +309,11 @@ func main() {
 	// ============================================================
 	// Component 4: Admin Dashboard & API Server
 	// ============================================================
+	// Initialize authentication middleware from environment
+	authConfig := auth.ConfigFromEnv()
+	authMiddleware := auth.NewMiddleware(authConfig)
+	log.Printf("Auth middleware: require_auth=%v", authConfig.RequireAuth)
+
 	dashMux := http.NewServeMux()
 
 	// Metrics endpoint (Prometheus)
@@ -346,7 +352,7 @@ func main() {
 		}
 	})
 
-	dashMux.HandleFunc("/api/v1/scan", func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/scan", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -361,7 +367,7 @@ func main() {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"scan_id":"%s","compliant":%v}`, resp.ScanID, resp.IsCompliant)
-	})
+	}))
 
 	// Bridge status endpoint
 	dashMux.HandleFunc("/api/v1/bridge", func(w http.ResponseWriter, r *http.Request) {
@@ -432,7 +438,7 @@ func main() {
 	})
 
 	// Compliance export endpoint — tamper-evident audit export
-	dashMux.HandleFunc("/api/v1/compliance", func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/compliance", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if !persistenceMgr.IsEnabled() {
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -452,7 +458,7 @@ func main() {
 			return
 		}
 		w.Write(data)
-	})
+	}))
 
 	// Persistence stats endpoint
 	dashMux.HandleFunc("/api/v1/persistence", func(w http.ResponseWriter, r *http.Request) {

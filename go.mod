@@ -13,6 +13,7 @@ replace (
 )
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/aegisgatesecurity/aegisgate v0.0.0-00010101000000-000000000000
 	github.com/aegisguardsecurity/aegisguard v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.18.0
