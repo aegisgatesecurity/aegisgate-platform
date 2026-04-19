@@ -36,6 +36,8 @@ certs/
 ssl/
 tls/
 keys/
+!upstream/aegisgate/pkg/tls/certs/
+!upstream/aegisgate/pkg/tls/
 
 # =============================================================================
 # SESSION MEMORY AND ANCHOR FILES (LOCAL ONLY)

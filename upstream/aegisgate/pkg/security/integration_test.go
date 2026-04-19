@@ -65,7 +65,7 @@ func TestFullSecurityChain(t *testing.T) {
 			name:           "POST without CSRF token (blocked)",
 			method:         http.MethodPost,
 			path:           "/dashboard/update",
-			body:           '{"test": "value"}',
+			body:           `{"test": "value"}`,
 			expectedStatus: http.StatusForbidden,
 			expectBody:     "CSRF",
 		},
@@ -73,7 +73,7 @@ func TestFullSecurityChain(t *testing.T) {
 			name:           "PUT without CSRF token (blocked)",
 			method:         http.MethodPut,
 			path:           "/dashboard/profile",
-			body:           '{"name": "test"}',
+			body:           `{"name": "test"}`,
 			expectedStatus: http.StatusForbidden,
 			expectBody:     "CSRF",
 		},
@@ -88,7 +88,7 @@ func TestFullSecurityChain(t *testing.T) {
 			name:           "PATCH without CSRF token (blocked)",
 			method:         http.MethodPatch,
 			path:           "/dashboard/partial",
-			body:           '{"field": "data"}',
+			body:           `{"field": "data"}`,
 			expectedStatus: http.StatusForbidden,
 			expectBody:     "CSRF",
 		},
@@ -96,7 +96,7 @@ func TestFullSecurityChain(t *testing.T) {
 			name:   "POST with valid CSRF token (allowed)",
 			method: http.MethodPost,
 			path:   "/dashboard/update",
-			body:   '{"test": "value"}',
+			body:   `{"test": "value"}`,
 			setupRequest: func(req *http.Request) {
 				req.Header.Set("Cookie", "csrf_token=dGVzdC10b2tlbi12YWx1ZQ")
 				req.Header.Set("X-CSRF-Token", "dGVzdC10b2tlbi12YWx1ZQ")

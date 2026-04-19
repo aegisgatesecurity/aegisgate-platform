@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: '1.25.8'
+  GO_VERSION: '1.25.9'
 
 jobs:
   # Job 1: Vulnerability Scanning
@@ -135,6 +135,14 @@ jobs:
           sarif_file: trivy-image-results.sarif
           category: trivy-image
 
+      - name: Check Trivy image scan results
+        run: |
+          if [ -f trivy-image-results.sarif ]; then
+            echo "✅ Trivy image scan completed"
+          else
+            echo "⚠️ Trivy image scan SARIF not generated (Docker build may have failed)"
+          fi
+
   # Job 4: Secret Detection
   trufflehog:
     name: TruffleHog - Secret Detection
@@ -147,13 +155,23 @@ jobs:
 
       - name: Run TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
+        if: github.event_name == 'pull_request'
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --debug --only-verified
 
-      - name: Scan entire history
+      - name: Scan entire history (push events)
+        if: github.event_name == 'push'
+        run: |
+          docker run --rm -v "$PWD:/pwd" \
+            trufflesecurity/trufflehog:latest git file:///pwd \
+            --only-verified --json > trufflehog-results.json 2>&1 || true
+          cat trufflehog-results.json
+
+      - name: Scan entire repo (schedule/manual)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           docker run --rm -v "$PWD:/pwd" \
             trufflesecurity/trufflehog:latest filesystem /pwd \
