@@ -20,9 +20,9 @@ type Tier int
 
 const (
 	TierCommunity    Tier = iota // Free tier
-	TierDeveloper                // $29/mo
-	TierProfessional             // $79/mo
-	TierEnterprise               // Custom pricing
+	TierDeveloper                // Paid tier
+	TierProfessional             // Paid tier
+	TierEnterprise               // Paid tier
 )
 
 // String returns the tier name
@@ -313,7 +313,7 @@ const (
 	FeatureMCPBasicRBAC        Feature = "mcp_basic_rbac"        // Basic RBAC for MCP tools
 
 	// ====================================================================
-	// Developer ($29/mo)
+	// Developer tier
 	// ====================================================================
 	FeatureOAuthSSO         Feature = "oauth_sso"
 	FeatureOIDC             Feature = "oidc"
@@ -340,7 +340,7 @@ const (
 	FeatureCodeExecSandbox  Feature = "code_execute_sandbox"  // Sandboxed code exec (Dev+)
 
 	// ====================================================================
-	// Professional ($79/mo)
+	// Professional tier
 	// ====================================================================
 	FeatureHIPAA          Feature = "compliance_hipaa"
 	FeaturePCI            Feature = "compliance_pci"
@@ -364,7 +364,7 @@ const (
 	FeatureProcessSandbox Feature = "mcp_process_sandbox" // Process-level sandboxing
 
 	// ====================================================================
-	// Enterprise (Custom pricing)
+	// Enterprise tier
 	// ====================================================================
 	FeatureISO42001     Feature = "compliance_iso42001"
 	FeatureFedRAMP      Feature = "compliance_fedramp"

@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 // =========================================================================
-// PROPRIETARY - AegisGate Security
-// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //
-// This file contains proprietary trade secret information.
-// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 // Package core provides license management for module activation.
@@ -272,8 +268,6 @@ func (lm *LicenseManager) validateLicense() error {
 
 // parseLicense parses a license key into a License struct.
 func (lm *LicenseManager) parseLicense(key string) (*License, error) {
-	// License format: BASE64 encoded JSON with optional RSA signature
-	// Production format: JSON payload + "." + base64(RSA-SHA256 signature)
 
 	decoded, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
@@ -287,7 +281,7 @@ func (lm *LicenseManager) parseLicense(key string) (*License, error) {
 	decodedStr := string(decoded)
 
 	// Check for signed license format: payload.signature
-	// Find the last occurrence of "}" which marks the end of JSON
+	// Locate payload boundary
 	lastBrace := strings.LastIndex(decodedStr, "}")
 	if lastBrace == -1 {
 		return nil, fmt.Errorf("invalid license format: no JSON object found")
@@ -311,7 +305,7 @@ func (lm *LicenseManager) parseLicense(key string) (*License, error) {
 			return nil, fmt.Errorf("signature verification failed: %w", err)
 		}
 	} else if signature != "" && lm.publicKey == nil {
-		// Signature present but no public key configured - security issue in production
+		// No public key configured for verification
 		_ = lm
 	}
 
@@ -324,16 +318,14 @@ func (lm *LicenseManager) verifySignature(payload []byte, signatureB64 string) e
 		return fmt.Errorf("no public key configured for signature verification")
 	}
 
-	// Decode the signature
 	signature, err := base64.StdEncoding.DecodeString(signatureB64)
 	if err != nil {
 		return fmt.Errorf("invalid signature encoding: %w", err)
 	}
 
-	// Hash the payload
 	hash := sha256.Sum256(payload)
 
-	// CRITICAL: Verify the signature using RSA-PKCS1-v15
+	// Verify signature
 	err = rsa.VerifyPKCS1v15(lm.publicKey, crypto.SHA256, hash[:], signature)
 	if err != nil {
 		lm.status = LicenseStatusSignatureInvalid

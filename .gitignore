@@ -40,6 +40,55 @@ keys/
 !upstream/aegisgate/pkg/tls/
 
 # =============================================================================
+# INTERNAL / DEVELOPMENT ARTIFACTS (NOT FOR PUBLIC REPO)
+# =============================================================================
+
+CI_DEBT.md
+CONSOLIDATION-STATUS.md
+CONSOLIDATION_STATUS.md
+MCP_E2E_PREP.md
+ANCHOR.md
+PROJECT_MEMORY.md
+SESSION_MEMORY.md
+EOF
+fix_illegal_runes.sh
+*.patch
+
+# Root-level operational config (use configs/ for examples)
+aegisgate-platform.yaml
+
+# Demo/internal dashboard with hardcoded credentials
+ui/frontend/consolidated-dashboard.html
+
+# =============================================================================
+# COVERAGE AND TEST ARTIFACTS
+# =============================================================================
+
+coverage.out
+coverage_*.out
+*.coverprofile
+*.out
+*.test
+e2e.test
+
+# =============================================================================
+# COMPILED BINARIES (build from source)
+# =============================================================================
+
+aegisgate-platform
+aegisgate-platform.exe
+
+# =============================================================================
+# INFRASTRUCTURE / DEPLOYMENT OVERRIDES
+# =============================================================================
+
+docker-compose.override.yml
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.kubeconfig
+
+# =============================================================================
 # SESSION MEMORY AND ANCHOR FILES (LOCAL ONLY)
 # =============================================================================
 

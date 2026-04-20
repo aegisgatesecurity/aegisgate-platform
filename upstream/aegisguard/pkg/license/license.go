@@ -158,7 +158,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		LicenseKey:    getEnv("LICENSE_KEY", ""),
-		AdminPanelURL: getEnv("ADMIN_PANEL_URL", "https://admin.aegisgatesecurity.io"),
+		AdminPanelURL: getEnv("ADMIN_PANEL_URL", "https://license.aegisgatesecurity.io"),
 		CacheDuration: 5 * time.Minute,
 		RetryInterval: 30 * time.Second,
 		FailOpen:      false,

@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.3.2] - 2026-04-20
+
+### Security Audit — Public Repository Cleanup
+
+#### Files Removed from Repository
+- `CI_DEBT.md` — Internal CI debt tracker with commit hashes and lowered quality gates
+- `CONSOLIDATION-STATUS.md` — Internal project management with upstream source paths
+- `EOF` — Empty junk file
+- `MCP_E2E_PREP.md` — Internal E2E test preparation with port configs
+- `fix_illegal_runes.sh` — One-shot script with developer username and absolute paths
+- `aegisgate-platform.yaml` — Root-level operational config with ML thresholds and Enterprise feature gates
+- `ui/frontend/consolidated-dashboard.html` — Internal demo with hardcoded admin/admin credentials and explicit tier pricing
+
+#### .gitignore Hardened
+- Added all removed files as gitignore patterns to prevent re-introduction
+- Added `docker-compose.override.yml`, `*.tfstate`, `*.tfvars`, `*.kubeconfig`
+- Organized into clear sections: Internal Artifacts, Coverage, Binaries, Infrastructure
+
+#### Proprietary Headers Removed (156 files)
+- All `PROPRIETARY - AegisGate Security` + trade secret headers removed from Go source
+- Resolves legal contradiction with Apache-2.0 open-source license
+
+#### Pricing / Commercial Details Sanitized
+- `pkg/tier/tier.go` — Removed `$29/mo`, `$79/mo`, `Custom pricing` comments
+- `upstream/aegisgate/pkg/core/tier_features.go` — Removed `GetPriceInfo()`, `GeneratePricingReport()`, vendor-specific tier integrations
+- `upstream/aegisgate/pkg/compliance/tier-manager.go` — Removed `PricingInfo` struct, pricing report functions
+- `configs/community.yaml` — Removed specific RPM limits, retention periods, paid-tier file references
+- `configs/developer.yaml` — Removed feature-differentiation comments and tier rate limits
+- `PERFORMANCE.md` — Replaced competitor names with generic labels, removed pricing indicators
+- `README.md` — Removed tier-gating indicators from compliance table, removed IP contribution clauses
+
+#### Security Vulnerabilities Fixed
+- `docker-compose.yml` — Removed `admin` as default Grafana password; now requires `GRAFANA_PASSWORD` env var
+- `upstream/aegisguard/pkg/config/config_defaults.go` — Removed hardcoded JWT secret default (`aegisguard-default-secret-change-me` → empty string)
+- `upstream/aegisguard/pkg/license/license.go` — Replaced `admin.aegisgatesecurity.io` with `license.aegisgatesecurity.io`
+- `upstream/aegisgate/pkg/core/license_integration_test.go` — Removed `licenseToSign()` function exposing signing format
+
+#### Stale Versions Updated
+- `ui/frontend/policy.html` — `v0.2.0` → `v1.3.1`
+- `ui/frontend/index_accessible.html` — `v0.15.1` → `v1.3.1`
+
+---
+
 ## [1.3.1] - 2026-04-19
 
 ### Phase D Complete: CI/CD Hardening & Security Fixes

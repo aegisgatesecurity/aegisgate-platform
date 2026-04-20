@@ -2,11 +2,8 @@
 # AegisGate Security Platform — Community Tier Configuration
 # =========================================================================
 # This is the default configuration for the Community (free) tier.
-# For paid tiers, see configs/developer.yaml and configs/professional.yaml.
 #
 # Environment variables take precedence over this file:
-#   LICENSE_KEY           — License key (empty = Community tier)
-#   ADMIN_PANEL_URL       — License validation API
 #   AEGISGATE_BIND_ADDRESS — Proxy bind address
 #   AEGISGATE_UPSTREAM    — Upstream AI provider URL
 #   AEGISGATE_RATE_LIMIT_PROXY — Proxy requests per minute
@@ -14,7 +11,7 @@
 #   AEGISGATE_DASHBOARD_PORT — Dashboard port
 #   AEGIS_PORT            — MCP server port
 #   AEGIS_LOG_LEVEL       — Log level
-#   DASHBOARD_AUTH_TOKEN  — Dashboard authentication token
+
 # =========================================================================
 
 # Platform mode: "standalone" (embedded MCP server) or "connected" (external scanner)
@@ -25,8 +22,8 @@ platform:
 proxy:
   bind_address: "0.0.0.0:8080"
   upstream: "https://api.openai.com"
-  rate_limit_proxy: 120  # proxy RPM (Community tier)
-  rate_limit_mcp: 60     # MCP RPM (Community tier)
+  rate_limit_proxy: 120  # Configurable rate limits
+  rate_limit_mcp: 60     # Configurable rate limits
   log_level: "info"
 
 # TLS — auto-generated self-signed certs on first startup (Community tier)
@@ -99,7 +96,7 @@ logging:
   format: "json"
 
 # Persistence — file-backed audit storage with tier-based retention
-# Community tier: 7-day retention, file storage (no database required)
+# File-backed storage (no database required)
 # Override: AEGISGATE_PERSISTENCE_ENABLED, AEGISGATE_DATA_DIR
 persistence:
   enabled: true
