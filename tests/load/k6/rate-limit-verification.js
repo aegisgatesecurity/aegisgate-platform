@@ -84,7 +84,7 @@ export function handleSummary(data) {
       metadata: {
         test: 'Rate Limit Verification',
         timestamp: new Date().toISOString(),
-        version: 'v1.3.0',
+        version: 'v1.3.1',
       },
       summary: {
         total_requests: data.metrics.http_reqs.count,

@@ -10,7 +10,7 @@ class AegisGateDashboard {
     }
 
     async init() {
-        console.log("AegisGate Dashboard v1.3.0 initialized");
+        console.log("AegisGate Dashboard v1.3.1 initialized");
         await this.fetchStats();
         await this.fetchHealth();
         await this.fetchTier();

@@ -1,6 +1,6 @@
 # AegisGate Platform — Enterprise Performance Report
 
-> **Version**: 1.3.0  
+> **Version**: 1.3.1  
 > **Date**: 2026-04-17  
 > **Classification**: Public — Marketing Use Approved
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-AegisGate Platform v1.3.0 has been **independently load-tested** using industry-standard tools (k6) and demonstrates **enterprise-grade performance** capable of handling production workloads at scale.
+AegisGate Platform v1.3.1 has been **independently load-tested** using industry-standard tools (k6) and demonstrates **enterprise-grade performance** capable of handling production workloads at scale.
 
 ### Key Performance Indicators
 
@@ -29,7 +29,7 @@ AegisGate Platform v1.3.0 has been **independently load-tested** using industry-
 ### Tools & Environment
 
 - **Load Generator**: k6 v1.7.1 ( Grafana Labs )
-- **Test Target**: AegisGate Platform v1.3.0 (Docker container)
+- **Test Target**: AegisGate Platform v1.3.1 (Docker container)
 - **Test Duration**: 150 seconds per suite
 - **Network**: Localhost (minimal network overhead)
 - **Hardware**: Standard development workstation
@@ -99,7 +99,7 @@ Error Rate:         1.49% (during 500 VU burst)
 
 | System | Avg Latency | P95 Latency | Peak RPS | Binary Size |
 |--------|-------------|-------------|----------|-------------|
-| **AegisGate v1.3.0** | **2.44ms** | **3.64ms** | **11,681** | **19.1MB** |
+| **AegisGate v1.3.1** | **2.44ms** | **3.64ms** | **11,681** | **19.1MB** |
 | Kong Gateway | 5-15ms | 20-50ms | 5,000+ | 100MB+ |
 | NGINX + Lua | 3-8ms | 15-30ms | 10,000+ | 50MB+ |
 | Cloudflare Workers | < 50ms | < 100ms | 100,000+ | N/A (serverless) |
@@ -242,7 +242,7 @@ For **Community** and **Developer** tiers:
 
 ## Conclusion
 
-**AegisGate Platform v1.3.0 demonstrates enterprise-grade performance**:
+**AegisGate Platform v1.3.1 demonstrates enterprise-grade performance**:
 
 - ✅ **11,681+ RPS** peak throughput (exceeds 10K target)
 - ✅ **2.44ms average latency** (sub-5ms guaranteed)
