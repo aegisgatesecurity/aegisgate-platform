@@ -12,7 +12,7 @@ import (
 )
 
 // Note: Framework interface, Severity types, Finding, CheckInput, CheckResult,
-// HTTPRequest, HTTPResponse, FrameworkConfig, TierInfo, and PricingInfo are
+// HTTPRequest, HTTPResponse, FrameworkConfig, and TierInfo are
 // defined in framework.go. This file contains additional types used across
 // compliance packages.
 

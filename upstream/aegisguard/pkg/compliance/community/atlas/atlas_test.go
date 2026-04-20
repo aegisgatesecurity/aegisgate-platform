@@ -206,19 +206,6 @@ func TestAtlasFramework_GetTier(t *testing.T) {
 	}
 }
 
-func TestAtlasFramework_GetPricing(t *testing.T) {
-	framework := NewAtlasFramework()
-	pricing := framework.GetPricing()
-
-	if pricing.Tier != "Community" {
-		t.Errorf("Expected pricing tier 'Community', got '%s'", pricing.Tier)
-	}
-
-	if pricing.MonthlyCost != 0 {
-		t.Errorf("Expected monthly cost 0, got %.0f", pricing.MonthlyCost)
-	}
-}
-
 func TestAtlasFramework_SupportsTier(t *testing.T) {
 	framework := NewAtlasFramework()
 

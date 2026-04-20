@@ -55,7 +55,6 @@ func NewSOC2Framework() *SOC2Framework {
 		},
 		tierInfo: common.TierInfo{
 			Name:        "Premium",
-			Pricing:     "$15,000-$25,000/month",
 			Description: "SOC 2 Type II compliance with audit support",
 		},
 		principles: []TrustServicePrinciple{
@@ -205,22 +204,6 @@ func (sf *SOC2Framework) GetConfig() *common.FrameworkConfig {
 // SupportsTier checks if current tier allows this framework
 func (sf *SOC2Framework) SupportsTier(tier string) bool {
 	return tier == "Premium"
-}
-
-// GetPricing returns pricing information
-func (sf *SOC2Framework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Premium",
-		MonthlyCost: 20000,
-		Description: "SOC 2 Type II with full audit support",
-		Features: []string{
-			"Complete TSP coverage",
-			"Audit evidence collection",
-			"Dedicated account manager",
-			"Custom control mapping",
-			"24/7 priority support",
-		},
-	}
 }
 
 // Ensure SOC2Framework implements the Framework interface

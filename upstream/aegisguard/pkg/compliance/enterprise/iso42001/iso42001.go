@@ -57,7 +57,6 @@ func NewISO42001Framework() *ISO42001Framework {
 		},
 		tierInfo: common.TierInfo{
 			Name:        "Enterprise",
-			Pricing:     "$10,000-$15,000/month",
 			Description: "ISO/IEC 42001 AI Management Systems",
 		},
 		clauses: []Clause{
@@ -179,21 +178,6 @@ func (f *ISO42001Framework) GetConfig() *common.FrameworkConfig {
 // SupportsTier checks if current tier allows this framework
 func (f *ISO42001Framework) SupportsTier(tier string) bool {
 	return tier == "Enterprise" || tier == "Premium"
-}
-
-// GetPricing returns pricing information
-func (f *ISO42001Framework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Enterprise",
-		MonthlyCost: 12000,
-		Description: "ISO/IEC 42001 AI Management compliance",
-		Features: []string{
-			"Complete ISO 42001 coverage",
-			"AI Management System audit",
-			"Policy templates",
-			"Enterprise support",
-		},
-	}
 }
 
 // Ensure ISO42001Framework implements the Framework interface

@@ -18,13 +18,6 @@
 //	checker := nist.NewNISTFramework()
 //	finding, _ := checker.Check(nil)
 //
-// # Pricing
-//
-// Tier: Enterprise
-// Monthly Cost: $10,000-$15,000
-// License: Commercial
-// Support: Enterprise (24/7)
-//
 // # Version
 //
 // Version: 1.0

@@ -11,13 +11,6 @@
 //   - Manage: Risk response and monitoring
 //   - NIST SP 1500: Technical AI standards
 //
-// # Pricing
-//
-// Tier: Enterprise
-// Monthly Cost: $10,000-$15,000
-// License: Commercial
-// Support: Enterprise (24/7)
-//
 // # Version
 //
 // Version: 1.4.0

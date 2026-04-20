@@ -17,12 +17,6 @@
 //   - LLM09: Overreliance
 //   - LLM10: Model Theft
 //
-// # Pricing
-//
-// Tier: Community (Free)
-// License: Apache 2.0
-// Support: Community
-//
 // # Version
 //
 // Version: 1.0.0

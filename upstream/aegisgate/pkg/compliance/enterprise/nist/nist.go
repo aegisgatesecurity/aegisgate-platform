@@ -55,7 +55,6 @@ func NewNISTFramework() *NISTFramework {
 		},
 		tierInfo: common.TierInfo{
 			Name:        "Enterprise",
-			Pricing:     "$10,000-$15,000/month",
 			Description: "NIST AI Risk Management Framework (RMF) and SP 1500",
 		},
 		functions: loadNISTFunctions(),
@@ -202,22 +201,6 @@ func (nf *NISTFramework) GetConfig() *common.FrameworkConfig {
 // SupportsTier checks if current tier allows this framework
 func (nf *NISTFramework) SupportsTier(tier string) bool {
 	return tier == "Enterprise" || tier == "Premium"
-}
-
-// GetPricing returns pricing information
-func (nf *NISTFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Enterprise",
-		MonthlyCost: 12500,
-		Description: "NIST AI RMF + SP 1500 compliance (Enterprise)",
-		Features: []string{
-			"Complete AI RMF coverage",
-			"SP 1500 technical standards",
-			"Enterprise support (24/7)",
-			"Custom implementations",
-			"Priority updates",
-		},
-	}
 }
 
 // Ensure NISTFramework implements the Framework interface

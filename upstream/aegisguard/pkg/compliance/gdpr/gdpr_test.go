@@ -81,13 +81,6 @@ func TestGDPRGetTier(t *testing.T) {
 	assert.Equal(t, "Community", tier.Name)
 }
 
-func TestGDPRGetPricing(t *testing.T) {
-	f := NewGDPRFramework()
-	pricing := f.GetPricing()
-	assert.Equal(t, "Community", pricing.Tier)
-	assert.Equal(t, float64(0), pricing.MonthlyCost)
-}
-
 func TestGDPRGetConfig(t *testing.T) {
 	f := NewGDPRFramework()
 	config := f.GetConfig()

@@ -12,13 +12,6 @@
 //   - Regularly Monitor and Test Networks
 //   - Maintain an Information Security Policy
 //
-// # Pricing
-//
-// Tier: Premium
-// Monthly Cost: $15,000-$25,000
-// License: Commercial
-// Support: Premium (24/7 + Dedicated)
-//
 // # Version
 //
 // Version: 4.0.0

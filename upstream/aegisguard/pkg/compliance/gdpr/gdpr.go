@@ -154,7 +154,6 @@ func (g *GDPRFramework) GetSeverityLevels() []common.Severity {
 func (g *GDPRFramework) GetTier() common.TierInfo {
 	return common.TierInfo{
 		Name:        "Community",
-		Pricing:     "Free",
 		Description: "GDPR compliance for AI agents",
 	}
 }
@@ -170,20 +169,6 @@ func (g *GDPRFramework) GetConfig() *common.FrameworkConfig {
 func (g *GDPRFramework) SupportsTier(tier string) bool {
 	// GDPR applies to all tiers
 	return true
-}
-
-func (g *GDPRFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Community",
-		MonthlyCost: 0,
-		Description: "GDPR compliance for AI agents",
-		Features: []string{
-			"Personal data detection",
-			"Data subject rights support",
-			"Lawful basis tracking",
-			"Consent management",
-		},
-	}
 }
 
 func (g *GDPRFramework) Configure(config map[string]interface{}) error {

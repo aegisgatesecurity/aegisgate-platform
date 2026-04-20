@@ -12,13 +12,6 @@
 //   - Performance evaluation
 //   - Improvement and monitoring
 //
-// # Pricing
-//
-// Tier: Enterprise
-// Monthly Cost: $10,000-$15,000
-// License: Commercial
-// Support: Enterprise (24/7)
-//
 // # Version
 //
 // Version: 1.0.0

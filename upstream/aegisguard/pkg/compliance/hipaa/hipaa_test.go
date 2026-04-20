@@ -98,13 +98,6 @@ func TestHIPAAGetTier(t *testing.T) {
 	assert.Equal(t, "Professional", tier.Name)
 }
 
-func TestHIPAAGetPricing(t *testing.T) {
-	f := NewHIPAAFramework()
-	pricing := f.GetPricing()
-	assert.Equal(t, "Professional", pricing.Tier)
-	assert.Greater(t, pricing.MonthlyCost, 0.0)
-}
-
 func TestHIPAAGetConfig(t *testing.T) {
 	f := NewHIPAAFramework()
 	config := f.GetConfig()

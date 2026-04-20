@@ -12,13 +12,6 @@
 //   - Physical Safeguards
 //   - Technical Safeguards
 //
-// # Pricing
-//
-// Tier: Premium
-// Monthly Cost: $15,000-$25,000
-// License: Commercial
-// Support: Premium (24/7 + Dedicated)
-//
 // # Version
 //
 // Version: 1.0.0

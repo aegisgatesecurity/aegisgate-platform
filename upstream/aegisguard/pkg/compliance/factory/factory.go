@@ -101,13 +101,6 @@ func (f *baseFramework) GetConfig() *common.FrameworkConfig {
 	}
 }
 
-// GetPricing returns the pricing info
-func (f *baseFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier: f.tier,
-	}
-}
-
 // Configure configures the framework
 func (f *baseFramework) Configure(config map[string]interface{}) error {
 	return nil

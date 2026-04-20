@@ -148,13 +148,6 @@ func TestOWASPGetTier(t *testing.T) {
 	assert.Equal(t, "Community", tier.Name)
 }
 
-func TestOWASPGetPricing(t *testing.T) {
-	f := NewOWASPLLMFramework()
-	pricing := f.GetPricing()
-	assert.Equal(t, "Community", pricing.Tier)
-	assert.Equal(t, float64(0), pricing.MonthlyCost)
-}
-
 func TestOWASPSupportsTier(t *testing.T) {
 	f := NewOWASPLLMFramework()
 	// OWASP LLM Top 10 applies to all tiers

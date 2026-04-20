@@ -11,13 +11,6 @@
 //   - Confidentiality (C1.1)
 //   - Privacy (P1.1-P8.3)
 //
-// # Pricing
-//
-// Tier: Premium
-// Monthly Cost: $15,000-$25,000
-// License: Commercial
-// Support: Premium (24/7 + Dedicated)
-//
 // # Version
 //
 // Version: 2.0.0

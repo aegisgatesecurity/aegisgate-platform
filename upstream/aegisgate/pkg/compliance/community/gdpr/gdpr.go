@@ -46,7 +46,6 @@ func NewGDPRFramework() *GDPRFramework {
 		},
 		tierInfo: common.TierInfo{
 			Name:        "Community",
-			Pricing:     "Free",
 			Description: "GDPR compliance for EU data protection",
 		},
 		requirements: []string{
@@ -171,16 +170,6 @@ func (g *GDPRFramework) GetTier() common.TierInfo {
 // SupportsTier checks if current tier allows this framework
 func (g *GDPRFramework) SupportsTier(tier string) bool {
 	return tier == "Community" || tier == "Enterprise" || tier == "Premium"
-}
-
-// GetPricing returns pricing information
-func (g *GDPRFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Community",
-		MonthlyCost: 0,
-		Description: "Free for open source and small teams",
-		Features:    []string{"All GDPR requirements", "Basic reporting", "Community support"},
-	}
 }
 
 // GetConfig returns framework configuration

@@ -14,12 +14,6 @@
 //   - Article 32: Security of processing
 //   - Article 35: Data Protection Impact Assessment
 //
-// # Pricing
-//
-// Tier: Community (Free)
-// License: EUPL
-// Support: Community
-//
 // # Version
 //
 // Version: 1.0.0
