@@ -167,7 +167,6 @@ func (p *PCIDSSFramework) GetSeverityLevels() []common.Severity {
 func (p *PCIDSSFramework) GetTier() common.TierInfo {
 	return common.TierInfo{
 		Name:        "Professional",
-		Pricing:     "Contact sales",
 		Description: "PCI-DSS v4.0 compliance for AI agent payment operations",
 	}
 }
@@ -182,21 +181,6 @@ func (p *PCIDSSFramework) GetConfig() *common.FrameworkConfig {
 
 func (p *PCIDSSFramework) SupportsTier(tier string) bool {
 	return tier == "professional" || tier == "enterprise"
-}
-
-func (p *PCIDSSFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Professional",
-		MonthlyCost: 19999,
-		Description: "PCI-DSS v4.0 compliance for AI agents",
-		Features: []string{
-			"Cardholder data detection",
-			"PAN masking and redaction",
-			"Secure transmission controls",
-			"Audit trail for card operations",
-			"Compliance reporting",
-		},
-	}
 }
 
 func (p *PCIDSSFramework) Configure(config map[string]interface{}) error {

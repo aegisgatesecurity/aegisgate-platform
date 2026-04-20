@@ -46,7 +46,6 @@ func NewAtlasFramework() *AtlasFramework {
 		},
 		tierInfo: common.TierInfo{
 			Name:        "Community",
-			Pricing:     "Free",
 			Description: "MITRE ATLAS framework for adversarial ML threats",
 		},
 		techniques: generateTechniques(),
@@ -169,16 +168,6 @@ func (af *AtlasFramework) GetSeverityLevels() []common.Severity {
 		common.SeverityMedium,
 		common.SeverityHigh,
 		common.SeverityCritical,
-	}
-}
-
-// GetPricing returns pricing information
-func (af *AtlasFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Community",
-		MonthlyCost: 0,
-		Description: "Free for open source and small teams",
-		Features:    []string{"All ATLAS techniques", "Basic reporting", "Community support"},
 	}
 }
 

@@ -167,7 +167,6 @@ func (h *HIPAAFramework) GetSeverityLevels() []common.Severity {
 func (h *HIPAAFramework) GetTier() common.TierInfo {
 	return common.TierInfo{
 		Name:        "Professional",
-		Pricing:     "Contact sales",
 		Description: "HIPAA compliance for healthcare AI agents",
 	}
 }
@@ -182,21 +181,6 @@ func (h *HIPAAFramework) GetConfig() *common.FrameworkConfig {
 
 func (h *HIPAAFramework) SupportsTier(tier string) bool {
 	return tier == "professional" || tier == "enterprise"
-}
-
-func (h *HIPAAFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Professional",
-		MonthlyCost: 14999,
-		Description: "HIPAA compliance for AI agent operations",
-		Features: []string{
-			"PHI detection and redaction",
-			"Audit trail for PHI access",
-			"Minimum necessary standard",
-			"Encryption controls",
-			"Breach notification support",
-		},
-	}
 }
 
 func (h *HIPAAFramework) Configure(config map[string]interface{}) error {

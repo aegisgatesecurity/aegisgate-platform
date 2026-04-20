@@ -45,7 +45,6 @@ func (m *mockFramework) GetConfig() *common.FrameworkConfig {
 	return &common.FrameworkConfig{Name: m.name, Version: m.version, Enabled: m.enabled}
 }
 func (m *mockFramework) SupportsTier(tier string) bool                 { return tier == m.tier || tier == "enterprise" }
-func (m *mockFramework) GetPricing() common.PricingInfo                { return common.PricingInfo{Tier: m.tier} }
 func (m *mockFramework) Configure(config map[string]interface{}) error { return nil }
 func (m *mockFramework) Check(ctx context.Context, input common.CheckInput) (*common.CheckResult, error) {
 	if m.checkFunc != nil {

@@ -16,16 +16,7 @@ type FrameworkConfig struct {
 // TierInfo contains tier metadata
 type TierInfo struct {
 	Name        string
-	Pricing     string
 	Description string
-}
-
-// PricingInfo contains pricing details
-type PricingInfo struct {
-	Tier        string
-	MonthlyCost int
-	Description string
-	Features    []string
 }
 
 // TechniqueFinding represents a technique check result

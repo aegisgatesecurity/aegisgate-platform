@@ -153,13 +153,6 @@ func TestISO27001GetTier(t *testing.T) {
 	assert.Equal(t, "Community", tier.Name)
 }
 
-func TestISO27001GetPricing(t *testing.T) {
-	f := NewISO27001Framework()
-	pricing := f.GetPricing()
-	assert.Equal(t, "Community", pricing.Tier)
-	assert.Equal(t, float64(0), pricing.MonthlyCost)
-}
-
 func TestISO27001SupportsTier(t *testing.T) {
 	f := NewISO27001Framework()
 	// ISO 27001 applies to all tiers

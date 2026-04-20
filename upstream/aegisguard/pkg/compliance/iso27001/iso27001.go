@@ -126,7 +126,6 @@ func (i *ISO27001Framework) GetSeverityLevels() []common.Severity {
 func (i *ISO27001Framework) GetTier() common.TierInfo {
 	return common.TierInfo{
 		Name:        "Community",
-		Pricing:     "Free",
 		Description: "ISO 27001:2022 compliance for AI agents",
 	}
 }
@@ -142,20 +141,6 @@ func (i *ISO27001Framework) GetConfig() *common.FrameworkConfig {
 func (i *ISO27001Framework) SupportsTier(tier string) bool {
 	// ISO 27001 applies to all tiers
 	return true
-}
-
-func (i *ISO27001Framework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Community",
-		MonthlyCost: 0,
-		Description: "ISO 27001:2022 compliance for AI agents",
-		Features: []string{
-			"Information security controls",
-			"Access control policies",
-			"Logging and monitoring",
-			"Risk management support",
-		},
-	}
 }
 
 func (i *ISO27001Framework) Configure(config map[string]interface{}) error {

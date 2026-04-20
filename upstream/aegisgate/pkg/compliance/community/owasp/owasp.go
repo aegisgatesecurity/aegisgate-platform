@@ -55,7 +55,6 @@ func NewOWASPFramework() *OWASPFramework {
 		},
 		tierInfo: common.TierInfo{
 			Name:        "Community",
-			Pricing:     "Free",
 			Description: "OWASP Top 10 for AI/LLM applications",
 		},
 		risks: loadRisks(),
@@ -184,16 +183,6 @@ func (of *OWASPFramework) GetConfig() *common.FrameworkConfig {
 // SupportsTier checks if current tier allows this framework
 func (of *OWASPFramework) SupportsTier(tier string) bool {
 	return tier == "Community" || tier == "Enterprise" || tier == "Premium"
-}
-
-// GetPricing returns pricing information
-func (of *OWASPFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Community",
-		MonthlyCost: 0,
-		Description: "OWASP Top 10 compliance checking (Free)",
-		Features:    []string{"All 10 OWASP AI risks", "Basic scanning", "Community updates"},
-	}
 }
 
 // Ensure OWASPFramework implements the Framework interface

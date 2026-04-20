@@ -226,16 +226,6 @@ func TestSOC2GetTier(t *testing.T) {
 	tier := f.GetTier()
 
 	assert.Equal(t, "Professional", tier.Name)
-	assert.NotEmpty(t, tier.Pricing)
-}
-
-func TestSOC2GetPricing(t *testing.T) {
-	f := NewSOC2Framework()
-	pricing := f.GetPricing()
-
-	assert.Equal(t, "Professional", pricing.Tier)
-	assert.Greater(t, pricing.MonthlyCost, 0.0)
-	assert.NotEmpty(t, pricing.Features)
 }
 
 func TestSOC2GetConfig(t *testing.T) {

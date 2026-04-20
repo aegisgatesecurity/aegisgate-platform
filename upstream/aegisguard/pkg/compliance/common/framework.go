@@ -40,7 +40,6 @@ type Framework interface {
 	GetTier() TierInfo
 	GetConfig() *FrameworkConfig
 	SupportsTier(tier string) bool
-	GetPricing() PricingInfo
 }
 
 // CheckInput represents input for compliance checks
@@ -98,14 +97,5 @@ type FrameworkConfig struct {
 // TierInfo holds tier information
 type TierInfo struct {
 	Name        string
-	Pricing     string
 	Description string
-}
-
-// PricingInfo holds pricing details
-type PricingInfo struct {
-	Tier        string
-	MonthlyCost float64
-	Description string
-	Features    []string
 }

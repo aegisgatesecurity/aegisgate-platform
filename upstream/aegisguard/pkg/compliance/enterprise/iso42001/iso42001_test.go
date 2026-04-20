@@ -206,19 +206,6 @@ func TestISO42001Framework_GetTier(t *testing.T) {
 	}
 }
 
-func TestISO42001Framework_GetPricing(t *testing.T) {
-	f := NewISO42001Framework()
-	pricing := f.GetPricing()
-
-	if pricing.Tier != "Enterprise" {
-		t.Errorf("Expected pricing tier 'Enterprise', got '%s'", pricing.Tier)
-	}
-
-	if pricing.MonthlyCost != 12000 {
-		t.Errorf("Expected monthly cost 12000, got %.0f", pricing.MonthlyCost)
-	}
-}
-
 func TestISO42001Framework_SupportsTier(t *testing.T) {
 	f := NewISO42001Framework()
 

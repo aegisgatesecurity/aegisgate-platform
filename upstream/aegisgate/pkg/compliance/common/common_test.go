@@ -74,34 +74,11 @@ func TestFrameworkConfig(t *testing.T) {
 func TestTierInfo(t *testing.T) {
 	tier := TierInfo{
 		Name:        "Enterprise",
-		Pricing:     "$1000/month",
 		Description: "Enterprise tier",
 	}
 
 	if tier.Name != "Enterprise" {
 		t.Errorf("Expected Name Enterprise, got %s", tier.Name)
-	}
-	if tier.Pricing != "$1000/month" {
-		t.Errorf("Expected Pricing $1000/month, got %s", tier.Pricing)
-	}
-}
-
-func TestPricingInfo(t *testing.T) {
-	pricing := PricingInfo{
-		Tier:        "Premium",
-		MonthlyCost: 500,
-		Description: "Premium features",
-		Features:    []string{"feature1", "feature2"},
-	}
-
-	if pricing.Tier != "Premium" {
-		t.Errorf("Expected Tier Premium, got %s", pricing.Tier)
-	}
-	if pricing.MonthlyCost != 500 {
-		t.Errorf("Expected MonthlyCost 500, got %d", pricing.MonthlyCost)
-	}
-	if len(pricing.Features) != 2 {
-		t.Errorf("Expected 2 features, got %d", len(pricing.Features))
 	}
 }
 

@@ -19,12 +19,6 @@
 //	checker := atlas.NewAtlasFramework()
 //	finding, _ := checker.Check(nil)
 //
-// # Pricing
-//
-// Tier: Community (Free)
-// License: MIT
-// Support: Community
-//
 // # Version
 //
 // Version: 4.6.0

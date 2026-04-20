@@ -193,7 +193,7 @@ func (o *OWASPLLMFramework) GetSeverityLevels() []common.Severity {
 }
 
 func (o *OWASPLLMFramework) GetTier() common.TierInfo {
-	return common.TierInfo{Name: "Community", Pricing: "Free", Description: "OWASP LLM Top 10 detection"}
+	return common.TierInfo{Name: "Community", Description: "OWASP LLM Top 10 detection"}
 }
 
 func (o *OWASPLLMFramework) GetConfig() *common.FrameworkConfig {
@@ -201,20 +201,6 @@ func (o *OWASPLLMFramework) GetConfig() *common.FrameworkConfig {
 }
 
 func (o *OWASPLLMFramework) SupportsTier(tier string) bool { return true }
-
-func (o *OWASPLLMFramework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Community",
-		MonthlyCost: 0,
-		Description: "OWASP LLM Top 10 vulnerability detection",
-		Features: []string{
-			"Prompt injection detection",
-			"Sensitive information detection",
-			"Tool misuse detection",
-			"Excessive agency detection",
-		},
-	}
-}
 
 func (o *OWASPLLMFramework) Configure(config map[string]interface{}) error {
 	o.config = config

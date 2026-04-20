@@ -378,7 +378,6 @@ func (sf *SOC2Framework) GetSeverityLevels() []common.Severity {
 func (sf *SOC2Framework) GetTier() common.TierInfo {
 	return common.TierInfo{
 		Name:        "Professional",
-		Pricing:     "Contact sales",
 		Description: "SOC 2 Type II compliance for AI agent operations",
 	}
 }
@@ -396,23 +395,6 @@ func (sf *SOC2Framework) GetConfig() *common.FrameworkConfig {
 func (sf *SOC2Framework) SupportsTier(tier string) bool {
 	// SOC 2 requires Professional or Enterprise tier
 	return tier == "professional" || tier == "enterprise"
-}
-
-// GetPricing returns pricing information
-func (sf *SOC2Framework) GetPricing() common.PricingInfo {
-	return common.PricingInfo{
-		Tier:        "Professional",
-		MonthlyCost: 9999, // Negotiated pricing
-		Description: "SOC 2 Type II compliance for AI agent security",
-		Features: []string{
-			"Complete TSP coverage",
-			"Agent audit trail",
-			"Tool authorization matrix",
-			"Session isolation",
-			"Compliance reporting",
-			"Annual audit support",
-		},
-	}
 }
 
 // ============================================================================

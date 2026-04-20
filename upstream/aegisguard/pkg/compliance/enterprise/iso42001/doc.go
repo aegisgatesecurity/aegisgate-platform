@@ -19,13 +19,6 @@
 //	checker := iso42001.NewISO42001Framework()
 //	finding, _ := checker.Check(nil)
 //
-// # Pricing
-//
-// Tier: Enterprise
-// Monthly Cost: $10,000-$15,000
-// License: Commercial
-// Support: Enterprise (24/7)
-//
 // # Version
 //
 // Version: 2023

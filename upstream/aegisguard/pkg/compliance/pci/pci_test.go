@@ -81,13 +81,6 @@ func TestPCIDSSGetTier(t *testing.T) {
 	assert.Equal(t, "Professional", tier.Name)
 }
 
-func TestPCIDSSGetPricing(t *testing.T) {
-	f := NewPCIDSSFramework()
-	pricing := f.GetPricing()
-	assert.Equal(t, "Professional", pricing.Tier)
-	assert.Greater(t, pricing.MonthlyCost, 0.0)
-}
-
 func TestPCIDSSGetConfig(t *testing.T) {
 	f := NewPCIDSSFramework()
 	config := f.GetConfig()
