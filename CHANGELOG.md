@@ -38,8 +38,13 @@
 - `upstream/aegisgate/pkg/core/license_integration_test.go` — Removed `licenseToSign()` function exposing signing format
 
 #### Stale Versions Updated
-- `ui/frontend/policy.html` — `v0.2.0` → `v1.3.1`
-- `ui/frontend/index_accessible.html` — `v0.15.1` → `v1.3.1`
+- `ui/frontend/policy.html` — `v0.2.0` → `v1.3.2`
+- `ui/frontend/index_accessible.html` — `v0.15.1` → `v1.3.2`
+
+#### Post-Audit Fixes
+- Version badge and all references bumped from v1.3.1 → v1.3.2 (21 files)
+- Docs link updated: `docs.aegisgatesecurity.io` → GitHub `docs/` folder (README.md, website)
+- `VERSION` file updated to `1.3.2`
 
 ---
 

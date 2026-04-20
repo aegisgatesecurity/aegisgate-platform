@@ -12,7 +12,7 @@ metadata:
   namespace: aegisgate
   labels:
     app.kubernetes.io/name: aegisgate-platform
-    app.kubernetes.io/version: "1.3.1"
+    app.kubernetes.io/version: "1.3.2"
 spec:
   replicas: 1
   selector:
@@ -27,7 +27,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: aegisgate-platform
-        app.kubernetes.io/version: "1.3.1"
+        app.kubernetes.io/version: "1.3.2"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8443"
@@ -41,7 +41,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: aegisgate-platform
-          image: aegisgate/platform:1.3.1
+          image: aegisgate/platform:1.3.2
           imagePullPolicy: IfNotPresent
           args:
             - "--proxy-port=8080"
