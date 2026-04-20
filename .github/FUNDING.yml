@@ -1,0 +1,13 @@
+# GitHub Sponsors Configuration
+# Organization-level sponsorship (not individual)
+# See: https://github.com/sponsors
+
+github: aegisgatesecurity
+
+# No individual funding methods - this is an enterprise platform
+# Commercial licensing inquiries go to sales@aegisgatesecurity.io
+
+custom:
+  - name: "Enterprise Licensing"
+    url: https://aegisgatesecurity.io/contact
+    about: "Commercial licenses, SLAs, and priority support"

@@ -1,0 +1,73 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00ADD8', 'primaryBorderColor': '#00ADD8', 'lineColor': '#F97583', 'secondaryColor': '#238636', 'tertiaryColor': '#1f6feb'}}}%%
+
+flowchart TB
+    subgraph "Client Layer"
+        A[💻 Application]
+        B[🤖 MCP Client]
+    end
+
+    subgraph "AegisGate Platform"
+        direction TB
+        
+        subgraph "Entry Points"
+            C[🌐 HTTP Proxy<br/>:8080]
+            D[🔗 MCP Server<br/>:8081]
+            E[📊 Dashboard<br/>:8443]
+        end
+        
+        subgraph "Security Core"
+            F[🔍 PII Scanner]
+            G[🛡️ Threat Detector]
+            H[⚡ Rate Limiter]
+            I[📋 Audit Logger]
+        end
+        
+        subgraph "Policy Engine"
+            J[🔐 RBAC Engine]
+            K[📜 Guardrails]
+            L[🔧 Tier Adapter]
+        end
+        
+        subgraph "Persistence"
+            M[💾 SQLite/FS]
+            N[📝 Audit Logs]
+            O[🔑 Certificate Store]
+        end
+    end
+    
+    subgraph "Upstream Services"
+        P[🤖 OpenAI/Anthropic]
+        Q[🛠️ MCP Tool Servers]
+    end
+
+    A -->|AI API Traffic| C
+    B -->|MCP Protocol| D
+    E -->|Monitoring| A
+    
+    C --> F
+    C --> G
+    C --> H
+    C --> I
+    
+    D --> J
+    D --> K
+    D --> I
+    
+    F --> L
+    G --> L
+    K --> L
+    
+    L -->|Authorized| P
+    L -->|Tool Calls| Q
+    
+    I --> N
+    J --> M
+    O --> C
+    O --> D
+    O --> E
+
+    style C fill:#00ADD822
+    style D fill:#00ADD822
+    style E fill:#1f6feb22
+    style F fill:#23863622
+    style G fill:#23863622

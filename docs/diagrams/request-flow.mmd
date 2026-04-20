@@ -1,0 +1,32 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00ADD8', 'primaryTextColor': '#fff', 'primaryBorderColor': '#00ADD8', 'lineColor': '#F97583', 'secondaryColor': '#006400', 'tertiaryColor': '#fff' }}}%%
+
+sequenceDiagram
+    autonumber
+    participant Client as 💻 Client
+    participant Proxy as 🛡️ AegisGate Proxy
+    participant Scanner as 🔍 Security Scanner
+    participant RateLimit as ⏱️ Rate Limiter
+    participant Upstream as 🤖 AI Service
+
+    Client->>Proxy: HTTP Request
+    Proxy->>Scanner: Scan for PII/Secrets
+    
+    alt Threat Detected
+        Scanner-->>Proxy: 🚫 BLOCK
+        Proxy-->>Client: 403 Forbidden
+    else Clean Request
+        Scanner-->>Proxy: ✅ PASS
+        Proxy->>RateLimit: Check quota
+        
+        alt Rate Limited
+            RateLimit-->>Proxy: 🚫 THROTTLE
+            Proxy-->>Client: 429 Too Many Requests
+        else Within Limit
+            RateLimit-->>Proxy: ✅ ALLOW
+            Proxy->>Upstream: Forward Request
+            Upstream-->>Proxy: AI Response
+            Proxy->>Scanner: Scan Response
+            Scanner-->>Proxy: ✅ PASS
+            Proxy-->>Client: Return Response
+        end
+    end
