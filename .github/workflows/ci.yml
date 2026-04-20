@@ -11,8 +11,54 @@ env:
   GO_VERSION: '1.25.9'
 
 jobs:
+  dco:
+    name: DCO Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Signed-off-by on all commits
+        run: |
+          echo "## DCO Verification" >> $GITHUB_STEP_SUMMARY
+          MISSING=0
+          # For PRs: check all commits between base and head (strict enforcement)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            COMMITS=$(git log --format="%H" origin/${{ github.base_ref }}..HEAD)
+            STRICT=1
+          else
+            # For pushes/schedule: check the latest commit (advisory only)
+            COMMITS=$(git log --format="%H" -1)
+            STRICT=0
+          fi
+          for COMMIT in $COMMITS; do
+            SIGNOFF=$(git log --format="%B" -1 $COMMIT | grep -c "Signed-off-by:")
+            if [ "$SIGNOFF" -eq 0 ]; then
+              AUTHOR=$(git log --format="%an <%ae>" -1 $COMMIT)
+              SUBJECT=$(git log --format="%s" -1 $COMMIT)
+              echo "❌ Missing Signed-off-by: $SUBJECT ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+              echo "   Fix: git commit --amend -s" >> $GITHUB_STEP_SUMMARY
+              MISSING=1
+            fi
+          done
+          if [ "$MISSING" -eq 1 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "See [DCO.md](DCO.md) for instructions on signing your commits." >> $GITHUB_STEP_SUMMARY
+            if [ "$STRICT" -eq 1 ]; then
+              echo "❌ DCO check failed — all PR commits must include Signed-off-by"
+              exit 1
+            else
+              echo "⚠️ DCO advisory: commits without Signed-off-by detected"
+            fi
+          else
+            echo "✅ All commits have valid Signed-off-by lines" >> $GITHUB_STEP_SUMMARY
+          fi
+
   test:
     name: Test Suite
+    needs: dco
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -71,6 +117,7 @@ jobs:
 
   govulncheck:
     name: govulncheck
+    needs: dco
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

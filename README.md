@@ -88,7 +88,7 @@ AegisGate Platform™ Community Edition is released under the [Apache License 2.
 
 ### Contribution Model
 
-Contributions are welcome under the [inbound=outbound](https://opensource.microsoft.com/outbound/) model. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. No CLA required.
+Contributions are welcome under the [inbound=outbound](https://opensource.microsoft.com/outbound/) model. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Every commit requires a `Signed-off-by` per our [DCO](DCO.md). No CLA required.
 
 ---
 
@@ -315,6 +315,7 @@ await client.connect({
 | [PERFORMANCE.md](PERFORMANCE.md) | Load testing results and benchmarks |
 | [SECURITY.md](SECURITY.md) | Security policies and vulnerability reporting |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [DCO.md](DCO.md) | Developer Certificate of Origin |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [LICENSE](LICENSE) | Apache 2.0 license text |
 | [NOTICE](NOTICE) | Trademark reservation and commercial licensing |
