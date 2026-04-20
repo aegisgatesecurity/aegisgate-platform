@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (C) 2025 AegisGuard Security
+// SPDX-FileCopyrightText: Copyright 2024-2026 AegisGate Security, LLC
 // SPDX-License-Identifier: Apache-2.0
 
 // Package logging provides structured JSON logging for AegisGuard.

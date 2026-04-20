@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGuard Security - Unified Audit Package
+// AegisGate Security - Unified Audit Package
 //
 // =========================================================================
 

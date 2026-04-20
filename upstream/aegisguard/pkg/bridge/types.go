@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGuard Security - AegisGate Bridge
+// AegisGate Security - AegisGate Bridge
 
 // =========================================================================
 //
