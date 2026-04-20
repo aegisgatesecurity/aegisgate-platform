@@ -58,6 +58,86 @@ flowchart LR
     end
 ```
 
+<!-- ASCII FALLBACK:
+Traditional Stack:
+Your App → Proxy → MCP Server → Audit System   (3 separate configs)
+
+AegisGate:
+Your App → [🛡️ AegisGate] → Secure AI          (unified)
+-->
+
+**One Binary. One Config. Enterprise-grade Security.**
+
+---
+
+## 💼 Sponsors
+
+AegisGate is proudly supported by organizations using our platform in production.
+
+> **Become a Sponsor**
+> 
+| Tier | Monthly | Benefits |
+|------|---------|----------|
+| 🥇 Gold | $5,000 | Logo on README, priority support, roadmap input |
+| 🥈 Silver | $1,000 | Logo in docs, beta access |
+| 🥉 Bronze | $500 | Name in sponsors section |
+
+[🤝 Sponsor on GitHub](https://github.com/sponsors/aegisgatesecurity) · [📧 Enterprise Licensing](mailto:sales@aegisgatesecurity.io)
+
+---
+
+## 📊 Request Flow
+
+Every request passes through comprehensive security inspection:
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant P as AegisGate
+    participant S as Scanner
+    participant R as Rate Limiter
+    participant U as AI Service
+
+    C->>P: HTTP Request
+    P->>S: Scan for PII/Secrets
+    
+    alt Threat Detected
+        S-->>P: BLOCK
+        P-->>C: 403 Forbidden
+    else Clean Request
+        S-->>P: PASS
+        P->>R: Check Rate Limit
+        
+        alt Rate Exceeded
+            R-->>P: THROTTLE
+            P-->>C: 429 Too Many
+        else Allowed
+            R-->>P: ALLOW
+            P->>U: Forward Request
+            U-->>P: Response
+            P->>S: Scan Response
+            S-->>P: PASS
+            P-->>C: Return Response
+        end
+    end
+```
+
+<!-- ASCII FALLBACK:
++--------+     +-----------+     +-----------+     +--------------+     +-------------+
+| Client |---->| AegisGate |---->|  Scanner  |---->| Rate Limiter |---->| AI Service  |
++--------+     +-----------+     +-----------+     +--------------+     +-------------+
+                    |                 |                      |                    |
+                    |            [Threat?]            [Quota OK?]          [Execute]
+                    |            /      \              /        \
+                    |         BLOCK    PASS       THROTTLE    ALLOW
+                    |           |       |            |         |
+                    +-----------+       +------------+         |
+                    403 Forbidden        429 Too Many          +
+                                                          Return Response
+-->
+
 
 ---
 
@@ -234,6 +314,309 @@ flowchart TB
     style G fill:#2386362
 ```
 
+<!-- ASCII FALLBACK:
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         AEGISGATE PLATFORM                              │
+│                          (Single Binary)                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐                │
+│  │  HTTP Proxy  │   │ MCP Server   │   │  Dashboard   │                │
+│  │   :8080      │   │   :8081      │   │   :8443      │                │
+│  │              │   │              │   │              │                │
+│  │ • Scanning   │   │ • Guardrails │   │ • Health     │                │
+│  │ • PII detect │   │ • RBAC       │   │ • Metrics    │                │
+│  │ • Rate limit │   │ • Audit      │   │ • Compliance │                │
+│  └──────┬───────┘   └──────┬───────┘   └──────┬───────┘                │
+│         │                   │                  │                        │
+│         └───────────────────┼──────────────────┘                        │
+│                             │                                           │
+│                  ┌──────────┴──────────┐                                │
+│                  │   Security Core     │                                │
+│                  │ (Scanner/Auth/Logs) │                                │
+│                  └──────────┬──────────┘                                │
+│                             │                                           │
+│  ┌──────────────┐   ┌───────┴────────┐   ┌──────────────┐              │
+│  │ Persistence  │   │ Tier Adapter   │   │  Cert Store  │              │
+│  │ /data/audit  │   │ (91 Features)  │   │   Auto-CA    │              │
+│  └──────────────┘   └───────┬────────┘   └──────────────┘              │
+│                             │                                           │
+│                    ┌────────┴────────┐                                  │
+│                    │ Upstream Services │                                 │
+│                    │ (AI APIs, Tools)  │                                 │
+│                    └───────────────────┘                                │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+-->
+
+---
+
+## 📊 Performance
+
+**Load tested with k6. See [PERFORMANCE.md](PERFORMANCE.md) for full details.**
+
+| Metric | Result | Grade |
+|--------|--------|-------|
+| **Peak Throughput** | 11,681 RPS | ✅ Outstanding |
+| **Average Latency** | 2.44ms | ✅ Excellent |
+| **P95 Latency** | 3.64ms | ✅ Excellent |
+| **P99 Latency** | 8.17ms | ✅ Excellent |
+| **Error Rate** | 0.00% | ✅ Perfect |
+| **Binary Size** | 14.3MB | ✅ Optimized |
+| **Docker Image** | 19.1MB | ✅ Minimal |
+| **Test Coverage** | 85%+ | ✅ Comprehensive |
+
+**Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
+
+---
+
+## 🔒 MCP Guardrails
+
+AegisGate implements 5 security guardrails for Model Context Protocol connections:
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph Request["Client Request"]
+        A["🔌 MCP Tool Call"]
+    end
+
+    subgraph Guardrails["5 Security Checks"]
+        B{Concurrent
+        Sessions?}
+        C{Tools/
+        Session?}
+        D{Execution
+        Timeout?}
+        E{Memory
+        Advisory?}
+        F{Per-Client
+        RPM?}
+    end
+
+    subgraph Result
+        G["✅ Execute Tool"]
+        H["🚫 Block Request"]
+    end
+
+    A --> B --> C --> D --> E --> F
+    B -->|Exceeded| H
+    C -->|Exceeded| H
+    D -->|Will timeout| H
+    E -->|Over threshold| H
+    F -->|Rate limited| H
+    F -->|Under limit| G
+
+    style H fill:#da3633
+    style G fill:#238636
+    style A fill:#a371f7
+```
+
+<!-- ASCII FALLBACK:
+                        ┌──────────────────┐
+                        │ Client Request   │
+                        │ 🔌 MCP Tool Call │
+                        └────────┬─────────┘
+                                 │
+            ┌────────────────────┼────────────────────┐
+            │              5 GUARDRAILS               │
+            │                                         │
+            ▼                    ┌──┐                 │
+    ┌───────────────┐            │No│                 │
+    │ Concurrent    │────Yes────>│  │                 │
+    │ Sessions OK?  │            └┬─┘                 │
+    └───────────────┘             │                   │
+                                  │                   │
+            ┌─────────────────────┘                   │
+            ▼                    ┌──┐                 │
+    ┌───────────────┐            │No│                 │
+    │ Tools/Session │────Yes────>│  │                 │
+    │ Cap OK?       │            └┬─┘                 │
+    └───────────────┘             │                   │
+                                  │                   │
+            ┌─────────────────────┘                   │
+            ▼                    ┌──┐                 │
+    ┌───────────────┐            │No│                 │
+    │ Execution     │────Yes────>│  │                 │
+    │ Timeout OK?   │            └┬─┘                 │
+    └───────────────┘             │                   │
+                                  │                   │
+            ┌─────────────────────┘                   │
+            ▼                    ┌──┐                 │
+    ┌───────────────┐            │No│                 │
+    │ Memory        │────Yes────>│  │                 │
+    │ Advisory OK?  │            └┬─┘                 │
+    └───────────────┘             │                   │
+                                  │                   │
+            ┌─────────────────────┘                   │
+            ▼                    ┌──┐                 │
+    ┌───────────────┐            │No│   ┌────────────┐ │
+    │ Per-Client    │────Yes────>│  │──>│ ✅ EXECUTE │ │
+    │ RPM OK?       │            └┬─┘   │   TOOL     │ │
+    └───────────────┘             │     └────────────┘ │
+            │                     │     ┌────────────┐ │
+            └─────────────────────┴────>│ 🚫 BLOCK   │ │
+                                          │  REQUEST   │ │
+                                          └────────────┘ │
+                                                       └──┘
+-->
+
+### Guardrail Details
+
+| Guardrail | Limit | Default |
+|-----------|-------|---------|
+| **Concurrent Sessions** | Max simultaneous sessions | 10 per client |
+| **Tools per Session** | Max tools available | 50 per session |
+| **Execution Timeout** | Max tool execution time | 60 seconds |
+| **Memory Advisory** | Memory threshold trigger | 80% utilized |
+| **Per-Client RPM** | Max requests per minute | 1,000 per client |
+
+---
+
+## 🛠️ Configuration
+
+### Zero-Config (Just Run)
+
+```bash
+aegisgate-platform --embedded-mcp --tier=community
+```
+
+### With Custom Config
+
+```yaml
+# aegisgate-platform.yaml
+proxy:
+  bind_address: :8080
+  upstream_url: https://api.openai.com
+  
+server:
+  port: 8443
+  dashboard_port: 8443
+  
+mcp:
+  enabled: true
+  port: 8081
+  
+persistence:
+  data_dir: /data
+  audit_dir: /data/audit
+  enabled: true
+  
+tier: community
+log_level: info
+```
+
+### Environment Variables
+
+```bash
+export AEGISGATE_PROXY_BIND_ADDRESS=:8080
+export AEGISGATE_DASHBOARD_PORT=8443
+export AEGISGATE_TIER=community
+export AEGISGATE_LOG_LEVEL=info
+```
+
+---
+
+## 🔄 Integration Examples
+
+### OpenAI Client
+
+```python
+import openai
+
+# Point to AegisGate instead of OpenAI directly
+openai.api_base = "http://localhost:8080"
+
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello, world!"}]
+)
+```
+
+### MCP Client
+
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+const client = new Client(
+  { name: 'my-app', version: '1.0.0' },
+  { capabilities: {} }
+);
+
+// Connect through AegisGate security layer
+await client.connect({
+  command: 'node',
+  args: ['-e', 'require("net").connect(8081)'],
+});
+```
+
+---
+
+## 🏛️ Compliance Coverage
+
+AegisGate Platform™ maps security controls to 9 major compliance frameworks:
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+mindmap
+  root((AegisGate
+Compliance))
+    NIST
+      AI RMF 1.500
+      Risk Management
+    MITRE
+      ATLAS
+      AI Threat Matrix
+    SOC2
+      Security Controls
+      Type II Ready
+    ISO["🌍 International"]
+      ISO 27001
+      ISO 42001
+    Industry
+      GDPR
+      HIPAA
+      PCI-DSS
+      OWASP LLM Top 10
+
+    style NIST fill:#0072c6
+    style MITRE fill:#c41230
+    style SOC2 fill:#0089d7
+    style ISO fill:#6a5acd
+    style Industry fill:#238636
+```
+
+<!-- ASCII FALLBACK:
+                    ┌─────────────────────┐
+                    │  AegisGate Platform │
+                    │    Compliance       │
+                    └──────────┬──────────┘
+           ┌──────────────────┼──────────────────┐
+           │                  │                  │
+    ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+    │   NIST      │    │   MITRE     │    │   SOC2      │
+    ├─────────────┤    ├─────────────┤    ├─────────────┤
+    │ AI RMF      │    │ ATLAS       │    │ Type II     │
+    │ 1.500       │    │ AI Threat   │    │ Ready       │
+    │             │    │ Matrix      │    │             │
+    └─────────────┘    └─────────────┘    └─────────────┘
+
+    ┌────────────────────────────────────────────────┐
+    │           INTERNATIONAL STANDARDS                │
+    ├────────────────┬──────────────────┬──────────────┤
+    │    ISO 27001   │    ISO 42001     │    GDPR      │
+    │    Info Sec    │  AI Management   │     EU       │
+    └────────────────┴──────────────────┴──────────────┘
+
+    ┌────────────────────────────────────────────────┐
+    │              INDUSTRY FRAMEWORKS                 │
+    ├──────────────┬──────────────┬──────────────────┤
+    │   HIPAA      │   PCI-DSS    │   OWASP          │
+    │  Healthcare  │   Payment    │   LLM Top 10     │
+    └──────────────┴──────────────┴──────────────────┘
+
+    Total: 9 Compliance Frameworks mapped
+-->
 
 **Community Edition includes all frameworks** — no hidden enterprise tiers.
 
