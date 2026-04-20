@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGuard Security - MCP Bridge Integration
+// AegisGate Security - MCP Bridge Integration
 //
 // =========================================================================
 //

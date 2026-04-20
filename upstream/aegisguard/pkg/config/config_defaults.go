@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2025-2026 AegisGuard Security
+// Copyright 2024-2026 AegisGate Security, LLC
 
 package config
 
