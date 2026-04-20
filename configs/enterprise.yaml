@@ -1,0 +1,99 @@
+# =========================================================================
+# AegisGate Security Platform — Enterprise Tier Configuration
+# =========================================================================
+# This configuration requires a commercial license.
+#
+# Contact: sales@aegisgatesecurity.io
+# License: See NOTICE for commercial terms
+#
+# Enterprise tiers include:
+#   - All Community features
+#   - HIPAA Compliance Module
+#   - PCI-DSS Compliance Module  
+#   - SOC2 Type II Automation
+#   - ISO 27001/42001 Suite
+#   - GDPR Advanced
+#   - Multi-tenant Dashboard with SSO
+#   - SLA Guarantees with 99.99% uptime
+#   - 24/7 Production Support
+# =========================================================================
+
+platform:
+  mode: "enterprise"    # Multi-node with external storage
+  license_key: "${AEGISGATE_LICENSE_KEY}"  # Required
+
+# Enterprise proxy with advanced features
+proxy:
+  bind_address: "0.0.0.0:8080"
+  upstream: "${AEGISGATE_UPSTREAM}"
+  rate_limit_proxy: 0  # Unlimited (0 = disable limit)
+  rate_limit_mcp: 0    # Unlimited
+  log_level: "info"
+  
+  # Enterprise: Encrypted audit logging to tamper-evident storage
+  audit_retention_days: 365
+  
+  # Enterprise: Advanced PII detection (ML-enhanced)
+  ml_detection: true
+
+# TLS: Support for external CA and automatic rotation
+tls:
+  cert_mode: "auto"           # auto | external | acme
+  external_ca: "${CA_BUNDLE}" # For enterprise PKI
+  auto_rotate_days: 30        # Certificate rotation
+
+# Compliance modules (require license)
+compliance:
+  modules:
+    - hipaa:
+        enabled: true
+        phi_detection: true
+        baa_enforcement: true
+        audit_level: "detailed"  # per-PHI access logging
+        
+    - pci_dss:
+        enabled: true
+        tokenization: true       # PAN tokenization integration
+        qsa_reports: true        # QSA-ready reports
+        
+    - soc2:
+        enabled: true
+        type: "type2"           # Type II, not just Type I
+        continuous_monitoring: true
+        evidence_collection: automated
+        auditor_portal: true
+        
+    - iso:
+        27001: true            # InfoSec Management
+        42001: true            # AI Management
+        gap_analysis: true     # Automated gap assessment
+        
+    - gdpr:
+        enabled: true
+        article30_records: true   # Processing activities
+        dpia_required: true        # Data Protection Impact
+        breach_notification: true   # 72-hour automation
+
+# Enterprise dashboard
+dashboard:
+  enabled: true
+  port: 8443
+  auth:
+    method: "sso"            # sso | oauth2 | saml
+    provider: "${SSO_PROVIDER}"
+  rbac:
+    roles: ["viewer", "analyst", "admin", "compliance_officer"]
+    multi_tenant: true
+  retention_days: 365        # 1 year vs community 7 days
+
+# Enterprise storage (external)
+storage:
+  type: "postgres"           # sqlite | postgres | mysql
+  connection: "${DATABASE_URL}"
+  encryption: "aes256"       # At-rest encryption
+
+# Support
+telemetry:
+  error_reporting: true      # Optional, GDPR-compliant
+  usage_analytics: true      # For license compliance
+  support_level: "24x7"     # Available: community, business, 24x7

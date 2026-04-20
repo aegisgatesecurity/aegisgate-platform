@@ -24,7 +24,25 @@ Contact: legal@aegisgatesecurity.io
 
 COMMERCIAL LICENSING
 
-The AegisGate Platform community edition is available under the Apache License
-2.0. Enterprise features, commercial support, and enhanced compliance frameworks
-are available under a separate commercial license. See
-https://aegisgatesecurity.io or contact sales@aegisgatesecurity.io for details.
+The AegisGate Platform Community Edition is available under the Apache License
+2.0. The following always-free features are included:
+  - MITRE ATLAS Framework mapping
+  - NIST AI RMF 1.500 compliance
+  - OWASP LLM Top 10 protection
+  - Core HTTP proxy and MCP server with 5 guardrails
+  - Single-admin dashboard (7-day retention)
+
+Enterprise modules and commercial licensing are available separately.
+See https://aegisgatesecurity.io for details on:
+  - HIPAA Compliance Module
+  - PCI-DSS Compliance Module
+  - SOC2 Type II Automation
+  - ISO 27001/42001 Suite
+  - GDPR Advanced
+  - Multi-tenant dashboard with SSO and RBAC
+  - SLA guarantees and 24/7 production support
+
+See configs/enterprise.yaml for enterprise configuration reference.
+Contact: sales@aegisgatesecurity.io
+
+AegisGuard™ Agent Security is a trademark of AegisGate Security, LLC.
