@@ -18,7 +18,7 @@ deploy/
 │   └── prometheus.yml        # Prometheus scrape config for Docker Compose
 ├── helm/
 │   └── aegisgate-platform/
-│       ├── Chart.yaml         # Helm chart metadata (v1.3.1)
+│       ├── Chart.yaml         # Helm chart metadata (v1.3.2)
 │       ├── values.yaml        # Default values (Community tier)
 │       └── templates/
 │           ├── _helpers.tpl   # Label helpers

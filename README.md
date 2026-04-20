@@ -2,7 +2,7 @@
 
 # 🛡️ AegisGate Platform™ — Enterprise AI Security Gateway
 
-[![Version](https://img.shields.io/badge/version-v1.3.1-green?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
+[![Version](https://img.shields.io/badge/version-v1.3.2-green?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
@@ -13,7 +13,7 @@
 [![Performance](https://img.shields.io/badge/Performance-11K_RPS-orange?logo=lightning)](PERFORMANCE.md)
 [![Community](https://img.shields.io/badge/Mastodon-@aegisgatesecurity-6364FF?logo=mastodon)](https://mastodon.social/@aegisgatesecurity)
 
-[📚 Docs](https://docs.aegisgatesecurity.io) &nbsp;•&nbsp; [✨ Features](#features) &nbsp;•&nbsp; [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗️ Architecture](#-architecture) &nbsp;•&nbsp; [⚡ Performance](PERFORMANCE.md) &nbsp;•&nbsp; [🔒 Security](SECURITY.md)
+[📚 Docs](https://github.com/aegisgatesecurity/aegisgate-platform/tree/main/docs) &nbsp;•&nbsp; [✨ Features](#features) &nbsp;•&nbsp; [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗️ Architecture](#-architecture) &nbsp;•&nbsp; [⚡ Performance](PERFORMANCE.md) &nbsp;•&nbsp; [🔒 Security](SECURITY.md)
 
 </div>
 
@@ -158,7 +158,7 @@ docker run -d \
 
 ```bash
 # Download latest release
-wget https://github.com/aegisgatesecurity/aegisgate-platform/releases/download/v1.3.1/aegisgate-platform-linux-amd64
+wget https://github.com/aegisgatesecurity/aegisgate-platform/releases/download/v1.3.2/aegisgate-platform-linux-amd64
 chmod +x aegisgate-platform-linux-amd64
 
 # Run with zero configuration
