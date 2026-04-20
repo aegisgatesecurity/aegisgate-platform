@@ -603,11 +603,6 @@ Compliance))
       PCI-DSS
       OWASP LLM Top 10
 
-    style NIST fill:#0072c6
-    style MITRE fill:#c41230
-    style SOC2 fill:#0089d7
-    style ISO fill:#6a5acd
-    style Industry fill:#238636
 ```
 
 
