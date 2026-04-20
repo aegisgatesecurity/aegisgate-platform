@@ -26,14 +26,14 @@
 **AegisGate Platform™** is a unified AI security gateway that consolidates HTTP proxy security, MCP protocol protection, and administrative dashboard into a single high-performance binary.
 
 | 🛡️ **Security** | 📋 **Compliance** | 🚀 **Performance** |
-|-----------------|------------------|-------------------|
-| Real-time threat scanning | **MITRE ATLAS** (free) | **2.44ms avg latency** |
-| Prompt injection prevention | **NIST AI RMF** (free) | **11,681 RPS peak** |
-| MCP tool authorization | SOC2, GDPR, HIPAA | **19.1MB Docker image** |
-| Data leakage protection | OWASP LLM Top 10 | **0 CVEs** |
-| RBAC & audit logging | ISO 27001/42001 | **2,350+ tests passing** |
+|------------------|-------------------|-------------------|
+| Real-time threat scanning | **MITRE ATLAS** ✅ Free | **2.44ms avg latency** |
+| Prompt injection prevention | **NIST AI RMF** ✅ Free | **11,681 RPS peak** |
+| MCP tool authorization | SOC2, HIPAA, PCI 🔒 Licensed | **19.1MB Docker image** |
+| Data leakage protection | ISO 27001/42001 🔒 Licensed | **0 CVEs** |
+| RBAC & audit logging | GDPR Advanced 🔒 Licensed | **2,350+ tests passing** |
 
-**Zero Configuration Required.** Download, run, secure. No external dependencies. No paid services. Ever.
+**Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Enterprise modules licensed. See [Pricing](#pricing--tiers).
 
 ---
 
@@ -153,9 +153,79 @@ sequenceDiagram
 
 ---
 
+## 🎯 The Strategic Model
+
+**Constraint #22 Original Vision**: Core security is free; enterprise compliance modules are licensed. This aligns with:
+- MITRE ATLAS + NIST AI RMF as **foundation** (always free)
+- HIPAA, PCI-DSS, SOC2, ISO modules as **commercial tier**
+- ACP/A2A security as the **next frontier**
+
+### Community Tier (Apache 2.0) — Always Free
+| Component | Access |
+|-----------|--------|
+| **MITRE ATLAS Framework** | Full mapping + detection rules |
+| **NIST AI RMF 1.500** | Complete implementation |
+| **OWASP LLM Top 10** | Protection + reporting |
+| **Basic HTTP Proxy** | PII scanning, rate limiting |
+| **MCP Server** | Core guardrails (5 base rules) |
+| **Self-hosted Dashboard** | Single admin, 7-day retention |
+
+### Enterprise Tier — Licensed
+Enterprise modules require a commercial license. See [aegisgatesecurity.io](https://aegisgatesecurity.io) for details.
+
+| Module | Features |
+|--------|----------|
+| **HIPAA Compliance** | PHI detection, BAA enforcement, audit trails |
+| **PCI-DSS** | Payment protection, tokenization, QSA reports |
+| **SOC2 Type II** | Continuous monitoring, evidence collection |
+| **ISO 27001/42001** | Policy mapping, gap analysis, certification prep |
+| **GDPR Advanced** | Article 30 records, DPIA, breach notification |
+| **Enterprise Platform** | Multi-tenant dashboard, SSO, unlimited retention, SLA |
+
+### Future: ACP/A2A Agent Security (v2.0)
+| Capability | Community | Enterprise |
+|------------|-----------|------------|
+| Basic agent validation | ✅ | ✅ |
+| Cross-agent federation | ❌ | ✅ |
+| Agent identity verification | ❌ | ✅ |
+| Real-time threat intel | ❌ | ✅ |
+
+**Contact**: [aegisgatesecurity.io](https://aegisgatesecurity.io) | [NOTICE](NOTICE) | [configs/enterprise.yaml](configs/enterprise.yaml)
+
+---
+
 ## 🔒 Security
 
 Our code security matches our product security:
+
+### Community Tier (Apache 2.0) — Always Free
+| Component | Access |
+|-----------|--------|
+| **MITRE ATLAS Framework** | Full mapping + detection rules |
+| **NIST AI RMF 1.500** | Complete implementation |
+| **OWASP LLM Top 10** | Protection + reporting |
+| **Basic HTTP Proxy** | PII scanning, rate limiting |
+| **MCP Server** | Core guardrails (5 base rules) |
+| **Self-hosted Dashboard** | Single admin, 7-day retention |
+
+### Enterprise Tier (Commercial License)
+| Module | Value |
+|--------|-------|
+| **HIPAA Compliance Module** | PHI detection, BAA enforcement, audit trails |
+| **PCI-DSS Module** | Payment data protection, tokenization integration |
+| **SOC2 Type II Automation** | Continuous monitoring, evidence collection, auditor reports |
+| **ISO 27001/42001 Suite** | Policy mapping, gap analysis, certification prep |
+| **GDPR Advanced** | Article 30 records, DPO dashboard, breach notification automation |
+| **Multi-tenant Dashboard** | RBAC, SSO, unlimited retention |
+| **SLA Guarantees** | 99.99% uptime, 24/7 support, dedicated SRE |
+
+### Future Tier: ACP/A2A Security (v2.0)
+| Capability | Community | Enterprise |
+|------------|-----------|------------|
+| Basic agent validation | ✅ | ✅ |
+| Cross-agent policy federation | ❌ | ✅ |
+| Agent identity verification | ❌ | ✅ |
+| Real-time threat intel sharing | ❌ | ✅ |
 
 - **8 security tools** run on every commit
 - **0 known CVEs** in production dependencies
