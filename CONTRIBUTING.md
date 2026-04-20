@@ -21,7 +21,7 @@ This project and everyone participating in it is governed by the [CODE_OF_CONDUC
    ```
 3. **Add the upstream** remote:
    ```bash
-   git remote add upstream https://github.com/aegisgate/aegisgate-platform.git
+   git remote add upstream https://github.com/aegisgatesecurity/aegisgate-platform.git
    ```
 4. **Create a branch** with a descriptive name using one of the following prefixes:
    - `feature/` — for new features (e.g., `feature/add-rate-limiting`)
@@ -108,6 +108,28 @@ fix: resolve token expiry calculation in auth service
 docs: update contributing guide with coverage requirements
 ```
 
+## Developer Certificate of Origin (DCO)
+
+Every commit must include a `Signed-off-by` line certifying that you have the right to submit the contribution under the [Apache License 2.0](LICENSE). This is our **Developer Certificate of Origin** — see [DCO.md](DCO.md) for the full text and legal details.
+
+**The easiest way:**
+
+```bash
+git commit -s -m "feat: add rate-limiting middleware"
+```
+
+The `-s` / `--signoff` flag automatically appends `Signed-off-by: Your Name <your.email@example.com>` to the commit message.
+
+**Forgot to sign off?** Amend the commit:
+
+```bash
+git commit --amend -s
+```
+
+**CI enforcement:** Our CI pipeline rejects pull requests containing any unsigned commits. All commits in a PR must include a valid `Signed-off-by` line.
+
+---
+
 ## Pull Request Process
 
 1. **Fill out the PR template** — provide a clear description of changes, motivation, and testing performed.
@@ -128,8 +150,10 @@ If you discover a security vulnerability, please report it responsibly by emaili
 
 ## License
 
-By contributing to AegisGate Platform, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE). No additional contributor license agreement (CLA) is required.
+By contributing to AegisGate Platform, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE), consistent with the [inbound=outbound](https://opensource.microsoft.com/outbound/) model. No additional contributor license agreement (CLA) is required.
+
+Every contribution must include a `Signed-off-by` line per our [DCO policy](DCO.md).
 
 ## Questions?
 
-If you have questions or need help, feel free to start a discussion on [GitHub Discussions](https://github.com/aegisgate/aegisgate-platform/discussions).
+If you have questions or need help, feel free to reach out on [Mastodon](https://mastodon.social/@aegisgatesecurity) or start a [GitHub Discussion](https://github.com/aegisgatesecurity/aegisgate-platform/discussions).

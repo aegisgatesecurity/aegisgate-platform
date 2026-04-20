@@ -9,6 +9,10 @@
 - Removed "All rights reserved" from README footer (contradicts Apache 2.0)
 - Fixed fabricated 3rd-party copyright in `certificate_test.go`
 - Clarified dual-license model: Community = Apache 2.0, Commercial = separate license
+- Added `DCO.md` — Developer Certificate of Origin based on Linux kernel DCO 1.1
+- Added CI enforcement: DCO check job in CI workflow (strict for PRs, advisory for pushes)
+- Updated CONTRIBUTING.md with DCO sign-off instructions and CI enforcement notice
+- Fixed stale `aegisgate/` org URLs in CONTRIBUTING.md
 
 ### Security Audit — Public Repository Cleanup
 
