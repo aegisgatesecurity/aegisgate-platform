@@ -58,13 +58,19 @@ flowchart LR
     end
 ```
 
-<!-- ASCII FALLBACK:
+
+<details>
+<summary>📄 ASCII Diagram Fallback</summary>
+
+```
 Traditional Stack:
 Your App → Proxy → MCP Server → Audit System   (3 separate configs)
 
 AegisGate:
 Your App → [🛡️ AegisGate] → Secure AI          (unified)
--->
+```
+</details>
+
 
 **One Binary. One Config. Enterprise-grade Security.**
 
@@ -124,7 +130,11 @@ sequenceDiagram
     end
 ```
 
-<!-- ASCII FALLBACK:
+
+<details>
+<summary>📄 ASCII Diagram Fallback</summary>
+
+```
 +--------+     +-----------+     +-----------+     +--------------+     +-------------+
 | Client |---->| AegisGate |---->|  Scanner  |---->| Rate Limiter |---->| AI Service  |
 +--------+     +-----------+     +-----------+     +--------------+     +-------------+
@@ -136,7 +146,9 @@ sequenceDiagram
                     +-----------+       +------------+         |
                     403 Forbidden        429 Too Many          +
                                                           Return Response
--->
+```
+</details>
+
 
 
 ---
@@ -314,7 +326,11 @@ flowchart TB
     style G fill:#2386362
 ```
 
-<!-- ASCII FALLBACK:
+
+<details>
+<summary>📄 ASCII Diagram Fallback</summary>
+
+```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         AEGISGATE PLATFORM                              │
 │                          (Single Binary)                                  │
@@ -347,7 +363,9 @@ flowchart TB
 │                    └───────────────────┘                                │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
--->
+```
+</details>
+
 
 ---
 
@@ -412,7 +430,11 @@ flowchart LR
     style A fill:#a371f7
 ```
 
-<!-- ASCII FALLBACK:
+
+<details>
+<summary>📄 ASCII Diagram Fallback</summary>
+
+```
                         ┌──────────────────┐
                         │ Client Request   │
                         │ 🔌 MCP Tool Call │
@@ -459,7 +481,9 @@ flowchart LR
                                           │  REQUEST   │ │
                                           └────────────┘ │
                                                        └──┘
--->
+```
+</details>
+
 
 ### Guardrail Details
 
@@ -586,7 +610,11 @@ Compliance))
     style Industry fill:#238636
 ```
 
-<!-- ASCII FALLBACK:
+
+<details>
+<summary>📄 ASCII Diagram Fallback</summary>
+
+```
                     ┌─────────────────────┐
                     │  AegisGate Platform │
                     │    Compliance       │
@@ -616,7 +644,9 @@ Compliance))
     └──────────────┴──────────────┴──────────────────┘
 
     Total: 9 Compliance Frameworks mapped
--->
+```
+</details>
+
 
 **Community Edition includes all frameworks** — no hidden enterprise tiers.
 
