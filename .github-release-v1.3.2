@@ -1,0 +1,51 @@
+## 🔐 v1.3.2 — Public Repository Security Audit Cleanup
+
+This release addresses findings from a comprehensive security audit of the public GitHub repository. All proprietary, confidential, and internal content has been sanitized or removed.
+
+---
+
+### 🗑️ Files Removed (7)
+
+| File | Reason |
+|------|--------|
+| `CI_DEBT.md` | Internal CI debt tracker with commit hashes, lowered quality gates |
+| `CONSOLIDATION-STATUS.md` | Internal project management with upstream source paths |
+| `EOF` | Zero-byte junk file |
+| `MCP_E2E_PREP.md` | Internal E2E test prep with port configs and agent context |
+| `fix_illegal_runes.sh` | Local script with developer username and absolute paths |
+| `aegisgate-platform.yaml` | Root-level operational config with ML thresholds, Enterprise feature gates |
+| `ui/frontend/consolidated-dashboard.html` | **Hardcoded admin/admin credentials, explicit tier pricing ($49/$199/mo)** |
+
+### 📝 PROPRIETARY Headers Removed (156 Go files)
+
+All `PROPRIETARY - AegisGate Security` + trade secret headers removed to resolve legal contradiction with Apache-2.0 license.
+
+### 💰 Pricing/Commercial Details Sanitized
+
+- Removed `$29/mo`, `$79/mo`, `Custom pricing` from source code comments
+- Removed `GetPriceInfo()`, `GeneratePricingReport()` functions
+- Removed vendor-specific tier integrations (SIEM providers by tier)
+- Removed specific RPM limits from config comments
+- Replaced competitor names with generic labels in benchmarks
+- Removed tier-gating indicators from README compliance table
+
+### 🔒 Security Fixes
+
+- **Hardcoded JWT secret**: Default `aegisguard-default-secret-change-me` removed → empty string (app fails closed)
+- **Grafana default password**: `admin` default removed → requires `GRAFANA_PASSWORD` env var
+- **Admin panel URL**: `admin.aegisgatesecurity.io` → `license.aegisgatesecurity.io`
+- **License signing format**: `licenseToSign()` function removed from test code
+
+### 🛡️ .gitignore Hardened
+
+Added patterns for all removed files, `docker-compose.override.yml`, `*.tfstate`, `*.tfvars`, `*.kubeconfig`, and organized into clear sections.
+
+### 📚 Post-Audit Fixes
+
+- Docs link updated: `docs.aegisgatesecurity.io` → [GitHub docs/ folder](https://github.com/aegisgatesecurity/aegisgate-platform/tree/main/docs)
+- All version references bumped v1.3.1 → **v1.3.2** (21 files)
+- `VERSION` file updated to `1.3.2`
+
+---
+
+**Full Changelog**: https://github.com/aegisgatesecurity/aegisgate-platform/compare/v1.3.1...v1.3.2
