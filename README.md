@@ -2,14 +2,14 @@
 
 # 🛡️ AegisGate Platform™ — Enterprise AI Security Gateway
 
-[![Version](https://img.shields.io/badge/version-v1.3.2-green?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/github/v/release/aegisgatesecurity/aegisgate-platform?label=version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
+[![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen?logo=codecov)](PERFORMANCE.md)
+[![Test Coverage](https://img.shields.io/badge/Coverage-79.9%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
-[![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](docs/DEPLOYMENT.md)
+[![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](deploy/helm/aegisgate-platform/)
 [![Performance](https://img.shields.io/badge/Performance-11K_RPS-orange?logo=lightning)](PERFORMANCE.md)
 [![Community](https://img.shields.io/badge/Mastodon-@aegisgatesecurity-6364FF?logo=mastodon)](https://mastodon.social/@aegisgatesecurity)
 
@@ -86,12 +86,7 @@ AegisGate Platform™ is released under the Apache License 2.0, a permissive ope
 
 ### Contribution Model
 
-We welcome community contributions, especially for the **Community** and **Developer** tiers. However:
-
-- **Community contributions** are gratefully accepted and will be reviewed promptly
-- **All contributions** are subject to our [CLA](CLA.md) (Contributor License Agreement)
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome community contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
@@ -136,12 +131,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 🚀 Quick Start
 
-### One-Line Install (Linux/macOS)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/aegisgatesecurity/aegisgate-platform/main/install.sh | bash
-```
-
 ### Docker (Recommended)
 
 ```bash
@@ -150,19 +139,20 @@ docker run -d \
   -p 8081:8081 \
   -p 8443:8443 \
   -v $(pwd)/data:/data \
-  aegisgatesecurity/aegisgate-platform:latest \
+  ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:latest \
   --embedded-mcp --tier=community
 ```
 
-### Binary Download
+### Build from Source
 
 ```bash
-# Download latest release
-wget https://github.com/aegisgatesecurity/aegisgate-platform/releases/download/v1.3.2/aegisgate-platform-linux-amd64
-chmod +x aegisgate-platform-linux-amd64
+# Clone the repository
+git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
+cd aegisgate-platform
 
-# Run with zero configuration
-./aegisgate-platform-linux-amd64 --embedded-mcp --tier=community
+# Build and run
+go build -o aegisgate-platform ./cmd/aegisgate-platform
+./aegisgate-platform --embedded-mcp --tier=community
 ```
 
 ### Verify Installation
@@ -322,8 +312,7 @@ await client.connect({
 | [README.md](README.md) | This file — overview and quick start |
 | [PERFORMANCE.md](PERFORMANCE.md) | Load testing results and benchmarks |
 | [SECURITY.md](SECURITY.md) | Security policies and vulnerability reporting |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute and CLA |
-| [CLA.md](CLA.md) | Contributor License Agreement |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [LICENSE](LICENSE) | Apache 2.0 license text |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |

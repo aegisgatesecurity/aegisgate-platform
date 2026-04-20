@@ -1,5 +1,3 @@
-// Copyright 2024 AegisGate Security. All rights reserved.
-//
 // Functional options for configuring AegisGate metrics.
 // Options allow customization of histogram buckets, registry selection,
 // and cardinality limits without changing the package API.

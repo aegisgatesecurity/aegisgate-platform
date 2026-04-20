@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard Security - MCP Bridge Integration
-// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
+//
 // =========================================================================
 //
 // This file integrates the AegisGate bridge into the AegisGuard MCP handler,

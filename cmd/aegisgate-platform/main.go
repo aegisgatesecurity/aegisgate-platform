@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGate Security Platform - Main Entry Point
 // =========================================================================
@@ -45,7 +45,7 @@ import (
 )
 
 var (
-	version     = "1.3.0"
+	version     = "1.3.2"
 	startTime   = time.Now()
 	configFile  = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort   = flag.Int("proxy-port", 8080, "AegisGate proxy port")

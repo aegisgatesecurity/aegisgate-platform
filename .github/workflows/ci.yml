@@ -130,7 +130,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/aegisgate:v1.3.2
             ghcr.io/${{ github.repository }}/aegisgate:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -41,7 +41,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: aegisgate-platform
-          image: aegisgate/platform:1.3.2
+          image: ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:1.3.2
           imagePullPolicy: IfNotPresent
           args:
             - "--proxy-port=8080"

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard License Tier Features
-// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
+//
 // =========================================================================
 //
 // This file defines which features are available in each tier.

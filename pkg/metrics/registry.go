@@ -1,5 +1,3 @@
-// Copyright 2024 AegisGate Security. All rights reserved.
-//
 // Registry management for Prometheus metrics. Supports both the default
 // global registry and isolated custom registries for testing and
 // multi-tenant deployments.

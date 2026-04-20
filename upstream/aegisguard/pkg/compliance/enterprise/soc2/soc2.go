@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard Security
-// Copyright (c) 2025-2026 AegisGuard Security. All rights reserved.
+
 // =========================================================================
 //
 // SOC 2 Type II Compliance Module for AI Agent Security

@@ -1,6 +1,5 @@
 // Package metrics provides Prometheus metrics for AegisGate Platform.
-// Copyright 2024 AegisGate Security. All rights reserved.
-//
+
 // This file implements high-cardinality protection mechanisms to prevent
 // metrics explosion in production environments. Proper cardinality control
 // is critical for Prometheus performance and cost management.

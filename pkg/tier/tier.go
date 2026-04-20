@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // Package tier provides the single-source-of-truth tier system for the
 // AegisGate Security Platform. All components (proxy, MCP, dashboard) use
 // these definitions for feature gating and rate limiting.

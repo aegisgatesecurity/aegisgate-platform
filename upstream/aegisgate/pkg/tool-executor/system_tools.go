@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// Copyright (c) 2025-2026 AegisGuard Security. All rights reserved.
+
 // =========================================================================
 //
 // System tools for process, memory, network, and system information.
