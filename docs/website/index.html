@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AegisGate Platform™ — Enterprise AI Security Gateway</title>
-    <meta name="description" content="Unified AI security gateway combining HTTP proxy, MCP security, and compliance automation. 11K RPS, 2.44ms latency, 0 CVEs.">
+    <meta name="description" content="Enterprise AI security gateway — unified HTTP proxy, MCP guardrails, and compliance automation. 11K RPS, 2.44ms latency, 0 CVEs. Apache 2.0.">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -147,7 +147,7 @@
     <header>
         <div class="container">
             <h1>🛡️ AegisGate Platform™</h1>
-            <p class="tagline">Enterprise AI Security Gateway — Unified. Simplified. Open.</p>
+            <p class="tagline">Enterprise AI Security Gateway — Unified Traffic Inspection, MCP Guardrails &amp; Compliance Automation</p>
             <p>HTTP Proxy + MCP Security + Dashboard in one 14MB binary</p>
             <div class="cta-buttons">
                 <a href="#install" class="btn btn-primary">Get Started</a>
@@ -232,7 +232,7 @@
 
             <h3>One-Line Install</h3>
             <div class="code-block">
-                <code>curl -fsSL https://raw.githubusercontent.com/aegisgatesecurity/aegisgate-platform/main/install.sh | bash</code>
+                <code>docker run -d -p 8443:8443 ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:latest</code>
             </div>
 
             <h3>Verify</h3>
