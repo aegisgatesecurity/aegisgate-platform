@@ -1,11 +1,6 @@
 # =========================================================================
 # AegisGate Security Platform — Developer Tier Configuration
 # =========================================================================
-# Includes all Community features plus:
-#   - OAuth SSO / OIDC authentication
-#   - Multi-provider support (Anthropic, Azure OpenAI, Cohere)
-#   - Request caching
-#   - Higher rate limits
 # =========================================================================
 
 platform:
@@ -14,7 +9,7 @@ platform:
 proxy:
   bind_address: "0.0.0.0:8080"
   upstream: "https://api.openai.com"
-  rate_limit: 600       # 600 req/min (Developer tier)
+  rate_limit: 600       # Configurable rate limits
   log_level: "info"
 
 tls:

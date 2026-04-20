@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -27,20 +26,11 @@ func (t Tier) String() string {
 	}
 }
 
-// PricingInfo holds pricing details for each tier
-type PricingInfo struct {
-	MonthlyPrice float64
-	AnnualPrice  float64
-	PerUser      bool
-	Description  string
-}
-
 // FrameworkTier holds tier assignment and metadata
 type FrameworkTier struct {
 	FrameworkID string
 	Name        string
 	Tier        Tier
-	Pricing     PricingInfo
 	Description string
 	Features    []string
 }
@@ -70,7 +60,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "MITRE ATLAS",
 		Tier:        TierCommunity,
 		Description: "MITRE ATLAS 18 threat techniques for AI security",
-		Pricing:     PricingInfo{Description: "Free"},
 		Features: []string{
 			"18 detection techniques",
 			"60+ detection patterns",
@@ -84,7 +73,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "OWASP AI Top 10",
 		Tier:        TierCommunity,
 		Description: "OWASP Top 10 security risks for LLM applications",
-		Pricing:     PricingInfo{Description: "Free"},
 		Features: []string{
 			"10 OWASP categories",
 			"40+ detection patterns",
@@ -98,7 +86,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "GDPR",
 		Tier:        TierCommunity,
 		Description: "General Data Protection Regulation compliance",
-		Pricing:     PricingInfo{Description: "Free"},
 		Features: []string{
 			"6 core requirements",
 			"Data protection checks",
@@ -112,12 +99,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "NIST AI Risk Management Framework",
 		Tier:        TierEnterprise,
 		Description: "NIST AI RMF for AI system governance",
-		Pricing: PricingInfo{
-			MonthlyPrice: 0,
-			AnnualPrice:  0,
-			PerUser:      false,
-			Description:  "Contact sales",
-		},
 		Features: []string{
 			"4 core functions (GV, MP, ME, RG)",
 			"20+ controls",
@@ -131,12 +112,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "NIST SP 1500",
 		Tier:        TierEnterprise,
 		Description: "NITRD AI Risk Management Framework Controls",
-		Pricing: PricingInfo{
-			MonthlyPrice: 0,
-			AnnualPrice:  0,
-			PerUser:      false,
-			Description:  "Contact sales",
-		},
 		Features: []string{
 			"10 control families",
 			"50+ controls",
@@ -149,12 +124,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "ISO/IEC 42001",
 		Tier:        TierEnterprise,
 		Description: "ISO/IEC 42001 AI Management System",
-		Pricing: PricingInfo{
-			MonthlyPrice: 0,
-			AnnualPrice:  0,
-			PerUser:      false,
-			Description:  "Contact sales",
-		},
 		Features: []string{
 			"AI management system controls",
 			"Risk assessment",
@@ -168,12 +137,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "SOC 2",
 		Tier:        TierPremium,
 		Description: "SOC 2 Type II controls for service organizations",
-		Pricing: PricingInfo{
-			MonthlyPrice: 0,
-			AnnualPrice:  0,
-			PerUser:      false,
-			Description:  "Contact sales",
-		},
 		Features: []string{
 			"5 Trust Service Criteria",
 			"CC1-CC9 controls",
@@ -187,12 +150,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "HIPAA",
 		Tier:        TierPremium,
 		Description: "Health Insurance Portability and Accountability Act",
-		Pricing: PricingInfo{
-			MonthlyPrice: 0,
-			AnnualPrice:  0,
-			PerUser:      false,
-			Description:  "Contact sales",
-		},
 		Features: []string{
 			"PHI detection",
 			"Security safeguards",
@@ -205,12 +162,6 @@ func (tm *TierManager) initializeDefaults() {
 		Name:        "PCI DSS",
 		Tier:        TierPremium,
 		Description: "Payment Card Industry Data Security Standard",
-		Pricing: PricingInfo{
-			MonthlyPrice: 0,
-			AnnualPrice:  0,
-			PerUser:      false,
-			Description:  "Contact sales",
-		},
 		Features: []string{
 			"CHD detection",
 			"Encryption validation",
@@ -321,44 +272,6 @@ func (tm *TierManager) GetEnterpriseFrameworks() []FrameworkTier {
 // GetPremiumFrameworks returns Premium-tier frameworks
 func (tm *TierManager) GetPremiumFrameworks() []FrameworkTier {
 	return tm.GetFrameworksByTier(TierPremium)
-}
-
-// GetPricingForFramework returns pricing info for a specific framework
-func (tm *TierManager) GetPricingForFramework(frameworkID string) (PricingInfo, error) {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	ft, exists := tm.tiers[frameworkID]
-	if !exists {
-		return PricingInfo{}, fmt.Errorf("framework %s not found", frameworkID)
-	}
-
-	return ft.Pricing, nil
-}
-
-// GeneratePricingReport generates a complete pricing report
-func (tm *TierManager) GeneratePricingReport() map[string]interface{} {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	report := map[string]interface{}{
-		"current_tier": tm.currentTier.String(),
-		"community": map[string]interface{}{
-			"frameworks":  tm.GetFrameworksByTier(TierCommunity),
-			"description": "Free for individuals and small teams",
-		},
-		"enterprise": map[string]interface{}{
-			"frameworks":  tm.GetFrameworksByTier(TierEnterprise),
-			"description": "For organizations needing governance frameworks",
-		},
-		"premium": map[string]interface{}{
-			"frameworks":  tm.GetFrameworksByTier(TierPremium),
-			"description": "For regulated industries (healthcare, finance)",
-		},
-		"billing_note": "Contact sales for Enterprise pricing",
-	}
-
-	return report
 }
 
 // ValidateLicense validates a license key for the given tier (stub)

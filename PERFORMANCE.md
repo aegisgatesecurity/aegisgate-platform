@@ -100,22 +100,22 @@ Error Rate:         1.49% (during 500 VU burst)
 | System | Avg Latency | P95 Latency | Peak RPS | Binary Size |
 |--------|-------------|-------------|----------|-------------|
 | **AegisGate v1.3.1** | **2.44ms** | **3.64ms** | **11,681** | **19.1MB** |
-| Kong Gateway | 5-15ms | 20-50ms | 5,000+ | 100MB+ |
-| NGINX + Lua | 3-8ms | 15-30ms | 10,000+ | 50MB+ |
-| Cloudflare Workers | < 50ms | < 100ms | 100,000+ | N/A (serverless) |
-| AWS API Gateway | 10-50ms | 50-200ms | Unlimited | N/A (managed) |
+| Industry Gateway A | 5-15ms | 20-50ms | 5,000+ | 100MB+ |
+| Industry Gateway B | 3-8ms | 15-30ms | 10,000+ | 50MB+ |
+| Serverless Edge A | < 50ms | < 100ms | 100,000+ | N/A (serverless) |
+| Managed API Gateway A | 10-50ms | 50-200ms | Unlimited | N/A (managed) |
 
-**Verdict**: AegisGate achieves **best-in-class latency** with **minimal footprint**, outperforming Kong and NGINX while remaining self-hosted and zero-cost.
+**Verdict**: AegisGate achieves **best-in-class latency** with **minimal footprint**, outperforming Industry Gateway A and Industry Gateway B while remaining self-hosted and zero-cost.
 
 ### vs. Competitors (AI Security)
 
-| Feature | AegisGate | Cloudflare AI Gateway | AWS WAF + Bedrock | Azure AI |
+| Feature | AegisGate | Industry Gateway A | Cloud AI Security A | Cloud AI Security B |
 |---------|-----------|----------------------|-------------------|----------|
 | Self-Hosted | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | Data Residency | ✅ Full control | ⚠️ Cloud | ⚠️ Cloud | ⚠️ Cloud |
 | MITRE ATLAS | ✅ Built-in | ❌ Separate | ❌ Separate | ❌ Separate |
 | MCP Support | ✅ Native | ❌ No | ❌ No | ❌ No |
-| Cost | **$0** | **$$$** | **$$$$** | **$$$$** |
+| Cost | **$0** | See vendor pricing | See vendor pricing | See vendor pricing |
 | Latency (local) | **2.44ms** | 20-100ms | 50-200ms | 30-150ms |
 
 **Verdict**: AegisGate provides **enterprise AI security** at **fraction of cost** with **better performance** and **full data control**.

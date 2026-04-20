@@ -43,7 +43,7 @@ const (
 
 // Default security configuration
 const (
-	DefaultJWTSecret           = "aegisguard-default-secret-change-me"
+	DefaultJWTSecret           = ""
 	DefaultJWTExpiration       = 24 * time.Hour
 	DefaultPasswordMinLength   = 12
 	DefaultPasswordComplexity  = 3

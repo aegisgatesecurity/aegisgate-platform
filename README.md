@@ -90,8 +90,6 @@ We welcome community contributions, especially for the **Community** and **Devel
 
 - **Community contributions** are gratefully accepted and will be reviewed promptly
 - **All contributions** are subject to our [CLA](CLA.md) (Contributor License Agreement)
-- **Intellectual property rights** for contributions remain with AegisGate Security, Inc.
-- **Exclusive features** in paid tiers are reserved — contributions may inform but not replicate Enterprise functionality
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -124,15 +122,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 | Framework | Coverage | Availability |
 |-----------|----------|--------------|
-| **MITRE ATLAS** | All AI-specific attack patterns | ✅ **Community (Free)** |
-| **NIST AI RMF** | Complete AI risk management | ✅ **Community (Free)** |
+| **MITRE ATLAS** | All AI-specific attack patterns | ✅ |
+| **NIST AI RMF** | Complete AI risk management | ✅ |
 | **OWASP LLM Top 10** | LLM01-LLM10 coverage | ✅ |
-| **SOC 2** | Security controls | 🔶 Developer+ |
-| **HIPAA** | Healthcare data protection | 🔶 Developer+ |
-| **GDPR** | EU data protection | 🔶 Developer+ |
-| **ISO 27001** | Information security | 🔶 Professional+ |
-| **ISO 42001** | AI management systems | 🔶 Professional+ |
-| **PCI-DSS** | Payment card security | 🔶 Professional+ |
+| **SOC 2** | Security controls | ✅ |
+| **HIPAA** | Healthcare data protection | ✅ |
+| **GDPR** | EU data protection | ✅ |
+| **ISO 27001** | Information security | ✅ |
+| **ISO 42001** | AI management systems | ✅ |
+| **PCI-DSS** | Payment card security | ✅ |
 
 ---
 

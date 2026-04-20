@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 // =========================================================================
-// PROPRIETARY - AegisGuard Security (adapted from AegisGate Security)
 // Copyright (c) 2025-2026 AegisGuard Security. All rights reserved.
 // =========================================================================
 //
-// This file contains proprietary trade secret information.
-// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 // Package threatintel provides threat intelligence for AI agent security

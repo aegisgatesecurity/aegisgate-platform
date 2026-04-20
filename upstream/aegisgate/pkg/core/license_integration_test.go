@@ -19,11 +19,6 @@ func generateTestKeyPair(t *testing.T) (*rsa.PrivateKey, *rsa.PublicKey) {
 	return privateKey, &privateKey.PublicKey
 }
 
-// licenseToSign creates the string that gets signed
-func licenseToSign(l *License) string {
-	return l.ID + l.Email + l.ExpiresAt.Format(time.RFC3339)
-}
-
 // TestRSASignature verifies RSA signing and verification
 func TestRSASignature(t *testing.T) {
 	privateKey, publicKey := generateTestKeyPair(t)
@@ -36,8 +31,8 @@ func TestRSASignature(t *testing.T) {
 	}
 
 	// Sign it
-	data := licenseToSign(license)
-	h := sha256.Sum256([]byte(data))
+	// Compute signing input from license fields
+	h := sha256.Sum256([]byte(license.ID + license.Email + license.ExpiresAt.Format(time.RFC3339)))
 	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, h[:])
 	if err != nil {
 		t.Fatalf("Failed to sign: %v", err)
@@ -73,8 +68,8 @@ func TestRSASignatureTampered(t *testing.T) {
 		Features:  []string{"ai_proxy"},
 	}
 
-	data := licenseToSign(license)
-	h := sha256.Sum256([]byte(data))
+	// Compute signing input from license fields
+	h := sha256.Sum256([]byte(license.ID + license.Email + license.ExpiresAt.Format(time.RFC3339)))
 	signature, _ := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, h[:])
 	license.Signature = base64.StdEncoding.EncodeToString(signature)
 
@@ -83,7 +78,7 @@ func TestRSASignatureTampered(t *testing.T) {
 	license.ID = "tampered-id"
 
 	// Verification should fail
-	dataTampered := licenseToSign(license)
+	dataTampered := license.ID + license.Email + license.ExpiresAt.Format(time.RFC3339)
 	hTampered := sha256.Sum256([]byte(dataTampered))
 	sigBytes, _ := base64.StdEncoding.DecodeString(license.Signature)
 	err := rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hTampered[:], sigBytes)

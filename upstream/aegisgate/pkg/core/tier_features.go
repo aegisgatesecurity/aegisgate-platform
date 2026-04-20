@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 // =========================================================================
-// PROPRIETARY - AegisGate Security
-// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //
-// This file contains proprietary trade secret information.
-// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 // Package core provides tier and feature management for AegisGate.
@@ -23,20 +19,18 @@ var FeatureTierMapping = map[string]Tier{
 	// ============================================================================
 
 	// Basic Connectivity
-	"ai_proxy":                TierCommunity,
-	"openai":                  TierCommunity,
-	"anthropic":               TierCommunity,
-	"cohere":                  TierDeveloper,
-	"azure_openai":            TierDeveloper,
-	"aws_bedrock":             TierProfessional,
-	"google_vertex":           TierEnterprise,
-	"custom_provider_adapter": TierProfessional,
-	"internal_ai_tool":        TierEnterprise,
-	"request_caching":         TierDeveloper,
-	"request_dedup":           TierDeveloper,
-	"batch_processing":        TierProfessional,
-	"connection_pooling":      TierProfessional,
-	"streaming":               TierCommunity,
+	"ai_proxy":           TierCommunity,
+	"openai":             TierCommunity,
+	"anthropic":          TierCommunity,
+	"cohere":             TierDeveloper,
+	"azure_openai":       TierDeveloper,
+	"aws_bedrock":        TierProfessional,
+	"google_vertex":      TierEnterprise,
+	"request_caching":    TierDeveloper,
+	"request_dedup":      TierDeveloper,
+	"batch_processing":   TierProfessional,
+	"connection_pooling": TierProfessional,
+	"streaming":          TierCommunity,
 
 	// ============================================================================
 	// SECURITY
@@ -122,19 +116,19 @@ var FeatureTierMapping = map[string]Tier{
 	// ============================================================================
 	// OBSERVABILITY
 	// ============================================================================
-	"metrics":          TierCommunity,
-	"request_logging":  TierCommunity,
-	"error_tracking":   TierCommunity,
-	"grafana":          TierDeveloper,
-	"datadog":          TierProfessional,
-	"newrelic":         TierProfessional,
-	"custom_metrics":   TierProfessional,
-	"siem_integration": TierProfessional,
-	"splunk":           TierProfessional,
-	"elastic":          TierProfessional,
-	"qradar":           TierEnterprise,
-	"azure_sentinel":   TierEnterprise,
-	"aws_cloudwatch":   TierDeveloper,
+	"metrics":               TierCommunity,
+	"request_logging":       TierCommunity,
+	"error_tracking":        TierCommunity,
+	"grafana":               TierDeveloper,
+	"siem_datadog":          TierProfessional, // SIEM integration
+	"siem_newrelic":         TierProfessional, // Monitoring integration
+	"custom_metrics":        TierProfessional,
+	"siem_integration":      TierProfessional,
+	"siem_splunk":           TierProfessional, // SIEM integration
+	"elastic":               TierProfessional,
+	"siem_qradar":           TierEnterprise, // SIEM integration
+	"siem_azuresentinel":    TierEnterprise, // SIEM integration
+	"monitoring_cloudwatch": TierDeveloper,  // Monitoring integration
 
 	// ============================================================================
 	// API & INTEGRATIONS
@@ -283,24 +277,6 @@ func (t Tier) GetUpgradePath() Tier {
 		return TierEnterprise
 	default:
 		return TierEnterprise
-	}
-}
-
-// GetPriceInfo returns pricing information for a tier
-// Note: Pricing is managed externally via the admin panel
-// Contact sales@aegisgatesecurity.io for tier pricing details
-func (t Tier) GetPriceInfo() (monthly float64, annual float64, perUser bool) {
-	switch t {
-	case TierCommunity:
-		return 0, 0, false // Free tier
-	case TierDeveloper:
-		return -1, -1, false // Contact sales
-	case TierProfessional:
-		return -1, -1, false // Contact sales
-	case TierEnterprise:
-		return -1, -1, false // Contact sales
-	default:
-		return 0, 0, false
 	}
 }
 
