@@ -1,0 +1,42 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#a371f7', 'primaryBorderColor': '#a371f7', 'lineColor': '#F97583', 'secondaryColor': '#238636'}}}%%
+
+flowchart LR
+    subgraph Request[Client Request]
+        A[🔌 MCP Tool Call]
+    end
+
+    subgraph Guardrails[5 MCP Guardrails]
+        direction TB
+        B{Concurrent
+        Session
+        Limit?}
+        C{Tools/Session
+        Cap?}
+        D{Execution
+        Timeout?}
+        E{Memory
+        Advisory?}
+        F{Per-Client
+        RPM?}
+    end
+
+    subgraph Result
+        G[✅ Execute Tool]
+        H[🚫 Deny Request]
+    end
+
+    A --> B
+    B -->|Within limit| C
+    B -->|Exceeded| H
+    C -->|Within cap| D
+    C -->|Exceeded| H
+    D -->|Not timed out| E
+    D -->|Will exceed| H
+    E -->|Under threshold| F
+    E -->|Warning triggered| F
+    F -->|Under RPM| G
+    F -->|Rate limited| H
+
+    style H fill:#da363322
+    style G fill:#23863622
+    style Guardrails fill:#a371f722,stroke:#a371f7
