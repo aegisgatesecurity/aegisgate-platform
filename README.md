@@ -2,16 +2,16 @@
 
 # 🛡️ AegisGate Platform™ — Enterprise AI Security Gateway
 
-[![Version](https://img.shields.io/badge/version-v1.3.0-green?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
+[![Version](https://img.shields.io/badge/version-v1.3.1-green?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.25.8+-00ADD8?logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
 [![Test Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen?logo=codecov)](PERFORMANCE.md)
 
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](docs/DEPLOYMENT.md)
 [![Performance](https://img.shields.io/badge/Performance-11K_RPS-orange?logo=lightning)](PERFORMANCE.md)
-[![Community](https://img.shields.io/badge/Community-Active-7289DA?logo=discord)](https://discord.gg/aegisgate)
+[![Community](https://img.shields.io/badge/Mastodon-@aegisgatesecurity-6364FF?logo=mastodon)](https://mastodon.social/@aegisgatesecurity)
 
 [📚 Docs](https://docs.aegisgatesecurity.io) &nbsp;•&nbsp; [✨ Features](#features) &nbsp;•&nbsp; [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗️ Architecture](#-architecture) &nbsp;•&nbsp; [⚡ Performance](PERFORMANCE.md) &nbsp;•&nbsp; [🔒 Security](SECURITY.md)
 
@@ -160,7 +160,7 @@ docker run -d \
 
 ```bash
 # Download latest release
-wget https://github.com/aegisgatesecurity/aegisgate-platform/releases/download/v1.3.0/aegisgate-platform-linux-amd64
+wget https://github.com/aegisgatesecurity/aegisgate-platform/releases/download/v1.3.1/aegisgate-platform-linux-amd64
 chmod +x aegisgate-platform-linux-amd64
 
 # Run with zero configuration
@@ -334,7 +334,7 @@ await client.connect({
 
 ## 🤝 Community
 
-- **Discord**: [discord.gg/aegisgate](https://discord.gg/aegisgate)
+- **Mastodon**: [@aegisgatesecurity](https://mastodon.social/@aegisgatesecurity)
 - **GitHub Discussions**: [github.com/aegisgatesecurity/aegisgate-platform/discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 - **Issues**: [github.com/aegisgatesecurity/aegisgate-platform/issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues)
 
@@ -363,7 +363,7 @@ await client.connect({
 
 **[aegisgatesecurity.io](https://aegisgatesecurity.io)**
 
-Built with ❤️ by the AegisGate Security team
+Built with 🖤 by the AegisGate Security team
 
 © 2026 AegisGate Security, Inc. All rights reserved.
 

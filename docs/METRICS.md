@@ -1,4 +1,4 @@
-# Prometheus Metrics Documentation — AegisGate Platform v1.3.0
+# Prometheus Metrics Documentation — AegisGate Platform v1.3.1
 
 AegisGate Platform exposes 10 canonical Prometheus metrics with full cardinality
 protection for production monitoring, alerting, and capacity planning.
