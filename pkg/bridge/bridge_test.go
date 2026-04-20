@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // Package bridge_test verifies the platform bridge wiring to upstream modules.
 package bridge_test
 

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (C) 2025 AegisGuard Security
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 // Package ratelimit - Rate limiting for AI agent operations
 // This file provides HTTP middleware integration with proxy-aware IP extraction

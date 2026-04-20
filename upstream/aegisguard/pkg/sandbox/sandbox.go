@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (C) 2025 AegisGuard Security
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 // Package sandbox provides secure code execution sandbox for AI agent operations.
 // This is a simplified version adapted from AegisGate for Go-based code execution.

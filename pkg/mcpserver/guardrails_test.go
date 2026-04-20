@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGate Platform - MCP Guardrail Middleware Tests
 // =========================================================================

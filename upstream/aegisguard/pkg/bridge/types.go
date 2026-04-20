@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard Security - AegisGate Bridge
-// Copyright (c) 2025-2026 AegisGuard Security. All rights reserved.
+
 // =========================================================================
 //
 // This package provides the bridge between AegisGuard and AegisGate,

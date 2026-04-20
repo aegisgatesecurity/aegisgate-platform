@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (C) 2025 AegisGuard Security
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 // Package logging provides structured JSON logging for AegisGuard.
 // Supports multiple log levels, structured fields, and various output formats.

@@ -1,5 +1,3 @@
-// Copyright 2024 AegisGate Security. All rights reserved.
-
 package metrics
 
 import (

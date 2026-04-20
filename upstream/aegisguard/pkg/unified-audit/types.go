@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard Security - Unified Audit Package
-// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
+//
 // =========================================================================
 
 package unified_audit

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // AegisGate - Chatbot Security Gateway
 // Copyright (c) 2026 John Colvin <john.colvin@securityfirm.com>
 // See LICENSE file for details.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // Package tier provides additional test coverage for the tier package,
 // targeting the uncovered switch-case branches and default paths.
 package tier

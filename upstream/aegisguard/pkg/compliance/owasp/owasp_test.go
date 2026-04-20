@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard Security
-// Copyright (c) 2025-2026 AegisGuard Security. All rights reserved.
+
 // =========================================================================
 //
 // OWASP LLM Top 10 Compliance Module Tests

@@ -1,5 +1,3 @@
-// Copyright 2024 AegisGate Security. All rights reserved.
-//
 // This file defines standard metric labels and dimensions for consistent
 // observability across the AegisGate Platform.
 package metrics

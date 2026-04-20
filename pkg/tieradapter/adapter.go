@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 // Package tieradapter provides bidirectional conversion between the platform's
 // unified tier system and the upstream AegisGuard/AegisGate tier types.
 // It also maps platform Feature constants to their equivalent feature strings

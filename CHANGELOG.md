@@ -67,7 +67,7 @@
 - **Result**: 0 known vulnerabilities across all modules (govulncheck verified)
 
 #### Docker / GHCR Publishing
-- **Docker image**: Successfully published to GHCR as `ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:v1.3.1`
+- **Docker image**: Successfully published to GHCR as `ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:latest`
 - **Dockerfile**: Updated base image to `golang:1.25.9-alpine`
 - **Image size**: 19.1MB (unchanged)
 
@@ -92,8 +92,8 @@
 | `upstream/aegisgate/go.mod` | gRPC v1.79.3 |
 | `upstream/aegisgate/pkg/tls/certs/doc.go` | New stub package file |
 | `upstream/aegisgate/pkg/security/integration_test.go` | Fixed rune literals |
-| `README.md`, `docs/website/index.html` | Mastodon, 🖤, v1.3.1 |
-| All deployment/UI files | Version bumped to v1.3.1 |
+| `README.md`, `docs/website/index.html` | Mastodon, 🖤 |
+| All deployment/UI files | Version bumped to v1.3.2 |
 
 ---
 

@@ -1,5 +1,3 @@
-// Copyright 2024 AegisGate Security. All rights reserved.
-//
 // Prometheus metrics for AegisGate Platform.
 // All metric definitions use canonical label names from labels.go
 // and cardinality-safe value sanitization from cardinality.go.

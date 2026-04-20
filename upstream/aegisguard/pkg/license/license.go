@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGuard License Management
-// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
+//
 // =========================================================================
 //
 // This package provides license validation for AegisGuard.

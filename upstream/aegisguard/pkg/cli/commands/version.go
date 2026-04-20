@@ -135,11 +135,10 @@ func LicenseInfo() {
 	fmt.Printf(`AegisGuard License
 ==================
 
-Copyright (c) 2024 AegisGuard Security
-All rights reserved.
+Copyright (c) 2024-2026 AegisGate Security, LLC
 
-This software is provided under a proprietary license.
-For license information, visit: https://aegisguard.io/license
+Licensed under the Apache License, Version 2.0.
+For details, see: https://www.apache.org/licenses/LICENSE-2.0
 
 Third-party licenses are available in the NOTICES file.
 `)

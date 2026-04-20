@@ -1,5 +1,3 @@
-// Copyright 2024 AegisGate Security. All rights reserved.
-//
 // HTTP middleware for automatic Prometheus metrics collection.
 // Uses cardinality-safe label values from the Phase 2 label system
 // to prevent metrics explosion in production.
