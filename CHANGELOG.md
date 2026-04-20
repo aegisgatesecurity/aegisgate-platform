@@ -2,6 +2,14 @@
 
 ## [1.3.2] - 2026-04-20
 
+### Legal & IP Protection
+- Added `NOTICE` file with trademark reservation and commercial licensing notice
+- Added `TRADEMARKS.md` with trademark usage policy
+- Standardized entity name to "AegisGate Security, LLC" across all files
+- Removed "All rights reserved" from README footer (contradicts Apache 2.0)
+- Fixed fabricated 3rd-party copyright in `certificate_test.go`
+- Clarified dual-license model: Community = Apache 2.0, Commercial = separate license
+
 ### Security Audit — Public Repository Cleanup
 
 #### Files Removed from Repository

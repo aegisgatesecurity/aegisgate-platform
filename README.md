@@ -75,18 +75,20 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## 📦 License & Contribution Model
 
-### Apache License 2.0
+### Apache License 2.0 — Community Edition
 
-AegisGate Platform™ is released under the Apache License 2.0, a permissive open-source license that allows you to:
+AegisGate Platform™ Community Edition is released under the [Apache License 2.0](LICENSE). This covers the open-source codebase published in this repository.
 
 - ✅ Use the software for any purpose
 - ✅ Modify and distribute the software
 - ✅ Use in proprietary software
 - ✅ Distribute copies to others
 
+**Commercial features** — including enterprise compliance frameworks, advanced threat detection, and priority support — are available under a separate commercial license. See [NOTICE](NOTICE) for trademark and licensing details, or contact [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io).
+
 ### Contribution Model
 
-We welcome community contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome under the [inbound=outbound](https://opensource.microsoft.com/outbound/) model. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. No CLA required.
 
 ---
 
@@ -315,6 +317,8 @@ await client.connect({
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
 | [LICENSE](LICENSE) | Apache 2.0 license text |
+| [NOTICE](NOTICE) | Trademark reservation and commercial licensing |
+| [TRADEMARKS.md](TRADEMARKS.md) | Trademark usage policy |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 
 ---
@@ -352,6 +356,6 @@ await client.connect({
 
 Built with 🖤 by the AegisGate Security team
 
-© 2026 AegisGate Security, Inc. All rights reserved.
+© 2024-2026 AegisGate Security, LLC
 
 </div>
