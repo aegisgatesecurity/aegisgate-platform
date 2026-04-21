@@ -1,40 +1,49 @@
+// SPDX-License-Identifier: Apache-2.0
+// Package middleware provides HTTP middleware for AegisGate Platform.
+//
+// FeatureGuard middleware enforces tier-based feature access using the
+// platform's client-side license validation system. No remote API calls
+// are required — all validation happens locally with ECDSA P-256 signatures.
 package middleware
 
 import (
 	"net/http"
 	"strings"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/core"
-	"github.com/aegisgatesecurity/aegisgate/pkg/core/license"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
-// FeatureGuard middleware checks if the current license tier allows access to a feature
+// FeatureGuard middleware checks if the current license tier allows access
+// to a feature. Uses the platform's client-side license validation.
 func FeatureGuard(featureKey string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get license manager from context (set by LicenseMiddleware)
-		lm := getLicenseManager(r.Context())
+		lm := license.ManagerFromContext(r.Context())
 
 		if lm == nil {
-			// No license - default to community
-			requiredTier := core.GetRequiredTier(featureKey)
-			if requiredTier > core.TierCommunity {
-				http.Error(w, "Professional tier required for this feature", http.StatusPaymentRequired)
+			// No license manager — default to Community tier
+			if !tier.IsFeatureCommunity(featureKey) {
+				requiredTier := tier.RequiredTier(featureKeyForKey(featureKey))
+				http.Error(w, getUpgradeMessage(requiredTier, tier.TierCommunity), http.StatusPaymentRequired)
 				return
 			}
-		} else {
-			// Check if feature is licensed
-			if !lm.IsFeatureLicensed(r.Context(), featureKey) {
-				// Get current tier info
-				tierStr := lm.GetTier(r.Context())
-				currentTier := core.GetTierByName(tierStr)
-				requiredTier := core.GetRequiredTier(featureKey)
+			next.ServeHTTP(w, r)
+			return
+		}
 
-				w.Header().Set("X-Required-Tier", requiredTier.String())
-				w.Header().Set("X-Current-Tier", currentTier.String())
+		// Check if feature is licensed using context-aware method
+		if !lm.IsFeatureLicensedForContext(r.Context(), featureKey) {
+			// Get current tier for upgrade message
+			tierStr := lm.GetTierForContext(r.Context())
+			currentTier, _ := tier.ParseTier(tierStr)
+			requiredTier := tier.RequiredTier(featureKeyForKey(featureKey))
 
-				http.Error(w, getUpgradeMessage(requiredTier, currentTier), http.StatusPaymentRequired)
-				return
-			}
+			w.Header().Set("X-Required-Tier", requiredTier.DisplayName())
+			w.Header().Set("X-Current-Tier", currentTier.DisplayName())
+
+			http.Error(w, getUpgradeMessage(requiredTier, currentTier), http.StatusPaymentRequired)
+			return
 		}
 
 		next.ServeHTTP(w, r)
@@ -46,16 +55,18 @@ func FeatureGuardFunc(featureKey string, next func(http.ResponseWriter, *http.Re
 	return FeatureGuard(featureKey, http.HandlerFunc(next))
 }
 
-// RequireTier ensures the request comes from an account with minimum tier
-func RequireTier(minimumTier core.Tier, next http.Handler) http.Handler {
+// RequireTier ensures the request comes from an account with minimum tier.
+// Uses the platform's client-side license validation.
+func RequireTier(minimumTier tier.Tier, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lm := getLicenseManager(r.Context())
+		lm := license.ManagerFromContext(r.Context())
 
-		var currentTier core.Tier
+		var currentTier tier.Tier
 		if lm == nil {
-			currentTier = core.TierCommunity
+			currentTier = tier.TierCommunity
 		} else {
-			currentTier = core.GetTierByName(lm.GetTier(r.Context()))
+			tierStr := lm.GetTierForContext(r.Context())
+			currentTier, _ = tier.ParseTier(tierStr)
 		}
 
 		if currentTier < minimumTier {
@@ -67,26 +78,27 @@ func RequireTier(minimumTier core.Tier, next http.Handler) http.Handler {
 	})
 }
 
-// RequireFeature checks if a specific feature is available
+// RequireFeature checks if a specific feature is available.
+// Uses the platform's client-side license validation.
 func RequireFeature(featureKeys ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			lm := getLicenseManager(r.Context())
+			lm := license.ManagerFromContext(r.Context())
 
 			for _, feature := range featureKeys {
 				hasFeature := false
 
 				if lm == nil {
-					// No license - check if feature is community
-					hasFeature = core.GetRequiredTier(feature) == core.TierCommunity
+					// No license — check if feature is Community tier
+					hasFeature = tier.IsFeatureCommunity(feature)
 				} else {
-					hasFeature = lm.IsFeatureLicensed(r.Context(), feature)
+					hasFeature = lm.IsFeatureLicensedForContext(r.Context(), feature)
 				}
 
 				if !hasFeature {
-					requiredTier := core.GetRequiredTier(feature)
+					requiredTier := tier.RequiredTier(featureKeyForKey(feature))
 					w.Header().Set("X-Required-Feature", feature)
-					w.Header().Set("X-Required-Tier", requiredTier.String())
+					w.Header().Set("X-Required-Tier", requiredTier.DisplayName())
 					http.Error(w, "Feature not available: "+feature, http.StatusPaymentRequired)
 					return
 				}
@@ -97,48 +109,57 @@ func RequireFeature(featureKeys ...string) func(http.Handler) http.Handler {
 	}
 }
 
-// getLicenseManager retrieves the license manager from context
-func getLicenseManager(ctx interface{ Value(interface{}) interface{} }) *license.LicenseManager {
-	// This would be set by the LicenseMiddleware
-	// Implementation depends on your context setup
-	return nil // Placeholder
+// TierBasedResponse modifies the response based on tier using client-side validation.
+func TierBasedResponse(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lm := license.ManagerFromContext(r.Context())
+
+		var currentTier tier.Tier
+		if lm == nil {
+			currentTier = tier.TierCommunity
+		} else {
+			tierStr := lm.GetTierForContext(r.Context())
+			currentTier, _ = tier.ParseTier(tierStr)
+		}
+
+		// Add tier header to response
+		w.Header().Set("X-AegisGate-Tier", currentTier.String())
+
+		// Add available features based on tier
+		features := tier.AllFeatures(currentTier)
+		featureStrs := make([]string, len(features))
+		for i, f := range features {
+			featureStrs[i] = string(f)
+		}
+		w.Header().Set("X-Available-Features", strings.Join(featureStrs, ","))
+
+		next.ServeHTTP(w, r)
+	})
 }
 
-func getUpgradeMessage(required, current core.Tier) string {
+// featureKeyForKey resolves a string feature key to a tier.Feature constant.
+// Returns a zero-value Feature if the key is unknown.
+func featureKeyForKey(key string) tier.Feature {
+	f, ok := tier.FeatureForKey(key)
+	if !ok {
+		// Unknown feature — return zero value (defaults to Community)
+		return tier.Feature("")
+	}
+	return f
+}
+
+func getUpgradeMessage(required, current tier.Tier) string {
 	upgradeLink := "/pricing"
-	if strings.Contains(required.String(), "Enterprise") {
+	if required == tier.TierEnterprise {
 		upgradeLink = "/contact-sales"
 	}
 
 	return `{"error": "upgrade_required", "message": "This feature requires ` +
-		required.String() + ` tier", "current_tier": "` + current.String() +
+		required.DisplayName() + ` tier", "current_tier": "` + current.String() +
 		`", "upgrade_url": "` + upgradeLink + `"}`
 }
 
-func getTierUpgradeMessage(required, current core.Tier) string {
+func getTierUpgradeMessage(required, current tier.Tier) string {
 	return `{"error": "tier_upgrade_required", "message": "This endpoint requires ` +
-		required.String() + ` tier or higher", "current_tier": "` + current.String() + `"}`
-}
-
-// TierBasedResponse modifies the response based on tier
-func TierBasedResponse(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lm := getLicenseManager(r.Context())
-
-		var tier core.Tier
-		if lm == nil {
-			tier = core.TierCommunity
-		} else {
-			tier = core.GetTierByName(lm.GetTier(r.Context()))
-		}
-
-		// Add tier header to response
-		w.Header().Set("X-AegisGate-Tier", tier.String())
-
-		// Add available features based on tier
-		features := core.GetFeaturesByTier(tier)
-		w.Header().Set("X-Available-Features", strings.Join(features, ","))
-
-		next.ServeHTTP(w, r)
-	})
+		required.DisplayName() + ` tier or higher", "current_tier": "` + current.String() + `"}`
 }

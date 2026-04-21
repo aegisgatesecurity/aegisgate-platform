@@ -1,17 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
+// License Validation Middleware — Client-Side Validation
 // =========================================================================
 //
-// License Validation Middleware - Integrates with AegisGate Admin Panel
-// =========================================================================
+// This middleware performs all license validation locally using ECDSA P-256
+// cryptographic signatures. No remote API calls are required for license
+// validation. License activation-only endpoints may contact
+// license.aegisgatesecurity.io for initial registration.
+//
+// The license key is sourced from:
+//   1. The LICENSE_KEY environment variable
+//   2. The X-License-Key HTTP header (for API usage)
+//   3. A configured license key file
+//
+// Once validated, the license Manager is injected into the request context
+// for downstream FeatureGuard and RequireTier middleware to use.
 
 package middleware
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -19,245 +27,156 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/core"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
+// globalManager is the singleton license Manager, initialized once.
+var globalManager *license.Manager
+var managerOnce sync.Once
 
-// LicenseConfig holds configuration for license validation
-type LicenseConfig struct {
-	AdminPanelURL string        // URL of the admin panel API
-	LicenseKey    string        // License key to validate
-	PublicKeyPEM  string        // Public key for license verification
-	CacheDuration time.Duration // How long to cache validation results
-	RetryInterval time.Duration // Time between retries on failure
-	FailOpen      bool          // Allow requests if license service is unavailable
-}
-
-// DefaultLicenseConfig returns sensible defaults
-func DefaultLicenseConfig() *LicenseConfig {
-	return &LicenseConfig{
-		AdminPanelURL: getEnv("ADMIN_PANEL_URL", "http://localhost:8443"),
-		LicenseKey:    getEnv("LICENSE_KEY", ""),
-		PublicKeyPEM:  getEnv("LICENSE_PUBLIC_KEY", ""),
-		CacheDuration: 5 * time.Minute,
-		RetryInterval: 30 * time.Second,
-		FailOpen:      false, // Security: Do not allow requests if license service is unavailable
-	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-// ValidationResult represents the result of license validation
-type ValidationResult struct {
-	Valid       bool      `json:"valid"`
-	Status      string    `json:"status"`
-	Message     string    `json:"message"`
-	Tier        core.Tier `json:"tier"`
-	ValidatedAt time.Time `json:"validated_at"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	MaxServers  int       `json:"max_servers"`
-	MaxUsers    int       `json:"max_users"`
-	RateLimit   int       `json:"rate_limit_per_minute"`
-}
-
-type cachedValidation struct {
-	result    ValidationResult
-	expiresAt time.Time
-}
-
-// LicenseValidator handles license validation via the admin panel API
-type LicenseValidator struct {
-	config     *LicenseConfig
-	httpClient *http.Client
-	cache      map[string]cachedValidation
-	cacheMu    sync.RWMutex
-}
-
-func NewLicenseValidator(config *LicenseConfig) *LicenseValidator {
-	if config == nil {
-		config = DefaultLicenseConfig()
-	}
-	return &LicenseValidator{
-		config:     config,
-		httpClient: &http.Client{Timeout: 10 * time.Second},
-		cache:      make(map[string]cachedValidation),
-	}
-}
-
-func (v *LicenseValidator) Validate(ctx context.Context) (*ValidationResult, error) {
-	v.cacheMu.RLock()
-	if cached, ok := v.cache["current"]; ok && time.Now().Before(cached.expiresAt) {
-		v.cacheMu.RUnlock()
-		return &cached.result, nil
-	}
-	v.cacheMu.RUnlock()
-
-	if v.config.LicenseKey == "" {
-		return &ValidationResult{
-			Valid:       true,
-			Status:      "community",
-			Message:     "No license key - using Community tier",
-			Tier:        core.TierCommunity,
-			ValidatedAt: time.Now(),
-			RateLimit:   60,
-			MaxServers:  1,
-			MaxUsers:    3,
-		}, nil
-	}
-
-	result, err := v.validateRemote(ctx)
-	if err != nil {
-		if v.config.FailOpen {
-			log.Printf("[LICENSE] Service unavailable, fail-open: %v", err)
-			return &ValidationResult{
-				Valid:       true,
-				Status:      "fail_open",
-				Message:     "License service unavailable",
-				Tier:        core.TierCommunity,
-				ValidatedAt: time.Now(),
-				RateLimit:   60,
-			}, nil
+// getGlobalManager returns the singleton license Manager, creating it if needed.
+func getGlobalManager() *license.Manager {
+	managerOnce.Do(func() {
+		var err error
+		globalManager, err = license.NewManager()
+		if err != nil {
+			log.Printf("[LICENSE] Failed to create license manager: %v", err)
+			return
 		}
-		return nil, fmt.Errorf("license validation failed: %w", err)
-	}
 
-	v.cacheMu.Lock()
-	v.cache["current"] = cachedValidation{result: *result, expiresAt: time.Now().Add(v.config.CacheDuration)}
-	v.cacheMu.Unlock()
-	return result, nil
+		// Set the license key from environment
+		key := getLicenseKey()
+		if key != "" {
+			globalManager.SetLicenseKey(key)
+			result := globalManager.Validate(key)
+			if result.Valid {
+				log.Printf("[LICENSE] Valid license: %s tier (customer: %s)", result.Tier.DisplayName(), result.Payload.Customer)
+			} else if result.GracePeriod {
+				log.Printf("[LICENSE] License in grace period: %s (expires: %s)", result.Message, result.Payload.ExpiresAt.Format(time.RFC3339))
+			} else {
+				log.Printf("[LICENSE] License validation failed: %s", result.Message)
+			}
+		} else {
+			log.Printf("[LICENSE] No license key configured — using Community tier")
+		}
+	})
+	return globalManager
 }
 
-func (v *LicenseValidator) validateRemote(ctx context.Context) (*ValidationResult, error) {
-	validateURL := fmt.Sprintf("%s/api/licenses/validate", v.config.AdminPanelURL)
-	payload := map[string]string{"license_key": v.config.LicenseKey}
-	body, _ := json.Marshal(payload)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", validateURL, bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := v.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var apiResp map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return nil, fmt.Errorf("parse response: %w", err)
+// getLicenseKey returns the license key from environment or file.
+func getLicenseKey() string {
+	// Check environment variable first
+	if key := os.Getenv("LICENSE_KEY"); key != "" {
+		return strings.TrimSpace(key)
 	}
 
-	valid, ok := apiResp["valid"].(bool)
-	if !ok || !valid {
-		status, _ := apiResp["status"].(string)
-		message, _ := apiResp["message"].(string)
-		return &ValidationResult{Valid: false, Status: status, Message: message}, fmt.Errorf("invalid: %s", message)
+	// Check for license key file
+	keyFile := os.Getenv("LICENSE_KEY_FILE")
+	if keyFile == "" {
+		keyFile = "/etc/aegisgate/license.key"
+	}
+	if data, err := os.ReadFile(keyFile); err == nil {
+		return strings.TrimSpace(string(data))
 	}
 
-	licenseData, ok := apiResp["license"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid license data")
-	}
-
-	tierName, _ := licenseData["tier_name"].(string)
-	tier := core.GetTierByName(tierName)
-
-	maxServers, maxUsers, rateLimit := 1, 3, 60
-	if ms, ok := licenseData["max_servers"].(float64); ok {
-		maxServers = int(ms)
-	}
-	if mu, ok := licenseData["max_users"].(float64); ok {
-		maxUsers = int(mu)
-	}
-	if rl, ok := licenseData["rate_limit_per_minute"].(float64); ok {
-		rateLimit = int(rl)
-	}
-
-	var expiresAt time.Time
-	if exp, ok := licenseData["expires_at"].(string); ok {
-		expiresAt, _ = time.Parse(time.RFC3339, exp)
-	}
-
-	return &ValidationResult{
-		Valid:       true,
-		Status:      "valid",
-		Message:     "License is valid",
-		Tier:        tier,
-		ValidatedAt: time.Now(),
-		ExpiresAt:   expiresAt,
-		MaxServers:  maxServers,
-		MaxUsers:    maxUsers,
-		RateLimit:   rateLimit,
-	}, nil
+	return ""
 }
 
-func (v *LicenseValidator) ClearCache() {
-	v.cacheMu.Lock()
-	defer v.cacheMu.Unlock()
-	v.cache = make(map[string]cachedValidation)
-}
-
-func (v *LicenseValidator) GetTier(ctx context.Context) core.Tier {
-	result, err := v.Validate(ctx)
-	if err != nil || !result.Valid {
-		return core.TierCommunity
-	}
-	return result.Tier
-}
-
-var globalValidator *LicenseValidator
-var validatorOnce sync.Once
-
-func GetGlobalValidator() *LicenseValidator {
-	validatorOnce.Do(func() { globalValidator = NewLicenseValidator(nil) })
-	return globalValidator
-}
-
+// LicenseMiddleware injects the license Manager into the request context
+// and validates the license key. Uses client-side ECDSA P-256 validation.
+//
+// The license key is sourced from (in order of priority):
+//  1. X-License-Key HTTP header (for API usage)
+//  2. Global LICENSE_KEY environment variable (default)
 func LicenseMiddleware() func(http.Handler) http.Handler {
-	validator := GetGlobalValidator()
+	mgr := getGlobalManager()
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip license check for health/version/stats endpoints
 			if strings.HasPrefix(r.URL.Path, "/health") ||
 				strings.HasPrefix(r.URL.Path, "/version") ||
 				strings.HasPrefix(r.URL.Path, "/stats") {
 				next.ServeHTTP(w, r)
 				return
 			}
-			ctx := r.Context()
-			result, err := validator.Validate(ctx)
-			if err != nil || !result.Valid {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusPaymentRequired)
-				json.NewEncoder(w).Encode(map[string]interface{}{"error": "license_invalid", "message": result.Message})
+
+			if mgr == nil {
+				// No license manager available — inject Community tier context
+				ctx := context.WithValue(r.Context(), license.CtxKeyTier, tier.TierCommunity)
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-			ctx = context.WithValue(ctx, "license_tier", result.Tier)
-			ctx = context.WithValue(ctx, "license_rate_limit", result.RateLimit)
+
+			// Determine the license key for this request
+			// Priority: header override > global config
+			key := mgr.GetLicenseKey()
+			if headerKey := r.Header.Get("X-License-Key"); headerKey != "" {
+				key = strings.TrimSpace(headerKey)
+			}
+
+			// Validate the license
+			result := mgr.Validate(key)
+
+			// Build context with license information
+			ctx := r.Context()
+			ctx = license.ContextWithManager(ctx, mgr)
+			ctx = license.ContextWithLicenseKey(ctx, key)
+
+			if result.Valid {
+				ctx = context.WithValue(ctx, license.CtxKeyTier, result.Tier)
+			} else {
+				ctx = context.WithValue(ctx, license.CtxKeyTier, tier.TierCommunity)
+			}
+
+			// If license is completely invalid (not even grace period), return 402
+			if !result.Valid && !result.GracePeriod && key != "" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusPaymentRequired)
+				w.Write([]byte(`{"error":"license_invalid","message":"` + result.Message + `"}`))
+				return
+			}
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func GetLicenseTierFromContext(ctx context.Context) core.Tier {
-	if tier, ok := ctx.Value("license_tier").(core.Tier); ok {
-		return tier
+// GetLicenseTierFromContext returns the current license tier from context
+func GetLicenseTierFromContext(ctx context.Context) tier.Tier {
+	if t, ok := ctx.Value(license.CtxKeyTier).(tier.Tier); ok {
+		return t
 	}
-	return core.TierCommunity
+	return tier.TierCommunity
 }
 
-func GetLicenseRateLimitFromContext(ctx context.Context) int {
-	if rl, ok := ctx.Value("license_rate_limit").(int); ok {
-		return rl
+// HealthCheck returns license health information
+func HealthCheck() map[string]any {
+	mgr := getGlobalManager()
+	if mgr == nil {
+		return map[string]any{
+			"status":  "no_license_manager",
+			"tier":    "community",
+			"message": "License manager not initialized",
+		}
 	}
-	return 60
+
+	key := mgr.GetLicenseKey()
+	if key == "" {
+		return map[string]any{
+			"status":  "community",
+			"tier":    "community",
+			"message": "No license key — Community tier",
+		}
+	}
+
+	result := mgr.Validate(key)
+	return map[string]any{
+		"status":       result.Message,
+		"tier":         result.Tier.String(),
+		"valid":        result.Valid,
+		"expired":      result.Expired,
+		"grace_period": result.GracePeriod,
+	}
 }

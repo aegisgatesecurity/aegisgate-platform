@@ -442,6 +442,92 @@ func HasFeature(t Tier, feature Feature) bool {
 	return t.CanAccess(RequiredTier(feature))
 }
 
+// featureKeyMap maps string feature keys (as used in middleware and core.FeatureTierMapping)
+// to platform Feature constants. This enables context-aware feature checks by string key.
+var featureKeyMap = map[string]Feature{
+	// Community
+	"ai_proxy": FeatureAIProxy, "openai": FeatureOpenAI, "anthropic": FeatureAnthropic,
+	"streaming": FeatureStreaming, "tls_termination": FeatureTLS,
+	"builtin_ca": FeatureBuiltInCA, "secret_scanning": FeatureSecretScanning,
+	"pii_scanning": FeaturePIIScanning, "prompt_injection": FeaturePromptInjection,
+	"bidirectional_inspection": FeatureBidirectional, "circuit_breaker": FeatureCircuitBreaker,
+	"compliance_atlas": FeatureATLAS, "compliance_nist_ai_rmf": FeatureNISTAIRMF,
+	"compliance_owasp": FeatureOWASP, "compliance_gdpr_view": FeatureGDPRView,
+	"ml_basic_anomaly": FeatureBasicAnomaly, "ml_traffic_pattern": FeatureTrafficPattern,
+	"metrics": FeatureMetrics, "audit_logging": FeatureAuditLogging,
+	"request_logging": FeatureRequestLog, "error_tracking": FeatureErrorTrack,
+	"storage_file": FeatureFileStorage, "deploy_docker": FeatureDocker,
+	"deploy_compose": FeatureCompose, "admin_dashboard": FeatureAdminDashboard,
+	"rest_api": FeatureRESTAPI, "sbom_tracking": FeatureSBOM, "i18n": FeatureI18N,
+	"mcp_session_isolation": FeatureMCPSessionIsolation, "mcp_basic_rbac": FeatureMCPBasicRBAC,
+	// Developer
+	"oauth_sso": FeatureOAuthSSO, "oidc": FeatureOIDC,
+	"cohere": FeatureCohere, "azure_openai": FeatureAzureOpenAI,
+	"request_caching": FeatureRequestCache, "request_dedup": FeatureRequestDedup,
+	"mtls": FeatureMTLS, "runtime_hardening": FeatureRuntimeHarden,
+	"ml_cost_anomaly": FeatureCostAnomaly, "ml_usage_anomaly": FeatureUsageAnomaly,
+	"compliance_nist_view": FeatureNISTView, "compliance_basic_security": FeatureBasicSecurity,
+	"custom_roles": FeatureCustomRoles, "granular_permissions": FeatureGranularPerms,
+	"grafana": FeatureGrafana, "webhooks": FeatureWebhooks,
+	"deploy_terraform": FeatureTerraform, "storage_sqlite": FeatureSQLite,
+	"storage_redis": FeatureRedis, "data_encryption": FeatureDataEncryption,
+	"admin_advanced": FeatureAdminAdvanced, "mcp_context_isolation": FeatureContextIsolation,
+	"code_execute_sandbox": FeatureCodeExecSandbox,
+	// Professional
+	"compliance_hipaa": FeatureHIPAA, "compliance_pci": FeaturePCI,
+	"compliance_soc2": FeatureSOC2Full, "compliance_gdpr": FeatureGDPRFull,
+	"compliance_nist": FeatureNISTFull, "compliance_iso27001": FeatureISO27001,
+	"ml_behavioral": FeatureMLBehavioral, "ml_predictive": FeatureMLPredictive,
+	"ml_threat_detection": FeatureMLThreat, "siem_integration": FeatureSIEM,
+	"multi_tenant": FeatureMultiTenant, "policy_engine": FeaturePolicyEngine,
+	"department_separation": FeatureDeptSeparation,
+	"deploy_kubernetes": FeatureKubernetes, "deploy_helm": FeatureHelm,
+	"storage_postgres": FeaturePostgreSQL, "storage_s3": FeatureS3,
+	"retention_policies": FeatureRetentionPol, "vault_secrets": FeatureVaultSecrets,
+	"mcp_process_sandbox": FeatureProcessSandbox,
+	// Enterprise
+	"compliance_iso42001": FeatureISO42001, "compliance_fedramp": FeatureFedRAMP,
+	"compliance_soc2_type2": FeatureSOC2Type2, "compliance_hitrust": FeatureHITRUST,
+	"ml_custom_models": FeatureMLCustom, "ml_zeroday": FeatureMLZeroDay,
+	"ml_realtime_response": FeatureMLRealtime,
+	"hsm_integration": FeatureHSM, "ldap_integration": FeatureLDAP,
+	"fips_compliance": FeatureFIPS,
+	"deploy_ha": FeatureHA, "deploy_airgapped": FeatureAirGapped,
+	"deploy_autoscale": FeatureAutoScale, "deploy_multiregion": FeatureMultiRegion,
+	"storage_mongo": FeatureMongoDB, "whitelabel": FeatureWhitelabel,
+	"custom_domain": FeatureCustomDomain, "mcp_vm_sandbox": FeatureVMSandbox,
+}
+
+// TierHasFeatureKey checks if a tier has access to a feature given its string key.
+// This is the string-key version of HasFeature, used by middleware that works
+// with feature key strings (e.g., "mtls", "compliance_hipaa").
+func TierHasFeatureKey(t Tier, key string) bool {
+	f, ok := featureKeyMap[key]
+	if !ok {
+		// Unknown feature keys default to Community tier access
+		return t >= TierCommunity
+	}
+	return t.CanAccess(RequiredTier(f))
+}
+
+// IsFeatureCommunity checks if a feature key requires only Community tier.
+// Returns true for unknown keys (conservative: allow by default).
+func IsFeatureCommunity(key string) bool {
+	f, ok := featureKeyMap[key]
+	if !ok {
+		// Unknown features: unknown → allow as community
+		return true
+	}
+	return RequiredTier(f) == TierCommunity
+}
+
+// FeatureForKey resolves a string feature key to a Feature constant.
+// Returns the Feature and true if found, or zero value and false.
+func FeatureForKey(key string) (Feature, bool) {
+	f, ok := featureKeyMap[key]
+	return f, ok
+}
+
 // AllFeatures returns all features available for a tier
 func AllFeatures(t Tier) []Feature {
 	var features []Feature

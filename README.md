@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-79.9%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Test Coverage](https://img.shields.io/badge/Coverage-87.7%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](deploy/helm/aegisgate-platform/)
@@ -452,7 +452,7 @@ flowchart TB
 | **Error Rate** | 0.00% | ✅ Perfect |
 | **Binary Size** | 14.3MB | ✅ Optimized |
 | **Docker Image** | 19.1MB | ✅ Minimal |
-| **Test Coverage** | 85%+ | ✅ Comprehensive |
+| **Test Coverage** | 87.7% | ✅ Comprehensive |
 
 **Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
 

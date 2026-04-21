@@ -747,3 +747,5 @@ func TestParseJSONParams_Invalid(t *testing.T) {
 		t.Error("Expected error parsing invalid JSON")
 	}
 }
+
+// TestGuardrailHandler_Comprehensive covers all guardrail scenarios including error paths

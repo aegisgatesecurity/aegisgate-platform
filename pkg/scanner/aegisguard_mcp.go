@@ -346,7 +346,22 @@ func (s *AegisGuardMCPScanner) validateResponse(resp *JSONRPCResponse, expectedI
 		return false
 	}
 
-	if resp.ID != expectedID && expectedID != 0 {
+	// Handle both int and float64 IDs (JSON unmarshals numbers as float64)
+	idMatch := false
+	if expectedID == 0 {
+		idMatch = true // expectedID == 0 means any ID is acceptable
+	} else if resp.ID == expectedID {
+		idMatch = true
+	} else {
+		// Check if resp.ID is float64 and expectedID is int with same value
+		if floatID, ok := resp.ID.(float64); ok {
+			if intExpected, ok := expectedID.(int); ok && floatID == float64(intExpected) {
+				idMatch = true
+			}
+		}
+	}
+
+	if !idMatch && expectedID != 0 {
 		s.logger.Debug("unexpected response ID", "got", resp.ID, "expected", expectedID)
 		return false
 	}
