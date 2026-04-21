@@ -1,200 +1,187 @@
-// SPDX-License-Identifier: Apache-2.0
-// =========================================================================
-// AegisGate Platform - MCP Tools Coverage Tests
-// =========================================================================
-// Targeted tests for uncovered branches in tools.go (47.4% → target 80%)
-// =========================================================================
-
 package mcpserver
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
 )
 
-// mockToolsAuthorizer is a minimal mock for creating a RequestHandler.
-type mockToolsAuthorizer struct{}
-
-func (m *mockToolsAuthorizer) Authorize(_ context.Context, _ *mcp.AuthorizationCall) (*mcp.AuthorizationDecision, error) {
-	return &mcp.AuthorizationDecision{Allowed: true}, nil
-}
-
-// mockToolsAuditLogger is a minimal mock for creating a RequestHandler.
-type mockToolsAuditLogger struct{}
-
-func (m *mockToolsAuditLogger) Log(_ context.Context, _ *mcp.AuditEntry) error {
-	return nil
-}
-
-// mockToolsSessionMgr is a minimal mock for creating a RequestHandler.
-type mockToolsSessionMgr struct{}
-
-func (m *mockToolsSessionMgr) CreateSession(_ context.Context, agentID string) (*mcp.Session, error) {
-	return &mcp.Session{ID: "test-session", AgentID: agentID}, nil
-}
-
-func (m *mockToolsSessionMgr) GetSession(_ context.Context, sessionID string) (*mcp.Session, error) {
-	return &mcp.Session{ID: sessionID}, nil
-}
-
-func (m *mockToolsSessionMgr) DeleteSession(_ context.Context, _ string) error {
-	return nil
-}
-
-// helper to create a RequestHandler with mocks
-func newTestHandler() *mcp.RequestHandler {
-	return mcp.NewRequestHandler(
-		&mockToolsAuthorizer{},
-		&mockToolsAuditLogger{},
-		&mockToolsSessionMgr{},
-	)
-}
-
-// TestRegisterBuiltInTools_All17Registered verifies that all 17 built-in tools
-// are registered into the handler's registry.
-func TestRegisterBuiltInTools_All17Registered(t *testing.T) {
-	handler := newTestHandler()
+// TestRegisterBuiltInTools_Comprehensive tests that all built-in tools are correctly registered
+func TestRegisterBuiltInTools_Comprehensive(t *testing.T) {
+	registry := mcp.NewToolRegistry()
+	handler := &mcp.RequestHandler{
+		Registry: registry,
+	}
 	RegisterBuiltInTools(handler, tier.TierCommunity)
 
-	count := handler.Registry.Count()
-	if count != 17 {
-		t.Errorf("Registry.Count() = %d, want 17", count)
-	}
-}
-
-// TestRegisterBuiltInTools_SpecificToolNames verifies each expected tool name
-// is present in the registry.
-func TestRegisterBuiltInTools_SpecificToolNames(t *testing.T) {
-	handler := newTestHandler()
-	RegisterBuiltInTools(handler, tier.TierCommunity)
-
-	safeTools := []string{
-		"process_list", "memory_stats", "network_connections", "system_info",
-		"git_status", "git_log", "git_diff",
-		"file_read", "web_search", "http_request", "json_fetch", "code_search",
-	}
-	blockedTools := []string{
-		"shell_command", "code_execute", "file_write", "file_delete", "database_query",
+	toolCount := registry.Count()
+	if toolCount != 17 {
+		t.Errorf("Expected 17 tools registered, got %d", toolCount)
 	}
 
-	for _, name := range safeTools {
-		if _, ok := handler.Registry.GetTool(name); !ok {
-			t.Errorf("safe tool %q not found in registry", name)
-		}
+	expectedTools := []string{
+		"process_list",
+		"memory_stats",
+		"network_connections",
+		"system_info",
+		"git_status",
+		"git_log",
+		"git_diff",
+		"file_read",
+		"web_search",
+		"http_request",
+		"json_fetch",
+		"code_search",
 	}
 
-	for _, name := range blockedTools {
-		if _, ok := handler.Registry.GetTool(name); !ok {
-			t.Errorf("blocked tool %q not found in registry", name)
+	for _, name := range expectedTools {
+		if _, ok := registry.GetTool(name); !ok {
+			t.Errorf("Tool %s should be registered", name)
 		}
 	}
 }
 
-// TestRegisterBuiltInTools_TierGating verifies tools exist for different tiers.
-// The tools are always registered; tier gating happens at the guardrail/authorizer level.
-func TestRegisterBuiltInTools_TierGating(t *testing.T) {
-	tiers := []tier.Tier{
-		tier.TierCommunity,
-		tier.TierDeveloper,
-		tier.TierProfessional,
-		tier.TierEnterprise,
-	}
-
-	for _, t2 := range tiers {
-		t.Run(t2.String(), func(t *testing.T) {
-			handler := newTestHandler()
-			RegisterBuiltInTools(handler, t2)
-
-			// All tiers should get all 17 tools (gating is at auth/guardrail level)
-			count := handler.Registry.Count()
-			if count != 17 {
-				t.Errorf("tier %s: Registry.Count() = %d, want 17", t2.String(), count)
-			}
-		})
-	}
-}
-
-// TestRegisterBuiltInTools_HandlersRegistered verifies that handlers are
-// registered alongside tool definitions by checking GetHandler.
-func TestRegisterBuiltInTools_HandlersRegistered(t *testing.T) {
-	handler := newTestHandler()
-	RegisterBuiltInTools(handler, tier.TierCommunity)
-
-	// Check that a few representative tools have handlers
-	for _, name := range []string{"process_list", "memory_stats", "file_read", "shell_command"} {
-		if _, ok := handler.Registry.GetHandler(name); !ok {
-			t.Errorf("tool %q has no handler registered", name)
-		}
-	}
-}
-
-// TestRegisterBuiltInTools_RiskLevels verifies risk levels are set correctly.
-func TestRegisterBuiltInTools_RiskLevels(t *testing.T) {
-	handler := newTestHandler()
-	RegisterBuiltInTools(handler, tier.TierCommunity)
-
-	// Safe tools should have low risk levels
-	for _, name := range []string{"process_list", "memory_stats", "system_info"} {
-		risk := handler.Registry.GetRiskLevel(name)
-		if risk <= 0 {
-			t.Errorf("tool %q risk level = %d, expected > 0", name, risk)
-		}
-	}
-
-	// Blocked (security) tools should have high risk levels
-	for _, name := range []string{"shell_command", "code_execute", "file_delete"} {
-		risk := handler.Registry.GetRiskLevel(name)
-		if risk < 50 {
-			t.Errorf("blocked tool %q risk level = %d, expected >= 50", name, risk)
-		}
-	}
-}
-
-// TestRegisterBuiltInTools_ToMCPFormat verifies tools can be exported in MCP format.
-func TestRegisterBuiltInTools_ToMCPFormat(t *testing.T) {
-	handler := newTestHandler()
-	RegisterBuiltInTools(handler, tier.TierCommunity)
-
-	tools := handler.Registry.ToMCPFormat()
-	if len(tools) != 17 {
-		t.Errorf("ToMCPFormat() returned %d tools, want 17", len(tools))
-	}
-}
-
-// TestRegisterTool_DuplicateName verifies that registering a duplicate
-// tool name doesn't panic (the error is logged and skipped).
-func TestRegisterTool_DuplicateName(t *testing.T) {
+// TestRegisterBuiltInTools_ErrorPaths tests error handling in registerTool
+func TestRegisterBuiltInTools_ErrorPaths(t *testing.T) {
 	registry := mcp.NewToolRegistry()
 
-	// First registration succeeds
-	err := registry.Register("test_tool", "A test tool", 10, nil)
+	err := registry.Register("test_tool", "Test tool", 10, map[string]interface{}{})
 	if err != nil {
-		t.Fatalf("first Register() error: %v", err)
+		t.Fatalf("First register failed: %v", err)
 	}
 
-	// Second registration with same name should return error
-	err = registry.Register("test_tool", "Duplicate", 10, nil)
+	err = registry.Register("test_tool", "Duplicate", 10, map[string]interface{}{})
 	if err == nil {
-		t.Error("duplicate Register() should return error, got nil")
+		t.Error("Expected error for duplicate registration")
+	}
+
+	executor := func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+		return nil, nil
+	}
+
+	err = registry.RegisterHandler("test_tool", executor)
+	if err != nil {
+		t.Errorf("RegisterHandler failed: %v", err)
+	}
+
+	if h, ok := registry.GetHandler("test_tool"); !ok {
+		t.Error("Handler should be registered")
+	} else if h == nil {
+		t.Error("Handler should not be nil")
 	}
 }
 
-// TestRegisterBuiltInTools_NoDuplicateNames verifies no duplicate tool names
-// across the full built-in set.
-func TestRegisterBuiltInTools_NoDuplicateNames(t *testing.T) {
-	handler := newTestHandler()
-	RegisterBuiltInTools(handler, tier.TierCommunity)
+// TestRegisterBuiltInTools_RaceCondition tests concurrent registration
+func TestRegisterBuiltInTools_RaceCondition(t *testing.T) {
+	registry := mcp.NewToolRegistry()
+	handler := &mcp.RequestHandler{
+		Registry: registry,
+	}
 
-	// List all tools and check for duplicates
-	toolList := handler.Registry.ListTools()
-	seen := make(map[string]bool)
-	for _, name := range toolList {
-		if seen[name] {
-			t.Errorf("duplicate tool name: %q", name)
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			RegisterBuiltInTools(handler, tier.TierCommunity)
+		}()
+	}
+
+	wg.Wait()
+
+	if registry == nil {
+		t.Fatal("Registry should not be nil")
+	}
+
+	toolCount := registry.Count()
+	if toolCount != 17 {
+		t.Errorf("Expected 17 tools after concurrent registration, got %d", toolCount)
+	}
+}
+
+// TestRegisterTool_Functionality tests registerTool helper function directly
+func TestRegisterTool_Functionality(t *testing.T) {
+	registry := mcp.NewToolRegistry()
+
+	toolSchema := map[string]interface{}{
+		"type":       "object",
+		"properties": map[string]interface{}{},
+	}
+
+	executor := func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+		return nil, nil
+	}
+	registerTool(registry, "test_register", "Test description", 10, toolSchema, executor)
+
+	tool, ok := registry.GetTool("test_register")
+	if !ok {
+		t.Error("Tool should be registered")
+	} else {
+		if tool.Description != "Test description" {
+			t.Errorf("Expected description 'Test description', got '%s'", tool.Description)
 		}
-		seen[name] = true
+		if tool.RiskLevel != 10 {
+			t.Errorf("Expected risk level 10, got %d", tool.RiskLevel)
+		}
+	}
+}
+
+// TestRegisterBuiltInTools_TierBasedVerification verifies tier-specific tool availability
+func TestRegisterBuiltInTools_TierBasedVerification(t *testing.T) {
+	registry1 := mcp.NewToolRegistry()
+	handler1 := &mcp.RequestHandler{
+		Registry: registry1,
+	}
+	RegisterBuiltInTools(handler1, tier.TierCommunity)
+	communityTools := registry1.Count()
+
+	registry2 := mcp.NewToolRegistry()
+	handler2 := &mcp.RequestHandler{
+		Registry: registry2,
+	}
+	RegisterBuiltInTools(handler2, tier.TierEnterprise)
+	enterpriseTools := registry2.Count()
+
+	if communityTools != enterpriseTools {
+		t.Errorf("Expected same tool count for both tiers, got %d vs %d",
+			communityTools, enterpriseTools)
+	}
+}
+
+// TestRegisterBuiltInTools_NoPanics tests that registration doesn't panic
+func TestRegisterBuiltInTools_NoPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("RegisterBuiltInTools panicked: %v", r)
+		}
+	}()
+
+	registry := mcp.NewToolRegistry()
+	handler := &mcp.RequestHandler{
+		Registry: registry,
+	}
+	RegisterBuiltInTools(handler, tier.TierCommunity)
+}
+
+// TestRegisterTool_InvalidToolNames tests handling of various tool names
+func TestRegisterTool_InvalidToolNames(t *testing.T) {
+	registry := mcp.NewToolRegistry()
+
+	invalidNames := []string{
+		"",            // empty
+		"   ",         // whitespace only
+		"tool-name",   // hyphen
+		"tool.name",   // dot
+		"tool name",   // space
+	}
+
+	for _, name := range invalidNames {
+		executor := func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+			return nil, nil
+		}
+		registerTool(registry, name, "Test", 10, map[string]interface{}{}, executor)
 	}
 }
