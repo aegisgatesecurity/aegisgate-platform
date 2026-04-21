@@ -29,11 +29,11 @@
 |------------------|-------------------|-------------------|
 | Real-time threat scanning | **MITRE ATLAS** ✅ Free | **2.44ms avg latency** |
 | Prompt injection prevention | **NIST AI RMF** ✅ Free | **11,681 RPS peak** |
-| MCP tool authorization | SOC2, HIPAA, PCI 🔒 Licensed | **19.1MB Docker image** |
-| Data leakage protection | ISO 27001/42001 🔒 Licensed | **0 CVEs** |
-| RBAC & audit logging | GDPR Advanced 🔒 Licensed | **2,350+ tests passing** |
+| MCP tool authorization | **OWASP LLM Top 10** ✅ Free | **19.1MB Docker image** |
+| Data leakage protection | HIPAA, PCI-DSS 🔒 Pro+ | **0 CVEs** |
+| RBAC & audit logging | SOC2 Type II, ISO 🔒 Enterprise | **2,350+ tests passing** |
 
-**Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Enterprise modules licensed. See [Pricing](#pricing--tiers).
+**Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Commercial modules licensed. See [Pricing](#-the-strategic-model).
 
 ---
 
@@ -155,9 +155,9 @@ sequenceDiagram
 
 ## 🎯 The Strategic Model
 
-**Constraint #22 Original Vision**: Core security is free; enterprise compliance modules are licensed. This aligns with:
+**AegisGate Security Platform**: Core security is free; commercial compliance modules are licensed. This aligns with:
 - MITRE ATLAS + NIST AI RMF as **foundation** (always free)
-- HIPAA, PCI-DSS, SOC2, ISO modules as **commercial tier**
+- HIPAA, PCI-DSS, SOC2, ISO modules as **commercial tiers**
 - ACP/A2A security as the **next frontier**
 
 ### Community Tier (Apache 2.0) — Always Free
@@ -170,17 +170,20 @@ sequenceDiagram
 | **MCP Server** | Core guardrails (5 base rules) |
 | **Self-hosted Dashboard** | Single admin, 7-day retention |
 
-### Enterprise Tier — Licensed
-Enterprise modules require a commercial license. See [aegisgatesecurity.io](https://aegisgatesecurity.io) for details.
+### Commercial Tiers — Licensed
+Commercial modules require a paid license. See [aegisgatesecurity.io](https://aegisgatesecurity.io) for details.
 
-| Module | Features |
-|--------|----------|
-| **HIPAA Compliance** | PHI detection, BAA enforcement, audit trails |
-| **PCI-DSS** | Payment protection, tokenization, QSA reports |
-| **SOC2 Type II** | Continuous monitoring, evidence collection |
-| **ISO 27001/42001** | Policy mapping, gap analysis, certification prep |
-| **GDPR Advanced** | Article 30 records, DPIA, breach notification |
-| **Enterprise Platform** | Multi-tenant dashboard, SSO, unlimited retention, SLA |
+| Module | Developer | Professional | Enterprise |
+|--------|-----------|--------------|------------|
+| **OAuth SSO + OIDC** | ✅ | ✅ | ✅ |
+| **HIPAA Compliance** | — | ✅ | ✅ |
+| **PCI-DSS** | — | ✅ | ✅ |
+| **SOC2 Type II** | — | — | ✅ |
+| **ISO 27001** | — | ✅ | ✅ |
+| **ISO 42001** | — | — | ✅ |
+| **GDPR Advanced** | — | ✅ | ✅ |
+| **Multi-tenant Dashboard** | — | ✅ | ✅ |
+| **SLA Guarantees** | — | — | ✅ |
 
 ### Future: ACP/A2A Agent Security (v2.0)
 | Capability | Community | Enterprise |
@@ -197,35 +200,6 @@ Enterprise modules require a commercial license. See [aegisgatesecurity.io](http
 ## 🔒 Security
 
 Our code security matches our product security:
-
-### Community Tier (Apache 2.0) — Always Free
-| Component | Access |
-|-----------|--------|
-| **MITRE ATLAS Framework** | Full mapping + detection rules |
-| **NIST AI RMF 1.500** | Complete implementation |
-| **OWASP LLM Top 10** | Protection + reporting |
-| **Basic HTTP Proxy** | PII scanning, rate limiting |
-| **MCP Server** | Core guardrails (5 base rules) |
-| **Self-hosted Dashboard** | Single admin, 7-day retention |
-
-### Enterprise Tier (Commercial License)
-| Module | Value |
-|--------|-------|
-| **HIPAA Compliance Module** | PHI detection, BAA enforcement, audit trails |
-| **PCI-DSS Module** | Payment data protection, tokenization integration |
-| **SOC2 Type II Automation** | Continuous monitoring, evidence collection, auditor reports |
-| **ISO 27001/42001 Suite** | Policy mapping, gap analysis, certification prep |
-| **GDPR Advanced** | Article 30 records, DPO dashboard, breach notification automation |
-| **Multi-tenant Dashboard** | RBAC, SSO, unlimited retention |
-| **SLA Guarantees** | 99.99% uptime, 24/7 support, dedicated SRE |
-
-### Future Tier: ACP/A2A Security (v2.0)
-| Capability | Community | Enterprise |
-|------------|-----------|------------|
-| Basic agent validation | ✅ | ✅ |
-| Cross-agent policy federation | ❌ | ✅ |
-| Agent identity verification | ❌ | ✅ |
-| Real-time threat intel sharing | ❌ | ✅ |
 
 - **8 security tools** run on every commit
 - **0 known CVEs** in production dependencies
@@ -280,19 +254,23 @@ Contributions are welcome under the [inbound=outbound](https://opensource.micros
 | **Circuit Breaker** | Automatic failure recovery | ✅ |
 | **Auto-Certificate Generation** | Built-in CA, zero-config TLS | ✅ |
 
-### Compliance Frameworks (Community Tier)
+### Compliance Frameworks
 
-| Framework | Coverage | Availability |
-|-----------|----------|--------------|
-| **MITRE ATLAS** | All AI-specific attack patterns | ✅ |
-| **NIST AI RMF** | Complete AI risk management | ✅ |
-| **OWASP LLM Top 10** | LLM01-LLM10 coverage | ✅ |
-| **SOC 2** | Security controls | ✅ |
-| **HIPAA** | Healthcare data protection | ✅ |
-| **GDPR** | EU data protection | ✅ |
-| **ISO 27001** | Information security | ✅ |
-| **ISO 42001** | AI management systems | ✅ |
-| **PCI-DSS** | Payment card security | ✅ |
+| Framework | Coverage | Tier |
+|-----------|----------|------|
+| **MITRE ATLAS** | All AI-specific attack patterns | Community ✅ |
+| **NIST AI RMF** | Complete AI risk management | Community ✅ |
+| **OWASP LLM Top 10** | LLM01-LLM10 coverage | Community ✅ |
+| **GDPR View** | Detection & data subject rights (view-only) | Community ✅ |
+| **Basic Security Controls** | OWASP + basic NIST mapping | Developer 🔒 |
+| **HIPAA** | Healthcare data protection, PHI detection, BAA | Professional 🔒 |
+| **PCI-DSS** | Payment card security, tokenization | Professional 🔒 |
+| **ISO 27001** | Information security management | Professional 🔒 |
+| **GDPR Advanced** | Article 30 records, DPIA, breach notification | Professional 🔒 |
+| **SOC2 Type II** | Continuous monitoring, evidence collection, auditor reports | Enterprise 🔒 |
+| **ISO 42001** | AI management systems | Enterprise 🔒 |
+| **FedRAMP** | US federal authorization | Enterprise 🔒 |
+| **HITRUST** | Healthcare trust framework | Enterprise 🔒 |
 
 ---
 
@@ -713,7 +691,7 @@ Compliance))
 </details>
 
 
-**Community Edition includes all frameworks** — no hidden enterprise tiers.
+**Community Edition includes MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10, and GDPR view-only detection** — commercial tiers unlock HIPAA, PCI-DSS, SOC2 Type II, ISO 27001/42001, and more.
 
 ---
 
