@@ -19,14 +19,15 @@ import (
 // signature verification. This is an ECDSA P-256 key.
 //
 // To regenerate:
-//   1. openssl ecparam -genkey -name prime256v1 -out private.pem
-//   2. openssl ec -in private.pem -pubout -out public.pem
-//   3. Embed the public PEM below
+//  1. openssl ecparam -genkey -name prime256v1 -out private.pem
+//  2. openssl ec -in private.pem -pubout -out public.pem
+//  3. Embed the public PEM below
 //
 // Key fingerprints (for verification):
-//   DER prefix (8 bytes): 3059301306072a86
-//   Public key X: 1504987626868443178806115043001279550729...
-//   Public key Y: 9114550456103658015913007380751475238459...
+//
+//	DER prefix (8 bytes): 3059301306072a86
+//	Public key X: 1504987626868443178806115043001279550729...
+//	Public key Y: 9114550456103658015913007380751475238459...
 const embeddedPublicKeyPEM = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIUXtmDqYgS9l7iFkXW1+8nRvXEvo
 pQpLwLB2UcawrcrJgocFQMgVRKq4EreyqT3bi+PeXeJ3uUW4iPaWJCcSDQ==

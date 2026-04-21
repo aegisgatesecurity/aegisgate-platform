@@ -2,12 +2,13 @@
 // Package main implements the AegisGate license key generation CLI.
 //
 // Usage:
-//   licensegen generate \
-//     --customer "Acme Corp" \
-//     --tier enterprise \
-//     --duration 365d \
-//     --key secrets/aegisgate-private.pem \
-//     --output license.key
+//
+//	licensegen generate \
+//	  --customer "Acme Corp" \
+//	  --tier enterprise \
+//	  --duration 365d \
+//	  --key secrets/aegisgate-private.pem \
+//	  --output license.key
 //
 // The generated license key is a base64-encoded JSON structure containing
 // the license payload and an ECDSA P-256 signature. The AegisGate platform
@@ -34,15 +35,15 @@ import (
 )
 
 var (
-	flagCustomer  = flag.String("customer", "", "Customer name or identifier (required)")
-	flagTier      = flag.String("tier", "professional", "License tier: community, developer, professional, enterprise")
-	flagDuration  = flag.String("duration", "365d", "License duration (e.g., 30d, 365d, never)")
-	flagKey       = flag.String("key", "", "Path to ECDSA P-256 private key PEM file (required)")
-	flagOutput    = flag.String("output", "", "Output file path (default: stdout)")
-	flagFeatures  = flag.String("features", "", "Comma-separated feature overrides (optional)")
+	flagCustomer   = flag.String("customer", "", "Customer name or identifier (required)")
+	flagTier       = flag.String("tier", "professional", "License tier: community, developer, professional, enterprise")
+	flagDuration   = flag.String("duration", "365d", "License duration (e.g., 30d, 365d, never)")
+	flagKey        = flag.String("key", "", "Path to ECDSA P-256 private key PEM file (required)")
+	flagOutput     = flag.String("output", "", "Output file path (default: stdout)")
+	flagFeatures   = flag.String("features", "", "Comma-separated feature overrides (optional)")
 	flagMaxServers = flag.Int("max-servers", 0, "Maximum servers (0 = unlimited)")
 	flagMaxUsers   = flag.Int("max-users", 0, "Maximum users (0 = unlimited)")
-	flagQuiet     = flag.Bool("quiet", false, "Suppress informational output")
+	flagQuiet      = flag.Bool("quiet", false, "Suppress informational output")
 )
 
 func main() {

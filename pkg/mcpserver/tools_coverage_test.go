@@ -171,11 +171,11 @@ func TestRegisterTool_InvalidToolNames(t *testing.T) {
 	registry := mcp.NewToolRegistry()
 
 	invalidNames := []string{
-		"",            // empty
-		"   ",         // whitespace only
-		"tool-name",   // hyphen
-		"tool.name",   // dot
-		"tool name",   // space
+		"",          // empty
+		"   ",       // whitespace only
+		"tool-name", // hyphen
+		"tool.name", // dot
+		"tool name", // space
 	}
 
 	for _, name := range invalidNames {

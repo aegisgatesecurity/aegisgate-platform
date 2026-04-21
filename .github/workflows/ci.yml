@@ -134,7 +134,7 @@ jobs:
       - name: Run govulncheck
         run: |
           echo "## govulncheck Results" >> $GITHUB_STEP_SUMMARY
-          cd upstream/aegisgate && govulncheck ./... 2>&1 | tee govulncheck-results.txt
+          govulncheck ./... 2>&1 | tee govulncheck-results.txt
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "⚠️ Vulnerabilities found - see results" >> $GITHUB_STEP_SUMMARY
             exit 1
@@ -147,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: govulncheck-results
-          path: upstream/aegisgate/govulncheck-results.txt
+          path: govulncheck-results.txt
           retention-days: 30
 
   docker-push:

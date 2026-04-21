@@ -128,9 +128,9 @@ func TestIsFeatureCommunity(t *testing.T) {
 // TestTierHasFeatureKey verifies string-key-based feature access
 func TestTierHasFeatureKey(t *testing.T) {
 	tests := []struct {
-		tier    tier.Tier
-		key     string
-		want    bool
+		tier tier.Tier
+		key  string
+		want bool
 	}{
 		{tier.TierCommunity, "ai_proxy", true},
 		{tier.TierCommunity, "mtls", false},
