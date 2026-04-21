@@ -45,7 +45,7 @@ import (
 )
 
 var (
-	version     = "1.3.2"
+	version     = "1.3.3"
 	startTime   = time.Now()
 	configFile  = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort   = flag.Int("proxy-port", 8080, "AegisGate proxy port")

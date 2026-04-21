@@ -44,7 +44,7 @@ func TestAegisGuardMCPScanner_Coverage(t *testing.T) {
 						"text": "test result",
 					},
 				},
-				"isError": false,
+				"isError":     false,
 				"duration_ms": int64(100),
 			}, nil
 		default:
@@ -61,9 +61,9 @@ func TestAegisGuardMCPScanner_Coverage(t *testing.T) {
 
 	// Create configuration
 	config := &AegisGuardMCPConfig{
-		Address:   addr,
-		Timeout:   5 * time.Second,
-		ReadTimeout: 2 * time.Second,
+		Address:      addr,
+		Timeout:      5 * time.Second,
+		ReadTimeout:  2 * time.Second,
 		WriteTimeout: 2 * time.Second,
 	}
 
@@ -193,9 +193,9 @@ func TestAegisGuardMCPScanner_Coverage(t *testing.T) {
 	// Test error handling - invalid address
 	t.Run("InvalidAddress", func(t *testing.T) {
 		invalidConfig := &AegisGuardMCPConfig{
-			Address: "invalid:port",
-			Timeout: 5 * time.Second,
-			ReadTimeout: 2 * time.Second,
+			Address:      "invalid:port",
+			Timeout:      5 * time.Second,
+			ReadTimeout:  2 * time.Second,
 			WriteTimeout: 2 * time.Second,
 		}
 		scanner := NewAegisGuardMCPScanner(invalidConfig)
@@ -217,9 +217,9 @@ func TestAegisGuardMCPScanner_Integration(t *testing.T) {
 	}
 
 	config := &AegisGuardMCPConfig{
-		Address:   address,
-		Timeout:   10 * time.Second,
-		ReadTimeout: 5 * time.Second,
+		Address:      address,
+		Timeout:      10 * time.Second,
+		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
 

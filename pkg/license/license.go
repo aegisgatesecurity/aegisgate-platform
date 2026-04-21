@@ -8,22 +8,24 @@
 //   - Fallback to Community tier on validation failure
 //
 // License Key Format:
-//   Base64 encoded JSON containing:
-//   - license_id: Unique license identifier (UUID)
-//   - tier: License tier (community, developer, professional, enterprise)
-//   - customer: Customer identifier
-//   - issued_at: RFC3339 timestamp
-//   - expires_at: RFC3339 timestamp (or "never" for perpetual)
-//   - features: Optional feature flags array
-//   - signature: ECDSA signature (base64) covering all other fields
+//
+//	Base64 encoded JSON containing:
+//	- license_id: Unique license identifier (UUID)
+//	- tier: License tier (community, developer, professional, enterprise)
+//	- customer: Customer identifier
+//	- issued_at: RFC3339 timestamp
+//	- expires_at: RFC3339 timestamp (or "never" for perpetual)
+//	- features: Optional feature flags array
+//	- signature: ECDSA signature (base64) covering all other fields
 //
 // Usage:
-//   lm := license.NewManager()
-//   result := lm.Validate("base64-encoded-license-key")
-//   if result.Valid {
-//       tier := result.Tier
-//       // proceed with feature access
-//   }
+//
+//	lm := license.NewManager()
+//	result := lm.Validate("base64-encoded-license-key")
+//	if result.Valid {
+//	    tier := result.Tier
+//	    // proceed with feature access
+//	}
 package license
 
 import (
@@ -67,43 +69,44 @@ const (
 // LicensePayload represents the decoded license data
 // Note: This struct is serialized to JSON and signed
 type LicensePayload struct {
-	LicenseID  string    `json:"license_id"`   // UUID
-	Tier       string    `json:"tier"`         // Tier name
-	Customer   string    `json:"customer"`     // Customer identifier
-	IssuedAt   time.Time `json:"issued_at"`    // When license was issued
-	ExpiresAt  time.Time `json:"expires_at"`   // When license expires
-	Features   []string  `json:"features"`     // Optional specific features
-	MaxServers int       `json:"max_servers"`  // Max servers allowed
-	MaxUsers   int       `json:"max_users"`    // Max users allowed
+	LicenseID  string    `json:"license_id"`  // UUID
+	Tier       string    `json:"tier"`        // Tier name
+	Customer   string    `json:"customer"`    // Customer identifier
+	IssuedAt   time.Time `json:"issued_at"`   // When license was issued
+	ExpiresAt  time.Time `json:"expires_at"`  // When license expires
+	Features   []string  `json:"features"`    // Optional specific features
+	MaxServers int       `json:"max_servers"` // Max servers allowed
+	MaxUsers   int       `json:"max_users"`   // Max users allowed
 }
 
 // ValidationResult contains the outcome of license validation
 type ValidationResult struct {
-	Valid       bool          // Is the license currently valid
-	Expired     bool          // Has the license expired (but in grace period)
-	GracePeriod bool          // Currently in grace period
-	Tier        tier.Tier     // Resolved tier level
+	Valid       bool           // Is the license currently valid
+	Expired     bool           // Has the license expired (but in grace period)
+	GracePeriod bool           // Currently in grace period
+	Tier        tier.Tier      // Resolved tier level
 	Payload     LicensePayload // Decoded license data
-	Message     string        // Human-readable status message
-	Error       error         // Validation error (if any)
-	ValidatedAt time.Time     // When validation occurred
+	Message     string         // Human-readable status message
+	Error       error          // Validation error (if any)
+	ValidatedAt time.Time      // When validation occurred
 }
 
 // LicenseKeyFormat represents the complete license key structure
 type LicenseKeyFormat struct {
-	Payload   LicensePayload `json:"payload"`   // License data
-	Signature string         `json:"signature"` // Base64-encoded ECDSA signature
+	Payload   LicensePayload `json:"payload"`              // License data
+	Signature string         `json:"signature"`            // Base64-encoded ECDSA signature
 	PublicKey string         `json:"public_key,omitempty"` // Optional: override embedded key
 }
 
 // Manager handles license validation and caching.
 // It supports two usage patterns:
-//   1. Explicit: lm.Validate(key) → inspect ValidationResult
-//   2. Context-aware: lm.SetLicenseKey(key) → lm.GetTierForContext(ctx) / lm.IsFeatureLicensedForContext(ctx, feature)
+//  1. Explicit: lm.Validate(key) → inspect ValidationResult
+//  2. Context-aware: lm.SetLicenseKey(key) → lm.GetTierForContext(ctx) / lm.IsFeatureLicensedForContext(ctx, feature)
+//
 // The context-aware pattern is used by middleware that receives the license key
 // via context (set by LicenseMiddleware).
 type Manager struct {
-	publicKey    *ecdsa.PublicKey  // Embedded public key for verification
+	publicKey    *ecdsa.PublicKey // Embedded public key for verification
 	licenseKey   string           // Active license key (set by middleware or SetLicenseKey)
 	cache        map[string]*cachedResult
 	cacheMu      sync.RWMutex
