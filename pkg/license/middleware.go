@@ -25,14 +25,14 @@ import (
 
 // licenseStatusResponse is the JSON structure returned by LicenseStatus.
 type licenseStatusResponse struct {
-	Valid        bool      `json:"valid"`
-	Tier         string    `json:"tier"`
-	DisplayName  string    `json:"display_name"`
-	ExpiresAt    string    `json:"expires_at"`
-	GracePeriod  bool      `json:"grace_period"`
-	Customer     string    `json:"customer"`
-	FeaturesCount int      `json:"features_count"`
-	Message      string    `json:"message"`
+	Valid         bool   `json:"valid"`
+	Tier          string `json:"tier"`
+	DisplayName   string `json:"display_name"`
+	ExpiresAt     string `json:"expires_at"`
+	GracePeriod   bool   `json:"grace_period"`
+	Customer      string `json:"customer"`
+	FeaturesCount int    `json:"features_count"`
+	Message       string `json:"message"`
 }
 
 // errorResponse is the JSON structure for 403 error replies.
@@ -154,14 +154,14 @@ func (lm *LicenseMiddleware) LicenseStatus() http.HandlerFunc {
 		}
 
 		resp := licenseStatusResponse{
-			Valid:        result.Valid,
-			Tier:         effectiveTier.String(),
-			DisplayName:  effectiveTier.DisplayName(),
-			ExpiresAt:    expiresAt,
-			GracePeriod:  result.GracePeriod,
-			Customer:     result.Payload.Customer,
+			Valid:         result.Valid,
+			Tier:          effectiveTier.String(),
+			DisplayName:   effectiveTier.DisplayName(),
+			ExpiresAt:     expiresAt,
+			GracePeriod:   result.GracePeriod,
+			Customer:      result.Payload.Customer,
 			FeaturesCount: len(tier.AllFeatures(effectiveTier)),
-			Message:      result.Message,
+			Message:       result.Message,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
