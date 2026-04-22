@@ -1,0 +1,21 @@
+{{- if and .Values.metrics.serviceMonitor.enabled .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-aegisgate-platform
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aegisgate-platform.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aegisgate-platform
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: dashboard
+      path: {{ .Values.metrics.path }}
+      interval: {{ .Values.metrics.interval }}
+{{- end }}

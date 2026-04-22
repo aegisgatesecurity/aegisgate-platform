@@ -34,7 +34,7 @@ services:
       - aegisgate-data:/data
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - TIER=${TIER:-community}
+      - AEGISGATE_LICENSE_KEY=${AEGISGATE_LICENSE_KEY:-}
       - AEGISGATE_DATA_DIR=/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8443/health"]
@@ -42,7 +42,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    command: ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp", "--tier=community"]
+    command: ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp"]
     restart: unless-stopped
     # Resource limits (align with K8s requests)
     deploy:

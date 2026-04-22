@@ -82,10 +82,10 @@ coverage_*.out
 e2e.test
 
 # =============================================================================
-# COMPILED BINARIES (build from source)
+# BINARY (built locally, not committed)
 # =============================================================================
 
-aegisgate-platform
+/aegisgate-platform
 aegisgate-platform.exe
 
 # =============================================================================
@@ -203,7 +203,7 @@ node_modules/
 # BINARY (built locally, not committed)
 # =============================================================================
 
-aegisgate-platform
+/aegisgate-platform
 
 # =============================================================================
 # DATABASE FILES

@@ -1,4 +1,4 @@
-.PHONY: build test lint clean docker run-community run-developer help
+.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise help
 
 # =========================================================================
 # AegisGate Security Platform — Makefile
@@ -35,14 +35,23 @@ docker-test: ## Test Docker image
 	docker run --rm -p 8080:8080 -p 8081:8081 -p 8443:8443 \
 		$(IMAGE):latest --embedded-mcp --target https://httpbin.org
 
-run-community: build ## Run with Community tier config
+run-community: build ## Run with Community tier (no license required)
 	./$(BINARY) --config configs/community.yaml --embedded-mcp
 
-run-developer: build ## Run with Developer tier config (requires LICENSE_KEY)
+run-developer: build ## Run with Developer tier config (requires AEGISGATE_LICENSE_KEY)
 	./$(BINARY) --config configs/developer.yaml --embedded-mcp
 
-run-quick: build ## Quick start with defaults (no config file)
+run-professional: build ## Run with Professional tier config (requires AEGISGATE_LICENSE_KEY)
+	./$(BINARY) --config configs/professional.yaml --embedded-mcp
+
+run-enterprise: build ## Run with Enterprise tier config (requires AEGISGATE_LICENSE_KEY)
+	./$(BINARY) --config configs/enterprise.yaml --embedded-mcp
+
+run-quick: build ## Quick start with defaults (Community tier, no config file)
 	./$(BINARY) --embedded-mcp
+
+run-licensed: build ## Run with explicit license key (set LICENSE_KEY env var)
+	./$(BINARY) --license="$(LICENSE_KEY)" --embedded-mcp
 
 clean: ## Remove build artifacts
 	rm -f $(BINARY)
@@ -58,3 +67,9 @@ deps: ## Download dependencies
 coverage: ## Run tests with coverage
 	go test -race -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out | tail -1
+
+licensegen: ## Build the license key generator
+	go build -o licensegen ./cmd/licensegen/
+
+licensegen-generate: licensegen ## Generate a license key (set CUSTOMER, TIER, DAYS env vars)
+	./licensegen --customer="$(CUSTOMER)" --tier="$(TIER)" --days="$(DAYS)"

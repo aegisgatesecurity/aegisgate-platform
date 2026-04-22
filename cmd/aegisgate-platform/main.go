@@ -34,6 +34,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
@@ -52,7 +53,9 @@ var (
 	mcpPort     = flag.Int("mcp-port", 8081, "AegisGuard MCP port")
 	dashPort    = flag.Int("dashboard-port", 8443, "Admin dashboard port")
 	targetURL   = flag.String("target", "https://api.openai.com", "Upstream LLM provider URL")
-	tierName    = flag.String("tier", "community", "License tier (community|developer|professional|enterprise)")
+	licenseKey     = flag.String("license", "", "License key (overrides AEGISGATE_LICENSE_KEY env var)")
+	licensePubKey  = flag.String("license-public-key", "", "Path to alternative public key PEM (dev/test only; production uses embedded key)")
+	tierName       = flag.String("tier", "community", "Display tier (read-only; actual tier derived from license)")
 	showVersion = flag.Bool("version", false, "Show version information")
 	embeddedMCP = flag.Bool("embedded-mcp", false, "Start embedded AegisGuard MCP server (standalone mode)")
 )
@@ -70,12 +73,69 @@ func main() {
 	// Set build info for Prometheus metrics
 	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOARCH)
 
-	// Parse platform tier (our unified tier system)
-	platformTier, err := tier.ParseTier(*tierName)
-	if err != nil {
-		log.Fatalf("Invalid tier %q: %v", *tierName, err)
+	// ============================================================
+	// License validation — the ONLY source of truth for tier
+	// ============================================================
+	// The --tier flag is read-only display; actual tier enforcement
+	// comes from the license key. Without a valid license, the
+	// platform runs as Community tier.
+
+	// Initialize license manager (use custom public key if provided for dev/test)
+	var licenseMgr *license.Manager
+	if *licensePubKey != "" {
+		keyData, err := os.ReadFile(*licensePubKey)
+		if err != nil {
+			log.Fatalf("Failed to read license public key %s: %v", *licensePubKey, err)
+		}
+		licenseMgr, err = license.NewManagerWithKey(string(keyData))
+		if err != nil {
+			log.Fatalf("Failed to initialize license manager with custom key: %v", err)
+		}
+		log.Printf("[LICENSE] Using custom public key from %s (dev/test mode)", *licensePubKey)
+	} else {
+		var lerr error
+		licenseMgr, lerr = license.NewManager()
+		if lerr != nil {
+			log.Fatalf("Failed to initialize license manager: %v", lerr)
+		}
 	}
-	log.Printf("Tier: %s (%s)", platformTier.DisplayName(), platformTier.String())
+
+	// Resolve license key: flag > env var > empty (Community)
+	resolvedLicenseKey := *licenseKey
+	if resolvedLicenseKey == "" {
+		resolvedLicenseKey = os.Getenv("AEGISGATE_LICENSE_KEY")
+	}
+
+	// Validate the license key
+	licenseResult := licenseMgr.Validate(resolvedLicenseKey)
+	platformTier := licenseResult.Tier // License-derived tier
+
+	// Log license status
+	if licenseResult.Valid {
+		if licenseResult.GracePeriod {
+			log.Printf("⚠️  License in grace period: %s (expires %s)", licenseResult.Message, licenseResult.Payload.ExpiresAt.Format(time.RFC3339))
+		}
+		log.Printf("License: VALID — %s tier (customer: %s)", platformTier.DisplayName(), licenseResult.Payload.Customer)
+	} else if resolvedLicenseKey != "" {
+		log.Printf("License: INVALID — %s. Falling back to Community tier", licenseResult.Message)
+	} else {
+		log.Printf("License: No license key provided — running as Community tier")
+	}
+
+	// Store the resolved license key for context-aware validation
+	licenseMgr.SetLicenseKey(resolvedLicenseKey)
+
+	// Warn if --tier flag conflicts with license-derived tier
+	if *tierName != "" && *tierName != "community" && *tierName != platformTier.String() {
+		log.Printf("⚠️  --tier flag (%q) ignored: tier is derived from license (%s). Use --license to set tier.", *tierName, platformTier.String())
+	}
+	log.Printf("Effective tier: %s (%s) [source: %s]", platformTier.DisplayName(), platformTier.String(),
+		func() string {
+			if resolvedLicenseKey != "" && licenseResult.Valid {
+				return "license"
+			}
+			return "community-default"
+		}())
 
 	// Load unified platform configuration
 	cfg, err := platformconfig.Load(*configFile)
@@ -395,6 +455,38 @@ func main() {
 			platformTier.SupportLevel())
 	})
 
+	// License status endpoint — show current license and tier info
+	dashMux.HandleFunc("/api/v1/license/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		currentResult := licenseMgr.Validate(licenseMgr.GetLicenseKey())
+		featureCount := len(tier.AllFeatures(currentResult.Tier))
+
+		resp := map[string]interface{}{
+			"valid":         currentResult.Valid,
+			"tier":          currentResult.Tier.String(),
+			"display_name":  currentResult.Tier.DisplayName(),
+			"features":      featureCount,
+			"grace_period":  currentResult.GracePeriod,
+			"expired":       currentResult.Expired,
+			"message":       currentResult.Message,
+			"validated_at":   currentResult.ValidatedAt.Format(time.RFC3339),
+		}
+		if currentResult.Valid {
+			resp["license_id"] = currentResult.Payload.LicenseID
+			resp["customer"] = currentResult.Payload.Customer
+			resp["expires_at"] = currentResult.Payload.ExpiresAt.Format(time.RFC3339)
+			resp["max_servers"] = currentResult.Payload.MaxServers
+			resp["max_users"] = currentResult.Payload.MaxUsers
+		}
+		data, err := json.Marshal(resp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"marshal failed"}`)
+			return
+		}
+		w.Write(data)
+	})
+
 	// Audit log endpoint — query persisted audit entries
 	dashMux.HandleFunc("/api/v1/audit", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -634,6 +726,14 @@ func main() {
 	log.Printf("[STARTUP-COMPLETE] All services initialized")
 	log.Printf("Components:")
 	log.Printf("  Proxy:    http://0.0.0.0:%d -> %s (tier: %s)", *proxyPort, *targetURL, platformTier.String())
+	log.Printf("  License:  %s", func() string {
+		if resolvedLicenseKey != "" && licenseResult.Valid {
+			return "validated (" + platformTier.String() + ")"
+		} else if resolvedLicenseKey != "" {
+			return "invalid (falling back to community)"
+		}
+		return "none (community tier)"
+	}())
 	if *embeddedMCP {
 		log.Printf("  MCP:      :%d (embedded server, standalone mode)", *mcpPort)
 	} else {
