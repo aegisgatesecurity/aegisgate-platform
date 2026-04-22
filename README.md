@@ -76,6 +76,7 @@ Your App → [🛡️ AegisGate] → Secure AI          (unified)
 
 ---
 
+<!-- Sponsors section — hidden until GitHub Sponsors setup is complete
 ## 💼 Sponsors
 
 AegisGate is proudly supported by organizations using our platform in production.
@@ -89,6 +90,7 @@ AegisGate is proudly supported by organizations using our platform in production
 | 🥉 Bronze | $500 | Name in sponsors section |
 
 [🤝 Sponsor on GitHub](https://github.com/sponsors/aegisgatesecurity) · [📧 Enterprise Licensing](mailto:sales@aegisgatesecurity.io)
+-->
 
 ---
 
