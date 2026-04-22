@@ -44,6 +44,7 @@ var (
 	flagMaxServers = flag.Int("max-servers", 0, "Maximum servers (0 = unlimited)")
 	flagMaxUsers   = flag.Int("max-users", 0, "Maximum users (0 = unlimited)")
 	flagQuiet      = flag.Bool("quiet", false, "Suppress informational output")
+	flagDev        = flag.Bool("dev", false, "Development mode: skip key pair verification (allows test keys)")
 )
 
 func main() {
@@ -82,9 +83,13 @@ func run() error {
 		return fmt.Errorf("failed to load private key: %w", err)
 	}
 
-	// Verify the key matches our embedded public key
-	if err := verifyKeyPair(privateKey); err != nil {
-		return fmt.Errorf("private key does not match embedded public key: %w", err)
+	// Verify the key matches our embedded public key (skip in --dev mode for testing)
+	if !*flagDev {
+		if err := verifyKeyPair(privateKey); err != nil {
+			return fmt.Errorf("private key does not match embedded public key: %w", err)
+		}
+	} else {
+		fmt.Fprintf(os.Stderr, "WARNING: --dev mode enabled; skipping key pair verification\n")
 	}
 
 	// Parse optional features

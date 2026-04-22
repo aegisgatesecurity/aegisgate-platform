@@ -1,0 +1,22 @@
+apiVersion: v2
+name: aegisgate-platform
+description: AegisGate Security Platform — unified AI API security gateway (proxy + MCP + dashboard)
+type: application
+version: 1.3.2
+appVersion: "1.3.2"
+home: https://github.com/aegisgatesecurity/aegisgate-platform
+keywords:
+  - security
+  - proxy
+  - mcp
+  - ai
+  - gateway
+  - rate-limiting
+maintainers:
+  - name: AegisGate Security
+    email: security@aegisgatesecurity.io
+sources:
+  - https://github.com/aegisgatesecurity/aegisgate-platform
+annotations:
+  category: Security
+  licenses: Apache-2.0

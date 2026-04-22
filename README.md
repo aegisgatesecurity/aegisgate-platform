@@ -287,8 +287,11 @@ docker run -d \
   -p 8443:8443 \
   -v $(pwd)/data:/data \
   ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:latest \
-  --embedded-mcp --tier=community
+  --embedded-mcp
 ```
+
+> **Note:** Tier is now derived from your license key — no `--tier` flag needed.
+> Set `AEGISGATE_LICENSE_KEY` to unlock Developer+ features.
 
 ### Build from Source
 
@@ -297,9 +300,16 @@ docker run -d \
 git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
 cd aegisgate-platform
 
-# Build and run
+# Build and run (Community tier — no license required)
 go build -o aegisgate-platform ./cmd/aegisgate-platform
-./aegisgate-platform --embedded-mcp --tier=community
+./aegisgate-platform --embedded-mcp
+
+# Run with a license key (Developer+ tiers)
+./aegisgate-platform --embedded-mcp --license=YOUR_LICENSE_KEY
+
+# Or set via environment variable
+export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
+./aegisgate-platform --embedded-mcp
 ```
 
 ### Verify Installation
@@ -307,6 +317,9 @@ go build -o aegisgate-platform ./cmd/aegisgate-platform
 ```bash
 # Health check
 curl http://localhost:8443/health
+
+# Check license status
+curl http://localhost:8443/api/v1/license/status
 
 # Dashboard (self-signed cert OK)
 open https://localhost:8443
@@ -552,7 +565,20 @@ flowchart LR
 ### Zero-Config (Just Run)
 
 ```bash
-aegisgate-platform --embedded-mcp --tier=community
+aegisgate-platform --embedded-mcp
+```
+
+> Tier is derived from your license key. No license = Community tier.
+
+### With License Key
+
+```bash
+# Via command-line flag
+aegisgate-platform --embedded-mcp --license=YOUR_LICENSE_KEY
+
+# Or via environment variable
+export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
+aegisgate-platform --embedded-mcp
 ```
 
 ### With Custom Config
@@ -576,7 +602,8 @@ persistence:
   audit_dir: /data/audit
   enabled: true
   
-tier: community
+# No tier key needed — tier is derived from license
+# license_key: YOUR_LICENSE_KEY  # Or set AEGISGATE_LICENSE_KEY env var
 log_level: info
 ```
 
@@ -585,7 +612,7 @@ log_level: info
 ```bash
 export AEGISGATE_PROXY_BIND_ADDRESS=:8080
 export AEGISGATE_DASHBOARD_PORT=8443
-export AEGISGATE_TIER=community
+export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
 export AEGISGATE_LOG_LEVEL=info
 ```
 

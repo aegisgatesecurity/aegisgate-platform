@@ -1,0 +1,170 @@
+# =========================================================================
+# AegisGate Security Platform — Helm Values
+# =========================================================================
+# Deploy: helm install aegisgate ./deploy/helm/aegisgate-platform
+# Upgrade: helm upgrade aegisgate ./deploy/helm/aegisgate-platform
+#
+# All values map to the platform's CLI flags and environment variables.
+# The binary is zero-config; these values override the embedded defaults.
+# =========================================================================
+
+# -- Platform tier is now derived from the license key.
+# Set AEGISGATE_LICENSE_KEY in the secrets section to unlock Developer+ features.
+# Without a license key, the platform runs in Community tier.
+# tier: community  # DEPRECATED — tier is now license-derived
+
+# -- Image configuration
+image:
+  repository: ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate
+  tag: "1.3.2"
+  pullPolicy: IfNotPresent
+  # pullSecrets: []
+
+# -- Replica count (adjust based on load)
+replicaCount: 1
+
+# -- Service account for pod identity
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# -- Pod security context (runs as non-root appuser)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# -- Container security context (read-only root FS, no privilege escalation)
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# -- Port configuration (matches CLI defaults)
+ports:
+  proxy: 8080       # AegisGate AI API proxy
+  mcp: 8081         # AegisGuard MCP server
+  dashboard: 8443   # Admin dashboard & API
+
+# -- Service type and annotations
+service:
+  type: ClusterIP
+  annotations: {}
+  # For LoadBalancer exposure:
+  # type: LoadBalancer
+  # loadBalancerIP: ""
+
+# -- Ingress for dashboard and API (optional)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: aegisgate.local
+      paths:
+        - path: /
+          pathType: Prefix
+          port: 8443
+  tls: []
+  #  - secretName: aegisgate-tls
+  #    hosts:
+  #      - aegisgate.local
+
+# -- Resource requests and limits
+# Community tier: minimal resources; Professional+ may need more
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+# -- Node selector for pod placement
+nodeSelector: {}
+
+# -- Tolerations for pod placement
+tolerations: []
+
+# -- Affinity rules
+affinity: {}
+
+# -- Topology spread constraints (for multi-replica Professional+)
+topologySpreadConstraints: []
+
+# -- Persistent volume for audit logs, certificates, and data
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+  # existingClaim: ""
+
+# -- Environment variable overrides (applied to all containers)
+env:
+  AEGISGATE_DATA_DIR: /data
+  # OPENAI_API_KEY: ""         # Set via secrets below
+  # AEGISGATE_LICENSE_KEY: ""  # Set via secrets below
+
+# -- Secrets (mounted as environment variables)
+secrets: {}
+  # openaiApiKey: ""
+  # license-key: ""    # Set to unlock Developer+ tiers
+
+# -- Health check configuration
+healthCheck:
+  # Proxy health probe
+  proxy:
+    path: /health
+    port: 8080
+  # Dashboard health probe (also checks MCP scanner)
+  dashboard:
+    path: /health
+    port: 8443
+  initialDelaySeconds: 5
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# -- Prometheus metrics scrape configuration
+metrics:
+  enabled: true
+  path: /metrics
+  port: 8443
+  interval: 30s
+  # ServiceMonitor for Prometheus Operator
+  serviceMonitor:
+    enabled: false
+    labels: {}
+    #   release: prometheus
+
+# -- Redis for Developer+ tier shared state (not needed for Community)
+redis:
+  enabled: false
+  # image: redis:7-alpine
+  # persistence:
+  #   enabled: true
+  #   size: 1Gi
+
+# -- Extra CLI arguments passed to the binary
+extraArgs: []
+  # - "--log-level=debug"
+  # - "--config=/data/config.yaml"
+
+# -- Extra volumes and volume mounts
+extraVolumes: []
+extraVolumeMounts: []
+
+# -- Pod annotations (useful for vault/inject sidecars, etc.)
+podAnnotations: {}
+
+# -- Deployment strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
