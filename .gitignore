@@ -61,6 +61,16 @@ aegisgate-platform.yaml
 ui/frontend/consolidated-dashboard.html
 
 # =============================================================================
+# BUSINESS AND PROJECT PLANS (PRIVATE — NEVER COMMIT)
+# =============================================================================
+
+plans/
+PLAN.md
+ROADMAP-INTERNAL.md
+SPRINT*.md
+BUSINESS*.md
+
+# =============================================================================
 # COVERAGE AND TEST ARTIFACTS
 # =============================================================================
 
@@ -114,7 +124,6 @@ dist/
 out/
 *.exe
 *.exe~
-*.out
 *.dll
 *.so
 *.dylib
