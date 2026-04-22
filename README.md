@@ -173,7 +173,7 @@ sequenceDiagram
 | **Self-hosted Dashboard** | Single admin, 7-day retention |
 
 ### Commercial Tiers — Licensed
-Commercial modules require a paid license. See [aegisgatesecurity.io](https://aegisgatesecurity.io) for details.
+Commercial modules require a paid license. See [NOTICE](NOTICE) for details, or contact [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io).
 
 | Module | Developer | Professional | Enterprise |
 |--------|-----------|--------------|------------|
@@ -195,7 +195,7 @@ Commercial modules require a paid license. See [aegisgatesecurity.io](https://ae
 | Agent identity verification | ❌ | ✅ |
 | Real-time threat intel | ❌ | ✅ |
 
-**Contact**: [aegisgatesecurity.io](https://aegisgatesecurity.io) | [NOTICE](NOTICE) | [configs/enterprise.yaml](configs/enterprise.yaml)
+**Contact**: [security@aegisgatesecurity.io](mailto:security@aegisgatesecurity.io) · [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io)
 
 ---
 
@@ -744,7 +744,7 @@ Compliance))
 
 <div align="center">
 
-**[aegisgatesecurity.io](https://aegisgatesecurity.io)**
+**[aegisgatesecurity.io](https://aegisgatesecurity.io)** — [security@aegisgatesecurity.io](mailto:security@aegisgatesecurity.io)
 
 Built with 🖤 by the AegisGate Security team
 
