@@ -2,12 +2,12 @@
 // Package license — Integration tests for license enforcement flow.
 //
 // These tests verify the complete license lifecycle:
-//   1. No license key → Community tier
-//   2. Valid license key → correct tier from license
-//   3. Invalid license key → Community tier fallback
-//   4. License middleware gates features correctly
-//   5. License middleware injects context properly
-//   6. X-License-Key header overrides AEGISGATE_LICENSE_KEY env
+//  1. No license key → Community tier
+//  2. Valid license key → correct tier from license
+//  3. Invalid license key → Community tier fallback
+//  4. License middleware gates features correctly
+//  5. License middleware injects context properly
+//  6. X-License-Key header overrides AEGISGATE_LICENSE_KEY env
 //
 // Run: go test -race ./pkg/license/
 package license
@@ -74,7 +74,7 @@ func TestWellFormedButUnsignedKeyFallsBackToCommunity(t *testing.T) {
 			LicenseID: "test-forge-123",
 			Tier:      "enterprise",
 			Customer:  "Attacker Corp",
-			MaxUsers:   9999,
+			MaxUsers:  9999,
 		},
 		Signature: base64.StdEncoding.EncodeToString(make([]byte, 64)), // All zeros = invalid
 	}

@@ -46,18 +46,18 @@ import (
 )
 
 var (
-	version     = "1.3.3"
-	startTime   = time.Now()
-	configFile  = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
-	proxyPort   = flag.Int("proxy-port", 8080, "AegisGate proxy port")
-	mcpPort     = flag.Int("mcp-port", 8081, "AegisGuard MCP port")
-	dashPort    = flag.Int("dashboard-port", 8443, "Admin dashboard port")
-	targetURL   = flag.String("target", "https://api.openai.com", "Upstream LLM provider URL")
-	licenseKey     = flag.String("license", "", "License key (overrides AEGISGATE_LICENSE_KEY env var)")
-	licensePubKey  = flag.String("license-public-key", "", "Path to alternative public key PEM (dev/test only; production uses embedded key)")
-	tierName       = flag.String("tier", "community", "Display tier (read-only; actual tier derived from license)")
-	showVersion = flag.Bool("version", false, "Show version information")
-	embeddedMCP = flag.Bool("embedded-mcp", false, "Start embedded AegisGuard MCP server (standalone mode)")
+	version       = "1.3.3"
+	startTime     = time.Now()
+	configFile    = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
+	proxyPort     = flag.Int("proxy-port", 8080, "AegisGate proxy port")
+	mcpPort       = flag.Int("mcp-port", 8081, "AegisGuard MCP port")
+	dashPort      = flag.Int("dashboard-port", 8443, "Admin dashboard port")
+	targetURL     = flag.String("target", "https://api.openai.com", "Upstream LLM provider URL")
+	licenseKey    = flag.String("license", "", "License key (overrides AEGISGATE_LICENSE_KEY env var)")
+	licensePubKey = flag.String("license-public-key", "", "Path to alternative public key PEM (dev/test only; production uses embedded key)")
+	tierName      = flag.String("tier", "community", "Display tier (read-only; actual tier derived from license)")
+	showVersion   = flag.Bool("version", false, "Show version information")
+	embeddedMCP   = flag.Bool("embedded-mcp", false, "Start embedded AegisGuard MCP server (standalone mode)")
 )
 
 func main() {
@@ -462,14 +462,14 @@ func main() {
 		featureCount := len(tier.AllFeatures(currentResult.Tier))
 
 		resp := map[string]interface{}{
-			"valid":         currentResult.Valid,
-			"tier":          currentResult.Tier.String(),
-			"display_name":  currentResult.Tier.DisplayName(),
-			"features":      featureCount,
-			"grace_period":  currentResult.GracePeriod,
-			"expired":       currentResult.Expired,
-			"message":       currentResult.Message,
-			"validated_at":   currentResult.ValidatedAt.Format(time.RFC3339),
+			"valid":        currentResult.Valid,
+			"tier":         currentResult.Tier.String(),
+			"display_name": currentResult.Tier.DisplayName(),
+			"features":     featureCount,
+			"grace_period": currentResult.GracePeriod,
+			"expired":      currentResult.Expired,
+			"message":      currentResult.Message,
+			"validated_at": currentResult.ValidatedAt.Format(time.RFC3339),
 		}
 		if currentResult.Valid {
 			resp["license_id"] = currentResult.Payload.LicenseID
