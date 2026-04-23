@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -601,5 +602,259 @@ func TestAdminOnly_EnterpriseTierAllowed(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("AdminOnly with enterprise tier: expected 200, got %d", rec.Code)
+	}
+}
+
+// ============================================================================
+// RBAC ROLE TESTS
+// ============================================================================
+
+func TestRequireRole_ViewerAccess(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.RequireRole(rbac.UserRoleViewer, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("viewer-user", "viewer")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/viewer", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("RequireRole(viewer) with viewer tier: expected 200, got %d", rec.Code)
+	}
+}
+
+func TestRequireRole_AnalystAccess(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.RequireRole(rbac.UserRoleAnalyst, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("analyst-user", "analyst")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/analyst", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("RequireRole(analyst) with analyst tier: expected 200, got %d", rec.Code)
+	}
+}
+
+func TestRequireRole_ViewerDeniedForAnalyst(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.RequireRole(rbac.UserRoleAnalyst, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("viewer-user", "viewer")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/analyst", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("RequireRole(analyst) with viewer tier: expected 403, got %d", rec.Code)
+	}
+}
+
+func TestRequireRole_AdminAccess(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	handler := m.RequireRole(rbac.UserRoleAdmin, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("admin-user", "admin")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/admin", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("RequireRole(admin) with admin tier: expected 200, got %d", rec.Code)
+	}
+}
+
+// ============================================================================
+// RBAC PERMISSION TESTS
+// ============================================================================
+
+func TestRequirePermission_DashboardRead(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	perm := rbac.Permission{Resource: rbac.ResourceDashboard, Action: rbac.ActionRead}
+	handler := m.RequirePermission(perm, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("viewer-user", "viewer")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/dashboard", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("RequirePermission(dashboard:read) with viewer: expected 200, got %d", rec.Code)
+	}
+}
+
+func TestRequirePermission_ConfigWriteDenied(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	perm := rbac.Permission{Resource: rbac.ResourceConfig, Action: rbac.ActionWrite}
+	handler := m.RequirePermission(perm, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("viewer-user", "viewer")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/config", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("RequirePermission(config:write) with viewer: expected 403, got %d", rec.Code)
+	}
+}
+
+func TestRequirePermission_AdminWildcard(t *testing.T) {
+	testKey := []byte("test-jwt-key-32bytes-long-key")
+	cfg := &Config{
+		JWTSigningKey:    testKey,
+		APIAuthToken:     "test-api-token",
+		TokenExpiryHours: 24,
+		RequireAuth:      true,
+	}
+	m := NewMiddleware(cfg)
+
+	perm := rbac.Permission{Resource: rbac.ResourceConfig, Action: rbac.ActionDelete}
+	handler := m.RequirePermission(perm, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	tokenString, err := m.GenerateToken("admin-user", "admin")
+	if err != nil {
+		t.Fatalf("Failed to generate token: %v", err)
+	}
+
+	req := httptest.NewRequest("GET", "/config", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("RequirePermission with admin wildcard: expected 200, got %d", rec.Code)
+	}
+}
+
+// ============================================================================
+// CONTEXT HELPER TESTS
+// ============================================================================
+
+func TestGetUserRole(t *testing.T) {
+	ctx := SetUserRole(context.Background(), rbac.UserRoleAnalyst)
+	role := GetUserRole(ctx)
+	if role != rbac.UserRoleAnalyst {
+		t.Errorf("GetUserRole() = %v, want analyst", role)
+	}
+}
+
+func TestGetPermissions(t *testing.T) {
+	perms := []rbac.Permission{{Resource: rbac.ResourceDashboard, Action: rbac.ActionRead}}
+	ctx := SetPermissions(context.Background(), perms)
+	got := GetPermissions(ctx)
+	if len(got) != 1 {
+		t.Errorf("GetPermissions() returned %d perms, want 1", len(got))
+	}
+}
+
+func TestSetUserRole(t *testing.T) {
+	ctx := context.Background()
+	ctx = SetUserRole(ctx, rbac.UserRoleComplianceOfficer)
+	role := GetUserRole(ctx)
+	if role != rbac.UserRoleComplianceOfficer {
+		t.Errorf("SetUserRole() = %v, want compliance_officer", role)
+	}
+}
+
+func TestSetPermissions(t *testing.T) {
+	ctx := context.Background()
+	perms := rbac.GetPermissionsForUserRole(rbac.UserRoleAnalyst)
+	ctx = SetPermissions(ctx, perms)
+	got := GetPermissions(ctx)
+	if len(got) != len(perms) {
+		t.Errorf("SetPermissions() returned %d perms, want %d", len(got), len(perms))
 	}
 }

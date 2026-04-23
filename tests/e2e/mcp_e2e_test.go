@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -17,6 +18,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// writeFile writes content to a file, creating parent directories if needed
+func writeFile(path string, content string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(content), 0644)
+}
 
 // MCPRequest represents a JSON-RPC request
 type MCPRequest struct {
@@ -267,15 +276,15 @@ func TestMCPE2E_ToolList(t *testing.T) {
 
 	t.Logf("Available tools: %v", toolNames)
 
-	// Verify we have at least echo
-	foundEcho := false
+	// Verify we have at least shell_command (Community tier tool)
+	foundShell := false
 	for _, name := range toolNames {
-		if name == "echo" {
-			foundEcho = true
+		if name == "shell_command" {
+			foundShell = true
 			break
 		}
 	}
-	assert.True(t, foundEcho, "Should have 'echo' tool available")
+	assert.True(t, foundShell, "Should have 'shell_command' tool available")
 }
 
 func TestMCPE2E_ToolCall_Echo_Allowed(t *testing.T) {
