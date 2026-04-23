@@ -26,6 +26,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/toolauth"
 	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
 )
 
@@ -96,8 +97,9 @@ type mcpClientBucket struct {
 // GuardrailMiddleware wraps an MCP RequestHandler and enforces tier-based
 // limits before delegating to the inner handler.
 type GuardrailMiddleware struct {
-	config GuardrailConfig
-	logger *slog.Logger
+	config        GuardrailConfig
+	logger        *slog.Logger
+	toolAuth      *toolauth.Matrix
 
 	// Session tracking
 	mu             sync.RWMutex
@@ -120,6 +122,10 @@ type GuardrailMiddleware struct {
 func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 	rpm := cfg.PlatformTier.RateLimitMCP()
 
+	// Initialize tool authorizer matrix with default policies
+	toolAuth := toolauth.NewMatrix()
+	toolAuth.RegisterDefaultPolicies()
+
 	if !cfg.Enabled {
 		return &GuardrailMiddleware{
 			config:       cfg,
@@ -127,6 +133,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 			sessions:     make(map[string]*sessionState),
 			rateLimits:   make(map[string]*mcpClientBucket),
 			rateLimitRPM: rpm,
+			toolAuth:     toolAuth,
 		}
 	}
 
@@ -136,6 +143,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 		sessions:     make(map[string]*sessionState),
 		rateLimits:   make(map[string]*mcpClientBucket),
 		rateLimitRPM: rpm,
+		toolAuth:     toolAuth,
 	}
 }
 
@@ -235,7 +243,6 @@ func (g *GuardrailMiddleware) OnToolCall(sessionID, toolName string) error {
 	g.mu.RUnlock()
 
 	if !exists {
-		// Session not tracked (e.g., pre-existing connection) — allow but log
 		g.logger.Debug("Tool call from untracked session", "session_id", sessionID, "tool", toolName)
 		return nil
 	}
@@ -256,6 +263,65 @@ func (g *GuardrailMiddleware) OnToolCall(sessionID, toolName string) error {
 	}
 
 	g.incrementToolCount(sessionID, toolName)
+	return nil
+}
+
+// OnToolCallWithAuth checks tool authorization using the Tool Authorizer matrix.
+// Returns an error if the tool call is denied by policy or requires approval.
+// This integrates risk-based tool authorization into the MCP guardrails.
+func (g *GuardrailMiddleware) OnToolCallWithAuth(sessionID, agentID, toolName string) error {
+	if !g.config.Enabled || g.toolAuth == nil {
+		return nil
+	}
+
+	// Create tool call for authorization check
+	toolCall := &toolauth.ToolCall{
+		ID:      sessionID + "-" + toolName,
+		Name:    toolName,
+		AgentID: agentID,
+	}
+
+	// Authorize the tool call
+	decision, err := g.toolAuth.Authorize(context.Background(), toolCall)
+	if err != nil {
+		atomic.AddInt64(&g.blockedRequests, 1)
+		g.logger.Error("Tool authorization error",
+			"session_id", sessionID,
+			"tool", toolName,
+			"error", err)
+		return fmt.Errorf("tool authorization failed: %w", err)
+	}
+
+	// Log the authorization decision
+	g.logger.Debug("Tool authorization decision",
+		"session_id", sessionID,
+		"tool", toolName,
+		"allow", decision.Allow,
+		"reason", decision.Reason,
+		"risk_score", decision.RiskScore)
+
+	// Check if tool is denied
+	if !decision.Allow {
+		atomic.AddInt64(&g.blockedRequests, 1)
+		
+		// Record metric for blocked tool call
+		tool := metrics.SanitizeToolName(toolName, nil)
+		metrics.RecordMCPRequest(tool, metrics.ResultFailure)
+		
+		if g.config.LogViolations {
+			g.logger.Warn("Tool call blocked by authorization",
+				"session_id", sessionID,
+				"tool", toolName,
+				"reason", decision.Reason,
+				"risk_score", decision.RiskScore)
+		}
+		return fmt.Errorf("tool %s blocked: %s", toolName, decision.Reason)
+	}
+
+	// Tool is authorized, record success metric
+	tool := metrics.SanitizeToolName(toolName, nil)
+	metrics.RecordMCPRequest(tool, metrics.ResultSuccess)
+	
 	return nil
 }
 
@@ -459,9 +525,11 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 		// --- Guard 2: Per-session tool count limit ---
 		if req.Method == "tools/call" || req.Method == "tool/call" {
 			sessionID := "anonymous"
+			agentID := ""
 			toolName := ""
 			if conn != nil && conn.Session != nil {
 				sessionID = conn.Session.ID
+				agentID = conn.Session.AgentID
 			}
 			// Extract tool name from params for logging
 			if req.Params != nil {
@@ -475,6 +543,11 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 
 			if err := g.OnToolCall(sessionID, toolName); err != nil {
 				return guardrailErrorResponse(req.ID, ErrSessionToolLimit, err.Error())
+			}
+
+			// --- Guard 2b: Tool authorization (risk-based) ---
+			if err := g.OnToolCallWithAuth(sessionID, agentID, toolName); err != nil {
+				return guardrailErrorResponse(req.ID, "tool_authorization_denied", err.Error())
 			}
 		}
 

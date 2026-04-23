@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -24,11 +25,13 @@ import (
 type contextKey string
 
 const (
-	ContextKeyUserID   contextKey = "auth_user_id"
-	ContextKeyTier     contextKey = "auth_tier"
-	ContextKeyAuthType contextKey = "auth_type"
-	AuthTypeJWT        string     = "jwt"
-	AuthTypeAPIToken   string     = "api_token"
+	ContextKeyUserID      contextKey = "auth_user_id"
+	ContextKeyTier        contextKey = "auth_tier"
+	ContextKeyAuthType    contextKey = "auth_type"
+	ContextKeyUserRole    contextKey = "auth_user_role"
+	ContextKeyPermissions contextKey = "auth_permissions"
+	AuthTypeJWT           string     = "jwt"
+	AuthTypeAPIToken      string     = "api_token"
 )
 
 // Config holds authentication configuration
@@ -87,10 +90,12 @@ func NewMiddleware(cfg *Config) *Middleware {
 func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !m.config.RequireAuth {
-			// Auth not required, inject dev context
+			// Auth not required, inject dev context with viewer role
 			ctx := context.WithValue(r.Context(), ContextKeyUserID, "dev-user")
 			ctx = context.WithValue(ctx, ContextKeyTier, "community")
 			ctx = context.WithValue(ctx, ContextKeyAuthType, "none")
+			ctx = SetUserRole(ctx, rbac.UserRoleViewer)
+			ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(rbac.UserRoleViewer))
 			next(w, r.WithContext(ctx))
 			return
 		}
@@ -151,6 +156,12 @@ func (m *Middleware) handleJWT(w http.ResponseWriter, r *http.Request, tokenStri
 	ctx := context.WithValue(r.Context(), ContextKeyUserID, claims.UserID)
 	ctx = context.WithValue(ctx, ContextKeyTier, claims.Tier)
 	ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeJWT)
+	
+	// Set RBAC role and permissions from JWT claims
+	userRole := rbac.ParseUserRole(claims.Tier)
+	ctx = SetUserRole(ctx, userRole)
+	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(userRole))
+	
 	next(w, r.WithContext(ctx))
 }
 
@@ -173,6 +184,11 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 	ctx := context.WithValue(r.Context(), ContextKeyUserID, "api-service")
 	ctx = context.WithValue(ctx, ContextKeyTier, "enterprise")
 	ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeAPIToken)
+	
+	// API tokens get admin role with full permissions
+	ctx = SetUserRole(ctx, rbac.UserRoleAdmin)
+	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(rbac.UserRoleAdmin))
+	
 	next(w, r.WithContext(ctx))
 }
 
@@ -250,4 +266,99 @@ func (m *Middleware) AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r)
 	})
+}
+
+// RequireRole wraps handlers requiring a minimum user role
+func (m *Middleware) RequireRole(required rbac.UserRole, next http.HandlerFunc) http.HandlerFunc {
+	return m.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		userRole := GetUserRole(r.Context())
+		if userRole == "" {
+			// Default to viewer if no role set
+			userRole = rbac.UserRoleViewer
+		}
+		
+		if !userRole.AtLeast(required) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprintf(w, `{"error":"forbidden","message":"role %s required, got %s", "required": "%s", "current": "%s"}`, required, userRole, required, userRole)
+			return
+		}
+		next(w, r)
+	})
+}
+
+// RequirePermission wraps handlers requiring a specific RBAC permission
+func (m *Middleware) RequirePermission(perm rbac.Permission, next http.HandlerFunc) http.HandlerFunc {
+	return m.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		permissions := GetPermissions(r.Context())
+		if permissions == nil {
+			// Load default permissions for user's role
+			userRole := GetUserRole(r.Context())
+			if userRole == "" {
+				userRole = rbac.UserRoleViewer
+			}
+			permissions = rbac.GetPermissionsForUserRole(userRole)
+		}
+		
+		hasPerm := false
+		for _, p := range permissions {
+			if p == perm {
+				hasPerm = true
+				break
+			}
+			// Check resource wildcard
+			if p.Resource == perm.Resource && p.Action == "*" {
+				hasPerm = true
+				break
+			}
+			// Check action wildcard
+			if p.Resource == "*" && p.Action == perm.Action {
+				hasPerm = true
+				break
+			}
+			// Check full wildcard
+			if p.Resource == "*" && p.Action == "*" {
+				hasPerm = true
+				break
+			}
+		}
+		
+		if !hasPerm {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprintf(w, `{"error":"forbidden","message":"permission %s required"}`, perm.String())
+			return
+		}
+		next(w, r)
+	})
+}
+
+// GetUserRole retrieves user role from context
+func GetUserRole(ctx context.Context) rbac.UserRole {
+	if v := ctx.Value(ContextKeyUserRole); v != nil {
+		if role, ok := v.(rbac.UserRole); ok {
+			return role
+		}
+	}
+	return ""
+}
+
+// GetPermissions retrieves permissions from context
+func GetPermissions(ctx context.Context) []rbac.Permission {
+	if v := ctx.Value(ContextKeyPermissions); v != nil {
+		if perms, ok := v.([]rbac.Permission); ok {
+			return perms
+		}
+	}
+	return nil
+}
+
+// SetUserRole sets user role in context
+func SetUserRole(ctx context.Context, role rbac.UserRole) context.Context {
+	return context.WithValue(ctx, ContextKeyUserRole, role)
+}
+
+// SetPermissions sets permissions in context
+func SetPermissions(ctx context.Context, perms []rbac.Permission) context.Context {
+	return context.WithValue(ctx, ContextKeyPermissions, perms)
 }
