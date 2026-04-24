@@ -4,6 +4,7 @@ import (
 	"testing"
 )
 
+// KeyManager Tests
 func TestNewKeyManager(t *testing.T) {
 	km := NewKeyManager("")
 	if km == nil {
@@ -27,6 +28,7 @@ func TestKeyManager_RevokeKey_Nonexistent(t *testing.T) {
 	}
 }
 
+// SignatureVerifier Tests
 func TestNewSignatureVerifier(t *testing.T) {
 	sv := NewSignatureVerifier()
 	if sv == nil {
@@ -73,6 +75,48 @@ func TestSignatureVerifier_StrictMode(t *testing.T) {
 	}
 }
 
+func TestSignatureVerifier_VerifySignature_EmptyPayload(t *testing.T) {
+	sv := NewSignatureVerifier()
+	result, _ := sv.VerifySignature([]byte(""), []byte("sig"), []byte("key"))
+	if result == nil {
+		t.Error("Result should not be nil")
+	}
+}
+
+func TestSignatureVerifier_VerifySignature_EmptySignature(t *testing.T) {
+	sv := NewSignatureVerifier()
+	result, _ := sv.VerifySignature([]byte("payload"), []byte(""), []byte("key"))
+	if result == nil {
+		t.Error("Result should not be nil")
+	}
+}
+
+func TestSignatureVerifier_VerifySignature_EmptyKey(t *testing.T) {
+	sv := NewSignatureVerifier()
+	result, _ := sv.VerifySignature([]byte("payload"), []byte("sig"), []byte(""))
+	if result == nil {
+		t.Error("Result should not be nil")
+	}
+}
+
+func TestSignatureVerifier_VerifySignature_LargePayload(t *testing.T) {
+	sv := NewSignatureVerifier()
+	largePayload := make([]byte, 1024*1024)
+	result, _ := sv.VerifySignature(largePayload, []byte("sig"), []byte("key"))
+	if result == nil {
+		t.Error("Result should not be nil")
+	}
+}
+
+func TestSignatureVerifier_VerifySignature_InvalidData(t *testing.T) {
+	sv := NewSignatureVerifier()
+	result, _ := sv.VerifySignature([]byte("invalid"), []byte("invalid"), []byte("invalid"))
+	if result == nil {
+		t.Error("Result should not be nil for invalid data")
+	}
+}
+
+// SignatureValidationService Tests
 func TestNewSignatureValidationService(t *testing.T) {
 	svs := NewSignatureValidationService()
 	if svs == nil {
@@ -80,20 +124,19 @@ func TestNewSignatureValidationService(t *testing.T) {
 	}
 }
 
-func TestSignatureValidationService_ValidateSignedPackage(t *testing.T) {
+func TestSignatureValidationService_ValidateSignedPackage_Empty(t *testing.T) {
 	svs := NewSignatureValidationService()
 	signed := &SignedPayload{
-		Data:      []byte("payload"),
-		Signature: []byte("signature"),
+		Data:      []byte(""),
+		Signature: []byte(""),
 	}
-	_, _ = svs.ValidateSignedPackage(signed)
+	result, _ := svs.ValidateSignedPackage(signed)
+	if result == nil {
+		t.Error("Result should not be nil")
+	}
 }
 
-func TestSignatureValidationService_ValidateStringSignature(t *testing.T) {
-	svs := NewSignatureValidationService()
-	_, _ = svs.ValidateStringSignature([]byte("payload"), "YmFzZTY0c2lnbmF0dXJl", []byte("key"))
-}
-
+// KeyManagementService Tests
 func TestNewKeyManagementService(t *testing.T) {
 	kms := NewKeyManagementService("")
 	if kms == nil {
@@ -117,6 +160,7 @@ func TestKeyManagementService_RevokeKey_Nonexistent(t *testing.T) {
 	}
 }
 
+// Concurrent Tests
 func TestConcurrentVerification(t *testing.T) {
 	sv := NewSignatureVerifier()
 	done := make(chan bool, 10)

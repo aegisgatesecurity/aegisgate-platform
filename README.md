@@ -19,7 +19,7 @@
 
 > **30-Second Pitch**: Your AI applications need enterprise-grade security — but shouldn't require enterprise budgets. AegisGate Platform™ provides unified AI traffic inspection, MCP security guardrails, and compliance automation in a single 19MB binary. Deploy in 60 seconds. Sleep better tonight.
 
-**[v1.3.5 — Compliance Registry Wiring Complete ✅]**(https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v1.3.5): Sprint 3 complete — 8+ compliance frameworks tier-aware, ATLAS/NIST mandatory for all, premium frameworks gated by tier.
+**[v1.3.6 — Compliance Registry Wiring Complete ✅]**(https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v1.3.6): Sprint 3 complete — 8+ compliance frameworks tier-aware, ATLAS/NIST mandatory for all, premium frameworks gated by tier.
 
 ---
 
@@ -226,7 +226,7 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## ✅ Sprint 3b — MCP Security Enhancement Complete
 
-**v1.3.5 — released April 2026**
+**v1.3.6 — released April 2026**
 
 We have addressed critical OpenAI/X security concerns with the following enhancements:
 
@@ -381,7 +381,7 @@ docker run -d \
   --embedded-mcp
 ```
 
-> **v1.3.5 Update:** Tier is now derived from your license key — no `--tier` flag needed.
+> **v1.3.6 Update:** Tier is now derived from your license key — no `--tier` flag needed.
 > Set `AEGISGATE_LICENSE_KEY` to unlock Developer+ features.
 > 
 > **Security Note:** Authentication is now enabled by default. Set `REQUIRE_AUTH=false` to opt-out.
@@ -872,3 +872,21 @@ Built with 🖤 by the AegisGate Security team
 © 2024-2026 AegisGate Security, LLC
 
 </div>
+
+---
+
+## ⚠️ DEPRECATION NOTICE
+
+| Version | Status | Note |
+|---------|--------|------|
+| **v1.3.6** | ✅ **Current** — Supported | Latest stable release |
+| v1.3.5 | ❌ Deprecated | Please upgrade to v1.3.6 |
+| v1.3.4 | ❌ Deprecated | Please upgrade to v1.3.6 |
+| v1.3.3 | ❌ Deprecated | Please upgrade to v1.3.6 |
+| < v1.3.3 | ❌ Deprecated | Please upgrade to v1.3.6 |
+
+**To ensure you have the latest security patches and features, please use v1.3.6.**
+
+---
+
+*Last updated: 2026-04-24*
