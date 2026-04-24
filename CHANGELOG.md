@@ -1,3 +1,44 @@
+## [1.3.5] - 2026-04-24
+
+### Compliance (Sprint 3 Completion)
+- S3-01: Ported Compliance Factory from AegisGuard (1,375 LOC)
+- S3-02: Ported Compliance Registry with framework registration/lookup
+- S3-03: MITRE ATLAS checks wired (Community-tier mandated)
+- S3-04: NIST AI RMF 1.0 checks wired (Community-tier mandated)
+- S3-05: OWASP LLM Top 10 checks wired (Community-tier)
+- S3-06: ISO 27001 checks wired (Developer+ tier)
+- S3-07: GDPR Basic checks wired (Developer+ tier)
+- S3-08: HIPAA checks wired (Professional+ tier)
+- S3-09: PCI-DSS checks wired (Professional+ tier)
+- S3-10: SOC2 Type I checks wired (Professional+ tier)
+- S3-11: ISO 42001 checks wired (Enterprise tier)
+- S3-12: GDPR Advanced checks wired (Professional+ tier)
+- S3-13: Compliance scan endpoint ready via `MCPTierAwareCompliance`
+- S3-14: Compliance integration tests written
+
+### Security (Sprint 3b Completion — Continued)
+- S3b-03: Signature Verification at MCP Registration complete (pkg/signature_verification)
+
+### Changed
+- New `pkg/compliance/mcp_compliance.go` adapter for tier-aware compliance
+- 14 MCP compliance tests passing
+- All 27 packages passing tests
+
+## [1.3.4] - 2026-04-24
+
+### Security (Sprint 3b Completion)
+- S3b-01: STDIO command validation with shell metacharacter injection protection (Guard 6)
+- S3b-02: MCP server registration gating with client IP logging
+- S3b-04: Authentication enabled by default (REQUIRE_AUTH=false to opt out)
+- S3b-05: Hard-enforced memory limits for Community tier sessions
+- S3b-07: Tool call limit enforcement (20 tools/session max for Community tier)
+- S3b-08: Tool authorization with risk matrix (low/medium/high/critical)
+- 18 new STDIO validation tests with comprehensive coverage
+
+### Changed
+- Package coverage improved to 84.6% overall (exceeds 80% threshold)
+- Go version: 1.25.9
+
 ## [1.3.3] - 2026-04-21
 
 ### Code Coverage Achievement — Phase 1 Complete

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -113,6 +114,9 @@ type GuardrailMiddleware struct {
 	rateLimits   map[string]*mcpClientBucket // sanitized clientAddr -> bucket
 	rateLimitRPM int                         // cached from tier.RateLimitMCP()
 
+	// STDIO command validation (Guard 6: prevents shell metacharacter injection via MCP STDIO)
+	stdioValidator *STDIOValidator
+
 	// Metrics
 	totalRequests   int64
 	blockedRequests int64
@@ -141,13 +145,14 @@ func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMidd
 	}
 
 	return &GuardrailMiddleware{
-		config:       cfg,
-		logger:       slog.Default().With("component", "mcp-guardrails", "tier", cfg.PlatformTier.String()),
-		serverID:     serverID,
-		sessions:     make(map[string]*sessionState),
-		rateLimits:   make(map[string]*mcpClientBucket),
-		rateLimitRPM: rpm,
-		toolAuth:     toolAuth,
+		config:         cfg,
+		logger:         slog.Default().With("component", "mcp-guardrails", "tier", cfg.PlatformTier.String()),
+		serverID:       serverID,
+		sessions:       make(map[string]*sessionState),
+		rateLimits:     make(map[string]*mcpClientBucket),
+		rateLimitRPM:   rpm,
+		toolAuth:       toolAuth,
+		stdioValidator: NewSTDIOValidator(DefaultSTDIOValidationConfig()),
 	}
 }
 
@@ -156,7 +161,8 @@ func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMidd
 // --------------------------------------------------------------------------
 
 // OnSessionCreate is called when a new MCP session is initialized.
-// Returns an error if the concurrent session limit has been reached.
+// Returns an error if the concurrent session limit has been reached
+// or if the session registration contains a dangerous STDIO command.
 func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID, clientAddr string) error {
 	if !g.config.Enabled {
 		return nil
@@ -182,6 +188,19 @@ func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID, clientAddr str
 
 	g.trackSession(sessionID, agentID, clientAddr)
 	return nil
+}
+
+// ValidateSessionCommand validates a command string that will be used to
+// start an MCP server via STDIO transport. This is Guard 6 of the MCP
+// guardrails, preventing shell metacharacter injection at session creation.
+//
+// This should be called by the MCP server registration path before
+// a new STDIO-based server subprocess is launched.
+func (g *GuardrailMiddleware) ValidateSessionCommand(cmd string) error {
+	if g.stdioValidator == nil {
+		return nil
+	}
+	return g.stdioValidator.ValidateCommand(cmd)
 }
 
 // OnSessionDestroy is called when an MCP session ends.
@@ -567,6 +586,33 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 			if err := g.OnToolCallWithAuth(sessionID, agentID, toolName); err != nil {
 				return guardrailErrorResponse(req.ID, "tool_authorization_denied", err.Error())
 			}
+
+			// --- Guard 6: STDIO command validation ---
+			// Validate command-like parameters in tool calls to prevent
+			// shell metacharacter injection via MCP STDIO transport.
+			if g.stdioValidator != nil && g.stdioValidator.IsEnabled() && req.Params != nil {
+				var params map[string]interface{}
+				if err := parseJSONParams(req.Params, &params); err == nil {
+					for paramName, paramValue := range params {
+						if strVal, ok := paramValue.(string); ok {
+							if err := g.stdioValidator.ValidateToolParameter(toolName, paramName, strVal); err != nil {
+								atomic.AddInt64(&g.blockedRequests, 1)
+								if g.config.LogViolations {
+									dangerousPatterns := g.stdioValidator.IdentifyDangerousPatterns(strVal)
+									g.logger.Warn("Tool parameter blocked by STDIO validation",
+										"session_id", sessionID,
+										"tool", toolName,
+										"param", paramName,
+										"patterns", strings.Join(dangerousPatterns, ", "),
+										"error", err,
+									)
+								}
+								return guardrailErrorResponse(req.ID, ErrCommandBlocked, err.Error())
+							}
+						}
+					}
+				}
+			}
 		}
 
 		// --- Guard 3: Execution timeout ---
@@ -598,18 +644,21 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 
 // GuardrailStats returns current guardrail statistics
 type GuardrailStats struct {
-	Tier              string `json:"tier"`
-	ActiveSessions    int64  `json:"active_sessions"`
-	MaxSessions       int    `json:"max_sessions"`
-	TotalRequests     int64  `json:"total_requests"`
-	BlockedRequests   int64  `json:"blocked_requests"`
-	TimeoutRequests   int64  `json:"timeout_requests"`
-	RateLimitRPM      int    `json:"rate_limit_rpm"`
-	RateLimitedReqs   int64  `json:"rate_limited_requests"`
-	ToolsPerSession   int    `json:"tools_per_session"`
-	ExecTimeoutSec    int    `json:"exec_timeout_sec"`
-	SandboxMemoryMB   int    `json:"sandbox_memory_mb"`
-	GuardrailsEnabled bool   `json:"guardrails_enabled"`
+	Tier                string `json:"tier"`
+	ActiveSessions      int64  `json:"active_sessions"`
+	MaxSessions         int    `json:"max_sessions"`
+	TotalRequests       int64  `json:"total_requests"`
+	BlockedRequests     int64  `json:"blocked_requests"`
+	TimeoutRequests     int64  `json:"timeout_requests"`
+	RateLimitRPM        int    `json:"rate_limit_rpm"`
+	RateLimitedReqs     int64  `json:"rate_limited_requests"`
+	ToolsPerSession     int    `json:"tools_per_session"`
+	ExecTimeoutSec      int    `json:"exec_timeout_sec"`
+	SandboxMemoryMB     int    `json:"sandbox_memory_mb"`
+	GuardrailsEnabled   bool   `json:"guardrails_enabled"`
+	StdioValidationOn   bool   `json:"stdio_validation_enabled"`
+	StdioTotalValidated int64  `json:"stdio_total_validated"`
+	StdioBlocked        int64  `json:"stdio_blocked"`
 }
 
 // Stats returns a snapshot of the current guardrail state
@@ -633,18 +682,21 @@ func (g *GuardrailMiddleware) Stats() GuardrailStats {
 	}
 
 	return GuardrailStats{
-		Tier:              g.config.PlatformTier.String(),
-		ActiveSessions:    atomic.LoadInt64(&g.activeSessions),
-		MaxSessions:       maxSess,
-		TotalRequests:     atomic.LoadInt64(&g.totalRequests),
-		BlockedRequests:   atomic.LoadInt64(&g.blockedRequests),
-		TimeoutRequests:   atomic.LoadInt64(&g.timeoutRequests),
-		RateLimitRPM:      rateLimitRPM,
-		RateLimitedReqs:   atomic.LoadInt64(&g.rateLimitedReqs),
-		ToolsPerSession:   maxTools,
-		ExecTimeoutSec:    timeoutSec,
-		SandboxMemoryMB:   memMB,
-		GuardrailsEnabled: g.config.Enabled,
+		Tier:                g.config.PlatformTier.String(),
+		ActiveSessions:      atomic.LoadInt64(&g.activeSessions),
+		MaxSessions:         maxSess,
+		TotalRequests:       atomic.LoadInt64(&g.totalRequests),
+		BlockedRequests:     atomic.LoadInt64(&g.blockedRequests),
+		TimeoutRequests:     atomic.LoadInt64(&g.timeoutRequests),
+		RateLimitRPM:        rateLimitRPM,
+		RateLimitedReqs:     atomic.LoadInt64(&g.rateLimitedReqs),
+		ToolsPerSession:     maxTools,
+		ExecTimeoutSec:      timeoutSec,
+		SandboxMemoryMB:     memMB,
+		GuardrailsEnabled:   g.config.Enabled,
+		StdioValidationOn:   g.stdioValidator != nil && g.stdioValidator.IsEnabled(),
+		StdioTotalValidated: g.stdioValidatorStats("total"),
+		StdioBlocked:        g.stdioValidatorStats("blocked"),
 	}
 }
 
@@ -655,7 +707,25 @@ func (g *GuardrailMiddleware) Close() {
 		"active_sessions", stats.ActiveSessions,
 		"total_requests", stats.TotalRequests,
 		"blocked_requests", stats.BlockedRequests,
-		"rate_limited_requests", stats.RateLimitedReqs)
+		"rate_limited_requests", stats.RateLimitedReqs,
+		"stdio_blocked", stats.StdioBlocked)
+}
+
+// stdioValidatorStats returns validation stats from the STDIO validator.
+// field is "total" or "blocked".
+func (g *GuardrailMiddleware) stdioValidatorStats(field string) int64 {
+	if g.stdioValidator == nil {
+		return 0
+	}
+	stats := g.stdioValidator.GetStats()
+	switch field {
+	case "total":
+		return stats.TotalValidations
+	case "blocked":
+		return stats.BlockedValidations
+	default:
+		return 0
+	}
 }
 
 // --------------------------------------------------------------------------

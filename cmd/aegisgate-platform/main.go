@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	version       = "1.3.3"
+	version       = "1.3.4"
 	startTime     = time.Now()
 	configFile    = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort     = flag.Int("proxy-port", 8080, "AegisGate proxy port")
@@ -218,6 +218,7 @@ func main() {
 		EnableMLDetection:              tier.HasFeature(platformTier, tier.FeatureBasicAnomaly),
 		MLSensitivity:                  "medium",
 		EnablePromptInjectionDetection: tier.HasFeature(platformTier, tier.FeaturePromptInjection),
+		PromptInjectionSensitivity:     50, // Medium sensitivity (0-100): blocks severity >= 4 by default
 		EnableContentAnalysis:          tier.HasFeature(platformTier, tier.FeatureTrafficPattern),
 		EnableBehavioralAnalysis:       tier.HasFeature(platformTier, tier.FeatureMLBehavioral),
 		OnRateLimited: func(client string) {
