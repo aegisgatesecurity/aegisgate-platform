@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: Apache-2.0
+// =========================================================================
+// =========================================================================
+//
+// =========================================================================
+
+package common
+
+// FrameworkConfig holds framework configuration
+type FrameworkConfig struct {
+	Name    string
+	Version string
+	Enabled bool
+}
+
+// TierInfo contains tier metadata
+type TierInfo struct {
+	Name        string
+	Description string
+}
+
+// TechniqueFinding represents a technique check result
+type TechniqueFinding struct {
+	ID          string
+	Name        string
+	Tactic      string
+	Severity    Severity
+	Status      string
+	Description string
+}
+
+// Findings is a collection of Finding
+type Findings struct {
+	Framework       string
+	Version         string
+	Timestamp       interface{} // time.Time
+	Status          string
+	Techniques      []TechniqueFinding
+	Recommendations []string
+}
+
+// ITierManager interface for tier checking
+type ITierManager interface {
+	GetCurrentTier() string
+	ValidateLicense() bool
+}

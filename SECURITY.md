@@ -30,12 +30,12 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **SBOM Generation** (CycloneDX + SPDX) |
 | ✅ | **Dependency Vulnerability Scanning** |
 | ✅ | **Secret Scanning** (AWS keys, GitHub tokens, etc.) |
-| ✅ | **Authentication-by-Default** (v1.3.4) |
-| ✅ | **Hard-Enforced Memory Limits** (v1.3.4) |
-| ✅ | **MCP Registration Logging** (v1.3.4) |
-| ✅ | **Tool Call Limits** (v1.3.4) |
-| ✅ | **Risk-Based Authorization** (v1.3.4) |
-| ✅ | **90.8% Test Coverage** (v1.3.4) |
+| ✅ | **Authentication-by-Default** (v1.3.5) |
+| ✅ | **Hard-Enforced Memory Limits** (v1.3.5) |
+| ✅ | **MCP Registration Logging** (v1.3.5) |
+| ✅ | **Tool Call Limits** (v1.3.5) |
+| ✅ | **Risk-Based Authorization** (v1.3.5) |
+| ✅ | **90.8% Test Coverage** (v1.3.5) |
 
 ## Reporting a Vulnerability
 
@@ -52,7 +52,7 @@ We will respond within **48 hours** and work to resolve the issue within **90 da
 
 ## Sprint 3b — MCP Security Enhancement Complete ✅
 
-**v1.3.4 — released April 2026**
+**v1.3.5 — released April 2026**
 
 All critical OpenAI/X security concerns addressed:
 
