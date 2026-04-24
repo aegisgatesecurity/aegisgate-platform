@@ -1,6 +1,6 @@
-# Prometheus Metrics Documentation — AegisGate Platform v1.3.4
+# Prometheus Metrics Documentation — AegisGate Platform v1.3.6
 
-**v1.3.4 Update** — MCP Security Enhancement complete. All metrics now support MCP guardrail tracking, authentication enforcement, and memory limit violation logging.
+**v1.3.6 Update** — MCP Security Enhancement complete. All metrics now support MCP guardrail tracking, authentication enforcement, and memory limit violation logging.
 
 ## Sprint 3b Additions
 
@@ -11,7 +11,7 @@
 | Memory Limit Violations | `aegisgate_memory_limit_violations_total` | ✅ |
 | Tool Call Enforcement | `aegisgate_tool_calls_enforced_total` | ✅ |
 
-**v1.3.4** — MCP Security Enhancement complete
+**v1.3.6** — MCP Security Enhancement complete
 
 AegisGate Platform exposes 10 canonical Prometheus metrics with full cardinality
 protection for production monitoring, alerting, and capacity planning.

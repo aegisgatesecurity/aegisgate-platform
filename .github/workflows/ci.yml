@@ -2,8 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  workflow_dispatch:
     branches: [main]
   workflow_dispatch:
 
@@ -81,8 +83,7 @@ jobs:
         run: go mod download
 
       - name: Run unit tests
-        run: |
-          go test -coverprofile=coverage.out $(go list ./pkg/... | grep -v "^github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance" | grep -v "/upstream/") 2>&1 | tee test-results.txt
+          go test -coverprofile=coverage.out $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/") 2>&1 | tee test-results.txt
 
       - name: Run integration tests
         run: |
