@@ -377,3 +377,136 @@ func TestStartCleanupRoutine(t *testing.T) {
 		t.Errorf("CountSessions after cleanup routine = %d, want 0", count)
 	}
 }
+
+// TestSetMemoryLimit tests memory limit configuration
+func TestSetMemoryLimit(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(rbac.DefaultConfig())
+	sm := NewConnectionSessionManager(rbacMgr)
+
+	sm.SetMemoryLimit("session1", 1024*1024) // 1MB
+
+	stats := sm.GetMemoryStats("session1")
+	if stats == nil {
+		t.Fatal("Expected memory stats to exist")
+	}
+	if stats.Limit != 1024*1024 {
+		t.Errorf("Expected limit 1048576, got %d", stats.Limit)
+	}
+	if stats.Usage != 0 {
+		t.Errorf("Expected initial usage 0, got %d", stats.Usage)
+	}
+	if stats.Tier != "community" {
+		t.Errorf("Expected tier 'community', got '%s'", stats.Tier)
+	}
+
+	// Test overriding existing limit
+	sm.SetMemoryLimit("session1", 2048*1024) // 2MB
+	stats = sm.GetMemoryStats("session1")
+	if stats.Limit != 2048*1024 {
+		t.Errorf("Expected updated limit 2097152, got %d", stats.Limit)
+	}
+}
+
+// TestGetMemoryStats tests memory stats retrieval
+func TestGetMemoryStats(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(rbac.DefaultConfig())
+	sm := NewConnectionSessionManager(rbacMgr)
+
+	// Non-existent session
+	stats := sm.GetMemoryStats("nonexistent")
+	if stats != nil {
+		t.Errorf("Expected nil for nonexistent session, got %v", stats)
+	}
+
+	// Set and retrieve
+	sm.SetMemoryLimit("session1", 512*1024)
+	stats = sm.GetMemoryStats("session1")
+	if stats == nil {
+		t.Fatal("Expected memory stats to exist")
+	}
+	if stats.Limit != 512*1024 {
+		t.Errorf("Expected limit 524288, got %d", stats.Limit)
+	}
+}
+
+// TestCheckAndEnforceMemoryLimit tests memory limit enforcement
+func TestCheckAndEnforceMemoryLimit(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(rbac.DefaultConfig())
+	sm := NewConnectionSessionManager(rbacMgr)
+
+	// Set limit
+	sm.SetMemoryLimit("session1", 1024) // 1KB
+
+	// Within limit - should return nil
+	err := sm.CheckAndEnforceMemoryLimit("session1")
+	if err != nil {
+		t.Errorf("Within limit should not error, got: %v", err)
+	}
+
+	// Increment usage
+	sm.IncrementMemoryUsage("session1", 2048) // 2KB (exceeds 1KB)
+
+	// Exceeds limit - should return error
+	err = sm.CheckAndEnforceMemoryLimit("session1")
+	if err == nil {
+		t.Error("Exceeding limit should return error")
+	}
+
+	// Non-existent session - should return nil (no enforcement needed)
+	err = sm.CheckAndEnforceMemoryLimit("nonexistent")
+	if err != nil {
+		t.Errorf("Non-existent session should not error, got: %v", err)
+	}
+}
+
+// TestIncrementMemoryUsage tests memory usage increment
+func TestIncrementMemoryUsage(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(rbac.DefaultConfig())
+	sm := NewConnectionSessionManager(rbacMgr)
+
+	// Set limit first
+	sm.SetMemoryLimit("session1", 1024*1024)
+
+	// Increment usage
+	sm.IncrementMemoryUsage("session1", 512)
+
+	stats := sm.GetMemoryStats("session1")
+	if stats == nil {
+		t.Fatal("Expected memory stats to exist")
+	}
+	if stats.Usage != 512 {
+		t.Errorf("Expected usage 512, got %d", stats.Usage)
+	}
+
+	// Increment again
+	sm.IncrementMemoryUsage("session1", 256)
+	stats = sm.GetMemoryStats("session1")
+	if stats.Usage != 768 {
+		t.Errorf("Expected usage 768, got %d", stats.Usage)
+	}
+
+	// Increment non-existent session - should not panic
+	sm.IncrementMemoryUsage("nonexistent", 100)
+	// No way to verify this without exposing internal state, but should not panic
+}
+
+// TestTruncateSessionID tests session ID truncation helper
+func TestTruncateSessionID(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"short", "short"},
+		{"exactly12ch", "exactly12ch"},
+		{"123456789abc", "123456789abc"},
+		{"123456789abcd", "123456789abc..."},
+		{"this_is_a_very_long_session_id", "this_is_a_ve..."},
+	}
+
+	for _, tt := range tests {
+		result := truncateSessionID(tt.input)
+		if result != tt.expected {
+			t.Errorf("truncateSessionID(%q) = %q, want %q", tt.input, result, tt.expected)
+		}
+	}
+}

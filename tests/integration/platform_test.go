@@ -1215,7 +1215,7 @@ func TestCertInitDefaultConfig(t *testing.T) {
 func TestGuardrailSessionLimit(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	maxSessions := tier.TierCommunity.MaxConcurrentMCP() // 5
@@ -1248,7 +1248,7 @@ func TestGuardrailSessionLimit(t *testing.T) {
 func TestGuardrailToolLimit(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	maxTools := tier.TierCommunity.MaxMCPToolsPerSession() // 20
@@ -1281,7 +1281,7 @@ func TestGuardrailToolLimit(t *testing.T) {
 func TestGuardrailExecTimeout(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	ctx := context.Background()
@@ -1304,7 +1304,7 @@ func TestGuardrailExecTimeout(t *testing.T) {
 func TestGuardrailExecTimeoutUnlimited(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierEnterprise)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	ctx := context.Background()
@@ -1321,7 +1321,7 @@ func TestGuardrailExecTimeoutUnlimited(t *testing.T) {
 func TestGuardrailMemoryLimit(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	err := gm.OnSessionCreate("sess-mem", "agent")
@@ -1344,7 +1344,7 @@ func TestGuardrailMemoryLimit(t *testing.T) {
 func TestGuardrailHandler(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	// Create a minimal inner handler
@@ -1389,7 +1389,7 @@ func TestGuardrailHandler(t *testing.T) {
 func TestGuardrailHandlerDisabled(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = false
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	auth := &mockAuthorizer{}
@@ -1419,7 +1419,7 @@ func TestGuardrailHandlerDisabled(t *testing.T) {
 func TestGuardrailStats(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	// Initial stats
@@ -1462,7 +1462,7 @@ func TestGuardrailTierEscalation(t *testing.T) {
 	t.Run("DeveloperSessions", func(t *testing.T) {
 		cfg := mcpserver.DefaultGuardrailConfig(tier.TierDeveloper)
 		cfg.Enabled = true
-		gm := mcpserver.NewGuardrailMiddleware(cfg)
+		gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 		defer gm.Close()
 
 		communityMax := tier.TierCommunity.MaxConcurrentMCP() // 5
@@ -1489,7 +1489,7 @@ func TestGuardrailTierEscalation(t *testing.T) {
 	t.Run("DeveloperToolsPerSession", func(t *testing.T) {
 		cfg := mcpserver.DefaultGuardrailConfig(tier.TierDeveloper)
 		cfg.Enabled = true
-		gm := mcpserver.NewGuardrailMiddleware(cfg)
+		gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 		defer gm.Close()
 
 		communityTools := tier.TierCommunity.MaxMCPToolsPerSession() // 20
@@ -1515,7 +1515,7 @@ func TestGuardrailTierEscalation(t *testing.T) {
 func TestGuardrailSessionDestroy(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity)
 	cfg.Enabled = true
-	gm := mcpserver.NewGuardrailMiddleware(cfg)
+	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
 	maxSessions := tier.TierCommunity.MaxConcurrentMCP() // 5
@@ -1724,7 +1724,7 @@ func TestGuardrailsWithToolRegistry(t *testing.T) {
 	platformTier := tier.TierCommunity
 
 	// Create guardrail middleware
-	gm := mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier))
+	gm := mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier), "test-server")
 	defer gm.Close()
 
 	// Create a request handler with mock adapters
@@ -1825,7 +1825,7 @@ func TestPersistenceWithGuardrails(t *testing.T) {
 	gCfg := mcpserver.DefaultGuardrailConfig(platformTier)
 	gCfg.AuditViolations = true
 	gCfg.LogViolations = true
-	gm := mcpserver.NewGuardrailMiddleware(gCfg)
+	gm := mcpserver.NewGuardrailMiddleware(gCfg, "test-server")
 	defer gm.Close()
 
 	// Trigger a violation by exceeding session limit
@@ -1950,7 +1950,7 @@ func TestFullPlatformStack(t *testing.T) {
 	mcpserver.RegisterBuiltInTools(embeddedServer.Handler(), platformTier)
 
 	// Create guardrails
-	gm := mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier))
+	gm := mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier), "test-server")
 	defer gm.Close()
 
 	// Verify tools registered on the handler

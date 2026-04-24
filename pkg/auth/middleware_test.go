@@ -17,8 +17,8 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg == nil {
 		t.Fatal("DefaultConfig returned nil")
 	}
-	if cfg.RequireAuth {
-		t.Error("RequireAuth should be false by default")
+	if !cfg.RequireAuth {
+		t.Error("RequireAuth should be true by default (security-first)")
 	}
 	if cfg.TokenExpiryHours != 24 {
 		t.Errorf("TokenExpiryHours expected 24, got %d", cfg.TokenExpiryHours)
@@ -51,11 +51,20 @@ func TestConfigFromEnv(t *testing.T) {
 			wantAPI:     "prod-api-token",
 		},
 		{
-			name:        "development mode",
+			name:        "development mode (no env vars)",
 			envRequire:  "",
 			envJWT:      "",
 			envAPI:      "",
-			wantRequire: false,
+			wantRequire: true, // Security-first: auth required by default
+			wantJWT:     "dev-key-change-in-production",
+			wantAPI:     "dev-token-change-in-production",
+		},
+		{
+			name:        "development mode (REQUIRE_AUTH=false)",
+			envRequire:  "false",
+			envJWT:      "",
+			envAPI:      "",
+			wantRequire: false, // Explicit opt-out
 			wantJWT:     "dev-key-change-in-production",
 			wantAPI:     "dev-token-change-in-production",
 		},
@@ -391,7 +400,7 @@ func extractFromContext(ctx context.Context, key interface{}) string {
 }
 
 func TestContextExtraction(t *testing.T) {
-	// Test that context values are properly set
+	// Test that context values are properly set with valid credentials
 	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := extractFromContext(r.Context(), ContextKeyUserID)
 		tier := extractFromContext(r.Context(), ContextKeyTier)
@@ -411,10 +420,12 @@ func TestContextExtraction(t *testing.T) {
 	})
 
 	cfg := DefaultConfig()
+	cfg.APIAuthToken = "test-token-for-context-test"
 	m := NewMiddleware(cfg)
 	handler := m.RequireAuth(dummyHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "token dGVzdC10b2tlbi1mb3ItY29udGV4dC10ZXN0") // base64 encoded
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 

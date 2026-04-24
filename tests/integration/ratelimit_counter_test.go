@@ -133,7 +133,7 @@ func TestRateLimitCounter_ProxyMultipleHits(t *testing.T) {
 //	guardrails.go OnRateLimitCheck → metrics.RecordRateLimitHit(ServiceMCP, sanitized)
 func TestRateLimitCounter_MCPRateLimit(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
-	g := mcpserver.NewGuardrailMiddleware(cfg)
+	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust the RPM limit
 	for i := 0; i < 60; i++ {
@@ -179,7 +179,7 @@ func TestRateLimitCounter_MCPRateLimit(t *testing.T) {
 // hits are recorded.
 func TestRateLimitCounter_MCPPerClientIsolation(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM per client
-	g := mcpserver.NewGuardrailMiddleware(cfg)
+	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust RPM for client A (subnet 10.x)
 	for i := 0; i < 60; i++ {
@@ -209,7 +209,7 @@ func TestRateLimitCounter_MCPPerClientIsolation(t *testing.T) {
 // the JSON-RPC handler stack.
 func TestRateLimitCounter_MCPGuardrailHandler(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
-	g := mcpserver.NewGuardrailMiddleware(cfg)
+	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	innerHandler := mcp.NewRequestHandler(nil, nil, nil)
 	wrapped := g.GuardrailHandler(innerHandler)
@@ -343,7 +343,7 @@ func TestRateLimitCounter_TierDifferentiation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := mcpserver.DefaultGuardrailConfig(tt.t)
-			g := mcpserver.NewGuardrailMiddleware(cfg)
+			g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 			// Stats should show the correct RPM
 			stats := g.Stats()
@@ -394,7 +394,7 @@ func TestRateLimitCounter_TierDifferentiation(t *testing.T) {
 // but metrics counter continues to accumulate).
 func TestRateLimitCounter_WindowReset(t *testing.T) {
 	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
-	g := mcpserver.NewGuardrailMiddleware(cfg)
+	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust the limit
 	for i := 0; i < 60; i++ {

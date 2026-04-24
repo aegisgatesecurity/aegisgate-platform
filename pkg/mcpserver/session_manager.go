@@ -12,6 +12,7 @@ package mcpserver
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -30,6 +31,25 @@ type ConnectionSessionManager struct {
 	manager *rbac.Manager
 	conns   map[string]*MCPSession
 	mu      sync.RWMutex
+}
+
+// MemoryStats tracks memory usage for a session
+type MemoryStats struct {
+	Usage int64  // Current memory usage in bytes
+	Limit int64  // Memory limit in bytes
+	Tier  string // Tier name (community, developer, etc.)
+}
+
+// SessionMemoryTracker tracks memory usage per session
+type SessionMemoryTracker struct {
+	mu           sync.RWMutex
+	sessions     map[string]*MemoryStats
+	defaultLimit int64 // Default memory limit (100MB)
+}
+
+var memTracker = &SessionMemoryTracker{
+	sessions:     make(map[string]*MemoryStats),
+	defaultLimit: 100 * 1024 * 1024, // 100MB default
 }
 
 // MCPSession represents a session bound to an MCP connection
@@ -219,6 +239,88 @@ type SessionStats struct {
 	TotalSessions   int
 	ActiveSessions  int
 	ExpiredSessions int
+}
+
+// ============================================================================
+// MEMORY LIMIT ENFORCEMENT (S3b-05)
+// ============================================================================
+//
+// Hard-enforce memory limits at Community tier by killing sessions that
+// exceed their quota. This prevents DoS attacks where malicious tool calls
+// could exhaust server memory.
+//
+// Without cgroups, we track allocations in-process and terminate sessions
+// that exceed their limits.
+// ============================================================================
+
+// SetMemoryLimit sets the memory limit for a session
+func (sm *ConnectionSessionManager) SetMemoryLimit(sessionID string, limitBytes int64) {
+	memTracker.mu.Lock()
+	defer memTracker.mu.Unlock()
+	memTracker.sessions[sessionID] = &MemoryStats{
+		Usage: 0,
+		Limit: limitBytes,
+		Tier:  "community",
+	}
+}
+
+// GetMemoryStats returns current memory stats for a session
+func (sm *ConnectionSessionManager) GetMemoryStats(sessionID string) *MemoryStats {
+	memTracker.mu.RLock()
+	defer memTracker.mu.RUnlock()
+	if stats, ok := memTracker.sessions[sessionID]; ok {
+		return stats
+	}
+	return nil
+}
+
+// CheckAndEnforceMemoryLimit checks if a session exceeds its memory quota
+// and kills it if necessary. Returns error if session was terminated.
+func (sm *ConnectionSessionManager) CheckAndEnforceMemoryLimit(sessionID string) error {
+	memTracker.mu.RLock()
+	stats, ok := memTracker.sessions[sessionID]
+	memTracker.mu.RUnlock()
+
+	if !ok {
+		return nil // No limit set for this session
+	}
+
+	// Check if usage exceeds limit (in real implementation, this would check
+	// actual process memory via OS APIs like /proc/meminfo or ps)
+	// For now, we simulate memory usage tracking
+	if stats.Usage > stats.Limit {
+		// Kill the session
+		sm.mu.Lock()
+		delete(sm.conns, sessionID)
+		sm.mu.Unlock()
+
+		// Log termination
+		slog.Warn("session terminated: memory quota exceeded",
+			"session_id", truncateSessionID(sessionID),
+			"used_mb", stats.Usage/(1024*1024),
+			"limit_mb", stats.Limit/(1024*1024))
+
+		return errors.New("memory quota exceeded")
+	}
+
+	return nil
+}
+
+// IncrementMemoryUsage safely increments memory usage for a session
+func (sm *ConnectionSessionManager) IncrementMemoryUsage(sessionID string, bytes int64) {
+	memTracker.mu.Lock()
+	defer memTracker.mu.Unlock()
+	if stats, ok := memTracker.sessions[sessionID]; ok {
+		stats.Usage += bytes
+	}
+}
+
+// truncateSessionID truncates session ID for logging
+func truncateSessionID(sessionID string) string {
+	if len(sessionID) > 12 {
+		return sessionID[:12] + "..."
+	}
+	return sessionID
 }
 
 // StartCleanupRoutine starts a background goroutine to clean up expired sessions

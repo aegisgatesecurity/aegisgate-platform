@@ -322,8 +322,8 @@ func main() {
 		}
 		embeddedServer = mcpserver.NewEmbeddedServer(mcpCfg)
 
-		// Initialize tier-aware MCP guardrails
-		mcpGuardrails = mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier))
+		// Initialize tier-aware MCP guardrails with server ID for registration logging
+		mcpGuardrails = mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier), "main-server")
 		mcpserver.RegisterBuiltInTools(embeddedServer.Handler(), platformTier)
 
 		if err := embeddedServer.Start(); err != nil {
