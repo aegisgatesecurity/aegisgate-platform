@@ -150,7 +150,7 @@ func TestMCPTierAwareCompliance_FilterFindingsByTier(t *testing.T) {
 	findings := []Finding{
 		{Framework: FrameworkATLAS, Severity: SeverityHigh},
 		{Framework: FrameworkNIST1500, Severity: SeverityMedium},
-		{Framework: FrameworkSOC2, Severity: SeverityHigh},    // Premium - should be filtered for Community
+		{Framework: FrameworkSOC2, Severity: SeverityHigh},     // Premium - should be filtered for Community
 		{Framework: FrameworkGDPR, Severity: SeverityCritical}, // Premium - should be filtered for Community
 	}
 
@@ -212,7 +212,7 @@ func TestMCPTierAwareCompliance_GetActiveFrameworks_Community(t *testing.T) {
 	if found < 1 {
 		t.Errorf("Community should have ATLAS framework, found %d", found)
 	}
-	
+
 	// Note: NIST may return 0 if it's a stub implementation
 	t.Logf("Community frameworks: %v", frameworks)
 }
@@ -330,13 +330,13 @@ func TestMCPSessionCompliance_Check(t *testing.T) {
 func TestFrameworkTierRestriction_Constants(t *testing.T) {
 	// Verify the restriction map is properly configured
 	expectedRestrictions := map[Framework]tier.Tier{
-		FrameworkATLAS:     tier.TierCommunity,
+		FrameworkATLAS:    tier.TierCommunity,
 		FrameworkNIST1500: tier.TierCommunity,
 		FrameworkOWASP:    tier.TierCommunity,
-		FrameworkHIPAA:     tier.TierDeveloper,
-		FrameworkPCIDSS:    tier.TierDeveloper,
+		FrameworkHIPAA:    tier.TierDeveloper,
+		FrameworkPCIDSS:   tier.TierDeveloper,
 		FrameworkSOC2:     tier.TierProfessional,
-		FrameworkGDPR:      tier.TierProfessional,
+		FrameworkGDPR:     tier.TierProfessional,
 		FrameworkISO27001: tier.TierProfessional,
 		FrameworkISO42001: tier.TierEnterprise,
 	}

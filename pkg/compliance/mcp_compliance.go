@@ -239,8 +239,8 @@ func DefaultMCPComplianceConfig() *Config {
 		EnableSOC2:      false, // Premium - opt-in
 		EnableISO42001:  false, // Premium - opt-in
 		ContextLines:    3,
-		StrictMode:      true,  // MCP should be strict
-		BlockOnCritical: true,  // Block critical findings
+		StrictMode:      true, // MCP should be strict
+		BlockOnCritical: true, // Block critical findings
 	}
 }
 
@@ -250,15 +250,15 @@ func DefaultMCPComplianceConfig() *Config {
 
 // FrameworkTierRestriction documents which tier can access each framework
 var FrameworkTierRestriction = map[Framework]tier.Tier{
-	FrameworkATLAS:     tier.TierCommunity,      // Mandated for all
-	FrameworkNIST1500: tier.TierCommunity,       // Mandated for all
-	FrameworkOWASP:    tier.TierCommunity,      // Security baseline
-	FrameworkHIPAA:     tier.TierDeveloper,      // Premium
-	FrameworkPCIDSS:    tier.TierDeveloper,      // Premium
-	FrameworkSOC2:     tier.TierProfessional,   // Premium
-	FrameworkGDPR:      tier.TierProfessional,   // Premium
-	FrameworkISO27001: tier.TierProfessional,   // Premium
-	FrameworkISO42001: tier.TierEnterprise,     // Premium
+	FrameworkATLAS:    tier.TierCommunity,    // Mandated for all
+	FrameworkNIST1500: tier.TierCommunity,    // Mandated for all
+	FrameworkOWASP:    tier.TierCommunity,    // Security baseline
+	FrameworkHIPAA:    tier.TierDeveloper,    // Premium
+	FrameworkPCIDSS:   tier.TierDeveloper,    // Premium
+	FrameworkSOC2:     tier.TierProfessional, // Premium
+	FrameworkGDPR:     tier.TierProfessional, // Premium
+	FrameworkISO27001: tier.TierProfessional, // Premium
+	FrameworkISO42001: tier.TierEnterprise,   // Premium
 }
 
 // IsEnterpriseOnly checks if a framework is Enterprise-only

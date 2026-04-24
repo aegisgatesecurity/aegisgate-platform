@@ -281,8 +281,8 @@ func TestSTDIOValidator_IdentifyDangerousPatterns(t *testing.T) {
 	v := NewSTDIOValidator(DefaultSTDIOValidationConfig())
 
 	tests := []struct {
-		cmd       string
-		patterns  []string
+		cmd      string
+		patterns []string
 	}{
 		{"cat file | grep", []string{"pipe_chaining"}},
 		{"ls && rm", []string{"logical_chaining"}},
