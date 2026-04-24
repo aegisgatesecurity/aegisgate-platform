@@ -82,7 +82,8 @@ jobs:
         run: go mod download
 
       - name: Run unit tests
-        go test -coverprofile=coverage.out $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/") 2>&1 | tee test-results.txt
+        run: |
+          go test -coverprofile=coverage.out $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/") 2>&1 | tee test-results.txt
 
       - name: Run integration tests
         run: |
