@@ -208,10 +208,10 @@ func (g *GuardrailMiddleware) trackSession(sessionID, agentID, clientAddr string
 	defer g.mu.Unlock()
 
 	g.sessions[sessionID] = &sessionState{
-		ID:        sessionID,
-		AgentID:   agentID,
-		CreatedAt: time.Now(),
-		LastSeen:  time.Now(),
+		ID:         sessionID,
+		AgentID:    agentID,
+		CreatedAt:  time.Now(),
+		LastSeen:   time.Now(),
 		ClientAddr: clientAddr, // Add clientAddr for logging
 	}
 	atomic.AddInt64(&g.activeSessions, 1)
