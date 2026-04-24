@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
-  workflow_dispatch:
-    branches: [main]
-  workflow_dispatch:
-
 env:
   GO_VERSION: '1.25.9'
 
@@ -83,7 +82,7 @@ jobs:
         run: go mod download
 
       - name: Run unit tests
-          go test -coverprofile=coverage.out $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/") 2>&1 | tee test-results.txt
+        go test -coverprofile=coverage.out $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/") 2>&1 | tee test-results.txt
 
       - name: Run integration tests
         run: |
