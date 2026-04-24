@@ -47,12 +47,13 @@ const (
 // --------------------------------------------------------------------------
 
 type sessionState struct {
-	ID        string
-	AgentID   string
-	ToolCount int64
-	MemoryMB  int64
-	CreatedAt time.Time
-	LastSeen  time.Time
+	ID         string
+	AgentID    string
+	ToolCount  int64
+	MemoryMB   int64
+	CreatedAt  time.Time
+	LastSeen   time.Time
+	ClientAddr string // Client IP address for logging
 }
 
 // --------------------------------------------------------------------------
@@ -100,6 +101,7 @@ type GuardrailMiddleware struct {
 	config   GuardrailConfig
 	logger   *slog.Logger
 	toolAuth *toolauth.Matrix
+	serverID string // Server identifier for MCP registration logging
 
 	// Session tracking
 	mu             sync.RWMutex
@@ -119,7 +121,7 @@ type GuardrailMiddleware struct {
 }
 
 // NewGuardrailMiddleware creates a new guardrail middleware for the given tier
-func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
+func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMiddleware {
 	rpm := cfg.PlatformTier.RateLimitMCP()
 
 	// Initialize tool authorizer matrix with default policies
@@ -130,6 +132,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 		return &GuardrailMiddleware{
 			config:       cfg,
 			logger:       slog.Default().With("component", "mcp-guardrails"),
+			serverID:     serverID,
 			sessions:     make(map[string]*sessionState),
 			rateLimits:   make(map[string]*mcpClientBucket),
 			rateLimitRPM: rpm,
@@ -140,6 +143,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 	return &GuardrailMiddleware{
 		config:       cfg,
 		logger:       slog.Default().With("component", "mcp-guardrails", "tier", cfg.PlatformTier.String()),
+		serverID:     serverID,
 		sessions:     make(map[string]*sessionState),
 		rateLimits:   make(map[string]*mcpClientBucket),
 		rateLimitRPM: rpm,
@@ -153,7 +157,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig) *GuardrailMiddleware {
 
 // OnSessionCreate is called when a new MCP session is initialized.
 // Returns an error if the concurrent session limit has been reached.
-func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID string) error {
+func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID, clientAddr string) error {
 	if !g.config.Enabled {
 		return nil
 	}
@@ -161,7 +165,7 @@ func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID string) error {
 	maxSessions := g.config.PlatformTier.MaxConcurrentMCP()
 	if maxSessions < 0 {
 		// Unlimited (-1)
-		g.trackSession(sessionID, agentID)
+		g.trackSession(sessionID, agentID, clientAddr)
 		return nil
 	}
 
@@ -176,7 +180,7 @@ func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID string) error {
 		return err
 	}
 
-	g.trackSession(sessionID, agentID)
+	g.trackSession(sessionID, agentID, clientAddr)
 	return nil
 }
 
@@ -199,7 +203,7 @@ func (g *GuardrailMiddleware) OnSessionDestroy(sessionID string) {
 }
 
 // trackSession registers a new session in the tracking map
-func (g *GuardrailMiddleware) trackSession(sessionID, agentID string) {
+func (g *GuardrailMiddleware) trackSession(sessionID, agentID, clientAddr string) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -208,14 +212,19 @@ func (g *GuardrailMiddleware) trackSession(sessionID, agentID string) {
 		AgentID:   agentID,
 		CreatedAt: time.Now(),
 		LastSeen:  time.Now(),
+		ClientAddr: clientAddr, // Add clientAddr for logging
 	}
 	atomic.AddInt64(&g.activeSessions, 1)
 	metrics.IncActiveConnections(metrics.ServiceMCP)
 	metrics.SetMCPConnections(int(atomic.LoadInt64(&g.activeSessions)))
 
-	g.logger.Info("Session created",
+	// MCP server registration logging
+	g.logger.Info("MCP server registration",
 		"session_id", sessionID,
 		"agent_id", agentID,
+		"client_ip", clientAddr,
+		"server_id", g.serverID,
+		"timestamp", time.Now().Format(time.RFC3339),
 		"active", atomic.LoadInt64(&g.activeSessions),
 		"max", g.config.PlatformTier.MaxConcurrentMCP())
 }
@@ -371,9 +380,8 @@ func (g *GuardrailMiddleware) incrementToolCount(sessionID, toolName string) {
 // --------------------------------------------------------------------------
 
 // OnMemoryUsage is called after a tool execution to report memory usage.
-// At MVP, this is advisory-only: it logs a warning when the tier limit is
-// exceeded but does not kill the process. Hard enforcement requires cgroups
-// or a sandbox runtime (planned for Professional+).
+// At MVP (with S3b-05), this hard-enforces memory limits at Community tier
+// by killing sessions that exceed their quota.
 func (g *GuardrailMiddleware) OnMemoryUsage(sessionID string, memoryMB int64) {
 	if !g.config.Enabled {
 		return
@@ -395,12 +403,17 @@ func (g *GuardrailMiddleware) OnMemoryUsage(sessionID string, memoryMB int64) {
 	}
 
 	if memoryMB > int64(limitMB) {
-		g.logger.Warn("Memory limit exceeded (advisory)",
+		// Hard enforcement: kill session that exceeds limit
+		g.logger.Error("Memory limit exceeded - HARD ENFORCEMENT (killing session)",
 			"session_id", sessionID,
 			"used_mb", memoryMB,
 			"limit_mb", limitMB,
-			"tier", g.config.PlatformTier.DisplayName(),
-			"note", "advisory only at Community tier; hard enforcement planned for Professional+")
+			"tier", g.config.PlatformTier.DisplayName())
+
+		// Remove the session from tracking
+		g.mu.Lock()
+		delete(g.sessions, sessionID)
+		g.mu.Unlock()
 	}
 }
 
@@ -510,6 +523,11 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 		}
 
 		// --- Guard 1: Concurrent session limit ---
+		// Use clientAddr from line 519 if conn is available, otherwise use empty string
+		clientAddrForSession := ""
+		if conn != nil && conn.Conn != nil {
+			clientAddrForSession = conn.Conn.RemoteAddr().String()
+		}
 		if req.Method == "initialize" {
 			sessionID := "pending"
 			agentID := ""
@@ -517,7 +535,7 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 				sessionID = conn.Session.ID
 				agentID = conn.Session.AgentID
 			}
-			if err := g.OnSessionCreate(sessionID, agentID); err != nil {
+			if err := g.OnSessionCreate(sessionID, agentID, clientAddrForSession); err != nil {
 				return guardrailErrorResponse(req.ID, ErrMaxSessions, err.Error())
 			}
 		}

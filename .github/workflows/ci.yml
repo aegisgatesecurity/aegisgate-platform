@@ -177,6 +177,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/aegisgate:latest
+            ghcr.io/${{ github.repository }}/aegisgate-platform:latest
+            ghcr.io/${{ github.repository }}/aegisgate-platform:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

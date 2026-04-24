@@ -120,7 +120,7 @@
 - **Result**: 0 known vulnerabilities across all modules (govulncheck verified)
 
 #### Docker / GHCR Publishing
-- **Docker image**: Successfully published to GHCR as `ghcr.io/aegisgatesecurity/aegisgate-platform/aegisgate:latest`
+- **Docker image**: Corrected to `ghcr.io/aegisgatesecurity/aegisgate-platform:latest` (v1.3.4)
 - **Dockerfile**: Updated base image to `golang:1.25.9-alpine`
 - **Image size**: 19.1MB (unchanged)
 

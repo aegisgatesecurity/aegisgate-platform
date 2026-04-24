@@ -48,7 +48,7 @@ func DefaultConfig() *Config {
 		JWTSigningKey:    []byte("dev-key-change-in-production"),
 		APIAuthToken:     "dev-token-change-in-production",
 		TokenExpiryHours: 24,
-		RequireAuth:      false, // Default to false for backward compatibility
+		RequireAuth:      true, // Security-first: auth enabled by default
 	}
 }
 
@@ -62,7 +62,12 @@ func ConfigFromEnv() *Config {
 	if token := os.Getenv("API_AUTH_TOKEN"); token != "" {
 		cfg.APIAuthToken = token
 	}
-	if strings.ToLower(os.Getenv("REQUIRE_AUTH")) == "true" {
+	// REQUIRE_AUTH=false explicitly disables auth (secure override)
+	// REQUIRE_AUTH=true explicitly enables auth (same as default)
+	// Missing REQUIRE_AUTH uses default (true - security-first)
+	if val := strings.ToLower(os.Getenv("REQUIRE_AUTH")); val == "false" {
+		cfg.RequireAuth = false
+	} else if val == "true" {
 		cfg.RequireAuth = true
 	}
 
