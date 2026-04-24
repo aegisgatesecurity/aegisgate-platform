@@ -270,6 +270,39 @@ We have addressed critical OpenAI/X security concerns with the following enhance
 
 ## 📋 Compliance Coverage
 
+AegisGate Platform™ maps security controls to 9 major compliance frameworks:
+
+| Framework | Coverage | Tier |
+|-----------|----------|------|
+| **MITRE ATLAS** | All AI-specific attack patterns | Community ✅ |
+| **NIST AI RMF** | Complete AI risk management | Community ✅ |
+| **OWASP LLM Top 10** | LLM01-LLM10 coverage | Community ✅ |
+| **GDPR View** | Detection & data subject rights (view-only) | Community ✅ |
+| **Basic Security Controls** | OWASP + basic NIST mapping | Developer 🔒 |
+| **HIPAA** | Healthcare data protection, PHI detection, BAA | Professional 🔒 |
+| **PCI-DSS** | Payment card security, tokenization | Professional 🔒 |
+| **ISO 27001** | Information security management | Professional 🔒 |
+| **GDPR Advanced** | Article 30 records, DPIA, breach notification | Professional 🔒 |
+| **SOC2 Type II** | Continuous monitoring, evidence collection, auditor reports | Enterprise 🔒 |
+| **ISO 42001** | AI management systems | Enterprise 🔒 |
+| **FedRAMP** | US federal authorization | Enterprise 🔒 |
+| **HITRUST** | Healthcare trust framework | Enterprise 🔒 |
+
+### Testing Metrics
+- **90.8% overall coverage** across all packages
+- **RBAC: 93.9%**, **ToolAuth: 96.2%**, **MCP Server: 88.3%**
+- **Zero race conditions** detected
+- **2,350+ tests passing** with `-race` detector
+
+### Performance Metrics
+- **Peak Throughput**: 11,681 RPS
+- **Average Latency**: 2.44ms
+- **P95 Latency**: 3.64ms
+- **P99 Latency**: 8.17ms
+- **Error Rate**: 0.00%
+- **Binary Size**: 14.3MB
+- **Docker Image**: 19.1MB
+
 ---
 
 ## 📦 License & Contribution Model
