@@ -40,10 +40,10 @@ func TestRiskLevel_String(t *testing.T) {
 
 func TestRiskScorer_Score(t *testing.T) {
 	tests := []struct {
-		name       string
-		toolName   string
-		wantScore  int
-		wantRange  string
+		name      string
+		toolName  string
+		wantScore int
+		wantRange string
 	}{
 		{"shell_command max", "shell_command", 100, "95-100"},
 		{"bash max", "bash", 100, "95-100"},
@@ -388,9 +388,9 @@ func TestMatrix_DefaultPolicies_HighRisk(t *testing.T) {
 	m.RegisterDefaultPolicies()
 
 	highRiskTools := []struct {
-		name          string
-		wantLevel     RiskLevel
-		wantApproval  bool
+		name         string
+		wantLevel    RiskLevel
+		wantApproval bool
 	}{
 		{"shell_command", RiskLevelCritical, true},
 		{"bash", RiskLevelCritical, true},

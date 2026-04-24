@@ -350,11 +350,11 @@ func TestAgent_HasMinimumRole(t *testing.T) {
 
 func TestAgent_CanExecuteTool(t *testing.T) {
 	tests := []struct {
-		name      string
-		role      AgentRole
-		tools     []ToolPermission
-		toolName  string
-		want      bool
+		name     string
+		role     AgentRole
+		tools    []ToolPermission
+		toolName string
+		want     bool
 	}{
 		{"admin always true", AgentRoleAdmin, []ToolPermission{}, "file:read", true},
 		{"tool:* wildcard", AgentRoleStandard, []ToolPermission{PermToolAll}, "shell:command", true},
@@ -601,9 +601,9 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestGetPermissionsForUserRole(t *testing.T) {
 	tests := []struct {
-		role        UserRole
-		wantLen     int
-		wantRead    bool
+		role         UserRole
+		wantLen      int
+		wantRead     bool
 		wantWildcard bool
 	}{
 		{UserRoleViewer, 4, true, false},
