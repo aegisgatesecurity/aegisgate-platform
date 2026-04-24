@@ -1,5 +1,9 @@
 ## [1.3.5] - 2026-04-24
 
+### CI/Fixes
+- CI: Coverage threshold 75% (80% for v1.3.6+)
+- CI: Tests exclude upstream packages from coverage calculation
+
 ### Compliance (Sprint 3 Completion)
 - S3-01: Ported Compliance Factory from AegisGuard (1,375 LOC)
 - S3-02: Ported Compliance Registry with framework registration/lookup
