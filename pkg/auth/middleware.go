@@ -156,12 +156,12 @@ func (m *Middleware) handleJWT(w http.ResponseWriter, r *http.Request, tokenStri
 	ctx := context.WithValue(r.Context(), ContextKeyUserID, claims.UserID)
 	ctx = context.WithValue(ctx, ContextKeyTier, claims.Tier)
 	ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeJWT)
-	
+
 	// Set RBAC role and permissions from JWT claims
 	userRole := rbac.ParseUserRole(claims.Tier)
 	ctx = SetUserRole(ctx, userRole)
 	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(userRole))
-	
+
 	next(w, r.WithContext(ctx))
 }
 
@@ -184,11 +184,11 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 	ctx := context.WithValue(r.Context(), ContextKeyUserID, "api-service")
 	ctx = context.WithValue(ctx, ContextKeyTier, "enterprise")
 	ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeAPIToken)
-	
+
 	// API tokens get admin role with full permissions
 	ctx = SetUserRole(ctx, rbac.UserRoleAdmin)
 	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(rbac.UserRoleAdmin))
-	
+
 	next(w, r.WithContext(ctx))
 }
 
@@ -276,7 +276,7 @@ func (m *Middleware) RequireRole(required rbac.UserRole, next http.HandlerFunc) 
 			// Default to viewer if no role set
 			userRole = rbac.UserRoleViewer
 		}
-		
+
 		if !userRole.AtLeast(required) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
@@ -299,7 +299,7 @@ func (m *Middleware) RequirePermission(perm rbac.Permission, next http.HandlerFu
 			}
 			permissions = rbac.GetPermissionsForUserRole(userRole)
 		}
-		
+
 		hasPerm := false
 		for _, p := range permissions {
 			if p == perm {
@@ -322,7 +322,7 @@ func (m *Middleware) RequirePermission(perm rbac.Permission, next http.HandlerFu
 				break
 			}
 		}
-		
+
 		if !hasPerm {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)

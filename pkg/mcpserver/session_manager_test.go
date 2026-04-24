@@ -30,8 +30,8 @@ func TestCreateSession(t *testing.T) {
 
 	// Register an agent first
 	agent := &rbac.Agent{
-		ID:    "test-agent",
-		Role:  rbac.AgentRoleStandard,
+		ID:   "test-agent",
+		Role: rbac.AgentRoleStandard,
 		Tools: []rbac.ToolPermission{
 			rbac.PermToolFileRead,
 			rbac.PermToolFileWrite,
@@ -366,7 +366,7 @@ func TestStartCleanupRoutine(t *testing.T) {
 
 	// Create and expire a session
 	session, _ := sm.CreateSession(ctx, "conn-1", "test-agent")
-	session.RBACSession.ExpiresAt = time.Now().Add(-time.Hour)
+	session.RBACSession.SetExpiresAt(time.Now().Add(-time.Hour))
 
 	// Wait for cleanup
 	time.Sleep(100 * time.Millisecond)

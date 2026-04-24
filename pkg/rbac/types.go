@@ -11,6 +11,7 @@
 package rbac
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -392,16 +393,18 @@ func (s *UserSession) RemainingTTL() time.Duration {
 
 // AgentSession represents an active agent session
 type AgentSession struct {
-	ID           string            `json:"id"`
-	AgentID      string            `json:"agent_id"`
-	Agent        *Agent            `json:"-"`
-	CreatedAt    time.Time         `json:"created_at"`
-	ExpiresAt    time.Time         `json:"expires_at"`
-	lastActivity atomic.Int64      `json:"-"`
-	Tags         map[string]string `json:"tags,omitempty"`
-	Active       bool              `json:"active"`
-	IPAddress    string            `json:"ip_address,omitempty"`
-	ContextHash  string            `json:"context_hash,omitempty"`
+	ID          string            `json:"id"`
+	AgentID     string            `json:"agent_id"`
+	Agent       *Agent            `json:"-"`
+	CreatedAt   time.Time         `json:"created_at"`
+	Tags        map[string]string `json:"tags,omitempty"`
+	Active      bool              `json:"active"`
+	IPAddress   string            `json:"ip_address,omitempty"`
+	ContextHash string            `json:"context_hash,omitempty"`
+
+	mu           sync.RWMutex `json:"-"`
+	ExpiresAt    time.Time    `json:"expires_at"`
+	lastActivity atomic.Int64 `json:"-"`
 }
 
 // LastActivityTime returns the last activity time
@@ -416,22 +419,37 @@ func (s *AgentSession) SetLastActivity(t time.Time) {
 
 // IsExpired checks if the session has expired
 func (s *AgentSession) IsExpired() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return time.Now().After(s.ExpiresAt)
 }
 
 // IsValid checks if the session is valid and not expired
 func (s *AgentSession) IsValid() bool {
-	return s.Active && !s.IsExpired()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Active && time.Now().Before(s.ExpiresAt)
 }
 
 // Refresh updates the session expiration time
 func (s *AgentSession) Refresh(duration time.Duration) {
-	s.SetLastActivity(time.Now())
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.lastActivity.Store(time.Now().UnixNano())
 	s.ExpiresAt = time.Now().Add(duration)
+}
+
+// SetExpiresAt safely updates the expiration time with mutex protection
+func (s *AgentSession) SetExpiresAt(t time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ExpiresAt = t
 }
 
 // RemainingTTL returns the remaining time-to-live duration
 func (s *AgentSession) RemainingTTL() time.Duration {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	remaining := time.Until(s.ExpiresAt)
 	if remaining < 0 {
 		return 0

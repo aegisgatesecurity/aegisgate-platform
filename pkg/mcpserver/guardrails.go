@@ -97,9 +97,9 @@ type mcpClientBucket struct {
 // GuardrailMiddleware wraps an MCP RequestHandler and enforces tier-based
 // limits before delegating to the inner handler.
 type GuardrailMiddleware struct {
-	config        GuardrailConfig
-	logger        *slog.Logger
-	toolAuth      *toolauth.Matrix
+	config   GuardrailConfig
+	logger   *slog.Logger
+	toolAuth *toolauth.Matrix
 
 	// Session tracking
 	mu             sync.RWMutex
@@ -303,11 +303,11 @@ func (g *GuardrailMiddleware) OnToolCallWithAuth(sessionID, agentID, toolName st
 	// Check if tool is denied
 	if !decision.Allow {
 		atomic.AddInt64(&g.blockedRequests, 1)
-		
+
 		// Record metric for blocked tool call
 		tool := metrics.SanitizeToolName(toolName, nil)
 		metrics.RecordMCPRequest(tool, metrics.ResultFailure)
-		
+
 		if g.config.LogViolations {
 			g.logger.Warn("Tool call blocked by authorization",
 				"session_id", sessionID,
@@ -321,7 +321,7 @@ func (g *GuardrailMiddleware) OnToolCallWithAuth(sessionID, agentID, toolName st
 	// Tool is authorized, record success metric
 	tool := metrics.SanitizeToolName(toolName, nil)
 	metrics.RecordMCPRequest(tool, metrics.ResultSuccess)
-	
+
 	return nil
 }
 
