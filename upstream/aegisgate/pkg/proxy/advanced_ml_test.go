@@ -78,8 +78,8 @@ func TestProxyNewWithContentAnalysis(t *testing.T) {
 // instantiates the BehavioralAnalyzer on the Proxy struct.
 func TestProxyNewWithBehavioralAnalysis(t *testing.T) {
 	opts := &Options{
-		Upstream:                "http://127.0.0.1:3000",
-		EnableMLDetection:       true,
+		Upstream:                 "http://127.0.0.1:3000",
+		EnableMLDetection:        true,
 		EnableBehavioralAnalysis: true,
 	}
 

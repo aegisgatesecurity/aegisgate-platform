@@ -38,13 +38,13 @@ type MCPVerifier struct {
 
 // PendingSession represents a session awaiting signature verification
 type PendingSession struct {
-	SessionID    string
-	ClientAddr   string
-	ServerID     string
-	Timestamp    time.Time
-	PublicKey    []byte
-	Signature    []byte
-	Verified     bool
+	SessionID  string
+	ClientAddr string
+	ServerID   string
+	Timestamp  time.Time
+	PublicKey  []byte
+	Signature  []byte
+	Verified   bool
 }
 
 // Config holds MCP verification configuration
@@ -68,11 +68,11 @@ type Config struct {
 // DefaultConfig returns the default MCP verification configuration
 func DefaultMCPConfig() *Config {
 	return &Config{
-		Enabled:             true,
-		Required:            false,
+		Enabled:                true,
+		Required:               false,
 		TrustedKeyFingerprints: []string{},
-		SessionTimeout:      5 * time.Minute,
-		StrictMode:         false,
+		SessionTimeout:         5 * time.Minute,
+		StrictMode:             false,
 	}
 }
 
@@ -285,11 +285,11 @@ func (mv *MCPVerifier) isKeyTrusted(fingerprint string) bool {
 // generateSessionToken generates a unique token for a pending session
 func generateSessionToken(sessionID, serverID string) string {
 	payload := fmt.Sprintf("%s:%s:%d", sessionID, serverID, time.Now().UnixNano())
-	
+
 	h := crypto.SHA256.New()
 	h.Write([]byte(payload))
 	hash := h.Sum(nil)
-	
+
 	return base64.URLEncoding.EncodeToString(hash[:16])
 }
 

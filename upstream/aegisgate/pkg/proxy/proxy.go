@@ -161,7 +161,7 @@ func New(opts *Options) *Proxy {
 			LogAllAnomalies:         true,
 		}
 
-			mlMiddleware, err := NewMLMiddleware(mlConfig)
+		mlMiddleware, err := NewMLMiddleware(mlConfig)
 		if err != nil {
 			slog.Error("Failed to create ML middleware", "error", err)
 		} else {
@@ -783,19 +783,19 @@ func (p *Proxy) Stop(ctx context.Context) error {
 // GetHealth returns health status
 func (p *Proxy) GetHealth() map[string]interface{} {
 	health := map[string]interface{}{
-		"status":        "healthy",
-		"enabled":       p.IsEnabled(),
-		"bind_address":  p.options.BindAddress,
-		"upstream":      p.options.Upstream,
-		"request_count": p.requestCount.Load(),
-		"max_body_size": p.options.MaxBodySize,
-		"timeout":       p.options.Timeout.String(),
-		"rate_limit":    p.options.RateLimit,
-		"ml_enabled":                    p.mlMiddleware != nil,
-		"prompt_injection_detection":   p.promptInjectionDetector != nil,
-		"combined_detection":            p.combinedDetector != nil,
-		"content_analysis":              p.contentAnalyzer != nil,
-		"behavioral_analysis":           p.behavioralAnalyzer != nil,
+		"status":                     "healthy",
+		"enabled":                    p.IsEnabled(),
+		"bind_address":               p.options.BindAddress,
+		"upstream":                   p.options.Upstream,
+		"request_count":              p.requestCount.Load(),
+		"max_body_size":              p.options.MaxBodySize,
+		"timeout":                    p.options.Timeout.String(),
+		"rate_limit":                 p.options.RateLimit,
+		"ml_enabled":                 p.mlMiddleware != nil,
+		"prompt_injection_detection": p.promptInjectionDetector != nil,
+		"combined_detection":         p.combinedDetector != nil,
+		"content_analysis":           p.contentAnalyzer != nil,
+		"behavioral_analysis":        p.behavioralAnalyzer != nil,
 	}
 
 	if p.circuitBreaker != nil {

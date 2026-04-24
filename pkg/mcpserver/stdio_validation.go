@@ -88,7 +88,7 @@ type STDIOValidationConfig struct {
 func DefaultSTDIOValidationConfig() STDIOValidationConfig {
 	return STDIOValidationConfig{
 		Enabled:                true,
-		MaxCommandLength:        4096,
+		MaxCommandLength:       4096,
 		StrictMode:             true,
 		AllowedCommandPrefixes: []string{"node", "python3", "python", "npx", "uvx", "bun", "deno"},
 	}
@@ -109,16 +109,16 @@ var (
 	// Used in non-strict mode and for detailed error reporting.
 	dangerousPatterns = map[string]*regexp.Regexp{
 		"pipe_chaining":        regexp.MustCompile(`\|`),
-		"command_separator":   regexp.MustCompile(`;`),
-		"logical_chaining":    regexp.MustCompile(`&&|\|\|`),
+		"command_separator":    regexp.MustCompile(`;`),
+		"logical_chaining":     regexp.MustCompile(`&&|\|\|`),
 		"command_substitution": regexp.MustCompile(`\$\(|\)`),
-		"backtick_exec":       regexp.MustCompile("`"),
-		"redirect":            regexp.MustCompile(`>|<|>>`),
-		"newline_injection":   regexp.MustCompile(`\n|\r`),
-		"wildcard_expansion":  regexp.MustCompile(`\*|\?`),
-		"variable_expansion":  regexp.MustCompile(`\$[a-zA-Z_]|$\{`),
-		"home_expansion":      regexp.MustCompile(`~`),
-		"background_exec":     regexp.MustCompile(`&`),
+		"backtick_exec":        regexp.MustCompile("`"),
+		"redirect":             regexp.MustCompile(`>|<|>>`),
+		"newline_injection":    regexp.MustCompile(`\n|\r`),
+		"wildcard_expansion":   regexp.MustCompile(`\*|\?`),
+		"variable_expansion":   regexp.MustCompile(`\$[a-zA-Z_]|$\{`),
+		"home_expansion":       regexp.MustCompile(`~`),
+		"background_exec":      regexp.MustCompile(`&`),
 	}
 
 	// argSeparatorPattern matches characters used to separate arguments
@@ -134,14 +134,14 @@ type STDIOValidator struct {
 	totalValidations   int64
 	blockedValidations int64
 	blockedByPattern   map[string]int64
-	mu                  sync.RWMutex
+	mu                 sync.RWMutex
 }
 
 // NewSTDIOValidator creates a new validator with the given config.
 func NewSTDIOValidator(cfg STDIOValidationConfig) *STDIOValidator {
 	return &STDIOValidator{
 		config:           cfg,
-		blockedByPattern:  make(map[string]int64),
+		blockedByPattern: make(map[string]int64),
 	}
 }
 
@@ -306,7 +306,7 @@ func (v *STDIOValidator) GetStats() STDIOValidationStats {
 // violation describes a single metacharacter violation in a command token.
 type violation struct {
 	Pattern     string // e.g., "pipe_chaining"
-	Metachar   string // e.g., "|"
+	Metachar    string // e.g., "|"
 	Description string // e.g., "pipe/command chaining"
 }
 
@@ -321,7 +321,7 @@ func (v *STDIOValidator) identifyViolations(token string) []violation {
 			matched := token[loc[0]:loc[1]]
 			violations = append(violations, violation{
 				Pattern:     name,
-				Metachar:   matched,
+				Metachar:    matched,
 				Description: dangerousPatternDescription(name),
 			})
 		}
@@ -333,17 +333,17 @@ func (v *STDIOValidator) identifyViolations(token string) []violation {
 // dangerousPatternDescription returns a human-readable description for a pattern name.
 func dangerousPatternDescription(name string) string {
 	descriptions := map[string]string{
-		"pipe_chaining":         "pipe/command chaining",
-		"command_separator":     "command separator",
-		"logical_chaining":      "logical AND/OR chaining",
-		"command_substitution":  "command substitution/subshell",
-		"backtick_exec":         "backtick command substitution",
-		"redirect":              "file redirect",
-		"newline_injection":     "newline injection",
-		"wildcard_expansion":    "wildcard expansion",
-		"variable_expansion":    "variable expansion",
-		"home_expansion":        "home directory expansion",
-		"background_exec":       "background execution",
+		"pipe_chaining":        "pipe/command chaining",
+		"command_separator":    "command separator",
+		"logical_chaining":     "logical AND/OR chaining",
+		"command_substitution": "command substitution/subshell",
+		"backtick_exec":        "backtick command substitution",
+		"redirect":             "file redirect",
+		"newline_injection":    "newline injection",
+		"wildcard_expansion":   "wildcard expansion",
+		"variable_expansion":   "variable expansion",
+		"home_expansion":       "home directory expansion",
+		"background_exec":      "background execution",
 	}
 	if desc, ok := descriptions[name]; ok {
 		return desc
