@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-90.8%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Test Coverage](https://img.shields.io/badge/Coverage-86.3%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](deploy/helm/aegisgate-platform/)
@@ -33,7 +33,7 @@
 | Prompt injection prevention | **NIST AI RMF** ✅ Free | **11,681 RPS peak** |
 | MCP tool authorization | **OWASP LLM Top 10** ✅ Free | **19.1MB Docker image** |
 | Data leakage protection | HIPAA, PCI-DSS 🔒 Pro+ | **0 CVEs** |
-| RBAC & audit logging | SOC2 Type II, ISO 🔒 Enterprise | **2,350+ tests passing** |
+| RBAC & audit logging | SOC2 Type II, ISO 🔒 Enterprise | **15 packages tested** |
 
 **Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Commercial modules licensed. See [Pricing](#-the-strategic-model).
 
@@ -75,14 +75,6 @@ Your App → [🛡️ AegisGate] → Secure AI          (unified)
 
 
 **One Binary. One Config. Enterprise-grade Security.**
-
-**[Sprint 3b Complete ✅]**:
-- Authentication-by-default (all endpoints require auth unless opted-out)
-- MCP server registration logging with client IP tracking
-- Hard-enforced memory limits (sessions terminated at quota)
-- Tool call limits (20 tools/session enforced)
-- Risk-based tool authorization
-- 90.8% overall test coverage
 
 ---
 
@@ -179,7 +171,7 @@ sequenceDiagram
 | **NIST AI RMF 1.500** | Complete implementation |
 | **OWASP LLM Top 10** | Protection + reporting |
 | **Basic HTTP Proxy** | PII scanning, rate limiting |
-| **MCP Server** | Core guardrails (5 base rules) |
+| **MCP Server** | Core guardrails (8 security rules) |
 | **Self-hosted Dashboard** | Single admin, 7-day retention |
 
 ### Commercial Tiers — Licensed
@@ -222,55 +214,11 @@ Our code security matches our product security:
 
 See [SECURITY.md](SECURITY.md) for details.
 
----
 
-## ✅ Sprint 3b — MCP Security Enhancement Complete
-
-**v1.3.6 — released April 2026**
-
-We have addressed critical OpenAI/X security concerns with the following enhancements:
-
-### Authentication-by-Default ✅
-- All endpoints require authentication unless explicitly disabled
-- Opt-out via `REQUIRE_AUTH=false` environment variable
-- Breaking change: users must set opt-out flag to maintain previous behavior
-
-### MCP Server Registration Logging ✅
-- Full audit trail with client IP, server ID, and timestamp
-- Registration logging via `trackSession()` function
-- Configurable via guardrail middleware
-
-### Hard-Enforced Memory Limits ✅
-- Sessions automatically terminated when exceeding quota
-- In-process memory tracking without cgroups
-- Works with Community tier (no elevated privileges needed)
-
-### Tool Call Limits ✅
-- 20 tools/session maximum enforced with proper error feedback
-- `OnToolCall()` with `incrementToolCount()` atomic operations
-- `TestGuardrailHandler_ToolCall` validates 21st call is blocked
-
-### Risk-Based Tool Authorization ✅
-- All tool calls checked against authorization matrix
-- Risk-based decisions (low/medium/high/critical)
-- Default allow if auth matrix not configured
-
-### Test Coverage ✅
-- **90.8% overall coverage** across all packages
-- **RBAC: 93.9%**, **ToolAuth: 96.2%**, **MCP Server: 88.3%**
-- **Zero race conditions** detected
-- **2,350+ tests passing** with `-race` detector
-
-### CI/CD Pipeline ✅
-- All workflows passing
-- gofmt, go vet, race detector clean
-- Coverage threshold enforcement at 80%+
-
----
 
 ## 📋 Compliance Coverage
 
-AegisGate Platform™ maps security controls to 9 major compliance frameworks:
+AegisGate Platform™ maps security controls to **13 major compliance frameworks**:
 
 | Framework | Coverage | Tier |
 |-----------|----------|------|
@@ -287,21 +235,6 @@ AegisGate Platform™ maps security controls to 9 major compliance frameworks:
 | **ISO 42001** | AI management systems | Enterprise 🔒 |
 | **FedRAMP** | US federal authorization | Enterprise 🔒 |
 | **HITRUST** | Healthcare trust framework | Enterprise 🔒 |
-
-### Testing Metrics
-- **90.8% overall coverage** across all packages
-- **RBAC: 93.9%**, **ToolAuth: 96.2%**, **MCP Server: 88.3%**
-- **Zero race conditions** detected
-- **2,350+ tests passing** with `-race` detector
-
-### Performance Metrics
-- **Peak Throughput**: 11,681 RPS
-- **Average Latency**: 2.44ms
-- **P95 Latency**: 3.64ms
-- **P99 Latency**: 8.17ms
-- **Error Rate**: 0.00%
-- **Binary Size**: 14.3MB
-- **Docker Image**: 19.1MB
 
 ---
 
@@ -346,24 +279,6 @@ Contributions are welcome under the [inbound=outbound](https://opensource.micros
 | **Audit Logging** | RFC5424-compliant, tamper-evident | ✅ |
 | **Circuit Breaker** | Automatic failure recovery | ✅ |
 | **Auto-Certificate Generation** | Built-in CA, zero-config TLS | ✅ |
-
-### Compliance Frameworks
-
-| Framework | Coverage | Tier |
-|-----------|----------|------|
-| **MITRE ATLAS** | All AI-specific attack patterns | Community ✅ |
-| **NIST AI RMF** | Complete AI risk management | Community ✅ |
-| **OWASP LLM Top 10** | LLM01-LLM10 coverage | Community ✅ |
-| **GDPR View** | Detection & data subject rights (view-only) | Community ✅ |
-| **Basic Security Controls** | OWASP + basic NIST mapping | Developer 🔒 |
-| **HIPAA** | Healthcare data protection, PHI detection, BAA | Professional 🔒 |
-| **PCI-DSS** | Payment card security, tokenization | Professional 🔒 |
-| **ISO 27001** | Information security management | Professional 🔒 |
-| **GDPR Advanced** | Article 30 records, DPIA, breach notification | Professional 🔒 |
-| **SOC2 Type II** | Continuous monitoring, evidence collection, auditor reports | Enterprise 🔒 |
-| **ISO 42001** | AI management systems | Enterprise 🔒 |
-| **FedRAMP** | US federal authorization | Enterprise 🔒 |
-| **HITRUST** | Healthcare trust framework | Enterprise 🔒 |
 
 ---
 
@@ -538,7 +453,7 @@ flowchart TB
 | **Error Rate** | 0.00% | ✅ Perfect |
 | **Binary Size** | 14.3MB | ✅ Optimized |
 | **Docker Image** | 19.1MB | ✅ Minimal |
-| **Test Coverage** | 90.8% | ✅ Comprehensive |
+| **Test Coverage** | 86.3% | ✅ Comprehensive (CI-tracked) |
 
 **Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
 
@@ -546,7 +461,7 @@ flowchart TB
 
 ## 🔒 MCP Guardrails
 
-AegisGate implements 5 security guardrails for Model Context Protocol connections:
+AegisGate implements 8 security guardrails for Model Context Protocol connections:
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
@@ -555,34 +470,40 @@ flowchart LR
         A["🔌 MCP Tool Call"]
     end
 
-    subgraph Guardrails["5 Security Checks"]
+    subgraph Guardrails["8 Security Checks"]
         B{Concurrent
         Sessions?}
-        C{Tools/
+        C{Session
+        Auth?}
+        D{Tools/
         Session?}
-        D{Execution
+        E{STDIO
+        Validation?}
+        F{Execution
         Timeout?}
-        E{Memory
+        G{Memory
         Advisory?}
-        F{Per-Client
+        H{Per-Client
         RPM?}
     end
 
     subgraph Result
-        G["✅ Execute Tool"]
-        H["🚫 Block Request"]
+        I["✅ Execute Tool"]
+        J["🚫 Block Request"]
     end
 
-    A --> B --> C --> D --> E --> F
-    B -->|Exceeded| H
-    C -->|Exceeded| H
-    D -->|Will timeout| H
-    E -->|Over threshold| H
-    F -->|Rate limited| H
-    F -->|Under limit| G
+    A --> B --> C --> D --> E --> F --> G --> H
+    B -->|Exceeded| J
+    C -->|Unauthorized| J
+    D -->|Exceeded| J
+    E -->|Invalid| J
+    F -->|Will timeout| J
+    G -->|Over threshold| J
+    H -->|Rate limited| J
+    H -->|Under limit| I
 
-    style H fill:#da3633
-    style G fill:#238636
+    style J fill:#da3633
+    style I fill:#238636
     style A fill:#a371f7
 ```
 
@@ -643,13 +564,16 @@ flowchart LR
 
 ### Guardrail Details
 
-| Guardrail | Limit | Default |
-|-----------|-------|---------|
-| **Concurrent Sessions** | Max simultaneous sessions | 10 per client |
-| **Tools per Session** | Max tools available | 50 per session |
+| Guardrail | Description | Default |
+|-----------|-------------|---------|
+| **Concurrent Sessions** | Max simultaneous sessions per client | 10 per client |
+| **Session Auth** | Authentication required for MCP sessions | Required ✅ |
+| **Tools per Session** | Max tools available per session | 50 per session |
+| **STDIO Validation** | Command injection prevention | Enabled ✅ |
 | **Execution Timeout** | Max tool execution time | 60 seconds |
 | **Memory Advisory** | Memory threshold trigger | 80% utilized |
 | **Per-Client RPM** | Max requests per minute | 1,000 per client |
+| **Tool Authorization** | Risk-based tool call approval | Enabled ✅ |
 
 ---
 
@@ -748,7 +672,7 @@ await client.connect({
 
 ## 🏛️ Compliance Coverage
 
-AegisGate Platform™ maps security controls to 9 major compliance frameworks:
+AegisGate Platform™ maps security controls to **13 major compliance frameworks**:
 
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
@@ -813,7 +737,6 @@ Compliance))
 </details>
 
 
-**Sprint 3b Complete** ✅ — All critical security controls implemented and production-ready.
 **Community Edition includes MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10, and GDPR view-only detection** — commercial tiers unlock HIPAA, PCI-DSS, SOC2 Type II, ISO 27001/42001, and more.
 
 ---
