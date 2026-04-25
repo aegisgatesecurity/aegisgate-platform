@@ -18,7 +18,8 @@
 [📚 Docs](https://github.com/aegisgatesecurity/aegisgate-platform/tree/main/docs) &nbsp;•&nbsp; [✨ Features](#features) &nbsp;•&nbsp; [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗️ Architecture](#-architecture) &nbsp;•&nbsp; [⚡ Performance](PERFORMANCE.md) &nbsp;•&nbsp; [🔒 Security](SECURITY.md)
 
 </div>
-> **The only AI security gateway with native MCP support, MITRE ATLAS enforcement, and zero external dependencies.**
+
+<p align="center"><em>The only AI security gateway with native MCP support, MITRE ATLAS enforcement, and zero external dependencies.</em></p>
 
 
 
