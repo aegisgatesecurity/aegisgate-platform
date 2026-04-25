@@ -1,7 +1,6 @@
 <div align="center">
 
 
-> **The only AI security gateway with native MCP support, MITRE ATLAS enforcement, and zero external dependencies.**
 
 # 🛡️ AegisGate Platform™ — Secure AI Traffic and MCP Servers
 
@@ -19,8 +18,8 @@
 [📚 Docs](https://github.com/aegisgatesecurity/aegisgate-platform/tree/main/docs) &nbsp;•&nbsp; [✨ Features](#features) &nbsp;•&nbsp; [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗️ Architecture](#-architecture) &nbsp;•&nbsp; [⚡ Performance](PERFORMANCE.md) &nbsp;•&nbsp; [🔒 Security](SECURITY.md)
 
 </div>
+> **The only AI security gateway with native MCP support, MITRE ATLAS enforcement, and zero external dependencies.**
 
-> **30-Second Pitch**: Your AI applications need enterprise-grade security — but shouldn't require enterprise budgets. AegisGate Platform™ provides unified AI traffic inspection, MCP security guardrails, and compliance automation in a single 19MB binary. Deploy in 60 seconds. Sleep better tonight.
 
 
 ---
@@ -39,6 +38,7 @@
 
 **Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Commercial modules licensed. See [Pricing](#-the-strategic-model).
 
+**30-Second Pitch**: Your AI applications need enterprise-grade security — but shouldn't require enterprise budgets. AegisGate Platform™ provides unified AI traffic inspection, MCP security guardrails, and compliance automation in a single 19MB binary. Deploy in 60 seconds. Sleep better tonight.
 ---
 
 ## 🎯 What Makes AegisGate Platform Different?
