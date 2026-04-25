@@ -1,5 +1,8 @@
 <div align="center">
 
+
+> **The only AI security gateway with native MCP support, MITRE ATLAS enforcement, and zero external dependencies.**
+
 # 🛡️ AegisGate Platform™ — Secure AI Traffic and MCP Servers
 
 [![Version](https://img.shields.io/github/v/release/aegisgatesecurity/aegisgate-platform?label=version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
@@ -760,6 +763,34 @@ flowchart LR
 | [TRADEMARKS.md](TRADEMARKS.md) | Trademark usage policy |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [docs/diagrams/](docs/diagrams/) | Mermaid architecture diagrams |
+
+---
+
+
+## 🔐 Security Disclosure Policy
+
+We take security seriously and follow responsible disclosure practices.
+
+| Item | Detail |
+|------|--------|
+| **Response Time** | 48 hours for initial acknowledgment |
+| **Resolution Target** | 90 days for verified vulnerabilities |
+| **Scope** | Community and Commercial tiers |
+| **Exclusions** | Social engineering, physical security, third-party services |
+
+### Reporting a Vulnerability
+
+**DO NOT** open a public GitHub issue.
+
+Email: **security@aegisgatesecurity.io**
+
+Include:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Your contact (optional)
+
+We believe in transparency: all security advisories are published to [SECURITY.advisories](https://github.com/aegisgatesecurity/aegisgate-platform/security/advisories) after fixes are deployed.
 
 ---
 
