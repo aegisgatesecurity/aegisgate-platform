@@ -23,6 +23,7 @@
 
 ---
 
+
 ## ⚡ TL;DR
 
 **AegisGate Platform™** is a unified AI security gateway that consolidates HTTP proxy security, MCP protocol protection, and administrative dashboard into a single high-performance binary.
@@ -38,6 +39,8 @@
 **Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Commercial modules licensed. See [Pricing](#-the-strategic-model).
 
 ---
+
+
 
 ## 🎯 What Makes AegisGate Platform Different?
 
@@ -79,6 +82,8 @@ Your App → [🛡️ AegisGate] → Secure AI          (unified)
 ---
 
 <!-- Sponsors section — hidden until GitHub Sponsors setup is complete
+
+
 ## 💼 Sponsors
 
 AegisGate is proudly supported by organizations using our platform in production.
@@ -95,6 +100,102 @@ AegisGate is proudly supported by organizations using our platform in production
 -->
 
 ---
+
+
+
+## ✨ Features
+
+### Unified Security Gateway
+
+| Component | Port | Purpose |
+|-----------|------|---------|
+| **HTTP Proxy** | `:8080` | AI API traffic inspection, PII scanning, rate limiting |
+| **MCP Server** | `:8081` | Model Context Protocol security, tool authorization |
+| **Dashboard** | `:8443` | Real-time monitoring, compliance status, audit logs |
+
+### Security Protection
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **Prompt Injection Prevention** | Blocks OWASP LLM Top 10 attacks | ✅ |
+| **Data Leakage Protection** | PII, secrets, credentials detection | ✅ |
+| **Adversarial Attack Defense** | Jailbreaks, DoS, manipulation detection | ✅ |
+| **MCP Tool Guardrails** | Per-tool authorization policies | ✅ |
+| **RBAC Access Control** | Role-based permissions | ✅ |
+| **Audit Logging** | RFC5424-compliant, tamper-evident | ✅ |
+| **Circuit Breaker** | Automatic failure recovery | ✅ |
+| **Auto-Certificate Generation** | Built-in CA, zero-config TLS | ✅ |
+
+---
+
+
+
+## 📊 Performance
+
+**Load tested with k6. See [PERFORMANCE.md](PERFORMANCE.md) for full details.**
+
+| Metric | Result | Grade |
+|--------|--------|-------|
+| **Peak Throughput** | 11,681 RPS | ✅ Outstanding |
+| **Average Latency** | 2.44ms | ✅ Excellent |
+| **P95 Latency** | 3.64ms | ✅ Excellent |
+| **P99 Latency** | 8.17ms | ✅ Excellent |
+| **Error Rate** | 0.00% | ✅ Perfect |
+| **Binary Size** | 14.3MB | ✅ Optimized |
+| **Docker Image** | 19.1MB | ✅ Minimal |
+| **Test Coverage** | 86.3% | ✅ Comprehensive (CI-tracked) |
+
+**Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
+
+---
+
+
+
+## 🎯 The Strategic Model
+
+**AegisGate Security Platform**: Core security is free; commercial compliance modules are licensed. This aligns with:
+- MITRE ATLAS + NIST AI RMF as **foundation** (always free)
+- HIPAA, PCI-DSS, SOC2, ISO modules as **commercial tiers**
+- ACP/A2A security as the **next frontier**
+
+### Community Tier (Apache 2.0) — Always Free
+| Component | Access |
+|-----------|--------|
+| **MITRE ATLAS Framework** | Full mapping + detection rules |
+| **NIST AI RMF 1.500** | Complete implementation |
+| **OWASP LLM Top 10** | Protection + reporting |
+| **Basic HTTP Proxy** | PII scanning, rate limiting |
+| **MCP Server** | Core guardrails (8 security rules) |
+| **Self-hosted Dashboard** | Single admin, 7-day retention |
+
+### Commercial Tiers — Licensed
+Commercial modules require a paid license. See [NOTICE](NOTICE) for details, or contact [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io).
+
+| Module | Developer | Professional | Enterprise |
+|--------|-----------|--------------|------------|
+| **OAuth SSO + OIDC** | ✅ | ✅ | ✅ |
+| **HIPAA Compliance** | — | ✅ | ✅ |
+| **PCI-DSS** | — | ✅ | ✅ |
+| **SOC2 Type II** | — | — | ✅ |
+| **ISO 27001** | — | ✅ | ✅ |
+| **ISO 42001** | — | — | ✅ |
+| **GDPR Advanced** | — | ✅ | ✅ |
+| **Multi-tenant Dashboard** | — | ✅ | ✅ |
+| **SLA Guarantees** | — | — | ✅ |
+
+### Future: ACP/A2A Agent Security (v2.0)
+| Capability | Community | Enterprise |
+|------------|-----------|------------|
+| Basic agent validation | ✅ | ✅ |
+| Cross-agent federation | ❌ | ✅ |
+| Agent identity verification | ❌ | ✅ |
+| Real-time threat intel | ❌ | ✅ |
+
+**Contact**: [security@aegisgatesecurity.io](mailto:security@aegisgatesecurity.io) · [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io)
+
+---
+
+
 
 ## 📊 Request Flow
 
@@ -157,49 +258,7 @@ sequenceDiagram
 
 ---
 
-## 🎯 The Strategic Model
 
-**AegisGate Security Platform**: Core security is free; commercial compliance modules are licensed. This aligns with:
-- MITRE ATLAS + NIST AI RMF as **foundation** (always free)
-- HIPAA, PCI-DSS, SOC2, ISO modules as **commercial tiers**
-- ACP/A2A security as the **next frontier**
-
-### Community Tier (Apache 2.0) — Always Free
-| Component | Access |
-|-----------|--------|
-| **MITRE ATLAS Framework** | Full mapping + detection rules |
-| **NIST AI RMF 1.500** | Complete implementation |
-| **OWASP LLM Top 10** | Protection + reporting |
-| **Basic HTTP Proxy** | PII scanning, rate limiting |
-| **MCP Server** | Core guardrails (8 security rules) |
-| **Self-hosted Dashboard** | Single admin, 7-day retention |
-
-### Commercial Tiers — Licensed
-Commercial modules require a paid license. See [NOTICE](NOTICE) for details, or contact [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io).
-
-| Module | Developer | Professional | Enterprise |
-|--------|-----------|--------------|------------|
-| **OAuth SSO + OIDC** | ✅ | ✅ | ✅ |
-| **HIPAA Compliance** | — | ✅ | ✅ |
-| **PCI-DSS** | — | ✅ | ✅ |
-| **SOC2 Type II** | — | — | ✅ |
-| **ISO 27001** | — | ✅ | ✅ |
-| **ISO 42001** | — | — | ✅ |
-| **GDPR Advanced** | — | ✅ | ✅ |
-| **Multi-tenant Dashboard** | — | ✅ | ✅ |
-| **SLA Guarantees** | — | — | ✅ |
-
-### Future: ACP/A2A Agent Security (v2.0)
-| Capability | Community | Enterprise |
-|------------|-----------|------------|
-| Basic agent validation | ✅ | ✅ |
-| Cross-agent federation | ❌ | ✅ |
-| Agent identity verification | ❌ | ✅ |
-| Real-time threat intel | ❌ | ✅ |
-
-**Contact**: [security@aegisgatesecurity.io](mailto:security@aegisgatesecurity.io) · [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io)
-
----
 
 ## 🔒 Security
 
@@ -213,6 +272,81 @@ Our code security matches our product security:
 - **Vulnerability scanning** with govulncheck + Trivy
 
 See [SECURITY.md](SECURITY.md) for details.
+
+
+
+
+
+## 🏛️ Compliance Coverage
+
+AegisGate Platform™ maps security controls to **13 major compliance frameworks**:
+
+```mermaid
+%%{init: {'theme': 'dark'}}%%
+mindmap
+  root((AegisGate
+Compliance))
+    NIST
+      AI RMF 1.500
+      Risk Management
+    MITRE
+      ATLAS
+      AI Threat Matrix
+    SOC2
+      Security Controls
+      Type II Ready
+    ISO["🌍 International"]
+      ISO 27001
+      ISO 42001
+    Industry
+      GDPR
+      HIPAA
+      PCI-DSS
+      OWASP LLM Top 10
+
+```
+
+
+<details>
+<summary>📄 ASCII Diagram Fallback</summary>
+
+```
+                    ┌─────────────────────┐
+                    │  AegisGate Platform │
+                    │    Compliance       │
+                    └──────────┬──────────┘
+           ┌──────────────────┼──────────────────┐
+           │                  │                  │
+    ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+    │   NIST      │    │   MITRE     │    │   SOC2      │
+    ├─────────────┤    ├─────────────┤    ├─────────────┤
+    │ AI RMF      │    │ ATLAS       │    │ Type II     │
+    │ 1.500       │    │ AI Threat   │    │ Ready       │
+    │             │    │ Matrix      │    │             │
+    └─────────────┘    └─────────────┘    └─────────────┘
+
+    ┌────────────────────────────────────────────────┐
+    │           INTERNATIONAL STANDARDS                │
+    ├────────────────┬──────────────────┬──────────────┤
+    │    ISO 27001   │    ISO 42001     │    GDPR      │
+    │    Info Sec    │  AI Management   │     EU       │
+    └────────────────┴──────────────────┴──────────────┘
+
+    ┌────────────────────────────────────────────────┐
+    │              INDUSTRY FRAMEWORKS                 │
+    ├──────────────┬──────────────┬──────────────────┤
+    │   HIPAA      │   PCI-DSS    │   OWASP          │
+    │  Healthcare  │   Payment    │   LLM Top 10     │
+    └──────────────┴──────────────┴──────────────────┘
+
+    Total: 9 Compliance Frameworks mapped
+```
+</details>
+
+
+**Community Edition includes MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10, and GDPR view-only detection** — commercial tiers unlock HIPAA, PCI-DSS, SOC2 Type II, ISO 27001/42001, and more.
+
+---
 
 
 
@@ -238,49 +372,7 @@ AegisGate Platform™ maps security controls to **13 major compliance frameworks
 
 ---
 
-## 📦 License & Contribution Model
 
-### Apache License 2.0 — Community Edition
-
-AegisGate Platform™ Community Edition is released under the [Apache License 2.0](LICENSE). This covers the open-source codebase published in this repository.
-
-- ✅ Use the software for any purpose
-- ✅ Modify and distribute the software
-- ✅ Use in proprietary software
-- ✅ Distribute copies to others
-
-**Commercial features** — including enterprise compliance frameworks, advanced threat detection, and priority support — are available under a separate commercial license. See [NOTICE](NOTICE) for trademark and licensing details, or contact [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io).
-
-### Contribution Model
-
-Contributions are welcome under the [inbound=outbound](https://opensource.microsoft.com/outbound/) model. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Every commit requires a `Signed-off-by` per our [DCO](DCO.md). No CLA required.
-
----
-
-## ✨ Features
-
-### Unified Security Gateway
-
-| Component | Port | Purpose |
-|-----------|------|---------|
-| **HTTP Proxy** | `:8080` | AI API traffic inspection, PII scanning, rate limiting |
-| **MCP Server** | `:8081` | Model Context Protocol security, tool authorization |
-| **Dashboard** | `:8443` | Real-time monitoring, compliance status, audit logs |
-
-### Security Protection
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **Prompt Injection Prevention** | Blocks OWASP LLM Top 10 attacks | ✅ |
-| **Data Leakage Protection** | PII, secrets, credentials detection | ✅ |
-| **Adversarial Attack Defense** | Jailbreaks, DoS, manipulation detection | ✅ |
-| **MCP Tool Guardrails** | Per-tool authorization policies | ✅ |
-| **RBAC Access Control** | Role-based permissions | ✅ |
-| **Audit Logging** | RFC5424-compliant, tamper-evident | ✅ |
-| **Circuit Breaker** | Automatic failure recovery | ✅ |
-| **Auto-Certificate Generation** | Built-in CA, zero-config TLS | ✅ |
-
----
 
 ## 🚀 Quick Start
 
@@ -337,6 +429,105 @@ nc -zv localhost 8081
 ```
 
 ---
+
+
+
+## 🛠️ Configuration
+
+### Zero-Config (Just Run)
+
+```bash
+aegisgate-platform --embedded-mcp
+```
+
+> Tier is derived from your license key. No license = Community tier.
+
+### With License Key
+
+```bash
+# Via command-line flag
+aegisgate-platform --embedded-mcp --license=YOUR_LICENSE_KEY
+
+# Or via environment variable
+export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
+aegisgate-platform --embedded-mcp
+```
+
+### With Custom Config
+
+```yaml
+# aegisgate-platform.yaml
+proxy:
+  bind_address: :8080
+  upstream_url: https://api.openai.com
+  
+server:
+  port: 8443
+  dashboard_port: 8443
+  
+mcp:
+  enabled: true
+  port: 8081
+  
+persistence:
+  data_dir: /data
+  audit_dir: /data/audit
+  enabled: true
+  
+# No tier key needed — tier is derived from license
+# license_key: YOUR_LICENSE_KEY  # Or set AEGISGATE_LICENSE_KEY env var
+log_level: info
+```
+
+### Environment Variables
+
+```bash
+export AEGISGATE_PROXY_BIND_ADDRESS=:8080
+export AEGISGATE_DASHBOARD_PORT=8443
+export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
+export AEGISGATE_LOG_LEVEL=info
+```
+
+---
+
+
+
+## 🔄 Integration Examples
+
+### OpenAI Client
+
+```python
+import openai
+
+# Point to AegisGate instead of OpenAI directly
+openai.api_base = "http://localhost:8080"
+
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello, world!"}]
+)
+```
+
+### MCP Client
+
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+const client = new Client(
+  { name: 'my-app', version: '1.0.0' },
+  { capabilities: {} }
+);
+
+// Connect through AegisGate security layer
+await client.connect({
+  command: 'node',
+  args: ['-e', 'require("net").connect(8081)'],
+});
+```
+
+---
+
+
 
 ## 🏗️ Architecture
 
@@ -440,24 +631,7 @@ flowchart TB
 
 ---
 
-## 📊 Performance
 
-**Load tested with k6. See [PERFORMANCE.md](PERFORMANCE.md) for full details.**
-
-| Metric | Result | Grade |
-|--------|--------|-------|
-| **Peak Throughput** | 11,681 RPS | ✅ Outstanding |
-| **Average Latency** | 2.44ms | ✅ Excellent |
-| **P95 Latency** | 3.64ms | ✅ Excellent |
-| **P99 Latency** | 8.17ms | ✅ Excellent |
-| **Error Rate** | 0.00% | ✅ Perfect |
-| **Binary Size** | 14.3MB | ✅ Optimized |
-| **Docker Image** | 19.1MB | ✅ Minimal |
-| **Test Coverage** | 86.3% | ✅ Comprehensive (CI-tracked) |
-
-**Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
-
----
 
 ## 🔒 MCP Guardrails
 
@@ -577,169 +751,7 @@ flowchart LR
 
 ---
 
-## 🛠️ Configuration
 
-### Zero-Config (Just Run)
-
-```bash
-aegisgate-platform --embedded-mcp
-```
-
-> Tier is derived from your license key. No license = Community tier.
-
-### With License Key
-
-```bash
-# Via command-line flag
-aegisgate-platform --embedded-mcp --license=YOUR_LICENSE_KEY
-
-# Or via environment variable
-export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
-aegisgate-platform --embedded-mcp
-```
-
-### With Custom Config
-
-```yaml
-# aegisgate-platform.yaml
-proxy:
-  bind_address: :8080
-  upstream_url: https://api.openai.com
-  
-server:
-  port: 8443
-  dashboard_port: 8443
-  
-mcp:
-  enabled: true
-  port: 8081
-  
-persistence:
-  data_dir: /data
-  audit_dir: /data/audit
-  enabled: true
-  
-# No tier key needed — tier is derived from license
-# license_key: YOUR_LICENSE_KEY  # Or set AEGISGATE_LICENSE_KEY env var
-log_level: info
-```
-
-### Environment Variables
-
-```bash
-export AEGISGATE_PROXY_BIND_ADDRESS=:8080
-export AEGISGATE_DASHBOARD_PORT=8443
-export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
-export AEGISGATE_LOG_LEVEL=info
-```
-
----
-
-## 🔄 Integration Examples
-
-### OpenAI Client
-
-```python
-import openai
-
-# Point to AegisGate instead of OpenAI directly
-openai.api_base = "http://localhost:8080"
-
-response = openai.ChatCompletion.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Hello, world!"}]
-)
-```
-
-### MCP Client
-
-```typescript
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-
-const client = new Client(
-  { name: 'my-app', version: '1.0.0' },
-  { capabilities: {} }
-);
-
-// Connect through AegisGate security layer
-await client.connect({
-  command: 'node',
-  args: ['-e', 'require("net").connect(8081)'],
-});
-```
-
----
-
-## 🏛️ Compliance Coverage
-
-AegisGate Platform™ maps security controls to **13 major compliance frameworks**:
-
-```mermaid
-%%{init: {'theme': 'dark'}}%%
-mindmap
-  root((AegisGate
-Compliance))
-    NIST
-      AI RMF 1.500
-      Risk Management
-    MITRE
-      ATLAS
-      AI Threat Matrix
-    SOC2
-      Security Controls
-      Type II Ready
-    ISO["🌍 International"]
-      ISO 27001
-      ISO 42001
-    Industry
-      GDPR
-      HIPAA
-      PCI-DSS
-      OWASP LLM Top 10
-
-```
-
-
-<details>
-<summary>📄 ASCII Diagram Fallback</summary>
-
-```
-                    ┌─────────────────────┐
-                    │  AegisGate Platform │
-                    │    Compliance       │
-                    └──────────┬──────────┘
-           ┌──────────────────┼──────────────────┐
-           │                  │                  │
-    ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
-    │   NIST      │    │   MITRE     │    │   SOC2      │
-    ├─────────────┤    ├─────────────┤    ├─────────────┤
-    │ AI RMF      │    │ ATLAS       │    │ Type II     │
-    │ 1.500       │    │ AI Threat   │    │ Ready       │
-    │             │    │ Matrix      │    │             │
-    └─────────────┘    └─────────────┘    └─────────────┘
-
-    ┌────────────────────────────────────────────────┐
-    │           INTERNATIONAL STANDARDS                │
-    ├────────────────┬──────────────────┬──────────────┤
-    │    ISO 27001   │    ISO 42001     │    GDPR      │
-    │    Info Sec    │  AI Management   │     EU       │
-    └────────────────┴──────────────────┴──────────────┘
-
-    ┌────────────────────────────────────────────────┐
-    │              INDUSTRY FRAMEWORKS                 │
-    ├──────────────┬──────────────┬──────────────────┤
-    │   HIPAA      │   PCI-DSS    │   OWASP          │
-    │  Healthcare  │   Payment    │   LLM Top 10     │
-    └──────────────┴──────────────┴──────────────────┘
-
-    Total: 9 Compliance Frameworks mapped
-```
-</details>
-
-
-**Community Edition includes MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10, and GDPR view-only detection** — commercial tiers unlock HIPAA, PCI-DSS, SOC2 Type II, ISO 27001/42001, and more.
-
----
 
 ## 📚 Documentation
 
@@ -759,6 +771,29 @@ Compliance))
 
 ---
 
+
+
+## 📦 License & Contribution Model
+
+### Apache License 2.0 — Community Edition
+
+AegisGate Platform™ Community Edition is released under the [Apache License 2.0](LICENSE). This covers the open-source codebase published in this repository.
+
+- ✅ Use the software for any purpose
+- ✅ Modify and distribute the software
+- ✅ Use in proprietary software
+- ✅ Distribute copies to others
+
+**Commercial features** — including enterprise compliance frameworks, advanced threat detection, and priority support — are available under a separate commercial license. See [NOTICE](NOTICE) for trademark and licensing details, or contact [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io).
+
+### Contribution Model
+
+Contributions are welcome under the [inbound=outbound](https://opensource.microsoft.com/outbound/) model. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Every commit requires a `Signed-off-by` per our [DCO](DCO.md). No CLA required.
+
+---
+
+
+
 ## 🤝 Community
 
 - **Mastodon**: [@aegisgatesecurity](https://mastodon.social/@aegisgatesecurity)
@@ -766,6 +801,8 @@ Compliance))
 - **Issues**: [github.com/aegisgatesecurity/aegisgate-platform/issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues)
 
 ---
+
+
 
 ## 📧 Contact
 
@@ -776,6 +813,26 @@ Compliance))
 | Support | support@aegisgatesecurity.io |
 
 ---
+
+
+
+## ⚠️ DEPRECATION NOTICE
+
+| Version | Status | Note |
+|---------|--------|------|
+| **v1.3.6** | ✅ **Current** — Supported | Latest stable release |
+| v1.3.5 | ❌ Deprecated | Please upgrade to v1.3.6 |
+| v1.3.4 | ❌ Deprecated | Please upgrade to v1.3.6 |
+| v1.3.3 | ❌ Deprecated | Please upgrade to v1.3.6 |
+| < v1.3.3 | ❌ Deprecated | Please upgrade to v1.3.6 |
+
+**To ensure you have the latest security patches and features, please use v1.3.6.**
+
+---
+
+*Last updated: 2026-04-24*
+
+
 
 ## 🙏 Acknowledgments
 
@@ -798,18 +855,4 @@ Built with 🖤 by the AegisGate Security team
 
 ---
 
-## ⚠️ DEPRECATION NOTICE
-
-| Version | Status | Note |
-|---------|--------|------|
-| **v1.3.6** | ✅ **Current** — Supported | Latest stable release |
-| v1.3.5 | ❌ Deprecated | Please upgrade to v1.3.6 |
-| v1.3.4 | ❌ Deprecated | Please upgrade to v1.3.6 |
-| v1.3.3 | ❌ Deprecated | Please upgrade to v1.3.6 |
-| < v1.3.3 | ❌ Deprecated | Please upgrade to v1.3.6 |
-
-**To ensure you have the latest security patches and features, please use v1.3.6.**
-
 ---
-
-*Last updated: 2026-04-24*
