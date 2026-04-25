@@ -134,9 +134,6 @@ AegisGate is proudly supported by organizations using our platform in production
 | **Docker Image** | 19.1MB | ✅ Minimal |
 | **Test Coverage** | 86.3% | ✅ Comprehensive (CI-tracked) |
 
-**Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
-
----
 
 ## 🎯 The Strategic Model
 
