@@ -19,10 +19,8 @@
 
 > **30-Second Pitch**: Your AI applications need enterprise-grade security — but shouldn't require enterprise budgets. AegisGate Platform™ provides unified AI traffic inspection, MCP security guardrails, and compliance automation in a single 19MB binary. Deploy in 60 seconds. Sleep better tonight.
 
-**[v1.3.6 — Compliance Registry Wiring Complete ✅]**(https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v1.3.6): Sprint 3 complete — 8+ compliance frameworks tier-aware, ATLAS/NIST mandatory for all, premium frameworks gated by tier.
 
 ---
-
 
 ## ⚡ TL;DR
 
@@ -39,8 +37,6 @@
 **Zero Configuration Required.** Download, run, secure. MITRE + NIST frameworks always free. Commercial modules licensed. See [Pricing](#-the-strategic-model).
 
 ---
-
-
 
 ## 🎯 What Makes AegisGate Platform Different?
 
@@ -63,7 +59,6 @@ flowchart LR
     end
 ```
 
-
 <details>
 <summary>📄 ASCII Diagram Fallback</summary>
 
@@ -76,13 +71,11 @@ Your App → [🛡️ AegisGate] → Secure AI          (unified)
 ```
 </details>
 
-
 **One Binary. One Config. Enterprise-grade Security.**
 
 ---
 
 <!-- Sponsors section — hidden until GitHub Sponsors setup is complete
-
 
 ## 💼 Sponsors
 
@@ -100,8 +93,6 @@ AegisGate is proudly supported by organizations using our platform in production
 -->
 
 ---
-
-
 
 ## ✨ Features
 
@@ -128,8 +119,6 @@ AegisGate is proudly supported by organizations using our platform in production
 
 ---
 
-
-
 ## 📊 Performance
 
 **Load tested with k6. See [PERFORMANCE.md](PERFORMANCE.md) for full details.**
@@ -148,8 +137,6 @@ AegisGate is proudly supported by organizations using our platform in production
 **Total Tests: 2,350+ (2,348 PASS, 1 SKIP)**
 
 ---
-
-
 
 ## 🎯 The Strategic Model
 
@@ -195,8 +182,6 @@ Commercial modules require a paid license. See [NOTICE](NOTICE) for details, or 
 
 ---
 
-
-
 ## 📊 Request Flow
 
 Every request passes through comprehensive security inspection:
@@ -235,7 +220,6 @@ sequenceDiagram
     end
 ```
 
-
 <details>
 <summary>📄 ASCII Diagram Fallback</summary>
 
@@ -254,11 +238,7 @@ sequenceDiagram
 ```
 </details>
 
-
-
 ---
-
-
 
 ## 🔒 Security
 
@@ -272,10 +252,6 @@ Our code security matches our product security:
 - **Vulnerability scanning** with govulncheck + Trivy
 
 See [SECURITY.md](SECURITY.md) for details.
-
-
-
-
 
 ## 🏛️ Compliance Coverage
 
@@ -305,7 +281,6 @@ Compliance))
       OWASP LLM Top 10
 
 ```
-
 
 <details>
 <summary>📄 ASCII Diagram Fallback</summary>
@@ -343,12 +318,9 @@ Compliance))
 ```
 </details>
 
-
 **Community Edition includes MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10, and GDPR view-only detection** — commercial tiers unlock HIPAA, PCI-DSS, SOC2 Type II, ISO 27001/42001, and more.
 
 ---
-
-
 
 ## 📋 Compliance Coverage
 
@@ -371,8 +343,6 @@ AegisGate Platform™ maps security controls to **13 major compliance frameworks
 | **HITRUST** | Healthcare trust framework | Enterprise 🔒 |
 
 ---
-
-
 
 ## 🚀 Quick Start
 
@@ -429,8 +399,6 @@ nc -zv localhost 8081
 ```
 
 ---
-
-
 
 ## 🛠️ Configuration
 
@@ -490,8 +458,6 @@ export AEGISGATE_LOG_LEVEL=info
 
 ---
 
-
-
 ## 🔄 Integration Examples
 
 ### OpenAI Client
@@ -526,8 +492,6 @@ await client.connect({
 ```
 
 ---
-
-
 
 ## 🏗️ Architecture
 
@@ -588,7 +552,6 @@ flowchart TB
     style G fill:#2386362
 ```
 
-
 <details>
 <summary>📄 ASCII Diagram Fallback</summary>
 
@@ -628,10 +591,7 @@ flowchart TB
 ```
 </details>
 
-
 ---
-
-
 
 ## 🔒 MCP Guardrails
 
@@ -680,7 +640,6 @@ flowchart LR
     style I fill:#238636
     style A fill:#a371f7
 ```
-
 
 <details>
 <summary>📄 ASCII Diagram Fallback</summary>
@@ -735,7 +694,6 @@ flowchart LR
 ```
 </details>
 
-
 ### Guardrail Details
 
 | Guardrail | Description | Default |
@@ -750,8 +708,6 @@ flowchart LR
 | **Tool Authorization** | Risk-based tool call approval | Enabled ✅ |
 
 ---
-
-
 
 ## 📚 Documentation
 
@@ -770,8 +726,6 @@ flowchart LR
 | [docs/diagrams/](docs/diagrams/) | Mermaid architecture diagrams |
 
 ---
-
-
 
 ## 📦 License & Contribution Model
 
@@ -792,8 +746,6 @@ Contributions are welcome under the [inbound=outbound](https://opensource.micros
 
 ---
 
-
-
 ## 🤝 Community
 
 - **Mastodon**: [@aegisgatesecurity](https://mastodon.social/@aegisgatesecurity)
@@ -801,8 +753,6 @@ Contributions are welcome under the [inbound=outbound](https://opensource.micros
 - **Issues**: [github.com/aegisgatesecurity/aegisgate-platform/issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues)
 
 ---
-
-
 
 ## 📧 Contact
 
@@ -813,8 +763,6 @@ Contributions are welcome under the [inbound=outbound](https://opensource.micros
 | Support | support@aegisgatesecurity.io |
 
 ---
-
-
 
 ## ⚠️ DEPRECATION NOTICE
 
@@ -830,9 +778,7 @@ Contributions are welcome under the [inbound=outbound](https://opensource.micros
 
 ---
 
-*Last updated: 2026-04-24*
-
-
+**
 
 ## 🙏 Acknowledgments
 
