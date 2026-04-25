@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ AegisGate Platform™ — Enterprise AI Security Gateway
+# 🛡️ AegisGate Platform™ — Secure AI Traffic and MCP Servers
 
 [![Version](https://img.shields.io/github/v/release/aegisgatesecurity/aegisgate-platform?label=version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
