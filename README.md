@@ -94,6 +94,45 @@ AegisGate is proudly supported by organizations using our platform in production
 
 ---
 
+
+## 📸 See It In Action
+
+Screenshots coming with website launch at aegisgatesecurity.io
+
+**Dashboard Preview:**
+- Real-time MCP guardrail events
+- Compliance status (MITRE ATLAS, NIST AI RMF)
+- Request flow visualization
+- Performance metrics (11K+ RPS, 2.44ms latency)
+
+**Meanwhile, try it locally:**
+```bash
+# Clone and run
+git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
+cd aegisgate-platform
+make run
+
+# Open dashboard (after auth setup)
+open https://localhost:8443
+```
+
+## 🏆 Why Not Just Use Kong, Traefik, or Cloudflare?
+
+Great question. Existing API gateways handle HTTP traffic beautifully. They don't handle **MCP security, AI-specific compliance, or unified inspection** without significant customization.
+
+| Requirement | Traditional API Gateway | AegisGate Community |
+|-------------|----------------------|---------------------|
+| HTTP/API Proxy | ✅ Yes | ✅ Yes |
+| **Native MCP Support** | ❌ No | ✅ Built-in guardrails |
+| **AI Framework Compliance** | ❌ Manual integration | ✅ ATLAS/NIST baked in |
+| **Zero External Dependencies** | ❌ 5-10 services | ✅ 19MB single binary |
+| **Self-Hosted, Air-Gapped** | ⚠️ Partial | ✅ 100% offline capable |
+
+**Reality check:** To match AegisGate's free tier with Kong + custom code, you'd need: Kong, OPA, custom MCP validators, external compliance audits, and ~$100K in engineering.
+
+We built AegisGate because **that infrastructure didn't exist.**
+
+---
 ## ✨ Features
 
 ### Unified Security Gateway
