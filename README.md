@@ -104,7 +104,7 @@ docker run -d \
   --embedded-mcp
 ```
 
-> **v1.3.6 Update:** Tier is now derived from your license key — no `--tier` flag needed.
+> **v1.3.7 Update:** Tier is now derived from your license key — no `--tier` flag needed.
 > Set `AEGISGATE_LICENSE_KEY` to unlock Developer+ features.
 
 ### Build from Source
