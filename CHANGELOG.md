@@ -1,4 +1,46 @@
-## [1.3.6] - 2026-04-24
+
+## [1.3.7] - 2026-04-27 - SSO Integration + Coverage Boost
+
+### Summary
+Sprint 4 complete: OIDC/SAML SSO ported and integrated. 28/29 packages now exceed 80% coverage threshold.
+
+### SSO Integration (Sprint 4)
+- S4-01: Ported SSO package from AegisGate upstream (~3,635 LOC)
+- S4-02: OIDC provider with PKCE support
+- S4-03: SAML 2.0 provider with XML signature validation
+- S4-04: SSO middleware wired into auth layer
+- S4-05: `/auth/login`, `/auth/callback`, `/auth/logout` endpoints
+- S4-06: SSO configuration file (`configs/sso.yaml.example`)
+- S4-07: Test lab environment with Keycloak
+- S4-08: Mock servers for OIDC and SAML testing
+
+### Test Lab Environment
+- Keycloak for real OIDC/SAML testing
+- PostgreSQL and Redis for test infrastructure
+- Integration tests with `go test -tags=lab`
+- Reusable across entire AegisGate project
+
+### Coverage Improvements
+- **signature_verification:** 58.6% → **81.8%** (+23.2%)
+- **compliance/premium/soc2:** 32.0% → **100%** (+68%)
+- **compliance/enterprise/iso42001:** 72.0% → **100%** (+28%)
+- **compliance (root):** 49.4% → **58.6%** (+9.2%)
+
+### Changed
+- All 28/29 packages pass 80% coverage threshold
+- Version bumped to 1.3.7
+- SSO endpoints available at `/auth/*`
+
+### Fixed
+- Multiple test file syntax errors corrected
+- API signature mismatches resolved
+- Import cycles broken (auth → sso → auth)
+
+### Documentation
+- New `testlab/README.md` for lab environment
+- New `plans/sprint4-status.md` for sprint details
+- Operations Order updated with Sprint 4 completion
+
 
 ## [1.3.6] - 2026-04-24 - Coverage 86.4%
 - CI: Coverage threshold now 80% (was 75%)

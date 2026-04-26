@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-86.3%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Test Coverage](https://img.shields.io/badge/Coverage-81.8%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](deploy/helm/aegisgate-platform/)
@@ -195,7 +195,7 @@ flowchart TB
 | **Error Rate** | 0.00% | ✅ Perfect |
 | **Binary Size** | 14.3MB | ✅ Optimized |
 | **Docker Image** | 19.1MB | ✅ Minimal |
-| **Test Coverage** | 86.3% | ✅ Comprehensive |
+| **Test Coverage** | 81.8% | ✅ Comprehensive |
 
 See [PERFORMANCE.md](PERFORMANCE.md) for full load testing details.
 
@@ -252,7 +252,7 @@ AegisGate Platform™ maps security controls to **13 major compliance frameworks
 ### Commercial Tiers — Licensed
 | Module | Developer | Professional | Enterprise |
 |--------|-----------|--------------|------------|
-| **OAuth SSO + OIDC** | ✅ | ✅ | ✅ |
+| **OAuth SSO (OIDC + SAML)** | ✅ | ✅ | ✅ |
 | **HIPAA Compliance** | — | ✅ | ✅ |
 | **PCI-DSS** | — | ✅ | ✅ |
 | **SOC2 Type II** | — | — | ✅ |

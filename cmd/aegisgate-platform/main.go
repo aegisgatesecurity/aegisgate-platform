@@ -31,6 +31,8 @@ import (
 
 	"runtime"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
@@ -39,6 +41,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
@@ -46,7 +49,7 @@ import (
 )
 
 var (
-	version       = "1.3.6"
+	version       = "1.3.7"
 	startTime     = time.Now()
 	configFile    = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort     = flag.Int("proxy-port", 8080, "AegisGate proxy port")
@@ -62,6 +65,12 @@ var (
 
 func main() {
 	flag.Parse()
+
+	// fileExists helper function for configuration files
+	fileExists := func(filename string) bool {
+		_, err := os.Stat(filename)
+		return !os.IsNotExist(err)
+	}
 
 	if *showVersion {
 		fmt.Printf("AegisGate Security Platform %s\n", version)
@@ -372,8 +381,122 @@ func main() {
 	// ============================================================
 	// Initialize authentication middleware from environment
 	authConfig := auth.ConfigFromEnv()
-	authMiddleware := auth.NewMiddleware(authConfig)
-	log.Printf("Auth middleware: require_auth=%v", authConfig.RequireAuth)
+
+	// Initialize SSO Manager with configuration from YAML file
+	var ssoManager *sso.Manager
+	var ssoErr error
+
+	// Try to load SSO configuration from YAML file
+	ssoConfig := sso.DefaultSSOConfig()
+	ssoConfigPath := "configs/sso.yaml"
+	if fileExists(ssoConfigPath) {
+		yamlData, err := os.ReadFile(ssoConfigPath)
+		if err != nil {
+			log.Printf("Warning: Failed to read SSO config file %s: %v", ssoConfigPath, err)
+		} else {
+			var configMap map[string]interface{}
+			if err := yaml.Unmarshal(yamlData, &configMap); err == nil {
+				// Parse sso section
+				if ssoMap, ok := configMap["sso"].(map[string]interface{}); ok {
+					if enabled, ok := ssoMap["enabled"].(bool); ok {
+						ssoConfig.Enabled = enabled
+					}
+				}
+
+				// Parse oidc section
+				if oidcMap, ok := configMap["oidc"].(map[string]interface{}); ok {
+					oidcConfig := &sso.OIDCConfig{}
+					if clientID, ok := oidcMap["client_id"].(string); ok {
+						oidcConfig.ClientID = clientID
+					}
+					if clientSecret, ok := oidcMap["client_secret"].(string); ok {
+						oidcConfig.ClientSecret = clientSecret
+					}
+					if issuerURL, ok := oidcMap["issuer_url"].(string); ok {
+						oidcConfig.IssuerURL = issuerURL
+					}
+					if authURL, ok := oidcMap["auth_url"].(string); ok {
+						oidcConfig.AuthURL = authURL
+					}
+					if tokenURL, ok := oidcMap["token_url"].(string); ok {
+						oidcConfig.TokenURL = tokenURL
+					}
+					if userInfoURL, ok := oidcMap["user_info_url"].(string); ok {
+						oidcConfig.UserInfoURL = userInfoURL
+					}
+					if redirectURL, ok := oidcMap["redirect_url"].(string); ok {
+						oidcConfig.RedirectURL = redirectURL
+					}
+					if providerType, ok := oidcMap["provider"].(string); ok {
+						oidcConfig.ProviderType = providerType
+					}
+					ssoConfig.OIDC = oidcConfig
+				}
+
+				// Parse saml section
+				if samlMap, ok := configMap["saml"].(map[string]interface{}); ok {
+					samlConfig := &sso.SAMLConfig{}
+					if idpMetadataURL, ok := samlMap["idp_metadata_url"].(string); ok {
+						samlConfig.IDPMetadataURL = idpMetadataURL
+					}
+					if entityID, ok := samlMap["entity_id"].(string); ok {
+						samlConfig.EntityID = entityID
+					}
+					if acsURL, ok := samlMap["acs_url"].(string); ok {
+						samlConfig.ACSURL = acsURL
+					}
+					if nameIDFormat, ok := samlMap["name_id_format"].(string); ok {
+						samlConfig.NameIDFormat = nameIDFormat
+					}
+					if certFile, ok := samlMap["cert_file"].(string); ok {
+						samlConfig.CertFile = certFile
+					}
+					if keyFile, ok := samlMap["key_file"].(string); ok {
+						samlConfig.KeyFile = keyFile
+					}
+					ssoConfig.SAML = samlConfig
+				}
+
+				// Parse session section
+				if sessionMap, ok := configMap["session"].(map[string]interface{}); ok {
+					if durationHours, ok := sessionMap["duration_hours"].(float64); ok {
+						ssoConfig.SessionDuration = time.Duration(durationHours) * time.Hour
+					}
+					if secure, ok := sessionMap["secure"].(bool); ok {
+						ssoConfig.CookieSecure = secure
+					}
+					if sameSite, ok := sessionMap["same_site"].(string); ok {
+						ssoConfig.CookieSameSite = sameSite
+					}
+				}
+			}
+		}
+	}
+
+	// Initialize SSO Manager
+	ssoManager, ssoErr = sso.NewManager(&sso.ManagerConfig{
+		DefaultConfig: ssoConfig,
+	})
+
+	// Create middleware with appropriate auth settings
+	var authMiddleware *auth.Middleware
+	if ssoErr != nil || !ssoConfig.Enabled {
+		log.Printf("Warning: SSO initialization failed or disabled: %v", ssoErr)
+		log.Println("SSO: Using basic authentication only")
+		authMiddleware = auth.NewMiddleware(authConfig)
+	} else {
+		authMiddleware = auth.NewMiddlewareWithSSO(authConfig, ssoManager)
+
+		// Log enabled providers
+		if ssoConfig.OIDC != nil {
+			log.Printf("SSO: OIDC provider configured: %s", ssoConfig.OIDC.IssuerURL)
+		}
+		if ssoConfig.SAML != nil {
+			log.Println("SSO: SAML provider configured")
+		}
+	}
+
+	log.Printf("Auth middleware: require_auth=%v, sso_enabled=%v", authConfig.RequireAuth, ssoManager != nil)
 
 	dashMux := http.NewServeMux()
 
@@ -669,6 +792,108 @@ func main() {
 
 	// Static UI file server
 	dashMux.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui/frontend"))))
+
+	// SSO Authentication Endpoints (Developer+ tiers)
+	dashMux.HandleFunc("/auth/login", func(w http.ResponseWriter, r *http.Request) {
+		// Check if SSO is configured and enabled
+		if authMiddleware.SSOManager() == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotImplemented)
+			fmt.Fprintf(w, `{"error":"SSO not configured"}`)
+			return
+		}
+
+		// Check SSO session for existing authentication
+		session, err := authMiddleware.SSOManager().GetSession("default")
+		if err == nil && session != nil && !session.IsExpired() && session.Active {
+			http.Redirect(w, r, "/ui/", http.StatusFound)
+			return
+		}
+
+		// Initiate SSO login flow - use first available provider
+		providers := authMiddleware.SSOManager().ListProviders()
+		if len(providers) == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotImplemented)
+			fmt.Fprintf(w, `{"error":"no SSO providers configured"}`)
+			return
+		}
+
+		providerName := providers[0] // Default to first provider
+		loginURL, _, err := authMiddleware.SSOManager().InitiateLogin(providerName)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"failed to initiate SSO login: %v"}`, err)
+			return
+		}
+
+		http.Redirect(w, r, loginURL, http.StatusFound)
+	})
+
+	dashMux.HandleFunc("/auth/callback", func(w http.ResponseWriter, r *http.Request) {
+		// Handle SSO callback (OAuth2/OIDC/SAML)
+		if authMiddleware.SSOManager() == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotImplemented)
+			fmt.Fprintf(w, `{"error":"SSO not configured"}`)
+			return
+		}
+
+		// Get query params for callback
+		params := make(map[string]string)
+		for key := range r.URL.Query() {
+			params[key] = r.URL.Query().Get(key)
+		}
+
+		// Process callback and complete authentication
+		result, err := authMiddleware.SSOManager().HandleCallback("default", params)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `{"error":"SSO callback failed: %v"}`, err)
+			return
+		}
+
+		// If callback returned redirect URL, use it
+		if result != nil && result.RedirectURL != "" {
+			http.Redirect(w, r, result.RedirectURL, http.StatusFound)
+			return
+		}
+
+		// Otherwise redirect to dashboard on success
+		http.Redirect(w, r, "/ui/", http.StatusFound)
+	})
+
+	dashMux.HandleFunc("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
+		// Handle SSO logout
+		if authMiddleware.SSOManager() == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotImplemented)
+			fmt.Fprintf(w, `{"error":"SSO not configured"}`)
+			return
+		}
+
+		// Get session ID from cookie or header
+		sessionID := r.Header.Get("Authorization")
+		if sessionID == "" {
+			// Try to get from cookie
+			if cookie, err := r.Cookie("session"); err == nil {
+				sessionID = cookie.Value
+			}
+		}
+
+		// Perform logout and redirect
+		logoutURL, err := authMiddleware.SSOManager().Logout(sessionID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"SSO logout failed: %v"}`, err)
+			return
+		}
+
+		http.Redirect(w, r, logoutURL, http.StatusFound)
+	})
 
 	// Serve index.html at dashboard root
 	dashMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

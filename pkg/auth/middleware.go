@@ -1,8 +1,9 @@
 // =========================================================================
 // AegisGate Security Platform — Authentication Middleware
 // =========================================================================
-// Provides JWT and API token authentication for dashboard API endpoints.
-// Two-tier auth: Bearer JWT for user sessions, X-API-Token for service auth.
+// Provides JWT, API token, and SSO authentication for dashboard API endpoints.
+// Three-tier auth: Bearer JWT for user sessions, X-API-Token for service auth,
+// SSO for centralized identity management.
 // =========================================================================
 
 package auth
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -40,6 +42,14 @@ type Config struct {
 	APIAuthToken     string
 	TokenExpiryHours int
 	RequireAuth      bool
+
+	// SSO Configuration
+	SSOConfig *sso.SSOConfig
+}
+
+// DefaultSSOConfig returns default SSO configuration
+func DefaultSSOConfig() *sso.SSOConfig {
+	return sso.DefaultSSOConfig()
 }
 
 // DefaultConfig returns development-safe config (RequireAuth=false)
@@ -81,17 +91,39 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// Middleware provides HTTP auth middleware
+// Middleware provides HTTP auth middleware with JWT, API token, and SSO support
 type Middleware struct {
-	config *Config
+	config     *Config
+	ssoManager *sso.Manager
 }
 
-// NewMiddleware creates auth middleware
+// NewMiddleware creates auth middleware with SSO support
 func NewMiddleware(cfg *Config) *Middleware {
-	return &Middleware{config: cfg}
+	return &Middleware{
+		config: cfg,
+	}
 }
 
-// RequireAuth wraps handlers requiring authentication
+// NewMiddlewareWithSSO creates auth middleware with SSO support
+func NewMiddlewareWithSSO(cfg *Config, ssoManager *sso.Manager) *Middleware {
+	return &Middleware{
+		config:     cfg,
+		ssoManager: ssoManager,
+	}
+}
+
+// SSOManager returns the SSO manager instance
+func (m *Middleware) SSOManager() *sso.Manager {
+	return m.ssoManager
+}
+
+// RequireSSOLogin checks if SSO login is required (when SSO is configured)
+func (m *Middleware) RequireSSOLogin() bool {
+	return m.ssoManager != nil && m.config != nil && m.config.SSOConfig != nil
+}
+
+// RequireAuth wraps handlers requiring authentication (supports JWT, API token, and SSO)
+// Priority order: 1) SSO token (if SSO configured), 2) Bearer JWT, 3) Token API key
 func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !m.config.RequireAuth {
@@ -105,7 +137,15 @@ func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Extract and validate auth header
+		// Try SSO authentication first if SSO is configured
+		if m.ssoManager != nil && m.config.SSOConfig != nil {
+			if err := m.handleSSOToken(w, r, next); err == nil {
+				return // SSO auth succeeded
+			}
+			// Continue to JWT/API token if SSO fails
+		}
+
+		// Extract and validate auth header for JWT/API token
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			m.unauthorized(w, "missing authorization header")
@@ -130,6 +170,66 @@ func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			m.unauthorized(w, "unsupported authorization scheme")
 		}
 	}
+}
+
+// SSO role conversion helper function
+func ssoRoleToUserRole(ssoRole string) rbac.UserRole {
+	switch ssoRole {
+	case "operator":
+		return rbac.UserRoleAnalyst
+	case "admin":
+		return rbac.UserRoleAdmin
+	default: // viewer or unknown
+		return rbac.UserRoleViewer
+	}
+}
+
+// handleSSOToken handles SSO token authentication
+// Returns nil if SSO authentication succeeds, otherwise returns error
+func (m *Middleware) handleSSOToken(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) error {
+	// Get SSO token from Authorization header (Bearer scheme)
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return fmt.Errorf("no authorization header")
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return fmt.Errorf("invalid authorization format")
+	}
+
+	token := parts[1]
+
+	// Try to validate SSO session
+	session, err := m.ssoManager.ValidateSession(token)
+	if err != nil {
+		return fmt.Errorf("SSO validation failed: %w", err)
+	}
+
+	// Extract user info from SSO session
+	if session.User == nil {
+		return fmt.Errorf("no user in SSO session")
+	}
+
+	// Build auth context from SSO user (SSOUser has direct fields now)
+	userID := session.User.ID
+	if userID == "" {
+		userID = session.User.Email // Use Email as fallback identifier
+	}
+
+	// Map SSO role string to platform role
+	platformRole := ssoRoleToUserRole(session.User.Role)
+
+	// Set auth context with SSO type
+	ctx := context.WithValue(r.Context(), ContextKeyUserID, userID)
+	ctx = context.WithValue(ctx, ContextKeyAuthType, "sso")
+	ctx = SetUserRole(ctx, platformRole)
+
+	// Set permissions based on user role
+	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(platformRole))
+
+	next(w, r.WithContext(ctx))
+	return nil
 }
 
 // handleJWT validates JWT tokens
