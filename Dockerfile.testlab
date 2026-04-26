@@ -1,0 +1,32 @@
+# ============================================================================
+# AegisGate Test Lab Dockerfile - Simplified
+# ============================================================================
+FROM alpine:3.19 AS final
+
+WORKDIR /app
+
+# Install CA certificates for HTTPS
+RUN apk add --no-cache ca-certificates tzdata wget
+
+# Create non-root user
+RUN adduser -D -g '' appuser
+
+# Copy binary from builder (built separately)
+COPY aegisgate-platform /app/aegisgate-platform
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose ports
+EXPOSE 8080 8443 9090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Run the application
+ENTRYPOINT ["/app/aegisgate-platform"]
+CMD ["serve", "--tier", "community"]

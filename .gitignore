@@ -6,6 +6,9 @@
 # SECRETS AND CREDENTIALS (CRITICAL — NEVER COMMIT)
 # =============================================================================
 
+# SSO config may contain client secrets
+configs/sso.yaml
+
 .env
 .env.*
 .env.local
@@ -50,7 +53,7 @@ MCP_E2E_PREP.md
 ANCHOR.md
 PROJECT_MEMORY.md
 SESSION_MEMORY.md
-EOF
+
 fix_illegal_runes.sh
 *.patch
 
@@ -61,6 +64,17 @@ aegisgate-platform.yaml
 ui/frontend/consolidated-dashboard.html
 
 # =============================================================================
+# =============================================================================
+# SPRINT ANALYSIS FILES (PRIVATE — NEVER COMMIT)
+# =============================================================================
+
+Sprint-4-Analysis.md
+Sprint-3-Analysis.md
+SPRINT*-Analysis.md
+SPRINT*-status.md
+Sprint*-status.md
+summarized-sprint-*.md
+sprint*-status.txt
 # BUSINESS AND PROJECT PLANS (PRIVATE — NEVER COMMIT)
 # =============================================================================
 
@@ -102,9 +116,6 @@ docker-compose.override.yml
 # SESSION MEMORY AND ANCHOR FILES (LOCAL ONLY)
 # =============================================================================
 
-ANCHOR.md
-PROJECT_MEMORY.md
-SESSION_MEMORY.md
 _commit_msg.txt
 RELEASE_NOTES*.md
 RELEASE_BODY.md
@@ -131,12 +142,8 @@ out/
 *.lib
 *.o
 *.obj
-coverage.out
-coverage_*.out
 coverage/
-*.coverprofile
 *.prof
-*.test
 *.test.exe
 *.debug
 __debug_bin
@@ -203,7 +210,6 @@ node_modules/
 # BINARY (built locally, not committed)
 # =============================================================================
 
-/aegisgate-platform
 
 # =============================================================================
 # DATABASE FILES
@@ -236,6 +242,27 @@ test_run.zip
  ARCHIVE/
 
 # =============================================================================
+# PHASE 3 SSO INTEGRATION ARTIFACTS
+# =============================================================================
+
+gen/
+main_sso_integration.py
+Phase3_SSO_Integration.md
+README_PHASE3_INTEGRATION.md
+Sprint4_Phase3_Report.md
+README_COMPETITION.md
+README_d7fcfeb_restored.md
+
+# =============================================================================
+# TEST LAB ENVIRONMENT (LOCAL ONLY)
+# =============================================================================
+
+testlab/
+testlab/.env
+testlab/.env.*
+.docker/
+
+# =============================================================================
 # KEEP THESE FILES (DON'T IGNORE)
 # =============================================================================
 
@@ -245,4 +272,11 @@ test_run.zip
 !LICENSE
 !LICENSE.*
 !README.md
-!README.*
+!README.md
+
+# SSO patch files (in subdirectories)
+**/*.patch
+**/*.sso_patch
+
+# Generated SSO integration code (not compilable standalone)
+gen/

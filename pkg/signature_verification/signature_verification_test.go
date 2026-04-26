@@ -186,3 +186,42 @@ func TestMultipleKeyManagement(t *testing.T) {
 		}
 	}
 }
+
+// Tests for 0% coverage functions
+func TestValidateStringSignature(t *testing.T) {
+	svc := NewSignatureValidationService()
+	_, err := svc.ValidateStringSignature([]byte("test data"), "invalid base64!", []byte("key"))
+	if err == nil {
+		t.Error("Expected error for invalid base64")
+	}
+}
+
+func TestSignatureVerifierIsEnabled(t *testing.T) {
+	sv := NewSignatureVerifier()
+	if !sv.IsEnabled() {
+		t.Error("New verifier should be enabled")
+	}
+	sv.Disable()
+	if sv.IsEnabled() {
+		t.Error("After Disable, should not be enabled")
+	}
+}
+
+func TestSignatureVerifierSetAllowedKeys(t *testing.T) {
+	sv := NewSignatureVerifier()
+	sv.SetAllowedKeys(map[string]bool{"key1": true, "key2": true})
+}
+
+func TestSignatureVerifierGetAllowedKeys(t *testing.T) {
+	sv := NewSignatureVerifier()
+	keys := sv.GetAllowedKeys()
+	t.Logf("Allowed keys: %v", keys)
+}
+
+func TestSignatureVerifierVerifyStringSignature(t *testing.T) {
+	sv := NewSignatureVerifier()
+	_, err := sv.VerifyStringSignature([]byte("test"), "invalid!", []byte("key"))
+	if err == nil {
+		t.Error("Expected error for invalid signature")
+	}
+}
