@@ -69,7 +69,7 @@ func TestDetectFrameworksIntegration(t *testing.T) {
 func TestAddCustomPatternIntegration(t *testing.T) {
 	manager := NewManager(nil)
 	if manager == nil {
-		t.Fatal("NewManager returned nil)
+		t.Fatal("NewManager returned nil")
 	}
 
 	// Create a custom pattern

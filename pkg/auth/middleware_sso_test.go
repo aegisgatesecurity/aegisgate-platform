@@ -145,9 +145,9 @@ func TestRequireSSOLogin(t *testing.T) {
 
 func TestSSORoleToUserRole(t *testing.T) {
 	tests := []struct {
-		name    string
-		role    string
-		want    rbac.UserRole
+		name string
+		role string
+		want rbac.UserRole
 	}{
 		{"admin maps to admin", "admin", rbac.UserRoleAdmin},
 		{"operator maps to analyst", "operator", rbac.UserRoleAnalyst},

@@ -104,7 +104,7 @@ func TestISO42001Configure(t *testing.T) {
 
 func TestISO42001Check(t *testing.T) {
 	fw := NewISO42001Framework()
-	
+
 	// Test with empty content
 	result, err := fw.Check(context.Background(), common.CheckInput{})
 	if err != nil {
@@ -116,7 +116,7 @@ func TestISO42001Check(t *testing.T) {
 	if result.Framework != FrameworkName {
 		t.Errorf("expected framework %s, got %s", FrameworkName, result.Framework)
 	}
-	
+
 	// Test with content
 	result, err = fw.Check(context.Background(), common.CheckInput{Content: "AI model training data"})
 	if err != nil {
@@ -129,7 +129,7 @@ func TestISO42001Check(t *testing.T) {
 
 func TestISO42001CheckRequest(t *testing.T) {
 	fw := NewISO42001Framework()
-	
+
 	findings, err := fw.CheckRequest(context.Background(), &common.HTTPRequest{})
 	if err != nil {
 		t.Errorf("CheckRequest failed: %v", err)
@@ -137,7 +137,7 @@ func TestISO42001CheckRequest(t *testing.T) {
 	if findings == nil {
 		// CheckRequest returns empty findings - expected behavior
 	}
-	
+
 	// Test with request
 	findings, err = fw.CheckRequest(context.Background(), &common.HTTPRequest{
 		Method: "POST",
@@ -152,7 +152,7 @@ func TestISO42001CheckRequest(t *testing.T) {
 
 func TestISO42001CheckResponse(t *testing.T) {
 	fw := NewISO42001Framework()
-	
+
 	findings, err := fw.CheckResponse(context.Background(), &common.HTTPResponse{})
 	if err != nil {
 		t.Errorf("CheckResponse failed: %v", err)
@@ -160,11 +160,11 @@ func TestISO42001CheckResponse(t *testing.T) {
 	if findings == nil {
 		// CheckResponse returns empty findings - expected behavior
 	}
-	
+
 	// Test with response
 	findings, err = fw.CheckResponse(context.Background(), &common.HTTPResponse{
 		StatusCode: 200,
-		Body:   []byte("AI model response"),
+		Body:       []byte("AI model response"),
 	})
 	if err != nil {
 		t.Errorf("CheckResponse with data failed: %v", err)
@@ -193,7 +193,7 @@ func TestISO42001GetConfig(t *testing.T) {
 
 func TestISO42001SupportsTier(t *testing.T) {
 	fw := NewISO42001Framework()
-	
+
 	// ISO42001 is enterprise tier
 	if !fw.SupportsTier("Enterprise") {
 		t.Error("ISO42001 should support enterprise tier")
