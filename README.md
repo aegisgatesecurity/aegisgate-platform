@@ -2,7 +2,7 @@
 
 # 🛡️ AegisGate Platform™ — Secure AI Traffic and MCP Servers
 
-[![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=v1.3.7&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
+[![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
