@@ -280,3 +280,4 @@ testlab/.env.*
 
 # Generated SSO integration code (not compilable standalone)
 gen/
+README-OLD.md
