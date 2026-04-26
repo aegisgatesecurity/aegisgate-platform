@@ -3,13 +3,13 @@
 package signature_verification
 
 import (
-	"crypto/ecdsa"
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/ed25519"
-	"crypto/sha256"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"testing"
@@ -421,7 +421,6 @@ func TestVerifySignatureWithValidECDSA(t *testing.T) {
 	}
 }
 
-
 // TestVerifySignatureWithInvalidKeys tests error paths
 func TestVerifySignatureWithInvalidKeys(t *testing.T) {
 	svc := NewSignatureValidationService()
@@ -457,10 +456,7 @@ func TestVerifySignatureWithInvalidKeys(t *testing.T) {
 	}
 }
 
-
 func mustMarshalPKIX(key interface{}) []byte {
 	bytes, _ := x509.MarshalPKIXPublicKey(key)
 	return bytes
 }
-
-

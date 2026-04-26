@@ -104,7 +104,7 @@ func TestSOC2Configure(t *testing.T) {
 
 func TestSOC2Check(t *testing.T) {
 	fw := NewSOC2Framework()
-	
+
 	// Test with empty content
 	result, err := fw.Check(context.Background(), common.CheckInput{})
 	if err != nil {
@@ -116,7 +116,7 @@ func TestSOC2Check(t *testing.T) {
 	if result.Framework != FrameworkName {
 		t.Errorf("expected framework %s, got %s", FrameworkName, result.Framework)
 	}
-	
+
 	// Test with content
 	result, err = fw.Check(context.Background(), common.CheckInput{Content: "test content"})
 	if err != nil {
@@ -129,7 +129,7 @@ func TestSOC2Check(t *testing.T) {
 
 func TestSOC2CheckRequest(t *testing.T) {
 	fw := NewSOC2Framework()
-	
+
 	findings, err := fw.CheckRequest(context.Background(), &common.HTTPRequest{})
 	if err != nil {
 		t.Errorf("CheckRequest failed: %v", err)
@@ -137,7 +137,7 @@ func TestSOC2CheckRequest(t *testing.T) {
 	if findings == nil {
 		// CheckRequest returns empty findings - expected behavior
 	}
-	
+
 	// Test with request
 	findings, err = fw.CheckRequest(context.Background(), &common.HTTPRequest{
 		Method: "POST",
@@ -152,7 +152,7 @@ func TestSOC2CheckRequest(t *testing.T) {
 
 func TestSOC2CheckResponse(t *testing.T) {
 	fw := NewSOC2Framework()
-	
+
 	findings, err := fw.CheckResponse(context.Background(), &common.HTTPResponse{})
 	if err != nil {
 		t.Errorf("CheckResponse failed: %v", err)
@@ -160,11 +160,11 @@ func TestSOC2CheckResponse(t *testing.T) {
 	if findings == nil {
 		// CheckResponse returns empty findings - expected behavior
 	}
-	
+
 	// Test with response
 	findings, err = fw.CheckResponse(context.Background(), &common.HTTPResponse{
 		StatusCode: 200,
-		Body:   []byte("response body"),
+		Body:       []byte("response body"),
 	})
 	if err != nil {
 		t.Errorf("CheckResponse with data failed: %v", err)
@@ -193,7 +193,7 @@ func TestSOC2GetConfig(t *testing.T) {
 
 func TestSOC2SupportsTier(t *testing.T) {
 	fw := NewSOC2Framework()
-	
+
 	// SOC2 is enterprise/premium tier
 	if !fw.SupportsTier("Premium") {
 		t.Error("SOC2 should support Premium tier")

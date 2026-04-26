@@ -437,5 +437,5 @@ func TestPCIDSS_DeveloperTier(t *testing.T) {
 	// Developer tier should have PCI-DSS enabled
 	enabled := adapter.IsFrameworkEnabledForTier(FrameworkPCIDSS, tier.TierDeveloper)
 	if !enabled {
-}
+	}
 }
