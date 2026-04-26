@@ -390,8 +390,8 @@ Contributions welcome under inbound=outbound model. See [CONTRIBUTING.md](CONTRI
 
 | Version | Status |
 |---------|--------|
-| **v1.3.6** | ✅ **Current** — Supported |
-| v1.3.5 | ❌ Deprecated |
+| **v1.3.7** | ✅ **Current** — Supported |
+| **v1.3.6** | ❌ Deprecated |
 | < v1.3.5 | ❌ Deprecated |
 
 ---
