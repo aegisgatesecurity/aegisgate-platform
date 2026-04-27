@@ -15,9 +15,7 @@
 
 ---
 
-## The Pitch
-
-> **"One platform. Complete AI security. From HTTP APIs to MCP agents."**
+---
 
 Your AI infrastructure is more than prompts. It's HTTP APIs, MCP agents, RAG pipelines, and third-party LLM integrations—each a potential attack vector.
 
