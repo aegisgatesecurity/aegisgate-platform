@@ -15,8 +15,6 @@
 
 ---
 
----
-
 Your AI infrastructure is more than prompts. It's HTTP APIs, MCP agents, RAG pipelines, and third-party LLM integrations—each a potential attack vector.
 
 AegisGate secures **every AI interaction point**: bidirectional API scanning, MCP session isolation, and compliance enforcement.
