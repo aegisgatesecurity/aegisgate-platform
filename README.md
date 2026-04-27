@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ AegisGate Platform™ — Secure AI Traffic and MCP Servers
+# 🛡️ AegisGate Platform™ — Secure Every AI Interaction
 
 [![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
@@ -17,11 +17,20 @@
 
 ## The Pitch
 
-> **"We built a 19MB proxy that catches 95%+ of MCP supply chain attacks."**
+> **"One platform. Complete AI security. From HTTP APIs to MCP agents."**
 
-When [Ox Security called MCP "the mother of all AI supply chain attacks"](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains), they were right. But their solution—centralized registries and vendor audits—is expensive and slow.
+Your AI infrastructure is more than prompts. It's HTTP APIs, MCP agents, RAG pipelines, and third-party LLM integrations—each a potential attack vector.
 
-AegisGate Platform™ is infrastructure you deploy today. It inspects every MCP tool call, scans for secrets and PII, enforces RBAC, and logs everything. MITRE ATLAS detection rules always free.
+AegisGate secures **every AI interaction point**: bidirectional API scanning, MCP session isolation, and compliance enforcement.
+
+When [Ox Security called MCP "the mother of all AI supply chain attacks"](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/), they were right. Their solution: expensive registries and vendor audits. Ours: deployable infrastructure in 60 seconds.
+
+| 🌐 AI API Security | 🔗 MCP Protocol Protection |
+|---------------------|---------------------------|
+| 144+ detection patterns | Session authentication + isolation |
+| Bidirectional request/response scanning | 8 guardrails active |
+| Real-time threat blocking | MITRE ATLAS enforcement |
+| PII, secrets, API key detection | Tool authorization with risk matrix |
 
 ---
 
