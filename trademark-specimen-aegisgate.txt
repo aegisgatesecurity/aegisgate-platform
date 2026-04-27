@@ -1,0 +1,119 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 612 792
+%%Pages: 1
+%%PageSize: letter
+
+% Simple PDF Generator for AegisGate Trademark Specimen
+% This is a minimal PDF structure
+
+% Set up fonts and positioning
+/Helvetica findfont 12 scalefont setfont
+/Helvetica-Bold findfont 16 scalefont setfont
+/Helvetica-Bold findfont 24 scalefont setfont
+
+% Page dimensions: 612 x 792 points
+
+% Function to draw text at position
+/textAt { moveto show } def
+
+% Header - AegisGate Trademark
+72 720 moveto
+/Helvetica-Bold findfont 24 scalefont setfont
+(AegisGate Platform™) show
+
+72 700 moveto
+/Helvetica findfont 10 scalefont setfont
+(Trademark Specimen - Use in Commerce) show
+
+% Divider line
+72 690 moveto
+0 -2 lineto
+stroke
+
+% Date
+72 670 moveto
+(Date of First Commercial Use: April 27, 2026) show
+
+% Service Description
+72 640 moveto
+/Helvetica-Bold findfont 14 scalefont setfont
+(Description of Services:) show
+
+72 620 moveto
+/Helvetica findfont 10 scalefont setfont
+(AegisGate Security Platform™ provides AI security gateway services,) show
+72 608 moveto
+(including: MCP protocol protection, HTTP proxy security, threat detection,) show
+72 596 moveto
+(compliance framework enforcement, and enterprise authentication services.) show
+
+% Trademark Usage Evidence
+72 560 moveto
+/Helvetica-Bold findfont 14 scalefont setfont
+(Specimen Description:) show
+
+72 540 moveto
+/Helvetica findfont 10 scalefont setfont
+(The AegisGate Platform™ mark appears in the following commercial contexts:) show
+
+72 520 moveto
+1. Product name on software binary and documentation
+72 505 moveto
+2. Service branding on website: https://aegisgatesecurity.io
+72 490 moveto
+3. GitHub repository: https://github.com/aegisgatesecurity/aegisgate-platform
+72 475 moveto
+4. Docker Hub distribution: ghcr.io/aegisgatesecurity/aegisgate-platform
+72 460 moveto
+5. Version identification in command-line interface
+72 445 moveto
+6. Software UI headers and terminal output
+72 430 moveto
+7. Security vulnerability documentation and blog posts
+
+% Product Version
+72 400 moveto
+/Helvetica-Bold findfont 14 scalefont setfont
+(Product Information:) show
+
+72 380 moveto
+/Helvetica findfont 10 scalefont setfont
+(Product Name: AegisGate Platform™) show
+72 368 moveto
+(Version: v1.3.7) show
+72 356 moveto
+(Release Date: April 27, 2026) show
+72 344 moveto
+(License: Apache 2.0 Open Source) show
+72 332 moveto
+(Distribution: Docker container (19.1MB)) show
+
+% Usage in Commerce
+72 300 moveto
+/Helvetica-Bold findfont 14 scalefont setfont
+(Evidence of Use in Commerce:) show
+
+72 280 moveto
+/The AegisGate Platform™ mark is used commercially to identify) show
+72 268 moveto
+/software services in the field of cybersecurity and AI security.) show
+72 256 moveto
+(The mark appears in product documentation, software interfaces,) show
+72 244 moveto
+(website branding, and distribution channels to identify the source) show
+72 232 moveto
+(of security services to consumers.)
+
+% Footer
+72 100 moveto
+0 -2 lineto stroke
+72 80 moveto
+/Symbol findfont 12 scalefont setfont
+(™) show
+72 68 moveto
+/Helvetica findfont 10 scalefont setfont
+(AegisGate Security, LLC - www.aegisgatesecurity.io) show
+
+% End
+showpage
+%%EOF
