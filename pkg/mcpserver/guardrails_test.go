@@ -1050,3 +1050,56 @@ func TestGuardrailHandler_DirectToolCall(t *testing.T) {
 		t.Errorf("Expected 1 active session, got %d", stats.ActiveSessions)
 	}
 }
+
+// TestStarterModeFeature tests that starter_mode feature flag reduces rate limits
+func TestStarterModeFeature(t *testing.T) {
+	// Test that Starter tier with starter_mode gets 150 RPM instead of 500 RPM
+	
+	// Developer tier without starter_mode = 300 MCP RPM
+	developerCfg := DefaultGuardrailConfig(tier.TierDeveloper)
+	gDev := NewGuardrailMiddleware(developerCfg, "test-server")
+	devStats := gDev.Stats()
+	if devStats.RateLimitRPM != 300 {
+		t.Errorf("Developer tier RPM: expected 300, got %d", devStats.RateLimitRPM)
+	}
+	
+	// Developer tier with starter_mode = 150 RPM
+	starterCfg := DefaultGuardrailConfig(tier.TierDeveloper)
+	starterCfg.Features = []string{"starter_mode"}
+	gStarter := NewGuardrailMiddleware(starterCfg, "test-server")
+	starterStats := gStarter.Stats()
+	if starterStats.RateLimitRPM != 150 {
+		t.Errorf("Starter mode RPM: expected 150, got %d", starterStats.RateLimitRPM)
+	}
+	
+	// Community tier should not be affected by starter_mode
+	communityCfg := DefaultGuardrailConfig(tier.TierCommunity)
+	communityCfg.Features = []string{"starter_mode"}
+	gComm := NewGuardrailMiddleware(communityCfg, "test-server")
+	commStats := gComm.Stats()
+	if commStats.RateLimitRPM != 60 {
+		t.Errorf("Community tier RPM (should stay 60): expected 60, got %d", commStats.RateLimitRPM)
+	}
+}
+
+// TestHasFeatureHelper tests the hasFeature helper function
+func TestHasFeatureHelper(t *testing.T) {
+	tests := []struct {
+		features []string
+		target   string
+		expected bool
+	}{
+		{[]string{"starter_mode"}, "starter_mode", true},
+		{[]string{"starter_mode"}, "other", false},
+		{[]string{"a", "b", "starter_mode"}, "starter_mode", true},
+		{[]string{}, "starter_mode", false},
+		{nil, "starter_mode", false},
+	}
+	
+	for _, tt := range tests {
+		result := hasFeature(tt.features, tt.target)
+		if result != tt.expected {
+			t.Errorf("hasFeature(%v, %q) = %v, expected %v", tt.features, tt.target, result, tt.expected)
+		}
+	}
+}

@@ -183,8 +183,9 @@ func (m *Manager) Check(content string, direction string) (*Result, error) {
 		Metadata:          map[string]string{"direction": direction},
 	}
 
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+	// Use write lock because we also modify reportHistory
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	for framework, checker := range m.frameworks {
 		result.FrameworksChecked = append(result.FrameworksChecked, framework)
