@@ -300,3 +300,5 @@ blog-*/
 demo-site/
 trademark-specimen-*.html
 trademark-specimen-*.txt
+# Sprint 6-7 utilities (not production-ready)
+cmd/customer-portal/

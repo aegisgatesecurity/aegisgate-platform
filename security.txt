@@ -1,0 +1,88 @@
+# AegisGate Security Policy
+# https://security.txt.net
+# Generated: 2026-04-29
+
+# ============================================================================
+# CONTACT INFORMATION
+# ============================================================================
+# For security vulnerabilities and responsible disclosure, contact us at:
+Contact: mailto:security@aegisgatesecurity.io
+
+# ============================================================================
+# DISCLOSURE POLICY
+# ============================================================================
+# We follow a coordinated disclosure process:
+# 1. We request that vulnerabilities be reported privately
+# 2. We acknowledge receipt within 48 hours
+# 3. We target a 7-day response window for initial assessment
+# 4. We aim to remediate within 90 days
+# 5. Public disclosure occurs after fixes are released
+Expires: 2027-01-01T00:00:00Z
+
+# ============================================================================
+# PGP ENCRYPTION (for sensitive communications)
+# ============================================================================
+# For encrypted communications, use our PGP key available at:
+Encryption: https://keys.openpgp.org/search?q=security@aegisgatesecurity.io
+
+# ============================================================================
+# SECURITY LINKS
+# ============================================================================
+# Our security documentation:
+Policy: https://aegisgatesecurity.io/docs/security/
+
+# Our public key:
+# PGP Key ID: [Available at keys.openpgp.org]
+
+# ============================================================================
+# ACKNOWLEDGMENTS
+# ============================================================================
+# We maintain a hall of fame for security researchers who report vulnerabilities.
+# We recognize responsible disclosure in our CHANGELOG with permission.
+Acknowledgments: https://github.com/aegisgatesecurity/aegisgate-platform/security/advisories
+
+# ============================================================================
+# SERVICES
+# ============================================================================
+# Infrastructure endpoints for security scanning:
+# - Production API: https://api.aegisgatesecurity.io
+# - Status Page: https://status.aegisgatesecurity.io
+# - Documentation: https://docs.aegisgatesecurity.io
+
+# ============================================================================
+# COMPLIANCE
+# ============================================================================
+# Our security controls are aligned with:
+# - SOC 2 Type II (in progress)
+# - HIPAA (Business Associate Agreement available)
+# - PCI-DSS (Service Provider controls documented)
+# - GDPR (Data Processing Agreement available)
+# - NIST AI RMF
+# - MITRE ATLAS
+
+# ============================================================================
+# INCIDENT RESPONSE
+# ============================================================================
+# In case of a security incident:
+# 1. Email: security@aegisgatesecurity.io
+# 2. Expected Response: 24 hours for critical issues
+# 3. For urgent incidents, please include "URGENT" in subject line
+
+# ============================================================================
+# PERMISSIONS
+# ============================================================================
+# Safe harbor for security research:
+# We authorize the following activities:
+Permissions-Supported: coordinated-disclosure
+
+# ============================================================================
+# PREFERRED LANGUAGES
+# ============================================================================
+Preferred-Languages: en
+
+# ============================================================================
+# LAST UPDATED
+# ============================================================================
+# This policy was last updated on: 2026-04-29
+# Check our security page for the latest version
+Canonical: https://aegisgatesecurity.io/.well-known/security.txt
