@@ -281,3 +281,22 @@ testlab/.env.*
 # Generated SSO integration code (not compilable standalone)
 gen/
 README-OLD.md
+
+# =============================================================================
+# SPRINT 6 - BILLING INFRASTRUCTURE (Defer until production-ready)
+# =============================================================================
+
+# Billing/stripe integration (requires credentials)
+pkg/billing/
+
+# Admin dashboard (internal tooling)
+cmd/admin/
+
+# Legal documents (for attorney review, not for git)
+legal-docs/
+
+# Archived/removed content
+blog-*/
+demo-site/
+trademark-specimen-*.html
+trademark-specimen-*.txt

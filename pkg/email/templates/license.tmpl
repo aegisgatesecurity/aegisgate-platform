@@ -1,0 +1,42 @@
+{{if .CustomerName}}Dear {{.CustomerName}},{{else}}Hello,{{end}}
+
+Thank you for subscribing to AegisGate {{.Tier}} Edition!
+
+Your license key is:
+
+{{.LicenseKey}}
+
+LICENSE DETAILS
+━━━━━━━━━━━━━━
+Tier:      {{.Tier}}
+Issued:    {{.IssuedAt}}
+Expires:   {{.ExpiresAt}}
+{{- if .Features}}
+Features:  {{range .Features}}{{.}} {{end}}
+{{- end}}
+
+QUICK START
+━━━━━━━━━━
+1. Save your license key securely
+2. Deploy AegisGate:
+   docker run -e AEGISGATE_LICENSE_KEY="{{.LicenseKey}}" aegisgate/platform:latest
+
+3. Verify your license:
+   curl -H "Authorization: Bearer {{.LicenseKey}}" http://localhost:8080/api/v1/health
+
+GETTING STARTED
+━━━━━━━━━━━━━━━
+📖 Documentation: https://aegisgatesecurity.io/docs/
+🔧 Installation: https://aegisgatesecurity.io/docs/installation/
+❓ Support: {{.SupportEmail}}
+
+Need help? Our team is ready to assist you.
+
+Best regards,
+The AegisGate Security Team
+{{if .CompanyName}}{{.CompanyName}}{{end}}
+{{if .CompanyURL}}{{.CompanyURL}}{{end}}
+
+---
+This email was sent by {{.CompanyName}}.
+{{if .CompanyURL}}{{.CompanyURL}}{{end}}
