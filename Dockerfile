@@ -35,6 +35,9 @@ RUN mkdir -p /data/certs /data/audit /data/logs && \
 # Copy default Community tier config (embedded in binary, but also available on disk)
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
 
+# Copy security.txt for vulnerability disclosure (RFC 9116)
+COPY --from=builder /build/aegisgate-platform/security.txt /var/www/html/.well-known/security.txt
+
 # Declare /data as the persistence volume
 VOLUME ["/data"]
 
