@@ -43,6 +43,20 @@ const (
 	ErrRateLimitExceeded = "rate_limit_exceeded"
 )
 
+// hasFeature checks if a feature flag is present in the features list.
+// Used for tier-specific behavior without adding new tier constants.
+func hasFeature(features []string, target string) bool {
+	if len(features) == 0 {
+		return false
+	}
+	for _, f := range features {
+		if f == target {
+			return true
+		}
+	}
+	return false
+}
+
 // --------------------------------------------------------------------------
 // sessionState tracks per-session guardrail counters
 // --------------------------------------------------------------------------
@@ -73,6 +87,10 @@ type GuardrailConfig struct {
 
 	// AuditViolations controls whether limit violations are sent to the audit log
 	AuditViolations bool
+
+	// Features contains optional feature flags for tier-specific behavior
+	// Examples: "starter_mode" - reduces rate limits for $29 Starter tier
+	Features []string
 }
 
 // DefaultGuardrailConfig returns sensible defaults for the given tier
@@ -127,6 +145,12 @@ type GuardrailMiddleware struct {
 // NewGuardrailMiddleware creates a new guardrail middleware for the given tier
 func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMiddleware {
 	rpm := cfg.PlatformTier.RateLimitMCP()
+
+	// Starter tier ($29/mo) gets reduced rate limits while keeping Developer features
+	// Only applies when platform tier is Developer (Starter uses Developer tier in code)
+	if cfg.PlatformTier == tier.TierDeveloper && hasFeature(cfg.Features, "starter_mode") {
+		rpm = 150 // Starter: 150 RPM instead of 300 RPM for Developer tier
+	}
 
 	// Initialize tool authorizer matrix with default policies
 	toolAuth := toolauth.NewMatrix()

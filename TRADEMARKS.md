@@ -35,4 +35,4 @@ commercial license terms. Contact sales@aegisgatesecurity.io.
 
 ## Questions
 
-For trademark usage questions, contact legal@aegisgatesecurity.io.
+For trademark usage questions, contact support@aegisgatesecurity.io.
