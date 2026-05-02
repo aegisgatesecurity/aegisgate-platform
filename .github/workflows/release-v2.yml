@@ -81,7 +81,7 @@ jobs:
           cosign sign-blob --yes --bundle aegisgate-platform.bundle aegisgate-platform
 
       - name: Upload to Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           draft: false
@@ -267,7 +267,7 @@ jobs:
           echo "✅ SBOM attestation verified"
 
       - name: Upload SBOM to Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           files: |
