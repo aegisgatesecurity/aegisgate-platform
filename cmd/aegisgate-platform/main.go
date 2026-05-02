@@ -83,7 +83,7 @@ func main() {
 	log.Printf("AegisGate Security Platform v%s (commit: %s) starting...", version, commit)
 
 	// Set build info for Prometheus metrics
-	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOArch, commit)
+	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOARCH, commit)
 
 	// ============================================================
 	// License validation — the ONLY source of truth for tier
