@@ -80,7 +80,7 @@ func (m *Manager) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if redirect == "" {
 		redirect = "/"
 	}
-	http.Redirect(w, r, redirect, http.StatusFound) // lgtm[go/unvalidated-url-redirection] — redirect defaults to "/" when empty; production uses SSO/OIDC
+	http.Redirect(w, r, redirect, http.StatusFound) // codeql[go/unvalidated-url-redirection] — redirect defaults to "/" when empty; production uses SSO/OIDC
 }
 
 // handleAuthStatus returns authentication status

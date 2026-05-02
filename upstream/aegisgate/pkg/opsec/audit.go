@@ -373,9 +373,9 @@ type FileStorageBackend struct {
 }
 
 // NewFileStorageBackend creates a new file-based storage backend
-// lgtm[go/path-injection] — basePath comes from server config, not user input; directory entries are validated with .json suffix check
+// codeql[go/path-injection] — basePath comes from server config, not user input; directory entries are validated with .json suffix check
 func NewFileStorageBackend(basePath string, maxFileSize int64) (*FileStorageBackend, error) {
-	if err := os.MkdirAll(basePath, 0700); err != nil { // lgtm[go/path-injection] — basePath is server-configured, not user-controlled
+	if err := os.MkdirAll(basePath, 0700); err != nil { // codeql[go/path-injection] — basePath is server-configured, not user-controlled
 		return nil, fmt.Errorf("failed to create audit directory: %w", err)
 	}
 
@@ -511,7 +511,7 @@ func (fs *FileStorageBackend) loadEntries() error {
 			continue
 		}
 
-		filename := filepath.Join(fs.basePath, entry.Name()) // lgtm[go/path-injection] — entry.Name() comes from os.ReadDir of the configured basePath, not user input
+		filename := filepath.Join(fs.basePath, entry.Name()) // codeql[go/path-injection] — entry.Name() comes from os.ReadDir of the configured basePath, not user input
 		data, err := os.ReadFile(filename)
 		if err != nil {
 			continue
