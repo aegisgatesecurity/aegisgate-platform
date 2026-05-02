@@ -25,6 +25,7 @@ jobs:
         run: |
           echo "## DCO Verification" >> $GITHUB_STEP_SUMMARY
           MISSING=0
+          BOT_COMMITS=0
           # For PRs: check all commits between base and head (strict enforcement)
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             COMMITS=$(git log --format="%H" origin/${{ github.base_ref }}..HEAD)
@@ -35,11 +36,19 @@ jobs:
             STRICT=0
           fi
           for COMMIT in $COMMITS; do
+            AUTHOR=$(git log --format="%an" -1 $COMMIT)
+            # Exempt bot authors (dependabot, renovate, etc.) from DCO
+            if echo "$AUTHOR" | grep -qiE '(dependabot|renovate|github-actions)\[bot\]$|bot$'; then
+              SUBJECT=$(git log --format="%s" -1 $COMMIT)
+              echo "⏭️ Skipping DCO for bot commit: $SUBJECT ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+              BOT_COMMITS=$((BOT_COMMITS + 1))
+              continue
+            fi
             SIGNOFF=$(git log --format="%B" -1 $COMMIT | grep -c "Signed-off-by:" || true)
             if [ "$SIGNOFF" -eq 0 ]; then
-              AUTHOR=$(git log --format="%an <%ae>" -1 $COMMIT)
+              EMAIL=$(git log --format="%ae" -1 $COMMIT)
               SUBJECT=$(git log --format="%s" -1 $COMMIT)
-              echo "❌ Missing Signed-off-by: $SUBJECT ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+              echo "❌ Missing Signed-off-by: $SUBJECT ($AUTHOR <$EMAIL>)" >> $GITHUB_STEP_SUMMARY
               echo "   Fix: git commit --amend -s" >> $GITHUB_STEP_SUMMARY
               MISSING=1
             fi
@@ -54,7 +63,11 @@ jobs:
               echo "⚠️ DCO advisory: commits without Signed-off-by detected"
             fi
           else
-            echo "✅ All commits have valid Signed-off-by lines" >> $GITHUB_STEP_SUMMARY
+            if [ "$BOT_COMMITS" -gt 0 ]; then
+              echo "✅ All human commits have Signed-off-by; $BOT_COMMITS bot commit(s) exempted" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ All commits have valid Signed-off-by lines" >> $GITHUB_STEP_SUMMARY
+            fi
           fi
 
   test:
