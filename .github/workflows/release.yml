@@ -176,7 +176,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build, sign-binary, sbom-attest]
+    needs: [build, build-image, sign-binary]
     permissions:
       contents: write
     steps:
@@ -204,7 +204,6 @@ jobs:
 
   # Job 5: Generate and Attest SBOM
   sbom-attest:
-    needs: [build-container]
     name: SBOM Attestation
     runs-on: ubuntu-latest
     permissions:
