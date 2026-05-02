@@ -178,7 +178,7 @@ func DefaultConfig() *Config {
 
 // LoadFromFile loads configuration from a YAML file, applying defaults for missing fields
 func LoadFromFile(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- Config path comes from CLI flag or hardcoded default, not user input
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Config file doesn't exist — use defaults with env overrides
