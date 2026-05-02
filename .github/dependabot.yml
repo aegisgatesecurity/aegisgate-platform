@@ -3,7 +3,7 @@ version: 2
 enable-beta-ecosystems: true
 
 updates:
-  # Go modules
+  # Go modules — ignore vendored upstream modules (no external repo)
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
@@ -15,6 +15,12 @@ updates:
       - "go"
     reviewers:
       - "aegisgatesecurity"
+    ignore:
+      # Vendored upstream — no external repo, local replace only
+      - dependency-name: "github.com/aegisgatesecurity/aegisgate"
+      - dependency-name: "github.com/aegisgatesecurity/aegisgate/*"
+      - dependency-name: "github.com/aegisguardsecurity/aegisguard"
+      - dependency-name: "github.com/aegisguardsecurity/aegisguard/*"
 
   # Docker base images
   - package-ecosystem: "docker"
