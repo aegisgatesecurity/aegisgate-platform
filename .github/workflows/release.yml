@@ -209,7 +209,7 @@ jobs:
 
   # Job 5: Generate and Attest SBOM
   sbom-attest:
-    needs: [build-container]
+    needs: [build-image]
     name: SBOM Attestation
     runs-on: ubuntu-latest
     permissions:
