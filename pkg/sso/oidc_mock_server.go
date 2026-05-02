@@ -28,6 +28,10 @@ type MockOIDCServer struct {
 	ClientID     string
 	ClientSecret string
 
+	// AllowedRedirectURIs is an allowlist of valid redirect URIs.
+	// If empty, the server defaults to allowing the server's own origin.
+	AllowedRedirectURIs []string
+
 	// Custom handlers
 	CustomAuthHandler     func(w http.ResponseWriter, r *http.Request)
 	CustomTokenHandler    func(w http.ResponseWriter, r *http.Request)
@@ -84,6 +88,25 @@ func (m *MockOIDCServer) handleDiscovery(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// isAllowedRedirect checks whether redirectURI is in the AllowedRedirectURIs allowlist.
+// If no allowlist is configured, the server's own origin is used as the default allowlist.
+func (m *MockOIDCServer) isAllowedRedirect(redirectURI string) bool {
+	if len(m.AllowedRedirectURIs) > 0 {
+		for _, allowed := range m.AllowedRedirectURIs {
+			if redirectURI == allowed {
+				return true
+			}
+		}
+		return false
+	}
+	// Default: only allow redirects to the mock server's own origin
+	parsed, err := url.Parse(redirectURI)
+	if err != nil {
+		return false
+	}
+	return parsed.Host == m.Server.Listener.Addr().String() || parsed.Host == ""
+}
+
 // handleAuthorize handles authorization requests
 func (m *MockOIDCServer) handleAuthorize(w http.ResponseWriter, r *http.Request) {
 	if m.CustomAuthHandler != nil {
@@ -94,6 +117,11 @@ func (m *MockOIDCServer) handleAuthorize(w http.ResponseWriter, r *http.Request)
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	if redirectURI == "" {
 		http.Error(w, "redirect_uri required", http.StatusBadRequest)
+		return
+	}
+
+	if !m.isAllowedRedirect(redirectURI) {
+		http.Error(w, "invalid redirect_uri", http.StatusBadRequest)
 		return
 	}
 

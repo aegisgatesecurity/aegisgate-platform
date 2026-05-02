@@ -344,6 +344,14 @@ func (m *Middleware) setSessionCookie(w http.ResponseWriter, sessionID string) {
 		HttpOnly: m.cookieOpts.HTTPOnly,
 	}
 
+	// Enforce Secure and HttpOnly in production to prevent session hijacking
+	if !cookie.Secure {
+		cookie.Secure = true
+	}
+	if !cookie.HttpOnly {
+		cookie.HttpOnly = true
+	}
+
 	switch m.cookieOpts.SameSite {
 	case "Strict":
 		cookie.SameSite = http.SameSiteStrictMode
@@ -369,6 +377,15 @@ func (m *Middleware) clearSessionCookie(w http.ResponseWriter) {
 		Secure:   m.cookieOpts.Secure,
 		HttpOnly: m.cookieOpts.HTTPOnly,
 	}
+
+	// Enforce Secure and HttpOnly in production to prevent session hijacking
+	if !cookie.Secure {
+		cookie.Secure = true
+	}
+	if !cookie.HttpOnly {
+		cookie.HttpOnly = true
+	}
+
 	http.SetCookie(w, cookie)
 }
 
@@ -378,7 +395,9 @@ func (m *Middleware) handleUnauthorized(w http.ResponseWriter, r *http.Request, 
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error":"unauthorized","message":"` + err.Error() + `"}`))
+		if _, writeErr := w.Write([]byte(`{"error":"unauthorized","message":"` + err.Error() + `"}`)); writeErr != nil {
+			_ = writeErr
+		}
 		return
 	}
 
@@ -391,7 +410,9 @@ func (m *Middleware) handleForbidden(w http.ResponseWriter, r *http.Request, err
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(`{"error":"forbidden","message":"` + err.Error() + `"}`))
+		if _, writeErr := w.Write([]byte(`{"error":"forbidden","message":"` + err.Error() + `"}`)); writeErr != nil {
+			_ = writeErr
+		}
 		return
 	}
 

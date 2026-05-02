@@ -23,9 +23,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -895,7 +897,12 @@ func main() {
 			return
 		}
 
-		http.Redirect(w, r, logoutURL, http.StatusFound)
+		// #nosec G101 -- Validate redirect URL to prevent open redirects
+		if !isSafeRedirectURL(logoutURL, r) {
+			http.Redirect(w, r, "/ui/", http.StatusFound)
+		} else {
+			http.Redirect(w, r, logoutURL, http.StatusFound)
+		}
 	})
 
 	// Serve index.html at dashboard root
@@ -1017,6 +1024,34 @@ func main() {
 	}
 
 	log.Println("Platform stopped gracefully")
+}
+
+// isSafeRedirectURL validates that a redirect URL is same-origin or a safe path.
+// Prevents open redirect vulnerabilities by ensuring redirect targets are trusted.
+func isSafeRedirectURL(rawURL string, r *http.Request) bool {
+	// Relative paths starting with "/" are safe (same-origin)
+	if strings.HasPrefix(rawURL, "/") && !strings.HasPrefix(rawURL, "//") {
+		return true
+	}
+
+	// Parse the URL to inspect its host
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+
+	// If the URL has no host, it's a relative URL — allow it
+	if u.Host == "" {
+		return true
+	}
+
+	// Check same-origin: the redirect host must match the request host
+	if u.Host == r.Host {
+		return true
+	}
+
+	// Reject external URLs to prevent open redirects
+	return false
 }
 
 // verifyServicesReady checks that all required services are listening
