@@ -1,18 +1,7 @@
 # ============================================================================
 # AegisGate Security Platform - Release Workflow v2
 # ============================================================================
-# Fixed version with proper image digest handling
-# 
-# Key features:
-# - Binary builds with SHA256 checksums (direct to release)
-# - Container image builds with Cosign keyless signing
-# - SBOM generation with Syft
-# - Attestation to image (provenance)
-# - Direct upload to GitHub Release (no intermediate artifacts)
-# 
-# Usage:
-# - Tag: git tag v1.3.8 && git push origin v1.3.8
-# - Manual: gh workflow run release-v2.yml -f version=v1.3.8
+# Fixed version with proper SBOM handling
 # ============================================================================
 
 name: Release & Signing v2
@@ -21,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., v1.3.8)'
+        description: 'Release version (e.g., 1.3.8)'
         required: true
         type: string
   push:
@@ -61,15 +50,15 @@ jobs:
         id: version
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          VERSION="${VERSION#v}"  # Remove 'v' prefix
+          VERSION="${VERSION#v}"
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Full version tag: v${VERSION}"
+          echo "Building version: v${VERSION}"
 
       - name: Build binary
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
           COMMIT: ${{ github.sha }}
-          BUILD_DATE: ${{ github.event.inputs.build_date || github.event.created_at }}
+          BUILD_DATE: ${{ github.event.created_at }}
         run: |
           mkdir -p dist
           CGO_ENABLED=0 go build \
@@ -100,7 +89,7 @@ jobs:
             --bundle aegisgate-platform.bundle \
             aegisgate-platform
 
-      - name: Upload Binary to Release
+      - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
@@ -136,7 +125,7 @@ jobs:
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
           VERSION="${VERSION#v}"
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Full version tag: v${VERSION}"
+          echo "Building version: v${VERSION}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -148,9 +137,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-
       - name: Build and push image
-        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -215,7 +202,11 @@ jobs:
 
       - name: Generate SBOM
         run: |
-          syft . -o spdxjson -q
+          echo "Generating SBOM..."
+          syft . -o spdxjson=sbom.spdx.json
+          echo "SBOM generated:"
+          ls -la sbom.spdx.json
+          head -20 sbom.spdx.json
 
       - name: Set up Cosign
         uses: sigstore/cosign-installer@v3
@@ -226,6 +217,7 @@ jobs:
         run: |
           IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
           echo "Attesting SBOM to: ${IMAGE_REF}"
+          ls -la sbom.spdx.json
           cosign attest --yes --type spdxjson --predicate sbom.spdx.json ${IMAGE_REF}
 
       - name: Upload SBOM to Release
