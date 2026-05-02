@@ -111,7 +111,7 @@ func (w *responseWriter) WriteHeader(code int) {
 
 func (w *responseWriter) Write(b []byte) (int, error) {
 	w.size += len(b)
-	return w.ResponseWriter.Write(b) // lgtm[go/reflected-xss] — logging response writer: only records response size, does not render HTML
+	return w.ResponseWriter.Write(b) // codeql[go/reflected-xss] — logging response writer: only records response size, does not render HTML
 }
 
 // getClientIP extracts the client IP from the request
