@@ -51,6 +51,8 @@ import (
 
 var (
 	version       = "1.3.7"
+	commit        = "unknown"
+	buildDate     = "unknown"
 	startTime     = time.Now()
 	configFile    = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort     = flag.Int("proxy-port", 8080, "AegisGate proxy port")
@@ -74,14 +76,14 @@ func main() {
 	}
 
 	if *showVersion {
-		fmt.Printf("AegisGate Security Platform %s\n", version)
+		fmt.Printf("AegisGate Security Platform %s (commit: %s, built: %s)\n", version, commit, buildDate)
 		os.Exit(0)
 	}
 
-	log.Printf("AegisGate Security Platform v%s starting...", version)
+	log.Printf("AegisGate Security Platform v%s (commit: %s) starting...", version, commit)
 
 	// Set build info for Prometheus metrics
-	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOARCH)
+	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOArch, commit)
 
 	// ============================================================
 	// License validation — the ONLY source of truth for tier
