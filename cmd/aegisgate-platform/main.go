@@ -1053,17 +1053,19 @@ func main() {
 // Prevents open redirect vulnerabilities by ensuring redirect targets are trusted.
 // codeql[go/bad-redirect-check] — false positive: all bypass vectors are explicitly handled below.
 func isSafeRedirectURL(rawURL string, r *http.Request) bool {
-	// Block protocol-relative URLs that could bypass the "/" check (e.g., "//evil.com")
+	// Block protocol-relative URLs (e.g., "//evil.com", "///evil.com")
 	if strings.HasPrefix(rawURL, "//") {
 		return false
 	}
 
+	// Block backslash-based bypass (e.g., "/\evil.com", "\\evil.com")
+	if strings.Contains(rawURL, "\\") {
+		return false
+	}
+
 	// Relative paths starting with "/" are safe (same-origin)
+	// After the above checks, a "/" prefix guarantees a safe relative path
 	if strings.HasPrefix(rawURL, "/") {
-		// Block backslash-based bypass (e.g., "/\\evil.com" or "///")
-		if strings.Contains(rawURL, "\\") || strings.HasPrefix(rawURL[1:], "/") {
-			return false
-		}
 		return true
 	}
 
