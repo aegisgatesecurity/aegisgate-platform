@@ -42,6 +42,10 @@ RUN mkdir -p /data/certs /data/audit /data/logs && \
 # Copy default Community tier config (embedded in binary, but also available on disk)
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
 
+# Copy billing config template (pricing defaults are embedded in binary via init(),
+# but this template can be customized for different pricing tiers)
+COPY --from=builder /build/aegisgate-platform/pkg/billing/billing-config.example.json /opt/aegisgate-platform/billing-config.json
+
 # Copy security.txt for vulnerability disclosure (RFC 9116)
 COPY --from=builder /build/aegisgate-platform/security.txt /var/www/html/.well-known/security.txt
 
