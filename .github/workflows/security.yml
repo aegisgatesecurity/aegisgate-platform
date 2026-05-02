@@ -297,7 +297,7 @@ jobs:
 
       - name: Upload SBOM to release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             sbom.cyclonedx.json
