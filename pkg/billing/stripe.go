@@ -63,23 +63,21 @@ func getDefaultConfigPath() string {
 }
 
 // LoadBillingConfig loads tier pricing and product configuration from JSON.
-// Falls back to sensible defaults if the config file is missing.
+// Pricing is loaded exclusively from billing-config.json — no prices are hardcoded in source code.
+// The example template (billing-config.example.json) is deployed to /opt/aegisgate-platform/ by the Dockerfile.
 func LoadBillingConfig() error {
 	data, err := os.ReadFile(configPath) // #nosec G304 -- path comes from env var or package default
 	if err != nil {
-		// Config file is optional — use defaults
-		TierPrices = map[string]int64{
-			"starter":      2900,
-			"developer":    7900,
-			"professional": 24900,
-		}
+		// No config file found — pricing requires explicit configuration.
+		// TierPrices starts empty; populate via billing-config.json or AEGISGATE_PRICE_* env vars.
+		TierPrices = map[string]int64{}
 		TierProducts = map[string]string{
 			"starter":      "",
 			"developer":    "",
 			"professional": "",
 			"enterprise":   "",
 		}
-		return nil
+		return fmt.Errorf("billing config not found at %q: pricing requires billing-config.json or AEGISGATE_PRICE_* env vars", configPath)
 	}
 
 	var config billingConfig
@@ -94,7 +92,7 @@ func LoadBillingConfig() error {
 		TierProducts = config.TierProducts
 	}
 
-	// Override with env vars if set (e.g., AEGISGATE_PRICE_STARTER=2900)
+	// Override with env vars if set (e.g., AEGISGATE_PRICE_STARTER=2900 — see billing-config.example.json)
 	for _, tier := range []string{"starter", "developer", "professional"} {
 		if v := os.Getenv("AEGISGATE_PRICE_" + tierToUpper(tier)); v != "" {
 			var price int64
@@ -357,8 +355,8 @@ func (c *StripeClient) GetInvoices(ctx context.Context, customerID string) ([]*I
 		invoice := &Invoice{
 			ID:          fmt.Sprintf("in_test_%d", time.Now().Unix()),
 			CustomerID:  customerID,
-			AmountDue:   7900,
-			AmountPaid:  7900,
+			AmountDue:   TierPrices["developer"],
+			AmountPaid:  TierPrices["developer"],
 			Currency:    "usd",
 			Status:      "paid",
 			Created:     time.Now(),
