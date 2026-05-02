@@ -425,7 +425,15 @@ func (s *AegisGuardMCPScanner) readJSON(conn net.Conn) (*JSONRPCResponse, error)
 		buf := make([]byte, 1024)
 		n, err := conn.Read(buf)
 		if err != nil {
+			// io.EOF means the connection was closed; only return data if we have some
+			if len(jsonBytes) > 0 {
+				break
+			}
 			return nil, fmt.Errorf("failed to read JSON: %w", err)
+		}
+
+		if n == 0 {
+			return nil, fmt.Errorf("failed to read JSON: got zero bytes from connection")
 		}
 
 		jsonBytes = append(jsonBytes, buf[:n]...)
@@ -438,6 +446,10 @@ func (s *AegisGuardMCPScanner) readJSON(conn net.Conn) (*JSONRPCResponse, error)
 
 	// Remove trailing newline and decode
 	jsonBytes = bytes.TrimSpace(jsonBytes)
+
+	if len(jsonBytes) == 0 {
+		return nil, fmt.Errorf("failed to read JSON: empty response")
+	}
 
 	var resp JSONRPCResponse
 	if err := json.Unmarshal(jsonBytes, &resp); err != nil {
