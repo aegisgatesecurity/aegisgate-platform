@@ -1,5 +1,10 @@
 # AegisGate Security Platform - Release Workflow v2
 # ============================================================================
+# Triggers: tag push (v*) or manual dispatch
+# Jobs: build-binary → build-container → sbom-attest
+# Signing: keyless (Sigstore/Fulcio + Rekor) via GitHub OIDC
+# SBOM: Syft SPDX-JSON, attested with Cosign
+# ============================================================================
 
 name: Release & Signing v2
 
@@ -99,6 +104,9 @@ jobs:
       packages: write
       attestations: write
       id-token: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      image_digest: ${{ steps.docker_build.outputs.digest }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -169,7 +177,13 @@ jobs:
 
   # ========================================================================
   # JOB 3: SBOM Generation & Attestation
-  # ========================================================================
+  # ============================================================================
+  # Key fixes from previous failures:
+  #   1. syft -o spdxjson writes file directly (avoids redirect issues)
+  #   2. docker/login-action + COSIGN_EXPERIMENTAL=1 for proper GHCR auth
+  #   3. Uses image digest for attestation (not tag) for collision safety
+  # ============================================================================
+
   sbom-attest:
     name: SBOM Attestation
     runs-on: ubuntu-latest
@@ -179,6 +193,8 @@ jobs:
       packages: write
       attestations: write
       id-token: write
+    env:
+      COSIGN_EXPERIMENTAL: "1"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -197,12 +213,24 @@ jobs:
           VERSION="${VERSION#v}"
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Generate SBOM with Syft
+      - name: Install Syft
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-          syft dir:. -o spdxjson > sbom.spdx.json
-          echo "SBOM generated: $(wc -l < sbom.spdx.json) lines"
-          ls -la sbom.spdx.json
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin v1.19.0
+          syft version
+
+      - name: Generate SBOM
+        id: sbom
+        run: |
+          # Use -o flag to write directly (avoids shell redirect issues with empty files)
+          syft dir:. -o spdxjson --output sbom.spdx.json
+          # Verify the SBOM was actually created and is valid JSON
+          if [ ! -s sbom.spdx.json ]; then
+            echo "::error::SBOM file is empty or missing"
+            exit 1
+          fi
+          echo "✅ SBOM generated: $(wc -l < sbom.spdx.json) lines, $(wc -c < sbom.spdx.json) bytes"
+          # Quick sanity check it's valid JSON
+          python3 -c "import json; json.load(open('sbom.spdx.json')); print('SBOM JSON valid')"
 
       - name: Set up Cosign
         uses: sigstore/cosign-installer@v3
@@ -210,21 +238,32 @@ jobs:
       - name: Attest SBOM to image
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
+          IMAGE_DIGEST: ${{ needs.build-container.outputs.image_digest }}
         run: |
-          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          # Use digest-based reference for attestation (more reliable than tag)
+          if [ -n "${IMAGE_DIGEST}" ]; then
+            IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
+          else
+            IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          fi
           echo "Attesting SBOM to: ${IMAGE_REF}"
-          cosign attest --yes --type spdxjson --predicate sbom.spdx.json ${IMAGE_REF}
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${IMAGE_REF}"
 
       - name: Verify SBOM attestation
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
+          IMAGE_DIGEST: ${{ needs.build-container.outputs.image_digest }}
         run: |
-          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          if [ -n "${IMAGE_DIGEST}" ]; then
+            IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
+          else
+            IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          fi
           cosign verify-attestation \
             --type spdxjson \
             --certificate-identity-regexp "https://github.com/.*" \
             --certificate-oidc-issuer-regexp "https://token.actions.githubusercontent.com" \
-            ${IMAGE_REF}
+            "${IMAGE_REF}"
           echo "✅ SBOM attestation verified"
 
       - name: Upload SBOM to Release
