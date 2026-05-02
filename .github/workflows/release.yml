@@ -230,9 +230,7 @@ jobs:
 
       - name: Generate SBOM
         run: |
-          syft scan dir:./ \
-            --format spdxjson \
-            --file sbom.spdx.json
+          syft . --format spdxjson --file sbom.spdx.json
 
       - name: Set up Cosign
         uses: sigstore/cosign-installer@v3
