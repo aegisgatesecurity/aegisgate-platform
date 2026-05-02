@@ -68,7 +68,7 @@ jobs:
           gosec -fmt sarif -out gosec-results.sarif ./... 2>&1 | tee gosec-results.txt
 
       - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: gosec-results.sarif
@@ -110,7 +110,7 @@ jobs:
           exit-code: '0'
 
       - name: Upload Trivy FS SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-fs-results.sarif
@@ -129,7 +129,7 @@ jobs:
           exit-code: '0'
 
       - name: Upload Trivy Image SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-image-results.sarif
