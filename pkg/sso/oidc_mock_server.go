@@ -132,7 +132,7 @@ func (m *MockOIDCServer) handleAuthorize(w http.ResponseWriter, r *http.Request)
 	q.Set("state", r.URL.Query().Get("state"))
 	u.RawQuery = q.Encode()
 
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	http.Redirect(w, r, u.String(), http.StatusFound) // #nosec G710 -- redirectURI validated by isAllowedRedirect above
 }
 
 // handleToken handles token exchange requests

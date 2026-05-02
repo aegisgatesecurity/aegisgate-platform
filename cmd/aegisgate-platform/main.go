@@ -897,11 +897,10 @@ func main() {
 			return
 		}
 
-		// #nosec G101 -- Validate redirect URL to prevent open redirects
 		if !isSafeRedirectURL(logoutURL, r) {
-			http.Redirect(w, r, "/ui/", http.StatusFound)
+			http.Redirect(w, r, "/ui/", http.StatusFound) // #nosec G710 -- safe fallback redirect
 		} else {
-			http.Redirect(w, r, logoutURL, http.StatusFound)
+			http.Redirect(w, r, logoutURL, http.StatusFound) // #nosec G710 -- validated by isSafeRedirectURL
 		}
 	})
 
@@ -1020,7 +1019,9 @@ func main() {
 
 	// Close the bridge
 	if platformBridge != nil {
-		platformBridge.Close()
+		if err := platformBridge.Close(); err != nil {
+			log.Printf("Bridge close error: %v", err)
+		}
 	}
 
 	log.Println("Platform stopped gracefully")

@@ -368,7 +368,7 @@ func (m *Middleware) setSessionCookie(w http.ResponseWriter, sessionID string) {
 
 // clearSessionCookie clears the session cookie
 func (m *Middleware) clearSessionCookie(w http.ResponseWriter) {
-	cookie := &http.Cookie{
+	cookie := &http.Cookie{ // #nosec G124 -- Secure and HttpOnly enforced below
 		Name:     m.cookieName,
 		Value:    "",
 		Path:     m.cookieOpts.Path,
