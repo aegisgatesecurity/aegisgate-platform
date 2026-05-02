@@ -91,7 +91,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 // Write ensures WriteHeader(200) is called if no explicit status was set,
 // matching Go's default behavior for http.ResponseWriter.
-// lgtm[go/reflected-xss] — false positive: this is a metrics middleware that passes through bytes
+// codeql[go/reflected-xss] — false positive: this is a metrics middleware that passes through bytes
 // to instrument request latency. It does not render HTML or inject user-controlled content.
 func (rw *responseWriter) Write(b []byte) (int, error) {
 	if !rw.written {
