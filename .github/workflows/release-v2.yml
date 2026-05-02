@@ -1,0 +1,240 @@
+# ============================================================================
+# AegisGate Security Platform - Release Workflow
+# ============================================================================
+# This workflow creates signed releases with SBOM attestation
+# 
+# Key features:
+# - Binary builds with SHA256 checksums
+# - Container image builds with Cosign keyless signing
+# - SBOM generation with Syft
+# - Attestation to image (provenance)
+# - Direct upload to GitHub Release (no intermediate artifacts)
+# 
+# Usage:
+# - Tag: git tag v1.3.8 && git push origin v1.3.8
+# - Manual: gh workflow run release.yml -f version=v1.3.8
+# ============================================================================
+
+name: Release & Signing
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.3.8)'
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GO_VERSION: '1.25.9'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/aegisgate-platform
+
+jobs:
+  # ========================================================================
+  # JOB 1: Build Binary
+  # ========================================================================
+  build-binary:
+    name: Build Binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Determine version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          echo "VERSION=${VERSION#v}" >> $GITHUB_OUTPUT
+          echo "Full version tag: $VERSION"
+
+      - name: Build binary
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          COMMIT: ${{ github.sha }}
+          BUILD_DATE: ${{ github.event.inputs.build_date || github.event.created_at }}
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 go build \
+            -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT:0:8} -X main.buildDate=${BUILD_DATE}" \
+            -o dist/aegisgate-platform \
+            cmd/aegisgate-platform/main.go
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd dist
+          sha256sum aegisgate-platform > aegisgate-platform.sha256
+          cat aegisgate-platform.sha256
+
+      - name: Set up Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign binary
+        run: |
+          cd dist
+          cosign sign-blob --yes --bundle aegisgate-platform.bundle aegisgate-platform
+
+      - name: Verify signature
+        run: |
+          cd dist
+          cosign verify-blob \
+            --certificate-identity-regexp "https://github.com/.*" \
+            --certificate-oidc-issuer-regexp "https://token.actions.githubusercontent.com" \
+            --bundle aegisgate-platform.bundle \
+            aegisgate-platform
+
+      - name: Upload Binary to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          files: |
+            dist/aegisgate-platform
+            dist/aegisgate-platform.sha256
+            dist/aegisgate-platform.bundle
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ========================================================================
+  # JOB 2: Build Container Image
+  # ========================================================================
+  build-container:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          echo "VERSION=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.created_at }}
+
+      - name: Verify and print image digest
+        id: digest
+        run: |
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }} | cut -d@ -f2)
+          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
+
+      - name: Sign container image
+        env:
+          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+        run: |
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
+          cosign sign --yes $IMAGE_REF
+
+      - name: Verify signature
+        env:
+          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+        run: |
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/.*" \
+            --certificate-oidc-issuer-regexp "https://token.actions.githubusercontent.com" \
+            $IMAGE_REF
+
+  # ========================================================================
+  # JOB 3: SBOM Generation & Attestation
+  # ========================================================================
+  sbom-attest:
+    name: SBOM Attestation
+    runs-on: ubuntu-latest
+    needs: build-container
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Syft
+        uses: anchore/sbom-action@v0
+
+      - name: Generate SBOM
+        run: |
+          syft . -o spdxjson -q
+
+      - name: Set up Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Get image digest
+        id: digest
+        run: |
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 2>/dev/null | cut -d@ -f2 || echo "")
+          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: Attest SBOM to image
+        if: steps.digest.outputs.IMAGE_DIGEST != ''
+        env:
+          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+        run: |
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json $IMAGE_REF
+
+      - name: Upload SBOM to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref }}
+          files: |
+            sbom.spdx.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
