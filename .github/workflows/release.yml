@@ -127,7 +127,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform:latest | cut -d@ -f2)
           IMAGE_REF="${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform@${IMAGE_DIGEST}"
           
-          cosign verify $IMAGE_REF
+          cosign verify --certificate-identity-regexp "https://github.com/.*" $IMAGE_REF
           echo "✅ Container image verified"
 
   # Job 3: Sign Binary (for binary distribution)
