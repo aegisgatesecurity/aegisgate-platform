@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/billing"
 )
 
 // Config holds the customer portal configuration
@@ -123,7 +125,7 @@ func main() {
 	})
 	mux.HandleFunc("GET /api/v1/customer/subscription", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, SubscriptionInfo{
-			SubscriptionID: "sub_xxxx", Tier: "developer", Price: 7900, Currency: "USD",
+			SubscriptionID: "sub_xxxx", Tier: "developer", Price: billing.TierPrices["developer"], Currency: "USD",
 		})
 	})
 	mux.HandleFunc("GET /api/v1/customer/usage", func(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +136,7 @@ func main() {
 	})
 	mux.HandleFunc("GET /api/v1/customer/invoices", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, []Invoice{
-			{InvoiceID: "inv_001", InvoiceNumber: "AEGIS-2026-0001", Amount: 7900},
+			{InvoiceID: "inv_001", InvoiceNumber: "AEGIS-2026-0001", Amount: billing.TierPrices["developer"]},
 		})
 	})
 	mux.HandleFunc("GET /api/v1/customer/documents", func(w http.ResponseWriter, r *http.Request) {
