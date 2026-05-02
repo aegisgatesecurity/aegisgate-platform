@@ -189,7 +189,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-container
     permissions:
-      contents: read
+      contents: write
       packages: write
       attestations: write
       id-token: write
