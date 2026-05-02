@@ -100,7 +100,9 @@ func (m *MockSAMLServer) handleMetadata(w http.ResponseWriter, r *http.Request) 
 		m.EntityID, certPEM, m.SSOURL, m.SLOURL)
 
 	w.Header().Set("Content-Type", "application/xml")
-	w.Write([]byte(metadata))
+	if _, err := w.Write([]byte(metadata)); err != nil {
+		return
+	}
 }
 
 // handleSSO handles SAML authentication requests

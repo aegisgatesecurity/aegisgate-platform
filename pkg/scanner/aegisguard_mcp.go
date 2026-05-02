@@ -403,7 +403,9 @@ func (s *AegisGuardMCPScanner) parseToolResult(result *CallToolResult) []ScanRes
 
 // writeJSON writes JSON data to connection with timeout
 func (s *AegisGuardMCPScanner) writeJSON(conn net.Conn, data []byte) error {
-	conn.SetWriteDeadline(time.Now().Add(s.config.WriteTimeout))
+	if err := conn.SetWriteDeadline(time.Now().Add(s.config.WriteTimeout)); err != nil {
+		return err
+	}
 
 	// Add newline separator for JSON-RPC protocol
 	_, err := conn.Write(append(data, '\n'))
@@ -417,7 +419,6 @@ func (s *AegisGuardMCPScanner) writeJSON(conn net.Conn, data []byte) error {
 // readJSON reads JSON data from connection with timeout
 func (s *AegisGuardMCPScanner) readJSON(conn net.Conn) (*JSONRPCResponse, error) {
 	conn.SetReadDeadline(time.Now().Add(s.config.ReadTimeout))
-
 	// Read until newline (JSON-RPC protocol line-based)
 	var jsonBytes []byte
 	for {

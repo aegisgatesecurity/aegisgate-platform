@@ -103,8 +103,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform:latest
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform:${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Verify and print image digest
         run: |
@@ -233,7 +231,7 @@ jobs:
       - name: Generate SBOM
         run: |
           syft scan dir:./ \
-            --output-format spdxjson \
+            --format spdxjson \
             --file sbom.spdx.json
 
       - name: Set up Cosign

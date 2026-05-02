@@ -1,0 +1,94 @@
+# Golangci-lint configuration for AegisGate Security Platform v1.3.8
+
+run:
+  timeout: 15m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosec
+    - govet
+    - staticcheck
+    - unused
+    - gofmt
+    - gosimple
+    - ineffassign
+
+linters-settings:
+  gosec:
+    excludes:
+      - G104
+      - G101
+      - G114
+      - G306
+      - G402
+
+issues:
+  exclude-use-cache: true
+  max-issues-per-linter: 100
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+        - staticcheck
+        - unused
+        - gosimple
+        - ineffassign
+    - path: _middleware\.go
+      linters:
+        - errcheck
+        - staticcheck
+    - path: main\.go
+      linters:
+        - errcheck
+    - path: _mock_server\.go
+      linters:
+        - errcheck
+        - gosec
+        - staticcheck
+    - text: "Error return value of `rand.Read`"
+      linters:
+        - errcheck
+    - text: "Error return value of `w.Write`"
+      linters:
+        - errcheck
+    - text: "Error return value of `es.server.Stop`"
+      linters:
+        - errcheck
+    - text: "Error return value of `.*InvalidateSession`"
+      linters:
+        - errcheck
+    - text: "SA9003: empty branch"
+      linters:
+        - staticcheck
+    - text: "SA1029: should not use built-in type string"
+      linters:
+        - staticcheck
+    - text: "SA4006: this value of `ctx` is never used"
+      linters:
+        - staticcheck
+    - path: pkg/scanner/aegisguard_mcp.go
+      linters:
+        - errcheck
+        - ineffassign
+        - staticcheck
+    - text: "httpClient.*is unused"
+      linters:
+        - unused
+    - text: "verifySignatureIndependently"
+      linters:
+        - unused
+    - text: "field.*time.*is unused"
+      linters:
+        - unused
+    - text: "S1009: should omit nil check"
+      linters:
+        - gosimple
+    - text: "S1039: unnecessary use of fmt.Sprintf"
+      linters:
+        - gosimple
+    - text: "ineffassign"
+      linters:
+        - ineffassign

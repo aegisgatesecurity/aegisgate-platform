@@ -1,0 +1,120 @@
+# ============================================================================
+# AegisGate CI Test Environment
+# Used by security-comprehensive.yml for DAST, pentest, and integration tests
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ========================================================================
+  # AegisGate Test Instance
+  # ========================================================================
+  aegisgate-test:
+    build:
+      context: .
+      dockerfile: testlab/Dockerfile.testlab
+    container_name: aegisgate-test
+    environment:
+      - AEGISGATE_LICENSE_KEY=${AEGISGATE_LICENSE_KEY:-}
+      - AEGISGATE_TIER=community
+      - AEGISGATE_DATA_DIR=/data
+      - AEGISGATE_LOG_LEVEL=info
+      - AEGISGATE_EMBEDDED_MCP=true
+      - AEGISGATE_TARGET_URL=https://httpbin.org
+    volumes:
+      - aegisgate-data:/data
+      - ./configs:/app/configs:ro
+    ports:
+      - "8080:8080"  # Proxy
+      - "8081:8081"  # MCP
+      - "8443:8443"  # Dashboard/API
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aegisgate-test-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ========================================================================
+  # PostgreSQL - Test Database
+  # ========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegisgate-postgres-test
+    environment:
+      - POSTGRES_DB=aegisgate_test
+      - POSTGRES_USER=aegisgate
+      - POSTGRES_PASSWORD=aegisgate_test_password
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    networks:
+      - aegisgate-test-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegisgate -d aegisgate_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================================
+  # Redis - Test Cache
+  # ========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: aegisgate-redis-test
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-test-data:/data
+    networks:
+      - aegisgate-test-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================================
+  # Keycloak - SSO/Auth (Optional)
+  # ========================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: aegisgate-keycloak-test
+    command: start-dev --import-realm
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    volumes:
+      - ./testlab/keycloak:/opt/keycloak/data/import:ro
+    ports:
+      - "8180:8080"
+    networks:
+      - aegisgate-test-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/realms/master"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    profiles:
+      - sso
+
+# ========================================================================
+# Networks
+# ========================================================================
+networks:
+  aegisgate-test-net:
+    driver: bridge
+
+# ========================================================================
+# Volumes
+# ========================================================================
+volumes:
+  aegisgate-data:
+  postgres-test-data:
+  redis-test-data:

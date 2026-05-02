@@ -186,7 +186,9 @@ func writeForbidden(w http.ResponseWriter, message, currentRole string) {
 		Tier:    currentRole,
 	}
 
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		return
+	}
 }
 
 // Context context keys for RBAC middleware

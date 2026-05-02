@@ -79,7 +79,9 @@ func (m *MockOIDCServer) handleDiscovery(w http.ResponseWriter, r *http.Request)
 		"token_endpoint_auth_methods_supported": []string{"client_secret_basic"},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(discovery)
+	if err := json.NewEncoder(w).Encode(discovery); err != nil {
+		return
+	}
 }
 
 // handleAuthorize handles authorization requests
@@ -121,7 +123,9 @@ func (m *MockOIDCServer) handleToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(token)
+	if err := json.NewEncoder(w).Encode(token); err != nil {
+		return
+	}
 }
 
 // handleUserInfo returns user information
@@ -146,7 +150,9 @@ func (m *MockOIDCServer) handleUserInfo(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(userInfo)
+	if err := json.NewEncoder(w).Encode(userInfo); err != nil {
+		return
+	}
 }
 
 // handleJWKS returns mock JWKS
@@ -157,7 +163,9 @@ func (m *MockOIDCServer) handleJWKS(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(jwks)
+	if err := json.NewEncoder(w).Encode(jwks); err != nil {
+		return
+	}
 }
 
 // generateIDToken creates a mock ID token (unsigned for testing)

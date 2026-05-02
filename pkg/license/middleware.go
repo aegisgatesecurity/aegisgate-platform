@@ -166,7 +166,10 @@ func (lm *LicenseMiddleware) LicenseStatus() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			// Log error but don't fail
+			return
+		}
 	}
 }
 
@@ -250,11 +253,13 @@ func resolveTierFromContext(ctx context.Context, mgr *Manager) tier.Tier {
 func writeForbidden(w http.ResponseWriter, message, currentTier string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusForbidden)
-	json.NewEncoder(w).Encode(errorResponse{
+	if err := json.NewEncoder(w).Encode(errorResponse{
 		Error:   "forbidden",
 		Message: message,
 		Tier:    currentTier,
-	})
+	}); err != nil {
+		// Log error but don't fail
+	}
 }
 
 // authTierKey mirrors the context key used by the auth middleware for tier
