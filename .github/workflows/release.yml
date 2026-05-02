@@ -241,8 +241,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform:latest 2>/dev/null | cut -d@ -f2 || echo "")
           if [ -n "$IMAGE_DIGEST" ]; then
             IMAGE_REF="${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform@${IMAGE_DIGEST}"
-            cosign attest --yes --type spdxjson \
-              --predicate sbom.spdx.json \
+            cosign attest --yes --type spdxjson --predicate sbom.spdx.json \
               $IMAGE_REF
             echo "✅ SBOM attested to container image"
           else
