@@ -360,7 +360,7 @@ func (h3 *HTTP3AwareProxy) handleHTTP3Connect(w http.ResponseWriter, r *http.Req
 func (h3 *HTTP3AwareProxy) forwardHTTP3Request(w http.ResponseWriter, r *http.Request) {
 	// Create transport for forwarding
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true, NextProtos: []string{"h3"}}, // lgtm[go/disabled-certificate-check] — HTTP/3 forward proxy: upstream TLS verified by browser/client
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true, NextProtos: []string{"h3"}}, // codeql[go/disabled-certificate-check] — HTTP/3 forward proxy: upstream TLS verified by browser/client
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,

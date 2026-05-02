@@ -1,0 +1,11 @@
+name: AegisGate Custom CodeQL Configuration
+
+# Exclude vendored upstream code from CodeQL scanning
+# These are historical reference implementations, not active platform code.
+# All upstream security findings are reviewed and annotated in source.
+paths-ignore:
+  - 'upstream/**'
+
+# Query suites to run
+queries:
+  - uses: security-and-quality

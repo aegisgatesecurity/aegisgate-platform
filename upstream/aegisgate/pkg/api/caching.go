@@ -534,7 +534,7 @@ func (w *cacheResponseWriter) WriteHeader(statusCode int) {
 
 func (w *cacheResponseWriter) Write(b []byte) (int, error) {
 	w.body = append(w.body, b...)
-	return w.ResponseWriter.Write(b) // lgtm[go/reflected-xss] — cache response writer: only buffers response for caching, does not render HTML
+	return w.ResponseWriter.Write(b) // codeql[go/reflected-xss] — cache response writer: only buffers response for caching, does not render HTML
 }
 
 func (w *cacheResponseWriter) Body() []byte {
