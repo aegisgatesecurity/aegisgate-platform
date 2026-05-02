@@ -50,6 +50,9 @@ func TestMockOIDCServerHandleAuthorize(t *testing.T) {
 	server := NewMockOIDCServer()
 	defer server.Close()
 
+	// Configure allowed redirect URIs so the test request passes validation
+	server.AllowedRedirectURIs = []string{"http://localhost/callback"}
+
 	// Make HTTP request to authorize endpoint with params
 	req := httptest.NewRequest("GET", server.AuthURL+"?client_id=test&redirect_uri=http://localhost/callback&response_type=code&state=test", nil)
 	rr := httptest.NewRecorder()

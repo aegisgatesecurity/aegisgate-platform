@@ -6,10 +6,14 @@ replace (
 	// Vendored upstream modules — self-contained, no external repo needed
 	github.com/aegisgatesecurity/aegisgate => ./upstream/aegisgate
 
-	// AegisGate subpackages (resolve from vendored upstream)
+	// AegisGate submodules (resolve from vendored upstream)
 	github.com/aegisgatesecurity/aegisgate/pkg/resilience => ./upstream/aegisgate/pkg/resilience
 	github.com/aegisgatesecurity/aegisgate/pkg/resilience/ratelimit => ./upstream/aegisgate/pkg/resilience/ratelimit
 	github.com/aegisguardsecurity/aegisguard => ./upstream/aegisguard
+
+	// AegisGuard submodules (resolve from vendored upstream)
+	github.com/aegisguardsecurity/aegisguard/pkg/unified-audit => ./upstream/aegisguard/pkg/unified-audit
+	github.com/aegisguardsecurity/aegisguard/shared/unified-audit => ./upstream/aegisguard/shared/unified-audit
 )
 
 require (
@@ -18,6 +22,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/prometheus/client_golang v1.18.0
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/oauth2 v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -33,7 +38,6 @@ require (
 	github.com/prometheus/procfs v0.12.0 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
-	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
