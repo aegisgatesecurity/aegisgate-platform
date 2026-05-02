@@ -52,12 +52,12 @@ import (
 )
 
 var (
-	version       = "1.3.7"
-	commit        = "unknown"
-	buildDate     = "unknown"
-	startTime     = time.Now()
-	configFile    = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
-	proxyPort     = flag.Int("proxy-port", 8080, "AegisGate proxy port")
+	version    = "1.3.7"
+	commit     = "unknown"
+	buildDate  = "unknown"
+	startTime  = time.Now()
+	configFile = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
+	proxyPort  = flag.Int("proxy-port", 8080, "AegisGate proxy port")
 
 	// writeJSON writes a JSON response and logs any write errors.
 	// This consolidates error handling for http.ResponseWriter writes
@@ -736,7 +736,7 @@ func main() {
 	dashMux.HandleFunc("/api/v1/guardrails", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if mcpGuardrails == nil {
-		writeBytes(w, []byte(`{"error": "guardrails not active (run with --embedded-mcp)"}`))
+			writeBytes(w, []byte(`{"error": "guardrails not active (run with --embedded-mcp)"}`))
 			return
 		}
 		stats := mcpGuardrails.Stats()
