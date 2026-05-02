@@ -45,7 +45,7 @@ func main() {
 
 	// Send to the sending address (self-test)
 	fmt.Printf("📧 Sending test email to %s...\n", cfg.From)
-	
+
 	err := client.SendLicenseEmail(cfg.From, data)
 	if err != nil {
 		fmt.Printf("❌ Email send failed: %v\n", err)

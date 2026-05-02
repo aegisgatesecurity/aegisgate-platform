@@ -119,10 +119,10 @@ func TestEmailClient_SendLicenseEmail(t *testing.T) {
 		CustomerName: "Test Customer",
 		Tier:         "Developer",
 		LicenseKey:   "eyJwYXlsb2FkIjp7ImxpY2Vuc2VfaWQiOiJ0ZXN0In0=",
-		IssuedAt:    "Wed, 29 Apr 2026 12:00:00 -0700",
-		ExpiresAt:   "Wed, 29 May 2026 12:00:00 -0700",
+		IssuedAt:     "Wed, 29 Apr 2026 12:00:00 -0700",
+		ExpiresAt:    "Wed, 29 May 2026 12:00:00 -0700",
 		Features:     []string{"starter_mode"},
-		SupportEmail:  "support@aegisgatesecurity.io",
+		SupportEmail: "support@aegisgatesecurity.io",
 		CompanyName:  "AegisGate Security, LLC",
 		CompanyURL:   "https://aegisgatesecurity.io",
 	}
@@ -235,9 +235,9 @@ func TestEmailClient_MultipleFeatures(t *testing.T) {
 	client := NewEmailClient(cfg)
 
 	data := LicenseEmailData{
-		Tier:      "Professional",
+		Tier:       "Professional",
 		LicenseKey: "test-key",
-		Features:  []string{"hipaa", "pci-dss", "gdpr"},
+		Features:   []string{"hipaa", "pci-dss", "gdpr"},
 	}
 
 	htmlBody, err := client.renderTemplate(data)

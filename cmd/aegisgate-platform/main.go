@@ -42,6 +42,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/security"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
@@ -273,7 +274,7 @@ func main() {
 
 	proxyHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%d", *proxyPort),
-		Handler:      metrics.WrapHandler("proxy", proxyMux),
+		Handler:      security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)),
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -911,7 +912,7 @@ func main() {
 
 	dashHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *dashPort),
-		Handler:      metrics.WrapHandler("dashboard", dashMux),
+		Handler:      security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux)),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

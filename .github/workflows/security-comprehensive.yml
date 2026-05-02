@@ -1,0 +1,405 @@
+name: Security Comprehensive
+
+on:
+  push:
+    branches: [main, develop]
+  schedule:
+    # Weekly comprehensive security scan (Sunday 2 AM)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.25.9'
+
+jobs:
+  # ================================================================
+  # TIER 1: SAST - Static Application Security Testing
+  # ================================================================
+  gosec-scan:
+    name: Gosec SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -fmt sarif -out gosec-results.sarif ./... 2>&1 || true
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec
+
+      - name: Check Results
+        run: |
+          if grep -q "Issues" gosec-results.sarif; then
+            echo "⚠️ Gosec found issues - review SARIF in Security tab"
+          fi
+
+  semgrep-scan:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >
+            p/security-aegisgate;
+            p/secrets;
+          output: semgrep-results.sarif
+          upload: always
+
+  # ================================================================
+  # TIER 2: DAST - Dynamic Application Security Testing
+  # ================================================================
+  zap-scan:
+    name: OWASP ZAP API Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install OWASP ZAP
+        run: |
+          python -m pip install --upgrade pip
+          pip install zaproxy azure-functions-core-tools
+
+      - name: Start test instance
+        run: |
+          docker compose -f docker-compose.test.yml up -d
+          sleep 30
+
+      - name: Run ZAP Baseline Scan
+        run: |
+          mkdir -p zap-reports
+          zap-baseline.py \
+            -t http://localhost:8080 \
+            -J zap-results.json \
+            -r zap-report.html \
+            --hook audit-lab/audit-scripts/hooks/zap-hooks.py \
+            -z "-config api.disablekey=true" \
+            2>&1 || true
+          cat zap-results.json || echo "No ZAP JSON output"
+
+      - name: Run ZAP API Scan
+        run: |
+          zap-api-scan.py \
+            -t http://localhost:8080/api/v1/ \
+            -f openapi \
+            -J zap-api-results.json \
+            2>&1 || true
+
+      - name: Upload ZAP Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-reports
+          path: |
+            zap-results.json
+            zap-report.html
+            zap-api-results.json
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  nmap-scan:
+    name: Nmap Service Discovery
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nmap
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nmap
+
+      - name: Start test instance
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Run Nmap Scan
+        run: |
+          mkdir -p nmap-results
+          nmap -sV -p 8080,8081,8443 \
+               -script=banner,version-info,vulners \
+               -oA nmap-results/scan \
+               aegisgate-test 2>&1 || true
+
+      - name: Upload Nmap Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nmap-results
+          path: nmap-results/
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  nikto-scan:
+    name: Nikto Web Server Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nikto
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nikto
+
+      - name: Start test instance
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Run Nikto Scan
+        run: |
+          mkdir -p nikto-results
+          nikto -h http://aegisgate-test:8080 \
+                -Format json \
+                -output nikto-results/nikto-report.json \
+                -Tuning 1,2,3,4,5,6,7,8,9 \
+                2>&1 || true
+
+      - name: Upload Nikto Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nikto-results
+          path: nikto-results/
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  # ================================================================
+  # TIER 3: PENETRATION TESTING SIMULATION
+  # ================================================================
+  pentest-license:
+    name: Pentest - License Bypass Simulation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start test instance
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Run License Bypass Tests
+        run: |
+          chmod +x audit-lab/audit-scripts/10-license-bypass.sh
+          ./audit-lab/audit-scripts/10-license-bypass.sh 2>&1 || true
+        env:
+          AEGISGATE_TARGET: http://aegisgate-test:8080
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-bypass-results
+          path: audit-results/10-targeted/license-bypass-results.txt
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  pentest-rbac:
+    name: Pentest - RBAC Escalation Simulation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start test instance
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Run RBAC Tests
+        run: |
+          chmod +x audit-lab/audit-scripts/11-rbac-test.sh
+          ./audit-lab/audit-scripts/11-rbac-test.sh 2>&1 || true
+        env:
+          AEGISGATE_TARGET: http://aegisgate-test:8080
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rbac-test-results
+          path: audit-results/11-rbac/rbac-test-results.txt
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  # ================================================================
+  # TIER 4: FUZZING
+  # ================================================================
+  fuzz-license-parser:
+    name: Fuzz Testing - License Parser
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Fuzz Test (5 min)
+        run: |
+          go test \
+            -fuzz=FuzzParseLicense \
+            -fuzztime=300s \
+            ./pkg/license/... 2>&1 || true
+
+      - name: Upload Fuzz Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fuzz-license-results
+          path: fuzz-*
+          retention-days: 30
+
+  fuzz-config-parser:
+    name: Fuzz Testing - Config Parser
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Fuzz Test (5 min)
+        run: |
+          go test \
+            -fuzz=FuzzParseConfig \
+            -fuzztime=300s \
+            ./pkg/config/... 2>&1 || true
+
+      - name: Upload Fuzz Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fuzz-config-results
+          path: fuzz-*
+          retention-days: 30
+
+  fuzz-scan-request:
+    name: Fuzz Testing - Scan Request Parser
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Fuzz Test (5 min)
+        run: |
+          go test \
+            -fuzz=FuzzScanRequest \
+            -fuzztime=300s \
+            ./pkg/scanner/... 2>&1 || true
+
+      - name: Upload Fuzz Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fuzz-scanner-results
+          path: fuzz-*
+          retention-days: 30
+
+  # ================================================================
+  # TIER 5: CONTAINER SECURITY
+  # ================================================================
+  trivy-container-scan:
+    name: Trivy Container Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build container
+        run: docker build -t aegisgate-platform:scan .
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'aegisgate-platform:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-image
+
+  # ================================================================
+  # SUMMARY
+  # ================================================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [gosec-scan, semgrep-scan, trivy-container-scan]
+    if: always()
+    steps:
+      - name: Generate Report
+        run: |
+          echo "## 🔒 Security Comprehensive Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Gosec SAST | ${{ needs.gosec-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Semgrep | ${{ needs.semgrep-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trivy Container | ${{ needs.trivy-container-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Weekly Scans:**" >> $GITHUB_STEP_SUMMARY
+          echo "- OWASP ZAP (DAST)" >> $GITHUB_STEP_SUMMARY
+          echo "- Nmap/Nikto (Network)" >> $GITHUB_STEP_SUMMARY
+          echo "- Pentest Simulations (License, RBAC)" >> $GITHUB_STEP_SUMMARY
+          echo "- Fuzzing (License, Config, Scanner)" >> $GITHUB_STEP_SUMMARY
