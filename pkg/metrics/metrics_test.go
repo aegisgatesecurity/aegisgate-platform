@@ -187,8 +187,8 @@ func TestRecordAuditEvent(t *testing.T) {
 }
 
 func TestSetBuildInfo(t *testing.T) {
-	SetBuildInfo("1.3.0", "go1.22.0", "linux/amd64")
-	SetBuildInfo("1.3.2", "go1.22.1", "darwin/arm64")
+	SetBuildInfo("1.3.0", "go1.22.0", "linux/amd64", "abc1234")
+	SetBuildInfo("1.3.2", "go1.22.1", "darwin/arm64", "def5678")
 }
 
 // --------------------------------------------------------------------------

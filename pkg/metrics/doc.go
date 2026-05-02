@@ -25,7 +25,7 @@ For most use cases, simply import and use the package-level functions:
 	metrics.RecordMCPRequest("scan_content", metrics.ResultSuccess)
 
 	// Set build info (call once at startup)
-	metrics.SetBuildInfo("1.3.0", "go1.22", "linux/amd64")
+	metrics.SetBuildInfo("1.3.0", "go1.22", "linux/amd64", "abc1234")
 
 # Cardinality Safety
 

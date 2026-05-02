@@ -35,7 +35,7 @@ jobs:
             STRICT=0
           fi
           for COMMIT in $COMMITS; do
-            SIGNOFF=$(git log --format="%B" -1 $COMMIT | grep -c "Signed-off-by:")
+            SIGNOFF=$(git log --format="%B" -1 $COMMIT | grep -c "Signed-off-by:" || true)
             if [ "$SIGNOFF" -eq 0 ]; then
               AUTHOR=$(git log --format="%an <%ae>" -1 $COMMIT)
               SUBJECT=$(git log --format="%s" -1 $COMMIT)
