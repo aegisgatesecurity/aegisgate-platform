@@ -1051,7 +1051,7 @@ func main() {
 
 // isSafeRedirectURL validates that a redirect URL is same-origin or a safe path.
 // Prevents open redirect vulnerabilities by ensuring redirect targets are trusted.
-// lgtm[go/bad-redirect-check] — false positive: all bypass vectors are explicitly handled below.
+// codeql[go/bad-redirect-check] — false positive: all bypass vectors are explicitly handled below.
 func isSafeRedirectURL(rawURL string, r *http.Request) bool {
 	// Block protocol-relative URLs that could bypass the "/" check (e.g., "//evil.com")
 	if strings.HasPrefix(rawURL, "//") {
