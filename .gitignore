@@ -1,304 +1,74 @@
-# =============================================================================
-# AegisGate Security Platform — .gitignore
-# =============================================================================
-
-# =============================================================================
-# SECRETS AND CREDENTIALS (CRITICAL — NEVER COMMIT)
-# =============================================================================
-
-# SSO config may contain client secrets
-configs/sso.yaml
-
-.env
-.env.*
-.env.local
-.env.*.local
-*.env
-!.env.example
-
-secrets/
-credentials/
-secrets.yaml
-secrets.yml
-secrets.json
-passwords.txt
-.api_keys
-.tokens
-
-*.pem
-*.key
-*.crt
-*.p12
-*.pfx
-*.jks
-*.keystore
-*.truststore
-keystore*
-ca-certificates/
-certs/
-ssl/
-tls/
-keys/
-!upstream/aegisgate/pkg/tls/certs/
-!upstream/aegisgate/pkg/tls/
-
-# =============================================================================
-# INTERNAL / DEVELOPMENT ARTIFACTS (NOT FOR PUBLIC REPO)
-# =============================================================================
-
-CI_DEBT.md
-CONSOLIDATION-STATUS.md
-CONSOLIDATION_STATUS.md
-MCP_E2E_PREP.md
-ANCHOR.md
-PROJECT_MEMORY.md
-SESSION_MEMORY.md
-
-fix_illegal_runes.sh
-*.patch
-
-# Root-level operational config (use configs/ for examples)
-aegisgate-platform.yaml
-
-# Demo/internal dashboard with hardcoded credentials
-ui/frontend/consolidated-dashboard.html
-
-# =============================================================================
-# =============================================================================
-# SPRINT ANALYSIS FILES (PRIVATE — NEVER COMMIT)
-# =============================================================================
-
-Sprint-4-Analysis.md
-Sprint-3-Analysis.md
-SPRINT*-Analysis.md
-SPRINT*-status.md
-Sprint*-status.md
-summarized-sprint-*.md
-sprint*-status.txt
-# BUSINESS AND PROJECT PLANS (PRIVATE — NEVER COMMIT)
-# =============================================================================
-
-plans/
-PLAN.md
-ROADMAP-INTERNAL.md
-SPRINT*.md
-BUSINESS*.md
-
-# =============================================================================
-# COVERAGE AND TEST ARTIFACTS
-# =============================================================================
-
-coverage.out
-coverage_*.out
-*.coverprofile
-*.out
-*.test
-e2e.test
-
-# =============================================================================
-# BINARY (built locally, not committed)
-# =============================================================================
-
-/aegisgate-platform
-aegisgate-platform.exe
-
-# =============================================================================
-# INFRASTRUCTURE / DEPLOYMENT OVERRIDES
-# =============================================================================
-
-docker-compose.override.yml
-*.tfstate
-*.tfstate.*
-*.tfvars
-*.kubeconfig
-
-# =============================================================================
-# SESSION MEMORY AND ANCHOR FILES (LOCAL ONLY)
-# =============================================================================
-
-_commit_msg.txt
-RELEASE_NOTES*.md
-RELEASE_BODY.md
-MIGRATION.md
-commit_msg*.txt
-tagmsg.txt
-gitmsg.txt
-msg*.txt
-
-# =============================================================================
-# BUILD ARTIFACTS
-# =============================================================================
-
+# Build outputs
 bin/
-build/
 dist/
-out/
+build/
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-*.a
-*.lib
-*.o
-*.obj
-coverage/
+*.test
+*.out
 *.prof
-*.test.exe
-*.debug
-__debug_bin
-__debug_bin.exe
+*.test-binary
+*.test-binary.*
 
-# =============================================================================
-# IDE AND EDITOR
-# =============================================================================
+# Test coverage
+coverage.out
+coverage_*.out
+coverage/
 
-.idea/
+# Go
+vendor/
+.upstream/
+*.sum
+
+# Environment and secrets
+.env
+.env.*
+.env.local
+*.pem
+*.key
+*.crt
+*.p12
+*.keystore
+
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo
-*.iml
-*.iws
-*.ipr
-.project
-.classpath
-*.code-workspace
 
-# =============================================================================
-# OS GENERATED
-# =============================================================================
-
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-desktop.ini
 
-# =============================================================================
-# LOG FILES
-# =============================================================================
-
-*.log
-logs/
-
-# =============================================================================
-# TEMPORARY, CACHE, AND BACKUP FILES
-# =============================================================================
-
-tmp/
-temp/
-*.tmp
-*.temp
-*.bak
-*.backup
-*.orig
-*.old
-.cache/
-*.cache
-
-# =============================================================================
-# DEPENDENCIES
-# =============================================================================
-
-vendor/
-node_modules/
-
-# =============================================================================
-# BINARY (built locally, not committed)
-# =============================================================================
-
-
-# =============================================================================
-# DATABASE FILES
-# =============================================================================
-
-*.db
-*.sqlite
-*.sqlite3
-
-# =============================================================================
-# CONTAINER ARTIFACTS
-# =============================================================================
-
-.docker/
-
-# =============================================================================
-# MISCELLANEOUS
-# =============================================================================
-
-cov*.txt
-*.secret
-*.credentials
-api_key.txt
-license_key.txt
-private_key.txt
-add_*.ps1
-*.ps1
-worktree/
-test_run.zip
- ARCHIVE/
-
-# =============================================================================
-# PHASE 3 SSO INTEGRATION ARTIFACTS
-# =============================================================================
-
-gen/
-main_sso_integration.py
-Phase3_SSO_Integration.md
-README_PHASE3_INTEGRATION.md
-Sprint4_Phase3_Report.md
-README_COMPETITION.md
-README_d7fcfeb_restored.md
-
-# =============================================================================
-# TEST LAB ENVIRONMENT (LOCAL ONLY)
-# =============================================================================
-
-testlab/
-testlab/.env
-testlab/.env.*
-.docker/
-
-# =============================================================================
-# KEEP THESE FILES (DON'T IGNORE)
-# =============================================================================
-
-!.env.example
-!*.example.yaml
-!.gitignore
-!LICENSE
-!LICENSE.*
-!README.md
-!README.md
-
-# SSO patch files (in subdirectories)
-**/*.patch
-**/*.sso_patch
-
-# Generated SSO integration code (not compilable standalone)
-gen/
-README-OLD.md
-
-# =============================================================================
-# SPRINT 6 - BILLING INFRASTRUCTURE (Defer until production-ready)
-# =============================================================================
-
-# Billing/stripe integration (requires credentials)
-pkg/billing/
-
-# Admin dashboard (internal tooling)
-cmd/admin/
-
-# Legal documents (for attorney review, not for git)
+# Internal documentation
+plans/
+CI_DEBT.md
+plans-*.md
+SPRINT*.md
+BUSINESS*.md
+PLAN*.md
+ROADMAP-INTERNAL.md
 legal-docs/
 
-# Archived/removed content
-blog-*/
-demo-site/
-trademark-specimen-*.html
-trademark-specimen-*.txt
-# Sprint 6-7 utilities (not production-ready)
+# Audit lab
+audit-lab/
+audit-results/
+
+# Admin/Customer portals (not built yet)
+cmd/admin/
 cmd/customer-portal/
+
+# Internal/DevOps (keep local only)
+.coverage-exclude.txt
+coverage.html
+coverage.txt
+sign-test.sh
+CASE-STUDY-TEMPLATE.md
+admin-server
+.admin-server/
+
+# CI Test Environment (security testing, local only)
+docker-compose.test.yml
