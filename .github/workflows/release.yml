@@ -191,6 +191,7 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+          download-timeout: 600
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
