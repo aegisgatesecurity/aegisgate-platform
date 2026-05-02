@@ -16,7 +16,7 @@ func AdditionalPatterns() []*Pattern {
 		// CLOUD PROVIDER TOKENS
 		{
 			Name:        "DiscordWebhook",
-			Regex:       regexp.MustCompile(`https://discord\.com/api/webhooks/[0-9]{18,20}/[A-Za-z0-9_-]{68}`),
+			Regex:       regexp.MustCompile(`https://discord\.com/api/webhooks/[0-9]{18,20}/[A-Za-z0-9_-]{68}`), // lgtm[go/regex/missing-regexp-anchor] — intentional: secret scanner matches substrings in larger text; anchoring would miss credentials embedded in JSON/URLs
 			Severity:    High,
 			Category:    CategoryCredential,
 			Description: "Discord webhook URL detected",
