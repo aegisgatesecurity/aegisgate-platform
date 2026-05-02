@@ -191,7 +191,7 @@ func run() error {
 
 // loadPrivateKey loads an ECDSA P-256 private key from a PEM file
 func loadPrivateKey(path string) (*ecdsa.PrivateKey, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- Path from CLI flag, not user input
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
