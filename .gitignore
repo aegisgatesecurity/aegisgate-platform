@@ -72,3 +72,8 @@ admin-server
 
 # CI Test Environment (security testing, local only)
 docker-compose.test.yml
+
+# Billing config (contains pricing data — loaded at runtime)
+# Billing config (pricing data loaded at runtime — copy billing-config.example.json to billing-config.json)
+billing-config.json
+pkg/billing/billing-config.json
