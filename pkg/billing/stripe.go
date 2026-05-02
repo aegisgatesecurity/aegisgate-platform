@@ -17,8 +17,8 @@ import (
 
 // billingConfig represents the pricing and product configuration loaded from billing-config.json
 type billingConfig struct {
-	TierPrices    map[string]int64  `json:"tier_prices"`
-	TierProducts  map[string]string `json:"tier_products"`
+	TierPrices   map[string]int64  `json:"tier_prices"`
+	TierProducts map[string]string `json:"tier_products"`
 }
 
 // TierProducts maps our tier names to Stripe Price IDs.
