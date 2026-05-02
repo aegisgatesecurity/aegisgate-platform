@@ -1,4 +1,36 @@
 
+## [1.3.8] - 2026-05-02 - Security Headers + DAST Pipeline
+
+### Summary
+Security hardening sprint: HTTP security headers, comprehensive CI/CD security pipeline with DAST, pentest simulations, and fuzzing.
+
+### Security Enhancements
+- S8-01: HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
+- S8-02: `pkg/security/headers.go` with tested middleware (94.4% coverage)
+- S8-03: Headers applied to proxy (8080) and dashboard (8443) endpoints
+
+### New CI/CD Workflows
+- S8-10: `security-comprehensive.yml` - Weekly DAST and pentest pipeline
+  - OWASP ZAP API + baseline scan
+  - Nmap service discovery
+  - Nikto web server scan
+  - License bypass pentest simulation
+  - RBAC escalation pentest simulation
+  - Fuzzing (license, config, scanner parsers)
+- S8-11: `docker-compose.test.yml` - CI test environment
+- S8-12: `.golangci.yml` - golangci-lint configuration
+
+### Code Quality
+- S8-20: golangci-lint integration in CI pipeline
+- S8-21: Fix all errcheck violations (middleware, scanners, SSO)
+- S8-22: Coverage maintained at 86.7% (above 80% gate)
+- S8-23: Coverage exclusion for billing/email/stores (require external services)
+
+### Fuzzing
+- S8-30: `pkg/license/license_fuzz_test.go` - License parser fuzzing
+- S8-31: `pkg/scanner/scanner_fuzz_test.go` - Scanner fuzzing
+- S8-32: `pkg/config_fuzz_test.go` - Config parser fuzzing
+
 ## [1.3.7] - 2026-04-27 - SSO Integration + Coverage Boost
 
 ### Summary
