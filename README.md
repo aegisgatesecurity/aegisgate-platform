@@ -376,7 +376,8 @@ Email: **security@aegisgatesecurity.io**
 
 | Version | Status |
 |---------|--------|
-| **v1.3.7** | ✅ **Current** — Supported |
+| **v1.3.8** | ✅ **Current** — Supported |
+| **v1.3.7** | ✅ Supported |
 | **v1.3.6** | ❌ Deprecated |
 | < v1.3.5 | ❌ Deprecated |
 
