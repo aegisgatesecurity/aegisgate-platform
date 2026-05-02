@@ -127,7 +127,7 @@ var (
 			Name: MetricBuildInfo,
 			Help: "Build and runtime information. Value is always 1; labels provide the details.",
 		},
-		[]string{LabelVersion, LabelGoVersion, LabelPlatform},
+		[]string{LabelVersion, LabelGoVersion, LabelPlatform, LabelCommit},
 	)
 )
 
@@ -222,8 +222,8 @@ func RecordAuditEvent() {
 // SetBuildInfo sets the build information gauge. Call once at startup.
 // This creates a time series with value 1 for each unique (version, goversion, platform)
 // combination, enabling discovery of deployment configurations via PromQL.
-func SetBuildInfo(version, goversion, platform string) {
-	buildInfo.WithLabelValues(version, goversion, platform).Set(1)
+func SetBuildInfo(version, goversion, platform, commit string) {
+	buildInfo.WithLabelValues(version, goversion, platform, commit).Set(1)
 }
 
 // --------------------------------------------------------------------------
