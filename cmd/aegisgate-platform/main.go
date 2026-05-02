@@ -621,7 +621,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		if !persistenceMgr.IsEnabled() {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			fmt.Fprintf(w, `{"error":"persistence disabled","entries":[]}`)
+			json.NewEncoder(w).Encode(map[string]string{"error": "persistence disabled", "entries": "[]"})
 			return
 		}
 
@@ -645,14 +645,14 @@ func main() {
 		entries, err := auditLog.Query(r.Context(), filter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		data, err := json.Marshal(entries)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error":"marshal failed"}`)
+			json.NewEncoder(w).Encode(map[string]string{"error": "marshal failed"})
 			return
 		}
 		w.Write(data)
@@ -675,7 +675,7 @@ func main() {
 		data, err := persistenceMgr.ExportForCompliance(r.Context(), format)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error":"%s"}`, err.Error())
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		w.Write(data)
