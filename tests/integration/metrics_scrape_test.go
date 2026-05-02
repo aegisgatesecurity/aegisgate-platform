@@ -48,7 +48,7 @@ func TestMetricsScrape(t *testing.T) {
 	metrics.RecordTierRequest(metrics.TierProfessional)
 	metrics.RecordAuditEvent()
 	metrics.RecordAuditEvent()
-	metrics.SetBuildInfo("1.3.0", "go1.22.0", "linux/amd64")
+	metrics.SetBuildInfo("1.3.0", "go1.22.0", "linux/amd64", "abc1234")
 
 	// Create a test server serving the Prometheus handler
 	handler := metrics.Handler()
