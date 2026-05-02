@@ -1054,7 +1054,7 @@ func TestGuardrailHandler_DirectToolCall(t *testing.T) {
 // TestStarterModeFeature tests that starter_mode feature flag reduces rate limits
 func TestStarterModeFeature(t *testing.T) {
 	// Test that Starter tier with starter_mode gets 150 RPM instead of 500 RPM
-	
+
 	// Developer tier without starter_mode = 300 MCP RPM
 	developerCfg := DefaultGuardrailConfig(tier.TierDeveloper)
 	gDev := NewGuardrailMiddleware(developerCfg, "test-server")
@@ -1062,7 +1062,7 @@ func TestStarterModeFeature(t *testing.T) {
 	if devStats.RateLimitRPM != 300 {
 		t.Errorf("Developer tier RPM: expected 300, got %d", devStats.RateLimitRPM)
 	}
-	
+
 	// Developer tier with starter_mode = 150 RPM
 	starterCfg := DefaultGuardrailConfig(tier.TierDeveloper)
 	starterCfg.Features = []string{"starter_mode"}
@@ -1071,7 +1071,7 @@ func TestStarterModeFeature(t *testing.T) {
 	if starterStats.RateLimitRPM != 150 {
 		t.Errorf("Starter mode RPM: expected 150, got %d", starterStats.RateLimitRPM)
 	}
-	
+
 	// Community tier should not be affected by starter_mode
 	communityCfg := DefaultGuardrailConfig(tier.TierCommunity)
 	communityCfg.Features = []string{"starter_mode"}
@@ -1095,7 +1095,7 @@ func TestHasFeatureHelper(t *testing.T) {
 		{[]string{}, "starter_mode", false},
 		{nil, "starter_mode", false},
 	}
-	
+
 	for _, tt := range tests {
 		result := hasFeature(tt.features, tt.target)
 		if result != tt.expected {
