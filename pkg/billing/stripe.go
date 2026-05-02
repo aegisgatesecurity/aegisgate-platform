@@ -92,7 +92,7 @@ func LoadBillingConfig() error {
 		TierProducts = config.TierProducts
 	}
 
-	// Override with env vars if set (e.g., AEGISGATE_PRICE_STARTER=2900 — see billing-config.example.json)
+	// Override with env vars if set (e.g., AEGISGATE_PRICE_STARTER — see billing-config.example.json)
 	for _, tier := range []string{"starter", "developer", "professional"} {
 		if v := os.Getenv("AEGISGATE_PRICE_" + tierToUpper(tier)); v != "" {
 			var price int64
