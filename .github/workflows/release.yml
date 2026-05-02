@@ -208,6 +208,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Job 5: Generate and Attest SBOM
+    needs: build-container
   sbom-attest:
     name: SBOM Attestation
     runs-on: ubuntu-latest
