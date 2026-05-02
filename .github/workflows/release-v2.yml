@@ -148,11 +148,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Crane
-        run: |
-          curl -sL https://github.com/google/crane/releases/download/v0.19.0/crane-linux-amd64.tar.gz | tar xzf - crane
-          sudo mv crane /usr/local/bin/
-          crane version
 
       - name: Build and push image
         id: build
