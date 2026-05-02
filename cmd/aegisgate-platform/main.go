@@ -671,6 +671,11 @@ func main() {
 		if format == "" {
 			format = "json"
 		}
+		// Validate format against allowlist to prevent taint injection
+		allowedFormats := map[string]bool{"json": true, "csv": true, "yaml": true, "xml": true}
+		if !allowedFormats[format] {
+			format = "json"
+		}
 
 		data, err := persistenceMgr.ExportForCompliance(r.Context(), format)
 		if err != nil {
@@ -678,7 +683,7 @@ func main() {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		w.Write(data)
+		w.Write(data) // #nosec G705 -- format validated against allowlist above
 	}))
 
 	// Persistence stats endpoint
