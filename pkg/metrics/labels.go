@@ -72,6 +72,10 @@ const (
 	// Cardinality: Low (~10 combinations)
 	LabelPlatform = "platform"
 
+	// LabelCommit tracks the git commit hash
+	// Cardinality: Low (changes only on deployment)
+	LabelCommit = "commit"
+
 	// LabelGuardrail identifies the guardrail component
 	// Cardinality: Low (~8 values)
 	LabelGuardrail = "guardrail"
