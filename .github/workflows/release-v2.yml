@@ -122,14 +122,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.VERSION }}
+            type=raw,value=latest
+
       - name: Build and push image
+        id: docker_build
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -188,12 +197,11 @@ jobs:
           VERSION="${VERSION#v}"
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Generate SBOM
-        run: |
-      - name: Install Syft
+      - name: Generate SBOM with Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-          syft . -o spdxjson=sbom.spdx.json
+          syft dir:. -o spdxjson > sbom.spdx.json
+          echo "SBOM generated: $(wc -l < sbom.spdx.json) lines"
           ls -la sbom.spdx.json
 
       - name: Set up Cosign
@@ -206,6 +214,18 @@ jobs:
           IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
           echo "Attesting SBOM to: ${IMAGE_REF}"
           cosign attest --yes --type spdxjson --predicate sbom.spdx.json ${IMAGE_REF}
+
+      - name: Verify SBOM attestation
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          cosign verify-attestation \
+            --type spdxjson \
+            --certificate-identity-regexp "https://github.com/.*" \
+            --certificate-oidc-issuer-regexp "https://token.actions.githubusercontent.com" \
+            ${IMAGE_REF}
+          echo "✅ SBOM attestation verified"
 
       - name: Upload SBOM to Release
         uses: softprops/action-gh-release@v1
