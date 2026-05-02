@@ -12,12 +12,19 @@ FROM golang:1.25.9-alpine AS builder
 RUN apk add --no-cache git ca-certificates
 WORKDIR /build
 
+# Build-time arguments for version injection
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_DATE=unknown
+
 # Copy the self-contained platform source (includes vendored upstream packages)
 COPY . ./aegisgate-platform/
 
-# Build the unified platform binary
+# Build the unified platform binary with version metadata injected via ldflags
 WORKDIR /build/aegisgate-platform
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /aegisgate-platform ./cmd/aegisgate-platform
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT:0:8} -X main.buildDate=${BUILD_DATE}" \
+    -o /aegisgate-platform ./cmd/aegisgate-platform
 
 # Production stage — minimal, immutable, zero-config
 FROM alpine:latest
