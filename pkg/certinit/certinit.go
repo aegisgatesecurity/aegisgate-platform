@@ -248,7 +248,7 @@ func checkExistingCerts(serverCertPath, serverKeyPath, caCertPath, caKeyPath str
 
 // parseCertificateFile reads and parses a PEM certificate file.
 func parseCertificateFile(path string) (*x509.Certificate, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- Cert path from config, not user input
 	if err != nil {
 		return nil, fmt.Errorf("read failed: %w", err)
 	}
@@ -268,7 +268,7 @@ func parseCertificateFile(path string) (*x509.Certificate, error) {
 
 // parseKeyFile reads and attempts to parse a PEM private key file.
 func parseKeyFile(path string) (interface{}, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- Key path from config, not user input
 	if err != nil {
 		return nil, fmt.Errorf("read failed: %w", err)
 	}
