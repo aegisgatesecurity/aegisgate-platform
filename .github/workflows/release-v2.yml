@@ -221,11 +221,11 @@ jobs:
       - name: Generate SBOM
         id: sbom
         run: |
-          # Use -o flag to write directly (avoids shell redirect issues with empty files)
-          syft dir:. -o spdxjson --output sbom.spdx.json
+          # syft output format is "spdx-json" (hyphen, not dot); redirect to file
+          syft dir:. -o spdx-json > sbom.spdx.json 2>/dev/null
           # Verify the SBOM was actually created and is valid JSON
           if [ ! -s sbom.spdx.json ]; then
-            echo "::error::SBOM file is empty or missing"
+            echo "::error::SBOM file is empty or missing — syft may have failed"
             exit 1
           fi
           echo "✅ SBOM generated: $(wc -l < sbom.spdx.json) lines, $(wc -c < sbom.spdx.json) bytes"
