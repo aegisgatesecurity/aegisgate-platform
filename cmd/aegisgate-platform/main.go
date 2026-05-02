@@ -1053,40 +1053,31 @@ func main() {
 // Prevents open redirect vulnerabilities by ensuring redirect targets are trusted.
 // codeql[go/bad-redirect-check] — false positive: all bypass vectors are explicitly handled below.
 func isSafeRedirectURL(rawURL string, r *http.Request) bool {
-	// Block protocol-relative URLs (e.g., "//evil.com", "///evil.com")
-	if strings.HasPrefix(rawURL, "//") {
-		return false
-	}
-
 	// Block backslash-based bypass (e.g., "/\evil.com", "\\evil.com")
 	if strings.Contains(rawURL, "\\") {
 		return false
 	}
 
-	// Relative paths starting with "/" are safe (same-origin)
-	// After the above checks, a "/" prefix guarantees a safe relative path
-	if strings.HasPrefix(rawURL, "/") {
-		return true
-	}
-
-	// Parse the URL to inspect its host
+	// Parse the URL to inspect its structure — never trust prefix checks alone
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return false
 	}
 
-	// If the URL has no host, it's a relative URL — allow it
-	if u.Host == "" {
-		return true
+	// Block any URL with a scheme (e.g., "https://evil.com")
+	if u.Scheme != "" {
+		return false
 	}
 
-	// Check same-origin: the redirect host must match the request host
-	if u.Host == r.Host {
-		return true
+	// Block any URL with a host — only hostless (relative) URLs are safe
+	if u.Host != "" && u.Host != r.Host {
+		return false
 	}
 
-	// Reject external URLs to prevent open redirects
-	return false
+	// At this point the URL is either:
+	// 1. Same-origin (host matches r.Host) — safe
+	// 2. Relative path with no host (e.g., "/ui/", "/dashboard") — safe
+	return true
 }
 
 // verifyServicesReady checks that all required services are listening
