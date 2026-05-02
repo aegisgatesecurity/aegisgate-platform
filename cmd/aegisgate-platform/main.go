@@ -58,6 +58,23 @@ var (
 	startTime     = time.Now()
 	configFile    = flag.String("config", "aegisgate-platform.yaml", "Configuration file path")
 	proxyPort     = flag.Int("proxy-port", 8080, "AegisGate proxy port")
+
+	// writeJSON writes a JSON response and logs any write errors.
+	// This consolidates error handling for http.ResponseWriter writes
+	// and satisfies gosec G104 (Errors unhandled).
+	writeJSON = func(w http.ResponseWriter, v interface{}) {
+		if err := json.NewEncoder(w).Encode(v); err != nil {
+			log.Printf("http response write error: %v", err)
+		}
+	}
+
+	// writeBytes writes raw bytes to the response and logs any write errors.
+	// Consolidates error handling for w.Write calls (gosec G104).
+	writeBytes = func(w http.ResponseWriter, data []byte) {
+		if _, err := w.Write(data); err != nil {
+			log.Printf("http response write error: %v", err)
+		}
+	}
 	mcpPort       = flag.Int("mcp-port", 8081, "AegisGuard MCP port")
 	dashPort      = flag.Int("dashboard-port", 8443, "Admin dashboard port")
 	targetURL     = flag.String("target", "https://api.openai.com", "Upstream LLM provider URL")
@@ -613,7 +630,7 @@ func main() {
 			fmt.Fprintf(w, `{"error":"marshal failed"}`)
 			return
 		}
-		w.Write(data)
+		writeBytes(w, data)
 	})
 
 	// Audit log endpoint — query persisted audit entries
@@ -621,7 +638,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		if !persistenceMgr.IsEnabled() {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			json.NewEncoder(w).Encode(map[string]string{"error": "persistence disabled", "entries": "[]"})
+			writeJSON(w, map[string]string{"error": "persistence disabled", "entries": "[]"})
 			return
 		}
 
@@ -645,17 +662,17 @@ func main() {
 		entries, err := auditLog.Query(r.Context(), filter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			writeJSON(w, map[string]string{"error": err.Error()})
 			return
 		}
 
 		data, err := json.Marshal(entries)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "marshal failed"})
+			writeJSON(w, map[string]string{"error": "marshal failed"})
 			return
 		}
-		w.Write(data)
+		writeBytes(w, data)
 	}))
 
 	// Compliance export endpoint — secure audit*
@@ -680,10 +697,10 @@ func main() {
 		data, err := persistenceMgr.ExportForCompliance(r.Context(), format)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			writeJSON(w, map[string]string{"error": err.Error()})
 			return
 		}
-		w.Write(data) // #nosec G705 -- format validated against allowlist above
+		writeBytes(w, data) // #nosec G705 -- format validated against allowlist above
 	}))
 
 	// Persistence stats endpoint
@@ -695,7 +712,7 @@ func main() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.Write(data)
+		writeBytes(w, data)
 	}))
 
 	// Certificate status endpoint — validate & inspect TLS certificates
@@ -712,14 +729,14 @@ func main() {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.Write(data)
+		writeBytes(w, data)
 	}))
 
 	// MCP Guardrails stats endpoint
 	dashMux.HandleFunc("/api/v1/guardrails", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if mcpGuardrails == nil {
-			w.Write([]byte(`{"error": "guardrails not active (run with --embedded-mcp)"}`))
+		writeBytes(w, []byte(`{"error": "guardrails not active (run with --embedded-mcp)"}`))
 			return
 		}
 		stats := mcpGuardrails.Stats()
@@ -727,7 +744,7 @@ func main() {
 			"success": true,
 			"data":    stats,
 		})
-		w.Write(data)
+		writeBytes(w, data)
 	})
 
 	// Aggregated dashboard stats endpoint
@@ -750,7 +767,7 @@ func main() {
 			stats["data"].(map[string]interface{})["certificates"] = certInfo
 		}
 		data, _ := json.Marshal(stats)
-		w.Write(data)
+		writeBytes(w, data)
 	}))
 
 	// Policy info endpoint — returns policy settings
@@ -797,7 +814,7 @@ func main() {
 			},
 		}
 		data, _ := json.Marshal(policies)
-		w.Write(data)
+		writeBytes(w, data)
 	})
 
 	// Static UI file server
@@ -1073,7 +1090,7 @@ func verifyServicesReady() error {
 		if err != nil {
 			return fmt.Errorf("port %d not ready: %w", port, err)
 		}
-		conn.Close()
+		_ = conn.Close()
 		log.Printf("[STARTUP-CONFIRM] Port %d ready", port)
 	}
 	return nil
