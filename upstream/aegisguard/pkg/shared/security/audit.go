@@ -195,7 +195,7 @@ func (arw *AuditResponseWriter) WriteHeader(code int) {
 }
 
 func (arw *AuditResponseWriter) Write(b []byte) (int, error) {
-	n, err := arw.ResponseWriter.Write(b)
+	n, err := arw.ResponseWriter.Write(b) // lgtm[go/reflected-xss] — audit response writer: only records bytes written, does not render HTML
 	arw.bytesWritten += n
 	return n, err
 }

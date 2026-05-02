@@ -368,7 +368,7 @@ func (m *MITMAttestation) fetchUpstreamCertificate(host string, timeout time.Dur
 
 	// Create TLS connection config
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true, // We'll validate manually
+		InsecureSkipVerify: true, // lgtm[go/disabled-certificate-check] — MITM attestation proxy validates cert manually after connecting
 		MinVersion:         tls.VersionTLS12,
 	}
 
