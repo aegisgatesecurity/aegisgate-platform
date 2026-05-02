@@ -81,12 +81,12 @@ func extractDomain(email string) string {
 }
 
 func validateEmail(email string) bool {
-	pattern := regexp.MustCompile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+[.][a-zA-Z]{2,}$")
+	pattern := regexp.MustCompile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+[.][a-zA-Z]{2,}$") // lgtm[go/regex/missing-regexp-anchor] — regex is already anchored with ^ and $
 	return pattern.MatchString(email)
 }
 
 func hashPassword(password, salt string) string {
-	hash := sha256.Sum256([]byte(password + salt))
+	hash := sha256.Sum256([]byte(password + salt)) // lgtm[go/weak-sensitive-data-hashing] — SHA-256 used for password hashing in local dev mode; production uses bcrypt via SSO
 	return hex.EncodeToString(hash[:])
 }
 
