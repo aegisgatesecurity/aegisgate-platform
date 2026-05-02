@@ -178,7 +178,7 @@ func (c *StripeClient) ValidateConfig() error {
 	if c.secretKey == "" {
 		return fmt.Errorf("STRIPE_SECRET_KEY is not set")
 	}
-	if c.secretKey == "sk_test_placeholder" {
+	if c.secretKey == "sk_test_placeholder" { // #nosec G101 -- validates that placeholder was not left in production
 		return fmt.Errorf("STRIPE_SECRET_KEY is still set to placeholder value")
 	}
 	return nil

@@ -214,7 +214,7 @@ func (s *AegisGuardMCPScanner) Health() error {
 		if err != nil {
 			return fmt.Errorf("health check failed: %w", err)
 		}
-		conn.Close()
+		_ = conn.Close()
 		return nil
 	}
 
@@ -418,7 +418,7 @@ func (s *AegisGuardMCPScanner) writeJSON(conn net.Conn, data []byte) error {
 
 // readJSON reads JSON data from connection with timeout
 func (s *AegisGuardMCPScanner) readJSON(conn net.Conn) (*JSONRPCResponse, error) {
-	conn.SetReadDeadline(time.Now().Add(s.config.ReadTimeout))
+	_ = conn.SetReadDeadline(time.Now().Add(s.config.ReadTimeout))
 	// Read until newline (JSON-RPC protocol line-based)
 	var jsonBytes []byte
 	for {
