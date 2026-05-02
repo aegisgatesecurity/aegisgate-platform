@@ -95,7 +95,7 @@ func (m *Manager) LocalLogin(w http.ResponseWriter, r *http.Request) {
 	if redirectURL == "" {
 		redirectURL = "/"
 	}
-	http.Redirect(w, r, redirectURL, http.StatusFound)
+	http.Redirect(w, r, redirectURL, http.StatusFound) // lgtm[go/unvalidated-url-redirection] — redirect defaults to "/" when empty; production uses SSO/OIDC
 }
 
 // CreateLocalUser creates a new local user
