@@ -120,17 +120,7 @@ jobs:
           
           echo "✅ Container image signed"
 
-      - name: Attest container image (SBOM)
-        run: |
-          IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform:latest | cut -d@ -f2)
-          IMAGE_REF="${{ env.REGISTRY }}/${{ github.repository_owner }}/aegisgate-platform@${IMAGE_DIGEST}"
           
-          # Generate SBOM and attest
-          cosign attest --yes --type spdxjson $IMAGE_REF
-          
-          echo "✅ SBOM attestation created"
-
       - name: Verify signature
         run: |
           IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
@@ -186,7 +176,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build, sign-binary]
+    needs: [build, sign-binary, sbom-attest]
     permissions:
       contents: write
     steps:
@@ -214,6 +204,7 @@ jobs:
 
   # Job 5: Generate and Attest SBOM
   sbom-attest:
+    needs: [build-container]
     name: SBOM Attestation
     runs-on: ubuntu-latest
     permissions:
