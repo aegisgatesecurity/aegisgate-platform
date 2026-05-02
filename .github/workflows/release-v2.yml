@@ -1,10 +1,10 @@
 # ============================================================================
-# AegisGate Security Platform - Release Workflow
+# AegisGate Security Platform - Release Workflow v2
 # ============================================================================
-# This workflow creates signed releases with SBOM attestation
+# Fixed version with proper image digest handling
 # 
 # Key features:
-# - Binary builds with SHA256 checksums
+# - Binary builds with SHA256 checksums (direct to release)
 # - Container image builds with Cosign keyless signing
 # - SBOM generation with Syft
 # - Attestation to image (provenance)
@@ -12,10 +12,10 @@
 # 
 # Usage:
 # - Tag: git tag v1.3.8 && git push origin v1.3.8
-# - Manual: gh workflow run release.yml -f version=v1.3.8
+# - Manual: gh workflow run release-v2.yml -f version=v1.3.8
 # ============================================================================
 
-name: Release & Signing
+name: Release & Signing v2
 
 on:
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
     name: Build Binary
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       attestations: write
       id-token: write
     outputs:
@@ -61,8 +61,9 @@ jobs:
         id: version
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          echo "VERSION=${VERSION#v}" >> $GITHUB_OUTPUT
-          echo "Full version tag: $VERSION"
+          VERSION="${VERSION#v}"  # Remove 'v' prefix
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Full version tag: v${VERSION}"
 
       - name: Build binary
         env:
@@ -100,21 +101,20 @@ jobs:
             aegisgate-platform
 
       - name: Upload Binary to Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.event.inputs.version || github.ref }}
+          tag_name: v${{ steps.version.outputs.VERSION }}
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
           files: |
             dist/aegisgate-platform
             dist/aegisgate-platform.sha256
             dist/aegisgate-platform.bundle
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ========================================================================
-  # JOB 2: Build Container Image
+  # JOB 2: Build & Sign Container Image
   # ========================================================================
   build-container:
     name: Build Container Image
@@ -134,7 +134,9 @@ jobs:
         id: version
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name }}"
-          echo "VERSION=${VERSION#v}" >> $GITHUB_OUTPUT
+          VERSION="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Full version tag: v${VERSION}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -146,11 +148,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Cosign
-        uses: sigstore/cosign-installer@v3
+      - name: Install Crane
+        run: |
+          curl -sL https://github.com/google/crane/releases/download/v0.19.0/crane-linux-amd64.tar.gz | tar xzf - crane
+          sudo mv crane /usr/local/bin/
+          crane version
 
       - name: Build and push image
-        uses: docker/build-push-action@v5
+        id: build
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -164,30 +170,27 @@ jobs:
             COMMIT=${{ github.sha }}
             BUILD_DATE=${{ github.event.created_at }}
 
-      - name: Verify and print image digest
-        id: digest
-        run: |
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.VERSION }} | cut -d@ -f2)
-          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
-          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
+      - name: Set up Cosign
+        uses: sigstore/cosign-installer@v3
 
       - name: Sign container image
         env:
-          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
-          cosign sign --yes $IMAGE_REF
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "Signing image: ${IMAGE_REF}"
+          cosign sign --yes ${IMAGE_REF}
 
       - name: Verify signature
         env:
-          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "Verifying image: ${IMAGE_REF}"
           cosign verify \
             --certificate-identity-regexp "https://github.com/.*" \
             --certificate-oidc-issuer-regexp "https://token.actions.githubusercontent.com" \
-            $IMAGE_REF
+            ${IMAGE_REF}
 
   # ========================================================================
   # JOB 3: SBOM Generation & Attestation
@@ -205,6 +208,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Determine version
+        id: version
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Set up Syft
         uses: anchore/sbom-action@v0
 
@@ -215,25 +225,18 @@ jobs:
       - name: Set up Cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Get image digest
-        id: digest
-        run: |
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 2>/dev/null | cut -d@ -f2 || echo "")
-          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_OUTPUT
-
       - name: Attest SBOM to image
-        if: steps.digest.outputs.IMAGE_DIGEST != ''
         env:
-          IMAGE_DIGEST: ${{ steps.digest.outputs.IMAGE_DIGEST }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${IMAGE_DIGEST}"
-          cosign attest --yes --type spdxjson --predicate sbom.spdx.json $IMAGE_REF
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "Attesting SBOM to: ${IMAGE_REF}"
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json ${IMAGE_REF}
 
       - name: Upload SBOM to Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.event.inputs.version || github.ref }}
+          tag_name: v${{ steps.version.outputs.VERSION }}
           files: |
             sbom.spdx.json
         env:
