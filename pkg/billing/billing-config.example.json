@@ -1,0 +1,13 @@
+{
+  "tier_prices": {
+    "starter": 2900,
+    "developer": 7900,
+    "professional": 24900
+  },
+  "tier_products": {
+    "starter": "",
+    "developer": "",
+    "professional": "",
+    "enterprise": ""
+  }
+}

@@ -15,20 +15,109 @@ import (
 
 //go:generate mockgen -destination=mocks/stripe_mock.go -package=mocks . StripeClientInterface
 
-// TierProduct maps our tier names to Stripe Price IDs
+// billingConfig represents the pricing and product configuration loaded from billing-config.json
+type billingConfig struct {
+	TierPrices    map[string]int64  `json:"tier_prices"`
+	TierProducts  map[string]string `json:"tier_products"`
+}
+
+// TierProducts maps our tier names to Stripe Price IDs.
+// Loaded from billing-config.json at init; empty strings are placeholder defaults.
 var TierProducts = map[string]string{
-	"starter":      "", // Will be set via env or during setup
+	"starter":      "",
 	"developer":    "",
 	"professional": "",
 	"enterprise":   "",
 }
 
-// TierPrices maps our tier names to monthly prices (cents)
-var TierPrices = map[string]int64{
-	"starter":      2900,  // $29.00
-	"developer":    7900,  // $79.00
-	"professional": 24900, // $249.00
-	// Enterprise is custom - not set here
+// TierPrices maps our tier names to monthly prices (cents).
+// Loaded from billing-config.json at init; overridden by env vars if set.
+var TierPrices = map[string]int64{}
+
+func init() {
+	// Auto-load billing config at package initialization.
+	// Falls back to defaults if billing-config.json is missing.
+	_ = LoadBillingConfig()
+}
+
+// configPath is the path to the billing configuration file.
+// Can be overridden with the AEGISGATE_BILLING_CONFIG env var.
+var configPath = getDefaultConfigPath()
+
+func getDefaultConfigPath() string {
+	if p := os.Getenv("AEGISGATE_BILLING_CONFIG"); p != "" {
+		return p
+	}
+	// Check common install locations
+	paths := []string{
+		"billing-config.json",
+		"/opt/aegisgate-platform/billing-config.json",
+		"/etc/aegisgate/billing-config.json",
+	}
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return "billing-config.json" // fallback — will use embedded defaults if missing
+}
+
+// LoadBillingConfig loads tier pricing and product configuration from JSON.
+// Falls back to sensible defaults if the config file is missing.
+func LoadBillingConfig() error {
+	data, err := os.ReadFile(configPath) // #nosec G304 -- path comes from env var or package default
+	if err != nil {
+		// Config file is optional — use defaults
+		TierPrices = map[string]int64{
+			"starter":      2900,
+			"developer":    7900,
+			"professional": 24900,
+		}
+		TierProducts = map[string]string{
+			"starter":      "",
+			"developer":    "",
+			"professional": "",
+			"enterprise":   "",
+		}
+		return nil
+	}
+
+	var config billingConfig
+	if err := json.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("failed to parse billing config: %w", err)
+	}
+
+	if len(config.TierPrices) > 0 {
+		TierPrices = config.TierPrices
+	}
+	if len(config.TierProducts) > 0 {
+		TierProducts = config.TierProducts
+	}
+
+	// Override with env vars if set (e.g., AEGISGATE_PRICE_STARTER=2900)
+	for _, tier := range []string{"starter", "developer", "professional"} {
+		if v := os.Getenv("AEGISGATE_PRICE_" + tierToUpper(tier)); v != "" {
+			var price int64
+			if _, err := fmt.Sscanf(v, "%d", &price); err == nil && price > 0 {
+				TierPrices[tier] = price
+			}
+		}
+	}
+
+	return nil
+}
+
+func tierToUpper(s string) string {
+	switch s {
+	case "starter":
+		return "STARTER"
+	case "developer":
+		return "DEVELOPER"
+	case "professional":
+		return "PROFESSIONAL"
+	default:
+		return ""
+	}
 }
 
 // StripeClientInterface defines the interface for Stripe operations
@@ -178,7 +267,7 @@ func (c *StripeClient) ValidateConfig() error {
 	if c.secretKey == "" {
 		return fmt.Errorf("STRIPE_SECRET_KEY is not set")
 	}
-	if c.secretKey == "sk_test_placeholder" { // #nosec G101 #trivy:ignore:stripe-secret-token -- validates that placeholder was not left in production
+	if c.secretKey == "sk_test_placeholder" { // #nosec G101 -- validates that placeholder was not left in production
 		return fmt.Errorf("STRIPE_SECRET_KEY is still set to placeholder value")
 	}
 	return nil
