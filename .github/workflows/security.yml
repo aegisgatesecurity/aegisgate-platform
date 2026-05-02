@@ -43,7 +43,7 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: govulncheck-results
           path: govulncheck-results.txt
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload Gosec results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gosec-results
           path: gosec-results.*
@@ -180,7 +180,7 @@ jobs:
 
       - name: Upload TruffleHog results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trufflehog-results
           path: trufflehog-results.json
@@ -211,7 +211,7 @@ jobs:
           govulncheck -json ./... | jq -r '.Finding | select(. != null) | "\(.OSV): \(.Trace[0].Module)"' || true
 
       - name: Upload dependency report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-report
           path: dependencies.json
@@ -254,7 +254,7 @@ jobs:
           staticcheck ./... 2>&1 | tee staticcheck-results.txt || true
 
       - name: Upload staticcheck results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: staticcheck-results
           path: staticcheck-results.txt
@@ -288,7 +288,7 @@ jobs:
           output-file: sbom.spdx.json
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-artifacts
           path: |

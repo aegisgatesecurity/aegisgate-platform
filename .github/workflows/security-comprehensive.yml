@@ -110,7 +110,7 @@ jobs:
             2>&1 || true
 
       - name: Upload ZAP Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: zap-reports
@@ -149,7 +149,7 @@ jobs:
                aegisgate-test 2>&1 || true
 
       - name: Upload Nmap Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: nmap-results
@@ -186,7 +186,7 @@ jobs:
                 2>&1 || true
 
       - name: Upload Nikto Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: nikto-results
@@ -219,7 +219,7 @@ jobs:
           AEGISGATE_TARGET: http://aegisgate-test:8080
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: license-bypass-results
@@ -249,7 +249,7 @@ jobs:
           AEGISGATE_TARGET: http://aegisgate-test:8080
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: rbac-test-results
@@ -285,7 +285,7 @@ jobs:
             ./pkg/license/... 2>&1 || true
 
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: fuzz-license-results
@@ -314,7 +314,7 @@ jobs:
             ./pkg/config/... 2>&1 || true
 
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: fuzz-config-results
@@ -343,7 +343,7 @@ jobs:
             ./pkg/scanner/... 2>&1 || true
 
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: fuzz-scanner-results
