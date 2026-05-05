@@ -51,6 +51,9 @@ type Config struct {
 	// Logging configuration
 	Logging LoggingConfig `yaml:"logging"`
 
+	// A2A (Agent-to-Agent) guardrails configuration
+	A2A A2AConfig `yaml:"a2a"`
+
 	// Persistence configuration (audit storage, retention, pruning)
 	Persistence persistence.Config `yaml:"persistence"`
 }
@@ -95,6 +98,13 @@ type MutualTLSConfig struct {
 type FIPSConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Level   string `yaml:"level"` // "140-2" or "140-3"
+}
+
+// A2AConfig holds A2A (Agent-to-Agent) guardrails configuration
+type A2AConfig struct {
+	Enabled      bool   `yaml:"enabled"`
+	ConfigFile   string `yaml:"config_file"`   // path to a2a.yaml
+	CapsFile     string `yaml:"caps_file"`     // path to a2a_caps.yaml
 }
 
 // SecurityConfig holds security middleware settings
@@ -171,6 +181,11 @@ func DefaultConfig() *Config {
 		Logging: LoggingConfig{
 			Level:  "info",
 			Format: "json",
+		},
+		A2A: A2AConfig{
+			Enabled:    false,
+			ConfigFile: "configs/a2a.yaml",
+			CapsFile:   "configs/a2a_caps.yaml",
 		},
 		Persistence: persistence.DefaultConfig(),
 	}
@@ -278,6 +293,17 @@ func (c *Config) applyEnvOverrides() {
 	// FIPS overrides
 	if v := os.Getenv("AEGISGATE_FIPS_ENABLED"); v != "" {
 		c.TLS.FIPS.Enabled = strings.ToLower(v) == "true"
+	}
+
+	// A2A overrides
+	if v := os.Getenv("AEGISGATE_A2A_ENABLED"); v != "" {
+		c.A2A.Enabled = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_A2A_CONFIG_FILE"); v != "" {
+		c.A2A.ConfigFile = v
+	}
+	if v := os.Getenv("AEGISGATE_A2A_CAPS_FILE"); v != "" {
+		c.A2A.CapsFile = v
 	}
 
 	// Persistence overrides
