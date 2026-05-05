@@ -1,0 +1,66 @@
+# ============================================================================
+# AegisGate Test Lab Dockerfile
+# Multi-stage build to handle local replace directives
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Build Stage
+# ----------------------------------------------------------------------------
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates
+
+# Copy ALL source code FIRST (required for local replace directives)
+COPY . .
+
+# Run go mod tidy to resolve dependencies with local replaces
+RUN go mod tidy 2>&1 | tail -3
+
+# Get VERSION from file
+ARG VERSION=1.3.7
+ARG COMMIT=local
+ARG BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# Build the application with version ldflags
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-w -s -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
+    -o /aegisgate-platform \
+    ./cmd/aegisgate-platform && \
+    echo "Build successful! Version: ${VERSION}"
+
+# ----------------------------------------------------------------------------
+# Final Stage
+# ----------------------------------------------------------------------------
+FROM alpine:3.19
+
+WORKDIR /app
+
+# Install CA certificates, curl, bash, jq for testing
+RUN apk add --no-cache ca-certificates tzdata curl bash jq
+
+# Create data directories
+RUN mkdir -p /data /data/certs /data/audit && \
+    chmod 755 /data /data/certs /data/audit
+
+# Create non-root user
+RUN adduser -D -g '' appuser
+
+# Copy binary from builder
+COPY --from=builder /app/aegisgate-platform /app/aegisgate-platform
+
+# Copy default config to app directory
+COPY configs/aegisgate-platform.yaml /app/
+COPY configs/community.yaml /app/
+
+# Set ownership
+RUN chown -R appuser:appuser /app && \
+    chown -R appuser:appuser /data
+
+# Switch to non-root user
+USER appuser
+
+# Default command
+CMD ["/app/aegisgate-platform", "--embedded-mcp"]

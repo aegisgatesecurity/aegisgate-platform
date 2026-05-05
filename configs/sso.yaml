@@ -1,0 +1,46 @@
+# =============================================================================
+# AegisGate Security Platform — SSO Configuration
+# =============================================================================
+# Configure OIDC and SAML providers for Developer tier and above
+# =============================================================================
+# SSO Settings
+# =============================================================================
+sso:
+  enabled: false  # Set to true to enable SSO for Developer tier
+  
+  # =============================================================================
+  # OIDC Configuration (Google, GitHub, Azure AD, etc.)
+  # =============================================================================
+  oidc:
+    enabled: false
+    provider: generic  # Options: google, github, azure, generic
+    client_id: ""      # OAuth2 client ID
+    client_secret: ""  # OAuth2 client secret
+    auth_url: ""       # Authorization endpoint URL
+    token_url: ""      # Token endpoint URL
+    user_info_url: ""  # User info endpoint URL
+    redirect_url: ""   # Callback URL (auto-generated in production)
+    scopes:
+      - openid
+      - profile
+      - email
+    
+  # =============================================================================
+  # SAML 2.0 Configuration
+  # =============================================================================
+  saml:
+    enabled: false
+    idp_metadata_url: ""  # Identity Provider metadata URL
+    idp_cert: ""          # Identity Provider certificate (base64)
+    entity_id: ""         # Service Provider entity ID
+    acs_url: ""           # Assertion Consumer Service URL
+    name_id_format: "email"  # Options: email, persistent, transient
+    
+  # =============================================================================
+  # Session Settings
+  # =============================================================================
+  session:
+    duration_hours: 8      # Session duration
+    refresh_before_expiry: 1  # Auto-refresh hours before expiry
+    secure: true           # HTTPS-only cookies (should be true in production)
+    same_site: "lax"       # Cookie same-site policy: strict, lax, none

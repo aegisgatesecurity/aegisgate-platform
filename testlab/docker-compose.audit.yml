@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: Apache-2.0
+# =========================================================================
+# AegisGate Security Audit Lab - Docker Compose Configuration
+# =========================================================================
+#
+# REUSES existing testlab infrastructure (Keycloak, PostgreSQL, Redis)
+# Adds Kali audit container and reconfigured AegisGate test instance
+#
+# Usage:
+#   cd /path/to/aegisgate-platform/testlab
+#   docker-compose -f docker-compose.audit.yml up -d
+#   docker exec -it aegisgate-audit /bin/bash
+#   /audit-scripts/10-license-bypass.sh
+#
+# Services:
+#   - keycloak: Existing IdP from testlab
+#   - postgres: Existing DB from testlab
+#   - redis: Existing cache from testlab
+#   - aegisgate-test: Test instance for auditing (ports 8080, 8443)
+#   - aegisgate-audit: Kali audit container (ports 1337)
+#
+# =========================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # AegisGate Test Instance - Auditing target
+  # ---------------------------------------------------------------------------
+  aegisgate-test:
+    build:
+      context: ..
+      dockerfile: testlab/Dockerfile.testlab
+    container_name: aegisgate-test-instance
+    hostname: aegisgate-test
+    environment:
+      # Tier configuration - Testing all tiers
+      AEGISGATE_TIER: developer
+      
+      # Database
+      DATABASE_URL: postgres://aegisgate:aegisgate_test_pass@postgres:5432/aegisgate_test?sslmode=disable
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # SSO Configuration - Keycloak
+      SSO_OIDC_ISSUER_URL: http://keycloak:8080/realms/aegisgate
+      SSO_OIDC_CLIENT_ID: aegisgate-platform
+      SSO_OIDC_CLIENT_SECRET: aegisgate-oidc-secret
+      
+      # Server - Explicit ports to avoid conflicts
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      SERVER_TLS_ENABLED: "false"
+      
+      # Logging
+      LOG_LEVEL: debug
+      
+      # Metrics
+      AEGISGATE_METRICS_ENABLED: "true"
+      METRICS_PORT: 8081
+      
+      # MCP Server
+      MCP_ENABLED: "true"
+      MCP_PORT: 9090
+    ports:
+      - "8080:8080"   # Proxy port (test target)
+      - "8443:8443"   # Dashboard port
+      - "8081:8081"   # Metrics port
+      - "9090:9090"   # MCP port
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - aegisgate-test
+
+  # ---------------------------------------------------------------------------
+  # Kali Linux Audit Container
+  # ---------------------------------------------------------------------------
+  aegisgate-audit:
+    image: kali-rolling:latest
+    container_name: aegisgate-audit
+    hostname: aegisgate-audit
+    environment:
+      - AEGISGATE_TARGET=http://aegisgate-test:8080
+      - AEGISGATE_DASHBOARD=http://aegisgate-test:8443
+      - KALI_MCP_ENABLED=true
+    volumes:
+      - /home/chaos/Desktop/AegisGate/audit-lab/audit-scripts:/audit-scripts:ro
+      - /home/chaos/Desktop/AegisGate/audit-lab/audit-results:/audit-results:rw
+      - /home/chaos/Desktop/AegisGate/consolidated/aegisgate-platform:/src/aegisgate-platform:ro
+    working_dir: /audit-scripts
+    command: bash -c "apt update && apt install -y curl jq nmap nikto sqlmap hydra wget tcpdump strace lsof && sleep infinity"
+    networks:
+      - aegisgate-test
+    ports:
+      - "1337:1337"  # MCP server port
+
+networks:
+  aegisgate-test:
+    external: true
+    name: aegisgate-test-net

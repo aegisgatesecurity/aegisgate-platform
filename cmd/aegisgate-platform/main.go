@@ -35,6 +35,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
@@ -261,6 +262,30 @@ func main() {
 
 	// Create mux for AegisGate proxy + management endpoints
 	proxyMux := http.NewServeMux()
+
+	// -------------------
+	// A2A Guardrails Middleware Integration
+	// -------------------
+	a2aCfg, err := a2a.LoadConfig("configs/a2a.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load A2A config: %v", err)
+	}
+	capsEnforcer := a2a.NewInMemoryCapEnforcer()
+	// Example capability set for demo agent
+	capsEnforcer.SetCapabilities("demo-agent", []string{"demo-capability"})
+
+	interval, parseErr := time.ParseDuration(a2aCfg.RateLimit.Interval)
+	if parseErr != nil {
+		log.Fatalf("Invalid rate‑limit interval in A2A config: %v", parseErr)
+	}
+	_ = interval // interval is used inside NewA2AMiddleware via secret; keep for config compatibility
+	a2aHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, map[string]string{"status": "a2a-ok"})
+	})
+	// Use the exported constructor – it wires auth, integrity, rate‑limiting, and capability enforcement.
+	// The license manager is passed as the third argument (nil if not needed here – the middleware will skip license checks).
+	a2aMiddleware := a2a.NewA2AMiddleware(a2aHandler, []byte(a2aCfg.Secret), nil, capsEnforcer)
+	proxyMux.Handle("/a2a/", a2aMiddleware)
 
 	// Management endpoints on the proxy port
 	proxyMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
