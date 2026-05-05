@@ -134,18 +134,25 @@ func (rm *RBACMiddleware) InjectRBACContext(next http.HandlerFunc) http.HandlerF
 		}
 
 		if sessionID == "" {
-			rm.logger.Debug("RBAC context injection failed: no session ID")
-			next.ServeHTTP(w, r)
+			// FAIL-CLOSED: No session ID means no authentication context.
+			// Downstream handlers MUST have RBAC context to enforce access control.
+			// Allowing through without context is a security risk — any request
+			// without a session ID could bypass all role-based checks.
+			rm.logger.Warn("RBAC context injection: no session ID — denying request")
+			writeForbidden(w, "authentication required: session ID missing", "")
 			return
 		}
 
 		// Get session from manager
 		session, err := rm.manager.GetSession(sessionID)
 		if err != nil {
-			rm.logger.Debug("RBAC context injection failed: session not found",
-				"error", err,
-				"session_id", truncateID(sessionID))
-			next.ServeHTTP(w, r)
+			// FAIL-CLOSED: Invalid/expired session means the user's session is gone.
+			// This covers revoked sessions, expired tokens, and corrupt session IDs.
+			// Allowing through without a valid session is a security risk —
+			// an attacker with a revoked session ID could bypass RBAC.
+			rm.logger.Warn("RBAC context injection: session invalid — denying request",
+				"error", err, "session_id", truncateID(sessionID))
+			writeForbidden(w, "invalid or expired session", "")
 			return
 		}
 

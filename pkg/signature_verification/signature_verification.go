@@ -298,11 +298,14 @@ func (sv *SignatureVerifier) VerifySignature(payload []byte, signature []byte, p
 	sv.statsLock.Unlock()
 
 	if !sv.enabled {
+		// FAIL-CLOSED: When signature verification is disabled, ALL signatures are
+		// considered INVALID. Callers checking result.Valid will correctly deny the request.
+		// The error message explains why, enabling administrators to diagnose misconfiguration.
 		return &VerificationResult{
-			Valid:     true,
+			Valid:     false,
 			Timestamp: time.Now(),
-			Error:     errors.New("signature verification is disabled"),
-		}, nil
+			Error:     errors.New("signature verification is disabled — all requests are denied by default"),
+		}, errors.New("signature verification is disabled")
 	}
 
 	block, _ := pem.Decode(publicKeyBytes)
