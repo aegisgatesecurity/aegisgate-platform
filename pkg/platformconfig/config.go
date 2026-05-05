@@ -102,9 +102,9 @@ type FIPSConfig struct {
 
 // A2AConfig holds A2A (Agent-to-Agent) guardrails configuration
 type A2AConfig struct {
-	Enabled      bool   `yaml:"enabled"`
-	ConfigFile   string `yaml:"config_file"`   // path to a2a.yaml
-	CapsFile     string `yaml:"caps_file"`     // path to a2a_caps.yaml
+	Enabled    bool   `yaml:"enabled"`
+	ConfigFile string `yaml:"config_file"` // path to a2a.yaml
+	CapsFile   string `yaml:"caps_file"`   // path to a2a_caps.yaml
 }
 
 // SecurityConfig holds security middleware settings
