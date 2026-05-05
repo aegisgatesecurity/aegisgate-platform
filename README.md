@@ -13,64 +13,11 @@
 
 </div>
 
-## Quick Start
-
-### Docker (Recommended)
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -p 8081:8081 \
-  -p 8443:8443 \
-  -v $(pwd)/data:/data \
-  ghcr.io/aegisgatesecurity/aegisgate-platform:latest
-```
-
-That's it. One command. Your MCP traffic is now authenticated, inspected, logged, and rate‑limited.
-
-### A2A Guardrails Demo (Docker)
-
-The A2A middleware is automatically enabled when the platform starts. To try it locally:
-
-```bash
-# Mount the A2A config (includes secret & rate‑limit)
-mkdir -p $(pwd)/a2a-config && cp configs/a2a.yaml $(pwd)/a2a-config/
-
-# Run the container, exposing the A2A endpoint on `/a2a/`
-docker run -d \
-  -p 8080:8080 \
-  -p 8081:8081 \
-  -p 8443:8443 \
-  -v $(pwd)/a2a-config:/app/configs \
-  ghcr.io/aegisgatesecurity/aegisgate-platform:latest
-```
-
-You can now call the A2A echo endpoint:
-
-```bash
-# Generate a self‑signed client cert (once)
-openssl req -newkey rsa:2048 -nodes -keyout client.key -x509 -days 365 -out client.crt -subj "/CN=demo-agent"
-
-# Compute a valid HMAC signature (replace SECRET with the value from a2a.yaml)
-SECRET=$(yq e '.secret' a2a-config/a2a.yaml)
-BODY='{"msg":"hello"}'
-SIG=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -binary | base64)
-
-curl -v \
-  --cert client.crt --key client.key \
-  -H "A2A-Signature: $SIG" \
-  -H "A2A-Capability: demo-capability" \
-  -d "$BODY" \
-  http://localhost:8080/a2a/echo
-```
-
-Observe the Prometheus counters grow (license, auth, integrity, capability) on `http://localhost:8443/metrics`.
-
 ---
 
-Your AI infrastructure is more than prompts. It's HTTP APIs, MCP agents, RAG pipelines, and third-party LLM integrations—each a potential attack vector.
+Your AI infrastructure goes far beyond prompts – it spans HTTP APIs, MCP agents, RAG pipelines, third‑party LLM integrations and the new A2A agent‑to‑agent communication layer, all of which can serve as attack vectors.
 
-AegisGate secures **every AI interaction point**: bidirectional API scanning, MCP session isolation, and compliance enforcement.
+AegisGate protects every AI interaction point by providing bidirectional API scanning, MCP session isolation, the A2A guardrails (mTLS authentication, HMAC‑SHA256 integrity verification, per‑agent capability enforcement, token‑bucket rate limiting, and optional license validation), and full compliance enforcement.
 
 When [Ox Security called MCP "the mother of all AI supply chain attacks"](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/), they were right. Their solution: expensive registries and vendor audits. Ours: deployable infrastructure in 60 seconds.
 
@@ -97,7 +44,7 @@ AI agents are connecting to MCP servers you don't control. Every tool call is a 
 docker run -p 8080:8080 -p 8081:8081 ghcr.io/aegisgatesecurity/aegisgate-platform:latest
 ```
 
-That's it. One command. Your MCP traffic is now authenticated, inspected, logged, and rate-limited.
+That’s it—just one command. Your MCP traffic and A2A agent‑to‑agent traffic are now authenticated, inspected, logged, and rate‑limited (A2A also adds mTLS authentication, HMAC‑SHA256 integrity verification, capability enforcement, token‑bucket rate limiting, and optional license validation).
 
 ---
 
@@ -169,6 +116,54 @@ flowchart TB
 ```
 
 ---
+
+## 🔒 A2A Security & Guardrails
+
+AegisGate’s new **Agent‑to‑Agent (A2A)** communication layer is protected by a suite of dedicated guard‑rails. Each request that travels between A2A agents passes through the following checks:
+
+| Guard‑rail | What it does | Why it matters |
+|------------|--------------|----------------|
+| **mTLS Authentication** | Verifies the client’s X.509 certificate and extracts the `CommonName` as the agent identifier. | Guarantees that only trusted agents can talk to each other. |
+| **HMAC‑SHA256 Integrity Verification** | Validates the `A2A‑Signature` header using a shared secret (`A2A‑Secret`). The signature covers the full request body. | Detect any tampering of the payload in transit --- prevents MITM attacks and replay attacks that could corrupt the A2A communication channel.
+| **Capability Enforcement** | Looks up the sender’s allowed capabilities from `configs/a2a_caps.yaml` (or a loaded config file) and ensures the requested operation is permitted. | Prevents an agent from invoking tools it isn’t authorized for, enforcing the principle of least privilege.
+| **Token‑Bucket Rate Limiting** | Enforces per‑agent request quotas (default 100 req/min). Excess requests are rejected with `429 Too Many Requests`. | Thwarts Denial‑of‑Service attacks and abuse of the A2A channel, protecting upstream services from overload.
+| **Optional License Validation** | If a license key is provided (`AEGISGATE_LICENSE_KEY`), the request is validated against the license manager; otherwise the guard‑rail is bypassed. | Allows commercial tiers to enforce paid‑feature usage while still supporting the free Community tier.
+| **Request Size Limits** | Rejects bodies > 2 MiB with a `413 Payload Too Large`. | Stops resource‑exhaustion attacks that could crash the service.
+| **Timeout Enforcement** | Cancels any request that exceeds a configurable execution timeout (default 30 s). | Guarantees that a hung agent does not block others, preserving system responsiveness.
+| **Audit Logging** | Emits a structured log entry (RFC 5424) for each request, including agent ID, guard‑rail outcomes, and timestamps. | Provides full traceability for investigations, forensic analysis, and compliance reporting.
+
+### How the Guardrails are Applied
+
+```mermaid
+flowchart TD
+    A[Incoming A2A Request] --> B[mTLS Auth]
+    B --> C[HMAC Verify]
+    C --> D[Capability Check]
+    D --> E[Rate Limit]
+    E --> F{License Required?}
+    F -->|Yes| G[License Validation]
+    F -->|No| H[Proceed]
+    G --> H
+    H --> I[Size / Timeout Checks]
+    I --> J[Audit Log]
+    J --> K[Forward to Target Agent]
+```
+
+### Metrics (Prometheus)
+
+All A2A guard‑rail events are exposed as counters in `pkg/metrics/a2a_metrics.go`:
+
+| Metric | Description |
+|--------|-------------|
+| `a2a_auth_fail_total` | Count of failed mTLS authentications |
+| `a2a_integrity_fail_total` | Count of HMAC verification failures |
+| `a2a_capability_denied_total` | Count of capability rejections |
+| `a2a_rate_limited_total` | Count of requests throttled by the token bucket |
+| `a2a_license_invalid_total` | Count of requests rejected due to invalid/absent license |
+| `a2a_request_total` | Total A2A requests processed |
+| `a2a_request_duration_seconds` | Latency histogram for successful A2A calls |
+
+These metrics are scraped by the existing Prometheus endpoint and visualised in the **Grafana dashboard** (`docs/grafana-dashboard-a2a.json`).
 
 ## 🔒 MCP Security & Guardrails
 
