@@ -57,23 +57,40 @@ func NewLicenseMiddleware(manager *Manager) *LicenseMiddleware {
 }
 
 // RequireLicense validates the license from context or the Manager's stored key
-// and injects license information into the request context. If no valid license
-// is found, the tier falls back to Community — this is not treated as an error.
-// The resolved tier and manager are always available downstream via context.
+// and injects license information into the request context.
+// FAIL-CLOSED BEHAVIOR by tier:
+//   - Community tier: No license required. Falls back to Community if no key present.
+//   - Developer+ tiers: Invalid/expired licenses are DENIED (403), not silently downgraded.
+//     This prevents unauthorized access to paid-tier features.
 func (lm *LicenseMiddleware) RequireLicense(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// Resolve license key from context (may have been injected by InjectLicenseContext)
 		var result ValidationResult
+		var licenseKey string
 		if key, ok := ctx.Value(CtxKeyLicenseKey).(string); ok && key != "" {
+			licenseKey = key
 			result = lm.manager.Validate(key)
 		} else {
 			// Use the Manager's stored key (set from env or config)
-			result = lm.manager.Validate(lm.manager.GetLicenseKey())
+			licenseKey = lm.manager.GetLicenseKey()
+			result = lm.manager.Validate(licenseKey)
 		}
 
-		// Determine effective tier: invalid/expired licenses fall back to Community
+		if !result.Valid {
+			// FAIL-CLOSED: If a license key was provided but is invalid/expired,
+			// deny the request rather than silently downgrading to Community tier.
+			// An attacker with an expired Enterprise key should NOT get Community access
+			// without re-authenticating — they may have been relying on Enterprise features.
+			if licenseKey != "" {
+				writeForbidden(w, "invalid or expired license", tier.TierCommunity.String())
+				return
+			}
+			// No license key provided at all — this is a valid Community-tier user.
+			// Fall back to Community tier (no license needed for Community features).
+		}
+
 		effectiveTier := result.Tier
 		if !result.Valid {
 			effectiveTier = tier.TierCommunity
