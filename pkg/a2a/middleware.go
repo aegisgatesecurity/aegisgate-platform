@@ -7,13 +7,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"io"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 )
 
 // NewA2AMiddleware creates an HTTP middleware that wraps the provided handler with A2A guard‑rails.
@@ -226,7 +226,13 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	capName := r.Header.Get("A2A-Capability")
 	if capName != "" {
-		allowed, _ := m.caps.IsAllowed(agentID, capName)
+		allowed, err := m.caps.IsAllowed(agentID, capName)
+		if err != nil {
+			// Log the internal error and respond with a generic server error.
+			metrics.RecordA2ACapabilityDenial(agentID, capName)
+			http.Error(w, "capability check error", http.StatusInternalServerError)
+			return
+		}
 		if !allowed {
 			metrics.RecordA2ACapabilityDenial(agentID, capName)
 			http.Error(w, "capability denied", http.StatusForbidden)
@@ -243,7 +249,10 @@ func EchoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(payload)
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		http.Error(w, "failed to write response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func RegisterA2AServer(mux *http.ServeMux, secret []byte, lm *license.Manager, caps CapabilityEnforcer) {
@@ -251,4 +260,4 @@ func RegisterA2AServer(mux *http.ServeMux, secret []byte, lm *license.Manager, c
 }
 
 // Note: In a real deployment the server would be started elsewhere; this file
-// provides only the middleware implementation needed for Sprint 7 Phase 2.
+// provides only the middleware implementation needed for Sprint 7 Phase 2.
