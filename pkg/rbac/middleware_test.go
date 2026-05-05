@@ -219,21 +219,21 @@ func TestRBACMiddleware_InjectRBACContext(t *testing.T) {
 		t.Errorf("InjectRBACContext query = %d, want 200", w3.Code)
 	}
 
-	// d) No session ID anywhere
+	// d) No session ID anywhere — FAIL-CLOSED: now returns 403 (denied by default)
 	r4 := httptest.NewRequest(http.MethodGet, "/", nil)
 	w4 := httptest.NewRecorder()
 	handler.ServeHTTP(w4, r4)
-	if w4.Code != http.StatusOK {
-		t.Errorf("InjectRBACContext none = %d, want 200", w4.Code)
+	if w4.Code != http.StatusForbidden {
+		t.Errorf("InjectRBACContext none = %d, want 403 (fail-closed: no session = denied)", w4.Code)
 	}
 
-	// e) Session ID present but not found
+	// e) Session ID present but not found — FAIL-CLOSED: now returns 403 (denied by default)
 	r5 := httptest.NewRequest(http.MethodGet, "/", nil)
 	r5.Header.Set("X-Session-ID", "nonexistent")
 	w5 := httptest.NewRecorder()
 	handler.ServeHTTP(w5, r5)
-	if w5.Code != http.StatusOK {
-		t.Errorf("InjectRBACContext notfound = %d, want 200", w5.Code)
+	if w5.Code != http.StatusForbidden {
+		t.Errorf("InjectRBACContext notfound = %d, want 403 (fail-closed: invalid session = denied)", w5.Code)
 	}
 }
 

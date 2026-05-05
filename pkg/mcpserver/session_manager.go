@@ -28,9 +28,10 @@ var (
 
 // ConnectionSessionManager handles MCP connection-to-session binding
 type ConnectionSessionManager struct {
-	manager *rbac.Manager
-	conns   map[string]*MCPSession
-	mu      sync.RWMutex
+	manager    *rbac.Manager
+	guardrails *GuardrailMiddleware
+	conns      map[string]*MCPSession
+	mu         sync.RWMutex
 }
 
 // MemoryStats tracks memory usage for a session
@@ -67,6 +68,12 @@ func NewConnectionSessionManager(rbacManager *rbac.Manager) *ConnectionSessionMa
 		manager: rbacManager,
 		conns:   make(map[string]*MCPSession),
 	}
+}
+
+// SetGuardrails wires the guardrail middleware so that session cleanup
+// can notify the middleware to release tracking state.
+func (sm *ConnectionSessionManager) SetGuardrails(g *GuardrailMiddleware) {
+	sm.guardrails = g
 }
 
 // CreateSession creates a new RBAC session bound to an MCP connection
@@ -147,7 +154,9 @@ func (sm *ConnectionSessionManager) UpdateActivity(connID string) error {
 	return nil
 }
 
-// CloseSession closes and cleans up a session
+// CloseSession closes and cleans up a session.
+// It notifies the guardrail middleware to release session tracking state
+// and decrement the active sessions counter.
 func (sm *ConnectionSessionManager) CloseSession(connID string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
@@ -162,6 +171,12 @@ func (sm *ConnectionSessionManager) CloseSession(connID string) error {
 
 	// Remove from map
 	delete(sm.conns, connID)
+
+	// Notify guardrail middleware to release session tracking state.
+	// This decrements the activeSessions counter and prevents counter drift.
+	if sm.guardrails != nil {
+		sm.guardrails.OnSessionDestroy(connID)
+	}
 
 	return nil
 }
