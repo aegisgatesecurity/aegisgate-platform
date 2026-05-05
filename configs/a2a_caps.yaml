@@ -1,0 +1,19 @@
+# AegisGate A2A Agent Capability Map
+# ====================================
+# Defines which capabilities each agent is authorized to use.
+# Format: agent_id -> [list of allowed capabilities]
+#
+# Agent IDs must match the Common Name (CN) on the agent's mTLS client certificate.
+# Capabilities are arbitrary strings that match the A2A-Capability header value.
+
+agents:
+  demo-agent:
+    - demo-capability
+    - echo
+  # Add your agents below:
+  # my-crawler-agent:
+  #   - web-scrape
+  #   - data-ingest
+  # my-analysis-agent:
+  #   - data-analyze
+  #   - report-generate

@@ -12,6 +12,10 @@ bridge:
   enabled: true
   aegisgate_url: "http://localhost:8080"
   timeout: 30s
+a2a:
+  enabled: true
+  config_file: "configs/a2a.yaml"
+  caps_file: "configs/a2a_caps.yaml"
 logging:
   level: info
   format: json

@@ -53,7 +53,7 @@ import (
 )
 
 var (
-	version    = "1.3.8"
+	version    = "2.0.0"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -266,26 +266,50 @@ func main() {
 	// -------------------
 	// A2A Guardrails Middleware Integration
 	// -------------------
-	a2aCfg, err := a2a.LoadConfig("configs/a2a.yaml")
-	if err != nil {
-		log.Fatalf("Failed to load A2A config: %v", err)
-	}
-	capsEnforcer := a2a.NewInMemoryCapEnforcer()
-	// Example capability set for demo agent
-	capsEnforcer.SetCapabilities("demo-agent", []string{"demo-capability"})
+	// Load A2A configuration from the platform config. If A2A is not enabled
+	// or the config file is missing, the A2A endpoints are disabled gracefully.
+	var a2aMiddleware http.Handler
+	if cfg.A2A.Enabled {
+		a2aCfg, err := a2a.LoadConfig(cfg.A2A.ConfigFile)
+		if err != nil {
+			log.Printf("Warning: A2A config load failed (%v) — A2A endpoints disabled", err)
+		} else {
+			// Load agent capability sets from YAML (or use empty enforcer)
+			capsEnforcer := a2a.NewInMemoryCapEnforcer()
+			if cfg.A2A.CapsFile != "" {
+				caps, err := a2a.LoadCaps(cfg.A2A.CapsFile)
+				if err != nil {
+					log.Printf("Warning: A2A caps load failed (%v) — using empty capability set", err)
+				} else {
+					for agentID, capabilities := range caps {
+						capsEnforcer.SetCapabilities(agentID, capabilities)
+					}
+					log.Printf("A2A: Loaded %d agent capability sets from %s", len(caps), cfg.A2A.CapsFile)
+				}
+			}
 
-	interval, parseErr := time.ParseDuration(a2aCfg.RateLimit.Interval)
-	if parseErr != nil {
-		log.Fatalf("Invalid rate‑limit interval in A2A config: %v", parseErr)
+			a2aHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				writeJSON(w, map[string]string{"status": "a2a-ok"})
+			})
+			// Wire the A2A middleware with license manager for tier-aware enforcement.
+			// Pass the license manager so A2A can validate license headers (Developer+ tiers).
+			a2aMiddleware = a2a.NewA2AMiddleware(a2aHandler, []byte(a2aCfg.Secret), licenseMgr, capsEnforcer)
+			proxyMux.Handle("/a2a/", a2aMiddleware)
+			// Register the echo endpoint specifically for testing/demos
+			a2a.RegisterA2AServer(proxyMux, []byte(a2aCfg.Secret), licenseMgr, capsEnforcer)
+			log.Printf("A2A: Guardrails active (secret=%d bytes, rate_limit=%d/%d per %s)",
+				len(a2aCfg.Secret), a2aCfg.RateLimit.Refill, a2aCfg.RateLimit.Capacity, a2aCfg.RateLimit.Interval)
+		}
 	}
-	_ = interval // interval is used inside NewA2AMiddleware via secret; keep for config compatibility
-	a2aHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, map[string]string{"status": "a2a-ok"})
-	})
-	// Use the exported constructor – it wires auth, integrity, rate‑limiting, and capability enforcement.
-	// The license manager is passed as the third argument (nil if not needed here – the middleware will skip license checks).
-	a2aMiddleware := a2a.NewA2AMiddleware(a2aHandler, []byte(a2aCfg.Secret), nil, capsEnforcer)
-	proxyMux.Handle("/a2a/", a2aMiddleware)
+	if a2aMiddleware == nil {
+		// A2A not configured — register a discovery endpoint that reports disabled
+		proxyMux.HandleFunc("/a2a/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			writeJSON(w, map[string]string{"status": "disabled", "reason": "a2a not configured"})
+		})
+		log.Printf("A2A: Guardrails not enabled (set a2a.enabled=true in config or AEGISGATE_A2A_ENABLED=true)")
+	}
 
 	// Management endpoints on the proxy port
 	proxyMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -1022,7 +1046,12 @@ func main() {
 		log.Printf("  MCP:      localhost:%d (AegisGuard scanner client)", *mcpPort)
 	}
 	log.Printf("  Bridge:   AegisGuard -> AegisGate (%s)", bridgeStatus)
-	log.Printf("  Persistence: %s (retention: %d days)", persistenceCfg.AuditDir, platformTier.LogRetentionDays())
+	log.Printf("  A2A:      %s (mTLS + HMAC + capability enforcement)", func() string {
+		if a2aMiddleware != nil {
+			return "active"
+		}
+		return "disabled"
+	}())
 	log.Printf("  Certs:    %s (auto_generate: %v)", certCfg.CertDir, certCfg.AutoGenerate)
 	log.Printf("  Dashboard: http://localhost:%d/health", *dashPort)
 	log.Printf("  API:      http://localhost:%d/api/v1/scan", *dashPort)
