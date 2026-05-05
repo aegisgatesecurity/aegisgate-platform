@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ AegisGate Platform™ — Secure Every AI Interaction
+# 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
 [![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
@@ -9,7 +9,11 @@
 [![Test Coverage](https://img.shields.io/badge/Coverage-82.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 
+> The only AI security gateway with native MCP and A2A support, MITRE ATLAS enforcement, zero‑trust mTLS/HMAC guardrails (capability enforcement, rate‑limiting, optional license validation), and zero external dependencies — deploy in 60 seconds.
+
 [📚 Docs](docs/) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [🔒 Security](#mcp-security--guardrails) • [📊 Compliance](#compliance-frameworks)
+
+> AegisGate Security Platform protects every AI interaction point—bidirectional API scanning, MCP session isolation, A2A zero‑trust guardrails (mTLS authentication, HMAC integrity, capability enforcement, and rate‑limiting)—and enforces compliance across the stack.
 
 </div>
 
