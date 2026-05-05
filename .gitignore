@@ -12,6 +12,29 @@ build/
 *.prof
 *.test-binary
 *.test-binary.*
+# Ignore stray README docs (old or competition versions)
+README-OLD.md
+README_COMPETITION.md
+README_d7fcfeb_restored.md
+# Coverage artifacts not covered by generic patterns
+*.coverprofile
+# Local‑only test artifacts & labs
+testlab/
+admin-server
+# Coverage artifacts (additional patterns)
+coverage.out
+coverage_*.out
+coverage/
+coverage.html
+coverage.txt
+final_coverage.out
+*coverage*.out
+*coverage*.txt
+*coverage*.html
+sign-test.sh
+CASE-STUDY-TEMPLATE.md
+admin-server
+.admin-server/
 
 # Test coverage
 coverage.out
