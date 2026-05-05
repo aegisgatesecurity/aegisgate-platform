@@ -197,23 +197,23 @@ func TestLicenseMiddlewareInjectLicenseContext(t *testing.T) {
 	}
 }
 
-// TestLicenseMiddlewareRequireLicenseFallback verifies RequireLicense
-// falls back to Community for invalid keys (does NOT block).
-func TestLicenseMiddlewareRequireLicenseFallback(t *testing.T) {
+// TestLicenseMiddlewareRequireLicenseNoKey verifies RequireLicense
+// allows Community-tier access when NO license key is provided (valid use case).
+func TestLicenseMiddlewareRequireLicenseNoKey(t *testing.T) {
 	mgr, err := NewManager()
 	if err != nil {
 		t.Fatalf("NewManager() error: %v", err)
 	}
 
 	lm := NewLicenseMiddleware(mgr)
-	mgr.SetLicenseKey("invalid-key")
+	// No license key set — this is a valid Community-tier user
 
 	called := false
 	handler := lm.RequireLicense(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		tierStr, _ := r.Context().Value(CtxKeyTier).(string)
 		if tierStr != "community" {
-			t.Errorf("Expected community tier fallback, got %q", tierStr)
+			t.Errorf("Expected community tier, got %q", tierStr)
 		}
 	})
 
@@ -222,7 +222,33 @@ func TestLicenseMiddlewareRequireLicenseFallback(t *testing.T) {
 	handler(w, req)
 
 	if !called {
-		t.Error("Handler was not called — RequireLicense should fall back to Community, not block")
+		t.Error("Handler was not called — RequireLicense should allow Community access with no key")
+	}
+}
+
+// TestLicenseMiddlewareRequireLicenseInvalidKey verifies RequireLicense
+// DENIES access when an invalid/expired license key is provided (fail-closed).
+// An invalid key means someone is TRYING to authenticate — they should be rejected,
+// not silently downgraded to Community.
+func TestLicenseMiddlewareRequireLicenseInvalidKey(t *testing.T) {
+	mgr, err := NewManager()
+	if err != nil {
+		t.Fatalf("NewManager() error: %v", err)
+	}
+
+	lm := NewLicenseMiddleware(mgr)
+	mgr.SetLicenseKey("invalid-key")
+
+	handler := lm.RequireLicense(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("Handler should NOT be called — invalid key should be denied (fail-closed)")
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("Expected 403 for invalid license key, got %d (fail-closed: invalid keys must be denied)", w.Code)
 	}
 }
 
