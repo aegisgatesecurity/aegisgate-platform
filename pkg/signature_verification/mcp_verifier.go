@@ -113,7 +113,10 @@ func (mv *MCPVerifier) RegisterPendingSession(sessionID, clientAddr, serverID st
 	defer mv.mu.Unlock()
 
 	if !mv.enabled {
-		return "", nil // Verification disabled, no token needed
+		// When verification is disabled, return empty token.
+		// The VerifyMCPInitialize and IsVerified methods will deny requests,
+		// so sessions won't be treated as verified without proper verification.
+		return "", nil
 	}
 
 	token := generateSessionToken(sessionID, serverID)
@@ -135,7 +138,13 @@ func (mv *MCPVerifier) VerifyPendingSession(token string, signature []byte) (*Ve
 	defer mv.mu.Unlock()
 
 	if !mv.enabled {
-		return &VerificationResult{Valid: true, Timestamp: time.Now()}, nil
+		// FAIL-CLOSED: When verification is disabled, sessions are NOT auto-verified.
+		// Returns Valid=false so callers checking result.Valid will deny the request.
+		return &VerificationResult{
+			Valid:     false,
+			Timestamp: time.Now(),
+			Error:     errors.New("signature verification is disabled — session verification denied by default"),
+		}, errors.New("signature verification is disabled")
 	}
 
 	pending, exists := mv.pendingSessions[token]
@@ -170,7 +179,13 @@ func (mv *MCPVerifier) VerifyPendingSession(token string, signature []byte) (*Ve
 // This can be called during the initialize handler to verify the client
 func (mv *MCPVerifier) VerifyMCPInitialize(ctx context.Context, init *MCPInitializeRequest) (*VerificationResult, error) {
 	if !mv.enabled {
-		return &VerificationResult{Valid: true, Timestamp: time.Now()}, nil
+		// FAIL-CLOSED: When verification is disabled, ALL initializations are denied.
+		// Returns Valid=false so callers checking result.Valid will reject the connection.
+		return &VerificationResult{
+			Valid:     false,
+			Timestamp: time.Now(),
+			Error:     errors.New("signature verification is disabled — MCP initialization denied by default"),
+		}, errors.New("signature verification is disabled")
 	}
 
 	// Build payload for verification
@@ -191,16 +206,16 @@ func (mv *MCPVerifier) VerifyMCPInitialize(ctx context.Context, init *MCPInitial
 		return result, nil
 	}
 
-	// No signature provided - check if required
-	if mv.strictMode || mv.verifier.IsStrictModeEnabled() {
-		return &VerificationResult{
-			Valid:     false,
-			Timestamp: time.Now(),
-			Error:     errors.New("signature required for MCP initialization"),
-		}, errors.New("signature required for MCP initialization")
-	}
-
-	return &VerificationResult{Valid: true, Timestamp: time.Now()}, nil
+	// No signature provided — FAIL-CLOSED: deny by default.
+	// In a security product, unsigned connections must NOT be allowed through.
+	// Use strictMode=true in production to enforce this at the config level.
+	// When strictMode=false (development/testing only), we still deny unsigned
+	// requests here to prevent accidental misconfiguration.
+	return &VerificationResult{
+		Valid:     false,
+		Timestamp: time.Now(),
+		Error:     errors.New("signature required for MCP initialization — unsigned connections are denied by default"),
+	}, errors.New("signature required for MCP initialization")
 }
 
 // MCPInitializeRequest represents an MCP initialization request
@@ -220,8 +235,11 @@ func (mv *MCPVerifier) IsVerified(token string) bool {
 	defer mv.mu.RUnlock()
 
 	pending, exists := mv.pendingSessions[token]
+	// FAIL-CLOSED: Unknown tokens are NOT verified. If a session token doesn't exist
+	// in the pending map, it was either never created (bogus token) or already consumed.
+	// Neither case should result in verified=true.
 	if !exists {
-		return true // Token not found = already verified or no verification needed
+		return false
 	}
 
 	return pending.Verified

@@ -235,7 +235,13 @@ func (m *Manager) CheckFramework(content string, framework Framework) (*Result, 
 	m.mu.RUnlock()
 
 	if !ok {
-		return result, nil // Framework not enabled
+		// FAIL-CLOSED: An unregistered framework means we CANNOT verify compliance.
+		// Returning Passed=true for an unregistered framework is dangerous —
+		// it would allow content to pass compliance checks that were never actually run.
+		result.Passed = false
+		result.FrameworksChecked = []Framework{}
+		result.Metadata = map[string]string{"reason": fmt.Sprintf("framework %s not enabled — compliance cannot be verified", framework)}
+		return result, fmt.Errorf("framework %s not enabled — compliance cannot be verified", framework)
 	}
 
 	findings, err := checker.Check(content)

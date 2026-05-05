@@ -305,12 +305,15 @@ func TestManager_CheckFramework_Atlas(t *testing.T) {
 func TestManager_CheckFramework_NIST(t *testing.T) {
 	mgr, _ := NewManager(DefaultConfig())
 
+	// FAIL-CLOSED: NIST is an Enterprise-tier framework. With DefaultConfig()
+	// (Community tier), it's not registered, so CheckFramework must return an error
+	// rather than silently returning Passed=true.
 	result, err := mgr.CheckFramework("test content", FrameworkNIST1500)
-	if err != nil {
-		t.Fatal(err)
+	if err == nil {
+		t.Error("CheckFramework for unregistered NIST framework should return error (fail-closed)")
 	}
-	if result == nil {
-		t.Fatal("CheckFramework returned nil")
+	if result != nil && result.Passed {
+		t.Error("unregistered framework should NOT return Passed=true (fail-closed)")
 	}
 }
 
@@ -343,7 +346,9 @@ func TestManager_ExportFindings_CSV(t *testing.T) {
 func TestManager_Check_MultipleFrameworks(t *testing.T) {
 	mgr, _ := NewManager(DefaultConfig())
 
-	for _, fw := range []Framework{FrameworkATLAS, FrameworkNIST1500} {
+	// FAIL-CLOSED: Only ATLAS is registered in Community tier (DefaultConfig).
+	// NIST is Enterprise-tier and should fail (not silently pass).
+	for _, fw := range []Framework{FrameworkATLAS} {
 		result, err := mgr.CheckFramework("test", fw)
 		if err != nil {
 			t.Fatalf("CheckFramework(%v) failed: %v", fw, err)
@@ -351,6 +356,12 @@ func TestManager_Check_MultipleFrameworks(t *testing.T) {
 		if result == nil {
 			t.Fatalf("CheckFramework(%v) returned nil", fw)
 		}
+	}
+
+	// NIST is NOT registered in Community tier — must return error (fail-closed)
+	_, err := mgr.CheckFramework("test", FrameworkNIST1500)
+	if err == nil {
+		t.Error("CheckFramework for unregistered NIST framework should return error (fail-closed)")
 	}
 }
 

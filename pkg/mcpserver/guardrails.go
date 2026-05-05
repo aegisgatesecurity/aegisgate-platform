@@ -221,8 +221,12 @@ func (g *GuardrailMiddleware) OnSessionCreate(sessionID, agentID, clientAddr str
 // This should be called by the MCP server registration path before
 // a new STDIO-based server subprocess is launched.
 func (g *GuardrailMiddleware) ValidateSessionCommand(cmd string) error {
+	// FAIL-CLOSED: If STDIO validation subsystem is unavailable, deny by default.
+	// Shell metacharacter injection is a critical security risk — we must validate.
 	if g.stdioValidator == nil {
-		return nil
+		g.logger.Error("STDIO validation unavailable — DENYING command by default",
+			"cmd", cmd)
+		return fmt.Errorf("STDIO validation unavailable: command denied by default")
 	}
 	return g.stdioValidator.ValidateCommand(cmd)
 }
@@ -295,8 +299,13 @@ func (g *GuardrailMiddleware) OnToolCall(sessionID, toolName string) error {
 	g.mu.RUnlock()
 
 	if !exists {
-		g.logger.Debug("Tool call from untracked session", "session_id", sessionID, "tool", toolName)
-		return nil
+		// FAIL-CLOSED: Untracked sessions are denied by default.
+		// This can happen due to race conditions, memory eviction, or session tracking bugs.
+		// In a security product, unknown sessions MUST NOT be allowed to execute tools.
+		atomic.AddInt64(&g.blockedRequests, 1)
+		g.logger.Warn("Tool call from UNTRACKED session — DENYING by default",
+			"session_id", sessionID, "tool", toolName)
+		return fmt.Errorf("tool call denied: session %s not tracked (possible race condition or session expiry)", sessionID)
 	}
 
 	currentCount := atomic.LoadInt64(&state.ToolCount)
@@ -322,8 +331,15 @@ func (g *GuardrailMiddleware) OnToolCall(sessionID, toolName string) error {
 // Returns an error if the tool call is denied by policy or requires approval.
 // This integrates risk-based tool authorization into the MCP guardrails.
 func (g *GuardrailMiddleware) OnToolCallWithAuth(sessionID, agentID, toolName string) error {
-	if !g.config.Enabled || g.toolAuth == nil {
-		return nil
+	if !g.config.Enabled {
+		return nil // intentional bypass: guardrails disabled
+	}
+	// FAIL-CLOSED: If tool authorization subsystem is unavailable, deny by default.
+	if g.toolAuth == nil {
+		atomic.AddInt64(&g.blockedRequests, 1)
+		g.logger.Error("tool authorization unavailable — DENYING by default",
+			"session_id", sessionID, "tool", toolName)
+		return fmt.Errorf("tool authorization unavailable: request denied by default")
 	}
 
 	// Create tool call for authorization check
@@ -558,11 +574,14 @@ func (g *GuardrailMiddleware) GuardrailHandler(inner *mcp.RequestHandler) func(c
 
 		// --- Guard 5: Per-client RPM rate limiting ---
 		// Applies to ALL incoming MCP requests, not just tool calls.
+		// FAIL-CLOSED: If client address cannot be determined, apply rate limiting
+		// with an anonymous bucket to prevent bypass via nil connections.
+		clientAddr := "unknown"
 		if conn != nil && conn.Conn != nil {
-			clientAddr := conn.Conn.RemoteAddr().String()
-			if err := g.OnRateLimitCheck(clientAddr); err != nil {
-				return guardrailErrorResponse(req.ID, ErrRateLimitExceeded, err.Error())
-			}
+			clientAddr = conn.Conn.RemoteAddr().String()
+		}
+		if err := g.OnRateLimitCheck(clientAddr); err != nil {
+			return guardrailErrorResponse(req.ID, ErrRateLimitExceeded, err.Error())
 		}
 
 		// --- Guard 1: Concurrent session limit ---

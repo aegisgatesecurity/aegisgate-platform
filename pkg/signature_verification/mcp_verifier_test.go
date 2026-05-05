@@ -169,13 +169,14 @@ func TestMCPVerifier_VerifyMCPInitialize_NoSignature(t *testing.T) {
 		Version:    "1.0",
 	}
 
-	// Non-strict mode: should pass without signature
+	// FAIL-CLOSED: Unsigned initialization requests are denied by default,
+	// regardless of strict mode. Unsigned requests are a security risk.
 	result, err := mv.VerifyMCPInitialize(nil, init)
-	if err != nil {
-		t.Fatalf("VerifyMCPInitialize() error: %v", err)
+	if err == nil {
+		t.Error("unsigned initialization should fail (fail-closed)")
 	}
-	if !result.Valid {
-		t.Error("should be valid when signature not provided in non-strict mode")
+	if result != nil && result.Valid {
+		t.Error("unsigned initialization should NOT be valid (fail-closed)")
 	}
 }
 
@@ -215,11 +216,13 @@ func TestMCPVerifier_VerifyMCPInitialize_Disabled(t *testing.T) {
 	}
 
 	result, err := mv.VerifyMCPInitialize(nil, init)
-	if err != nil {
-		t.Fatalf("VerifyMCPInitialize() error: %v", err)
+	// FAIL-CLOSED: When verification is disabled, all requests are denied by default.
+	// Disabled verification means we CANNOT verify the request, so it must be denied.
+	if err == nil {
+		t.Error("disabled verifier should deny all requests (fail-closed)")
 	}
-	if !result.Valid {
-		t.Error("disabled verifier should allow all")
+	if result != nil && result.Valid {
+		t.Error("disabled verifier should return Valid=false (fail-closed)")
 	}
 }
 
@@ -231,9 +234,11 @@ func TestMCPVerifier_IsVerified(t *testing.T) {
 	mv := NewMCPVerifier(DefaultMCPConfig())
 	mv.Enable()
 
-	// Non-existent token should return true (no verification needed)
-	if !mv.IsVerified("non-existent-token") {
-		t.Error("non-existent token should be considered verified")
+	// FAIL-CLOSED: Unknown tokens are NOT verified.
+	// If a session token doesn't exist in the pending map, it was either
+	// never created (bogus token) or already consumed — neither should be verified.
+	if mv.IsVerified("non-existent-token") {
+		t.Error("non-existent token should NOT be verified (fail-closed)")
 	}
 
 	// Register a session

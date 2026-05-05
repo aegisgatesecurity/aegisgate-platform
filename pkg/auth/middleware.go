@@ -13,6 +13,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -95,12 +96,14 @@ type Claims struct {
 type Middleware struct {
 	config     *Config
 	ssoManager *sso.Manager
+	logger     *slog.Logger
 }
 
 // NewMiddleware creates auth middleware with SSO support
 func NewMiddleware(cfg *Config) *Middleware {
 	return &Middleware{
 		config: cfg,
+		logger: slog.Default().With("component", "auth-middleware"),
 	}
 }
 
@@ -109,6 +112,7 @@ func NewMiddlewareWithSSO(cfg *Config, ssoManager *sso.Manager) *Middleware {
 	return &Middleware{
 		config:     cfg,
 		ssoManager: ssoManager,
+		logger:     slog.Default().With("component", "auth-middleware"),
 	}
 }
 
@@ -127,7 +131,19 @@ func (m *Middleware) RequireSSOLogin() bool {
 func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !m.config.RequireAuth {
-			// Auth not required, inject dev context with viewer role
+			// FAIL-CLOSED: In production environment, REQUIRE_AUTH=false is a security risk.
+			// Only allow dev bypass when AEGISGATE_ENV explicitly opts in.
+			env := strings.ToLower(os.Getenv("AEGISGATE_ENV"))
+			if env == "production" || env == "prod" {
+				// Production must not skip auth, even if REQUIRE_AUTH is accidentally set to false.
+				m.logger.Warn("auth required in production environment — REQUIRE_AUTH=false ignored",
+					"env", env)
+				m.unauthorized(w, "authentication required in production environment")
+				return
+			}
+			// Dev/testing only: log explicit warning that auth is disabled
+			m.logger.Warn("AUTH DISABLED — dev mode active, requests allowed without authentication",
+				"warning", "this should only be used in development/testing")
 			ctx := context.WithValue(r.Context(), ContextKeyUserID, "dev-user")
 			ctx = context.WithValue(ctx, ContextKeyTier, "community")
 			ctx = context.WithValue(ctx, ContextKeyAuthType, "none")
@@ -137,12 +153,23 @@ func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Try SSO authentication first if SSO is configured
+		// Try SSO authentication first if SSO is configured.
+		// FAIL-CLOSED: When SSO is the sole auth method (no JWT/API token fallback),
+		// SSO failure must deny the request, not cascade to JWT/API token check.
 		if m.ssoManager != nil && m.config.SSOConfig != nil {
 			if err := m.handleSSOToken(w, r, next); err == nil {
 				return // SSO auth succeeded
 			}
-			// Continue to JWT/API token if SSO fails
+			// SSO failed — if no JWT/API key is configured, deny immediately.
+			// This prevents an SSO-only deployment from being bypassed by sending
+			// a JWT or API token that happens to validate against dev keys.
+			if m.config.JWTSigningKey == nil || string(m.config.JWTSigningKey) == "dev-key-change-in-production" {
+				if m.config.APIAuthToken == "" || m.config.APIAuthToken == "dev-token-change-in-production" {
+					m.unauthorized(w, "SSO authentication failed and no fallback auth is configured")
+					return
+				}
+			}
+			// Continue to JWT/API token if configured
 		}
 
 		// Extract and validate auth header for JWT/API token

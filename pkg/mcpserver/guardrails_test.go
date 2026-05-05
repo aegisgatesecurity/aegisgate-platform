@@ -211,10 +211,11 @@ func TestToolCall_UntrackedSession(t *testing.T) {
 	cfg := DefaultGuardrailConfig(tier.TierCommunity)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
-	// Call tool on session that was never registered
+	// FAIL-CLOSED: Call tool on session that was never registered.
+	// In a security product, unknown sessions MUST NOT be allowed to execute tools.
 	err := g.OnToolCall("unknown_session", "process_list")
-	if err != nil {
-		t.Errorf("Untracked session should be allowed (not gatechecked), got: %v", err)
+	if err == nil {
+		t.Error("untracked session should be DENIED (fail-closed: unknown sessions bypass is a security risk)")
 	}
 }
 
