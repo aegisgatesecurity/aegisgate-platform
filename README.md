@@ -1,3 +1,55 @@
+## Quick Start
+
+### Docker (Recommended)
+
+```bash
+docker run -d \
+  -p 8080:8080 \
+  -p 8081:8081 \
+  -p 8443:8443 \
+  -v $(pwd)/data:/data \
+  ghcr.io/aegisgatesecurity/aegisgate-platform:latest
+```
+
+That's it. One command. Your MCP traffic is now authenticated, inspected, logged, and rate‑limited.
+
+### A2A Guardrails Demo (Docker)
+
+The A2A middleware is automatically enabled when the platform starts. To try it locally:
+
+```bash
+# Mount the A2A config (includes secret & rate‑limit)
+mkdir -p $(pwd)/a2a-config && cp configs/a2a.yaml $(pwd)/a2a-config/
+
+# Run the container, exposing the A2A endpoint on `/a2a/`
+docker run -d \
+  -p 8080:8080 \
+  -p 8081:8081 \
+  -p 8443:8443 \
+  -v $(pwd)/a2a-config:/app/configs \
+  ghcr.io/aegisgatesecurity/aegisgate-platform:latest
+```
+
+You can now call the A2A echo endpoint:
+
+```bash
+# Generate a self‑signed client cert (once)
+openssl req -newkey rsa:2048 -nodes -keyout client.key -x509 -days 365 -out client.crt -subj "/CN=demo-agent"
+
+# Compute a valid HMAC signature (replace SECRET with the value from a2a.yaml)
+SECRET=$(yq e '.secret' a2a-config/a2a.yaml)
+BODY='{"msg":"hello"}'
+SIG=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -binary | base64)
+
+curl -v \
+  --cert client.crt --key client.key \
+  -H "A2A-Signature: $SIG" \
+  -H "A2A-Capability: demo-capability" \
+  -d "$BODY" \
+  http://localhost:8080/a2a/echo
+```
+
+Observe the Prometheus counters grow (license, auth, integrity, capability) on `http://localhost:8443/metrics`.
 <div align="center">
 
 # 🛡️ AegisGate Platform™ — Secure Every AI Interaction
