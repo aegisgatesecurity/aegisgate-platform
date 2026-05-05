@@ -1,0 +1,20 @@
+# AegisGate A2A (Agent-to-Agent) Guardrails Configuration
+# ====================================================
+# This file configures the A2A security middleware that protects
+# inter-agent communication with mTLS, HMAC integrity verification,
+# capability enforcement, and rate limiting.
+
+# Shared secret for HMAC-SHA256 integrity verification.
+# In production, this should be rotated regularly and managed via
+# a secrets manager (Vault, AWS Secrets Manager, etc.).
+# CHANGE THIS before deploying to production.
+secret: "aegisgate-a2a-default-secret-change-me"
+
+# Rate limiting configuration for A2A requests
+rate_limit:
+  # Maximum burst capacity per agent
+  capacity: 100
+  # Tokens refilled per interval
+  refill: 10
+  # Refill interval (Go duration format)
+  interval: "1m"
