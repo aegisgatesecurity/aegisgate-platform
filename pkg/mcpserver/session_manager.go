@@ -167,7 +167,9 @@ func (sm *ConnectionSessionManager) CloseSession(connID string) error {
 	}
 
 	// Invalidate RBAC session
-	sm.manager.InvalidateSession(session.RBACSession.ID)
+	if err := sm.manager.InvalidateSession(session.RBACSession.ID); err != nil {
+		slog.Default().Warn("failed to invalidate RBAC session on close", "sessionID", session.RBACSession.ID, "error", err)
+	}
 
 	// Remove from map
 	delete(sm.conns, connID)
