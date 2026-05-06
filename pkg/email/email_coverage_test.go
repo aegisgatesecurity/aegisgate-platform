@@ -460,7 +460,7 @@ func TestSendLicenseEmail_Integration(t *testing.T) {
 type mockAddr string
 
 func (m mockAddr) Network() string { return "tcp" }
-func (m mockAddr) String() string   { return string(m) }
+func (m mockAddr) String() string  { return string(m) }
 
 type mockImplicitTLSConn struct {
 	net.Conn
@@ -477,7 +477,7 @@ func TestSend_WithImplicitTLS_ClientCreationError(t *testing.T) {
 	// To test this error path, we would need to mock the tls.Dial function.
 	// Since we can't easily mock stdlib functions, we test that the code path is exercised.
 	// The client creation error is hard to trigger without mocking.
-	
+
 	// Test with a host that will fail at client creation level
 	// Note: tls.Dial will fail with a connection error before smtp.NewClient is called
 	cfg := Config{
@@ -523,12 +523,12 @@ func TestSend_WithImplicitTLS_MailFromError(t *testing.T) {
 	// This would require mocking smtp.NewClient to return a client that fails on Mail.
 	// Since we can't easily mock this, we document that this error path exists.
 	// The test below exercises the implicit TLS path to the point of connection.
-	
+
 	cfg := Config{
-		Host:     "192.0.2.1",
-		Port:     465,
-		From:     "test@example.com",
-		UseTLS:   false,
+		Host:   "192.0.2.1",
+		Port:   465,
+		From:   "test@example.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
@@ -543,10 +543,10 @@ func TestSend_WithImplicitTLS_MailFromError(t *testing.T) {
 func TestSend_WithImplicitTLS_RcptToError(t *testing.T) {
 	// This would require mocking smtp.NewClient to return a client that fails on Rcpt.
 	cfg := Config{
-		Host:     "192.0.2.1",
-		Port:     465,
-		From:     "test@example.com",
-		UseTLS:   false,
+		Host:   "192.0.2.1",
+		Port:   465,
+		From:   "test@example.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
@@ -560,10 +560,10 @@ func TestSend_WithImplicitTLS_RcptToError(t *testing.T) {
 // This is hard to trigger without mocking.
 func TestSend_WithImplicitTLS_DataError(t *testing.T) {
 	cfg := Config{
-		Host:     "192.0.2.1",
-		Port:     465,
-		From:     "test@example.com",
-		UseTLS:   false,
+		Host:   "192.0.2.1",
+		Port:   465,
+		From:   "test@example.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
@@ -577,10 +577,10 @@ func TestSend_WithImplicitTLS_DataError(t *testing.T) {
 // This is hard to trigger without mocking.
 func TestSend_WithImplicitTLS_WriteError(t *testing.T) {
 	cfg := Config{
-		Host:     "192.0.2.1",
-		Port:     465,
-		From:     "test@example.com",
-		UseTLS:   false,
+		Host:   "192.0.2.1",
+		Port:   465,
+		From:   "test@example.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
@@ -594,10 +594,10 @@ func TestSend_WithImplicitTLS_WriteError(t *testing.T) {
 // This is hard to trigger without mocking.
 func TestSend_WithImplicitTLS_CloseError(t *testing.T) {
 	cfg := Config{
-		Host:     "192.0.2.1",
-		Port:     465,
-		From:     "test@example.com",
-		UseTLS:   false,
+		Host:   "192.0.2.1",
+		Port:   465,
+		From:   "test@example.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
@@ -611,10 +611,10 @@ func TestSend_WithImplicitTLS_CloseError(t *testing.T) {
 // This is non-fatal and is swallowed by the code.
 func TestSend_WithImplicitTLS_QuitError(t *testing.T) {
 	cfg := Config{
-		Host:     "192.0.2.1",
-		Port:     465,
-		From:     "test@example.com",
-		UseTLS:   false,
+		Host:   "192.0.2.1",
+		Port:   465,
+		From:   "test@example.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
