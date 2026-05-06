@@ -71,10 +71,13 @@ const (
 func a2aErrorResponse(w http.ResponseWriter, code, message string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"code":    code,
 		"message": message,
-	})
+	}); err != nil {
+		// Response headers already sent; log the encoding error for observability.
+		slog.Default().Error("a2aErrorResponse: failed to encode JSON", "error", err, "code", code)
+	}
 }
 
 // NewA2AMiddleware creates an HTTP middleware that wraps the provided handler with A2A guard‑rails.

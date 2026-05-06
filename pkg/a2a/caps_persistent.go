@@ -148,7 +148,7 @@ func (p *PersistentCapEnforcer) saveLocked() error {
 	// Ensure the directory exists.
 	dir := filepath.Dir(p.filePath)
 	if dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil { // #nosec G301 -- capability store needs group-readable parent dir
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -171,13 +171,13 @@ func (p *PersistentCapEnforcer) saveLocked() error {
 	}
 
 	tmpFile := p.filePath + ".tmp"
-	if err := os.WriteFile(tmpFile, data, 0644); err != nil {
+	if err := os.WriteFile(tmpFile, data, 0600); err != nil { // #nosec G306 -- capability file contains auth secrets
 		return fmt.Errorf("failed to write temp capability file: %w", err)
 	}
 
 	if err := os.Rename(tmpFile, p.filePath); err != nil {
 		// Clean up temp file on failure.
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		return fmt.Errorf("failed to rename capability file: %w", err)
 	}
 
