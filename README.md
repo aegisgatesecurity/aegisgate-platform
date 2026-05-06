@@ -428,10 +428,11 @@ Email: **security@aegisgatesecurity.io**
 
 | Version | Status |
 |---------|--------|
-| **v1.3.8** | ✅ **Current** — Supported |
-| **v1.3.7** | ✅ Supported |
-| **v1.3.6** | ❌ Deprecated |
-| < v1.3.5 | ❌ Deprecated |
+| **v2.0.1** | ✅ **Current** — Supported |
+| **v2.0.0** | ✅ Supported |
+| **v1.3.8** | ✅ Supported |
+| **v1.3.7** | ❌ Deprecated |
+| < v1.3.7 | ❌ Deprecated |
 
 ---
 
