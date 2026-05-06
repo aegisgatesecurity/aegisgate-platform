@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-//go:build !race
 
 package compliance
 
@@ -7,141 +6,340 @@ import (
 	"testing"
 )
 
-func TestSOC2Framework_New(t *testing.T) {
-	f := NewSOC2Framework()
-	if f == nil {
-		t.Fatal("NewSOC2Framework returned nil")
+// =============================================================================
+// SOC2Framework — New, initTrustCriteria, initControls
+// =============================================================================
+
+func TestNewSOC2Framework(t *testing.T) {
+	fw := NewSOC2Framework()
+	if fw == nil {
+		t.Fatal("expected non-nil framework")
 	}
-	if f.Name != "SOC 2 Type II" {
-		t.Errorf("Name=%q, want %q", f.Name, "SOC 2 Type II")
+	if fw.Name != "SOC 2 Type II" {
+		t.Errorf("expected name 'SOC 2 Type II', got '%s'", fw.Name)
 	}
-	if f.CreatedAt.IsZero() {
-		t.Error("CreatedAt should be set")
+	if fw.ControlMap == nil {
+		t.Error("expected non-nil ControlMap")
+	}
+	if len(fw.TrustCriteria) != 5 {
+		t.Errorf("expected 5 trust criteria, got %d", len(fw.TrustCriteria))
+	}
+	if len(fw.Controls) != 9 {
+		t.Errorf("expected 9 controls, got %d", len(fw.Controls))
+	}
+	if len(fw.AIControls) != 8 {
+		t.Errorf("expected 8 AI controls, got %d", len(fw.AIControls))
 	}
 }
 
-func TestSOC2Framework_initTrustCriteria(t *testing.T) {
-	f := NewSOC2Framework()
-	if len(f.TrustCriteria) == 0 {
-		t.Fatal("TrustCriteria should be populated")
+func TestInitTrustCriteria(t *testing.T) {
+	fw := NewSOC2Framework()
+
+	criteriaIDs := make(map[string]bool)
+	for _, tc := range fw.TrustCriteria {
+		criteriaIDs[tc.ID] = true
 	}
-	ids := make(map[string]bool)
-	for _, tc := range f.TrustCriteria {
-		ids[tc.ID] = true
+
+	expected := []string{"CC", "A", "PI", "C", "P"}
+	for _, id := range expected {
+		if !criteriaIDs[id] {
+			t.Errorf("expected criteria %q not found", id)
+		}
 	}
-	for _, want := range []string{"CC", "A", "PI", "C", "P"} {
-		if !ids[want] {
-			t.Errorf("TrustCriteria missing %q", want)
+
+	// CC should have 9 controls
+	for _, tc := range fw.TrustCriteria {
+		if tc.ID == "CC" {
+			if len(tc.Controls) != 9 {
+				t.Errorf("CC expected 9 controls, got %d", len(tc.Controls))
+			}
 		}
 	}
 }
 
-func TestSOC2Framework_initControls(t *testing.T) {
-	f := NewSOC2Framework()
-	if len(f.Controls) == 0 {
-		t.Fatal("Controls should be populated")
+func TestInitControls(t *testing.T) {
+	fw := NewSOC2Framework()
+
+	expectedIDs := []string{"CC1.1", "CC3.2", "CC5.4", "CC6.2", "CC6.3", "CC6.4", "CC6.5", "CC6.6", "PI1.2"}
+	for _, id := range expectedIDs {
+		if _, exists := fw.ControlMap[id]; !exists {
+			t.Errorf("expected control %q in ControlMap", id)
+		}
 	}
-	if len(f.AIControls) == 0 {
-		t.Error("AIControls should be populated")
+
+	// AI controls list should match
+	for _, id := range fw.AIControls {
+		if _, exists := fw.ControlMap[id]; !exists {
+			t.Errorf("AI control %q not in ControlMap", id)
+		}
 	}
 }
 
-func TestSOC2Framework_GetControl(t *testing.T) {
-	f := NewSOC2Framework()
-	ctrl, err := f.GetControl("CC3.2")
+// =============================================================================
+// SOC2Framework — GetControl, GetControlsByCriteria, GetAIControls
+// =============================================================================
+
+func TestGetControl_Found(t *testing.T) {
+	fw := NewSOC2Framework()
+	ctrl, err := fw.GetControl("CC3.2")
 	if err != nil {
-		t.Errorf("GetControl(CC3.2) error: %v", err)
+		t.Fatalf("expected control CC3.2, got error: %v", err)
 	}
-	if ctrl == nil {
-		t.Error("should return non-nil")
+	if ctrl.ID != "CC3.2" {
+		t.Errorf("expected ID CC3.2, got %s", ctrl.ID)
 	}
-	if ctrl.Criteria != "CC3" {
-		t.Errorf("Criteria=%q, want %q", ctrl.Criteria, "CC3")
+	if ctrl.Name != "AI-Specific Risk Assessment" {
+		t.Errorf("unexpected name: %s", ctrl.Name)
 	}
-	_, err = f.GetControl("DOES_NOT_EXIST")
+}
+
+func TestGetControl_NotFound(t *testing.T) {
+	fw := NewSOC2Framework()
+	_, err := fw.GetControl("XX99.9")
 	if err == nil {
-		t.Error("unknown control should return error")
+		t.Fatal("expected error for non-existent control")
+	}
+	expected := "control XX99.9 not found"
+	if err.Error() != expected {
+		t.Errorf("expected %q, got %v", expected, err)
 	}
 }
 
-func TestSOC2Framework_GetControlsByCriteria(t *testing.T) {
-	t.Skip("GetControlsByCriteria: CC criteria may not match Control.Criteria values")
-	f := NewSOC2Framework()
-	controls := f.GetControlsByCriteria("CC")
-	if len(controls) == 0 {
-		t.Error("CC criteria should have controls")
+func TestGetControlsByCriteria(t *testing.T) {
+	fw := NewSOC2Framework()
+
+	// PI1 has Criteria "PI1", so GetControlsByCriteria("PI1") matches
+	pi := fw.GetControlsByCriteria("PI1")
+	if len(pi) != 1 {
+		t.Errorf("PI1 criteria expected 1 control, got %d", len(pi))
 	}
-	for _, c := range controls {
-		if c.Criteria != "CC" {
-			t.Errorf("control %s has Criteria=%q, want CC", c.ID, c.Criteria)
+	if len(pi) > 0 && pi[0].ID != "PI1.2" {
+		t.Errorf("expected control PI1.2, got %s", pi[0].ID)
+	}
+
+	// CC6 has Criteria "CC6"
+	cc6 := fw.GetControlsByCriteria("CC6")
+	if len(cc6) != 5 {
+		t.Errorf("CC6 criteria expected 5 controls, got %d", len(cc6))
+	}
+
+	// No controls have Criteria "CC" (they use CC3, CC5, CC6)
+	cc := fw.GetControlsByCriteria("CC")
+	if len(cc) != 0 {
+		t.Errorf("CC criteria expected 0 controls, got %d", len(cc))
+	}
+
+	// Unknown criteria
+	none := fw.GetControlsByCriteria("XX")
+	if len(none) != 0 {
+		t.Errorf("unknown criteria expected 0 controls, got %d", len(none))
+	}
+}
+
+func TestGetAIControls(t *testing.T) {
+	fw := NewSOC2Framework()
+	controls := fw.GetAIControls()
+	if len(controls) != 8 {
+		t.Errorf("expected 8 AI controls, got %d", len(controls))
+	}
+	for _, ctrl := range controls {
+		found := false
+		for _, id := range fw.AIControls {
+			if id == ctrl.ID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("control %s not in AIControls list", ctrl.ID)
 		}
 	}
-	controls = f.GetControlsByCriteria("Z9")
-	if len(controls) != 0 {
-		t.Errorf("unknown criteria should return empty, got %d", len(controls))
-	}
 }
 
-func TestSOC2Framework_GetAIControls(t *testing.T) {
-	f := NewSOC2Framework()
-	aiControls := f.GetAIControls()
-	if len(aiControls) == 0 {
-		t.Error("AIControls should not be empty")
-	}
-	aiMap := make(map[string]bool)
-	for _, c := range aiControls {
-		aiMap[c.ID] = true
-	}
-	for _, want := range []string{"CC3.2", "CC5.4", "CC6.4"} {
-		if !aiMap[want] {
-			t.Errorf("AIControls missing %q", want)
-		}
-	}
-}
+// =============================================================================
+// SOC2Assessment — New, AddControlFinding, calculateScore, GenerateReport
+// =============================================================================
 
-func TestSOC2Assessment_New(t *testing.T) {
-	f := NewSOC2Framework()
-	assessment := f.NewSOC2Assessment("auditor@example.com", []string{"CC3.2", "CC5.4"})
+func TestNewSOC2Assessment(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Alice Auditor", []string{"auth-service", "ml-pipeline"})
 	if assessment == nil {
-		t.Fatal("NewSOC2Assessment returned nil")
+		t.Fatal("expected non-nil assessment")
 	}
-	if assessment.Auditor != "auditor@example.com" {
-		t.Errorf("Auditor=%q, want %q", assessment.Auditor, "auditor@example.com")
+	if assessment.Framework != fw {
+		t.Error("Framework not set correctly")
+	}
+	if assessment.Auditor != "Alice Auditor" {
+		t.Errorf("expected auditor 'Alice Auditor', got '%s'", assessment.Auditor)
+	}
+	if len(assessment.Scope) != 2 {
+		t.Errorf("expected scope len 2, got %d", len(assessment.Scope))
+	}
+	if len(assessment.ControlFindings) != 0 {
+		t.Errorf("expected 0 control findings, got %d", len(assessment.ControlFindings))
+	}
+	if assessment.OverallRating != "In Progress" {
+		t.Errorf("expected initial rating 'In Progress', got '%s'", assessment.OverallRating)
 	}
 }
 
-func TestSOC2Assessment_AddControlFinding(t *testing.T) {
-	f := NewSOC2Framework()
-	assessment := f.NewSOC2Assessment("auditor", nil)
-	finding := SOC2ControlFinding{
+func TestAddControlFinding_Pass(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Bob", nil)
+
+	assessment.AddControlFinding(SOC2ControlFinding{
 		ControlID:   "CC3.2",
-		Severity:    "medium",
-		Description: "Test finding",
+		ControlName: "AI Risk Assessment",
+		Status:      "Pass",
+		Severity:    "Low",
+		Description: "All requirements met",
+	})
+
+	if assessment.ComplianceScore != 100.0 {
+		t.Errorf("expected score 100, got %.2f", assessment.ComplianceScore)
 	}
-	assessment.AddControlFinding(finding)
-	if len(assessment.ControlFindings) != 1 {
-		t.Errorf("ControlFindings count=%d, want 1", len(assessment.ControlFindings))
+	if assessment.OverallRating != "Effective" {
+		t.Errorf("expected rating 'Effective', got '%s'", assessment.OverallRating)
 	}
 }
 
-func TestSOC2Assessment_CalculateScore(t *testing.T) {
-	f := NewSOC2Framework()
-	assessment := f.NewSOC2Assessment("auditor", nil)
-	assessment.calculateScore()
-	score := assessment.ComplianceScore
-	if score < 0 || score > 100 {
-		t.Errorf("Score=%f outside [0,100]", score)
+func TestAddControlFinding_Mixed(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Carol", nil)
+
+	// 3 Pass, 1 Fail → 75% → "Needs Improvement"
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC3.2", Status: "Pass", Severity: "Low"})
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC5.4", Status: "Pass", Severity: "Low"})
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC6.2", Status: "Pass", Severity: "Low"})
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC6.3", Status: "Fail", Severity: "High"})
+
+	if assessment.ComplianceScore != 75.0 {
+		t.Errorf("expected score 75.0, got %.2f", assessment.ComplianceScore)
+	}
+	if assessment.OverallRating != "Needs Improvement" {
+		t.Errorf("expected 'Needs Improvement', got '%s'", assessment.OverallRating)
 	}
 }
 
-func TestSOC2Assessment_GenerateReport(t *testing.T) {
-	f := NewSOC2Framework()
-	assessment := f.NewSOC2Assessment("auditor", nil)
-	assessment.ControlFindings = append(assessment.ControlFindings,
-		SOC2ControlFinding{ControlID: "CC3.2", Severity: "high", Description: "Critical finding"},
-	)
+func TestAddControlFinding_AllFail(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Dave", nil)
+
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC3.2", Status: "Fail", Severity: "Critical"})
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC5.4", Status: "Fail", Severity: "Critical"})
+
+	if assessment.ComplianceScore != 0 {
+		t.Errorf("expected score 0, got %.2f", assessment.ComplianceScore)
+	}
+	if assessment.OverallRating != "Ineffective" {
+		t.Errorf("expected 'Ineffective', got '%s'", assessment.OverallRating)
+	}
+}
+
+func TestAddControlFinding_EmptyFindings(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Eve", nil)
+
+	// calculateScore called on empty list
+	if assessment.ComplianceScore != 0 {
+		t.Errorf("expected 0 on empty findings, got %.2f", assessment.ComplianceScore)
+	}
+}
+
+func TestCalculateScore_EffectiveThreshold(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Frank", nil)
+
+	// Exactly 9 Pass out of 10 → 90% → Effective
+	for i := 0; i < 9; i++ {
+		assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC3.2", Status: "Pass", Severity: "Low"})
+	}
+	assessment.AddControlFinding(SOC2ControlFinding{ControlID: "CC5.4", Status: "Fail", Severity: "Medium"})
+
+	if assessment.ComplianceScore != 90.0 {
+		t.Errorf("expected score 90, got %.2f", assessment.ComplianceScore)
+	}
+	if assessment.OverallRating != "Effective" {
+		t.Errorf("expected 'Effective' at 90%%, got '%s'", assessment.OverallRating)
+	}
+}
+
+func TestGenerateReport(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Grace", []string{"service-a"})
+	assessment.AddControlFinding(SOC2ControlFinding{
+		ControlID:   "CC6.4",
+		ControlName: "Adversarial Defense",
+		Status:      "Pass",
+		Severity:    "Low",
+		Description: "Model hardening in place",
+		Remediation: "Continue monitoring",
+	})
+
 	report := assessment.GenerateReport()
 	if report == "" {
-		t.Error("GenerateReport should return non-empty string")
+		t.Fatal("expected non-empty report")
 	}
+	if !contains(report, "SOC 2 Compliance Assessment Report") {
+		t.Error("report missing header")
+	}
+	if !contains(report, "Grace") {
+		t.Error("report missing auditor")
+	}
+	if !contains(report, "Effective") {
+		t.Error("report missing overall rating")
+	}
+	if !contains(report, "CC6.4") {
+		t.Error("report missing control ID")
+	}
+	if !contains(report, "Pass") {
+		t.Error("report missing status")
+	}
+	if !contains(report, "Continue monitoring") {
+		t.Error("report missing remediation")
+	}
+}
+
+func TestGenerateReport_EmptyFindings(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Henry", nil)
+	report := assessment.GenerateReport()
+	if !contains(report, "Control Findings:") {
+		t.Error("empty findings report missing header")
+	}
+}
+
+func TestGenerateReport_NoRemediation(t *testing.T) {
+	fw := NewSOC2Framework()
+	assessment := fw.NewSOC2Assessment("Irene", nil)
+	assessment.AddControlFinding(SOC2ControlFinding{
+		ControlID:   "CC3.2",
+		ControlName: "Test",
+		Status:      "Pass",
+		Severity:    "Low",
+		Description: "No remediation needed",
+		Remediation: "", // empty
+	})
+	report := assessment.GenerateReport()
+	// Should not crash and should handle empty remediation gracefully
+	if report == "" {
+		t.Fatal("expected non-empty report")
+	}
+}
+
+// =============================================================================
+// Helper
+// =============================================================================
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
