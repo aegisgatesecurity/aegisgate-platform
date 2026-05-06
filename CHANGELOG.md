@@ -1,4 +1,59 @@
 
+## [2.0.1] - 2026-05-06 - Fail-Closed Security Hardening + SLA/SLO
+
+### Summary
+Critical security hardening: fail-closed defaults across all security packages, A2A capability persistence, comprehensive health checks, and SLA/SLO definitions.
+
+### Security Fixes (Fail-Closed Audit)
+- **CRITICAL**: A2A capability enforcement now blocks requests with missing capability headers (was silent pass-through)
+- **CRITICAL**: MCP guardrails deny untracked sessions, nil tool authorization, and nil STDIO validation (was pass-through)
+- **CRITICAL**: Signature verification returns `Valid=false` when disabled (was `Valid=true`)
+- **CRITICAL**: MCP verifier denies unsigned initialization requests in all modes (was allowed in non-strict)
+- **CRITICAL**: RBAC middleware returns 403 for missing/invalid session IDs (was pass-through)
+- **HIGH**: Auth middleware production environment ignores `REQUIRE_AUTH=false` flag (was global bypass)
+- **HIGH**: License middleware returns 403 for invalid license keys (was silent Community downgrade)
+- **HIGH**: Compliance framework checks return error for unregistered frameworks (was silent pass)
+- **HIGH**: MCP `CloseSession` now calls `OnSessionDestroy` to prevent activeSessions counter drift
+- **HIGH**: A2A middleware adds panic recovery, structured error codes (14 A2A_ERR_* codes)
+- **MEDIUM**: `gosec` alerts resolved — G301 (directory perms), G306 (file perms), G104 (error handling)
+
+### Features
+- A2A capability persistence — `PersistentCapEnforcer` saves capabilities to JSON with atomic writes, survives pod restarts
+- Comprehensive health checks — `/health` endpoints verify proxy, persistence, license, and certificate subsystems
+- SLA/SLO definitions — new `pkg/sla/` package with per-tier SLA commitments and measurable SLOs
+- `/api/v1/sla` endpoint — returns SLA details and SLOs for current tier
+- Testlab directory removed from git tracking (security: contained credentials and binary)
+
+### Infrastructure
+- A2A middleware wired to production router with license-aware enforcement
+- A2A configuration added to platform config with environment variable overrides
+- `PersistentCapEnforcer` seeds from YAML on first load, persists to JSON on changes
+
+---
+
+## [2.0.0] - 2026-05-05 - A2A Agent Security
+
+### Summary
+Major release: Agent-to-Agent (A2A) security guardrails joining HTTP API and MCP protocol protection as the third pillar.
+
+### A2A Security Features
+- A2A mTLS authentication — mutual TLS for agent-to-agent communication
+- A2A HMAC-SHA256 integrity verification — message authentication codes for request integrity
+- A2A per-agent capability enforcement — fine-grained authorization for agent actions
+- A2A per-agent token bucket rate limiting — configurable rate limits per agent identity
+- A2A license-aware enforcement — tier-based feature gating for A2A capabilities
+- A2A → MITRE ATLAS threat mappings — mapping A2A attack patterns to known threat frameworks
+- A2A Prometheus metrics — license failures, capability denials, auth failures, integrity failures
+
+### Infrastructure
+- `pkg/a2a/` — A2A security middleware with fail-closed defaults
+- `configs/a2a.yaml` — HMAC shared secret and rate limit configuration
+- `configs/a2a_caps.yaml` — Agent capability map configuration
+- CI/CD pipeline updates for A2A integration tests
+- Docker release with A2A support
+
+---
+
 ## [1.3.8] - 2026-05-02 - Security Headers + DAST Pipeline
 
 ### Summary
