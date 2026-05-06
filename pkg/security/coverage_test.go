@@ -28,11 +28,11 @@ func TestSecureHeadersMiddleware_Defaults(t *testing.T) {
 
 	// Verify default security headers are set
 	expectedHeaders := map[string]string{
-		"Content-Security-Policy":  "default-src",
-		"X-Frame-Options":          "DENY",
-		"X-Content-Type-Options":   "nosniff",
-		"X-XSS-Protection":        "1; mode=block",
-		"Referrer-Policy":          "strict-origin-when-cross-origin",
+		"Content-Security-Policy":   "default-src",
+		"X-Frame-Options":           "DENY",
+		"X-Content-Type-Options":    "nosniff",
+		"X-XSS-Protection":          "1; mode=block",
+		"Referrer-Policy":           "strict-origin-when-cross-origin",
 		"Strict-Transport-Security": "max-age=31536000",
 		"Permissions-Policy":        "accelerometer=()",
 	}
