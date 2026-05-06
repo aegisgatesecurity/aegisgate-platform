@@ -188,6 +188,33 @@ func (e *InMemoryCapEnforcer) IsAllowed(agentID, capability string) (bool, error
 	return ok, nil
 }
 
+// Agents returns a list of all registered agent IDs.
+func (e *InMemoryCapEnforcer) Agents() []string {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	agents := make([]string, 0, len(e.agentCaps))
+	for id := range e.agentCaps {
+		agents = append(agents, id)
+	}
+	return agents
+}
+
+// GetCapabilities returns the capability list for a given agent.
+// Returns nil if the agent is not found.
+func (e *InMemoryCapEnforcer) GetCapabilities(agentID string) []string {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	caps, ok := e.agentCaps[agentID]
+	if !ok {
+		return nil
+	}
+	result := make([]string, 0, len(caps))
+	for cap := range caps {
+		result = append(result, cap)
+	}
+	return result
+}
+
 // ----- Rate Limiter -----
 // Token bucket per agent ID.
 
