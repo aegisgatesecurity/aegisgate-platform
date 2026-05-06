@@ -1,8 +1,8 @@
 name: Security Comprehensive
 
 on:
-  push:
-    branches: [main, develop]
+  # NOTE: No 'push' trigger — security.yml already covers gosec + Trivy on every push.
+  # This workflow handles DAST, pentest, fuzzing, and Semgrep (weekly or on-demand only).
   schedule:
     # Weekly comprehensive security scan (Sunday 2 AM)
     - cron: '0 2 * * 0'
@@ -17,38 +17,8 @@ permissions:
 
 jobs:
   # ================================================================
-  # TIER 1: SAST - Static Application Security Testing
+  # TIER 1: ADDITIONAL SAST (Semgrep — not in security.yml)
   # ================================================================
-  gosec-scan:
-    name: Gosec SAST Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Run Gosec
-        run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec -fmt sarif -out gosec-results.sarif ./... 2>&1 || true
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: gosec-results.sarif
-          category: gosec
-
-      - name: Check Results
-        run: |
-          if grep -q "Issues" gosec-results.sarif; then
-            echo "⚠️ Gosec found issues - review SARIF in Security tab"
-          fi
-
   semgrep-scan:
     name: Semgrep Security Scan
     runs-on: ubuntu-latest
@@ -355,41 +325,15 @@ jobs:
           retention-days: 30
 
   # ================================================================
-  # TIER 5: CONTAINER SECURITY
-  # ================================================================
-  trivy-container-scan:
-    name: Trivy Container Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Build container
-        run: docker build -t aegisgate-platform:scan .
-
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'aegisgate-platform:scan'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '1'
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
-          category: trivy-image
-
-  # ================================================================
   # SUMMARY
+  # Note: gosec, Trivy, govulncheck, TruffleHog, dep review, and
+  # standard Go tools run in security.yml on every push + weekly.
+  # This workflow covers Semgrep, DAST, pentest, and fuzzing only.
   # ================================================================
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [gosec-scan, semgrep-scan, trivy-container-scan]
+    needs: [semgrep-scan, zap-scan, nmap-scan, nikto-scan, pentest-license, pentest-rbac, fuzz-license-parser, fuzz-config-parser, fuzz-scan-request]
     if: always()
     steps:
       - name: Generate Report
@@ -398,12 +342,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Scan | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Gosec SAST | ${{ needs.gosec-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Semgrep | ${{ needs.semgrep-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Trivy Container | ${{ needs.trivy-container-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Semgrep SAST | ${{ needs.semgrep-scan.result == 'success' && '✅ Pass' || '⚠️ Review Needed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| OWASP ZAP (DAST) | ${{ needs.zap-scan.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Nmap | ${{ needs.nmap-scan.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Nikto | ${{ needs.nikto-scan.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pentest: License Bypass | ${{ needs.pentest-license.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pentest: RBAC Escalation | ${{ needs.pentest-rbac.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fuzz: License Parser | ${{ needs.fuzz-license-parser.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fuzz: Config Parser | ${{ needs.fuzz-config-parser.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Fuzz: Scan Request | ${{ needs.fuzz-scan-request.result == 'success' && '✅ Pass' || '⚠️ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Weekly Scans:**" >> $GITHUB_STEP_SUMMARY
-          echo "- OWASP ZAP (DAST)" >> $GITHUB_STEP_SUMMARY
-          echo "- Nmap/Nikto (Network)" >> $GITHUB_STEP_SUMMARY
-          echo "- Pentest Simulations (License, RBAC)" >> $GITHUB_STEP_SUMMARY
-          echo "- Fuzzing (License, Config, Scanner)" >> $GITHUB_STEP_SUMMARY
+          echo "_gosec, Trivy, govulncheck, and standard Go tools run in [security.yml](.github/workflows/security.yml) on every push._" >> $GITHUB_STEP_SUMMARY
