@@ -1,556 +1,507 @@
-// Package webhook provides Stripe webhook handling for AegisGate.
-//
-//go:build billing
-// +build billing
+// SPDX-License-Identifier: Apache-2.0
+//go:build !race
 
 package webhook
+
+// ---------------------------------------------------------------------------
+// webhook_test.go — Full coverage for billing/webhook/webhook.go
+// ---------------------------------------------------------------------------
 
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"os"
 	"testing"
 	"time"
 )
 
-// =============================================================================
-// Handler Creation Tests
-// =============================================================================
+// testLicenseService implements LicenseServicer for testing.
+type testLicenseService struct {
+	generateError  error
+	activateError  error
+	deactivateError error
+	updateError    error
+	generatedKey   string
+	calls          []string
+}
+
+func (m *testLicenseService) GenerateLicense(ctx context.Context, customerID string, tier string, durationDays int) (string, error) {
+	m.calls = append(m.calls, "GenerateLicense")
+	if m.generateError != nil {
+		return "", m.generateError
+	}
+	m.generatedKey = "test-license-" + customerID
+	return m.generatedKey, nil
+}
+
+func (m *testLicenseService) ActivateLicense(ctx context.Context, licenseKey string, customerEmail string) error {
+	m.calls = append(m.calls, "ActivateLicense")
+	return m.activateError
+}
+
+func (m *testLicenseService) DeactivateLicense(ctx context.Context, licenseKey string) error {
+	m.calls = append(m.calls, "DeactivateLicense")
+	return m.deactivateError
+}
+
+func (m *testLicenseService) UpdateLicenseTier(ctx context.Context, licenseKey string, newTier string) error {
+	m.calls = append(m.calls, "UpdateLicenseTier")
+	return m.updateError
+}
+
+// testEmailService implements EmailServicer for testing.
+type testEmailService struct {
+	sendError error
+	sentTo   string
+	sentData  EmailData
+}
+
+func (m *testEmailService) SendLicenseEmail(ctx context.Context, to string, data EmailData) error {
+	m.sentTo = to
+	m.sentData = data
+	return m.sendError
+}
 
 func TestDefaultHandler(t *testing.T) {
-	handler := DefaultHandler("test_secret")
-	if handler == nil {
-		t.Fatal("DefaultHandler() should not return nil")
+	h := DefaultHandler("whsec_test_secret")
+	if h.webhookSecret != "whsec_test_secret" {
+		t.Errorf("webhookSecret=%q, want whsec_test_secret", h.webhookSecret)
+	}
+	if h.logger == nil {
+		t.Error("logger should not be nil")
 	}
 }
 
-func TestDefaultHandlerEmptySecret(t *testing.T) {
-	handler := DefaultHandler("")
-	if handler == nil {
-		t.Fatal("DefaultHandler() with empty secret should not return nil")
+func TestHandler_WithLicenseService(t *testing.T) {
+	h := &Handler{}
+	mock := &testLicenseService{}
+	result := h.WithLicenseService(mock)
+	if result != h {
+		t.Error("WithLicenseService should return the same handler")
+	}
+	if h.licenseService != mock {
+		t.Error("licenseService not set correctly")
 	}
 }
 
-func TestHandlerWithLicenseService(t *testing.T) {
-	handler := DefaultHandler("secret")
-	result := handler.WithLicenseService(nil)
-	if result != handler {
-		t.Error("WithLicenseService() should return same handler")
+func TestHandler_WithEmailService(t *testing.T) {
+	h := &Handler{}
+	mock := &testEmailService{}
+	result := h.WithEmailService(mock)
+	if result != h {
+		t.Error("WithEmailService should return the same handler")
+	}
+	if h.emailService != mock {
+		t.Error("emailService not set correctly")
 	}
 }
 
-func TestHandlerWithEmailService(t *testing.T) {
-	handler := DefaultHandler("secret")
-	result := handler.WithEmailService(nil)
-	if result != handler {
-		t.Error("WithEmailService() should return same handler")
+func TestProcessEvent_UnknownType(t *testing.T) {
+	h := &Handler{logger: testLogger()}
+	event := StripeEvent{
+		ID:   "evt_test_123",
+		Type: "unknown.event.type",
+		Data: json.RawMessage(`{}`),
+	}
+	payload, _ := json.Marshal(event)
+
+	// Should not error — unknown events are logged and skipped
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
 	}
 }
 
-func TestHandlerHealthCheck(t *testing.T) {
-	handler := DefaultHandler("secret")
-	err := handler.HealthCheck()
-	if err != nil {
-		t.Errorf("HealthCheck() error = %v", err)
-	}
-}
-
-func TestHandlerHealthCheckEmptySecret(t *testing.T) {
-	handler := DefaultHandler("")
-	err := handler.HealthCheck()
-	if err == nil {
-		t.Error("HealthCheck() with empty secret should error")
-	}
-}
-
-// =============================================================================
-// Event Parsing Tests
-// =============================================================================
-
-func TestStripeEventFields(t *testing.T) {
-	event := &StripeEvent{
-		ID:        "evt_123",
-		Type:      "checkout.session.completed",
-		CreatedAt: time.Now().Unix(),
-		Livemode:  false,
+func TestProcessEvent_CheckoutSessionCompleted(t *testing.T) {
+	mockLic := &testLicenseService{}
+	mockEmail := &testEmailService{}
+	h := &Handler{
+		logger:         testLogger(),
+		licenseService: mockLic,
+		emailService:   mockEmail,
 	}
 
-	if event.ID != "evt_123" {
-		t.Errorf("Event ID = %q, want %q", event.ID, "evt_123")
-	}
-	if event.Type != "checkout.session.completed" {
-		t.Errorf("Event Type = %q, want %q", event.Type, "checkout.session.completed")
-	}
-}
-
-func TestStripeEventJSONSerialization(t *testing.T) {
-	event := &StripeEvent{
-		ID:        "evt_json_test",
-		Type:      "invoice.paid",
-		CreatedAt: 1714425600,
-		Livemode:  true,
-	}
-
-	data, err := json.Marshal(event)
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-
-	var parsed StripeEvent
-	if err := json.Unmarshal(data, &parsed); err != nil {
-		t.Fatalf("json.Unmarshal() error = %v", err)
-	}
-
-	if parsed.ID != event.ID {
-		t.Errorf("Parsed ID = %q, want %q", parsed.ID, event.ID)
-	}
-	if parsed.Livemode != event.Livemode {
-		t.Errorf("Parsed Livemode = %v, want %v", parsed.Livemode, event.Livemode)
-	}
-}
-
-func TestStripeEventDataRawMessage(t *testing.T) {
-	event := &StripeEvent{
-		ID:   "evt_data",
-		Type: "test",
-		Data: json.RawMessage(`{"key": "value"}`),
-	}
-
-	var parsed map[string]interface{}
-	if err := json.Unmarshal(event.Data, &parsed); err != nil {
-		t.Fatalf("Failed to parse event Data: %v", err)
-	}
-
-	if parsed["key"] != "value" {
-		t.Errorf("Parsed Data[key] = %v, want %v", parsed["key"], "value")
-	}
-}
-
-// =============================================================================
-// Checkout Session Data Tests
-// =============================================================================
-
-func TestCheckoutSessionDataFields(t *testing.T) {
-	data := &CheckoutSessionData{
-		ID:            "cs_123",
-		CustomerEmail: "test@example.com",
-		CustomerID:    "cus_123",
-		AmountTotal:   7900,
-		Currency:      "usd",
-		Status:        "complete",
+	sessionData := CheckoutSessionData{
+		ID:            "cs_test_123",
+		CustomerEmail: "alice@example.com",
+		CustomerID:    "cus_test_abc",
+		PaymentStatus: "paid",
 		Metadata:      map[string]string{"tier": "developer"},
 	}
-
-	if data.CustomerEmail != "test@example.com" {
-		t.Errorf("CustomerEmail = %q, want %q", data.CustomerEmail, "test@example.com")
-	}
-	if data.AmountTotal != 7900 {
-		t.Errorf("AmountTotal = %d, want 7900", data.AmountTotal)
-	}
-}
-
-func TestCheckoutSessionDataMetadata(t *testing.T) {
-	data := &CheckoutSessionData{
-		ID:       "cs_metadata",
-		Metadata: map[string]string{"tier": "professional", "seats": "5"},
-	}
-
-	if data.Metadata["tier"] != "professional" {
-		t.Errorf("Metadata[tier] = %q, want %q", data.Metadata["tier"], "professional")
-	}
-}
-
-func TestCheckoutSessionDataJSON(t *testing.T) {
-	data := &CheckoutSessionData{
-		ID:            "cs_json",
-		CustomerEmail: "json@example.com",
-		AmountTotal:   24900,
-	}
-
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-
-	var parsed CheckoutSessionData
-	if err := json.Unmarshal(dataBytes, &parsed); err != nil {
-		t.Fatalf("json.Unmarshal() error = %v", err)
-	}
-
-	if parsed.CustomerEmail != data.CustomerEmail {
-		t.Errorf("Parsed CustomerEmail = %q, want %q", parsed.CustomerEmail, data.CustomerEmail)
-	}
-}
-
-// =============================================================================
-// Subscription Data Tests
-// =============================================================================
-
-func TestSubscriptionDataFields(t *testing.T) {
-	data := &SubscriptionData{
-		ID:         "sub_123",
-		CustomerID: "cus_123",
-		Status:     "active",
-	}
-
-	if data.Status != "active" {
-		t.Errorf("Status = %q, want %q", data.Status, "active")
-	}
-}
-
-func TestSubscriptionDataCancelAtPeriodEnd(t *testing.T) {
-	data := &SubscriptionData{
-		ID:                "sub_cancel",
-		CustomerID:        "cus_123",
-		Status:            "active",
-		CancelAtPeriodEnd: true,
-	}
-
-	if !data.CancelAtPeriodEnd {
-		t.Error("CancelAtPeriodEnd should be true")
-	}
-}
-
-func TestSubscriptionDataJSON(t *testing.T) {
-	data := &SubscriptionData{
-		ID:         "sub_json",
-		CustomerID: "cus_json",
-		Status:     "trialing",
-	}
-
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-
-	var parsed SubscriptionData
-	if err := json.Unmarshal(dataBytes, &parsed); err != nil {
-		t.Fatalf("json.Unmarshal() error = %v", err)
-	}
-
-	if parsed.Status != "trialing" {
-		t.Errorf("Parsed Status = %q, want %q", parsed.Status, "trialing")
-	}
-}
-
-// =============================================================================
-// Invoice Data Tests
-// =============================================================================
-
-func TestInvoiceDataFields(t *testing.T) {
-	data := &InvoiceData{
-		ID:             "in_123",
-		CustomerID:     "cus_123",
-		SubscriptionID: "sub_123",
-		AmountPaid:     7900,
-		Currency:       "usd",
-		Status:         "paid",
-	}
-
-	if data.AmountPaid != 7900 {
-		t.Errorf("AmountPaid = %d, want 7900", data.AmountPaid)
-	}
-	if data.Status != "paid" {
-		t.Errorf("Status = %q, want %q", data.Status, "paid")
-	}
-}
-
-func TestInvoiceDataPastDue(t *testing.T) {
-	data := &InvoiceData{
-		ID:         "in_past_due",
-		CustomerID: "cus_123",
-		AmountPaid: 0,
-		Currency:   "usd",
-		Status:     "past_due",
-	}
-
-	if data.Status != "past_due" {
-		t.Errorf("Status = %q, want %q", data.Status, "past_due")
-	}
-}
-
-func TestInvoiceDataJSON(t *testing.T) {
-	data := &InvoiceData{
-		ID:         "in_json",
-		CustomerID: "cus_json",
-		AmountPaid: 24900,
-		Currency:   "usd",
-		Status:     "paid",
-	}
-
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-
-	var parsed InvoiceData
-	if err := json.Unmarshal(dataBytes, &parsed); err != nil {
-		t.Fatalf("json.Unmarshal() error = %v", err)
-	}
-
-	if parsed.AmountPaid != 24900 {
-		t.Errorf("Parsed AmountPaid = %d, want 24900", parsed.AmountPaid)
-	}
-}
-
-// =============================================================================
-// ProcessEvent Tests
-// =============================================================================
-
-func TestProcessEventCheckoutSessionCompleted(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`{
-		"id": "evt_checkout",
-		"type": "checkout.session.completed",
-		"created": 1714425600,
-		"data": {"object": {"id": "cs_123", "customer_email": "test@example.com"}}
-	}`)
-
-	err := handler.ProcessEvent(context.Background(), payload, "sig_123")
-	_ = err
-}
-
-func TestProcessEventSubscriptionCreated(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`{"id": "evt_sub", "type": "customer.subscription.created", "created": 1714425600}`)
-	err := handler.ProcessEvent(context.Background(), payload, "sig_123")
-	_ = err
-}
-
-func TestProcessEventInvoicePaid(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`{"id": "evt_invoice", "type": "invoice.paid", "created": 1714425600}`)
-	err := handler.ProcessEvent(context.Background(), payload, "sig_123")
-	_ = err
-}
-
-func TestProcessEventInvalidJSON(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`invalid json {`)
-	err := handler.ProcessEvent(context.Background(), payload, "sig_123")
-	if err == nil {
-		t.Error("ProcessEvent() with invalid JSON should error")
-	}
-}
-
-func TestProcessEventEmptyPayload(t *testing.T) {
-	handler := DefaultHandler("secret")
-	err := handler.ProcessEvent(context.Background(), []byte{}, "sig")
-	if err == nil {
-		t.Error("ProcessEvent() with empty payload should error")
-	}
-}
-
-func TestProcessEventPaymentFailed(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`{"id": "evt_failed", "type": "invoice.payment_failed", "created": 1714425600, "data": {"object": {}}}`)
-	_ = handler.ProcessEvent(context.Background(), payload, "sig")
-}
-
-func TestProcessEventSubscriptionDeleted(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`{"id": "evt_deleted", "type": "customer.subscription.deleted", "created": 1714425600}`)
-	_ = handler.ProcessEvent(context.Background(), payload, "sig")
-}
-
-func TestProcessEventSubscriptionUpdated(t *testing.T) {
-	handler := DefaultHandler("secret")
-	payload := []byte(`{"id": "evt_updated", "type": "customer.subscription.updated", "created": 1714425600}`)
-	_ = handler.ProcessEvent(context.Background(), payload, "sig")
-}
-
-// =============================================================================
-// Direct Handler Function Tests
-// =============================================================================
-
-func TestHandleCheckoutSessionCompletedWithData(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
-
-	dataJSON := `{"object": {"id": "cs_test", "customer_email": "test@example.com", "customer_id": "cus_test"}}`
-	event := &StripeEvent{
-		ID:   "evt_handle_checkout_data",
+	data, _ := json.Marshal(sessionData)
+	event := StripeEvent{
+		ID:   "evt_checkout",
 		Type: "checkout.session.completed",
-		Data: json.RawMessage(dataJSON),
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
 	}
 
-	err := handler.handleCheckoutSessionCompleted(ctx, event)
-	if err != nil {
-		t.Errorf("handleCheckoutSessionCompleted() with data error = %v", err)
+	if len(mockLic.calls) == 0 {
+		t.Error("license service should have been called")
 	}
 }
 
-func TestHandleCheckoutSessionCompletedPaid(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
+func TestProcessEvent_CheckoutNotPaid(t *testing.T) {
+	mockLic := &testLicenseService{}
+	h := &Handler{
+		logger:         testLogger(),
+		licenseService: mockLic,
+	}
 
-	dataJSON := `{"object": {"id": "cs_paid", "customer_email": "paid@example.com", "customer_id": "cus_paid", "amount_total": 7900}}`
-	event := &StripeEvent{
-		ID:   "evt_paid_checkout",
+	sessionData := CheckoutSessionData{
+		ID:            "cs_test_123",
+		CustomerEmail: "bob@example.com",
+		PaymentStatus: "unpaid", // NOT paid
+	}
+	data, _ := json.Marshal(sessionData)
+	event := StripeEvent{
+		ID:   "evt_checkout_unpaid",
 		Type: "checkout.session.completed",
-		Data: json.RawMessage(dataJSON),
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
 	}
 
-	err := handler.handleCheckoutSessionCompleted(ctx, event)
-	if err != nil {
-		t.Errorf("handleCheckoutSessionCompleted() paid checkout error = %v", err)
+	// Should NOT generate license for unpaid checkout
+	if len(mockLic.calls) > 0 {
+		t.Error("license service should not have been called for unpaid checkout")
 	}
 }
 
-func TestHandleSubscriptionUpdatedWithData(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
+func TestProcessEvent_CheckoutSessionCompleted_TierInferFromAmount(t *testing.T) {
+	mockLic := &testLicenseService{}
+	h := &Handler{
+		logger:         testLogger(),
+		licenseService: mockLic,
+	}
 
-	dataJSON := `{"object": {"id": "sub_test", "customer": "cus_test", "status": "active"}}`
-	event := &StripeEvent{
-		ID:   "evt_sub_updated_data",
+	// Amount corresponds to "professional" tier (>= 24900 cents)
+	sessionData := CheckoutSessionData{
+		ID:            "cs_test_pro",
+		CustomerEmail: "pro@example.com",
+		PaymentStatus: "paid",
+		AmountTotal:   29900,
+		Metadata:      map[string]string{}, // no tier in metadata
+	}
+	data, _ := json.Marshal(sessionData)
+	event := StripeEvent{
+		ID:   "evt_pro",
+		Type: "checkout.session.completed",
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
+	}
+}
+
+func TestProcessEvent_CheckoutSessionCompleted_LicenseServiceError(t *testing.T) {
+	mockLic := &testLicenseService{generateError: context.DeadlineExceeded}
+	h := &Handler{
+		logger:         testLogger(),
+		licenseService: mockLic,
+	}
+
+	sessionData := CheckoutSessionData{
+		ID:            "cs_test_err",
+		CustomerEmail: "err@example.com",
+		CustomerID:    "cus_err",
+		PaymentStatus: "paid",
+		Metadata:      map[string]string{"tier": "developer"},
+	}
+	data, _ := json.Marshal(sessionData)
+	event := StripeEvent{
+		ID:   "evt_err",
+		Type: "checkout.session.completed",
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err == nil {
+		t.Fatal("expected error when license service fails")
+	}
+}
+
+func TestProcessEvent_CheckoutSessionCompleted_EmailError(t *testing.T) {
+	mockLic := &testLicenseService{}
+	mockEmail := &testEmailService{sendError: context.DeadlineExceeded}
+	h := &Handler{
+		logger:         testLogger(),
+		licenseService: mockLic,
+		emailService:   mockEmail,
+	}
+
+	sessionData := CheckoutSessionData{
+		ID:            "cs_test_email_err",
+		CustomerEmail: "emailerr@example.com",
+		CustomerID:    "cus_email_err",
+		PaymentStatus: "paid",
+		Metadata:      map[string]string{"tier": "developer"},
+	}
+	data, _ := json.Marshal(sessionData)
+	event := StripeEvent{
+		ID:   "evt_email_err",
+		Type: "checkout.session.completed",
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	// Email errors should NOT cause ProcessEvent to fail
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() should not fail on email error: %v", err)
+	}
+}
+
+func TestProcessEvent_SubscriptionUpdated(t *testing.T) {
+	h := &Handler{logger: testLogger()}
+
+	subData := SubscriptionData{
+		ID:     "sub_test_123",
+		Status: "active",
+	}
+	data, _ := json.Marshal(subData)
+	event := StripeEvent{
+		ID:   "evt_sub_active",
 		Type: "customer.subscription.updated",
-		Data: json.RawMessage(dataJSON),
+		Data: data,
 	}
+	payload, _ := json.Marshal(event)
 
-	err := handler.handleSubscriptionUpdated(ctx, event)
-	if err != nil {
-		t.Errorf("handleSubscriptionUpdated() with data error = %v", err)
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
 	}
 }
 
-func TestHandleSubscriptionDeletedWithData(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
+func TestProcessEvent_SubscriptionUpdated_PastDue(t *testing.T) {
+	h := &Handler{logger: testLogger()}
 
-	dataJSON := `{"object": {"id": "sub_deleted", "customer": "cus_test", "status": "canceled"}}`
-	event := &StripeEvent{
-		ID:   "evt_sub_deleted_data",
+	subData := SubscriptionData{
+		ID:     "sub_past_due",
+		Status: "past_due",
+	}
+	data, _ := json.Marshal(subData)
+	event := StripeEvent{
+		ID:   "evt_past_due",
+		Type: "customer.subscription.updated",
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
+	}
+}
+
+func TestProcessEvent_SubscriptionUpdated_Canceled(t *testing.T) {
+	h := &Handler{logger: testLogger()}
+
+	subData := SubscriptionData{
+		ID:     "sub_canceled",
+		Status: "canceled",
+	}
+	data, _ := json.Marshal(subData)
+	event := StripeEvent{
+		ID:   "evt_sub_canceled",
+		Type: "customer.subscription.updated",
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
+	}
+}
+
+func TestProcessEvent_SubscriptionDeleted(t *testing.T) {
+	mockLic := &testLicenseService{}
+	h := &Handler{
+		logger:         testLogger(),
+		licenseService: mockLic,
+	}
+
+	subData := SubscriptionData{
+		ID:         "sub_deleted",
+		CustomerID: "cus_deleted",
+	}
+	data, _ := json.Marshal(subData)
+	event := StripeEvent{
+		ID:   "evt_sub_deleted",
 		Type: "customer.subscription.deleted",
-		Data: json.RawMessage(dataJSON),
+		Data: data,
 	}
+	payload, _ := json.Marshal(event)
 
-	err := handler.handleSubscriptionDeleted(ctx, event)
-	if err != nil {
-		t.Errorf("handleSubscriptionDeleted() with data error = %v", err)
-	}
-}
-
-func TestHandleInvoicePaymentSucceededWithData(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
-
-	dataJSON := `{"object": {"id": "in_test", "customer": "cus_test", "amount_paid": 7900, "status": "paid"}}`
-	event := &StripeEvent{
-		ID:   "evt_invoice_succeeded_data",
-		Type: "invoice.paid",
-		Data: json.RawMessage(dataJSON),
-	}
-
-	err := handler.handleInvoicePaymentSucceeded(ctx, event)
-	if err != nil {
-		t.Errorf("handleInvoicePaymentSucceeded() with data error = %v", err)
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
 	}
 }
 
-func TestHandleInvoicePaymentFailedWithData(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
+func TestProcessEvent_InvoicePaymentSucceeded(t *testing.T) {
+	h := &Handler{logger: testLogger()}
 
-	dataJSON := `{"object": {"id": "in_failed", "customer": "cus_test", "amount_paid": 0, "status": "open"}}`
-	event := &StripeEvent{
-		ID:   "evt_invoice_failed_data",
+	invData := InvoiceData{
+		ID:        "in_test_123",
+		AmountPaid: 9900,
+		Currency:  "usd",
+		Status:    "paid",
+	}
+	data, _ := json.Marshal(invData)
+	event := StripeEvent{
+		ID:   "evt_inv_paid",
+		Type: "invoice.payment_succeeded",
+		Data: data,
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
+	}
+}
+
+func TestProcessEvent_InvoicePaymentFailed(t *testing.T) {
+	h := &Handler{logger: testLogger()}
+
+	invData := InvoiceData{
+		ID:       "in_test_failed",
+		AmountDue: 9900,
+		Currency: "usd",
+		Status:   "open",
+	}
+	data, _ := json.Marshal(invData)
+	event := StripeEvent{
+		ID:   "evt_inv_failed",
 		Type: "invoice.payment_failed",
-		Data: json.RawMessage(dataJSON),
+		Data: data,
 	}
+	payload, _ := json.Marshal(event)
 
-	err := handler.handleInvoicePaymentFailed(ctx, event)
-	if err != nil {
-		t.Errorf("handleInvoicePaymentFailed() with data error = %v", err)
-	}
-}
-
-func TestHandleInvoicePaymentFailedWithCustomerEmail(t *testing.T) {
-	handler := DefaultHandler("whsec_test")
-	ctx := context.Background()
-
-	dataJSON := `{"object": {"id": "in_failed_email", "customer_email": "failed@example.com"}}`
-	event := &StripeEvent{
-		ID:   "evt_invoice_failed_email",
-		Type: "invoice.payment_failed",
-		Data: json.RawMessage(dataJSON),
-	}
-
-	err := handler.handleInvoicePaymentFailed(ctx, event)
-	if err != nil {
-		t.Errorf("handleInvoicePaymentFailed() with customer email error = %v", err)
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err != nil {
+		t.Fatalf("ProcessEvent() error: %v", err)
 	}
 }
 
-// =============================================================================
-// Tier Inference Tests
-// =============================================================================
+func TestProcessEvent_InvalidPayload(t *testing.T) {
+	h := &Handler{logger: testLogger()}
+	if err := h.ProcessEvent(context.Background(), []byte(`not valid json`), "sig"); err == nil {
+		t.Fatal("expected error for invalid JSON payload")
+	}
+}
+
+func TestProcessEvent_InvalidEventData(t *testing.T) {
+	h := &Handler{logger: testLogger()}
+
+	event := StripeEvent{
+		ID:   "evt_bad_data",
+		Type: "checkout.session.completed",
+		Data: json.RawMessage(`not valid json here`),
+	}
+	payload, _ := json.Marshal(event)
+
+	if err := h.ProcessEvent(context.Background(), payload, "sig"); err == nil {
+		t.Fatal("expected error for invalid event data")
+	}
+}
 
 func TestInferTierFromAmount(t *testing.T) {
-	handler := DefaultHandler("secret")
-
+	h := &Handler{}
 	tests := []struct {
 		amount int64
 		want   string
 	}{
-		// Amount >= 24900 returns professional
-		{24900, "professional"},
-		{100000, "professional"},
-		// Amount >= 7900 returns developer
-		{7900, "developer"},
-		{15000, "developer"},
-		// Amount >= 2900 returns starter
-		{2900, "starter"},
-		{5000, "starter"},
-		// Below 2900 returns developer (default fallback)
-		{0, "developer"},
-		{2800, "developer"},
-		{-100, "developer"},
+		{29900, "professional"}, // >= 24900
+		{24900, "professional"}, // >= 24900
+		{24899, "developer"},    // >= 7900
+		{7900, "developer"},     // >= 7900
+		{7899, "starter"},       // >= 2900
+		{2900, "starter"},       // >= 2900
+		{2899, "developer"},     // default fallback
+		{0, "developer"},        // default fallback
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.want, func(t *testing.T) {
-			got := handler.inferTierFromAmount(tt.amount)
-			if got != tt.want {
-				t.Errorf("inferTierFromAmount(%d) = %q, want %q", tt.amount, got, tt.want)
-			}
-		})
-	}
-}
-
-// =============================================================================
-// Event Type Constants
-// =============================================================================
-
-func TestEventTypeConstants(t *testing.T) {
-	eventTypes := []string{
-		"checkout.session.completed",
-		"customer.subscription.created",
-		"customer.subscription.updated",
-		"customer.subscription.deleted",
-		"invoice.paid",
-		"invoice.payment_failed",
-	}
-
-	for _, et := range eventTypes {
-		if et == "" {
-			t.Error("Empty event type constant")
+	for _, tc := range tests {
+		if got := h.inferTierFromAmount(tc.amount); got != tc.want {
+			t.Errorf("inferTierFromAmount(%d)=%q, want %q", tc.amount, got, tc.want)
 		}
 	}
 }
 
-func TestAllEventTypesCovered(t *testing.T) {
-	requiredEvents := map[string]bool{
-		"checkout.session.completed":    false,
-		"customer.subscription.created": false,
-		"customer.subscription.updated": false,
-		"customer.subscription.deleted": false,
-		"invoice.paid":                  false,
-		"invoice.payment_failed":        false,
+func TestHealthCheck_NoSecret(t *testing.T) {
+	h := &Handler{webhookSecret: ""}
+	if err := h.HealthCheck(); err == nil {
+		t.Fatal("expected error when webhook secret is empty")
 	}
+}
 
-	for event := range requiredEvents {
-		if event == "" {
-			t.Error("Empty event type")
-		}
+func TestHealthCheck_WithSecret(t *testing.T) {
+	h := &Handler{webhookSecret: "whsec_test"}
+	if err := h.HealthCheck(); err != nil {
+		t.Fatalf("HealthCheck() error: %v", err)
 	}
+}
+
+func TestCheckoutSessionData_Fields(t *testing.T) {
+	data := CheckoutSessionData{
+		ID:            "cs_123",
+		CustomerEmail: "test@example.com",
+		CustomerID:    "cus_123",
+		PaymentStatus: "paid",
+		Status:        "complete",
+		AmountTotal:   9900,
+		Currency:      "usd",
+		Metadata:      map[string]string{"tier": "developer"},
+	}
+	if data.ID != "cs_123" {
+		t.Errorf("ID=%q, want cs_123", data.ID)
+	}
+	if data.PaymentStatus != "paid" {
+		t.Errorf("PaymentStatus=%q, want paid", data.PaymentStatus)
+	}
+}
+
+func TestSubscriptionData_Fields(t *testing.T) {
+	data := SubscriptionData{
+		ID:                 "sub_123",
+		CustomerID:         "cus_123",
+		Status:             "active",
+		Tier:               "developer",
+		CurrentPeriodStart: time.Now().AddDate(0, -1, 0),
+		CurrentPeriodEnd:    time.Now().AddDate(0, 1, 0),
+		CancelAtPeriodEnd:   false,
+	}
+	if data.Status != "active" {
+		t.Errorf("Status=%q, want active", data.Status)
+	}
+}
+
+func TestInvoiceData_Fields(t *testing.T) {
+	data := InvoiceData{
+		ID:             "in_123",
+		CustomerID:     "cus_123",
+		SubscriptionID: "sub_123",
+		AmountDue:      9900,
+		AmountPaid:     9900,
+		Currency:       "usd",
+		Status:         "paid",
+		Paid:           true,
+		Number:         "INV-0001",
+		Description:    "AegisGate Developer License",
+	}
+	if data.Status != "paid" {
+		t.Errorf("Status=%q, want paid", data.Status)
+	}
+	if !data.Paid {
+		t.Error("Paid should be true")
+	}
+}
+
+// testLogger returns a logger that writes to stderr (safe for tests).
+func testLogger() *log.Logger {
+	return log.New(os.Stderr, "", 0)
 }
