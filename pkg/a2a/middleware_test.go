@@ -13,10 +13,10 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -367,13 +367,13 @@ func TestRateLimiting(t *testing.T) {
 
 	// Tiny bucket: 2 tokens, refill 1 per minute
 	m := &Middleware{
-		auth:      &MTLSAuth{},
-		integrity: NewIntegrityVerifier(secret),
-		caps:      caps,
-		limiter:   NewTokenBucket(2, 1, time.Minute),
-		next:      http.HandlerFunc(testEchoHandler),
+		auth:       &MTLSAuth{},
+		integrity:  NewIntegrityVerifier(secret),
+		caps:       caps,
+		limiter:    NewTokenBucket(2, 1, time.Minute),
+		next:       http.HandlerFunc(testEchoHandler),
 		licenseMgr: nil,
-		logger:    slog.Default().With("component", "a2a-middleware-test"),
+		logger:     slog.Default().With("component", "a2a-middleware-test"),
 	}
 
 	// Helper: make a fresh signed request each time (fresh buffer + fresh signature)
@@ -650,7 +650,6 @@ func TestEchoHandler_ValidJSON(t *testing.T) {
 	}
 }
 
-
 // =============================================================================
 // Middleware.ServeHTTP — uncovered guard paths
 // =============================================================================
@@ -694,7 +693,7 @@ func TestServeHTTP_Guard1_LicenseInvalid(t *testing.T) {
 // --- Guard 3: Rate limit exceeded ---
 func TestServeHTTP_Guard3_RateLimited(t *testing.T) {
 	m := &Middleware{
-		auth:      &MTLSAuth{},
+		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier([]byte("secret")),
 		caps:       NewInMemoryCapEnforcer(),
 		limiter:    &alwaysDeniedLimiter{},
@@ -725,7 +724,7 @@ func TestServeHTTP_Guard4_MalformedSignature(t *testing.T) {
 	caps := NewInMemoryCapEnforcer()
 	caps.SetCapabilities("agent-malform", []string{"echo"})
 	m := &Middleware{
-		auth:      &MTLSAuth{},
+		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier([]byte("secret")),
 		caps:       caps,
 		limiter:    NewTokenBucket(100, 10, time.Minute),
@@ -755,7 +754,7 @@ func TestServeHTTP_Guard5_UnknownAgent(t *testing.T) {
 	caps := NewInMemoryCapEnforcer()
 	caps.SetCapabilities("known-agent", []string{"echo"})
 	m := &Middleware{
-		auth:      &MTLSAuth{},
+		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier([]byte("secret")),
 		caps:       caps,
 		limiter:    NewTokenBucket(100, 10, time.Minute),
@@ -782,7 +781,7 @@ func TestServeHTTP_Guard5_CapabilityDenied(t *testing.T) {
 	caps := NewInMemoryCapEnforcer()
 	caps.SetCapabilities("agent-deny", []string{"read"})
 	m := &Middleware{
-		auth:      &MTLSAuth{},
+		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier([]byte("secret")),
 		caps:       caps,
 		limiter:    NewTokenBucket(100, 10, time.Minute),
@@ -807,7 +806,7 @@ func TestServeHTTP_Guard5_CapabilityDenied(t *testing.T) {
 // --- Guard 5: CapCheck internal error ---
 func TestServeHTTP_Guard5_CapCheckInternalError(t *testing.T) {
 	m := &Middleware{
-		auth:      &MTLSAuth{},
+		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier([]byte("secret")),
 		caps:       &errorCapEnforcer{},
 		limiter:    NewTokenBucket(100, 10, time.Minute),
@@ -844,7 +843,7 @@ func TestServeHTTP_PanicRecovery(t *testing.T) {
 	caps := NewInMemoryCapEnforcer()
 	caps.SetCapabilities("agent-panic", []string{"echo"})
 	m := &Middleware{
-		auth:      &MTLSAuth{},
+		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier([]byte("secret")),
 		caps:       caps,
 		limiter:    NewTokenBucket(100, 10, time.Minute),

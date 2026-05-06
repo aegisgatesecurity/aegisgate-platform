@@ -18,12 +18,12 @@ import (
 
 // testLicenseService implements LicenseServicer for testing.
 type testLicenseService struct {
-	generateError  error
-	activateError  error
+	generateError   error
+	activateError   error
 	deactivateError error
-	updateError    error
-	generatedKey   string
-	calls          []string
+	updateError     error
+	generatedKey    string
+	calls           []string
 }
 
 func (m *testLicenseService) GenerateLicense(ctx context.Context, customerID string, tier string, durationDays int) (string, error) {
@@ -53,7 +53,7 @@ func (m *testLicenseService) UpdateLicenseTier(ctx context.Context, licenseKey s
 // testEmailService implements EmailServicer for testing.
 type testEmailService struct {
 	sendError error
-	sentTo   string
+	sentTo    string
 	sentData  EmailData
 }
 
@@ -348,10 +348,10 @@ func TestProcessEvent_InvoicePaymentSucceeded(t *testing.T) {
 	h := &Handler{logger: testLogger()}
 
 	invData := InvoiceData{
-		ID:        "in_test_123",
+		ID:         "in_test_123",
 		AmountPaid: 9900,
-		Currency:  "usd",
-		Status:    "paid",
+		Currency:   "usd",
+		Status:     "paid",
 	}
 	data, _ := json.Marshal(invData)
 	event := StripeEvent{
@@ -370,10 +370,10 @@ func TestProcessEvent_InvoicePaymentFailed(t *testing.T) {
 	h := &Handler{logger: testLogger()}
 
 	invData := InvoiceData{
-		ID:       "in_test_failed",
+		ID:        "in_test_failed",
 		AmountDue: 9900,
-		Currency: "usd",
-		Status:   "open",
+		Currency:  "usd",
+		Status:    "open",
 	}
 	data, _ := json.Marshal(invData)
 	event := StripeEvent{
@@ -472,8 +472,8 @@ func TestSubscriptionData_Fields(t *testing.T) {
 		Status:             "active",
 		Tier:               "developer",
 		CurrentPeriodStart: time.Now().AddDate(0, -1, 0),
-		CurrentPeriodEnd:    time.Now().AddDate(0, 1, 0),
-		CancelAtPeriodEnd:   false,
+		CurrentPeriodEnd:   time.Now().AddDate(0, 1, 0),
+		CancelAtPeriodEnd:  false,
 	}
 	if data.Status != "active" {
 		t.Errorf("Status=%q, want active", data.Status)
