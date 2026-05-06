@@ -26,6 +26,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -46,6 +47,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/security"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sla"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
@@ -274,17 +276,19 @@ func main() {
 		if err != nil {
 			log.Printf("Warning: A2A config load failed (%v) — A2A endpoints disabled", err)
 		} else {
-			// Load agent capability sets from YAML (or use empty enforcer)
-			capsEnforcer := a2a.NewInMemoryCapEnforcer()
+			// A2A Persistence: capabilities are stored in /data/a2a_caps.json
+			// so they survive pod restarts. On first startup, seed from the YAML config.
+			capsFile := filepath.Join(cfg.Persistence.DataDir, "a2a_caps.json")
+			capsEnforcer, err := a2a.NewPersistentCapEnforcer(capsFile)
+			if err != nil {
+				log.Printf("Warning: A2A persistent caps init failed (%v) — falling back to in-memory", err)
+				capsEnforcer, _ = a2a.NewPersistentCapEnforcer(capsFile)
+			}
+
+			// Load from YAML config on first startup (seeds the persistent store)
 			if cfg.A2A.CapsFile != "" {
-				caps, err := a2a.LoadCaps(cfg.A2A.CapsFile)
-				if err != nil {
-					log.Printf("Warning: A2A caps load failed (%v) — using empty capability set", err)
-				} else {
-					for agentID, capabilities := range caps {
-						capsEnforcer.SetCapabilities(agentID, capabilities)
-					}
-					log.Printf("A2A: Loaded %d agent capability sets from %s", len(caps), cfg.A2A.CapsFile)
+				if err := capsEnforcer.LoadFromYAML(cfg.A2A.CapsFile); err != nil {
+					log.Printf("Warning: A2A YAML caps load failed (%v) — using persisted capabilities", err)
 				}
 			}
 
@@ -312,16 +316,86 @@ func main() {
 	}
 
 	// Management endpoints on the proxy port
+	// Health check verifies all critical dependencies: proxy, persistence,
+	// license manager, and certificate store.
 	proxyMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		health := proxyServer.GetHealth()
 		w.Header().Set("Content-Type", "application/json")
-		if enabled, ok := health["enabled"].(bool); !ok || !enabled {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			fmt.Fprintf(w, `{"status":"unhealthy"}`)
-			return
+
+		checks := map[string]map[string]interface{}{}
+		allHealthy := true
+
+		// Check 1: Proxy core
+		proxyHealth := proxyServer.GetHealth()
+		proxyEnabled := false
+		if enabled, ok := proxyHealth["enabled"].(bool); ok && enabled {
+			proxyEnabled = true
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"healthy","tier":"%s","version":"%s"}`, platformTier.String(), version)
+		checks["proxy"] = map[string]interface{}{
+			"enabled": proxyEnabled,
+			"healthy": proxyEnabled,
+		}
+		if !proxyEnabled {
+			allHealthy = false
+		}
+
+		// Check 2: Persistence layer
+		persistStarted := false
+		if started, ok := persistenceMgr.Stats()["started"].(bool); ok && started {
+			persistStarted = true
+		}
+		checks["persistence"] = map[string]interface{}{
+			"enabled": persistenceMgr.IsEnabled(),
+			"started": persistStarted,
+			"healthy": persistStarted,
+		}
+		if !persistStarted {
+			allHealthy = false
+		}
+
+		// Check 3: License manager
+		licenseResult := licenseMgr.Validate(licenseMgr.GetLicenseKey())
+		checks["license"] = map[string]interface{}{
+			"valid":   licenseResult.Valid,
+			"tier":    licenseResult.Tier.String(),
+			"healthy": licenseResult.Valid,
+		}
+		if !licenseResult.Valid {
+			allHealthy = false
+		}
+
+		// Check 4: Certificate store
+		certValidation, certErr := certinit.ValidateCerts(certinit.Config{
+			CertDir:      cfg.TLS.CertDir,
+			AutoGenerate: cfg.TLS.AutoGenerate,
+			CACertFile:   "ca.crt",
+			CAKeyFile:    "ca.key",
+			CertFile:     "server.crt",
+			KeyFile:      "server.key",
+		})
+		certHealthy := certErr == nil && certValidation != nil && (certValidation.ServerCertValid || !cfg.TLS.AutoGenerate)
+		checks["certificates"] = map[string]interface{}{
+			"valid":   certHealthy,
+			"healthy": certHealthy,
+		}
+		if !certHealthy {
+			allHealthy = false
+		}
+
+		status := "healthy"
+		code := http.StatusOK
+		if !allHealthy {
+			status = "unhealthy"
+			code = http.StatusServiceUnavailable
+		}
+
+		// Build JSON response manually for deterministic field order
+		w.WriteHeader(code)
+		fmt.Fprintf(w, `{"status":"%s","tier":"%s","version":"%s","checks":{"proxy":{"enabled":%v,"healthy":%v},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v}}}`,
+			status, platformTier.String(), version,
+			proxyEnabled, proxyEnabled,
+			persistenceMgr.IsEnabled(), persistStarted, persistStarted,
+			licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
+			certHealthy, certHealthy)
 	})
 
 	proxyMux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
@@ -574,25 +648,85 @@ func main() {
 	// Metrics endpoint (Prometheus)
 	dashMux.Handle("/metrics", metrics.Handler())
 
-	// Dashboard health endpoint
+	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		checks := map[string]map[string]interface{}{}
+		allHealthy := true
+
+		// Scanner
 		scannerHealthy := mcpScanner.Health() == nil
+		checks["scanner"] = map[string]interface{}{"healthy": scannerHealthy}
+		if !scannerHealthy {
+			allHealthy = false
+		}
+
+		// Bridge
 		bridgeStatus := "disabled"
 		if platformBridge != nil && platformBridge.IsEnabled() {
 			bridgeStatus = "enabled"
 		}
+		checks["bridge"] = map[string]interface{}{"status": bridgeStatus, "healthy": true}
+
+		// Persistence
+		persistStarted := false
+		if started, ok := persistenceMgr.Stats()["started"].(bool); ok && started {
+			persistStarted = true
+		}
+		checks["persistence"] = map[string]interface{}{"enabled": persistenceMgr.IsEnabled(), "started": persistStarted, "healthy": persistStarted}
+		if !persistStarted {
+			allHealthy = false
+		}
+
+		// License
+		licenseResult := licenseMgr.Validate(licenseMgr.GetLicenseKey())
+		checks["license"] = map[string]interface{}{"valid": licenseResult.Valid, "tier": licenseResult.Tier.String(), "healthy": licenseResult.Valid}
+		if !licenseResult.Valid {
+			allHealthy = false
+		}
+
+		// Certificates
+		certValidation, certErr := certinit.ValidateCerts(certinit.Config{
+			CertDir:      cfg.TLS.CertDir,
+			AutoGenerate: cfg.TLS.AutoGenerate,
+			CACertFile:   "ca.crt",
+			CAKeyFile:    "ca.key",
+			CertFile:     "server.crt",
+			KeyFile:      "server.key",
+		})
+		certHealthy := certErr == nil && certValidation != nil && (certValidation.ServerCertValid || !cfg.TLS.AutoGenerate)
+		checks["certificates"] = map[string]interface{}{"valid": certHealthy, "healthy": certHealthy}
+		if !certHealthy {
+			allHealthy = false
+		}
+
+		// A2A
+		a2aHealthy := true
+		a2aStatus := "disabled"
+		if a2aMiddleware != nil {
+			a2aStatus = "active"
+		} else {
+			a2aHealthy = false // A2A not configured is degraded, not fatal
+		}
+		checks["a2a"] = map[string]interface{}{"status": a2aStatus, "healthy": a2aHealthy}
 
 		status := "healthy"
 		code := http.StatusOK
-		if !scannerHealthy {
+		if !allHealthy {
 			status = "degraded"
 			code = http.StatusServiceUnavailable
 		}
 
 		w.WriteHeader(code)
-		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","bridge":"%s","scanner":"%v","uptime":%.0f,"timestamp":"%s"}`,
-			status, version, platformTier.String(), bridgeStatus, scannerHealthy, time.Since(startTime).Seconds(), time.Now().UTC().Format(time.RFC3339))
+		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","checks":{"scanner":{"healthy":%v},"bridge":{"status":"%s","healthy":true},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"a2a":{"status":"%s","healthy":%v}},"uptime":%.0f,"timestamp":"%s"}`,
+			status, version, platformTier.String(),
+			scannerHealthy, bridgeStatus,
+			persistenceMgr.IsEnabled(), persistStarted, persistStarted,
+			licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
+			certHealthy, certHealthy,
+			a2aStatus, a2aHealthy,
+			time.Since(startTime).Seconds(), time.Now().UTC().Format(time.RFC3339))
 	})
 
 	dashMux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
@@ -673,6 +807,42 @@ func main() {
 			resp["max_servers"] = currentResult.Payload.MaxServers
 			resp["max_users"] = currentResult.Payload.MaxUsers
 		}
+		data, err := json.Marshal(resp)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"marshal failed"}`)
+			return
+		}
+		writeBytes(w, data)
+	})
+
+	// SLA/SLO endpoint — show service level objectives for the current tier
+	dashMux.HandleFunc("/api/v1/sla", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		currentSLA := sla.GetSLA(platformTier)
+
+		resp := map[string]interface{}{
+			"tier":                platformTier.String(),
+			"uptime_target":       currentSLA.UptimeTarget,
+			"support_response":    currentSLA.SupportResponse,
+			"support_channel":     currentSLA.SupportChannel,
+			"incident_response":   currentSLA.IncidentResponse,
+			"data_retention_days": currentSLA.DataRetention,
+			"slos":                make([]map[string]interface{}, 0, len(sla.SLOs)),
+		}
+
+		slos := make([]map[string]interface{}, 0, len(sla.SLOs))
+		for _, slo := range sla.SLOs {
+			slos = append(slos, map[string]interface{}{
+				"name":        slo.Name,
+				"target":      slo.Target,
+				"window":      slo.Window,
+				"metric":      slo.Metric,
+				"description": slo.Description,
+			})
+		}
+		resp["slos"] = slos
+
 		data, err := json.Marshal(resp)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
