@@ -999,3 +999,97 @@ func TestAegisGuardMCPScanner_Scan_Concurrent(t *testing.T) {
 		t.Errorf("Concurrent scan error: %v", err)
 	}
 }
+
+// ============================================================================
+// Connection Wrappers for Error Path Testing
+// ============================================================================
+
+// failSetWriteDeadlineConn wraps a net.Conn and fails on SetWriteDeadline
+type failSetWriteDeadlineConn struct {
+	net.Conn
+}
+
+func (c *failSetWriteDeadlineConn) SetWriteDeadline(t time.Time) error {
+	return fmt.Errorf("simulated SetWriteDeadline failure")
+}
+
+// ============================================================================
+// writeJSON Edge Case Coverage Tests
+// ============================================================================
+
+func TestAegisGuardMCPScanner_writeJSON_SetWriteDeadlineFails(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	// Create a real connection to wrap
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Keep connection open so client doesn't get EOF
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	// Wrap with failing deadline setter
+	failConn := &failSetWriteDeadlineConn{Conn: client}
+
+	err = scanner.writeJSON(failConn, []byte(`{}`))
+	if err == nil {
+		t.Error("writeJSON should fail when SetWriteDeadline fails")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// readJSON Edge Case Coverage Tests
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_ZeroBytesNoNewline(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			// Close immediately WITHOUT reading - client will get zero bytes on read
+			conn.Close()
+		}
+	}()
+
+	conn, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	_, err = scanner.readJSON(conn)
+	if err == nil {
+		t.Error("readJSON should error on zero bytes without newline")
+	}
+
+	<-serverDone
+}
