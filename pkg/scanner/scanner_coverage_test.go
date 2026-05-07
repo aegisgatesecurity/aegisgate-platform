@@ -42,17 +42,17 @@ func TestJSONRPCError_Error_Standard(t *testing.T) {
 
 // failConn wraps a net.Conn and lets individual methods fail
 type failConn struct {
-	parent                net.Conn
-	failSetWriteDeadline  bool
-	failSetReadDeadline   bool
+	parent               net.Conn
+	failSetWriteDeadline bool
+	failSetReadDeadline  bool
 }
 
-func (f *failConn) Read(b []byte) (n int, err error)              { return f.parent.Read(b) }
-func (f *failConn) Write(b []byte) (n int, err error)             { return f.parent.Write(b) }
-func (f *failConn) Close() error                                  { return f.parent.Close() }
-func (f *failConn) LocalAddr() net.Addr                           { return f.parent.LocalAddr() }
-func (f *failConn) RemoteAddr() net.Addr                          { return f.parent.RemoteAddr() }
-func (f *failConn) SetDeadline(t time.Time) error                 { return f.parent.SetDeadline(t) }
+func (f *failConn) Read(b []byte) (n int, err error)  { return f.parent.Read(b) }
+func (f *failConn) Write(b []byte) (n int, err error) { return f.parent.Write(b) }
+func (f *failConn) Close() error                      { return f.parent.Close() }
+func (f *failConn) LocalAddr() net.Addr               { return f.parent.LocalAddr() }
+func (f *failConn) RemoteAddr() net.Addr              { return f.parent.RemoteAddr() }
+func (f *failConn) SetDeadline(t time.Time) error     { return f.parent.SetDeadline(t) }
 func (f *failConn) SetReadDeadline(t time.Time) error {
 	if f.failSetReadDeadline {
 		return fmt.Errorf("set read deadline failed")
