@@ -6,49 +6,111 @@
 [![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-82.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
+[![Test Coverage](https://img.shields.io/badge/Coverage-87.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-1_394_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Docker](https://img.shields.io/badge/Docker-20MB-2496ED?logo=docker)](Dockerfile)
 
-> The only AI security gateway with native MCP and A2A support, MITRE ATLAS enforcement, zero‑trust mTLS/HMAC guardrails (capability enforcement, rate‑limiting, optional license validation), and zero external dependencies — deploy in 60 seconds.
+> The only AI security platform with native HTTP API, MCP, **and** A2A protection. Three pillars. One gateway. Zero external dependencies.
 
-[📚 Docs](docs/) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [🔒 Security](#mcp-security--guardrails) • [📊 Compliance](#compliance-frameworks)
-
-> AegisGate Security Platform protects every AI interaction point—bidirectional API scanning, MCP session isolation, A2A zero‑trust guardrails (mTLS authentication, HMAC integrity, capability enforcement, and rate‑limiting)—and enforces compliance across the stack.
+[🌐 Website](https://aegisgatesecurity.io) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](docs/) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
 </div>
 
 ---
 
-Your AI infrastructure goes far beyond prompts – it spans HTTP APIs, MCP agents, RAG pipelines, third‑party LLM integrations and the new A2A agent‑to‑agent communication layer, all of which can serve as attack vectors.
+## The Problem
 
-AegisGate protects every AI interaction point by providing bidirectional API scanning, MCP session isolation, the A2A guardrails (mTLS authentication, HMAC‑SHA256 integrity verification, per‑agent capability enforcement, token‑bucket rate limiting, and optional license validation), and full compliance enforcement.
+Your AI infrastructure spans **three attack surfaces** — and most teams are only protecting one:
 
-When [Ox Security called MCP "the mother of all AI supply chain attacks"](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/), they were right. Their solution: expensive registries and vendor audits. Ours: deployable infrastructure in 60 seconds.
+| Attack Surface | Risk | Conventional Tools |
+|---|---|---|
+| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ✅ WAFs exist |
+| **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection |
+| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No solution exists |
 
-| 🌐 AI API Security | 🔗 MCP Protocol Protection |
-|---------------------|---------------------------|
-| 144+ detection patterns | Session authentication + isolation |
-| Bidirectional request/response scanning | 8 guardrails active |
-| Real-time threat blocking | MITRE ATLAS enforcement |
-| PII, secrets, API key detection | Tool authorization with risk matrix |
+AegisGate secures **all three** in a single 20 MB binary you deploy in 60 seconds.
 
 ---
 
-## Why AegisGate?
+## Three Pillars of AI Security
 
-### The Problem
-AI agents are connecting to MCP servers you don't control. Every tool call is a potential attack vector:
-- **Tool poisoning**: Malicious tools injected into your context
-- **Data exfiltration**: Secrets smuggled out via MCP responses
-- **Shadow AI**: Developers connecting to unsanctioned endpoints
-- **No observability**: You can't see what your agents are doing
+### 🌐 HTTP API Security
 
-### The Solution
-```bash
-docker run -p 8080:8080 -p 8081:8081 ghcr.io/aegisgatesecurity/aegisgate-platform:latest
-```
+Bidirectional scanning of every request and response with 144+ detection patterns:
 
-That’s it—just one command. Your MCP traffic and A2A agent‑to‑agent traffic are now authenticated, inspected, logged, and rate‑limited (A2A also adds mTLS authentication, HMAC‑SHA256 integrity verification, capability enforcement, token‑bucket rate limiting, and optional license validation).
+- **144+ detection patterns** — MITRE ATLAS, OWASP LLM Top 10, PII/secrets/credentials
+- **Bidirectional inspection** — scans both requests and responses
+- **Rate limiting** — per-client, per-IP quotas with token-bucket algorithm
+- **Circuit breaker** — automatic failure recovery
+- **Tamper-evident audit** — RFC 5424-compliant structured logging
+
+### 🔗 MCP Protocol Protection
+
+Session authentication, tool authorization, and 8 guardrails for every MCP connection:
+
+| Guardrail | What It Does |
+|-----------|-------------|
+| **Session Authentication** | Auth required for all MCP sessions |
+| **Concurrent Session Limits** | Max 10 simultaneous sessions per client |
+| **Tools per Session** | Max 50 tools available per session |
+| **STDIO Validation** | Command injection prevention |
+| **Execution Timeout** | Max 60-second tool execution |
+| **Memory Monitoring** | Alerts at 80% memory threshold |
+| **Per-Client RPM** | Max 1,000 requests/minute per client |
+| **Tool Authorization** | Risk-based tool call approval with authorization matrix |
+
+### 🤝 A2A Agent-to-Agent Security
+
+Zero-trust guardrails for inter-agent communication — the first purpose-built A2A security layer:
+
+| Guardrail | What It Does |
+|-----------|-------------|
+| **mTLS Authentication** | Verifies X.509 certificates; extracts agent identity from CommonName |
+| **HMAC-SHA256 Integrity** | Validates A2A-Signature header covering full request body |
+| **Capability Enforcement** | Enforces least-privilege per agent from capability configuration |
+| **Token-Bucket Rate Limiting** | Per-agent request quotas (default 100 req/min) |
+| **Request Size Limits** | Rejects bodies > 2 MiB (413 Payload Too Large) |
+| **Timeout Enforcement** | Cancels requests exceeding configurable timeout (default 30 s) |
+| **Optional License Validation** | Cryptographic ECDSA P-256 license enforcement for commercial tiers |
+| **Audit Logging** | RFC 5424 structured log per request with agent ID and guard-rail outcomes |
+
+---
+
+## 🔐 Enterprise Authentication
+
+AegisGate ships production-grade SSO and access control — not stubs:
+
+| Feature | Details |
+|---------|---------|
+| **OIDC / OAuth 2.0** | Full OpenID Connect with PKCE; auto-discovery of provider endpoints |
+| **SAML 2.0** | SP-initiated login; pre-configured for **Azure AD**, **Okta**, and **Google Workspace** |
+| **RBAC** | Role-based access control with session-scoped permissions |
+| **Tool Authorization** | Risk-weighted authorization matrix controls which tools each role can invoke |
+| **License Enforcement** | ECDSA P-256 cryptographic validation; community tier works license-free |
+| **API Key Fallback** | Key-based auth for service accounts and CI/CD pipelines |
+
+> **Community tier** includes core proxy, MCP guardrails, and A2A guardrails — license-free.
+> SSO, RBAC, and compliance modules are available on commercial tiers. See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing/).
+
+---
+
+## 📊 Compliance Frameworks
+
+AegisGate maps security controls to 13 compliance frameworks:
+
+| Framework | Coverage | |
+|-----------|----------|-|
+| **MITRE ATLAS** | All AI-specific adversarial techniques | Community |
+| **NIST AI RMF 1.500** | Complete AI risk management | Community |
+| **OWASP LLM Top 10** | LLM01–LLM10 coverage | Community |
+| **ISO 27001** | Information security management | Professional |
+| **GDPR** | Data protection and PII handling | Developer |
+| **HIPAA** | Healthcare data protection / PHI detection | Developer |
+| **PCI-DSS** | Payment card security / tokenization | Developer |
+| **SOC2 Type II** | Continuous monitoring and evidence collection | Professional |
+| **ISO 42001** | AI management systems | Professional |
+
+> All framework modules are fail-closed — if a compliance check cannot be evaluated, the request is blocked.
 
 ---
 
@@ -59,224 +121,124 @@ That’s it—just one command. Your MCP traffic and A2A agent‑to‑agent traf
 
 flowchart TB
     subgraph "Client Layer"
-        A[💻 Application]
+        A[💻 HTTP Client]
         B[🤖 MCP Client]
+        C[🤝 A2A Agent]
     end
 
     subgraph "AegisGate Platform"
         subgraph "Entry Points"
-            C["🌐 HTTP Proxy\n:8080"]
-            D["🔗 MCP Server\n:8081"]
-            E["📊 Dashboard\n:8443"]
+            D["🌐 HTTP Proxy\n:8080"]
+            E["🔗 MCP Server\n:8081"]
+            F["🤝 A2A Endpoint\n:8082"]
+            G["📊 Dashboard\n:8443"]
         end
-        
+
         subgraph "Security Core"
-            F[🔍 PII Scanner]
-            G[🛡️ Threat Detector]
-            H[⚡ Rate Limiter]
-            I[📋 Audit Logger]
+            H[🔍 Scanner — 144+ patterns]
+            I[🛡️ A2A Guardrails — mTLS/HMAC/caps]
+            J[⚡ Rate Limiter]
+            K[📋 Audit Logger — RFC 5424]
         end
-        
-        subgraph "Policy Engine"
-            J["🔐 RBAC Engine"]
-            K[📜 Guardrails]
-            L[🔧 Tier Adapter]
+
+        subgraph "Auth & Access"
+            L["🔐 SSO — OIDC/SAML"]
+            M["🛡️ RBAC Engine"]
+            N["🔑 Tool Authorization"]
+            O["📜 License — ECDSA P-256"]
         end
-        
+
+        subgraph "Compliance"
+            P[ATLAS • NIST • OWASP]
+            Q[HIPAA • PCI • SOC2 • ISO]
+        end
+
         subgraph "Persistence"
-            M[(💾 Data Store)]
-            N["📝 Audit Logs"]
-            O["🔑 Certificate Store"]
+            R[(💾 Data Store)]
+            S["📝 Audit Logs"]
+            T["🔑 Cert Store"]
         end
     end
-    
+
     subgraph "Upstream"
-        P[🤖 AI Services]
-        Q[🛠️ MCP Tools]
+        U[🤖 AI Services]
+        V[🛠️ MCP Tools]
+        W[🤝 Peer Agents]
     end
 
-    A --> C
-    B --> D
-    E --> A
-    
-    C --> F & G & H & I
-    D --> J & K & I
-    
-    F --> L
-    G --> L
-    K --> L
-    
-    L --> P & Q
-    
-    I --> N
-    J --> M
-    O --> C & D & E
-    
-    style C fill:#00ADD822
-    style D fill:#00ADD822
-    style E fill:#1f6feb22
-    style F fill:#23863622
-    style G fill:#23863622
+    A --> D
+    B --> E
+    C --> F
+
+    D --> H & J & K
+    E --> M & N & K
+    F --> I & J & K
+
+    H --> P & Q
+    I --> M
+    L --> M
+    O --> M
+    M --> R
+    K --> S
+    T --> D & E & F
+
+    P & Q --> U & V & W
 ```
-
----
-
-## 🔒 A2A Security & Guardrails
-
-AegisGate’s new **Agent‑to‑Agent (A2A)** communication layer is protected by a suite of dedicated guard‑rails. Each request that travels between A2A agents passes through the following checks:
-
-| Guard‑rail | What it does | Why it matters |
-|------------|--------------|----------------|
-| **mTLS Authentication** | Verifies the client’s X.509 certificate and extracts the `CommonName` as the agent identifier. | Guarantees that only trusted agents can talk to each other. |
-| **HMAC‑SHA256 Integrity Verification** | Validates the `A2A‑Signature` header using a shared secret (`A2A‑Secret`). The signature covers the full request body. | Detect any tampering of the payload in transit --- prevents MITM attacks and replay attacks that could corrupt the A2A communication channel.
-| **Capability Enforcement** | Looks up the sender’s allowed capabilities from `configs/a2a_caps.yaml` (or a loaded config file) and ensures the requested operation is permitted. | Prevents an agent from invoking tools it isn’t authorized for, enforcing the principle of least privilege.
-| **Token‑Bucket Rate Limiting** | Enforces per‑agent request quotas (default 100 req/min). Excess requests are rejected with `429 Too Many Requests`. | Thwarts Denial‑of‑Service attacks and abuse of the A2A channel, protecting upstream services from overload.
-| **Optional License Validation** | If a license key is provided (`AEGISGATE_LICENSE_KEY`), the request is validated against the license manager; otherwise the guard‑rail is bypassed. | Allows commercial tiers to enforce paid‑feature usage while still supporting the free Community tier.
-| **Request Size Limits** | Rejects bodies > 2 MiB with a `413 Payload Too Large`. | Stops resource‑exhaustion attacks that could crash the service.
-| **Timeout Enforcement** | Cancels any request that exceeds a configurable execution timeout (default 30 s). | Guarantees that a hung agent does not block others, preserving system responsiveness.
-| **Audit Logging** | Emits a structured log entry (RFC 5424) for each request, including agent ID, guard‑rail outcomes, and timestamps. | Provides full traceability for investigations, forensic analysis, and compliance reporting.
-
-### How the Guardrails are Applied
-
-```mermaid
-flowchart TD
-    A[Incoming A2A Request] --> B[mTLS Auth]
-    B --> C[HMAC Verify]
-    C --> D[Capability Check]
-    D --> E[Rate Limit]
-    E --> F{License Required?}
-    F -->|Yes| G[License Validation]
-    F -->|No| H[Proceed]
-    G --> H
-    H --> I[Size / Timeout Checks]
-    I --> J[Audit Log]
-    J --> K[Forward to Target Agent]
-```
-
-### Metrics (Prometheus)
-
-All A2A guard‑rail events are exposed as counters in `pkg/metrics/a2a_metrics.go`:
-
-| Metric | Description |
-|--------|-------------|
-| `a2a_auth_fail_total` | Count of failed mTLS authentications |
-| `a2a_integrity_fail_total` | Count of HMAC verification failures |
-| `a2a_capability_denied_total` | Count of capability rejections |
-| `a2a_rate_limited_total` | Count of requests throttled by the token bucket |
-| `a2a_license_invalid_total` | Count of requests rejected due to invalid/absent license |
-| `a2a_request_total` | Total A2A requests processed |
-| `a2a_request_duration_seconds` | Latency histogram for successful A2A calls |
-
-These metrics are scraped by the existing Prometheus endpoint and visualised in the **Grafana dashboard** (`docs/grafana-dashboard-a2a.json`).
-
-## 🔒 MCP Security & Guardrails
-
-AegisGate implements **8 security guardrails** for every MCP connection:
-
-| Guardrail | Description | Status |
-|-----------|-------------|--------|
-| **Session Authentication** | Authentication required for all MCP sessions | ✅ |
-| **Concurrent Sessions** | Max 10 simultaneous sessions per client | ✅ |
-| **Tools per Session** | Max 50 tools available per session | ✅ |
-| **STDIO Validation** | Command injection prevention | ✅ |
-| **Execution Timeout** | Max 60-second tool execution | ✅ |
-| **Memory Monitoring** | Alerts at 80% memory threshold | ✅ |
-| **Per-Client RPM** | Max 1,000 requests/minute per client | ✅ |
-| **Tool Authorization** | Risk-based tool call approval | ✅ |
-
-### 144+ Pattern Detection
-
-| Category | Patterns | Coverage |
-|----------|----------|----------|
-| **MITRE ATLAS** | 60+ patterns | Adversarial AI techniques |
-| **OWASP LLM Top 10** | 45+ patterns | LLM-specific attacks |
-| **HIPAA** | 8 patterns | PHI detection |
-| **PCI-DSS** | 6 patterns | Credit card detection |
-| **GDPR** | 4 patterns | PII detection |
-| **Secret Scanning** | 10+ patterns | API keys, tokens, credentials |
-
----
-
-## 📊 Compliance Frameworks
-
-AegisGate maps security controls to **13 major compliance frameworks**:
-
-| Framework | Coverage | Tier |
-|-----------|----------|------|
-| **MITRE ATLAS** | All AI-specific attack patterns | Community ✅ |
-| **NIST AI RMF** | Complete AI risk management | Community ✅ |
-| **OWASP LLM Top 10** | LLM01-LLM10 coverage | Community ✅ |
-| **HIPAA** | Healthcare data protection, PHI detection | Professional 🔒 |
-| **PCI-DSS** | Payment card security, tokenization | Professional 🔒 |
-| **SOC2 Type II** | Continuous monitoring, evidence collection | Enterprise 🔒 |
-| **ISO 27001** | Information security management | Professional 🔒 |
-| **ISO 42001** | AI management systems | Enterprise 🔒 |
 
 ---
 
 ## 🚀 Quick Start
 
-### Docker (Recommended)
+### Docker
 
 ```bash
 docker run -d \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8443:8443 \
-  -v $(pwd)/data:/data \
+  -e AEGISGATE_A2A_ENABLED=true \
   ghcr.io/aegisgatesecurity/aegisgate-platform:latest
 ```
 
-### Verify Installation
+### Kubernetes (Helm)
+
+```bash
+helm repo add aegisgate https://aegisgatesecurity.github.io/aegisgate-platform
+helm install aegisgate aegisgate/aegisgate-platform
+```
+
+The Helm chart includes **HPA autoscaling** (1–10 replicas), **NetworkPolicy** ingress/egress restrictions, **ServiceMonitor** for Prometheus, and rolling update strategy.
+
+<details>
+<summary>Advanced Helm values</summary>
+
+```yaml
+# values.yaml
+replicaCount: 2
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+persistence:
+  enabled: true
+  size: 10Gi
+
+serviceMonitor:
+  enabled: true
+
+networkPolicy:
+  enabled: true
+```
+
+</details>
+
+### Verify
 
 ```bash
 curl http://localhost:8443/health
-```
-
-### With License Key
-
-```bash
-export AEGISGATE_LICENSE_KEY=YOUR_LICENSE_KEY
-./aegisgate-platform --embedded-mcp
-```
-
----
-
-## Request Flow
-
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00ADD8', 'primaryTextColor': '#fff', 'primaryBorderColor': '#00ADD8', 'lineColor': '#F97583', 'secondaryColor': '#006400', 'tertiaryColor': '#fff' }}}%%
-
-sequenceDiagram
-    autonumber
-    participant Client as 💻 Client
-    participant Proxy as 🛡️ AegisGate
-    participant Scanner as 🔍 Scanner
-    participant RateLimit as ⏱️ Rate Limiter
-    participant Upstream as 🤖 AI Service
-
-    Client->>Proxy: HTTP Request
-    Proxy->>Scanner: Scan for PII/Secrets
-    
-    alt Threat Detected
-        Scanner-->>Proxy: 🚫 BLOCK
-        Proxy-->>Client: 403 Forbidden
-    else Clean Request
-        Scanner-->>Proxy: ✅ PASS
-        Proxy->>RateLimit: Check quota
-        
-        alt Rate Limited
-            RateLimit-->>Proxy: 🚫 THROTTLE
-            Proxy-->>Client: 429 Too Many Requests
-        else Within Limit
-            RateLimit-->>Proxy: ✅ ALLOW
-            Proxy->>Upstream: Forward Request
-            Upstream-->>Proxy: AI Response
-            Proxy->>Scanner: Scan Response
-            Scanner-->>Proxy: ✅ PASS
-            Proxy-->>Client: Return Response
-        end
-    end
+open https://localhost:8443  # Dashboard
 ```
 
 ---
@@ -286,30 +248,15 @@ sequenceDiagram
 | Metric | Result |
 |--------|--------|
 | **Peak Throughput** | 11,681 RPS |
-| **Average Latency** | 2.44ms |
-| **P95 Latency** | 3.64ms |
+| **Average Latency** | 2.44 ms |
+| **P95 Latency** | 3.64 ms |
 | **Error Rate** | 0.00% |
-| **Binary Size** | 19.1MB |
-| **Test Coverage** | 82.1% |
+| **Binary Size** | 20 MB |
+| **Package Test Coverage** | 87.1% |
+| **Tests Passing** | 1,394 |
+| **CVEs** | 0 |
 
-*See [PERFORMANCE.md](PERFORMANCE.md) for full load testing details.*
-
----
-
-## ✨ Features
-
-### Core Security
-- **Prompt Injection Prevention** — Blocks OWASP LLM Top 10 attacks
-- **Data Leakage Protection** — PII, secrets, credentials detection
-- **Adversarial Attack Defense** — Jailbreaks, DoS, manipulation detection
-- **RBAC Access Control** — Role-based permissions
-- **Audit Logging** — RFC5424-compliant, tamper-evident
-
-### Platform Features
-- **Auto-Certificate Generation** — Built-in CA, zero-config TLS
-- **Circuit Breaker** — Automatic failure recovery
-- **Prometheus Metrics** — Cardinality-controlled monitoring
-- **OIDC/SAML SSO** — Enterprise authentication (Developer+)
+*Load testing methodology in [PERFORMANCE.md](PERFORMANCE.md).*
 
 ---
 
@@ -321,25 +268,77 @@ sequenceDiagram
 aegisgate-platform --embedded-mcp
 ```
 
-### Custom Config
+AegisGate auto-detects OpenAI, Anthropic, Azure, and AWS Bedrock. Auto-generates TLS certificates. Works immediately.
+
+### SSO Configuration
 
 ```yaml
 # aegisgate-platform.yaml
+sso:
+  oidc:
+    enabled: true
+    issuer_url: https://login.microsoftonline.com/<tenant>/v2.0
+    client_id: your-client-id
+    client_secret: your-client-secret
+  saml:
+    enabled: true
+    idp_metadata_url: https://your-idp/metadata
+    sp_entity_id: https://your-domain/sp
+```
+
+Pre-configured provider templates for **Azure AD**, **Okta**, and **Google Workspace**.
+
+### A2A Configuration
+
+```yaml
+a2a:
+  enabled: true
+  mTLS:
+    enabled: true
+    cert_file: /data/a2a-client.crt
+    key_file: /data/a2a-client.key
+    ca_file: /data/a2a-ca.crt
+  hmac:
+    enabled: true
+    secret: ${A2A_HMAC_SECRET}
+  capabilities_file: configs/a2a_caps.yaml
+```
+
+<details>
+<summary>Full configuration reference</summary>
+
+```yaml
 proxy:
   bind_address: :8080
   upstream_url: https://api.openai.com
-  
+
 server:
   port: 8443
-  
+
 mcp:
   enabled: true
   port: 8081
-  
+
+a2a:
+  enabled: true
+  port: 8082
+
 persistence:
   data_dir: /data
   enabled: true
+
+sso:
+  oidc:
+    enabled: false
+  saml:
+    enabled: false
+
+logging:
+  level: info
+  format: json
 ```
+
+</details>
 
 ---
 
@@ -365,32 +364,41 @@ const client = new Client({ name: 'my-app', version: '1.0.0' }, { capabilities: 
 await client.connect({ command: 'node', args: ['server.js'] });
 ```
 
+### A2A Agent
+
+```bash
+curl -X POST https://aegisgate:8082/a2a \
+  -H "Content-Type: application/json" \
+  -H "A2A-Signature: sha256=<hmac>" \
+  --cert /data/a2a-client.crt \
+  --key /data/a2a-client.key \
+  -d '{"agent_id":"my-agent","action":"query","target":"peer-agent"}'
+```
+
 ---
 
-## 🎯 The Strategic Model
+## ✨ Features at a Glance
 
-**Core security is free; commercial compliance modules are licensed.**
+| Category | Feature |
+|----------|---------|
+| **HTTP Security** | Bidirectional scanning · 144+ detection patterns · Rate limiting · Circuit breaker |
+| **MCP Security** | 8 guardrails · Session isolation · Tool authorization matrix · STDIO validation |
+| **A2A Security** | mTLS · HMAC-SHA256 · Capability enforcement · Per-agent rate limiting |
+| **Authentication** | OIDC + OAuth 2.0 with PKCE · SAML 2.0 SP-initiated · RBAC · API key fallback |
+| **Compliance** | MITRE ATLAS · NIST AI RMF · OWASP LLM Top 10 · HIPAA · PCI-DSS · SOC2 · ISO 27001/42001 · GDPR |
+| **Observability** | Prometheus metrics · RFC 5424 audit logging · Health checks · Grafana dashboard |
+| **Deployment** | Docker (20 MB) · Kubernetes + Helm · HPA autoscaling · NetworkPolicy · Rolling updates |
+| **Security** | Auto-CA TLS · 0 CVEs · Fail-closed compliance · Tamper-evident logs |
 
-### Community Tier (Apache 2.0) — Always Free
-| Component | Access |
-|-----------|--------|
-| **MITRE ATLAS Framework** | Full mapping + detection |
-| **NIST AI RMF 1.500** | Complete implementation |
-| **OWASP LLM Top 10** | Protection + reporting |
-| **Basic HTTP Proxy** | PII scanning, rate limiting |
-| **MCP Server** | 8 security guardrails |
-| **Self-hosted Dashboard** | Single admin, 7-day retention |
+---
 
-### Commercial Tiers
-| Module | Developer | Professional | Enterprise |
-|--------|-----------|--------------|------------|
-| **OAuth SSO (OIDC + SAML)** | ✅ | ✅ | ✅ |
-| **HIPAA Compliance** | — | ✅ | ✅ |
-| **PCI-DSS** | — | ✅ | ✅ |
-| **SOC2 Type II** | — | — | ✅ |
-| **Multi-tenant Dashboard** | — | ✅ | ✅ |
+## 🎯 Community & Commercial Tiers
 
-**Contact**: [sales@aegisgatesecurity.io](mailto:sales@aegisgatesecurity.io)
+**Core AI security is free.** The Community tier (Apache 2.0) includes the full HTTP proxy, all 8 MCP guardrails, all A8 A2A guardrails, MITRE ATLAS, NIST AI RMF, and OWASP LLM Top 10 enforcement — no license key required.
+
+Commercial tiers add SSO (SAML/OIDC), RBAC, advanced compliance frameworks (HIPAA, PCI-DSS, SOC2, ISO 27001/42001), and priority support.
+
+👉 **[Compare tiers and pricing →](https://aegisgatesecurity.io/pricing/)**
 
 ---
 
@@ -399,9 +407,12 @@ await client.connect({ command: 'node', args: ['server.js'] });
 | Document | Description |
 |----------|-------------|
 | [PERFORMANCE.md](PERFORMANCE.md) | Load testing results |
-| [SECURITY.md](SECURITY.md) | Security policies |
+| [SECURITY.md](SECURITY.md) | Security policies and disclosure |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
-| [docs/diagrams/](docs/diagrams/) | Architecture diagrams |
+| [A2A Technical Spec](docs/a2a-guardrails-technical-spec.md) | A2A security deep dive |
+| [A2A Implementation](docs/a2a-implementation-roadmap.md) | A2A implementation roadmap |
+| [Metrics Reference](docs/METRICS.md) | Prometheus metrics documentation |
+| [Architecture Diagrams](docs/diagrams/) | System architecture diagrams |
 
 ---
 
@@ -421,6 +432,7 @@ Email: **security@aegisgatesecurity.io**
 - **Mastodon**: [@aegisgatesecurity](https://mastodon.social/@aegisgatesecurity)
 - **GitHub Discussions**: [Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 - **Issues**: [Issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues)
+- **Website**: [aegisgatesecurity.io](https://aegisgatesecurity.io)
 
 ---
 
@@ -447,7 +459,7 @@ Email: **security@aegisgatesecurity.io**
 
 <div align="center">
 
-**[aegisgatesecurity.io](https://aegisgatesecurity.io)** — [security@aegisgatesecurity.io](mailto:security@aegisgatesecurity.io)
+[aegisgatesecurity.io](https://aegisgatesecurity.io) — [security@aegisgatesecurity.io](mailto:security@aegisgatesecurity.io)
 
 Built with 🖤 by the AegisGate Security team
 
