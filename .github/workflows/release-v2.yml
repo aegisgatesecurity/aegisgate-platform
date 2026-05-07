@@ -20,7 +20,7 @@ on:
       - 'v*'
 
 env:
-  GO_VERSION: '1.25.9'
+  GO_VERSION: '1.25.10'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/aegisgate-platform
 
