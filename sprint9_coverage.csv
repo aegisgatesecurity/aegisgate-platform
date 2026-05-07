@@ -1,0 +1,16 @@
+PACKAGE,COVERAGE
+sso: 
+auth: 
+signature_verification: 
+mcpserver: 
+bridge: 
+compliance: 
+certinit: 
+email: 
+license: 
+logging: 
+billing: 
+billing/webhook: 
+persistence: 
+platformconfig: 
+tieradapter: 
