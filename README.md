@@ -3,7 +3,7 @@
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
 [![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
-[![License](https://img.shields.io/github/license/aegisgatesecurity/aegisgate-platform?color=blue)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.25.9+-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
 [![Test Coverage](https://img.shields.io/badge/Coverage-87.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
@@ -394,7 +394,7 @@ curl -X POST https://aegisgate:8082/a2a \
 
 ## 🎯 Community & Commercial Tiers
 
-**Core AI security is free.** The Community tier (Apache 2.0) includes the full HTTP proxy, all 8 MCP guardrails, all A8 A2A guardrails, MITRE ATLAS, NIST AI RMF, and OWASP LLM Top 10 enforcement — no license key required.
+**Core AI security is free.** The Community tier (Apache 2.0) includes the full HTTP proxy, all 8 MCP guardrails, all 8 A2A guardrails, MITRE ATLAS, NIST AI RMF, and OWASP LLM Top 10 enforcement — no license key required.
 
 Commercial tiers add SSO (SAML/OIDC), RBAC, advanced compliance frameworks (HIPAA, PCI-DSS, SOC2, ISO 27001/42001), and priority support.
 
