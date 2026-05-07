@@ -28,12 +28,12 @@ func TestSend_ImplicitTLS_WithAuth(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{
-		Host:     "localhost",
-		Port:     portFromAddr(srv.TLSAddr),
-		From:     "from@test.local",
-		Username: "user",
-		Password: "pass",
-		UseTLS:   false,
+		Host:      "localhost",
+		Port:      portFromAddr(srv.TLSAddr),
+		From:      "from@test.local",
+		Username:  "user",
+		Password:  "pass",
+		UseTLS:    false,
 		TLSConfig: srv.TLSConfig("localhost"),
 	}
 
