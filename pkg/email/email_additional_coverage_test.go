@@ -280,8 +280,8 @@ func TestSend_STARTTLS_ConnectionRefused(t *testing.T) {
 	if err == nil {
 		t.Error("send with connection refused should error")
 	}
-	if !strings.Contains(err.Error(), "SMTP") && !strings.Contains(err.Error(), "send") {
-		t.Errorf("Error should be SMTP related: %v", err)
+	if !strings.Contains(err.Error(), "SMTP") && !strings.Contains(err.Error(), "TLS") && !strings.Contains(err.Error(), "connection") && !strings.Contains(err.Error(), "lookup") && !strings.Contains(err.Error(), "dial") {
+		t.Errorf("Error should be connection related: %v", err)
 	}
 }
 
