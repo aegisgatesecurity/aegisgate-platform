@@ -36,13 +36,13 @@ type MockSMTPServer struct {
 // NewMockSMTPServer creates a test SMTP server on available ports.
 func NewMockSMTPServer() (*MockSMTPServer, error) {
 	s := &MockSMTPServer{stopCh: make(chan struct{})}
-	
+
 	tlsCert, caPool, err := generateSelfSignedCert()
 	if err != nil {
 		return nil, err
 	}
 	s.caCertPool = caPool
-	
+
 	plainAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	plainLn, err := net.ListenTCP("tcp", plainAddr)
 	if err != nil {
@@ -50,7 +50,7 @@ func NewMockSMTPServer() (*MockSMTPServer, error) {
 	}
 	s.plainLn = plainLn
 	s.PlainAddr = plainLn.Addr().String()
-	
+
 	tlsAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	tlsLnTCP, err := net.ListenTCP("tcp", tlsAddr)
 	if err != nil {
@@ -60,13 +60,13 @@ func NewMockSMTPServer() (*MockSMTPServer, error) {
 	tlsLn := tls.NewListener(tlsLnTCP, &tls.Config{Certificates: []tls.Certificate{tlsCert}})
 	s.tlsLn = tlsLnTCP
 	s.TLSAddr = tlsLn.Addr().String()
-	
+
 	s.wg.Add(2)
 	go s.acceptLoop(plainLn)
 	go s.acceptLoopTLS(tlsLn)
-	
+
 	time.Sleep(100 * time.Millisecond)
-	
+
 	return s, nil
 }
 
@@ -221,7 +221,7 @@ func (s *MockSMTPServer) MessageCount() int {
 func (s *MockSMTPServer) TLSConfig(host string) *tls.Config {
 	return &tls.Config{
 		ServerName: host,
-		RootCAs:   s.caCertPool,
+		RootCAs:    s.caCertPool,
 	}
 }
 
