@@ -11,6 +11,7 @@ package scanner
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -143,4 +144,12 @@ type JSONRPCError struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+}
+
+// Error implements the error interface for JSONRPCError.
+func (e *JSONRPCError) Error() string {
+	if e == nil {
+		return ""
+	}
+	return fmt.Sprintf("JSON-RPC error %d: %s", e.Code, e.Message)
 }
