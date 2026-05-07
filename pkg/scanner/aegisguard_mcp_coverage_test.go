@@ -961,9 +961,9 @@ func TestAegisGuardMCPScanner_Scan_Concurrent(t *testing.T) {
 		}
 		if method == "tools/call" {
 			return map[string]interface{}{
-				"content":      []interface{}{map[string]interface{}{"type": "text", "text": "ok"}},
-				"isError":      false,
-				"duration_ms":  int64(10),
+				"content":     []interface{}{map[string]interface{}{"type": "text", "text": "ok"}},
+				"isError":     false,
+				"duration_ms": int64(10),
 			}, nil
 		}
 		return nil, nil
