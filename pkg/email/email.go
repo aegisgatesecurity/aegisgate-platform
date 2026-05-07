@@ -128,6 +128,11 @@ type Config struct {
 	// true = STARTTLS on port 587
 	// false = implicit TLS on port 465
 	UseTLS bool
+
+	// TLSConfig is an optional custom TLS configuration for implicit TLS.
+	// When provided, this config is used instead of the default TLS config.
+	// Use this to inject a custom RootCAs pool for self-signed certificates.
+	TLSConfig *tls.Config
 }
 
 // LicenseEmailData contains the data for the license delivery email template.
@@ -238,8 +243,11 @@ func (c *EmailClient) send(to string, msg []byte) error {
 		}
 	} else {
 		// Implicit TLS on port 465
-		tlsConfig := &tls.Config{
-			ServerName: c.config.Host,
+		tlsConfig := c.config.TLSConfig
+		if tlsConfig == nil {
+			tlsConfig = &tls.Config{
+				ServerName: c.config.Host,
+			}
 		}
 
 		conn, err := tls.Dial("tcp", host, tlsConfig)
