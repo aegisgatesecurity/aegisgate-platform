@@ -76,6 +76,11 @@ func DefaultAegisGuardMCPConfig() *AegisGuardMCPConfig {
 
 // Initialize connects to AegisGuard MCP server and performs initialization
 func (s *AegisGuardMCPScanner) Initialize() error {
+	// Already initialized - skip reconnection
+	if s.initialized {
+		return nil
+	}
+
 	// Connect to MCP server
 	conn, err := net.DialTimeout("tcp", s.config.Address, s.config.Timeout)
 	if err != nil {
@@ -297,6 +302,11 @@ func (s *AegisGuardMCPScanner) Stats() (*StatsResponse, error) {
 	resp, err := s.readJSON(s.conn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to receive tools response: %w", err)
+	}
+
+	// Check for JSON-RPC error from server
+	if resp.Error != nil {
+		return nil, fmt.Errorf("tools/list error: %s (code %d)", resp.Error.Message, resp.Error.Code)
 	}
 
 	// Parse tools count
