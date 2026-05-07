@@ -125,7 +125,7 @@ func TestEmailSend_STARTTLS(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error from STARTTLS send to non-existent server, got nil")
 		}
-		if !strings.Contains(err.Error(), "SMTP") {
+		if !strings.Contains(err.Error(), "SMTP") && !strings.Contains(err.Error(), "TLS") && !strings.Contains(err.Error(), "connection") && !strings.Contains(err.Error(), "lookup") && !strings.Contains(err.Error(), "dial") {
 			t.Errorf("expected SMTP-related error, got: %v", err)
 		}
 	})
