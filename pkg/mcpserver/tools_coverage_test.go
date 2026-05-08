@@ -114,8 +114,9 @@ func TestRegisterTool_Functionality(t *testing.T) {
 	executor := func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
 		return nil, nil
 	}
-	registerTool(registry, "test_register", "Test description", 10, toolSchema, executor)
 
+	// Test registerTool helper with all parameters
+	registerTool(registry, "test_register", "Test description", 10, toolSchema, executor)
 	tool, ok := registry.GetTool("test_register")
 	if !ok {
 		t.Error("Tool should be registered")

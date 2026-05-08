@@ -61,3 +61,29 @@ func TestFeatureAccessibleInAll_TierCommunity_BasicAnomaly(t *testing.T) {
 		t.Error("FeatureAccessibleInAll(BasicAnomaly, Community) = false, want true")
 	}
 }
+
+func TestFeatureAccessibleInAll_TierCommunity_MCPSessionIsolation(t *testing.T) {
+	// MCPSessionIsolation is only in AegisGuard feature map (not AegisGate).
+	// This forces the third block (aglicense.CanAccess) to execute.
+	result := FeatureAccessibleInAll(tier.FeatureMCPSessionIsolation, tier.TierCommunity)
+	if !result {
+		t.Error("FeatureAccessibleInAll(MCPSessionIsolation, Community) = false, want true")
+	}
+}
+
+func TestFeatureAccessibleInAll_TierDeveloper_MCPBasicRBAC(t *testing.T) {
+	// MCPBasicRBAC is only in AegisGuard feature map.
+	// Tests the aglicense.CanAccess path at Developer tier.
+	result := FeatureAccessibleInAll(tier.FeatureMCPBasicRBAC, tier.TierDeveloper)
+	if !result {
+		t.Error("FeatureAccessibleInAll(MCPBasicRBAC, Developer) = false, want true")
+	}
+}
+
+func TestFeatureAccessibleInAll_TierProfessional_CodeExecSandbox(t *testing.T) {
+	// CodeExecSandbox is only in AegisGuard feature map.
+	result := FeatureAccessibleInAll(tier.FeatureCodeExecSandbox, tier.TierProfessional)
+	if !result {
+		t.Error("FeatureAccessibleInAll(CodeExecSandbox, Professional) = false, want true")
+	}
+}
