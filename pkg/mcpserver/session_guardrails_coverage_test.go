@@ -73,8 +73,8 @@ func TestValidateSessionCommand_DangerousCommand(t *testing.T) {
 	// scan) fires for pipe_chaining patterns like "rm -rf /; echo pwned"
 	orig := g.stdioValidator
 	g.stdioValidator = NewSTDIOValidator(STDIOValidationConfig{
-		Enabled:      true,
-		StrictMode:   false, // non-strict → Guard 4 dangerousPatterns active
+		Enabled:          true,
+		StrictMode:       false, // non-strict → Guard 4 dangerousPatterns active
 		MaxCommandLength: 4096,
 	})
 	defer func() { g.stdioValidator = orig }()
