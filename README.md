@@ -4,10 +4,10 @@
 
 [![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.25.10-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-89.4%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Tests](https://img.shields.io/badge/Tests-1_418_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Test Coverage](https://img.shields.io/badge/Coverage-97.7%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-2_548_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Docker](https://img.shields.io/badge/Docker-20MB-2496ED?logo=docker)](Dockerfile)
 
 > The only AI security platform with native HTTP API, MCP, **and** A2A protection. Three pillars. One gateway. Zero external dependencies.
@@ -252,8 +252,8 @@ open https://localhost:8443  # Dashboard
 | **P95 Latency** | 3.64 ms |
 | **Error Rate** | 0.00% |
 | **Binary Size** | 20 MB |
-| **Package Test Coverage** | 89.4% |
-| **Tests Passing** | 1,418 |
+| **Package Test Coverage** | 97.7% |
+| **Tests Passing** | 2,548 |
 | **CVEs** | 0 |
 
 *Load testing methodology in [PERFORMANCE.md](PERFORMANCE.md).*
@@ -429,7 +429,7 @@ Email: **security@aegisgatesecurity.io**
 
 ## 🤝 Community
 
-- **Mastodon**: [@aegisgatesecurity](https://mastodon.social/@aegisgatesecurity)
+- **X/Twitter**: [@aegisgatesec](https://x.com/aegisgatesec)
 - **GitHub Discussions**: [Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 - **Issues**: [Issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues)
 - **Website**: [aegisgatesecurity.io](https://aegisgatesecurity.io)
