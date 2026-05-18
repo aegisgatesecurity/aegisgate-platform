@@ -34,15 +34,15 @@ import (
 
 type mockAddr struct{ addr string }
 
-func (m *mockAddr) String() string                    { return m.addr }
-func (m *mockAddr) Network() string                   { return "tcp" }
-func (m *mockAddr) LocalAddr() net.Addr              { return m }
-func (m *mockAddr) RemoteAddr() net.Addr              { return m }
-func (m *mockAddr) Read(b []byte) (n int, err error) { return 0, errors.New("mock read") }
-func (m *mockAddr) Write(b []byte) (n int, err error) { return len(b), nil }
-func (m *mockAddr) Close() error                     { return nil }
-func (m *mockAddr) SetDeadline(t time.Time) error    { return nil }
-func (m *mockAddr) SetReadDeadline(t time.Time) error { return nil }
+func (m *mockAddr) String() string                     { return m.addr }
+func (m *mockAddr) Network() string                    { return "tcp" }
+func (m *mockAddr) LocalAddr() net.Addr                { return m }
+func (m *mockAddr) RemoteAddr() net.Addr               { return m }
+func (m *mockAddr) Read(b []byte) (n int, err error)   { return 0, errors.New("mock read") }
+func (m *mockAddr) Write(b []byte) (n int, err error)  { return len(b), nil }
+func (m *mockAddr) Close() error                       { return nil }
+func (m *mockAddr) SetDeadline(t time.Time) error      { return nil }
+func (m *mockAddr) SetReadDeadline(t time.Time) error  { return nil }
 func (m *mockAddr) SetWriteDeadline(t time.Time) error { return nil }
 
 // =========================================================================

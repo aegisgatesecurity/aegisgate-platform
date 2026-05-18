@@ -1040,7 +1040,7 @@ func TestMCPStart_AlreadyRunning(t *testing.T) {
 func TestMCPSession(t *testing.T) {
 	session := &MCPSession{
 		ConnectionID: "test-conn",
-		CreatedAt:   time.Now(),
+		CreatedAt:    time.Now(),
 		LastActivity: time.Now(),
 	}
 

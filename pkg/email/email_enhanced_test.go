@@ -359,10 +359,10 @@ func TestSend_ImplicitTLS_ConnCloseError(t *testing.T) {
 	// This is hard to test without mocking
 	// We'll just verify the path is exercised
 	cfg := Config{
-		Host:     "localhost",
-		Port:     465,
-		From:     "test@test.com",
-		UseTLS:   false,
+		Host:   "localhost",
+		Port:   465,
+		From:   "test@test.com",
+		UseTLS: false,
 	}
 	client := NewEmailClient(cfg)
 
@@ -378,10 +378,10 @@ func TestSend_ImplicitTLS_ConnCloseError(t *testing.T) {
 
 func TestSend_STARTTLS_AuthNil(t *testing.T) {
 	cfg := Config{
-		Host:     "localhost",
-		Port:     587,
-		From:     "test@test.com",
-		UseTLS:   true,
+		Host:   "localhost",
+		Port:   587,
+		From:   "test@test.com",
+		UseTLS: true,
 		// No credentials - auth will be nil
 	}
 	client := NewEmailClient(cfg)
