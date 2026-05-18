@@ -408,7 +408,10 @@ func (p *SAMLProvider) validateResponse(response *Response) error {
 	}
 
 	// Validate signature if required
-	if p.samlConfig.ValidateSignature && response.Signature != nil {
+	if p.samlConfig.ValidateSignature {
+		if response.Signature == nil {
+			return NewSSOError(ErrInvalidSignature, "SAML response signature is required but missing")
+		}
 		if err := p.validateSignature(response); err != nil {
 			return err
 		}

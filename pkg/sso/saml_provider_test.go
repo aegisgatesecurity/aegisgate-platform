@@ -408,8 +408,103 @@ func TestSAMLLoadIDPMetadata(t *testing.T) {
 }
 
 // =============================================================================
-// SAML Name and Type Tests
+// SAML validateResponse Error Path Tests
 // =============================================================================
+
+func TestSAMLValidateResponse_ErrorPaths(t *testing.T) {
+	mockServer, _ := NewMockSAMLServer()
+	defer mockServer.Close()
+
+	cfg := mockServer.NewSAMLConfig()
+	provider, _ := NewSAMLProvider(cfg, nil)
+
+	t.Run("status failure", func(t *testing.T) {
+		resp := &Response{
+			Status: &Status{StatusCode: &StatusCode{Value: "urn:oasis:names:tc:SAML:2.0:status:Responder"}},
+		}
+		err := provider.validateResponse(resp)
+		if err == nil || !strings.Contains(err.Error(), "SAML response status") {
+			t.Errorf("Expected status error, got: %v", err)
+		}
+	})
+
+	t.Run("issuer mismatch", func(t *testing.T) {
+		resp := &Response{
+			Status: &Status{StatusCode: &StatusCode{Value: "urn:oasis:names:tc:SAML:2.0:status:Success"}},
+			Issuer: &ResponseIssuer{Value: "wrong-issuer"},
+		}
+		err := provider.validateResponse(resp)
+		if err == nil || !strings.Contains(err.Error(), "response issuer mismatch") {
+			t.Errorf("Expected issuer mismatch error, got: %v", err)
+		}
+	})
+
+	t.Run("nil assertion", func(t *testing.T) {
+		resp := &Response{
+			Status:    &Status{StatusCode: &StatusCode{Value: "urn:oasis:names:tc:SAML:2.0:status:Success"}},
+			Issuer:    &ResponseIssuer{Value: mockServer.EntityID},
+			Assertion: nil,
+		}
+		err := provider.validateResponse(resp)
+		if err == nil || !strings.Contains(err.Error(), "no assertion in response") {
+			t.Errorf("Expected nil assertion error, got: %v", err)
+		}
+	})
+
+	t.Run("assertion expired", func(t *testing.T) {
+		resp := &Response{
+			Status: &Status{StatusCode: &StatusCode{Value: "urn:oasis:names:tc:SAML:2.0:status:Success"}},
+			Issuer: &ResponseIssuer{Value: mockServer.EntityID},
+			Assertion: &Assertion{
+				Conditions: &Conditions{
+					NotOnOrAfter: time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
+				},
+			},
+		}
+		err := provider.validateResponse(resp)
+		if err == nil || !strings.Contains(err.Error(), "assertion has expired") {
+			t.Errorf("Expected expiration error, got: %v", err)
+		}
+	})
+
+	t.Run("assertion not yet valid", func(t *testing.T) {
+		resp := &Response{
+			Status: &Status{StatusCode: &StatusCode{Value: "urn:oasis:names:tc:SAML:2.0:status:Success"}},
+			Issuer: &ResponseIssuer{Value: mockServer.EntityID},
+			Assertion: &Assertion{
+				Conditions: &Conditions{
+					NotBefore: time.Now().Add(1 * time.Hour).Format(time.RFC3339),
+				},
+			},
+		}
+		err := provider.validateResponse(resp)
+		if err == nil || !strings.Contains(err.Error(), "assertion not yet valid") {
+			t.Errorf("Expected notyetvalid error, got: %v", err)
+		}
+	})
+
+	t.Run("signature required but missing", func(t *testing.T) {
+		cfg.SAML.ValidateSignature = true
+		provider, _ = NewSAMLProvider(cfg, nil)
+		resp := &Response{
+			Status: &Status{StatusCode: &StatusCode{Value: "urn:oasis:names:tc:SAML:2.0:status:Success"}},
+			Issuer: &ResponseIssuer{Value: mockServer.EntityID},
+			Assertion: &Assertion{
+				Conditions: &Conditions{
+					NotBefore:    time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
+					NotOnOrAfter: time.Now().Add(1 * time.Hour).Format(time.RFC3339),
+				},
+			},
+			Signature: nil,
+		}
+		err := provider.validateResponse(resp)
+		if err == nil {
+			t.Errorf("Expected error when signature is required but missing, got: <nil>")
+		} else if !strings.Contains(err.Error(), "signature is required but missing") {
+			t.Errorf("Expected error containing 'signature is required but missing', got: %v", err)
+		}
+	})
+}
 
 func TestSAMLNameAndType(t *testing.T) {
 	mockServer, err := NewMockSAMLServer()
