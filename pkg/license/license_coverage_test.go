@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -502,7 +503,13 @@ func TestRequireLicense_KeyFromContext(t *testing.T) {
 	handlerCalled := false
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
-		w.WriteHeader(http.StatusOK)
+
+		// Verify that the key was propagated to the context if it was missing initially
+		// but available via the manager (this tests the specific propagation logic)
+		val := r.Context().Value(CtxKeyLicenseKey)
+		if val == nil || val.(string) == "" {
+			t.Errorf("Expected license key in context, got nil or empty")
+		}
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -514,7 +521,56 @@ func TestRequireLicense_KeyFromContext(t *testing.T) {
 	}
 }
 
+func TestRequireLicense_PropagatesManagerKey(t *testing.T) {
+	mgr, priv := newMgrWithPrivForTest(t)
+	key := signLicenseWithPriv(t, priv, LicensePayload{
+		LicenseID: "prop-key",
+		Tier:      "developer",
+		Customer:  "test",
+		IssuedAt:  time.Now(),
+		ExpiresAt: time.Now().Add(30 * 24 * time.Hour),
+	}, 64)
+	mgr.SetLicenseKey(key)
+	lm := NewLicenseMiddleware(mgr)
+
+	handlerCalled := false
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerCalled = true
+		val := r.Context().Value(CtxKeyLicenseKey)
+		if val == nil || val.(string) != key {
+			t.Errorf("Expected propagated key %q, got %v", key, val)
+		}
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	// Note: No key in context here
+	rec := httptest.NewRecorder()
+	lm.RequireLicense(handler).ServeHTTP(rec, req)
+	if !handlerCalled {
+		t.Error("Handler should be called (valid manager key)")
+	}
+}
+
 // ---------- LicenseStatus middleware ----------
+
+func TestLicenseStatus_EncodeError(t *testing.T) {
+	mgr, _ := NewManager()
+	lm := NewLicenseMiddleware(mgr)
+
+	req := httptest.NewRequest("GET", "/status", nil)
+	rec := httptest.NewRecorder()
+
+	// Wrap the recorder with our failing writer
+	fw := &failingResponseWriter{ResponseRecorder: rec}
+
+	// We cannot pass 'fw' directly to ServeHTTP because ServeHTTP expects http.ResponseWriter
+	// but the handler's internal logic will use the writer we provide.
+	// In this case, we need to manually call the handler function.
+	handler := lm.LicenseStatus()
+	handler.ServeHTTP(fw, req)
+
+	// The test passes if it doesn't crash; the code should handle the error internally.
+}
 
 func TestLicenseStatus_ValidKey(t *testing.T) {
 	mgr, priv := newMgrWithPrivForTest(t)
@@ -735,6 +791,15 @@ func TestManagerFromContext_NotSet(t *testing.T) {
 // =============================================================================
 // Test helpers
 // =============================================================================
+
+// failingResponseWriter is used to trigger JSON encoding errors in middleware
+type failingResponseWriter struct {
+	*httptest.ResponseRecorder
+}
+
+func (f *failingResponseWriter) Write(p []byte) (n int, err error) {
+	return 0, fmt.Errorf("simulated write failure")
+}
 
 // newKeyPairForTest generates a key pair and returns priv + public PEM
 func newKeyPairForTest(t *testing.T) (*ecdsa.PrivateKey, string) {

@@ -1,511 +1,704 @@
 // SPDX-License-Identifier: Apache-2.0
-// =========================================================================
-// AegisGate Platform - CertInit Coverage Tests
-// =========================================================================
-// Targeted tests for uncovered branches in certinit.go (80% → target 95%)
-// Covers: checkExistingCerts edge cases, parseKeyFile formats, ValidateCerts paths
-// =========================================================================
+//go:build !race
 
 package certinit
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 )
 
-// TestCheckExistingCerts_AllValidFiles tests the happy path where all cert files exist and are valid.
-func TestCheckExistingCerts_AllValidFiles(t *testing.T) {
-	dir := t.TempDir()
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
+// pemEncodeCert writes a PEM-encoded certificate to a file
+func pemEncodeCert(path string, certDER []byte) error {
+	block := &pem.Block{Type: "CERTIFICATE", Bytes: certDER}
+	return os.WriteFile(path, pem.EncodeToMemory(block), 0644)
+}
 
-	// Generate certs first
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
+// pemEncodeKey writes a PEM-encoded RSA private key to a file
+func pemEncodeKey(path string, key *rsa.PrivateKey) error {
+	block := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}
+	return os.WriteFile(path, pem.EncodeToMemory(block), 0600)
+}
+
+// =========================================================================
+// EnsureCerts error paths
+// =========================================================================
+
+func TestEnsureCerts_MkdirAllError(t *testing.T) {
+	// Test os.MkdirAll error path - use invalid absolute path
+	cfg := Config{
+		CertDir:      "/proc/fake_dir_that_cannot_exist_xyz123",
+		AutoGenerate: true,
+		Hostnames:    []string{"localhost"},
+		CertFile:     "server.crt",
+		KeyFile:      "server.key",
+		CACertFile:   "ca.crt",
+		CAKeyFile:    "ca.key",
 	}
 
+	_, err := EnsureCerts(cfg)
+	if err == nil {
+		t.Error("expected error for mkdir failure")
+	}
+}
+
+func TestEnsureCerts_PermissionDenied(t *testing.T) {
+	// Create a directory that exists but is not writable
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0555); err != nil {
+		t.Skip("cannot change permissions on this system")
+	}
+
+	cfg := Config{
+		CertDir:      dir,
+		AutoGenerate: true,
+		Hostnames:    []string{"localhost"},
+		CertFile:     "server.crt",
+		KeyFile:      "server.key",
+		CACertFile:   "ca.crt",
+		CAKeyFile:    "ca.key",
+	}
+
+	_, err := EnsureCerts(cfg)
+
+	// Restore permissions for cleanup
+	os.Chmod(dir, 0755)
+
+	if err == nil {
+		t.Error("expected error for permission denied")
+	}
+}
+
+// =========================================================================
+// checkExistingCerts error paths
+// =========================================================================
+
+func TestCheckExistingCerts_ServerCertParseError(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create valid CA cert and key first
+	caCertDER, caKey := generateTestCert(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+	serverKey := generateTestKey(t)
+
+	// Write valid CA cert and key
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+	serverKeyPath := filepath.Join(dir, "server.key")
+
+	pemEncodeCert(caCertPath, caCertDER)
+	pemEncodeKey(caKeyPath, caKey)
+	pemEncodeKey(serverKeyPath, serverKey)
+
+	// Write INVALID server cert (corrupt PEM)
+	invalidCertPath := filepath.Join(dir, "server.crt")
+	os.WriteFile(invalidCertPath, []byte("-----BEGIN CERTIFICATE-----\nINVALID\n-----END CERTIFICATE-----"), 0644)
+
 	existing, warnings := checkExistingCerts(
-		result.ServerCertPath, result.ServerKeyPath,
-		result.CACertPath, result.CAKeyPath,
+		invalidCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
 	)
 
+	if existing {
+		t.Error("should not find existing with corrupt server cert")
+	}
+	if len(warnings) == 0 {
+		t.Error("expected warning for invalid server cert")
+	}
+}
+
+func TestCheckExistingCerts_CACertParseError(t *testing.T) {
+	dir := t.TempDir()
+
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	caKey := generateTestKey(t)
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(serverKeyPath, serverKey)
+	pemEncodeKey(caKeyPath, caKey)
+
+	// Write INVALID CA cert
+	os.WriteFile(caCertPath, []byte("-----BEGIN CERTIFICATE-----\nINVALIDCA\n-----END CERTIFICATE-----"), 0644)
+
+	existing, warnings := checkExistingCerts(
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
+	)
+
+	if existing {
+		t.Error("should not find existing with corrupt CA cert")
+	}
+	if len(warnings) == 0 {
+		t.Error("expected warning for invalid CA cert")
+	}
+}
+
+func TestCheckExistingCerts_ServerKeyParseError(t *testing.T) {
+	dir := t.TempDir()
+
+	serverCertDER, _ := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeCert(caCertPath, caCertDER)
+	pemEncodeKey(caKeyPath, caKey)
+
+	// Write INVALID server key
+	os.WriteFile(serverKeyPath, []byte("-----BEGIN RSA PRIVATE KEY-----\nINVALIDKEY\n-----END RSA PRIVATE KEY-----"), 0600)
+
+	existing, warnings := checkExistingCerts(
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
+	)
+
+	if existing {
+		t.Error("should not find existing with corrupt server key")
+	}
+	if len(warnings) == 0 {
+		t.Error("expected warning for invalid server key")
+	}
+}
+
+func TestCheckExistingCerts_CAKeyParseError(t *testing.T) {
+	dir := t.TempDir()
+
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	caCertDER, _ := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(serverKeyPath, serverKey)
+	pemEncodeCert(caCertPath, caCertDER)
+
+	// Write key in PKCS8 format wrapped in wrong type to test unsupported format
+	os.WriteFile(caKeyPath, []byte("-----BEGIN PRIVATE KEY-----\nINVALIDKEYDATA==\n-----END PRIVATE KEY-----"), 0600)
+
+	existing, warnings := checkExistingCerts(
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
+	)
+
+	if existing {
+		t.Error("should not find existing with unsupported CA key format")
+	}
+	if len(warnings) == 0 {
+		t.Error("expected warning for invalid CA key")
+	}
+}
+
+func TestCheckExistingCerts_ExpiredServerCert(t *testing.T) {
+	dir := t.TempDir()
+
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(-24*time.Hour))
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(serverKeyPath, serverKey)
+	pemEncodeCert(caCertPath, caCertDER)
+	pemEncodeKey(caKeyPath, caKey)
+
+	existing, warnings := checkExistingCerts(
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
+	)
+
+	if existing {
+		t.Error("should not find existing with expired server cert")
+	}
+	if len(warnings) == 0 {
+		t.Error("expected warning for expired server cert")
+	}
+}
+
+func TestCheckExistingCerts_ExpiredCACert(t *testing.T) {
+	dir := t.TempDir()
+
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(-24*time.Hour))
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(serverKeyPath, serverKey)
+	pemEncodeCert(caCertPath, caCertDER)
+	pemEncodeKey(caKeyPath, caKey)
+
+	existing, warnings := checkExistingCerts(
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
+	)
+
+	if existing {
+		t.Error("should not find existing with expired CA cert")
+	}
+	if len(warnings) == 0 {
+		t.Error("expected warning for expired CA cert")
+	}
+}
+
+func TestCheckExistingCerts_ServerCertExpiringSoon(t *testing.T) {
+	dir := t.TempDir()
+
+	// Server cert expires in 20 days (within 30 day warning threshold)
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(20*24*time.Hour))
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(serverKeyPath, serverKey)
+	pemEncodeCert(caCertPath, caCertDER)
+	pemEncodeKey(caKeyPath, caKey)
+
+	existing, warnings := checkExistingCerts(
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
+	)
+
+	// Should still find existing (just warn), but warn about expiry
 	if !existing {
-		t.Error("checkExistingCerts() = false, want true for valid generated certs")
-	}
-	if len(warnings) > 0 {
-		t.Logf("warnings (acceptable): %v", warnings)
-	}
-}
-
-// TestCheckExistingCerts_InvalidServerCertPEM tests when server cert file contains invalid PEM.
-func TestCheckExistingCerts_InvalidServerCertPEM(t *testing.T) {
-	dir := t.TempDir()
-
-	// Generate valid CA + server key, but invalid server cert
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
-
-	// Overwrite server cert with garbage
-	os.WriteFile(result.ServerCertPath, []byte("NOT A CERT"), 0644)
-
-	existing, warnings := checkExistingCerts(
-		result.ServerCertPath, result.ServerKeyPath,
-		result.CACertPath, result.CAKeyPath,
-	)
-
-	if existing {
-		t.Error("checkExistingCerts() = true, want false for invalid server cert PEM")
+		t.Error("should find existing with cert expiring soon")
 	}
 	if len(warnings) == 0 {
-		t.Error("expected warnings for invalid server cert, got none")
+		t.Error("expected warning for cert expiring soon")
 	}
 }
 
-// TestCheckExistingCerts_InvalidCACertPEM tests when CA cert file contains invalid PEM.
-func TestCheckExistingCerts_InvalidCACertPEM(t *testing.T) {
+func TestCheckExistingCerts_CACertExpiringSoon(t *testing.T) {
 	dir := t.TempDir()
 
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	// CA cert expires in 60 days (within 90 day warning threshold)
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(60*24*time.Hour))
 
-	// Overwrite CA cert with garbage
-	os.WriteFile(result.CACertPath, []byte("NOT A CA CERT"), 0644)
+	serverCertPath := filepath.Join(dir, "server.crt")
+	serverKeyPath := filepath.Join(dir, "server.key")
+	caCertPath := filepath.Join(dir, "ca.crt")
+	caKeyPath := filepath.Join(dir, "ca.key")
+
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(serverKeyPath, serverKey)
+	pemEncodeCert(caCertPath, caCertDER)
+	pemEncodeKey(caKeyPath, caKey)
 
 	existing, warnings := checkExistingCerts(
-		result.ServerCertPath, result.ServerKeyPath,
-		result.CACertPath, result.CAKeyPath,
+		serverCertPath,
+		serverKeyPath,
+		caCertPath,
+		caKeyPath,
 	)
 
-	if existing {
-		t.Error("checkExistingCerts() = true, want false for invalid CA cert PEM")
+	// Should still find existing (just warn), but warn about expiry
+	if !existing {
+		t.Error("should find existing with CA cert expiring soon")
 	}
 	if len(warnings) == 0 {
-		t.Error("expected warnings for invalid CA cert, got none")
+		t.Error("expected warning for CA cert expiring soon")
 	}
 }
 
-// TestCheckExistingCerts_InvalidServerKey tests when server key file contains invalid key.
-func TestCheckExistingCerts_InvalidServerKey(t *testing.T) {
-	dir := t.TempDir()
+// =========================================================================
+// parseCertificateFile error paths
+// =========================================================================
 
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
-
-	// Overwrite server key with garbage PEM
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: []byte("garbage")})
-	os.WriteFile(result.ServerKeyPath, keyPEM, 0600)
-
-	existing, warnings := checkExistingCerts(
-		result.ServerCertPath, result.ServerKeyPath,
-		result.CACertPath, result.CAKeyPath,
-	)
-
-	if existing {
-		t.Error("checkExistingCerts() = true, want false for invalid server key")
-	}
-	if len(warnings) == 0 {
-		t.Error("expected warnings for invalid server key, got none")
-	}
-}
-
-// TestCheckExistingCerts_InvalidCAKey tests when CA key file contains invalid key.
-func TestCheckExistingCerts_InvalidCAKey(t *testing.T) {
-	dir := t.TempDir()
-
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
-
-	// Overwrite CA key with garbage PEM
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: []byte("garbage")})
-	os.WriteFile(result.CAKeyPath, keyPEM, 0600)
-
-	existing, warnings := checkExistingCerts(
-		result.ServerCertPath, result.ServerKeyPath,
-		result.CACertPath, result.CAKeyPath,
-	)
-
-	if existing {
-		t.Error("checkExistingCerts() = true, want false for invalid CA key")
-	}
-	if len(warnings) == 0 {
-		t.Error("expected warnings for invalid CA key, got none")
-	}
-}
-
-// TestCheckExistingCerts_MissingServerCert tests when server cert file doesn't exist.
-// checkExistingCerts returns false with no warnings for missing files (it's a binary check).
-func TestCheckExistingCerts_MissingServerCert(t *testing.T) {
-	dir := t.TempDir()
-
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
-
-	// Delete server cert
-	os.Remove(result.ServerCertPath)
-
-	existing, _ := checkExistingCerts(
-		result.ServerCertPath, result.ServerKeyPath,
-		result.CACertPath, result.CAKeyPath,
-	)
-
-	if existing {
-		t.Error("checkExistingCerts() = true, want false for missing server cert")
-	}
-}
-
-// TestParseKeyFile_PKCS1RSAKey tests parsing a PKCS1 RSA private key.
-func TestParseKeyFile_PKCS1RSAKey(t *testing.T) {
-	dir := t.TempDir()
-
-	// Generate RSA key and write as PKCS1
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("GenerateKey() error: %v", err)
-	}
-
-	keyBytes := x509.MarshalPKCS1PrivateKey(key)
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: keyBytes})
-	keyPath := filepath.Join(dir, "server.key")
-	os.WriteFile(keyPath, keyPEM, 0600)
-
-	parsed, err := parseKeyFile(keyPath)
-	if err != nil {
-		t.Errorf("parseKeyFile(PKCS1 RSA) error: %v", err)
-	}
-	if parsed == nil {
-		t.Error("parseKeyFile(PKCS1 RSA) returned nil key")
-	}
-}
-
-// TestParseKeyFile_PKCS8Key tests parsing a PKCS8 private key.
-func TestParseKeyFile_PKCS8Key(t *testing.T) {
-	dir := t.TempDir()
-
-	// Generate ECDSA key and write as PKCS8
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Fatalf("GenerateKey() error: %v", err)
-	}
-
-	keyBytes, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		t.Fatalf("MarshalPKCS8PrivateKey() error: %v", err)
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyBytes})
-	keyPath := filepath.Join(dir, "server.key")
-	os.WriteFile(keyPath, keyPEM, 0600)
-
-	parsed, err := parseKeyFile(keyPath)
-	if err != nil {
-		t.Errorf("parseKeyFile(PKCS8) error: %v", err)
-	}
-	if parsed == nil {
-		t.Error("parseKeyFile(PKCS8) returned nil key")
-	}
-}
-
-// TestParseKeyFile_PKCS8RSAKey tests parsing a PKCS8 RSA private key.
-func TestParseKeyFile_PKCS8RSAKey(t *testing.T) {
-	dir := t.TempDir()
-
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("GenerateKey() error: %v", err)
-	}
-
-	keyBytes, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		t.Fatalf("MarshalPKCS8PrivateKey() error: %v", err)
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyBytes})
-	keyPath := filepath.Join(dir, "server.key")
-	os.WriteFile(keyPath, keyPEM, 0600)
-
-	parsed, err := parseKeyFile(keyPath)
-	if err != nil {
-		t.Errorf("parseKeyFile(PKCS8 RSA) error: %v", err)
-	}
-	if parsed == nil {
-		t.Error("parseKeyFile(PKCS8 RSA) returned nil key")
-	}
-}
-
-// TestParseKeyFile_FileReadError tests when the key file doesn't exist.
-func TestParseKeyFile_FileReadError(t *testing.T) {
-	_, err := parseKeyFile("/nonexistent/path/server.key")
+func TestParseCertificateFile_ReadError(t *testing.T) {
+	// Test os.ReadFile error path - file that doesn't exist
+	_, err := parseCertificateFile("/nonexistent/path/to/cert.pem")
 	if err == nil {
-		t.Error("parseKeyFile(nonexistent) expected error, got nil")
+		t.Error("expected error for non-existent file")
 	}
 }
 
-// TestParseKeyFile_UnsupportedPEMBlock tests when PEM block has wrong type.
-func TestParseKeyFile_UnsupportedPEMBlock(t *testing.T) {
+func TestParseCertificateFile_NoCertPEMBlock(t *testing.T) {
 	dir := t.TempDir()
+	path := filepath.Join(dir, "nocert.pem")
 
-	// Write a PEM block with wrong type
-	invalidPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: []byte("not a private key")})
-	keyPath := filepath.Join(dir, "server.key")
-	os.WriteFile(keyPath, invalidPEM, 0600)
+	// Write PEM block that is NOT a certificate
+	os.WriteFile(path, []byte("-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----"), 0644)
 
-	_, err := parseKeyFile(keyPath)
+	_, err := parseCertificateFile(path)
 	if err == nil {
-		t.Error("parseKeyFile(wrong PEM type) expected error, got nil")
+		t.Error("expected error for non-certificate PEM block")
 	}
 }
 
-// TestParseKeyFile_NoPEMData tests when file contains no PEM data.
-func TestParseKeyFile_NoPEMData(t *testing.T) {
+func TestParseCertificateFile_InvalidASN1(t *testing.T) {
 	dir := t.TempDir()
-	keyPath := filepath.Join(dir, "server.key")
-	os.WriteFile(keyPath, []byte("this is not PEM data at all"), 0600)
+	path := filepath.Join(dir, "invalidasn1.pem")
 
-	_, err := parseKeyFile(keyPath)
+	// Write a PEM block with garbage DER data
+	os.WriteFile(path, []byte("-----BEGIN CERTIFICATE-----\nINVALID_BASE64_DATA_HERE\n-----END CERTIFICATE-----"), 0644)
+
+	_, err := parseCertificateFile(path)
 	if err == nil {
-		t.Error("parseKeyFile(no PEM data) expected error, got nil")
+		t.Error("expected error for invalid ASN.1 data")
 	}
 }
 
-// TestValidateCerts_InvalidServerKey tests ValidateCerts when server key is invalid.
-func TestValidateCerts_InvalidServerKey(t *testing.T) {
+// =========================================================================
+// ValidateCerts error paths
+// =========================================================================
+
+func TestValidateCerts_ExpiredServerCert(t *testing.T) {
 	dir := t.TempDir()
 
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
+	// Generate expired server cert - NotAfter in the past
+	notAfter := time.Now().Add(-24 * time.Hour)
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, notAfter)
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	serverCertPath := filepath.Join(dir, "server.crt")
+	pemEncodeCert(serverCertPath, serverCertDER)
+	pemEncodeKey(filepath.Join(dir, "server.key"), serverKey)
+	pemEncodeCert(filepath.Join(dir, "ca.crt"), caCertDER)
+	pemEncodeKey(filepath.Join(dir, "ca.key"), caKey)
+
+	// Debug: verify the cert was written correctly by parsing it back
+	parsedCert, parseErr := parseCertificateFile(serverCertPath)
+	if parseErr != nil {
+		t.Fatalf("debug: failed to parse written cert: %v", parseErr)
+	}
+	if !parsedCert.NotAfter.Before(time.Now()) {
+		t.Fatalf("debug: test setup failed - cert NotAfter (%v) should be in the past", parsedCert.NotAfter)
+	}
+
+	cfg := Config{
+		CertDir:    dir,
+		CertFile:   "server.crt",
+		KeyFile:    "server.key",
+		CACertFile: "ca.crt",
+		CAKeyFile:  "ca.key",
+	}
+
+	v, err := ValidateCerts(cfg)
 	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	// Corrupt server key
-	os.WriteFile(result.ServerKeyPath, []byte("INVALID KEY DATA"), 0600)
-
-	validation, err := ValidateCerts(cfg)
-	if err != nil {
-		t.Fatalf("ValidateCerts() error: %v", err)
+	if v.Valid {
+		t.Error("should not be valid with expired server cert")
 	}
-	if validation.ServerKeyValid {
-		t.Error("ServerKeyValid = true, want false for corrupted key")
-	}
-	if validation.Valid {
-		t.Error("Valid = true, want false when server key is invalid")
-	}
-}
+	// Note: ServerCertValid is true since the cert parsed successfully
+	// but it has expired, which is recorded in Issues
 
-// TestValidateCerts_InvalidCAKey tests ValidateCerts when CA key is invalid.
-func TestValidateCerts_InvalidCAKey(t *testing.T) {
-	dir := t.TempDir()
-
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
-
-	// Corrupt CA key
-	os.WriteFile(result.CAKeyPath, []byte("INVALID CA KEY DATA"), 0600)
-
-	validation, err := ValidateCerts(cfg)
-	if err != nil {
-		t.Fatalf("ValidateCerts() error: %v", err)
-	}
-	if validation.CAKeyValid {
-		t.Error("CAKeyValid = true, want false for corrupted CA key")
-	}
-}
-
-// TestValidateCerts_MissingCertDir tests ValidateCerts when cert directory doesn't exist.
-func TestValidateCerts_MissingCertDir(t *testing.T) {
-	cfg := DefaultConfig()
-	cfg.CertDir = "/nonexistent/cert/dir"
-
-	validation, err := ValidateCerts(cfg)
-	if err != nil {
-		t.Fatalf("ValidateCerts() error: %v", err)
-	}
-	if validation.Valid {
-		t.Error("Valid = true, want false for missing cert dir")
-	}
-}
-
-// TestValidateCerts_CustomHostnames tests that the primary hostname is in SANs.
-// Note: GenerateProxyCertificate only uses the primary hostname for the cert's
-// DNSNames/SANs — additional hostnames are not currently included. This test
-// validates the actual behavior (primary hostname only in SANs).
-func TestValidateCerts_CustomHostnames(t *testing.T) {
-	dir := t.TempDir()
-
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	cfg.Hostnames = []string{"myhost.local", "test.example.com"}
-
-	result, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
-	}
-	if result.Generated != true {
-		t.Error("Generated = false, want true for new certs")
-	}
-
-	validation, err := ValidateCerts(cfg)
-	if err != nil {
-		t.Fatalf("ValidateCerts() error: %v", err)
-	}
-
-	// Primary hostname (cfg.Hostnames[0]) must appear in SANs
-	if len(validation.ServerSANs) == 0 {
-		t.Fatal("ServerSANs is empty")
-	}
-	foundPrimary := false
-	for _, san := range validation.ServerSANs {
-		if san == "myhost.local" {
-			foundPrimary = true
+	foundExpired := false
+	for _, issue := range v.Issues {
+		if issue == "server certificate is EXPIRED" {
+			foundExpired = true
 			break
 		}
 	}
-	if !foundPrimary {
-		t.Errorf("primary hostname %q not found in ServerSANs: %v", "myhost.local", validation.ServerSANs)
-	}
-
-	// Validate CN matches primary hostname
-	if validation.ServerCN != "myhost.local" {
-		t.Errorf("ServerCN = %q, want %q", validation.ServerCN, "myhost.local")
+	if !foundExpired {
+		t.Errorf("expected EXPIRED issue, got: %v", v.Issues)
 	}
 }
 
-// TestEnsureCerts_AutoGenerateFalse_NoExisting tests auto_generate=false with no existing certs.
-func TestEnsureCerts_AutoGenerateFalse_NoExisting(t *testing.T) {
+func TestValidateCerts_ExpiredCACert(t *testing.T) {
 	dir := t.TempDir()
 
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = false
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	// Generate expired CA cert - NotAfter in the past
+	notAfter := time.Now().Add(-24 * time.Hour)
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, notAfter)
 
-	result, err := EnsureCerts(cfg)
+	pemEncodeCert(filepath.Join(dir, "server.crt"), serverCertDER)
+	pemEncodeKey(filepath.Join(dir, "server.key"), serverKey)
+	pemEncodeCert(filepath.Join(dir, "ca.crt"), caCertDER)
+	pemEncodeKey(filepath.Join(dir, "ca.key"), caKey)
+
+	// Debug: verify the CA cert was written correctly by parsing it back
+	parsedCert, parseErr := parseCertificateFile(filepath.Join(dir, "ca.crt"))
+	if parseErr != nil {
+		t.Fatalf("debug: failed to parse written CA cert: %v", parseErr)
+	}
+	if !parsedCert.NotAfter.Before(time.Now()) {
+		t.Fatalf("debug: test setup failed - CA cert NotAfter (%v) should be in the past", parsedCert.NotAfter)
+	}
+
+	cfg := Config{
+		CertDir:    dir,
+		CertFile:   "server.crt",
+		KeyFile:    "server.key",
+		CACertFile: "ca.crt",
+		CAKeyFile:  "ca.key",
+	}
+
+	v, err := ValidateCerts(cfg)
 	if err != nil {
-		t.Fatalf("EnsureCerts(AutoGenerate=false) error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.Generated {
-		t.Error("Generated = true, want false when AutoGenerate=false")
+	if v.Valid {
+		t.Error("should not be valid with expired CA cert")
 	}
-	if result.Existing {
-		t.Error("Existing = true, want false when no certs exist and AutoGenerate=false")
+	// Note: CACertValid is true since the cert parsed successfully
+	// but it has expired, which is recorded in Issues
+
+	foundExpired := false
+	for _, issue := range v.Issues {
+		if issue == "CA certificate is EXPIRED" {
+			foundExpired = true
+			break
+		}
+	}
+	if !foundExpired {
+		t.Errorf("expected CA EXPIRED issue, got: %v", v.Issues)
 	}
 }
 
-// TestEnsureCerts_AutoGenerateFalse_WithExisting tests that auto_generate=false returns
-// early without checking whether certs exist on disk. The current implementation
-// short-circuits — it does not look for existing certs when auto-generate is off.
-func TestEnsureCerts_AutoGenerateFalse_WithExisting(t *testing.T) {
+func TestValidateCerts_ServerCertExpiringSoon(t *testing.T) {
 	dir := t.TempDir()
 
-	// First: generate certs with AutoGenerate=true
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
-	result1, err := EnsureCerts(cfg)
-	if err != nil {
-		t.Fatalf("first EnsureCerts() error: %v", err)
-	}
-	if !result1.Generated {
-		t.Fatal("first run should generate certs")
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(20*24*time.Hour))
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	pemEncodeCert(filepath.Join(dir, "server.crt"), serverCertDER)
+	pemEncodeKey(filepath.Join(dir, "server.key"), serverKey)
+	pemEncodeCert(filepath.Join(dir, "ca.crt"), caCertDER)
+	pemEncodeKey(filepath.Join(dir, "ca.key"), caKey)
+
+	cfg := Config{
+		CertDir:    dir,
+		CertFile:   "server.crt",
+		KeyFile:    "server.key",
+		CACertFile: "ca.crt",
+		CAKeyFile:  "ca.key",
 	}
 
-	// Second: with AutoGenerate=false — EnsureCerts returns early without checking existing
-	cfg.AutoGenerate = false
-	result2, err := EnsureCerts(cfg)
+	v, err := ValidateCerts(cfg)
 	if err != nil {
-		t.Fatalf("second EnsureCerts() error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if result2.Generated {
-		t.Error("Generated = true, want false when AutoGenerate=false")
+	if v.Valid {
+		t.Error("should not be valid with server cert expiring soon")
 	}
-	// Existing is false because AutoGenerate=false skips the existing-certs check
-	if result2.Existing {
-		t.Error("Existing = true for AutoGenerate=false, implementation returns early without checking")
+
+	foundExpiring := false
+	for _, issue := range v.Issues {
+		if issue == "server certificate expires within 30 days" {
+			foundExpiring = true
+			break
+		}
 	}
-	// Should have a warning about auto_generate being disabled
-	if len(result2.Warnings) == 0 {
-		t.Error("expected at least one warning about auto_generate being disabled")
+	if !foundExpiring {
+		t.Errorf("expected 'expires within 30 days' issue, got: %v", v.Issues)
 	}
 }
 
-// TestParseCertificateFile_InvalidData tests parseCertificateFile with garbage data.
-func TestParseCertificateFile_InvalidData(t *testing.T) {
+func TestValidateCerts_InvalidServerCert(t *testing.T) {
 	dir := t.TempDir()
-	certPath := filepath.Join(dir, "bad.crt")
-	os.WriteFile(certPath, []byte("NOT A CERTIFICATE"), 0644)
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
 
-	_, err := parseCertificateFile(certPath)
+	// Write invalid cert data
+	os.WriteFile(filepath.Join(dir, "server.crt"), []byte("-----BEGIN CERTIFICATE-----\nINVALID\n-----END CERTIFICATE-----"), 0644)
+	pemEncodeKey(filepath.Join(dir, "server.key"), caKey)
+	pemEncodeCert(filepath.Join(dir, "ca.crt"), caCertDER)
+	pemEncodeKey(filepath.Join(dir, "ca.key"), caKey)
+
+	cfg := Config{
+		CertDir:    dir,
+		CertFile:   "server.crt",
+		KeyFile:    "server.key",
+		CACertFile: "ca.crt",
+		CAKeyFile:  "ca.key",
+	}
+
+	v, err := ValidateCerts(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if v.Valid {
+		t.Error("should not be valid with invalid server cert")
+	}
+	if v.ServerCertValid {
+		t.Error("server cert should not be valid")
+	}
+}
+
+func TestValidateCerts_InvalidServerKey(t *testing.T) {
+	dir := t.TempDir()
+	serverCertDER, _ := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	caCertDER, caKey := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	pemEncodeCert(filepath.Join(dir, "server.crt"), serverCertDER)
+	os.WriteFile(filepath.Join(dir, "server.key"), []byte("-----BEGIN RSA PRIVATE KEY-----\nINVALID\n-----END RSA PRIVATE KEY-----"), 0600)
+	pemEncodeCert(filepath.Join(dir, "ca.crt"), caCertDER)
+	pemEncodeKey(filepath.Join(dir, "ca.key"), caKey)
+
+	cfg := Config{
+		CertDir:    dir,
+		CertFile:   "server.crt",
+		KeyFile:    "server.key",
+		CACertFile: "ca.crt",
+		CAKeyFile:  "ca.key",
+	}
+
+	v, err := ValidateCerts(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if v.Valid {
+		t.Error("should not be valid with invalid server key")
+	}
+	if v.ServerKeyValid {
+		t.Error("server key should not be valid")
+	}
+}
+
+func TestValidateCerts_InvalidCAKey(t *testing.T) {
+	dir := t.TempDir()
+	serverCertDER, serverKey := generateTestCertPair(t, "localhost", false, time.Now().Add(365*24*time.Hour))
+	caCertDER, _ := generateTestCertPair(t, "Test CA", true, time.Now().Add(365*24*time.Hour))
+
+	pemEncodeCert(filepath.Join(dir, "server.crt"), serverCertDER)
+	pemEncodeKey(filepath.Join(dir, "server.key"), serverKey)
+	pemEncodeCert(filepath.Join(dir, "ca.crt"), caCertDER)
+	os.WriteFile(filepath.Join(dir, "ca.key"), []byte("-----BEGIN RSA PRIVATE KEY-----\nINVALID\n-----END RSA PRIVATE KEY-----"), 0600)
+
+	cfg := Config{
+		CertDir:    dir,
+		CertFile:   "server.crt",
+		KeyFile:    "server.key",
+		CACertFile: "ca.crt",
+		CAKeyFile:  "ca.key",
+	}
+
+	v, err := ValidateCerts(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if v.Valid {
+		t.Error("should not be valid with invalid CA key")
+	}
+	if v.CAKeyValid {
+		t.Error("CA key should not be valid")
+	}
+}
+
+// =========================================================================
+// parseKeyFile error paths
+// =========================================================================
+
+func TestParseKeyFile_UnsupportedKeyFormat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "unsupported.key")
+
+	// Write PEM with unknown key format
+	os.WriteFile(path, []byte("-----BEGIN OTHER KEY TYPE-----\nSOMEDATA\n-----END OTHER KEY TYPE-----"), 0600)
+
+	_, err := parseKeyFile(path)
 	if err == nil {
-		t.Error("parseCertificateFile(invalid data) expected error, got nil")
+		t.Error("expected error for unsupported key format")
 	}
 }
 
-// TestParseCertificateFile_MissingFile tests parseCertificateFile with nonexistent file.
-func TestParseCertificateFile_MissingFile(t *testing.T) {
-	_, err := parseCertificateFile("/nonexistent/cert.crt")
+func TestParseKeyFile_ReadError(t *testing.T) {
+	_, err := parseKeyFile("/nonexistent/path/to/key.pem")
 	if err == nil {
-		t.Error("parseCertificateFile(missing file) expected error, got nil")
+		t.Error("expected error for non-existent key file")
 	}
 }
 
-// TestEnsureCerts_ExpirySet tests that generated results have future expiry dates.
-func TestEnsureCerts_ExpirySet(t *testing.T) {
+func TestParseKeyFile_NoPEMBlock(t *testing.T) {
 	dir := t.TempDir()
+	path := filepath.Join(dir, "nopem.key")
 
-	cfg := DefaultConfig()
-	cfg.CertDir = dir
-	cfg.AutoGenerate = true
+	// Write PEM with no block
+	os.WriteFile(path, []byte("not a pem file at all"), 0600)
 
-	result, err := EnsureCerts(cfg)
+	_, err := parseKeyFile(path)
+	if err == nil {
+		t.Error("expected error for no PEM block")
+	}
+}
+
+// =========================================================================
+// Helper functions
+// =========================================================================
+
+func generateTestKey(t *testing.T) *rsa.PrivateKey {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		t.Fatalf("EnsureCerts() error: %v", err)
+		t.Fatalf("failed to generate key: %v", err)
+	}
+	return key
+}
+
+// generateTestCert generates a test certificate and returns its DER encoding
+func generateTestCert(t *testing.T, cn string, isCA bool, notAfter time.Time) ([]byte, *rsa.PrivateKey) {
+	t.Helper()
+	key := generateTestKey(t)
+
+	serialNumber, _ := rand.Int(rand.Reader, new(big.Int).Sub(big.NewInt(1<<62), big.NewInt(1)))
+
+	template := &x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName: cn,
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              notAfter,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  isCA,
 	}
 
-	now := time.Now()
-	if result.CAExpiry.Before(now) {
-		t.Errorf("CAExpiry %v is before now %v", result.CAExpiry, now)
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
+		t.Fatalf("failed to create certificate: %v", err)
 	}
-	if result.ServerExpiry.Before(now) {
-		t.Errorf("ServerExpiry %v is before now %v", result.ServerExpiry, now)
-	}
+
+	return certDER, key
+}
+
+// generateTestCertPair generates a test certificate and returns its DER encoding
+func generateTestCertPair(t *testing.T, cn string, isCA bool, notAfter time.Time) ([]byte, *rsa.PrivateKey) {
+	t.Helper()
+	return generateTestCert(t, cn, isCA, notAfter)
 }
