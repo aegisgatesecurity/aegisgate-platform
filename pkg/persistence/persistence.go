@@ -35,6 +35,20 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 )
 
+// newFileStorageBackend is the constructor used by New().
+// Tests can override this variable to inject mock errors.
+var newFileStorageBackend = opsec.NewFileStorageBackend
+
+// pruneAuditLog wraps auditLog.PruneOldEntries for test injection.
+var pruneAuditLog = func(auditLog *opsec.ComplianceAuditLog, ctx context.Context) (int, error) {
+	return auditLog.PruneOldEntries(ctx)
+}
+
+// closeStorage wraps storage.Close for test injection.
+var closeStorage = func(storage *opsec.FileStorageBackend) error {
+	return storage.Close()
+}
+
 // Config holds persistence configuration (loaded from YAML or defaults)
 type Config struct {
 	Enabled       bool          `yaml:"enabled"`
@@ -85,8 +99,8 @@ func New(platformTier tier.Tier, cfg Config) (*Manager, error) {
 		return nil, fmt.Errorf("failed to create audit directory %s: %w", cfg.AuditDir, err)
 	}
 
-	// Create the file storage backend
-	storage, err := opsec.NewFileStorageBackend(cfg.AuditDir, cfg.MaxFileSize)
+	// Create the file storage backend (uses injection variable for testability)
+	storage, err := newFileStorageBackend(cfg.AuditDir, cfg.MaxFileSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file storage backend: %w", err)
 	}
@@ -157,14 +171,14 @@ func (m *Manager) Close() error {
 	if m.storage != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		if pruned, err := m.auditLog.PruneOldEntries(ctx); err == nil && pruned > 0 {
+		if pruned, err := pruneAuditLog(m.auditLog, ctx); err == nil && pruned > 0 {
 			log.Printf("Final prune: removed %d expired entries", pruned)
 		}
 	}
 
 	// Close the storage backend
 	if m.storage != nil {
-		if err := m.storage.Close(); err != nil {
+		if err := closeStorage(m.storage); err != nil {
 			return fmt.Errorf("failed to close storage backend: %w", err)
 		}
 	}
@@ -269,7 +283,7 @@ func (m *Manager) doPrune(ctx context.Context) {
 		return
 	}
 
-	pruned, err := m.auditLog.PruneOldEntries(ctx)
+	pruned, err := pruneAuditLog(m.auditLog, ctx)
 	if err != nil {
 		log.Printf("Audit prune error: %v", err)
 		return
