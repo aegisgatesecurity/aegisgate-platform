@@ -156,4 +156,4 @@ Every contribution must include a `Signed-off-by` line per our [DCO policy](DCO.
 
 ## Questions?
 
-If you have questions or need help, feel free to reach out on [Mastodon](https://mastodon.social/@aegisgatesecurity) or start a [GitHub Discussion](https://github.com/aegisgatesecurity/aegisgate-platform/discussions).
+If you have questions or need help, feel free to reach out on [X/Twitter @aegisgatesec](https://x.com/aegisgatesec) or start a [GitHub Discussion](https://github.com/aegisgatesecurity/aegisgate-platform/discussions).
