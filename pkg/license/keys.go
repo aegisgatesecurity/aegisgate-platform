@@ -34,12 +34,13 @@ pQpLwLB2UcawrcrJgocFQMgVRKq4EreyqT3bi+PeXeJ3uUW4iPaWJCcSDQ==
 -----END PUBLIC KEY-----
 `
 
-// GetEmbeddedPublicKey returns the ECDSA public key embedded in the binary.
-// This key is used to verify license signatures.
-func GetEmbeddedPublicKey() (*ecdsa.PublicKey, error) {
-	block, _ := pem.Decode([]byte(embeddedPublicKeyPEM))
+// parsePublicKeyFromPEM parses an ECDSA P-256 public key from a PEM string.
+// This is the internal implementation shared by GetEmbeddedPublicKey and
+// KeyFingerprint. Extracted for testability.
+func parsePublicKeyFromPEM(pemData string) (*ecdsa.PublicKey, error) {
+	block, _ := pem.Decode([]byte(pemData))
 	if block == nil {
-		return nil, fmt.Errorf("failed to decode embedded public key PEM")
+		return nil, fmt.Errorf("failed to decode PEM block")
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
@@ -60,18 +61,29 @@ func GetEmbeddedPublicKey() (*ecdsa.PublicKey, error) {
 	return ecdsaPub, nil
 }
 
-// KeyFingerprint returns a fingerprint of the embedded public key for logging
-// and debugging purposes (not for security verification).
-func KeyFingerprint() string {
-	block, _ := pem.Decode([]byte(embeddedPublicKeyPEM))
+// fingerprintFromPEM returns a debug fingerprint from PEM data.
+// Returns "invalid" if PEM decode fails, "short" if DER is too small.
+func fingerprintFromPEM(pemData string) string {
+	block, _ := pem.Decode([]byte(pemData))
 	if block == nil {
 		return "invalid"
 	}
-	// Return first 16 bytes of DER as hex (simplified fingerprint)
 	if len(block.Bytes) >= 8 {
 		return fmt.Sprintf("%x", block.Bytes[:8])
 	}
 	return "short"
+}
+
+// GetEmbeddedPublicKey returns the ECDSA public key embedded in the binary.
+// This key is used to verify license signatures.
+func GetEmbeddedPublicKey() (*ecdsa.PublicKey, error) {
+	return parsePublicKeyFromPEM(embeddedPublicKeyPEM)
+}
+
+// KeyFingerprint returns a fingerprint of the embedded public key for logging
+// and debugging purposes (not for security verification).
+func KeyFingerprint() string {
+	return fingerprintFromPEM(embeddedPublicKeyPEM)
 }
 
 // IsKeyPlaceholder returns true if the embedded key is still the placeholder.
