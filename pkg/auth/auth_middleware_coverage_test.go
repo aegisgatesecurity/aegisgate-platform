@@ -486,7 +486,7 @@ func TestSSORoleToUserRole_Mapping(t *testing.T) {
 	}{
 		{"admin", rbac.UserRoleAdmin},
 		{"viewer", rbac.UserRoleViewer},
-		{"analyst", rbac.UserRoleViewer},      // unknown → viewer
+		{"analyst", rbac.UserRoleViewer},            // unknown → viewer
 		{"compliance_officer", rbac.UserRoleViewer}, // unknown → viewer
 	}
 
