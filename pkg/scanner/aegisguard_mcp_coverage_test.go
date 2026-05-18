@@ -1093,3 +1093,241 @@ func TestAegisGuardMCPScanner_readJSON_ZeroBytesNoNewline(t *testing.T) {
 
 	<-serverDone
 }
+
+// failSetReadDeadlineConn wraps a net.Conn and fails on SetReadDeadline
+type failSetReadDeadlineConn struct {
+	net.Conn
+}
+
+func (c *failSetReadDeadlineConn) SetReadDeadline(t time.Time) error {
+	return fmt.Errorf("simulated SetReadDeadline failure")
+}
+
+// ============================================================================
+// readJSON SetReadDeadline failure test
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_SetReadDeadlineFails(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Keep connection open but don't send anything
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	// Wrap with failing read deadline setter
+	failConn := &failSetReadDeadlineConn{Conn: client}
+
+	_, err = scanner.readJSON(failConn)
+	if err == nil {
+		t.Error("readJSON should fail when SetReadDeadline fails")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// readJSON empty response test
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_EmptyResponse(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Send just newline (empty after trim)
+			conn.Write([]byte("\n"))
+		}
+	}()
+
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	_, err = scanner.readJSON(client)
+	if err == nil {
+		t.Error("readJSON should fail on empty response")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// readJSON malformed JSON test
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_MalformedJSON(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Send malformed JSON with newline
+			conn.Write([]byte("{invalid json}\n"))
+		}
+	}()
+
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	_, err = scanner.readJSON(client)
+	if err == nil {
+		t.Error("readJSON should fail on malformed JSON")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// readJSON success path test (verify it works)
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_Success(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Send valid JSON-RPC response with newline
+			conn.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":{"status":"ok"}}` + "\n"))
+		}
+	}()
+
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	resp, err := scanner.readJSON(client)
+	if err != nil {
+		t.Errorf("readJSON should succeed, got error: %v", err)
+	}
+	if resp == nil {
+		t.Error("readJSON should return response")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// writeJSON success path test (verify it works)
+// ============================================================================
+
+func TestAegisGuardMCPScanner_writeJSON_Success(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	var received []byte
+	var mu sync.Mutex
+
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			buf := make([]byte, 1024)
+			n, _ := conn.Read(buf)
+			mu.Lock()
+			received = buf[:n]
+			mu.Unlock()
+		}
+	}()
+
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	err = scanner.writeJSON(client, []byte(`{"jsonrpc":"2.0","id":1,"method":"test"}`))
+	if err != nil {
+		t.Errorf("writeJSON should succeed, got error: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	mu.Lock()
+	if len(received) == 0 {
+		t.Error("server should have received data")
+	}
+	mu.Unlock()
+
+	<-serverDone
+}
+
+// ============================================================================
+// Health error path test
+// ============================================================================
+
+func TestAegisGuardMCPScanner_Health_InvalidAddress(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	config.Address = "invalid-no-port" // Invalid address
+	scanner := NewAegisGuardMCPScanner(config)
+
+	err := scanner.Health()
+	if err == nil {
+		t.Error("Health should error on invalid address")
+	}
+}
