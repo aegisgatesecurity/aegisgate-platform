@@ -406,7 +406,7 @@ func TestIdentifyGaps_TechniqueNotInMap(t *testing.T) {
 
 func TestGetControlsForTechnique_Known(t *testing.T) {
 	m := NewFrameworkMapping()
-	controls := m.getControlsForTechnique("T1535")
+	controls := m.GetControlsForTechnique("T1535")
 	if len(controls) == 0 {
 		t.Error("T1535 should have controls")
 	}
@@ -414,7 +414,7 @@ func TestGetControlsForTechnique_Known(t *testing.T) {
 
 func TestGetControlsForTechnique_Unknown(t *testing.T) {
 	m := NewFrameworkMapping()
-	controls := m.getControlsForTechnique("T9999")
+	controls := m.GetControlsForTechnique("T9999")
 	if len(controls) != 0 {
 		t.Errorf("T9999 should have 0 controls, got %d", len(controls))
 	}
