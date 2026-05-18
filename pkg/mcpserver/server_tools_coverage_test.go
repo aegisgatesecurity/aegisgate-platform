@@ -21,9 +21,9 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
 	"github.com/aegisguardsecurity/aegisguard/pkg/authorization"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
 // =========================================================================
