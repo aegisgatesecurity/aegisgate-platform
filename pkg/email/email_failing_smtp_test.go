@@ -41,7 +41,7 @@ import (
 type SMTPFailMode int
 
 const (
-	FailNone       SMTPFailMode = iota // Happy path
+	FailNone        SMTPFailMode = iota // Happy path
 	FailBadGreeting                     // No 220 greeting → NewClient failure
 	FailAuth                            // Return 535 → Auth failure
 	FailMail                            // Return 550 → MAIL FROM failure
