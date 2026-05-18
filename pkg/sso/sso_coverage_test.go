@@ -58,7 +58,7 @@ func TestRequireSession_CookieInvalidSession(t *testing.T) {
 
 func TestRequireSession_CookieExpiredSession(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	session := &SSOSession{
 		ID:           "expired-session",
 		UserID:       "user-123",
@@ -87,7 +87,7 @@ func TestRequireSession_CookieExpiredSession(t *testing.T) {
 
 func TestRequireSession_CookieInactiveSession(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	session := &SSOSession{
 		ID:           "inactive-session",
 		UserID:       "user-123",
@@ -120,7 +120,7 @@ func TestRequireSession_CookieInactiveSession(t *testing.T) {
 
 func TestOptionalSession_ContextSession(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	session := &SSOSession{
 		ID:           "ctx-session",
 		UserID:       "user-456",
@@ -133,7 +133,7 @@ func TestOptionalSession_ContextSession(t *testing.T) {
 	manager.sessions.Create(session)
 
 	middleware := NewMiddleware(manager, nil)
-	
+
 	ctx := ContextWithSession(context.Background(), session)
 	handler := middleware.OptionalSession(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -421,7 +421,6 @@ func TestManager_InitiateLogin_ProviderNotFound(t *testing.T) {
 	}
 }
 
-
 // =========================================================================
 // Manager ValidateSession tests (88.2% → 95%+)
 // =========================================================================
@@ -437,7 +436,7 @@ func TestManager_ValidateSession_Nonexistent(t *testing.T) {
 
 func TestManager_ValidateSession_ProviderMissing(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	session := &SSOSession{
 		ID:           "orphan-session",
 		UserID:       "user-123",
@@ -470,7 +469,7 @@ func TestManager_Logout_Nonexistent(t *testing.T) {
 
 func TestManager_Logout_SessionDeleted(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	session := &SSOSession{
 		ID:           "logout-session",
 		UserID:       "user-123",
@@ -518,7 +517,7 @@ func TestManager_HandleCallback_ProviderMissing(t *testing.T) {
 
 func TestManager_HandleCallback_MissingState(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	provider := &mockProvider{name: "test"}
 	manager.SetProvidersForTest(map[string]SSOProviderInterface{"test": provider})
 
@@ -530,7 +529,7 @@ func TestManager_HandleCallback_MissingState(t *testing.T) {
 
 func TestManager_HandleCallback_StateNotFound(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	provider := &mockProvider{name: "test"}
 	manager.SetProvidersForTest(map[string]SSOProviderInterface{"test": provider})
 
@@ -547,7 +546,7 @@ func TestManager_HandleCallback_StateNotFound(t *testing.T) {
 func TestSessionFromContext(t *testing.T) {
 	session := &SSOSession{ID: "test-session"}
 	ctx := ContextWithSession(context.Background(), session)
-	
+
 	retrieved := SessionFromContext(ctx)
 	if retrieved == nil {
 		t.Error("expected session")
@@ -560,7 +559,7 @@ func TestSessionFromContext(t *testing.T) {
 func TestUserFromContext(t *testing.T) {
 	user := &SSOUser{ID: "test-user"}
 	ctx := ContextWithUser(context.Background(), user)
-	
+
 	retrieved := UserFromContext(ctx)
 	if retrieved == nil {
 		t.Error("expected user")
@@ -572,7 +571,7 @@ func TestUserFromContext(t *testing.T) {
 
 func TestContextHelpers_EmptyContext(t *testing.T) {
 	ctx := context.Background()
-	
+
 	if SessionFromContext(ctx) != nil {
 		t.Error("expected nil session")
 	}
@@ -589,7 +588,7 @@ type mockProviderS18 struct {
 	name string
 }
 
-func (m *mockProviderS18) Name() string { return m.name }
+func (m *mockProviderS18) Name() string      { return m.name }
 func (m *mockProviderS18) Type() SSOProvider { return ProviderOIDC }
 func (m *mockProviderS18) InitiateLogin(state string) (string, *SSORequest, error) {
 	return "https://example.com/login", &SSORequest{State: state, ID: "req-123", Provider: m.name}, nil
@@ -601,7 +600,7 @@ func (m *mockProviderS18) ValidateSession(session *SSOSession) error {
 	return NewSSOError(ErrInvalidToken, "mock validation")
 }
 func (m *mockProviderS18) Logout(session *SSOSession) (string, error) { return "", nil }
-func (m *mockProviderS18) Metadata() ([]byte, error) { return nil, nil }
+func (m *mockProviderS18) Metadata() ([]byte, error)                  { return nil, nil }
 
 // =========================================================================
 // SSOError tests
@@ -610,7 +609,7 @@ func (m *mockProviderS18) Metadata() ([]byte, error) { return nil, nil }
 func TestSSOError_WithCauseS18(t *testing.T) {
 	inner := errors.New("inner error")
 	err := NewSSOError(ErrInvalidRequest, "outer error").WithCause(inner)
-	
+
 	msg := err.Error()
 	if !strings.Contains(msg, "outer error") || !strings.Contains(msg, "inner error") {
 		t.Errorf("expected error message with 'outer error' and 'inner error', got '%s'", msg)
@@ -703,7 +702,7 @@ func TestDomainMatches_NoMatch(t *testing.T) {
 
 func TestManager_Stats(t *testing.T) {
 	manager, _ := NewManager(nil)
-	
+
 	stats, err := manager.Stats()
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
