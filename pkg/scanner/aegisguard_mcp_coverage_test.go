@@ -11,6 +11,7 @@ package scanner
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
@@ -1329,5 +1330,192 @@ func TestAegisGuardMCPScanner_Health_InvalidAddress(t *testing.T) {
 	err := scanner.Health()
 	if err == nil {
 		t.Error("Health should error on invalid address")
+	}
+}
+
+// ============================================================================
+// readJSON with complete message (newline terminated) - success path
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_CompleteMessage(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Send complete JSON with newline
+			resp := `{"jsonrpc":"2.0","id":1,"result":{"status":"complete"}}` + "\n"
+			conn.Write([]byte(resp))
+		}
+	}()
+
+	conn, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	resp, err := scanner.readJSON(conn)
+	if err != nil {
+		t.Errorf("readJSON should succeed for complete message: %v", err)
+	}
+	if resp == nil {
+		t.Error("readJSON should return response")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// readJSON with multiple chunks then newline - partial read success
+// ============================================================================
+
+func TestAegisGuardMCPScanner_readJSON_MultipleChunks(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+		conn, _ := ln.Accept()
+		if conn != nil {
+			defer conn.Close()
+			// Send in multiple chunks
+			conn.Write([]byte(`{"json`))
+			time.Sleep(10 * time.Millisecond)
+			conn.Write([]byte(`rpc":"2.0","id":1`))
+			time.Sleep(10 * time.Millisecond)
+			conn.Write([]byte(`,"result":{}}`))
+			time.Sleep(10 * time.Millisecond)
+			conn.Write([]byte("\n"))
+		}
+	}()
+
+	conn, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	resp, err := scanner.readJSON(conn)
+	if err != nil {
+		t.Errorf("readJSON should succeed with multiple chunks: %v", err)
+	}
+	if resp == nil {
+		t.Error("readJSON should return response")
+	}
+
+	<-serverDone
+}
+
+// ============================================================================
+// Initialize with SetDeadline error
+// ============================================================================
+
+func TestAegisGuardMCPScanner_Initialize_WriteDeadlineError(t *testing.T) {
+	// Test that Initialize handles connection write deadline errors
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	// Accept connection but make it fail on SetWriteDeadline
+	go func() {
+		conn, _ := ln.Accept()
+		if conn != nil {
+			// Close immediately after accept
+			conn.Close()
+		}
+	}()
+
+	config := DefaultAegisGuardMCPConfig()
+	config.Address = ln.Addr().String()
+	config.Timeout = 100 * time.Millisecond
+	scanner := NewAegisGuardMCPScanner(config)
+
+	err = scanner.Initialize()
+	if err == nil {
+		t.Error("Initialize should error when connection fails")
+	}
+}
+
+// ============================================================================
+// Scan with write error
+// ============================================================================
+
+func TestAegisGuardMCPScanner_Scan_WriteError(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	// Create a mock connection that fails on write
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+
+	// Accept and immediately close to simulate connection failure
+	go func() {
+		conn, _ := ln.Accept()
+		if conn != nil {
+			conn.Close()
+		}
+	}()
+
+	// Connect, then close to simulate write error
+	conn, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn.Close() // Close immediately so write will fail
+
+	scanner.initialized = true
+	scanner.conn = &mockFailingConn{conn}
+
+	req := &ScanRequest{Message: "test-input"}
+	_, err = scanner.Scan(context.Background(), req)
+	if err == nil {
+		t.Error("Scan should error when write fails")
+	}
+}
+
+// mockFailingConn wraps a connection but fails writes
+type mockFailingConn struct {
+	net.Conn
+}
+
+func (m *mockFailingConn) Write(b []byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
+// ============================================================================
+// Close with conn nil
+// ============================================================================
+
+func TestAegisGuardMCPScanner_Close_NilConn(t *testing.T) {
+	config := DefaultAegisGuardMCPConfig()
+	scanner := NewAegisGuardMCPScanner(config)
+
+	// conn is nil, should not panic
+	err := scanner.Close()
+	if err != nil {
+		t.Error("Close with nil conn should not error")
 	}
 }
