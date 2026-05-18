@@ -49,7 +49,7 @@ func TestOIDCInitiateLogin_StoreCreateFails(t *testing.T) {
 	// Test the error path when store.Create fails
 	// We need to create provider without calling NewOIDCProvider (which requires network)
 	// by directly setting fields that bypass discovery
-	
+
 	provider := &OIDCProvider{
 		config: &SSOConfig{
 			Name: "test-provider",
@@ -67,10 +67,10 @@ func TestOIDCInitiateLogin_StoreCreateFails(t *testing.T) {
 		},
 		store: &failingRequestStore{},
 	}
-	
+
 	// Mock the oauth2 field with a simple config
 	provider.oauth2 = &oauth2.Config{
-		ClientID:    "test-client",
+		ClientID: "test-client",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://auth.example.com",
 			TokenURL: "https://token.example.com",
@@ -92,14 +92,14 @@ func TestOIDCInitiateLogin_WithPKCE_S256(t *testing.T) {
 		config: &SSOConfig{
 			Name: "test-provider-pkce",
 			OIDC: &OIDCConfig{
-				ClientID:       "test-client",
-				ClientSecret:   "test-secret",
-				AuthURL:        "https://auth.example.com",
-				TokenURL:       "https://token.example.com",
-				UserInfoURL:    "https://userinfo.example.com",
-				JWKSURL:        "https://jwks.example.com",
-				UsePKCE:        true,
-				PKCEChallenge:  "S256",
+				ClientID:      "test-client",
+				ClientSecret:  "test-secret",
+				AuthURL:       "https://auth.example.com",
+				TokenURL:      "https://token.example.com",
+				UserInfoURL:   "https://userinfo.example.com",
+				JWKSURL:       "https://jwks.example.com",
+				UsePKCE:       true,
+				PKCEChallenge: "S256",
 			},
 		},
 		oidcConfig: &OIDCConfig{
@@ -660,9 +660,9 @@ func TestOIDCGetProviderSpecificOptions_AzureAD(t *testing.T) {
 	provider := &OIDCProvider{
 		config: &SSOConfig{
 			OIDC: &OIDCConfig{
-				ClientID:       "test-client",
-				ClientSecret:   "test-secret",
-				AzureADTenant:  "common",
+				ClientID:      "test-client",
+				ClientSecret:  "test-secret",
+				AzureADTenant: "common",
 			},
 		},
 		oidcConfig: &OIDCConfig{
@@ -806,10 +806,10 @@ func TestOIDCMapClaimsToUser_WithMapping(t *testing.T) {
 	provider := &OIDCProvider{
 		config: &SSOConfig{
 			AttributeMapping: &AttributeMapping{
-				EmailAttribute:  "custom_email",
-				NameAttribute:   "custom_name",
-				GroupAttribute:  "custom_groups",
-				RoleAttribute:   "custom_role",
+				EmailAttribute: "custom_email",
+				NameAttribute:  "custom_name",
+				GroupAttribute: "custom_groups",
+				RoleAttribute:  "custom_role",
 			},
 		},
 	}
