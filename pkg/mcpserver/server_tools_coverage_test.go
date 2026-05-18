@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
 	"github.com/aegisguardsecurity/aegisguard/pkg/authorization"
@@ -994,5 +995,170 @@ func TestGuardrailHandler_GH_ErrorID(t *testing.T) {
 	// Verify the error ID is preserved
 	if resp.ID != req.ID {
 		t.Errorf("expected ID preserved, got %v vs %v", resp.ID, req.ID)
+	}
+}
+
+// =========================================================================
+// Tests: stdio_validation.go uncovered blocks
+// =========================================================================
+
+// TestSTDIOValidator_IdentifyPatterns_AllTypes tests pattern matching for
+// shell metacharacter detection in command tokens.
+func TestSTDIOValidator_IdentifyPatterns_AllTypes(t *testing.T) {
+	v := NewSTDIOValidator(DefaultSTDIOValidationConfig())
+
+	patterns := map[string]string{
+		"pipe_chaining":        "cat | grep",
+		"command_separator":    "ls ; rm",
+		"logical_chaining":     "ls && rm",
+		"command_substitution": "$(whoami)",
+		"backtick_exec":        "`id`",
+		"redirect":             "echo > file",
+		"newline_injection":    "ls\nid",
+		"wildcard_expansion":   "rm *.txt",
+		"variable_expansion":   "echo $USER",
+		"home_expansion":       "ls ~",
+		"background_exec":      "ls &",
+	}
+
+	for name, cmd := range patterns {
+		matched := v.IdentifyDangerousPatterns(cmd)
+		found := false
+		for _, m := range matched {
+			if m == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected pattern %q for %q, got %v", name, cmd, matched)
+		}
+	}
+}
+
+// TestSTDIOValidator_IdentifyPatterns_Empty tests empty command case.
+func TestSTDIOValidator_IdentifyPatterns_Empty(t *testing.T) {
+	v := NewSTDIOValidator(DefaultSTDIOValidationConfig())
+	matched := v.IdentifyDangerousPatterns("")
+	if len(matched) != 0 {
+		t.Errorf("expected no patterns for empty string, got %v", matched)
+	}
+}
+
+// TestSTDIOValidator_IdentifyPatterns_Multiple tests commands matching multiple patterns.
+func TestSTDIOValidator_IdentifyPatterns_Multiple(t *testing.T) {
+	v := NewSTDIOValidator(DefaultSTDIOValidationConfig())
+	matched := v.IdentifyDangerousPatterns("ls &\n")
+	found := map[string]bool{}
+	for _, m := range matched {
+		found[m] = true
+	}
+
+	if !found["background_exec"] {
+		t.Errorf("expected background_exec, got %v", matched)
+	}
+	if !found["newline_injection"] {
+		t.Errorf("expected newline_injection, got %v", matched)
+	}
+}
+
+// TestSTDIOValidator_ValidateToolParameter_Disabled tests disabled validator.
+func TestSTDIOValidator_ValidateToolParameter_Disabled(t *testing.T) {
+	v := NewSTDIOValidator(STDIOValidationConfig{Enabled: false})
+	err := v.ValidateToolParameter("shell_command", "command", "ls")
+	if err != nil {
+		t.Errorf("expected nil when disabled, got %v", err)
+	}
+}
+
+// TestSTDIOValidator_ValidateToolParameter_NonCommand tests non-command parameters.
+func TestSTDIOValidator_ValidateToolParameter_NonCommand(t *testing.T) {
+	v := NewSTDIOValidator(DefaultSTDIOValidationConfig())
+	nonCommand := map[string]string{
+		"filename": "test.txt",
+		"user":     "admin",
+		"id":       "123",
+	}
+	for paramName, paramValue := range nonCommand {
+		err := v.ValidateToolParameter("search", paramName, paramValue)
+		if err != nil {
+			t.Errorf("non-command param %q should pass, got %v", paramName, err)
+		}
+	}
+}
+
+// TestSTDIOValidator_ValidateCommand_NonStrictMode tests non-strict mode blocking.
+func TestSTDIOValidator_ValidateCommand_NonStrictMode(t *testing.T) {
+	v := NewSTDIOValidator(STDIOValidationConfig{Enabled: true, StrictMode: false})
+
+	err := v.ValidateCommand("echo hello | grep world")
+	if err == nil {
+		t.Error("expected pipe_chaining to be blocked")
+	}
+
+	err = v.ValidateCommand("ls && rm -rf")
+	if err == nil {
+		t.Error("expected logical_chaining to be blocked")
+	}
+}
+
+// TestGuardrailHandler_OnToolCallWithAuth tests tool authorization integration.
+func TestGuardrailHandler_OnToolCallWithAuth(t *testing.T) {
+	g := NewGuardrailMiddleware(DefaultGuardrailConfig(tier.TierCommunity), "test-server")
+	g.OnSessionCreate("sess-auth-1", "agent-1", "127.0.0.1")
+
+	err := g.OnToolCallWithAuth("sess-auth-1", "agent-1", "process_list")
+	t.Logf("OnToolCallWithAuth result: %v", err)
+}
+
+// TestGuardrailHandler_OnToolCallWithAuth_Denied tests denied tool call.
+func TestGuardrailHandler_OnToolCallWithAuth_Denied(t *testing.T) {
+	g := NewGuardrailMiddleware(DefaultGuardrailConfig(tier.TierCommunity), "test-server")
+
+	err := g.OnToolCallWithAuth("sess-auth-2", "agent-1", "shell_command")
+	if err == nil {
+		t.Error("expected shell_command to be denied")
+	}
+}
+
+// TestConnectionSessionManager_CreateSession tests session creation.
+func TestConnectionSessionManager_CreateSession(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(rbac.DefaultConfig())
+	sm := NewConnectionSessionManager(rbacMgr)
+
+	agent := &rbac.Agent{
+		ID:   "test-agent-session",
+		Role: rbac.AgentRoleStandard,
+	}
+	rbacMgr.RegisterAgent(agent)
+
+	ctx := context.Background()
+	session, err := sm.CreateSession(ctx, "conn-test-1", "test-agent-session")
+	if err != nil {
+		t.Fatalf("CreateSession failed: %v", err)
+	}
+	if session == nil {
+		t.Fatal("expected session")
+	}
+}
+
+// TestConnectionSessionManager_CloseSession tests session cleanup.
+func TestConnectionSessionManager_CloseSession(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(rbac.DefaultConfig())
+	sm := NewConnectionSessionManager(rbacMgr)
+
+	agent := &rbac.Agent{
+		ID:   "close-agent",
+		Role: rbac.AgentRoleStandard,
+	}
+	rbacMgr.RegisterAgent(agent)
+
+	ctx := context.Background()
+	session, _ := sm.CreateSession(ctx, "conn-close-1", "close-agent")
+
+	// CloseSession takes connID (not RBAC session ID)
+	err := sm.CloseSession(session.ConnectionID)
+	if err != nil {
+		t.Errorf("CloseSession failed: %v", err)
 	}
 }
