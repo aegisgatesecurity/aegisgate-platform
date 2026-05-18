@@ -308,7 +308,7 @@ Sprint 4 complete: OIDC/SAML SSO ported and integrated. 28/29 packages now excee
 - **Image size**: 19.1MB (unchanged)
 
 #### Community & Branding
-- **Contact**: Replaced Discord with Mastodon — [@aegisgatesecurity](https://mastodon.social/@aegisgatesecurity)
+- **Contact**: Replaced Discord with X/Twitter — [@aegisgatesec](https://x.com/aegisgatesec)
 - **Footer**: Heart emoji changed from red (❤️) to black (🖤)
 
 #### CI Results (commit 1065180)
