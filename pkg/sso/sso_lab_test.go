@@ -45,10 +45,10 @@ func TestKeycloakDiscovery(t *testing.T) {
 
 	// Parse discovery document
 	var discovery struct {
-		Issuer               string `json:"issuer"`
+		Issuer                string `json:"issuer"`
 		AuthorizationEndpoint string `json:"authorization_endpoint"`
-		TokenEndpoint        string `json:"token_endpoint"`
-		UserinfoEndpoint     string `json:"userinfo_endpoint"`
+		TokenEndpoint         string `json:"token_endpoint"`
+		UserinfoEndpoint      string `json:"userinfo_endpoint"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&discovery); err != nil {
@@ -297,7 +297,7 @@ func TestInitiateLogin(t *testing.T) {
 		Provider: ProviderOIDC,
 		OIDC: &OIDCConfig{
 			IssuerURL:    "http://localhost:8080/realms/aegisgate",
-			ClientID:    "aegisgate-platform",
+			ClientID:     "aegisgate-platform",
 			ClientSecret: "aegisgate-oidc-secret",
 			RedirectURL:  "http://localhost/callback",
 		},
@@ -364,7 +364,7 @@ func TestNewOIDCProvider_WithKeycloak(t *testing.T) {
 		Provider: ProviderOIDC,
 		OIDC: &OIDCConfig{
 			IssuerURL:    "http://localhost:8080/realms/aegisgate",
-			ClientID:    "aegisgate-platform",
+			ClientID:     "aegisgate-platform",
 			ClientSecret: "aegisgate-oidc-secret",
 			RedirectURL:  "http://localhost/callback",
 		},
@@ -393,8 +393,8 @@ func TestNewSAMLProvider_Basic(t *testing.T) {
 		SAML: &SAMLConfig{
 			EntityID:    "http://sp.example.com",
 			MetadataURL: "http://idp.example.com/metadata",
-			ACSURL:     "http://sp.example.com/acs",
-			SLSURL:     "http://sp.example.com/sls",
+			ACSURL:      "http://sp.example.com/acs",
+			SLSURL:      "http://sp.example.com/sls",
 			IDPEntityID: "http://idp.example.com",
 		},
 	}

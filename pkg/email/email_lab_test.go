@@ -44,9 +44,9 @@ func TestMailpitHealth(t *testing.T) {
 	}
 
 	var info struct {
-		Version   string `json:"Version"`
-		Messages  int    `json:"Messages"`
-		Unread    int    `json:"Unread"`
+		Version  string `json:"Version"`
+		Messages int    `json:"Messages"`
+		Unread   int    `json:"Unread"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
@@ -239,14 +239,14 @@ func TestEmailClient_Send_WithMailpit(t *testing.T) {
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "Test Customer",
-		Tier:        "developer",
-		LicenseKey:  "TEST-KEY-12345",
-		ExpiresAt:   time.Now().Add(365 * 24 * time.Hour).Format("2006-01-02"),
-		IssuedAt:    time.Now().Format("2006-01-02"),
-		Features:    []string{"feature1", "feature2"},
+		Tier:         "developer",
+		LicenseKey:   "TEST-KEY-12345",
+		ExpiresAt:    time.Now().Add(365 * 24 * time.Hour).Format("2006-01-02"),
+		IssuedAt:     time.Now().Format("2006-01-02"),
+		Features:     []string{"feature1", "feature2"},
 		SupportEmail: "support@test.local",
-		CompanyName: "Test Company",
-		CompanyURL:  "https://test.example.com",
+		CompanyName:  "Test Company",
+		CompanyURL:   "https://test.example.com",
 	})
 
 	if err != nil {
@@ -264,21 +264,21 @@ func TestEmailClient_Send_TLSConfig(t *testing.T) {
 	}
 
 	client := NewEmailClient(Config{
-		Host:     "localhost",
-		Port:     1043, // Implicit TLS
-		Username: "test",
-		Password: "test",
-		From:     "aegisgate@test.local",
-		UseTLS:   false,
+		Host:      "localhost",
+		Port:      1043, // Implicit TLS
+		Username:  "test",
+		Password:  "test",
+		From:      "aegisgate@test.local",
+		UseTLS:    false,
 		TLSConfig: tlsConfig,
 	})
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "TLS Config Test",
-		Tier:        "enterprise",
-		LicenseKey:  "TLS-TEST-KEY",
-		ExpiresAt:   time.Now().Add(30 * 24 * time.Hour).Format("2006-01-02"),
-		IssuedAt:    time.Now().Format("2006-01-02"),
+		Tier:         "enterprise",
+		LicenseKey:   "TLS-TEST-KEY",
+		ExpiresAt:    time.Now().Add(30 * 24 * time.Hour).Format("2006-01-02"),
+		IssuedAt:     time.Now().Format("2006-01-02"),
 	})
 
 	if err != nil {
@@ -307,10 +307,10 @@ func TestSTARTTLS_Send(t *testing.T) {
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "STARTTLS Test",
-		Tier:        "professional",
-		LicenseKey:  "STARTTLS-KEY",
-		ExpiresAt:   time.Now().Add(90 * 24 * time.Hour).Format("2006-01-02"),
-		IssuedAt:    time.Now().Format("2006-01-02"),
+		Tier:         "professional",
+		LicenseKey:   "STARTTLS-KEY",
+		ExpiresAt:    time.Now().Add(90 * 24 * time.Hour).Format("2006-01-02"),
+		IssuedAt:     time.Now().Format("2006-01-02"),
 	})
 
 	if err != nil {
@@ -377,8 +377,8 @@ func TestSend_ConnectionRefused(t *testing.T) {
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "Connection Test",
-		Tier:        "developer",
-		LicenseKey:  "CONN-TEST",
+		Tier:         "developer",
+		LicenseKey:   "CONN-TEST",
 	})
 
 	if err == nil {
@@ -399,8 +399,8 @@ func TestSend_TLSConnectionRefused(t *testing.T) {
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "TLS Connection Test",
-		Tier:        "developer",
-		LicenseKey:  "TLS-CONN-TEST",
+		Tier:         "developer",
+		LicenseKey:   "TLS-CONN-TEST",
 	})
 
 	if err == nil {
@@ -421,8 +421,8 @@ func TestSend_NoAuth(t *testing.T) {
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "No Auth Test",
-		Tier:        "community",
-		LicenseKey:  "NOAUTH-KEY",
+		Tier:         "community",
+		LicenseKey:   "NOAUTH-KEY",
 	})
 
 	// Mailpit in insecure mode should allow no auth
@@ -461,8 +461,8 @@ func TestMailpitMessageCount(t *testing.T) {
 
 	err = client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "Count Test",
-		Tier:        "developer",
-		LicenseKey:  "COUNT-TEST",
+		Tier:         "developer",
+		LicenseKey:   "COUNT-TEST",
 	})
 	if err != nil {
 		t.Fatalf("Send failed: %v", err)
@@ -498,8 +498,8 @@ func TestMailpitGetMessage(t *testing.T) {
 
 	err := client.SendLicenseEmail("user@test.local", LicenseEmailData{
 		CustomerName: "Get Message Test",
-		Tier:        "developer",
-		LicenseKey:  "GET-MESSAGE-TEST",
+		Tier:         "developer",
+		LicenseKey:   "GET-MESSAGE-TEST",
 	})
 	if err != nil {
 		t.Fatalf("Send failed: %v", err)
