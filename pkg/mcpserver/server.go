@@ -144,6 +144,10 @@ type authorizerAdapter struct {
 }
 
 func (a *authorizerAdapter) Authorize(ctx context.Context, call *mcp.AuthorizationCall) (*mcp.AuthorizationDecision, error) {
+	if call == nil {
+		return nil, fmt.Errorf("authorization call is nil")
+	}
+
 	authzCall := &authorization.ToolCallRequest{
 		ID:         call.ID,
 		Name:       call.Name,
