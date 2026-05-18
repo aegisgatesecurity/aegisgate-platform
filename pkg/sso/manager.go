@@ -642,3 +642,25 @@ func ContextWithSession(ctx context.Context, session *SSOSession) context.Contex
 func ContextWithUser(ctx context.Context, user *SSOUser) context.Context {
 	return context.WithValue(ctx, UserContextKey, user)
 }
+
+// ============================================================================
+// Test injection helpers (for unit testing only)
+// These methods bypass normal provider initialization to allow testing
+// without real OIDC/SAML infrastructure.
+// ============================================================================
+
+// SetProvidersForTest replaces the providers map for unit testing
+func (m *Manager) SetProvidersForTest(providers map[string]SSOProviderInterface) {
+	m.providers = providers
+}
+
+// SetConfigsForTest replaces the configs map for unit testing
+func (m *Manager) SetConfigsForTest(configs map[string]*SSOConfig) {
+	m.configs = configs
+}
+
+// Mu returns the manager's mutex for external locking
+// Use with caution - only for test injection helpers
+func (m *Manager) Mu() *sync.RWMutex {
+	return &m.mu
+}

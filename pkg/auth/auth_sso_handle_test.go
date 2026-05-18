@@ -9,6 +9,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,6 +60,51 @@ func (s *mockSessionStore) DeleteByUserID(userID string) error {
 
 func (s *mockSessionStore) Cleanup() error {
 	return nil
+}
+
+// mockSSOProvider implements sso.SSOProviderInterface for handleSSOToken testing
+// Key: ValidateSession returns nil for valid sessions, enabling the success path
+type mockSSOProvider struct {
+	name string
+	typ  sso.SSOProvider
+}
+
+func (m *mockSSOProvider) Name() string          { return m.name }
+func (m *mockSSOProvider) Type() sso.SSOProvider { return m.typ }
+func (m *mockSSOProvider) InitiateLogin(s string) (string, *sso.SSORequest, error) {
+	return "", nil, errors.New("not implemented")
+}
+func (m *mockSSOProvider) HandleCallback(req *sso.SSORequest, params map[string]string) (*sso.SSOResponse, error) {
+	return nil, errors.New("not implemented")
+}
+func (m *mockSSOProvider) ValidateSession(sess *sso.SSOSession) error {
+	return nil // Always valid - enables success path testing
+}
+func (m *mockSSOProvider) Logout(sess *sso.SSOSession) (string, error) {
+	return "", nil
+}
+func (m *mockSSOProvider) Metadata() ([]byte, error) {
+	return []byte(`{"info":"mock"}`), nil
+}
+
+// newMockSSOManagerWithProvider creates an SSO manager with a mock provider injected
+// This allows testing handleSSOToken success path without needing real OIDC/SAML
+func newMockSSOManagerWithProvider(t *testing.T) (*sso.Manager, *mockSessionStore) {
+	store := newMockStore()
+	mgr, err := sso.NewManager(&sso.ManagerConfig{SessionStore: store})
+	if err != nil {
+		t.Fatalf("NewManager failed: %v", err)
+	}
+
+	// Inject mock provider directly into providers map (bypasses OIDC/SAML network requirements)
+	mp := &mockSSOProvider{name: "test-provider", typ: sso.ProviderOIDC}
+	mgrCfg := &sso.SSOConfig{Provider: sso.ProviderOIDC, Name: "test-provider", Enabled: true}
+	mgr.Mu().Lock()
+	mgr.SetProvidersForTest(map[string]sso.SSOProviderInterface{"test-provider": mp})
+	mgr.SetConfigsForTest(map[string]*sso.SSOConfig{"test-provider": mgrCfg})
+	mgr.Mu().Unlock()
+
+	return mgr, store
 }
 
 // =========================================================================
@@ -170,6 +216,257 @@ func TestSSOTokenHandle_SSOfailsNoFallback(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("Expected 401 in SSO-only mode, got %d", rec.Code)
+	}
+}
+
+// =========================================================================
+// Tests: SSO success path (valid session)
+// =========================================================================
+
+// TestSSOTokenHandle_ValidSSOSession: successful SSO authentication
+func TestSSOTokenHandle_ValidSSOSession(t *testing.T) {
+	mgr, store := newMockSSOManagerWithProvider(t)
+
+	validSession := &sso.SSOSession{
+		ID:           "valid-session",
+		User:         &sso.SSOUser{ID: "user-123", Email: "admin@example.com", Role: "admin"},
+		ProviderName: "test-provider",
+		Active:       true,
+		ExpiresAt:    time.Now().Add(1 * time.Hour),
+	}
+	store.Create(validSession)
+
+	cfg := &Config{
+		JWTSigningKey:    []byte("test-jwt-key-32bytes-long-key"),
+		TokenExpiryHours: 24,
+		APIAuthToken:     "test-api-token",
+		RequireAuth:      true,
+		SSOConfig:        sso.DefaultSSOConfig(),
+	}
+	m := NewMiddlewareWithSSO(cfg, mgr)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer valid-session")
+	rec := httptest.NewRecorder()
+
+	var userID, authType, role string
+	handler := m.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID = GetUserID(r.Context())
+		authType = GetAuthType(r.Context())
+		role = string(GetUserRole(r.Context()))
+		w.WriteHeader(http.StatusOK)
+	}))
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected 200 for valid SSO session, got %d", rec.Code)
+	}
+	if userID != "user-123" {
+		t.Errorf("Expected userID=user-123, got %s", userID)
+	}
+	if authType != "sso" {
+		t.Errorf("Expected authType=sso, got %s", authType)
+	}
+	if role != string(rbac.UserRoleAdmin) {
+		t.Errorf("Expected role=admin, got %s", role)
+	}
+}
+
+// TestSSOTokenHandle_SSOEmailFallback: session.User.ID empty → uses Email
+func TestSSOTokenHandle_SSOEmailFallback(t *testing.T) {
+	mgr, store := newMockSSOManagerWithProvider(t)
+
+	// Session where User.ID is empty but Email is set
+	emailOnlySession := &sso.SSOSession{
+		ID:           "email-only-session",
+		User:         &sso.SSOUser{Email: "email-user@example.com", Role: "viewer"},
+		ProviderName: "test-provider",
+		Active:       true,
+		ExpiresAt:    time.Now().Add(1 * time.Hour),
+	}
+	store.Create(emailOnlySession)
+
+	cfg := &Config{
+		JWTSigningKey:    []byte("test-jwt-key-32bytes-long-key"),
+		TokenExpiryHours: 24,
+		APIAuthToken:     "test-api-token",
+		RequireAuth:      true,
+		SSOConfig:        sso.DefaultSSOConfig(),
+	}
+	m := NewMiddlewareWithSSO(cfg, mgr)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer email-only-session")
+	rec := httptest.NewRecorder()
+
+	var userID string
+	handler := m.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID = GetUserID(r.Context())
+		w.WriteHeader(http.StatusOK)
+	}))
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", rec.Code)
+	}
+	// Should fall back to Email when ID is empty
+	if userID != "email-user@example.com" {
+		t.Errorf("Expected userID fallback to email, got %s", userID)
+	}
+}
+
+// TestSSOTokenHandle_SSOSuccessWithFallbackAuth: SSO succeeds, JWT fallback if SSO fails
+func TestSSOTokenHandle_SSOSuccessWithFallbackAuth(t *testing.T) {
+	mgr, store := newMockSSOManagerWithProvider(t)
+
+	validSession := &sso.SSOSession{
+		ID:           "valid-session",
+		User:         &sso.SSOUser{ID: "sso-user", Email: "sso@example.com", Role: "analyst"},
+		ProviderName: "test-provider",
+		Active:       true,
+		ExpiresAt:    time.Now().Add(1 * time.Hour),
+	}
+	store.Create(validSession)
+
+	cfg := &Config{
+		JWTSigningKey:    []byte("test-jwt-key-32bytes-long-key"),
+		TokenExpiryHours: 24,
+		APIAuthToken:     "test-api-token",
+		RequireAuth:      true,
+		SSOConfig:        sso.DefaultSSOConfig(),
+	}
+	m := NewMiddlewareWithSSO(cfg, mgr)
+
+	// SSO session is valid
+	req1 := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req1.Header.Set("Authorization", "Bearer valid-session")
+	rec1 := httptest.NewRecorder()
+
+	handler := m.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	handler.ServeHTTP(rec1, req1)
+
+	if rec1.Code != http.StatusOK {
+		t.Errorf("Expected 200 for valid SSO, got %d", rec1.Code)
+	}
+
+	// Different token falls to JWT
+	jwtToken, _ := m.GenerateToken("jwt-user", "admin")
+	req2 := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req2.Header.Set("Authorization", "Bearer "+jwtToken)
+	rec2 := httptest.NewRecorder()
+	handler.ServeHTTP(rec2, req2)
+
+	if rec2.Code != http.StatusOK {
+		t.Errorf("Expected 200 for JWT fallback, got %d", rec2.Code)
+	}
+}
+
+// TestSSOTokenHandle_SSOProviderValidateError: provider returns validation error
+func TestSSOTokenHandle_SSOProviderValidateError(t *testing.T) {
+	store := newMockStore()
+	mgr, err := sso.NewManager(&sso.ManagerConfig{SessionStore: store})
+	if err != nil {
+		t.Fatalf("NewManager failed: %v", err)
+	}
+
+	// Create a mock provider that always returns error
+	failProvider := &mockFailProvider{name: "fail-provider", typ: sso.ProviderOIDC}
+	mgrCfg := &sso.SSOConfig{Provider: sso.ProviderOIDC, Name: "fail-provider", Enabled: true}
+	mgr.Mu().Lock()
+	mgr.SetProvidersForTest(map[string]sso.SSOProviderInterface{"fail-provider": failProvider})
+	mgr.SetConfigsForTest(map[string]*sso.SSOConfig{"fail-provider": mgrCfg})
+	mgr.Mu().Unlock()
+
+	sessionWithFailProvider := &sso.SSOSession{
+		ID:           "fail-session",
+		User:         &sso.SSOUser{ID: "user-1", Email: "test@example.com", Role: "admin"},
+		ProviderName: "fail-provider",
+		Active:       true,
+	}
+	store.Create(sessionWithFailProvider)
+
+	cfg := &Config{
+		JWTSigningKey:    []byte("test-jwt-key-32bytes-long-key"),
+		TokenExpiryHours: 24,
+		APIAuthToken:     "test-api-token",
+		RequireAuth:      true,
+		SSOConfig:        sso.DefaultSSOConfig(),
+	}
+	m := NewMiddlewareWithSSO(cfg, mgr)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer fail-session")
+	rec := httptest.NewRecorder()
+
+	handler := m.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("Expected 401 when provider validation fails, got %d", rec.Code)
+	}
+}
+
+// mockFailProvider always returns an error on ValidateSession
+type mockFailProvider struct {
+	name string
+	typ  sso.SSOProvider
+}
+
+func (m *mockFailProvider) Name() string          { return m.name }
+func (m *mockFailProvider) Type() sso.SSOProvider { return m.typ }
+func (m *mockFailProvider) InitiateLogin(s string) (string, *sso.SSORequest, error) {
+	return "", nil, errors.New("not implemented")
+}
+func (m *mockFailProvider) HandleCallback(req *sso.SSORequest, params map[string]string) (*sso.SSOResponse, error) {
+	return nil, errors.New("not implemented")
+}
+func (m *mockFailProvider) ValidateSession(sess *sso.SSOSession) error {
+	return errors.New("provider validation failed")
+}
+func (m *mockFailProvider) Logout(sess *sso.SSOSession) (string, error) {
+	return "", nil
+}
+func (m *mockFailProvider) Metadata() ([]byte, error) {
+	return []byte(`{}`), nil
+}
+
+// TestSSOTokenHandle_UppercaseBearer: uppercase BEARER scheme
+func TestSSOTokenHandle_UppercaseBearer(t *testing.T) {
+	mgr, store := newMockSSOManagerWithProvider(t)
+
+	validSession := &sso.SSOSession{
+		ID:           "valid-uppercase",
+		User:         &sso.SSOUser{ID: "user-upper", Email: "upper@example.com", Role: "admin"},
+		ProviderName: "test-provider",
+		Active:       true,
+		ExpiresAt:    time.Now().Add(1 * time.Hour),
+	}
+	store.Create(validSession)
+
+	cfg := &Config{
+		JWTSigningKey:    []byte("test-jwt-key-32bytes-long-key"),
+		TokenExpiryHours: 24,
+		APIAuthToken:     "test-api-token",
+		RequireAuth:      true,
+		SSOConfig:        sso.DefaultSSOConfig(),
+	}
+	m := NewMiddlewareWithSSO(cfg, mgr)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "BEARER valid-uppercase") // Uppercase BEARER
+	rec := httptest.NewRecorder()
+
+	handler := m.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected 200 with uppercase BEARER, got %d", rec.Code)
 	}
 }
 
