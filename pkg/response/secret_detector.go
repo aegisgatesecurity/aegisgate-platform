@@ -178,9 +178,9 @@ func (sd *SecretDetector) findMaskedMatches(text string, pattern *regexp.Regexp)
 
 		matches = append(matches, SecretMatch{
 			Category: SECRET_API_KEY, // Categorize as generic API key
-			Start:   idx[0],
-			End:     idx[1],
-			Value:   sd.maskSecret(match),
+			Start:    idx[0],
+			End:      idx[1],
+			Value:    sd.maskSecret(match),
 			Severity: 4, // Default high severity
 			Provider: "generic",
 			Redacted: sd.maskSecret(match),
@@ -480,10 +480,10 @@ func MaskSecrets(text string) string {
 
 // ValidateSecretResult holds validation results
 type ValidateSecretResult struct {
-	Valid        bool
-	Severity     int
-	Category     SecretCategory
-	Provider     string
+	Valid         bool
+	Severity      int
+	Category      SecretCategory
+	Provider      string
 	FalsePositive bool
 }
 

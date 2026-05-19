@@ -63,11 +63,11 @@ func NewResponseGuardWithConfig(config *ResponseGuardConfig) *ResponseGuard {
 
 	rg := &ResponseGuard{
 		config:         config,
-		piiScanner:    NewPIIScanner(),
+		piiScanner:     NewPIIScanner(),
 		secretDetector: NewSecretDetector(),
-		tokenLimiter:  NewTokenLimiter(DefaultTokenLimiterConfig()),
+		tokenLimiter:   NewTokenLimiter(DefaultTokenLimiterConfig()),
 		toxicityFilter: NewToxicityFilter(),
-		clientUsage:   make(map[string]*TokenUsage),
+		clientUsage:    make(map[string]*TokenUsage),
 		enabled:        true,
 	}
 
@@ -90,9 +90,9 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 	result := &ResponseScanResult{
 		Allowed:           true,
 		Threats:           []Threat{},
-		DetectedPII:      []PIICategory{},
-		DetectedSecrets:  []string{},
-		ScanTime:         startTime,
+		DetectedPII:       []PIICategory{},
+		DetectedSecrets:   []string{},
+		ScanTime:          startTime,
 		ComplianceReports: make(map[string]ComplianceResult),
 	}
 
@@ -112,11 +112,11 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		for _, match := range piiMatches {
 			result.DetectedPII = append(result.DetectedPII, match.Category)
 			result.Threats = append(result.Threats, Threat{
-				Type:     "pii",
-				Severity: match.Severity,
-				Message:  string(match.Category) + " detected in response",
-				Location: "response_body",
-				Pattern:  string(match.Category),
+				Type:       "pii",
+				Severity:   match.Severity,
+				Message:    string(match.Category) + " detected in response",
+				Location:   "response_body",
+				Pattern:    string(match.Category),
 				MatchStart: match.Start,
 				MatchEnd:   match.End,
 			})
@@ -129,11 +129,11 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		for _, match := range secretMatches {
 			result.DetectedSecrets = append(result.DetectedSecrets, match.Provider+":"+string(match.Category))
 			result.Threats = append(result.Threats, Threat{
-				Type:     "secret",
-				Severity: match.Severity,
-				Message:  match.Provider + " " + string(match.Category) + " detected in response",
-				Location: "response_body",
-				Pattern:  string(match.Category),
+				Type:       "secret",
+				Severity:   match.Severity,
+				Message:    match.Provider + " " + string(match.Category) + " detected in response",
+				Location:   "response_body",
+				Pattern:    string(match.Category),
 				MatchStart: match.Start,
 				MatchEnd:   match.End,
 			})
@@ -146,10 +146,10 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		if scanCtx != nil {
 			clientID = scanCtx.ClientID
 		}
-		
+
 		tokenCount := rg.tokenLimiter.CountTokens(response)
 		result.Tokens = tokenCount
-		
+
 		allowed, reason := rg.tokenLimiter.AllowToken(clientID, tokenCount)
 		if !allowed {
 			result.Allowed = false
@@ -217,12 +217,12 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 func (rg *ResponseGuard) ScanWithConfig(ctx context.Context, response string, config *ResponseGuardConfig) (*ResponseScanResult, error) {
 	// Create a temporary guard with the custom config
 	tempGuard := &ResponseGuard{
-		config:          config,
-		piiScanner:      rg.piiScanner,
-		secretDetector:  rg.secretDetector,
-		tokenLimiter:    rg.tokenLimiter,
-		toxicityFilter:  rg.toxicityFilter,
-		enabled:         true,
+		config:         config,
+		piiScanner:     rg.piiScanner,
+		secretDetector: rg.secretDetector,
+		tokenLimiter:   rg.tokenLimiter,
+		toxicityFilter: rg.toxicityFilter,
+		enabled:        true,
 	}
 
 	if config.EnableHallucination {
@@ -307,10 +307,10 @@ func (rg *ResponseGuard) addComplianceReports(result *ResponseScanResult) {
 
 	if hasEmail || hasPhone || hasAddress {
 		result.ComplianceReports["GDPR"] = ComplianceResult{
-			Compliant: false,
+			Compliant:  false,
 			Violations: []string{"PII detected in AI response (GDPR Article 22)"},
-			Framework: "GDPR",
-			Timestamp: time.Now(),
+			Framework:  "GDPR",
+			Timestamp:  time.Now(),
 		}
 	}
 
@@ -326,10 +326,10 @@ func (rg *ResponseGuard) addComplianceReports(result *ResponseScanResult) {
 
 	if hasHealth || hasDOB {
 		result.ComplianceReports["HIPAA"] = ComplianceResult{
-			Compliant: false,
+			Compliant:  false,
 			Violations: []string{"Protected health information detected (HIPAA)"},
-			Framework: "HIPAA",
-			Timestamp: time.Now(),
+			Framework:  "HIPAA",
+			Timestamp:  time.Now(),
 		}
 	}
 
@@ -347,20 +347,20 @@ func (rg *ResponseGuard) addComplianceReports(result *ResponseScanResult) {
 
 	if hasCC || hasBank {
 		result.ComplianceReports["PCI-DSS"] = ComplianceResult{
-			Compliant: false,
+			Compliant:  false,
 			Violations: []string{"Payment card data detected (PCI-DSS)"},
-			Framework: "PCI-DSS",
-			Timestamp: time.Now(),
+			Framework:  "PCI-DSS",
+			Timestamp:  time.Now(),
 		}
 	}
 
 	// Check for secret/API key leakage (SOC2)
 	if len(result.DetectedSecrets) > 0 {
 		result.ComplianceReports["SOC2"] = ComplianceResult{
-			Compliant: false,
+			Compliant:  false,
 			Violations: []string{"Secret/API key detected in response (SOC2)"},
-			Framework: "SOC2",
-			Timestamp: time.Now(),
+			Framework:  "SOC2",
+			Timestamp:  time.Now(),
 		}
 	}
 

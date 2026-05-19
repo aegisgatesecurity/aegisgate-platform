@@ -57,13 +57,13 @@ func DefaultResponseGuardConfig() *ResponseGuardConfig {
 		EnablePIIScanner:      true,
 		EnableSecretDetection: true,
 		EnableToxicityFilter:  true,
-		EnableHallucination:  false,
-		MaxResponseTokens:    8192,
-		MaxResponseLatencyMS: 100,
-		StrictMode:           false,
-		Tier:                 "community",
-		PIIPatterns:          nil,
-		SecretPatterns:       nil,
+		EnableHallucination:   false,
+		MaxResponseTokens:     8192,
+		MaxResponseLatencyMS:  100,
+		StrictMode:            false,
+		Tier:                  "community",
+		PIIPatterns:           nil,
+		SecretPatterns:        nil,
 	}
 }
 
@@ -127,11 +127,11 @@ type Threat struct {
 
 // ComplianceResult holds compliance framework check results
 type ComplianceResult struct {
-	Compliant    bool
-	Violations    []string
-	Framework    string
-	ControlID    string
-	Timestamp    time.Time
+	Compliant  bool
+	Violations []string
+	Framework  string
+	ControlID  string
+	Timestamp  time.Time
 }
 
 // ============================================================================
@@ -241,21 +241,21 @@ const (
 
 // SecretMetadata provides information about each secret category
 var SecretMetadata = map[SecretCategory]struct {
-	Description    string
-	Compliance     []string
+	Description     string
+	Compliance      []string
 	Severity        int
 	CommonProviders []string
 }{
-	SECRET_API_KEY:         {"API Key for various services", []string{"SOC2"}, 4, []string{"Stripe", "Twilio", "SendGrid", "AWS", "GitHub"}},
-	SECRET_BEARER_TOKEN:    {"Bearer Authentication Token", []string{"SOC2"}, 4, []string{"OpenAI", "Anthropic", "Google", "Azure"}},
-	SECRET_AWS_KEY:         {"AWS Access Key", []string{"SOC2", "PCI-DSS"}, 5, []string{"AWS"}},
-	SECRET_PRIVATE_KEY:     {"Private Cryptographic Key", []string{"SOC2", "PCI-DSS"}, 5, []string{"SSH", "TLS", "PGP"}},
-	SECRET_OAUTH_TOKEN:     {"OAuth Access Token", []string{"SOC2"}, 4, []string{"Google", "GitHub", "Microsoft"}},
-	SECRET_PASSWORD:        {"Password", []string{"SOC2", "PCI-DSS", "HIPAA"}, 5, []string{}},
-	SECRET_JWT:             {"JSON Web Token", []string{"SOC2"}, 4, []string{}},
-	SECRET_DATABASE_URL:    {"Database Connection String", []string{"SOC2", "PCI-DSS", "HIPAA"}, 5, []string{"PostgreSQL", "MySQL", "Redis", "MongoDB"}},
-	SECRET_ENCRYPTION_KEY:  {"Encryption Key", []string{"SOC2", "PCI-DSS", "HIPAA"}, 5, []string{}},
-	SECRET_WEBHOOK_SECRET:  {"Webhook Signature Secret", []string{"SOC2"}, 3, []string{"Stripe", "GitHub", "Slack"}},
+	SECRET_API_KEY:        {"API Key for various services", []string{"SOC2"}, 4, []string{"Stripe", "Twilio", "SendGrid", "AWS", "GitHub"}},
+	SECRET_BEARER_TOKEN:   {"Bearer Authentication Token", []string{"SOC2"}, 4, []string{"OpenAI", "Anthropic", "Google", "Azure"}},
+	SECRET_AWS_KEY:        {"AWS Access Key", []string{"SOC2", "PCI-DSS"}, 5, []string{"AWS"}},
+	SECRET_PRIVATE_KEY:    {"Private Cryptographic Key", []string{"SOC2", "PCI-DSS"}, 5, []string{"SSH", "TLS", "PGP"}},
+	SECRET_OAUTH_TOKEN:    {"OAuth Access Token", []string{"SOC2"}, 4, []string{"Google", "GitHub", "Microsoft"}},
+	SECRET_PASSWORD:       {"Password", []string{"SOC2", "PCI-DSS", "HIPAA"}, 5, []string{}},
+	SECRET_JWT:            {"JSON Web Token", []string{"SOC2"}, 4, []string{}},
+	SECRET_DATABASE_URL:   {"Database Connection String", []string{"SOC2", "PCI-DSS", "HIPAA"}, 5, []string{"PostgreSQL", "MySQL", "Redis", "MongoDB"}},
+	SECRET_ENCRYPTION_KEY: {"Encryption Key", []string{"SOC2", "PCI-DSS", "HIPAA"}, 5, []string{}},
+	SECRET_WEBHOOK_SECRET: {"Webhook Signature Secret", []string{"SOC2"}, 3, []string{"Stripe", "GitHub", "Slack"}},
 }
 
 // ============================================================================
@@ -280,20 +280,20 @@ type TokenLimiterConfig struct {
 // DefaultTokenLimiterConfig returns default token limiter configuration
 func DefaultTokenLimiterConfig() *TokenLimiterConfig {
 	return &TokenLimiterConfig{
-		MaxTokensPerResponse: 8192,
-		TokensPerMinute:      100000,
+		MaxTokensPerResponse:  8192,
+		TokensPerMinute:       100000,
 		MaxResponsesPerMinute: 100,
-		WindowDuration:       time.Minute,
+		WindowDuration:        time.Minute,
 	}
 }
 
 // TokenUsage tracks token usage for a client
 type TokenUsage struct {
-	ClientID      string
-	TotalTokens   int64
-	RequestCount  int64
-	WindowStart   time.Time
-	TokenCapacity int64
+	ClientID        string
+	TotalTokens     int64
+	RequestCount    int64
+	WindowStart     time.Time
+	TokenCapacity   int64
 	RequestCapacity int64
 }
 
@@ -329,9 +329,9 @@ const (
 
 // ToxicityResult holds the result of toxicity scanning
 type ToxicityResult struct {
-	Categories   []ToxicityCategory
-	Severity     int
-	Filtered     bool
+	Categories  []ToxicityCategory
+	Severity    int
+	Filtered    bool
 	Explanation string
 }
 
@@ -356,18 +356,18 @@ type HallucinationConfig struct {
 
 // HallucinationResult holds the result of hallucination detection
 type HallucinationResult struct {
-	Flagged       bool
-	Claims        []Claim
+	Flagged              bool
+	Claims               []Claim
 	HighConfidenceClaims int
-	TotalClaims   int
-	Explanation   string
+	TotalClaims          int
+	Explanation          string
 }
 
 // Claim represents a factual claim in the response
 type Claim struct {
 	Text       string
 	Confidence float64
-	Verified   *bool  // nil = unknown, true = verified, false = hallucinated
+	Verified   *bool // nil = unknown, true = verified, false = hallucinated
 	Source     string
 }
 
@@ -432,23 +432,23 @@ type TokenCounter interface {
 
 // PIIMatch represents a matched PII entity
 type PIIMatch struct {
-	Category    PIICategory
-	Start       int
-	End         int
-	Value       string
-	Severity    int
-	Redacted    string
+	Category PIICategory
+	Start    int
+	End      int
+	Value    string
+	Severity int
+	Redacted string
 }
 
 // SecretMatch represents a matched secret
 type SecretMatch struct {
-	Category      SecretCategory
-	Start         int
-	End           int
-	Value         string // Masked value
-	Severity      int
-	Provider      string
-	Redacted      string
+	Category SecretCategory
+	Start    int
+	End      int
+	Value    string // Masked value
+	Severity int
+	Provider string
+	Redacted string
 }
 
 // ============================================================================

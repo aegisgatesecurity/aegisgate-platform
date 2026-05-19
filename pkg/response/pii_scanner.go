@@ -125,9 +125,9 @@ func (ps *PIIScanner) FindPII(text string) []PIIMatch {
 			match := text[idx[0]:idx[1]]
 			matches = append(matches, PIIMatch{
 				Category: PII_EMAIL, // Categorize as email (generic)
-				Start:   idx[0],
-				End:     idx[1],
-				Value:   match,
+				Start:    idx[0],
+				End:      idx[1],
+				Value:    match,
 				Severity: 3, // Default medium severity
 				Redacted: "****",
 			})
@@ -407,12 +407,12 @@ func (ps *PIIScanner) SeveritySummary(matches []PIIMatch) struct {
 func (ps *PIIScanner) RedactPII(text string, config *RedactionConfig) string {
 	if config == nil {
 		config = &RedactionConfig{
-			RedactSSN:          true,
-			RedactCreditCard:   true,
-			RedactEmail:        true,
-			RedactPhone:        true,
-			RedactHealthInfo:   true,
-			RedactCustom:       false,
+			RedactSSN:        true,
+			RedactCreditCard: true,
+			RedactEmail:      true,
+			RedactPhone:      true,
+			RedactHealthInfo: true,
+			RedactCustom:     false,
 		}
 	}
 

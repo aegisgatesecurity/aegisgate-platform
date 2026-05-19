@@ -107,8 +107,8 @@ func NewHallucinationDetector(config *HallucinationConfig) *HallucinationDetecto
 	if config == nil {
 		config = &HallucinationConfig{
 			ConfidenceThreshold: 0.7,
-			EnableFactChecking: false,
-			VerifyAttributions: false,
+			EnableFactChecking:  false,
+			VerifyAttributions:  false,
 		}
 	}
 	return &HallucinationDetector{
@@ -122,9 +122,9 @@ func (hd *HallucinationDetector) Scan(text string) *HallucinationResult {
 	defer hd.mu.RUnlock()
 
 	result := &HallucinationResult{
-		Flagged:       false,
-		Claims:        []Claim{},
-		TotalClaims:   0,
+		Flagged:              false,
+		Claims:               []Claim{},
+		TotalClaims:          0,
 		HighConfidenceClaims: 0,
 	}
 

@@ -847,7 +847,7 @@ func TestSeverityDistributionEmpty(t *testing.T) {
 
 func TestSeverityDistributionPopulated(t *testing.T) {
 	detector := NewSecretDetector()
-	
+
 	// Create some matches
 	matches := []SecretMatch{
 		{Severity: 5},
@@ -855,7 +855,7 @@ func TestSeverityDistributionPopulated(t *testing.T) {
 		{Severity: 4},
 		{Severity: 3},
 	}
-	
+
 	dist := detector.SeverityDistribution(matches)
 	if dist[5] != 1 {
 		t.Errorf("expected 1 match with severity 5, got %d", dist[5])
