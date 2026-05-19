@@ -124,7 +124,7 @@ func TestGuardScanWithContextWithSecrets(t *testing.T) {
 
 	// Test with secrets in response
 	scanCtx := NewScanContext("test-client", "test-req")
-	result, err := guard.ScanWithContext(context.Background(), "API Key: sk_test_REDACTED", scanCtx)
+	result, err := guard.ScanWithContext(context.Background(), "API Key: sk_test_TeStVaLuE1234567890Ab", scanCtx)
 	if err != nil {
 		t.Fatalf("ScanWithContext with secrets failed: %v", err)
 	}
@@ -810,8 +810,8 @@ func TestSecretDetectorFindMatches(t *testing.T) {
 		text     string
 		expected []SecretCategory
 	}{
-		{"Stripe key: sk_test_REDACTED", []SecretCategory{SECRET_API_KEY}},
-		{"GitHub token: ghp_REDACTED", []SecretCategory{SECRET_API_KEY}},
+		{"Stripe key: sk_test_AbCdEfGhIjKlMnOpQrStU", []SecretCategory{SECRET_API_KEY}},
+		{"GitHub token: ghp_AbCdEfGhIjKlMnOpQrStUvWx123456", []SecretCategory{SECRET_API_KEY}},
 		{"JWT token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", []SecretCategory{SECRET_JWT}},
 		{"AWS key: AKIAIOSFODNN7EXAMPLE", []SecretCategory{SECRET_AWS_KEY}},
 	}
@@ -827,7 +827,11 @@ func TestSecretDetectorFindMatches(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("should find %s in: %s", expected, tc.text[:50]+"...")
+				preview := tc.text
+				if len(preview) > 50 {
+					preview = preview[:50] + "..."
+				}
+				t.Errorf("should find %s in: %s", expected, preview)
 			}
 		}
 	}
@@ -853,7 +857,7 @@ func TestSecretDetectorMaskSecret(t *testing.T) {
 	detector := NewSecretDetector()
 
 	// Test masking
-	masked := detector.maskSecret("sk_live_REDACTED")
+	masked := detector.maskSecret("sk_live_LiVeVaLuE1234567890Cd")
 	if masked == "" {
 		t.Error("maskSecret should return non-empty string")
 	}
@@ -872,10 +876,10 @@ func TestSecretDetectorDetectProvider(t *testing.T) {
 		pattern  string
 		expected string
 	}{
-		{"sk_live_REDACTED", "Stripe"},
-		{"sk_test_REDACTED", "Stripe"},
+		{"sk_live_LiVeVaLuE1234567890Cd", "Stripe"},
+		{"sk_test_TeStVaLuE1234567890Ab", "Stripe"},
 		{"sk-ant-", "Anthropic"},
-		{"ghp_REDACTED", "GitHub"},
+		{"ghp_TeStToKeN1234567890Efgh", "GitHub"},
 		{"AKIA", "AWS"},
 	}
 
@@ -899,7 +903,7 @@ func TestSecretDetectorScanSecretsWithContext(t *testing.T) {
 	scanCtx := NewScanContext("test-client", "test-req")
 	scanCtx.Metadata["source"] = "test"
 
-	matches, err := detector.ScanSecretsWithContext(context.Background(), "API key: sk_test_REDACTED", scanCtx)
+	matches, err := detector.ScanSecretsWithContext(context.Background(), "API key: sk_test_TeStVaLuE1234567890Ab", scanCtx)
 	if err != nil {
 		t.Fatalf("ScanSecretsWithContext failed: %v", err)
 	}
@@ -947,7 +951,7 @@ func TestSecretDetectorDetectSecretsByProvider(t *testing.T) {
 	detector := NewSecretDetector()
 
 	// First find secrets
-	matches := detector.FindSecrets("sk_live_REDACTED and ghp_REDACTED")
+	matches := detector.FindSecrets("sk_live_LiVeVaLuE1234567890Cd and ghp_TeStToKeN1234567890Efgh")
 
 	// Then detect by provider
 	results := detector.DetectSecretsByProvider(matches)
@@ -962,7 +966,7 @@ func TestSecretDetectorDetectSecretsByProvider(t *testing.T) {
 }
 
 func TestSecretDetectorMaskSecrets(t *testing.T) {
-	text := "API Key: sk_live_REDACTED and GitHub: ghp_REDACTED"
+	text := "API Key: sk_live_LiVeVaLuE1234567890Cd and GitHub: ghp_TeStToKeN1234567890Efgh"
 
 	masked := MaskSecrets(text)
 
@@ -976,7 +980,7 @@ func TestSecretDetectorMaskSecrets(t *testing.T) {
 }
 
 func TestSecretDetectorValidateSecretStandalone(t *testing.T) {
-	result := ValidateSecret("sk_test_REDACTED")
+	result := ValidateSecret("sk_test_TeStVaLuE1234567890Ab")
 
 	if result == nil {
 		t.Fatal("result should not be nil")
@@ -989,7 +993,7 @@ func TestSecretDetectorValidateSecretStandalone(t *testing.T) {
 func TestSecretDetectorCountByCategory(t *testing.T) {
 	detector := NewSecretDetector()
 
-	matches := detector.FindSecrets("sk_test_REDACTED and sk_live_REDACTED")
+	matches := detector.FindSecrets("sk_test_TeStVaLuE1234567890Ab and sk_live_LiVeVaLuE1234567890Cd")
 
 	counts := detector.CountByCategory(matches)
 
@@ -1002,7 +1006,7 @@ func TestSecretDetectorFindMaskedMatches(t *testing.T) {
 	detector := NewSecretDetector()
 
 	// Test with masked text
-	matches := detector.FindSecrets("sk_live_REDACTED")
+	matches := detector.FindSecrets("sk_live_LiVeVaLuE1234567890Cd")
 
 	for _, match := range matches {
 		if match.Redacted == "" {
