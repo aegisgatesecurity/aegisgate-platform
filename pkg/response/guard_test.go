@@ -324,7 +324,7 @@ func TestScanWithConfig(t *testing.T) {
 	config := &ResponseGuardConfig{
 		EnablePIIScanner:      false, // Disable PII scanning
 		EnableSecretDetection: true,
-		StrictMode:           false,
+		StrictMode:            false,
 	}
 
 	response := "API key: sk_live_1234567890abcdefghij"
@@ -337,7 +337,7 @@ func TestScanWithConfig(t *testing.T) {
 	// PII should not be detected (scanner disabled)
 	// Note: With PII scanner disabled, no PII should be detected
 	// but we can verify the config was respected
-	
+
 	// Secrets should still be detected
 	if len(result.DetectedSecrets) == 0 {
 		t.Error("expected secrets to be detected")
