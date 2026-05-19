@@ -9,7 +9,7 @@ on:
       - main
   workflow_dispatch:
 env:
-  GO_VERSION: '1.25.10'
+  GO_VERSION: '1.26.3'
 
 permissions:
   contents: read
