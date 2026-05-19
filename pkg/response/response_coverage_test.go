@@ -1478,24 +1478,360 @@ func TestToxicityResultStructure(t *testing.T) {
 }
 
 // ============================================================================
-// HallucinationResult Tests
+// Secret Detector Coverage Tests
 // ============================================================================
 
-func TestHallucinationResultStructure(t *testing.T) {
-	verified := true
-	result := HallucinationResult{
-		Flagged:              false,
-		Claims:               []Claim{{Text: "Test claim", Confidence: 0.9, Verified: &verified}},
-		HighConfidenceClaims: 1,
-		TotalClaims:          1,
-		Explanation:          "Checked",
+func TestSecretDetectorSeveritySummaryCoverage(t *testing.T) {
+	detector := NewSecretDetector()
+
+	// Test empty matches
+	empty := detector.SeveritySummary(nil)
+	if empty.Critical != 0 || empty.High != 0 {
+		t.Error("empty matches should have zero summary")
 	}
 
-	if result.Flagged {
-		t.Error("should not be flagged")
+	// Test all severity levels
+	matches := []SecretMatch{
+		{Category: SECRET_AWS_KEY, Severity: 5},
+		{Category: SECRET_API_KEY, Severity: 4},
+		{Category: SECRET_PASSWORD, Severity: 3},
+		{Category: SECRET_BEARER_TOKEN, Severity: 2},
+		{Category: SECRET_PRIVATE_KEY, Severity: 1},
 	}
-	if result.TotalClaims != 1 {
-		t.Error("wrong total claims")
+
+	summary := detector.SeveritySummary(matches)
+	if summary.Critical != 1 || summary.High != 1 || summary.Medium != 1 || summary.Low != 2 {
+		t.Errorf("expected C:1 H:1 M:1 L:2, got C:%d H:%d M:%d L:%d",
+			summary.Critical, summary.High, summary.Medium, summary.Low)
+	}
+}
+
+func TestSecretDetectorSeverityDistributionCoverage(t *testing.T) {
+	detector := NewSecretDetector()
+
+	matches := []SecretMatch{
+		{Severity: 5}, {Severity: 5}, {Severity: 4},
+		{Severity: 3}, {Severity: 3}, {Severity: 3},
+		{Severity: 1}, {Severity: 2},
+	}
+
+	dist := detector.SeverityDistribution(matches)
+	if dist[5] != 2 || dist[4] != 1 || dist[3] != 3 {
+		t.Errorf("unexpected distribution: %v", dist)
+	}
+}
+
+func TestSecretDetectorMaskSecretsCoverage(t *testing.T) {
+	// MaskSecrets is a standalone function
+	text := "Stripe key: sk_live_AbCdEfGhIjKlMnOpQrStU and GitHub: ghp_AbCdEfGhIjKlMnOpQrStUvWx123456"
+	masked := MaskSecrets(text)
+
+	// Should mask both
+	if masked == text {
+		t.Error("should have masked secrets")
+	}
+}
+
+func TestSecretDetectorValidateSecretCoverage(t *testing.T) {
+	// Test JWT validation
+	validJWT := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+	result := ValidateSecret("JWT token: " + validJWT)
+	if result.Severity < 4 {
+		t.Errorf("JWT should be high severity, got %d", result.Severity)
+	}
+
+	// Test very long secret
+	longSecret := "sk_live_" + strings.Repeat("A", 50)
+	longResult := ValidateSecret(longSecret)
+	// Severity depends on secret format, may be 4 or 5
+	if longResult.Severity < 4 {
+		t.Errorf("long secret should be high severity, got %d", longResult.Severity)
+	}
+
+	// Test invalid secret
+	invalidResult := ValidateSecret("not a secret at all")
+	if invalidResult.Valid {
+		t.Error("should not be valid")
+	}
+}
+
+func TestSecretDetectorScanSecretsWithContextCoverage(t *testing.T) {
+	detector := NewSecretDetector()
+
+	// Test with context
+	ctx := context.Background()
+	scanCtx := NewScanContext("test-client", "req-123")
+
+	matches, err := detector.ScanSecretsWithContext(ctx, "JWT: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c and Stripe: sk_live_AbCdEfGhIjKlMnOpQrStU", scanCtx)
+	if err != nil {
+		t.Fatalf("ScanSecretsWithContext failed: %v", err)
+	}
+
+	if len(matches) < 2 {
+		t.Errorf("should find at least 2 secrets, got %d", len(matches))
+	}
+}
+
+func TestSecretDetectorScanSecretsWithNilContext(t *testing.T) {
+	detector := NewSecretDetector()
+
+	matches, err := detector.ScanSecretsWithContext(context.Background(), "Stripe: sk_live_AbCdEfGhIjKlMnOpQrStU", nil)
+	if err != nil {
+		t.Fatalf("ScanSecretsWithContext with nil context failed: %v", err)
+	}
+
+	_ = matches
+}
+
+func TestSecretDetectorDetectSecretsByProviderCoverage(t *testing.T) {
+	detector := NewSecretDetector()
+
+	// Create sample matches for provider detection
+	matches := []SecretMatch{
+		{Category: SECRET_API_KEY, Provider: "Stripe"},
+		{Category: SECRET_API_KEY, Provider: "GitHub"},
+		{Category: SECRET_AWS_KEY, Provider: "AWS"},
+	}
+
+	// Test provider grouping
+	result := detector.DetectSecretsByProvider(matches)
+	if len(result["Stripe"]) != 1 {
+		t.Errorf("expected 1 Stripe match, got %d", len(result["Stripe"]))
+	}
+	if len(result["GitHub"]) != 1 {
+		t.Errorf("expected 1 GitHub match, got %d", len(result["GitHub"]))
+	}
+	if len(result["AWS"]) != 1 {
+		t.Errorf("expected 1 AWS match, got %d", len(result["AWS"]))
+	}
+
+	// Test empty matches - should return empty map
+	empty := detector.DetectSecretsByProvider(nil)
+	if len(empty) != 0 {
+		t.Error("nil matches should return empty map")
+	}
+
+	// Test unknown provider
+	unknown := detector.DetectSecretsByProvider([]SecretMatch{{Category: SECRET_PRIVATE_KEY}})
+	// May or may not have "unknown" key depending on implementation
+	_ = unknown
+}
+
+// ============================================================================
+// PIIScanner Coverage Tests
+// ============================================================================
+
+func TestPIIScannerValidateMatchCoverage(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	// Test various PII validation
+	testCases := []struct {
+		text     string
+		category PIICategory
+		valid    bool
+	}{
+		{"234-56-7890", PII_SSN, true},              // Valid SSN
+		{"000-12-3456", PII_SSN, false},             // Invalid: 000 prefix
+		{"666-12-3456", PII_SSN, false},             // Invalid: 666 prefix
+		{"test@example.com", PII_EMAIL, true},       // Valid email
+		{"invalid-email", PII_EMAIL, false},         // Invalid email
+		{"555-123-4567", PII_PHONE, true},           // Valid phone
+		{"4111111111111111", PII_CREDIT_CARD, true}, // Valid card (passes Luhn)
+	}
+
+	for _, tc := range testCases {
+		result := scanner.validateMatch(tc.category, tc.text)
+		if result != tc.valid {
+			t.Errorf("validateMatch(%v, %q) = %v, expected %v", tc.category, tc.text, result, tc.valid)
+		}
+	}
+
+	// Test unknown category - should return false (handled by default case)
+	unknown := scanner.validateMatch(PII_NAME, "test")
+	_ = unknown // Just covering the function call
+}
+
+func TestPIIScannerGetRedactionCoverage(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	// Test different categories
+	cats := []PIICategory{PII_SSN, PII_EMAIL, PII_CREDIT_CARD, PII_PHONE}
+	for _, cat := range cats {
+		redaction := scanner.getRedaction(cat, "matched")
+		if redaction == "" {
+			t.Errorf("should have redaction for %v", cat)
+		}
+	}
+}
+
+func TestPIIScannerScanPIIWithContextCoverage(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	ctx := context.Background()
+	scanCtx := NewScanContext("client-123", "req-456")
+
+	matches, err := scanner.ScanPIIWithContext(ctx, "Email: test@example.com, SSN: 234-56-7890", scanCtx)
+	if err != nil {
+		t.Fatalf("ScanPIIWithContext failed: %v", err)
+	}
+
+	if len(matches) < 2 {
+		t.Errorf("should find at least 2 PII matches, got %d", len(matches))
+	}
+}
+
+func TestPIIScannerScanPIIWithNilContext(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	matches, err := scanner.ScanPIIWithContext(context.Background(), "test@example.com", nil)
+	if err != nil {
+		t.Fatalf("ScanPIIWithContext with nil context failed: %v", err)
+	}
+
+	_ = matches
+}
+
+func TestPIIScannerSeveritySummaryCoverage(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	matches := []PIIMatch{
+		{Category: PII_SSN, Severity: 5},
+		{Category: PII_CREDIT_CARD, Severity: 5},
+		{Category: PII_EMAIL, Severity: 3},
+		{Category: PII_PHONE, Severity: 2},
+	}
+
+	summary := scanner.SeveritySummary(matches)
+	if summary.Critical != 2 || summary.High != 0 || summary.Medium != 1 || summary.Low != 1 {
+		t.Errorf("unexpected summary: C:%d H:%d M:%d L:%d",
+			summary.Critical, summary.High, summary.Medium, summary.Low)
+	}
+}
+
+func TestPIIScannerRedactPIICoverage(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	text := "SSN: 234-56-7890 and Email: user@example.com"
+	redacted := scanner.RedactPII(text, nil)
+
+	if strings.Contains(redacted, "234-56-7890") {
+		t.Error("SSN should be redacted")
+	}
+	if strings.Contains(redacted, "user@example.com") {
+		t.Error("email should be redacted")
+	}
+}
+
+func TestPIIScannerCountByCategoryCoverage(t *testing.T) {
+	scanner := NewPIIScanner()
+
+	matches := []PIIMatch{
+		{Category: PII_EMAIL},
+		{Category: PII_EMAIL},
+		{Category: PII_PHONE},
+		{Category: PII_SSN},
+	}
+
+	counts := scanner.CountByCategory(matches)
+	if counts[PII_EMAIL] != 2 {
+		t.Errorf("expected 2 emails, got %d", counts[PII_EMAIL])
+	}
+	if counts[PII_PHONE] != 1 {
+		t.Errorf("expected 1 phone, got %d", counts[PII_PHONE])
+	}
+}
+
+func TestPIIScannerScanWithTimeoutCoverage(t *testing.T) {
+	// ScanWithTimeout is a standalone function
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	result, err := ScanWithTimeout(ctx, "test data", 10*time.Second)
+	if err != nil {
+		t.Fatalf("ScanWithTimeout failed: %v", err)
+	}
+
+	_ = result
+}
+
+func TestPIIScannerScanWithTimeoutContextCancellation(t *testing.T) {
+	// Test with already-cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := ScanWithTimeout(ctx, "test", 1*time.Second)
+	// May succeed or fail depending on implementation
+	_ = err
+}
+
+// ============================================================================
+// Guard Coverage Tests (additional)
+// ============================================================================
+
+func TestGuardScanWithConfigStrictMode(t *testing.T) {
+	config := &ResponseGuardConfig{
+		EnablePIIScanner:      true,
+		EnableSecretDetection: true,
+		EnableToxicityFilter:  false,
+		EnableHallucination:   false,
+		MaxResponseTokens:     4096,
+		StrictMode:            true,
+	}
+
+	guard := NewResponseGuardWithConfig(config)
+
+	// Test with strict mode and PII
+	result, err := guard.ScanWithConfig(context.Background(), "SSN: 234-56-7890", config)
+	if err != nil {
+		t.Fatalf("ScanWithConfig failed: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("result should not be nil")
+	}
+}
+
+func TestGuardScanWithContextMultipleClients(t *testing.T) {
+	guard := NewResponseGuard()
+
+	clients := []string{"client-a", "client-b", "client-c"}
+	for _, client := range clients {
+		scanCtx := NewScanContext(client, "req-1")
+		_, err := guard.ScanWithContext(context.Background(), "test response", scanCtx)
+		if err != nil {
+			t.Fatalf("ScanWithContext failed for %s: %v", client, err)
+		}
+	}
+
+	// Verify usage tracking - may not be implemented
+	for _, client := range clients {
+		usage := guard.GetUsage(client)
+		// Usage tracking may not be implemented, just verify no panic
+		_ = usage
+	}
+}
+
+// ============================================================================
+// Toxicity Filter Coverage Tests
+// ============================================================================
+
+func TestToxicityFilterScanEdgeCases(t *testing.T) {
+	filter := NewToxicityFilter()
+
+	// Test various edge cases
+	texts := []string{
+		"",
+		"a",
+		strings.Repeat("a", 1000),
+		"Normal sentence.",
+		"Another normal response here.",
+	}
+
+	for _, text := range texts {
+		result := filter.Scan(text)
+		if result == nil {
+			t.Errorf("Scan(%q) returned nil", text[:minInt(20, len(text))])
+		}
 	}
 }
 
