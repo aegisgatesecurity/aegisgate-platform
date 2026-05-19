@@ -1,8 +1,3 @@
-# README.md — AegisGate Security Platform (v2.0.1 Draft for Review)
-
-> **Status**: Draft for review — validates against actual codebase
-> **SHA**: c6bafa1 | **Go**: 1.26.3 | **Coverage**: 97.7% | **Tests**: 2,548
-
 ---
 
 <div align="center">
