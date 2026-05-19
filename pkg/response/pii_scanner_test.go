@@ -547,12 +547,12 @@ func TestRedactPIIWithConfig(t *testing.T) {
 	scanner := NewPIIScanner()
 
 	config := &RedactionConfig{
-		RedactSSN:          true,
-		RedactCreditCard:   false, // Don't redact CC
-		RedactEmail:        true,
-		RedactPhone:        false,
-		RedactHealthInfo:   true,
-		RedactCustom:       false,
+		RedactSSN:        true,
+		RedactCreditCard: false, // Don't redact CC
+		RedactEmail:      true,
+		RedactPhone:      false,
+		RedactHealthInfo: true,
+		RedactCustom:     false,
 	}
 
 	text := "SSN: 123-45-6789, CC: 4111-1111-1111-1111, Email: a@b.com"
@@ -639,7 +639,7 @@ func TestLuhnCheck(t *testing.T) {
 		{"378282246310005", true},   // Valid Amex
 		{"4111111111111112", false}, // Invalid
 		{"1234567890123456", false}, // Invalid
-		{"123", false},             // Too short
+		{"123", false},              // Too short
 	}
 
 	for _, tt := range tests {
