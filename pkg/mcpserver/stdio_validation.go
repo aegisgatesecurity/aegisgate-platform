@@ -7,7 +7,7 @@
 // shell metacharacter injection attacks. This directly addresses the
 // vulnerability described in OX Security's "Mother of All AI Supply Chains"
 // advisory (2026-04) and Anthropic MCP SDK design vulnerability
-// CVE-2025-XXXXX.
+// CVE-2024-XXXXX.
 //
 // The MCP STDIO transport executes arbitrary OS commands by design.
 // AegisGate validates and rejects commands containing shell metacharacters
