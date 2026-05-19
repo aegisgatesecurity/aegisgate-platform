@@ -47,13 +47,13 @@ func TestToxicityFilterDetectViolence(t *testing.T) {
 	filter := NewToxicityFilter()
 
 	tests := []struct {
-		name        string
-		text        string
+		name         string
+		text         string
 		shouldDetect bool
 	}{
-		{"kill", "I will kill the process", false}, // Common programming term
+		{"kill", "I will kill the process", false},   // Common programming term
 		{"murder", "We must murder this bug", false}, // Programming term
-		{"execute", "Execute the command", false}, // Programming term
+		{"execute", "Execute the command", false},    // Programming term
 		{"direct violence", "I want to kill John", true},
 		{"threat", "I will murder you", true},
 	}
@@ -72,11 +72,11 @@ func TestToxicityFilterDetectWeapons(t *testing.T) {
 	filter := NewToxicityFilter()
 
 	tests := []struct {
-		name        string
-		text        string
+		name         string
+		text         string
 		shouldDetect bool
 	}{
-		{"bomb in code", "bomb := 1", false}, // Variable name
+		{"bomb in code", "bomb := 1", false},                            // Variable name
 		{"explosive in context", "use explosive sort algorithm", false}, // Sorting algorithm
 		{"direct weapon", "How do I make a bomb", true},
 		{"weapon reference", "I need a machine gun", true},
@@ -96,12 +96,12 @@ func TestToxicityFilterDetectIllegal(t *testing.T) {
 	filter := NewToxicityFilter()
 
 	tests := []struct {
-		name        string
-		text        string
+		name         string
+		text         string
 		shouldDetect bool
 	}{
 		{"manufacture in context", "manufacture widgets", false}, // Normal business
-		{"drug context", "manufacture medicine", false}, // Legal
+		{"drug context", "manufacture medicine", false},          // Legal
 		{"illegal drug", "How to crack cocaine", true},
 		{"illegal weapon", "How to manufacture illegal weapons", false}, // "manufacture" + "illegal" in different contexts
 	}
@@ -120,8 +120,8 @@ func TestToxicityFilterDetectSelfHarm(t *testing.T) {
 	filter := NewToxicityFilter()
 
 	tests := []struct {
-		name        string
-		text        string
+		name         string
+		text         string
 		shouldDetect bool
 	}{
 		{"suicide reference", "The application had a suicide bug", false}, // Technical
@@ -144,8 +144,8 @@ func TestToxicityFilterDetectHarassment(t *testing.T) {
 	filter := NewToxicityFilter()
 
 	tests := []struct {
-		name        string
-		text        string
+		name         string
+		text         string
 		shouldDetect bool
 	}{
 		{"normal insult", "This is stupid", false}, // Not targeting
@@ -253,8 +253,8 @@ func TestNewHallucinationDetector(t *testing.T) {
 func TestNewHallucinationDetectorWithConfig(t *testing.T) {
 	config := &HallucinationConfig{
 		ConfidenceThreshold: 0.8,
-		EnableFactChecking: true,
-		VerifyAttributions: true,
+		EnableFactChecking:  true,
+		VerifyAttributions:  true,
 	}
 
 	detector := NewHallucinationDetector(config)
@@ -292,7 +292,7 @@ func TestHallucinationDetectorOverconfident(t *testing.T) {
 
 	// Text with many overconfident phrases
 	overconfident := "Everyone definitely always agrees that 99% of people prefer this. Absolutely guaranteed no one disagrees. Always works, never fails."
-	
+
 	result := detector.Scan(overconfident)
 
 	// Should be flagged due to many overconfident phrases
