@@ -18,7 +18,7 @@ type TokenLimiter struct {
 }
 
 type tokenEntry struct {
-	tokens   int
+	tokens    int
 	timestamp time.Time
 }
 
@@ -91,7 +91,7 @@ func (tl *TokenLimiter) AllowToken(clientID string, tokens int) (bool, string) {
 
 	// Add new entry
 	tl.usage[clientID] = append(validEntries, tokenEntry{
-		tokens:   tokens,
+		tokens:    tokens,
 		timestamp: now,
 	})
 

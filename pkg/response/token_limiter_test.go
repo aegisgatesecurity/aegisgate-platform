@@ -42,11 +42,11 @@ func TestCountTokens(t *testing.T) {
 		text     string
 		expected int
 	}{
-		{"single word", 1},        // 1 word ≈ 1.33 tokens, floor to 1
-		{"two words", 2},           // 2 words ≈ 2.67 tokens, floor to 2
-		{"hello world", 2},        // 2 words
-		{"", 0},                    // empty
-		{"one", 1},                 // 1 word
+		{"single word", 1},             // 1 word ≈ 1.33 tokens, floor to 1
+		{"two words", 2},               // 2 words ≈ 2.67 tokens, floor to 2
+		{"hello world", 2},             // 2 words
+		{"", 0},                        // empty
+		{"one", 1},                     // 1 word
 		{"This is a test sentence", 4}, // 5 words
 	}
 
