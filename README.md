@@ -247,8 +247,8 @@ open https://localhost:8443  # Dashboard
 
 | Metric | Result |
 |--------|--------|
-| **Peak Throughput** | 11,681 RPS |
-| **Average Latency** | 2.44 ms |
+| **Peak Throughput** | 24,806 RPS |
+| **Average Latency** | 3.2 ms |
 | **P95 Latency** | 3.64 ms |
 | **Error Rate** | 0.00% |
 | **Binary Size** | 20 MB |
