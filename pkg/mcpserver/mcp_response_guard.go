@@ -85,10 +85,10 @@ func (rs *MCPResponseScanner) ScanMCPMessage(ctx context.Context, message interf
 		// Try common response fields
 		if text, ok := msg["text"].(string); ok {
 			content = text
-		} else if content, ok = msg["content"].(string); ok {
-			content = content
-		} else if content, ok = msg["message"].(string); ok {
-			content = content
+		} else if c, ok := msg["content"].(string); ok {
+			content = c
+		} else if m, ok := msg["message"].(string); ok {
+			content = m
 		}
 	}
 
