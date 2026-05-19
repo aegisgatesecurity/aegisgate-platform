@@ -91,8 +91,8 @@ func (rs *A2AResponseScanner) ScanA2AMessage(ctx context.Context, message interf
 			content = text
 		} else if data, ok := msg["data"].(string); ok {
 			content = data
-		} else if content, ok = msg["content"].(string); ok {
-			content = content
+		} else if c, ok := msg["content"].(string); ok {
+			content = c
 		} else if payload, ok := msg["payload"].(string); ok {
 			content = payload
 		}
