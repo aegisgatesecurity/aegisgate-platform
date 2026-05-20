@@ -17,7 +17,8 @@
     "enterprise": ""
   },
   "stripe_config": {
-    "publishable_key": "pk_live_51TT0vSK2DQfk64XNCkz1nS9rVZEZyUQXUtpS4aylNiMlTqo53fQ0vhif7wskRXnx3GB5o1jMZfAfcAqmB8po1QWI00cIxRUy9u",
+    "webhook_secret": "whsec_CsCdMALXQRV5HPAcFhN4MalNrySigvDW",
+    "webhook_endpoint": "https://api.aegisgatesecurity.io/webhook/stripe",
     "products": {
       "starter_annual": {
         "product_id": "prod_UTnOhISU4LGix5",
