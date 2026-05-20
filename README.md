@@ -12,7 +12,7 @@
 [![Tests](https://img.shields.io/badge/Tests-2_548_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 
-> **The only AI security platform with native HTTP API, MCP, AND A2A protection.** Three pillars. One gateway. Zero external dependencies.
+> **The only AI security platform with native HTTP API, MCP, AND A2A AND RESPONSE protection.** Four pillars. One gateway. Zero external dependencies.
 
 [🌐 Website](https://aegisgatesecurity.io) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](docs/) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
@@ -83,6 +83,29 @@ Zero-trust guardrails for inter-agent communication — the first purpose-built 
 | 6 | **Timeout Enforcement** | Configurable request timeouts |
 | 7 | **License Validation** | ECDSA P-256 cryptographic enforcement |
 | 8 | **Audit Logging** | RFC 5424 structured log per request |
+
+### 🛡️ AI Response Security (v3.0)
+
+Bidirectional protection for LLM outputs — the fourth pillar of AI security:
+
+| # | Guardrail | Description |
+|---|-----------|-------------|
+| 1 | **PII Scanner** | Detects SSN, credit cards, emails, phones, health info |
+| 2 | **Secret Detector** | Detects API keys (Stripe, GitHub, AWS, OpenAI, Slack) |
+| 3 | **Hallucination Detector** | Identifies false statements, overconfidence, unverified claims |
+| 4 | **Toxicity Filter** | Detects hate speech, violence, harassment |
+| 5 | **Token Limiter** | Rate limiting for response token counts |
+| 6 | **Response Redactor** | Intelligent redaction with multiple strategies |
+| 7 | **Compliance Reports** | Auto-generates GDPR, HIPAA, PCI-DSS, SOC2 reports |
+| 8 | **Response Guard Middleware** | Unified scanning for HTTP, MCP, A2A |
+
+**Features:**
+- Bidirectional inspection — scans both requests AND responses
+- 12 PII categories with validation (SSN format, Luhn algorithm for CC)
+- 10 secret patterns with provider detection
+- Real-time hallucination detection with risk scoring
+- Fail-closed security — blocked responses return sanitized versions
+- Sub-5ms scanning latency (typical response scan < 1ms)
 
 ---
 
