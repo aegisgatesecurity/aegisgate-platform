@@ -17,7 +17,6 @@
     "enterprise": ""
   },
   "stripe_config": {
-    "webhook_secret": "whsec_CsCdMALXQRV5HPAcFhN4MalNrySigvDW",
     "webhook_endpoint": "https://api.aegisgatesecurity.io/webhook/stripe",
     "products": {
       "starter_annual": {
