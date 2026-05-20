@@ -116,7 +116,16 @@ func (s *Server) Start() error {
 
 	addr := ":" + s.port
 	s.logger.Printf("Starting Stripe webhook server on %s", addr)
-	return http.ListenAndServe(addr, mux)
+
+	// HTTP server with timeouts to prevent slow-loris attacks (G114)
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      mux,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	return server.ListenAndServe()
 }
 
 // handleWebhook processes incoming Stripe webhook events
@@ -176,7 +185,9 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"received": true}`))
+	if _, err := w.Write([]byte(`{"received": true}`)); err != nil {
+		s.logger.Printf("failed to write response: %v", err)
+	}
 }
 
 // verifySignature validates the Stripe webhook signature
@@ -343,7 +354,9 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(status)
+	if err := json.NewEncoder(w).Encode(status); err != nil {
+		s.logger.Printf("failed to encode status: %v", err)
+	}
 }
 
 // inferTierFromAmount determines tier from payment amount (cents)
@@ -371,8 +384,13 @@ func GetWebhookSigningSecret() string {
 }
 
 // SetWebhookSigningSecret sets the webhook secret (for testing)
+//
+//go:nosec G104
 func SetWebhookSigningSecret(secret string) {
-	os.Setenv("STRIPE_WEBHOOK_SECRET", secret)
+	if err := os.Setenv("STRIPE_WEBHOOK_SECRET", secret); err != nil {
+		// In test environment, this is acceptable to fail silently
+		return
+	}
 }
 
 // MockLicenseGenerator is a mock implementation for development
