@@ -85,23 +85,9 @@ var TierPrices = map[string]int64{
 
 // NewWebhookServer creates a new webhook server
 func NewWebhookServer(port string) *Server {
-	// Load from environment first, then config file
+	// Webhook secret MUST come from environment variable for security
+	// Never store real secrets in config files or code
 	secret := os.Getenv("STRIPE_WEBHOOK_SECRET")
-	if secret == "" {
-		// Try loading from config file
-		if configPath := os.Getenv("AEGISGATE_BILLING_CONFIG"); configPath != "" {
-			if data, err := os.ReadFile(configPath); err == nil {
-				var cfg struct {
-					StripeConfig struct {
-						WebhookSecret string `json:"webhook_secret"`
-					} `json:"stripe_config"`
-				}
-				if json.Unmarshal(data, &cfg) == nil {
-					secret = cfg.StripeConfig.WebhookSecret
-				}
-			}
-		}
-	}
 
 	return &Server{
 		port:   port,
