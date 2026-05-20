@@ -156,8 +156,6 @@ Comprehensive threat analysis with STRIDE methodology, CVSS scoring, and MITRE A
 | **CVSS 3.1** | 25+ threats scored (7 Critical, 11 High, 7 Medium) |
 | **MITRE ATLAS** | Full ATLAS-MCP, ATLAS-A2A, ATLAS-LLM coverage |
 
-See [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) for full documentation.
-
 ---
 
 ## 🏗️ Architecture
@@ -347,8 +345,6 @@ response = requests.post(
 | **A2A Agent** | 10 STRIDE threats | Impersonation (CVSS 9.1) |
 | **AI Response** | 11 STRIDE threats | PII disclosure (CVSS 9.1) |
 
-See [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) for full threat model.
-
 ### SIEM Integration
 
 ```yaml
@@ -410,7 +406,6 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Document | Description |
 |----------|-------------|
-| [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) | Comprehensive threat model (STRIDE, CVSS, ATLAS) |
 | [PERFORMANCE.md](PERFORMANCE.md) | Sprint 10 load testing results (24,806 RPS, 3.2ms) |
 | [SECURITY.md](SECURITY.md) | Security policies and vulnerability disclosure |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
