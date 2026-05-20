@@ -41,12 +41,6 @@ AegisGate Platform implements comprehensive security scanning:
 
 Comprehensive threat analysis for all four security pillars:
 
-| Document | Purpose | Key Content |
-|----------|---------|-------------|
-| [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) | Full threat model | STRIDE, DFD, attack trees, CVSS, ATLAS |
-| [plans/a2a-threat-analysis.md](plans/a2a-threat-analysis.md) | A2A-specific | 10 ATLAS-A2A patterns |
-| [plans/v3.0-ROADMAP.md](plans/v3.0-ROADMAP.md) | Implementation | v3.0 roadmap |
-
 ### Threat Categories Covered
 
 | Pillar | Threats | Top Risk |
