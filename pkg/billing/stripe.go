@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -242,8 +243,8 @@ func NewStripeClient() *StripeClient {
 		baseURL:        "https://api.stripe.com/v1",
 	}
 
-	// Determine if we're in mock mode
-	if secretKey == "" || secretKey == "sk_test_placeholder" { // #nosec G101 #trivy:ignore:stripe-secret-token -- Test placeholder key, not a real credential
+	// Determine if we're in mock mode (key missing, placeholder, or not live)
+	if secretKey == "" || secretKey == "sk_test_placeholder" || !strings.HasPrefix(secretKey, "sk_live_") {
 		client.mockMode = true
 	}
 
