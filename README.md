@@ -412,7 +412,6 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [docs/METRICS.md](docs/METRICS.md) | Prometheus metrics reference |
 | [docs/A2A Technical Spec](docs/a2a-guardrails-technical-spec.md) | A2A security deep dive |
-| [legal-docs/](legal-docs/) | DPA, BAA, MSA, NDA templates |
 
 ---
 
