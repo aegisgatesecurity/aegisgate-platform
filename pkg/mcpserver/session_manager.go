@@ -88,7 +88,9 @@ func (sm *ConnectionSessionManager) CreateSession(ctx context.Context, connID, a
 	agent, err := sm.manager.GetAgent(agentID)
 	if err != nil {
 		// Cleanup the RBAC session
-		sm.manager.InvalidateSession(session.ID)
+		if invalidateErr := sm.manager.InvalidateSession(session.ID); invalidateErr != nil {
+			slog.Warn("failed to invalidate RBAC session", "error", invalidateErr)
+		}
 		return nil, ErrAgentNotFound
 	}
 
