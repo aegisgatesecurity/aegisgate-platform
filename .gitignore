@@ -100,3 +100,4 @@ docker-compose.test.yml
 # Billing config (pricing data loaded at runtime — copy billing-config.example.json to billing-config.json)
 billing-config.json
 pkg/billing/billing-config.json
+.env.example
