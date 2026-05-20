@@ -37,6 +37,42 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
 | ✅ | **90.8% Test Coverage** (v1.3.6) |
 
+## Threat Model (v3.0)
+
+Comprehensive threat analysis for all four security pillars:
+
+| Document | Purpose | Key Content |
+|----------|---------|-------------|
+| [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) | Full threat model | STRIDE, DFD, attack trees, CVSS, ATLAS |
+| [plans/a2a-threat-analysis.md](plans/a2a-threat-analysis.md) | A2A-specific | 10 ATLAS-A2A patterns |
+| [plans/v3.0-ROADMAP.md](plans/v3.0-ROADMAP.md) | Implementation | v3.0 roadmap |
+
+### Threat Categories Covered
+
+| Pillar | Threats | Top Risk |
+|--------|---------|----------|
+| **HTTP API** | 10 STRIDE threats | License tier bypass (CVSS 9.8) |
+| **MCP Protocol** | 10 STRIDE threats | Session spoofing (CVSS 9.5) |
+| **A2A Agent** | 10 STRIDE threats | Agent impersonation (CVSS 9.1) |
+| **AI Response** | 11 STRIDE threats | PII disclosure (CVSS 9.1) |
+
+### CVSS Score Distribution
+
+| Severity | Count | Range |
+|----------|-------|-------|
+| 🔴 Critical | 7 | 9.0–9.8 |
+| 🟠 High | 11 | 7.0–8.9 |
+| 🟡 Medium | 7 | 4.0–6.9 |
+
+### MITRE ATLAS Coverage
+
+| Category | Techniques | Status |
+|----------|-----------|--------|
+| ATLAS-MCP | 4 | ✅ All mitigated |
+| ATLAS-A2A | 10 | ✅ All mitigated |
+| ATLAS-LLM | 8 | ✅ All mitigated |
+| ATLAS-RAG | 3 | 🔜 v4.0 planning |
+
 ## Reporting a Vulnerability
 
 We take security seriously. If you discover a vulnerability:

@@ -124,11 +124,12 @@ func (es *EmbeddedServer) Start() error {
 	return nil
 }
 
-// Stop gracefully shuts down the MCP server
 func (es *EmbeddedServer) Stop() error {
-	es.cancel()
+	es.cancel() // cancel is void, context cancel never fails
 	if es.server != nil {
-		es.server.Stop()
+		if err := es.server.Stop(); err != nil {
+			return err //nolint:gosec G104
+		}
 	}
 	es.logger.Info("Embedded MCP server stopped")
 	return nil

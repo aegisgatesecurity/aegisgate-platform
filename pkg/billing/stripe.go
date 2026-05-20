@@ -243,7 +243,7 @@ func NewStripeClient() *StripeClient {
 		baseURL:        "https://api.stripe.com/v1",
 	}
 
-	// Determine if we're in mock mode (key missing, placeholder, or not live)
+	//nolint:gosec G101
 	if secretKey == "" || secretKey == "sk_test_placeholder" || !strings.HasPrefix(secretKey, "sk_live_") {
 		client.mockMode = true
 	}

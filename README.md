@@ -144,6 +144,20 @@ Maps security controls to **9 frameworks** across all tiers:
 
 > All framework modules are **fail-closed** — if a compliance check cannot be evaluated, the request is blocked.
 
+### Threat Model
+
+Comprehensive threat analysis with STRIDE methodology, CVSS scoring, and MITRE ATLAS mappings:
+
+| Element | Coverage |
+|---------|----------|
+| **STRIDE** | 41 threats across HTTP, MCP, A2A, Response |
+| **Data Flow Diagrams** | 3 DFDs with trust boundaries |
+| **Attack Trees** | 4 major attack vectors |
+| **CVSS 3.1** | 25+ threats scored (7 Critical, 11 High, 7 Medium) |
+| **MITRE ATLAS** | Full ATLAS-MCP, ATLAS-A2A, ATLAS-LLM coverage |
+
+See [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) for full documentation.
+
 ---
 
 ## 🏗️ Architecture
@@ -322,6 +336,18 @@ response = requests.post(
 | **Tamper-Evident Logs** | Hash chain audit trail (legally admissible) |
 | **RFC 5424 Syslog** | Structured logging for SIEM integration |
 | **Zero CVEs** | All dependencies scanned, 0 vulnerabilities |
+| **Threat Model** | Full STRIDE analysis, CVSS scoring, MITRE ATLAS mapping |
+
+### Threat Model (v3.0)
+
+| Category | Coverage | Top Threat |
+|----------|----------|-----------|
+| **HTTP API** | 10 STRIDE threats | License bypass (CVSS 9.8) |
+| **MCP Protocol** | 10 STRIDE threats | Session spoofing (CVSS 9.5) |
+| **A2A Agent** | 10 STRIDE threats | Impersonation (CVSS 9.1) |
+| **AI Response** | 11 STRIDE threats | PII disclosure (CVSS 9.1) |
+
+See [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) for full threat model.
 
 ### SIEM Integration
 
@@ -384,6 +410,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Document | Description |
 |----------|-------------|
+| [plans/THREAT-MODEL.md](plans/THREAT-MODEL.md) | Comprehensive threat model (STRIDE, CVSS, ATLAS) |
 | [PERFORMANCE.md](PERFORMANCE.md) | Sprint 10 load testing results (24,806 RPS, 3.2ms) |
 | [SECURITY.md](SECURITY.md) | Security policies and vulnerability disclosure |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
