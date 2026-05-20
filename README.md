@@ -22,19 +22,20 @@
 
 ## The Problem
 
-Your AI infrastructure spans **three attack surfaces** — and most teams are only protecting one:
+Your AI infrastructure spans **four attack surfaces** — and most teams are only protecting one:
 
 | Attack Surface | Risk | Current Protection |
 |---|---|---|
 | **HTTP APIs** | Prompt injection, data leakage, PII exposure | ✅ WAFs exist |
 | **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection |
 | **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No solution exists |
+| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection |
 
-**AegisGate secures all three in a single 19.1 MB binary you deploy in 60 seconds.**
+**AegisGate secures all four in a single 19.1 MB binary you deploy in 60 seconds.**
 
 ---
 
-## Three Pillars of AI Security
+## Four Pillars of AI Security
 
 ### 🌐 HTTP API Security
 
@@ -84,9 +85,9 @@ Zero-trust guardrails for inter-agent communication — the first purpose-built 
 | 7 | **License Validation** | ECDSA P-256 cryptographic enforcement |
 | 8 | **Audit Logging** | RFC 5424 structured log per request |
 
-### 🛡️ AI Response Security (v3.0)
+### 🛡️ Agent Response Security (v3.0)
 
-Bidirectional protection for LLM outputs — the fourth pillar of AI security:
+Protection for LLM outputs — the fourth pillar of AI security:
 
 | # | Guardrail | Description |
 |---|-----------|-------------|
