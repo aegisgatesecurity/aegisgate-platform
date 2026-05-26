@@ -148,7 +148,8 @@ func Base64Likeness(data []byte) float64 {
 	for _, b := range data {
 		isValid := false
 		for _, valid := range validSet {
-			if byte(valid) == b {
+			r := rune(b)
+			if valid == r {
 				isValid = true
 				break
 			}

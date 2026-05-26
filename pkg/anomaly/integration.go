@@ -395,7 +395,7 @@ func tryBase64Decode(data []byte) []byte {
 	for _, b := range data {
 		found := false
 		for _, c := range base64Chars {
-			if byte(c) == b {
+			if c == rune(b) {
 				found = true
 				break
 			}
