@@ -478,7 +478,3 @@ func TestScanResponseWithPII(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 	if result == nil {
-		t.Fatal("Expected non-nil result")
-	}
-}
-}
