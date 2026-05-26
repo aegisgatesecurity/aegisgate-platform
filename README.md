@@ -22,7 +22,7 @@
 
 ## The Problem
 
-Your AI infrastructure spans **four attack surfaces** — and most teams are only protecting one:
+Your AI infrastructure spans **five attack surfaces** — and most teams are only protecting one:
 
 | Attack Surface | Risk | Current Protection |
 |---|---|---|
@@ -30,6 +30,7 @@ Your AI infrastructure spans **four attack surfaces** — and most teams are onl
 | **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection |
 | **A2A Communication** | Agent impersonation, data tampering, capability escalation | ✅ Native protection |
 | **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ✅ ACP Protocol |
+| **ACP Protocol** | Message tampering, rate abuse, capability escalation, session hijacking | ❌ No native protection |
 
 **AegisGate secures all four in a single 19.1 MB binary you deploy in 60 seconds.**
 
@@ -397,6 +398,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 | **HTTP Security** | Bidirectional scanning · 144+ patterns · Rate limiting · Circuit breaker |
 | **MCP Security** | 8 guardrails · Session isolation · Tool authorization · STDIO validation |
 | **A2A Security** | mTLS · HMAC-SHA256 · Capability enforcement · Per-agent rate limiting |
+| **ACP Security** | HMAC verification · Per-session rate limiting · Message validation · Response scanning · Prometheus metrics |
 | **Authentication** | OIDC/OAuth 2.0 + PKCE · SAML 2.0 · RBAC · API keys |
 | **Compliance** | ATLAS · NIST AI RMF · OWASP · HIPAA · PCI · SOC2 · ISO 27001/42001 · GDPR |
 | **Observability** | Prometheus metrics · RFC 5424 audit · Hash chain logs · Grafana dashboard |
