@@ -6,6 +6,7 @@ package acp
 import (
 	"context"
 	"testing"
+	"time"
 
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 )
@@ -408,4 +409,137 @@ func TestGetSessionStats(t *testing.T) {
 	if stats != nil {
 		t.Error("Expected nil for non-existent session")
 	}
+}
+
+func TestScanResponseWithSecret(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableSecretDetection = true
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	result := scanner.ScanResponse("API key: sk-1234567890abcdef", "session-test")
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestScanResponseWithToxic(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableToxicityDetection = true
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	result := scanner.ScanResponse("angry rant content", "session-test")
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestScanResponseEmpty(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	result := scanner.ScanResponse("", "session-test")
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+	if !result.Allowed {
+		t.Error("Expected empty response to be allowed")
+	}
+}
+
+func TestScanACPMessageNilResult(t *testing.T) {
+	scanner := NewACPResponseScanner()
+	msg := &ACPMessage{Method: "test.method"}
+	result, err := scanner.ScanACPMessage(context.Background(), msg, "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestCheckRateLimitTimeout(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitPerMinute = 60
+	cfg.RateLimitBurst = 1
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("timeout-test")
+	scanner.CheckRateLimit("timeout-test")
+	time.Sleep(100 * time.Millisecond)
+	err := scanner.CheckRateLimit("timeout-test")
+	if err != nil {
+		t.Error("Should allow after waiting for token refill")
+	}
+}
+
+func TestResetAllSessionStatsWithData(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 5
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("session-reset")
+	stats := scanner.ResetAllSessionStats()
+	if len(stats) != 1 {
+		t.Errorf("Expected 1 session stat, got %d", len(stats))
+	}
+}
+
+}
+
+func TestScanResponseAllowed(t *testing.T) {
+	scanner := NewACPResponseScanner()
+	result, err := scanner.ScanResponse(context.Background(), "clean content", "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestScanResponseEmpty(t *testing.T) {
+	scanner := NewACPResponseScanner()
+	result, err := scanner.ScanResponse(context.Background(), "", "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if !result.Allowed {
+		t.Error("Empty response should be allowed")
+	}
+}
+
+func TestScanACPMessageNilResult(t *testing.T) {
+	scanner := NewACPResponseScanner()
+	msg := &ACPMessage{Method: "test.method"}
+	result, err := scanner.ScanACPMessage(context.Background(), msg, "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestCheckRateLimitExhaust(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 2
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("exhaust")
+	scanner.CheckRateLimit("exhaust")
+	err := scanner.CheckRateLimit("exhaust")
+	if err == nil {
+		t.Error("Expected rate limit error")
+	}
+}
+
+func TestResetAllSessionStatsWithData(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 5
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("session-reset")
+	stats := scanner.ResetAllSessionStats()
+	if len(stats) != 1 {
+		t.Errorf("Expected 1 session stat, got %d", len(stats))
+	}
+}
 }
