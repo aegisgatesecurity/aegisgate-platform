@@ -45,3 +45,13 @@ func TestValidateConfigNegativeRateLimit(t *testing.T) {
 		t.Errorf("Expected negative rate limit to be set to default, got error: %v", err)
 	}
 }
+
+func TestValidateRateLimitDefaults(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.RateLimitPerMinute = 0
+	cfg.RateLimitBurst = 0
+	cfg.Validate()
+	if cfg.RateLimitPerMinute <= 0 || cfg.RateLimitBurst <= 0 {
+		t.Error("Expected positive rate limit defaults")
+	}
+}

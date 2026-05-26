@@ -434,3 +434,77 @@ func TestCheckRateLimitBurst(t *testing.T) {
 		t.Error("Expected rate limit error on 4th request")
 	}
 }
+
+func TestResetAllSessionStatsMultiple(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 5
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("s1")
+	scanner.CheckRateLimit("s2")
+	scanner.CheckRateLimit("s3")
+	stats := scanner.ResetAllSessionStats()
+	if len(stats) != 3 {
+		t.Errorf("Expected 3 stats, got %d", len(stats))
+	}
+}
+
+func TestClearSessionStats(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 5
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("clear-me")
+	scanner.ClearSessionStats("clear-me")
+	// Should not panic
+}
+
+func TestClearAllStats(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 5
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	scanner.CheckRateLimit("all")
+	scanner.ClearAllStats()
+	// Should not panic
+}
+
+func TestScanResponseWithPII(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnablePIIScanner = true
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	result, err := scanner.ScanResponse(context.Background(), "Contact: john@example.com", "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestScanResponseWithSecret(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableSecretDetection = true
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	result, err := scanner.ScanResponse(context.Background(), "Password: secret123", "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
+
+func TestScanResponseStrictMode(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnablePIIScanner = true
+	cfg.ResponseGuardConfig.StrictMode = true
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	result, err := scanner.ScanResponse(context.Background(), "Email: test@test.com", "session-test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+}
