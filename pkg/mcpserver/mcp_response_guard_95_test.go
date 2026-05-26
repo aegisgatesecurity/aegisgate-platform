@@ -64,7 +64,7 @@ func TestGuardResponse_StrictSecrets(t *testing.T) {
 	g := NewMCPResponseGuardWithConfig(&responseguard.ResponseGuardConfig{
 		StrictMode: true, EnableSecretDetection: true, EnablePIIScanner: true,
 	})
-	ok, _, _ := g.GuardResponse(context.Background(), "key=sk_live_PLACEHOLDER", "s4")
+	ok, _, _ := g.GuardResponse(context.Background(), "Stripe key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt", "s4")
 	if ok {
 		t.Error("strict mode should block secrets")
 	}
