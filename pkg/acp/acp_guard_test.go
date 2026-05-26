@@ -496,3 +496,4 @@ func TestScanResponseWithSecret(t *testing.T) {
 }
 
 func TestScanResponseStrictMode(t *testing.T) {
+}
