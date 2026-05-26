@@ -409,3 +409,28 @@ func TestNewACPResponseScannerWithNilResponseGuard(t *testing.T) {
 		t.Error("Expected guard to be initialized even with nil config")
 	}
 }
+
+func TestGetSessionStatsNonExistent(t *testing.T) {
+	scanner := NewACPResponseScanner()
+	stats := scanner.GetSessionStats("non-existent")
+	if stats != nil {
+		t.Error("Expected nil for non-existent session")
+	}
+}
+
+func TestCheckRateLimitBurst(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.EnableRateLimiting = true
+	cfg.RateLimitBurst = 3
+	scanner := NewACPResponseScannerWithConfig(cfg)
+	for i := 0; i < 3; i++ {
+		err := scanner.CheckRateLimit("burst-test")
+		if err != nil {
+			t.Errorf("Request %d should succeed, got %v", i+1, err)
+		}
+	}
+	err := scanner.CheckRateLimit("burst-test")
+	if err == nil {
+		t.Error("Expected rate limit error on 4th request")
+	}
+}
