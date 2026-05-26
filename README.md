@@ -398,7 +398,6 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 | **MCP Security** | 8 guardrails · Session isolation · Tool authorization · STDIO validation |
 | **A2A Security** | mTLS · HMAC-SHA256 · Capability enforcement · Per-agent rate limiting |
 | **ACP Security** | HMAC verification · Per-session rate limiting · Message validation · Response scanning · Prometheus metrics |
-| **ACP Security** | HMAC verification · Per-session rate limiting · Message validation · Response scanning · Prometheus metrics |
 | **Authentication** | OIDC/OAuth 2.0 + PKCE · SAML 2.0 · RBAC · API keys |
 | **Compliance** | ATLAS · NIST AI RMF · OWASP · HIPAA · PCI · SOC2 · ISO 27001/42001 · GDPR |
 | **Observability** | Prometheus metrics · RFC 5424 audit · Hash chain logs · Grafana dashboard |
