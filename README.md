@@ -197,7 +197,7 @@ flowchart TB
         B[🤖 MCP Client]
         C[🤝 A2A Agent]
     end
-    subgraph "AegisGate Platform v2.0.1"
+    subgraph "AegisGate Platform v3.0.0"
         subgraph "Entry Points"
             D["🌐 HTTP Proxy\n:8080"]
             E["🔗 MCP Server\n:8081"]
@@ -249,7 +249,7 @@ flowchart TB
 
 ---
 
-## ⚡ Performance (v2.0.1 Sprint 10 Benchmark)
+## ⚡ Performance (v3.0.0 Sprint 10 Benchmark)
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
@@ -296,7 +296,7 @@ Includes HPA autoscaling, NetworkPolicy, ServiceMonitor, rolling updates.
 
 ```bash
 curl http://localhost:8443/health
-# {"status":"healthy","version":"v2.0.1","tier":"community",...}
+# {"status":"healthy","version":"v3.0.0","tier":"community",...}
 ```
 
 ---
