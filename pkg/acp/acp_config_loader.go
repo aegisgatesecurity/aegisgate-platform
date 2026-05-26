@@ -7,8 +7,8 @@ package acp
 
 import (
 	"fmt"
-	"path/filepath"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -25,11 +25,11 @@ func NewConfigLoader() *ConfigLoader {
 // LoadConfig loads ACP configuration from a YAML file
 func (cl *ConfigLoader) LoadConfig(path string) (*ACPGuardConfig, error) {
 	// Validate path to prevent file inclusion attacks
-		sanitizedPath := filepath.Clean(path)
-		if !strings.HasPrefix(sanitizedPath, "/") && !strings.HasPrefix(sanitizedPath, "./") && !strings.HasPrefix(sanitizedPath, "../") {
-			return nil, fmt.Errorf("invalid config path: path must be absolute or relative")
-		}
-		data, err := os.ReadFile(sanitizedPath)
+	sanitizedPath := filepath.Clean(path)
+	if !strings.HasPrefix(sanitizedPath, "/") && !strings.HasPrefix(sanitizedPath, "./") && !strings.HasPrefix(sanitizedPath, "../") {
+		return nil, fmt.Errorf("invalid config path: path must be absolute or relative")
+	}
+	data, err := os.ReadFile(sanitizedPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
