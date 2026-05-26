@@ -434,7 +434,7 @@ func TestMCPSessionGuard_ScanWithPII(t *testing.T) {
 func TestMCPSessionGuard_ScanWithSecrets(t *testing.T) {
 	guard := NewMCPSessionGuard()
 
-	response := "API Key: sk_live_PLACEHOLDER"
+	response := "API Key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt"
 	result, _ := guard.Scan(context.Background(), response, "secret-session")
 
 	if result == nil {
