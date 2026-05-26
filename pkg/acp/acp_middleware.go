@@ -110,7 +110,7 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.Handler {
 					"reason", result.BlockReason,
 				)
 				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte("Content blocked: " + result.BlockReason))
+				w.Write([]byte("Content blocked: <redacted>"))
 				return
 			}
 		}
