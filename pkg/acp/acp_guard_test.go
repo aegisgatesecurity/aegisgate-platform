@@ -482,7 +482,6 @@ func TestResetAllSessionStatsWithData(t *testing.T) {
 	}
 }
 
-}
 
 func TestScanResponseAllowed(t *testing.T) {
 	scanner := NewACPResponseScanner()
