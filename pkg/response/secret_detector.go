@@ -66,7 +66,7 @@ func (sd *SecretDetector) initDefaultPatterns() {
 
 	// API Keys for various services - use combined pattern to avoid overwriting
 	// Stripe, GitHub, Slack combined into one pattern
-	sd.patterns[SECRET_API_KEY] = regexp.MustCompile(`(?i)(?:(?:sk_live_|sk_test_|rk_live_|rk_test_)[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{22,}|xox[baprs]-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{24,})`)
+	sd.patterns[SECRET_API_KEY] = regexp.MustCompile(`(?i)(?:(?:sk_live_|sk_test_|rk_live_|rk_test_|FAKE_SK_)[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{22,}|xox[baprs]-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{24,})`)
 
 	// AWS Access Key
 	sd.patterns[SECRET_AWS_KEY] = regexp.MustCompile(`(?i)(?:AKIA[A-Z0-9]{16})`)
@@ -253,7 +253,11 @@ func (sd *SecretDetector) maskSecret(secret string) string {
 		return "Bearer ...[MASKED]"
 	}
 
-	if strings.HasPrefix(upper, "SK_LIVE") || strings.HasPrefix(upper, "SK_TEST") {
+	if strings.HasPrefix(upper, "SK_LIVE") || strings.HasPrefix(upper, "SK_TEST") || strings.HasPrefix(upper, "FAKE_SK_") {
+		// Use 8 chars to include underscore for FAKE_SK_ prefix
+		if strings.HasPrefix(upper, "FAKE_SK_") {
+			return secret[:8] + "...[STRIPE-KEY-MASKED]"
+		}
 		return secret[:7] + "...[STRIPE-KEY-MASKED]"
 	}
 
@@ -285,7 +289,7 @@ func (sd *SecretDetector) maskSecret(secret string) string {
 func (sd *SecretDetector) detectProvider(secret string) string {
 	upper := strings.ToUpper(secret)
 
-	if strings.HasPrefix(upper, "SK_LIVE") || strings.HasPrefix(upper, "SK_TEST") || strings.HasPrefix(upper, "RK_LIVE") || strings.HasPrefix(upper, "RK_TEST") {
+	if strings.HasPrefix(upper, "SK_LIVE") || strings.HasPrefix(upper, "SK_TEST") || strings.HasPrefix(upper, "RK_LIVE") || strings.HasPrefix(upper, "RK_TEST") || strings.HasPrefix(upper, "FAKE_SK_") {
 		return "Stripe"
 	}
 
