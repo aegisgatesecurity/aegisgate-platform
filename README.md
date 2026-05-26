@@ -35,7 +35,7 @@ Your AI infrastructure spans **four attack surfaces** — and most teams are onl
 
 ---
 
-## Four Pillars of AI Security
+## Five Pillars of AI Security
 
 ### 🌐 HTTP API Security
 
@@ -109,6 +109,34 @@ Protection for LLM outputs — the fourth pillar of AI security:
 - Sub-5ms scanning latency (typical response scan < 1ms)
 
 ---
+
+
+### 🔐 ACP Protocol Security (v3.0)
+
+**Agent Communication Protocol** — The newest pillar for agent-to-agent security.
+
+The ACP guard provides comprehensive protection for agent communication:
+
+| Feature | Description |
+|---------|-------------|
+| **HMAC Verification** | Full message body signature validation |
+| **Rate Limiting** | Per-session token-bucket algorithm |
+| **Response Scanning** | PII, secrets, toxicity, hallucination detection |
+| **Capability Enforcement** | Fine-grained permission control |
+| **Input Validation** | Method blocking, schema validation |
+
+```go
+// ACP middleware integrates seamlessly
+import "github.com/aegisgatesecurity/aegisgate-platform/pkg/acp"
+
+func main() {
+    scanner := acp.NewACPResponseScanner()
+    mw := acp.NewMiddleware(scanner)
+    http.Handle("/acp/", mw.WrapHandler(handler))
+}
+```
+
+- **Coverage:** 90.1% | **Tests:** 164 | **Metrics:** 10 Prometheus counters
 
 ## 🔐 Enterprise Authentication
 
@@ -337,7 +365,7 @@ response = requests.post(
 | **Zero CVEs** | All dependencies scanned, 0 vulnerabilities |
 | **Threat Model** | Full STRIDE analysis, CVSS scoring, MITRE ATLAS mapping |
 
-### Threat Model (v3.0)
+### Threat Model (v3.0 — ACP Protocol Added)
 
 | Category | Coverage | Top Threat |
 |----------|----------|-----------|
