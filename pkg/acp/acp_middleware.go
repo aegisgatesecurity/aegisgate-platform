@@ -117,7 +117,10 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.Handler {
 			}
 		}
 
-		// Write response
+		// Write response with security headers
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		// Prevent caching to avoid reflected XSS
+		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 		if _, writeErr := w.Write(wrapper.buffer.Bytes()); writeErr != nil {
 			m.logger.Error("Failed to write response", "error", writeErr)
 		}

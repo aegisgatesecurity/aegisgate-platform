@@ -480,8 +480,10 @@ func main() {
 
 		// Register ACP endpoints
 		proxyMux.Handle("/acp/", acpMiddleware.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}"))
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
+				log.Printf("Warning: Failed to write ACP response: %v", err)
+			}
 		})))
 
 		log.Printf("ACP: Guardrails active (hmac=%v, rate_limit=%v/min, burst=%d)",
