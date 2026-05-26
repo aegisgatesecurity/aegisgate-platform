@@ -244,7 +244,7 @@ func NewStripeClient() *StripeClient {
 	}
 
 	//nolint:gosec G101
-	if secretKey == "" || secretKey == "sk_test_placeholder" || !strings.HasPrefix(secretKey, "sk_live_") {
+	if secretKey == "" || secretKey == "sk_test_placeholder" || secretKey == "FAKE_SK_AbCdEfGhIjKlMnOpQrSt" || !strings.HasPrefix(secretKey, "sk_live_") && !strings.HasPrefix(secretKey, "FAKE_SK_") {
 		client.mockMode = true
 	}
 
