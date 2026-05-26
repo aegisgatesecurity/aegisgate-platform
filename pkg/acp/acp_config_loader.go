@@ -7,7 +7,9 @@ package acp
 
 import (
 	"fmt"
+	"path/filepath"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -22,7 +24,12 @@ func NewConfigLoader() *ConfigLoader {
 
 // LoadConfig loads ACP configuration from a YAML file
 func (cl *ConfigLoader) LoadConfig(path string) (*ACPGuardConfig, error) {
-	data, err := os.ReadFile(path)
+	// Validate path to prevent file inclusion attacks
+		sanitizedPath := filepath.Clean(path)
+		if !strings.HasPrefix(sanitizedPath, "/") && !strings.HasPrefix(sanitizedPath, "./") && !strings.HasPrefix(sanitizedPath, "../") {
+			return nil, fmt.Errorf("invalid config path: path must be absolute or relative")
+		}
+		data, err := os.ReadFile(sanitizedPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -141,11 +148,15 @@ func LoadConfigFromEnv() *ACPGuardConfig {
 	}
 
 	if v := os.Getenv("ACP_RATE_LIMIT_RPM"); v != "" {
-		fmt.Sscanf(v, "%d", &cfg.RateLimitPerMinute)
+		if _, err := fmt.Sscanf(v, "%d", &cfg.RateLimitPerMinute); err != nil {
+			cfg.RateLimitPerMinute = 100
+		}
 	}
 
 	if v := os.Getenv("ACP_RATE_LIMIT_BURST"); v != "" {
-		fmt.Sscanf(v, "%d", &cfg.RateLimitBurst)
+		if _, err := fmt.Sscanf(v, "%d", &cfg.RateLimitBurst); err != nil {
+			cfg.RateLimitBurst = 20
+		}
 	}
 
 	return cfg
