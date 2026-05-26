@@ -56,8 +56,8 @@ func TestFindStripeKeys(t *testing.T) {
 		input    string
 		expected int
 	}{
-		{"sk_live key", "sk_live_1234567890abcdefghij", 1},
-		{"sk_test key", "sk_test_abcdefghij1234567890", 1},
+		{"sk_live key", "sk_live_PLACEHOLDER", 1},
+		{"sk_test key", "sk_test_PLACEHOLDER", 1},
 		{"no key", "This is just a normal text", 0},
 	}
 
@@ -371,7 +371,7 @@ func TestFindEncryptionKeys(t *testing.T) {
 func TestFindMultipleSecrets(t *testing.T) {
 	detector := NewSecretDetector()
 
-	text := "Stripe key: sk_live_1234567890abcdefghij, AWS key: AKIAIOSFODNN7EXAMPLE, JWT: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"
+	text := "Stripe key: sk_live_PLACEHOLDER, AWS key: AKIAIOSFODNN7EXAMPLE, JWT: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"
 
 	matches := detector.FindSecrets(text)
 
@@ -387,7 +387,7 @@ func TestMaskSecret(t *testing.T) {
 		name   string
 		secret string
 	}{
-		{"Stripe key", "sk_live_1234567890abcdefghij"},
+		{"Stripe key", "sk_live_PLACEHOLDER"},
 		{"AWS key", "AKIAIOSFODNN7EXAMPLE"},
 		{"JWT", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"},
 		{"Bearer", "Bearer mytoken1234567890"},
@@ -410,8 +410,8 @@ func TestDetectProvider(t *testing.T) {
 		secret   string
 		expected string
 	}{
-		{"sk_live_1234567890abcdefghij", "Stripe"},
-		{"sk_test_abcdefghij1234567890", "Stripe"},
+		{"sk_live_PLACEHOLDER", "Stripe"},
+		{"sk_test_PLACEHOLDER", "Stripe"},
 		{"AKIAIOSFODNN7EXAMPLE", "AWS"},
 		{"ghp_1234567890abcdefghijklmnopqrstuvwxyz", "GitHub"},
 	}
@@ -440,7 +440,7 @@ func TestSecretValidateMatch(t *testing.T) {
 	}
 
 	// Valid API key (long enough)
-	if !detector.validateMatch(SECRET_API_KEY, "sk_live_1234567890abcdefghij") {
+	if !detector.validateMatch(SECRET_API_KEY, "sk_live_PLACEHOLDER") {
 		t.Error("expected valid API key to pass validation")
 	}
 
@@ -459,7 +459,7 @@ func TestScanSecrets(t *testing.T) {
 	detector := NewSecretDetector()
 	ctx := context.Background()
 
-	text := "API key: sk_live_1234567890abcdefghij"
+	text := "API key: sk_live_PLACEHOLDER"
 	matches, err := detector.ScanSecrets(ctx, text)
 
 	if err != nil {
@@ -475,7 +475,7 @@ func TestScanSecretsWithContext(t *testing.T) {
 	ctx := context.Background()
 	scanCtx := NewScanContext("client-123", "req-456")
 
-	text := "API key: sk_live_1234567890abcdefghij"
+	text := "API key: sk_live_PLACEHOLDER"
 	matches, err := detector.ScanSecretsWithContext(ctx, text, scanCtx)
 
 	if err != nil {
@@ -486,7 +486,7 @@ func TestScanSecretsWithContext(t *testing.T) {
 	}
 
 	// Should return masked value
-	if matches[0].Value == "sk_live_1234567890abcdefghij" {
+	if matches[0].Value == "sk_live_PLACEHOLDER" {
 		t.Error("expected masked value, got original")
 	}
 }
@@ -494,7 +494,7 @@ func TestScanSecretsWithContext(t *testing.T) {
 func TestSecretCountByCategory(t *testing.T) {
 	detector := NewSecretDetector()
 
-	text := "Stripe: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE, Stripe: sk_test_abcdefghij1234567890"
+	text := "Stripe: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE, Stripe: sk_test_PLACEHOLDER"
 	matches := detector.FindSecrets(text)
 
 	counts := detector.CountByCategory(matches)
@@ -515,7 +515,7 @@ func TestSecretCountByCategory(t *testing.T) {
 func TestSecretSeveritySummary(t *testing.T) {
 	detector := NewSecretDetector()
 
-	text := "Stripe: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE, Private Key: -----BEGIN RSA PRIVATE KEY-----"
+	text := "Stripe: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE, Private Key: -----BEGIN RSA PRIVATE KEY-----"
 	matches := detector.FindSecrets(text)
 
 	summary := detector.SeveritySummary(matches)
@@ -531,7 +531,7 @@ func TestSecretSeveritySummary(t *testing.T) {
 func TestSeverityDistribution(t *testing.T) {
 	detector := NewSecretDetector()
 
-	text := "Stripe: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE"
+	text := "Stripe: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE"
 	matches := detector.FindSecrets(text)
 
 	dist := detector.SeverityDistribution(matches)
@@ -544,7 +544,7 @@ func TestSeverityDistribution(t *testing.T) {
 func TestDetectSecretsByProvider(t *testing.T) {
 	detector := NewSecretDetector()
 
-	text := "Stripe: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE, Stripe: sk_test_abcdefghij1234567890"
+	text := "Stripe: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE, Stripe: sk_test_PLACEHOLDER"
 	matches := detector.FindSecrets(text)
 
 	byProvider := detector.DetectSecretsByProvider(matches)
@@ -561,7 +561,7 @@ func TestDetectSecretsByProvider(t *testing.T) {
 }
 
 func TestScanTextForSecrets(t *testing.T) {
-	text := "API key: sk_live_1234567890abcdefghij"
+	text := "API key: sk_live_PLACEHOLDER"
 	matches, err := ScanTextForSecrets(text)
 
 	if err != nil {
@@ -573,12 +573,12 @@ func TestScanTextForSecrets(t *testing.T) {
 }
 
 func TestMaskSecrets(t *testing.T) {
-	text := "Stripe key: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE"
+	text := "Stripe key: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE"
 
 	masked := MaskSecrets(text)
 
 	// Original secrets should not be present
-	if containsStr(masked, "sk_live_1234567890abcdefghij") {
+	if containsStr(masked, "sk_live_PLACEHOLDER") {
 		t.Error("Stripe key not properly masked")
 	}
 	if containsStr(masked, "AKIAIOSFODNN7EXAMPLE") {
@@ -600,7 +600,7 @@ func TestValidateSecret(t *testing.T) {
 		secret   string
 		expected bool
 	}{
-		{"sk_live_1234567890abcdefghij", true},
+		{"sk_live_PLACEHOLDER", true},
 		{"AKIAIOSFODNN7EXAMPLE", true},
 		{"ghp_1234567890abcdefghijklmnopqrstuvwxyz", true},
 		{"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", true},
@@ -657,7 +657,7 @@ func TestSecretCustomPatterns(t *testing.T) {
 func TestSecretMatchPositions(t *testing.T) {
 	detector := NewSecretDetector()
 
-	text := "API key is: sk_live_1234567890abcdefghij for testing"
+	text := "API key is: sk_live_PLACEHOLDER for testing"
 	matches := detector.FindSecrets(text)
 
 	if len(matches) < 1 {
@@ -674,7 +674,7 @@ func TestSecretLargeText(t *testing.T) {
 	detector := NewSecretDetector()
 
 	// Create a large text with multiple secrets
-	baseText := "API key: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE, "
+	baseText := "API key: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE, "
 	largeText := ""
 	for i := 0; i < 50; i++ {
 		largeText += baseText
@@ -695,7 +695,7 @@ func TestSecretConcurrency(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			for j := 0; j < 100; j++ {
-				text := "API key: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE"
+				text := "API key: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE"
 				detector.FindSecrets(text)
 			}
 			done <- true
@@ -709,7 +709,7 @@ func TestSecretConcurrency(t *testing.T) {
 
 func BenchmarkFindSecrets(b *testing.B) {
 	detector := NewSecretDetector()
-	text := "Stripe: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE, JWT: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"
+	text := "Stripe: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE, JWT: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -718,7 +718,7 @@ func BenchmarkFindSecrets(b *testing.B) {
 }
 
 func BenchmarkMaskSecrets(b *testing.B) {
-	text := "Stripe: sk_live_1234567890abcdefghij, AWS: AKIAIOSFODNN7EXAMPLE"
+	text := "Stripe: sk_live_PLACEHOLDER, AWS: AKIAIOSFODNN7EXAMPLE"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -753,7 +753,7 @@ func TestScanTextForSecretsWithConfigInvalid(t *testing.T) {
 }
 
 func TestValidateSecretValid(t *testing.T) {
-	result := ValidateSecret("sk_live_1234567890abcdefghij")
+	result := ValidateSecret("sk_live_PLACEHOLDER")
 	if !result.Valid {
 		t.Error("expected valid Stripe key")
 	}
