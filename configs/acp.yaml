@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+# AegisGate ACP Security Configuration
+
+enabled: true
+
+hmac:
+  enabled: true
+  secret: "${ACP_HMAC_SECRET}"
+  timestamp_tolerance: "5m"
+
+rate_limit:
+  enabled: true
+  requests_per_minute: 60
+  burst: 10
+
+input_validation:
+  enabled: true
+  blocked_methods:
+    - "execute_shell"
+    - "run_command"
+    - "system_override"
+
+capabilities:
+  enabled: true
+  default_policy: "deny"
+
+scanning:
+  response_scanning: true
+  detect_pii: true
+  detect_secrets: true
+  detect_toxicity: true
+  detect_hallucination: true
+  timeout: "5s"
+
+logging:
+  level: "info"
+  log_blocked: true
+  log_pii: false
+
+integration:
+  share_with_mcp: true
+  share_with_a2a: true
+  keycloak:
+    enabled: false
+    issuer: "${KEYCLOAK_ISSUER}"
+    client_id: "${KEYCLOAK_CLIENT_ID}"

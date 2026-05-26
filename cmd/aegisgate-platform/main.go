@@ -37,6 +37,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/acp"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
@@ -450,6 +451,42 @@ func main() {
 
 	platformBridge, err := bridge.NewPlatformBridge(fmt.Sprintf("http://localhost:%d", *proxyPort))
 	if err != nil {
+
+		// ============================================================
+		// Component 5: ACP (Agent Communication Protocol) Guard
+		// ============================================================
+		var acpMiddleware *acp.Middleware
+		_ = acp.NewACPResponseScanner // Reserved for future use
+
+		// Load ACP configuration from file or environment
+		acpConfigPath := "configs/acp.yaml"
+		var acpCfg *acp.ACPGuardConfig
+
+		if _, err := os.Stat(acpConfigPath); err == nil {
+			loader := acp.NewConfigLoader()
+			acpCfg, err = loader.LoadConfig(acpConfigPath)
+			if err != nil {
+				log.Printf("Warning: ACP config load failed (%v) - using defaults", err)
+				acpCfg = acp.DefaultACPGuardConfig()
+			}
+		} else {
+			acpCfg = acp.LoadConfigFromEnv()
+			log.Printf("ACP: No config file found, using env-based config")
+		}
+
+		// Create ACP scanner and middleware
+		acp.SetGuardEnabled(acpCfg.EnableHMAC || acpCfg.EnableRateLimiting)
+		acpMiddleware = acp.NewMiddlewareWithConfig(acpCfg)
+
+		// Register ACP endpoints
+		proxyMux.Handle("/acp/", acpMiddleware.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}"))
+		})))
+
+		log.Printf("ACP: Guardrails active (hmac=%v, rate_limit=%v/min, burst=%d)",
+			acpCfg.EnableHMAC, acpCfg.RateLimitPerMinute, acpCfg.RateLimitBurst)
+
 		log.Printf("Warning: Failed to create platform bridge: %v", err)
 		log.Println("Continuing without bridge - LLM calls won't be routed through AegisGate")
 	} else {
