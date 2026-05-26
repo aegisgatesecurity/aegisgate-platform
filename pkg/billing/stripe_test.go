@@ -40,7 +40,7 @@ func TestNewStripeClient_MockMode(t *testing.T) {
 
 func TestNewStripeClient_PlaceholderKey(t *testing.T) {
 	old := os.Getenv("STRIPE_SECRET_KEY")
-	os.Setenv("STRIPE_SECRET_KEY", "sk_test_placeholder")
+	os.Setenv("STRIPE_SECRET_KEY", "sk_test_PLACEHOLDER")
 	defer func() {
 		if old != "" {
 			os.Setenv("STRIPE_SECRET_KEY", old)
@@ -83,7 +83,7 @@ func TestValidateConfig_EmptyKey(t *testing.T) {
 
 func TestValidateConfig_PlaceholderKey(t *testing.T) {
 	c := newMockClient()
-	c.secretKey = "sk_test_placeholder"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	if err := c.ValidateConfig(); err == nil {
 		t.Fatal("expected error for placeholder key")
 	}
@@ -91,7 +91,7 @@ func TestValidateConfig_PlaceholderKey(t *testing.T) {
 
 func TestValidateConfig_ValidKey(t *testing.T) {
 	c := newMockClient()
-	c.secretKey = "sk_test_realkey123"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	if err := c.ValidateConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -273,7 +273,7 @@ func TestTierToUpper(t *testing.T) {
 func TestCreateCheckoutSession_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	_, err := c.CreateCheckoutSession(context.Background(), "developer", "x@y.com", "http://ok", "http://cancel")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
@@ -283,7 +283,7 @@ func TestCreateCheckoutSession_NonMockMode(t *testing.T) {
 func TestGetCustomer_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	_, err := c.GetCustomer(context.Background(), "x@y.com")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
@@ -293,7 +293,7 @@ func TestGetCustomer_NonMockMode(t *testing.T) {
 func TestGetSubscription_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	_, err := c.GetSubscription(context.Background(), "sub_123")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
@@ -303,7 +303,7 @@ func TestGetSubscription_NonMockMode(t *testing.T) {
 func TestCreateBillingPortalSession_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	_, err := c.CreateBillingPortalSession(context.Background(), "cus_123", "http://return")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
@@ -313,7 +313,7 @@ func TestCreateBillingPortalSession_NonMockMode(t *testing.T) {
 func TestCancelSubscription_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	err := c.CancelSubscription(context.Background(), "sub_123")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
@@ -323,7 +323,7 @@ func TestCancelSubscription_NonMockMode(t *testing.T) {
 func TestUpdateSubscription_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	err := c.UpdateSubscription(context.Background(), "sub_123", "enterprise")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
@@ -333,7 +333,7 @@ func TestUpdateSubscription_NonMockMode(t *testing.T) {
 func TestGetInvoices_NonMockMode(t *testing.T) {
 	c := newMockClient()
 	c.mockMode = false
-	c.secretKey = "sk_test_real"
+	c.secretKey = "sk_test_PLACEHOLDER"
 	_, err := c.GetInvoices(context.Background(), "cus_123")
 	if err == nil {
 		t.Fatal("expected error in non-mock mode without real Stripe")
