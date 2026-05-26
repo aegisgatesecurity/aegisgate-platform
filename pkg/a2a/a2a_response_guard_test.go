@@ -35,12 +35,12 @@ func TestNewA2AResponseScanner(t *testing.T) {
 
 func TestNewA2AResponseScannerWithConfig(t *testing.T) {
 	config := &responseguard.ResponseGuardConfig{
-		EnablePIIScanner:        true,
-		EnableSecretDetection:   true,
-		EnableToxicityFilter:    true,
-		EnableHallucination:     true,
-		MaxResponseTokens:       10000,
-		MaxResponseLatencyMS:   1000,
+		EnablePIIScanner:      true,
+		EnableSecretDetection: true,
+		EnableToxicityFilter:  true,
+		EnableHallucination:   true,
+		MaxResponseTokens:     10000,
+		MaxResponseLatencyMS:  1000,
 	}
 
 	scanner := NewA2AResponseScannerWithConfig(config)
@@ -73,7 +73,7 @@ func TestA2AResponseScanner_ScanResponse_WithPII(t *testing.T) {
 
 func TestA2AResponseScanner_ScanResponse_WithSecret(t *testing.T) {
 	scanner := NewA2AResponseScanner()
-	result, err := scanner.ScanResponse(context.Background(), "Key: sk_live_1234567890", "agent-001")
+	result, err := scanner.ScanResponse(context.Background(), "Key: sk_live_PLACEHOLDER", "agent-001")
 	if err != nil {
 		t.Errorf("ScanResponse with secret failed: %v", err)
 	}
@@ -104,8 +104,8 @@ func TestA2AResponseScanner_ScanA2AMessage_ByteSlice(t *testing.T) {
 func TestA2AResponseScanner_ScanA2AMessage_MapWithText(t *testing.T) {
 	scanner := NewA2AResponseScanner()
 	msg := map[string]interface{}{
-		"text":    "A2A message text",
-		"sender":  "agent-003",
+		"text":   "A2A message text",
+		"sender": "agent-003",
 	}
 	result, err := scanner.ScanA2AMessage(context.Background(), msg, "agent-003")
 	if err != nil {
@@ -314,7 +314,7 @@ func TestA2AResponseHandler_HandleResponse(t *testing.T) {
 
 func TestA2AResponseHandler_HandleResponse_WithThreats(t *testing.T) {
 	handler := NewA2AResponseHandler()
-	_, result, err := handler.HandleResponse(context.Background(), "Secret: sk_live_abc123", "agent-threat")
+	_, result, err := handler.HandleResponse(context.Background(), "Secret: sk_live_PLACEHOLDER", "agent-threat")
 	if err != nil {
 		t.Logf("HandleResponse with threats: %v", err)
 	}
@@ -403,7 +403,7 @@ func TestA2AResponseScanner_EmptyContent(t *testing.T) {
 
 func TestA2AResponseScanner_UnicodeContent(t *testing.T) {
 	scanner := NewA2AResponseScanner()
-	result, err := scanner.ScanResponse(context.Background(), "Unicode: " + "Привет", "agent-unicode")
+	result, err := scanner.ScanResponse(context.Background(), "Unicode: "+"Привет", "agent-unicode")
 	if err != nil {
 		t.Errorf("Unicode content scan failed: %v", err)
 	}
@@ -450,4 +450,39 @@ func TestA2AResponseHandler_HttpHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	t.Logf("HTTP handler response: %d", w.Code)
+}
+
+func TestGuardResponseVarious(t *testing.T) {
+	mid := NewResponseGuardMiddleware()
+	tests := []string{"clean", "email: test@test.com", "key=ghp_abc"}
+	for _, msg := range tests {
+		allowed, _, _ := mid.GuardResponse(context.Background(), msg, "agent")
+		t.Logf("'%s' allowed: %v", msg, allowed)
+	}
+}
+
+func TestHandleResponseVariousTypes(t *testing.T) {
+	handler := NewA2AResponseHandler()
+	msgs := []interface{}{
+		"string",
+		[]byte("bytes"),
+		map[string]interface{}{"text": "map"},
+		map[string]interface{}{"data": "data"},
+	}
+	for i, msg := range msgs {
+		allowed, _, _ := handler.HandleResponse(context.Background(), msg, "agent")
+		t.Logf("Type %d allowed: %v", i, allowed)
+	}
+}
+
+func TestHandleResponseEmptyMap(t *testing.T) {
+	handler := NewA2AResponseHandler()
+	allowed, _, _ := handler.HandleResponse(context.Background(), map[string]interface{}{}, "agent")
+	t.Logf("Empty map allowed: %v", allowed)
+}
+
+func TestGetComplianceReportA2A(t *testing.T) {
+	handler := NewA2AResponseHandler()
+	report, _ := handler.GetComplianceReport(context.Background(), "test")
+	t.Logf("A2A compliance report: %d", len(report))
 }
