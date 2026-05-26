@@ -248,7 +248,7 @@ func NewStripeClient() *StripeClient {
 
 	//nolint:gosec G101
 	// #nosec G101 - This is a test placeholder, not a real credential
-	if secretKey == "" || secretKey == testStripeKeyPlaceholder || secretKey == "FAKE_SK_AbCdEfGhIjKlMnOpQrSt" || !strings.HasPrefix(secretKey, "sk_live_") && !strings.HasPrefix(secretKey, "FAKE_SK_") {
+	if secretKey == "" || secretKey == testStripeKeyPlaceholder || (!strings.HasPrefix(secretKey, "sk_live_") && !strings.HasPrefix(secretKey, "FAKE_SK_")) {
 		client.mockMode = true
 	}
 
@@ -270,7 +270,7 @@ func (c *StripeClient) ValidateConfig() error {
 	if c.secretKey == "" {
 		return fmt.Errorf("STRIPE_SECRET_KEY is not set")
 	}
-	if c.secretKey == testStripeKeyPlaceholder { // #nosec G101 -- validates that placeholder was not left in production
+	if c.secretKey == testStripeKeyPlaceholder { // Only reject the old sk_test_placeholder, FAKE_SK_ keys are valid
 		return fmt.Errorf("STRIPE_SECRET_KEY is still set to placeholder value")
 	}
 	return nil
