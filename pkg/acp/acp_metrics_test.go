@@ -62,7 +62,7 @@ func TestSetGuardEnabled(t *testing.T) {
 	SetGuardEnabled(false)
 }
 
-func TestSetActiveSessions(t *testing.T) {
+func TestSetActiveSessionsMetric(t *testing.T) {
 	SetActiveSessions(5)
 	SetActiveSessions(10)
 	SetActiveSessions(0)
