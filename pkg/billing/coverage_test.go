@@ -173,7 +173,7 @@ func TestCreateCheckoutSessionRealMode(t *testing.T) {
 	// Create a client that thinks it's in real mode
 	// by using a key format that doesn't match mock patterns
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key_format",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt_format",
 		mockMode:  false,
 	}
 
@@ -188,7 +188,7 @@ func TestCreateCheckoutSessionRealMode(t *testing.T) {
 
 func TestGetCustomerRealMode(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  false,
 	}
 
@@ -203,7 +203,7 @@ func TestGetCustomerRealMode(t *testing.T) {
 
 func TestGetSubscriptionRealMode(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  false,
 	}
 
@@ -218,7 +218,7 @@ func TestGetSubscriptionRealMode(t *testing.T) {
 
 func TestCreateBillingPortalSessionRealMode(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  false,
 	}
 
@@ -233,7 +233,7 @@ func TestCreateBillingPortalSessionRealMode(t *testing.T) {
 
 func TestCancelSubscriptionRealMode(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  false,
 	}
 
@@ -245,7 +245,7 @@ func TestCancelSubscriptionRealMode(t *testing.T) {
 
 func TestUpdateSubscriptionRealMode(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  false,
 	}
 
@@ -257,7 +257,7 @@ func TestUpdateSubscriptionRealMode(t *testing.T) {
 
 func TestGetInvoicesRealMode(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_live_PLACEHOLDER_key",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  false,
 	}
 
@@ -272,7 +272,7 @@ func TestGetInvoicesRealMode(t *testing.T) {
 
 func TestVerifyWebhookSignatureWithSecret(t *testing.T) {
 	client := &StripeClient{
-		secretKey:     "sk_live_PLACEHOLDER_key",
+		secretKey:     "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		webhookSecret: "whsec_test_secret",
 		mockMode:      false,
 	}
@@ -301,7 +301,7 @@ func TestValidateConfigEmptyKey(t *testing.T) {
 
 func TestValidateConfigPlaceholder(t *testing.T) {
 	client := &StripeClient{
-		secretKey: "sk_test_PLACEHOLDER",
+		secretKey: "FAKE_SK_AbCdEfGhIjKlMnOpQrSt",
 		mockMode:  true,
 	}
 
