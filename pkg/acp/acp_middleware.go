@@ -119,8 +119,8 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.Handler {
 
 		// Write response
 		if _, writeErr := w.Write(wrapper.buffer.Bytes()); writeErr != nil {
-				m.logger.Error("Failed to write response", "error", writeErr)
-			}
+			m.logger.Error("Failed to write response", "error", writeErr)
+		}
 	})
 }
 
