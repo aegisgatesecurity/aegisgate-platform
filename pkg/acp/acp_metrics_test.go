@@ -57,12 +57,12 @@ func TestRecordBlockedMethod(t *testing.T) {
 	RecordBlockedMethod("system.reboot")
 }
 
-func TestSetGuardEnabled(t *testing.T) {
+func TestSetGuardEnabledMetric(t *testing.T) {
 	SetGuardEnabled(true)
 	SetGuardEnabled(false)
 }
 
-func TestSetActiveSessionsMetric(t *testing.T) {
+func TestSetActiveSessionsMetricMetric(t *testing.T) {
 	SetActiveSessions(5)
 	SetActiveSessions(10)
 	SetActiveSessions(0)
