@@ -40,7 +40,7 @@ func TestNewStripeClient_MockMode(t *testing.T) {
 
 func TestNewStripeClient_PlaceholderKey(t *testing.T) {
 	old := os.Getenv("STRIPE_SECRET_KEY")
-	os.Setenv("STRIPE_SECRET_KEY", "FAKE_SK_AbCdEfGhIjKlMnOpQrSt")
+	os.Setenv("STRIPE_SECRET_KEY", "sk_test_placeholder")
 	defer func() {
 		if old != "" {
 			os.Setenv("STRIPE_SECRET_KEY", old)
