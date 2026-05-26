@@ -24,12 +24,13 @@
 
 Your AI infrastructure spans **five attack surfaces** — and most teams are only protecting one:
 
-| Attack Surface | Risk | Current Protection |
+| Attack Surface | Risk | Traditional | AegisGate |
 |---|---|---|
-| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ✅ WAFs exist |
-| **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection |
-| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ✅ Native protection |
-| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ✅ ACP Protocol |
+| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ✅ WAFs exist | ✅ AI-aware scanning, PII detection |
+| **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection | ✅ Built-in protocol guard |
+| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No native protection | ✅ Agent-to-agent verification |
+| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection | ✅ Real-time response guard |
+| **ACP Protocol** | Message tampering, capability escalation, replay attacks | ❌ No native protection | ✅ HMAC-signed messages |
 
 **AegisGate secures all five in a single 19.1 MB binary you deploy in 60 seconds.**
 
