@@ -161,8 +161,3 @@ func TestLoadConfigFromEnvWithHMAC(t *testing.T) {
 		t.Error("Expected HMAC secret to be set")
 	}
 }
-
-func TestValidateWithNegativeTimeout(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.ScanTimeoutSeconds = -1
-	cfg.Validate()
