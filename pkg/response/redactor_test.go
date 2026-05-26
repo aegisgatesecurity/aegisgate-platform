@@ -115,7 +115,7 @@ func TestRedactorPhoneRedaction(t *testing.T) {
 
 func TestRedactorStripeKeyRedaction(t *testing.T) {
 	redactor := NewRedactor()
-	text := "Key: sk_live_PLACEHOLDER"
+	text := "Key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt"
 	result := redactor.Redact(text)
 
 	// Should attempt redaction - result may vary
@@ -291,7 +291,7 @@ func TestRedactorClearAuditLog(t *testing.T) {
 func TestRedactorRedactPIIOnly(t *testing.T) {
 	redactor := NewRedactor()
 
-	text := "Email: test@example.com, Key: sk_live_PLACEHOLDER"
+	text := "Email: test@example.com, Key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt"
 	result := redactor.RedactPIIOnly(text)
 
 	// Only PII should be redacted
@@ -303,7 +303,7 @@ func TestRedactorRedactPIIOnly(t *testing.T) {
 func TestRedactorRedactSecretsOnly(t *testing.T) {
 	redactor := NewRedactor()
 
-	text := "Email: test@example.com, Key: sk_live_PLACEHOLDER"
+	text := "Email: test@example.com, Key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt"
 	result := redactor.RedactSecretsOnly(text)
 
 	_ = result // May or may not redact email
