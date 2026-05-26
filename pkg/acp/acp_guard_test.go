@@ -409,4 +409,3 @@ func TestGetSessionStats(t *testing.T) {
 		t.Error("Expected nil for non-existent session")
 	}
 }
-}
