@@ -275,7 +275,7 @@ func TestEnsureLoggerAlreadySet(t *testing.T) {
 	}
 }
 
-func TestSetGuardEnabledGuard(t *testing.T) {
+func TestSetGuardEnabled(t *testing.T) {
 	SetGuardEnabled(true)
 	SetGuardEnabled(false)
 }
@@ -408,12 +408,4 @@ func TestNewACPResponseScannerWithNilResponseGuard(t *testing.T) {
 	if scanner.guard == nil {
 		t.Error("Expected guard to be initialized even with nil config")
 	}
-}
-
-	if stats != nil {
-		t.Error("Expected nil for non-existent session")
-	}
-}
-
-func TestExtractContentFromACPMessageMap(t *testing.T) {
 }
