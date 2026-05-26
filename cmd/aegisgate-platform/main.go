@@ -449,8 +449,8 @@ func main() {
 	// The bridge routes LLM API calls from AegisGuard through
 	// AegisGate for defense-in-depth security scanning.
 
-	platformBridge, err := bridge.NewPlatformBridge(fmt.Sprintf("http://localhost:%d", *proxyPort))
-	if err != nil {
+	platformBridge, bridgeErr := bridge.NewPlatformBridge(fmt.Sprintf("http://localhost:%d", *proxyPort))
+	if bridgeErr != nil {
 
 		// ============================================================
 		// Component 5: ACP (Agent Communication Protocol) Guard
@@ -487,7 +487,7 @@ func main() {
 		log.Printf("ACP: Guardrails active (hmac=%v, rate_limit=%v/min, burst=%d)",
 			acpCfg.EnableHMAC, acpCfg.RateLimitPerMinute, acpCfg.RateLimitBurst)
 
-		log.Printf("Warning: Failed to create platform bridge: %v", err)
+		log.Printf("Warning: Failed to create platform bridge: %v - continuing without bridge", bridgeErr)
 		log.Println("Continuing without bridge - LLM calls won't be routed through AegisGate")
 	} else {
 		defer platformBridge.Close()
