@@ -220,6 +220,9 @@ type WebhookEvent struct {
 }
 
 // StripeClient wraps all Stripe operations
+// testStripeKeyPlaceholder is a test placeholder key for mock mode detection
+const testStripeKeyPlaceholder = "sk_test_placeholder"
+
 type StripeClient struct {
 	secretKey      string
 	webhookSecret  string
@@ -244,7 +247,8 @@ func NewStripeClient() *StripeClient {
 	}
 
 	//nolint:gosec G101
-	if secretKey == "" || secretKey == "sk_test_placeholder" || secretKey == "FAKE_SK_AbCdEfGhIjKlMnOpQrSt" || !strings.HasPrefix(secretKey, "sk_live_") && !strings.HasPrefix(secretKey, "FAKE_SK_") {
+	// #nosec G101 - This is a test placeholder, not a real credential
+	if secretKey == "" || secretKey == testStripeKeyPlaceholder || secretKey == "FAKE_SK_AbCdEfGhIjKlMnOpQrSt" || !strings.HasPrefix(secretKey, "sk_live_") && !strings.HasPrefix(secretKey, "FAKE_SK_") {
 		client.mockMode = true
 	}
 
@@ -266,7 +270,7 @@ func (c *StripeClient) ValidateConfig() error {
 	if c.secretKey == "" {
 		return fmt.Errorf("STRIPE_SECRET_KEY is not set")
 	}
-	if c.secretKey == "sk_test_placeholder" { // #nosec G101 -- validates that placeholder was not left in production
+	if c.secretKey == testStripeKeyPlaceholder { // #nosec G101 -- validates that placeholder was not left in production
 		return fmt.Errorf("STRIPE_SECRET_KEY is still set to placeholder value")
 	}
 	return nil
