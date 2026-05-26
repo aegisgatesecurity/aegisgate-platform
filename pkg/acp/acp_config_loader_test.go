@@ -161,3 +161,23 @@ func TestLoadConfigFromEnvWithHMAC(t *testing.T) {
 		t.Error("Expected HMAC secret to be set")
 	}
 }
+
+func TestValidateDefaultTimeout(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.ScanTimeout = 0
+	cfg.Validate()
+	if cfg.ScanTimeout == 0 {
+		t.Error("Expected default timeout to be set")
+	}
+}
+
+func TestLoadConfigFromEnvWithAllVars(t *testing.T) {
+	os.Setenv("ACP_HMAC_SECRET", "test-secret-32-bytes-long!!!!")
+	os.Setenv("ACP_RATE_LIMIT_BURST", "50")
+	defer os.Unsetenv("ACP_HMAC_SECRET")
+	defer os.Unsetenv("ACP_RATE_LIMIT_BURST")
+	cfg := LoadConfigFromEnv()
+	if cfg == nil {
+		t.Fatal("Expected non-nil config")
+	}
+}
