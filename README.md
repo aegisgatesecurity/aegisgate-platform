@@ -413,25 +413,43 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 ## 🎯 Tier Comparison
 
 | Feature | Community | Developer | Professional |
-|---------|-----------|-----------|--------------|
-| **HTTP Proxy** | ✅ | ✅ | ✅ |
-| **MCP Guardrails** | 8 | 8 | 8 |
-| **A2A Guardrails** | 8 | 8 | 8 |
-| **MITRE ATLAS** | ✅ | ✅ | ✅ |
-| **NIST AI RMF** | ✅ | ✅ | ✅ |
-| **OWASP LLM Top 10** | ✅ | ✅ | ✅ |
-| **OIDC / SAML SSO** | — | ✅ | ✅ |
-| **RBAC** | Basic | Advanced | Granular |
-| **GDPR** | View | Full | Full |
-| **HIPAA** | — | — | ✅ |
-| **PCI-DSS** | — | — | ✅ |
-| **SOC2** | — | — | ✅ |
-| **ISO 27001** | — | — | ✅ |
-| **SIEM Integration** | — | ✅ | ✅ |
-| **Redis/SQLite** | — | ✅ | ✅ |
-| **PostgreSQL/S3** | — | — | ✅ |
-| **Kubernetes/Helm** | — | ✅ | ✅ |
+|---------|:---------:|:--------:|:------------:|
+| **Core Security** | | | |
+| HTTP Proxy | ✅ | ✅ | ✅ |
+| Secret Detection/Masking | ✅ | ✅ | ✅ |
+| PII Detection | ✅ | ✅ | ✅ |
+| **Response Guard** | | | |
+| Toxicity Detection | ✅ | ✅ | ✅ |
+| Hallucination Detection | — | ✅ | ✅ |
+| Real-time Response Scanning | ✅ | ✅ | ✅ |
+| **Protocol Guards** | | | |
+| MCP Guardrails | 8 | 8 | 8 |
+| A2A Guardrails | 8 | 8 | 8 |
+| ACP Protocol (HMAC-signed) | ✅ | ✅ | ✅ |
+| Message Tampering Protection | ✅ | ✅ | ✅ |
+| Replay Attack Prevention | ✅ | ✅ | ✅ |
+| Capability Escalation Control | ✅ | ✅ | ✅ |
+| Rate Limiting | ✅ | ✅ | ✅ |
+| **Compliance Frameworks** | | | |
+| MITRE ATLAS | ✅ | ✅ | ✅ |
+| NIST AI RMF | ✅ | ✅ | ✅ |
+| OWASP LLM Top 10 | ✅ | ✅ | ✅ |
+| **Access Control** | | | |
+| OIDC / SAML SSO | — | ✅ | ✅ |
+| RBAC | Basic | Advanced | Granular |
+| **Data Privacy** | | | |
+| GDPR | View | Full | Full |
+| HIPAA | — | — | ✅ |
+| PCI-DSS | — | — | ✅ |
+| SOC2 | — | — | ✅ |
+| ISO 27001 | — | — | ✅ |
+| **Integrations** | | | |
+| SIEM Integration | — | ✅ | ✅ |
+| Redis/SQLite | — | ✅ | ✅ |
+| PostgreSQL/S3 | — | — | ✅ |
+| Kubernetes/Helm | — | ✅ | ✅ |
 
+> See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing) for full tier details.
 > See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing/) for full tier details.
 
 ---
