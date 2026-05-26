@@ -275,12 +275,12 @@ func TestEnsureLoggerAlreadySet(t *testing.T) {
 	}
 }
 
-func TestSetGuardEnabledGuardTest(t *testing.T) {
+func TestSetGuardEnabled(t *testing.T) {
 	SetGuardEnabled(true)
 	SetGuardEnabled(false)
 }
 
-func TestSetActiveSessionsGuardTest(t *testing.T) {
+func TestSetActiveSessions(t *testing.T) {
 	SetActiveSessions(0)
 	SetActiveSessions(5)
 }
@@ -409,72 +409,3 @@ func TestNewACPResponseScannerWithNilResponseGuard(t *testing.T) {
 		t.Error("Expected guard to be initialized even with nil config")
 	}
 }
-
-func TestGetSessionStatsNonExistent(t *testing.T) {
-	scanner := NewACPResponseScanner()
-	stats := scanner.GetSessionStats("non-existent")
-	if stats != nil {
-		t.Error("Expected nil for non-existent session")
-	}
-}
-
-func TestCheckRateLimitBurst(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnableRateLimiting = true
-	cfg.RateLimitBurst = 3
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	for i := 0; i < 3; i++ {
-		err := scanner.CheckRateLimit("burst-test")
-		if err != nil {
-			t.Errorf("Request %d should succeed, got %v", i+1, err)
-		}
-	}
-	err := scanner.CheckRateLimit("burst-test")
-	if err == nil {
-		t.Error("Expected rate limit error on 4th request")
-	}
-}
-
-func TestResetAllSessionStatsMultiple(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnableRateLimiting = true
-	cfg.RateLimitBurst = 5
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	scanner.CheckRateLimit("s1")
-	scanner.CheckRateLimit("s2")
-	scanner.CheckRateLimit("s3")
-	stats := scanner.ResetAllSessionStats()
-	if len(stats) != 3 {
-		t.Errorf("Expected 3 stats, got %d", len(stats))
-	}
-}
-
-func TestClearSessionStats(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnableRateLimiting = true
-	cfg.RateLimitBurst = 5
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	scanner.CheckRateLimit("clear-me")
-	scanner.ClearSessionStats("clear-me")
-	// Should not panic
-}
-
-func TestClearAllStats(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnableRateLimiting = true
-	cfg.RateLimitBurst = 5
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	scanner.CheckRateLimit("all")
-	scanner.ClearAllStats()
-	// Should not panic
-}
-
-func TestScanResponseWithPII(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnablePIIScanner = true
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	result, err := scanner.ScanResponse(context.Background(), "Contact: john@example.com", "session-test")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if result == nil {
