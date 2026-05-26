@@ -110,13 +110,17 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.Handler {
 					"reason", result.BlockReason,
 				)
 				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte("Content blocked: <redacted>"))
+				if _, writeErr := w.Write([]byte("Content blocked: <redacted>")); writeErr != nil {
+					m.logger.Error("Failed to write blocked response", "error", writeErr)
+				}
 				return
 			}
 		}
 
 		// Write response
-		w.Write(wrapper.buffer.Bytes())
+		if _, writeErr := w.Write(wrapper.buffer.Bytes()); writeErr != nil {
+			m.logger.Error("Failed to write response", "error", writeErr)
+		}
 	})
 }
 
