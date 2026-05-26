@@ -22,17 +22,21 @@
 
 ## The Problem
 
-Your AI infrastructure spans **five attack surfaces** — and most teams are only protecting one:
+AI infrastructure spans multiple attack surfaces — and most teams are only protecting one. Traditional security solutions (WAFs, API gateways) weren't designed for AI-specific threats.
+
+### Attack Surface Comparison
 
 | Attack Surface | Risk | Traditional | AegisGate |
-|---|---|---|
-| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ✅ WAFs exist | ✅ AI-aware scanning, PII detection |
+|---|---|---|---|
+| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ⚠️ WAFs exist (AI-agnostic) | ✅ AI-aware scanning, PII detection |
 | **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection | ✅ Built-in protocol guard |
 | **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No native protection | ✅ Agent-to-agent verification |
 | **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection | ✅ Real-time response guard |
 | **ACP Protocol** | Message tampering, capability escalation, replay attacks | ❌ No native protection | ✅ HMAC-signed messages |
 
-**AegisGate secures all five in a single 19.1 MB binary you deploy in 60 seconds.**
+AegisGate fills these gaps with a single unified platform.
+
+ 19.1 MB binary you deploy in 60 seconds.**
 
 ---
 
