@@ -275,12 +275,12 @@ func TestEnsureLoggerAlreadySet(t *testing.T) {
 	}
 }
 
-func TestSetGuardEnabled(t *testing.T) {
+func TestSetGuardEnabledGuardTest(t *testing.T) {
 	SetGuardEnabled(true)
 	SetGuardEnabled(false)
 }
 
-func TestSetActiveSessions(t *testing.T) {
+func TestSetActiveSessionsGuardTest(t *testing.T) {
 	SetActiveSessions(0)
 	SetActiveSessions(5)
 }
