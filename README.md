@@ -450,7 +450,6 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 | Kubernetes/Helm | — | ✅ | ✅ |
 
 > See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing) for full tier details.
-> See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing/) for full tier details.
 
 ---
 
