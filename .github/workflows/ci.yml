@@ -48,6 +48,13 @@ jobs:
               BOT_COMMITS=$((BOT_COMMITS + 1))
               continue
             fi
+            # Exempt merge commits (commits with 2+ parents - created by GitHub merge UI)
+            PARENT_COUNT=$(git rev-list --parents -1 $COMMIT | awk '{print NF}') || true
+            if [ "$PARENT_COUNT" -gt 2 ]; then
+              SUBJECT=$(git log --format="%s" -1 $COMMIT)
+              echo "⏭️ Skipping DCO for merge commit: $SUBJECT ($AUTHOR)" >> $GITHUB_STEP_SUMMARY
+              continue
+            fi
             SIGNOFF=$(git log --format="%B" -1 $COMMIT | grep -c "Signed-off-by:" || true)
             if [ "$SIGNOFF" -eq 0 ]; then
               EMAIL=$(git log --format="%ae" -1 $COMMIT)

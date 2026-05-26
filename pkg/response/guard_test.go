@@ -7,6 +7,7 @@ package response
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -83,7 +84,7 @@ func TestScanWithSecrets(t *testing.T) {
 	guard := NewResponseGuard()
 	ctx := context.Background()
 
-	response := "My API key is sk_live_PLACEHOLDER and AWS key is AKIAIOSFODNN7EXAMPLE"
+	response := "My API key is FAKE_SK_AbCdEfGhIjKlMnOpQrSt and AWS key is AKIAIOSFODNN7EXAMPLE"
 	result, err := guard.Scan(ctx, response)
 
 	if err != nil {
@@ -327,7 +328,7 @@ func TestScanWithConfig(t *testing.T) {
 		StrictMode:            false,
 	}
 
-	response := "API key: sk_live_PLACEHOLDER"
+	response := "API key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt"
 	result, err := guard.ScanWithConfig(context.Background(), response, config)
 
 	if err != nil {
@@ -404,7 +405,7 @@ func TestSecretDetectorAccess(t *testing.T) {
 	}
 
 	// Test that detector works
-	matches := detector.FindSecrets("sk_live_PLACEHOLDER")
+	matches := detector.FindSecrets("FAKE_SK_AbCdEfGhIjKlMnOpQrSt")
 	if len(matches) == 0 {
 		t.Error("expected Stripe key to be detected via SecretDetector")
 	}
@@ -460,10 +461,10 @@ func TestRedactResponse(t *testing.T) {
 }
 
 func TestMaskResponse(t *testing.T) {
-	response := "API key: sk_live_PLACEHOLDER"
+	response := "API key: FAKE_SK_AbCdEfGhIjKlMnOpQrSt"
 	masked := MaskResponse(response)
 
-	if containsStr(masked, "sk_live_PLACEHOLDER") {
+	if strings.Contains(masked, "FAKE_SK_AbCdEfGhIjKlMnOpQrSt") {
 		t.Error("expected API key to be masked")
 	}
 }
