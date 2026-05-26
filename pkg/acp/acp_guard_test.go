@@ -275,16 +275,6 @@ func TestEnsureLoggerAlreadySet(t *testing.T) {
 	}
 }
 
-func TestSetGuardEnabled(t *testing.T) {
-	SetGuardEnabled(true)
-	SetGuardEnabled(false)
-}
-
-func TestSetActiveSessions(t *testing.T) {
-	SetActiveSessions(0)
-	SetActiveSessions(5)
-}
-
 func TestNewACPResponseScannerWithConfigAllFeatures(t *testing.T) {
 	cfg := DefaultACPGuardConfig()
 	cfg.EnableRateLimiting = true
@@ -407,5 +397,15 @@ func TestNewACPResponseScannerWithNilResponseGuard(t *testing.T) {
 	}
 	if scanner.guard == nil {
 		t.Error("Expected guard to be initialized even with nil config")
+	}
+}
+
+// Sprint 14: Additional coverage tests
+
+func TestGetSessionStats(t *testing.T) {
+	scanner := NewACPResponseScanner()
+	stats := scanner.GetSessionStats("test-session")
+	if stats != nil {
+		t.Error("Expected nil for non-existent session")
 	}
 }
