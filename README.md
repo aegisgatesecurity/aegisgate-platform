@@ -28,8 +28,8 @@ Your AI infrastructure spans **four attack surfaces** — and most teams are onl
 |---|---|---|
 | **HTTP APIs** | Prompt injection, data leakage, PII exposure | ✅ WAFs exist |
 | **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection |
-| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No solution exists |
-| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection |
+| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ✅ Native protection |
+| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ✅ ACP Protocol |
 
 **AegisGate secures all four in a single 19.1 MB binary you deploy in 60 seconds.**
 
@@ -440,7 +440,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| **v2.0.1** | ✅ Current | Sprint 10 benchmarked, 97.7% coverage |
+| **v3.0.0** | ✅ Current | ACP Protocol shipped, 90.1% coverage, 164 tests |
 | **v2.0.0** | ✅ Supported | A2A guardrails shipped |
 | **v1.3.x** | ⚠️ Legacy | Community support only |
 
@@ -450,6 +450,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 - [MCP Protocol](https://modelcontextprotocol.io) — Model Context Protocol
 - [A2A Protocol](https://a2a-protocol.org/latest/) — Agent-to-Agent communication standard
+- [ACP Protocol](https://github.com/aegisgatesecurity/aegisgate-platform/tree/main/pkg/acp) — Agent Communication Protocol security layer
 - [MITRE ATLAS](https://atlas.mitre.org) — AI threat framework
 - [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) — AI risk management
 - [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — LLM security
