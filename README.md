@@ -22,7 +22,7 @@
 
 ## The Problem
 
-AI infrastructure spans multiple attack surfaces — and most teams are only protecting one. Traditional security solutions (WAFs, API gateways) weren't designed for AI-specific threats.
+Your AI infrastructure spans multiple attack surfaces — and most teams are only protecting one. Traditional security solutions (WAFs, API gateways) weren't designed for AI-specific threats like prompt injection, agent impersonation, or tool poisoning.
 
 ### Attack Surface Comparison
 
@@ -36,7 +36,7 @@ AI infrastructure spans multiple attack surfaces — and most teams are only pro
 
 AegisGate fills these gaps with a single unified platform.
 
- 19.1 MB binary you deploy in 60 seconds.**
+**AegisGate secures all five in a single 19.1 MB binary you deploy in 60 seconds.**
 
 ---
 
@@ -114,7 +114,6 @@ Protection for LLM outputs — the fourth pillar of AI security:
 - Sub-5ms scanning latency (typical response scan < 1ms)
 
 ---
-
 
 ### 🔐 ACP Protocol Security (v3.0)
 
