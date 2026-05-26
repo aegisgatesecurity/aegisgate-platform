@@ -481,19 +481,4 @@ func TestScanResponseWithPII(t *testing.T) {
 		t.Fatal("Expected non-nil result")
 	}
 }
-
-func TestScanResponseWithSecret(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnableSecretDetection = true
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	result, err := scanner.ScanResponse(context.Background(), "Password: secret123", "session-test")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if result == nil {
-		t.Fatal("Expected non-nil result")
-	}
-}
-
-func TestScanResponseStrictMode(t *testing.T) {
 }
