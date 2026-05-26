@@ -149,3 +149,20 @@ func TestYamlToGuardConfigFull(t *testing.T) {
 		t.Fatal("Expected non-nil config")
 	}
 }
+
+func TestLoadConfigFromEnvWithHMAC(t *testing.T) {
+	os.Setenv("ACP_HMAC_SECRET", "test-secret-key-32-bytes-long!!!!")
+	defer os.Unsetenv("ACP_HMAC_SECRET")
+	cfg := LoadConfigFromEnv()
+	if cfg == nil {
+		t.Fatal("Expected non-nil config")
+	}
+	if cfg.HMACSecret == "" {
+		t.Error("Expected HMAC secret to be set")
+	}
+}
+
+func TestValidateWithNegativeTimeout(t *testing.T) {
+	cfg := DefaultACPGuardConfig()
+	cfg.ScanTimeoutSeconds = -1
+	cfg.Validate()
