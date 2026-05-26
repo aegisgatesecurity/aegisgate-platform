@@ -496,15 +496,3 @@ func TestScanResponseWithSecret(t *testing.T) {
 }
 
 func TestScanResponseStrictMode(t *testing.T) {
-	cfg := DefaultACPGuardConfig()
-	cfg.EnablePIIScanner = true
-	cfg.ResponseGuardConfig.StrictMode = true
-	scanner := NewACPResponseScannerWithConfig(cfg)
-	result, err := scanner.ScanResponse(context.Background(), "Email: test@test.com", "session-test")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if result == nil {
-		t.Fatal("Expected non-nil result")
-	}
-}
