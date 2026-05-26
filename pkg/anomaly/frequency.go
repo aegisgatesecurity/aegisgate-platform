@@ -270,14 +270,14 @@ func CalculateBase64Score(data []byte) float64 {
 		return 0.0
 	}
 
-	validSet := make(map[byte]bool)
+	validSet := make(map[rune]bool)
 	for _, c := range "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=" {
-		validSet[byte(c)] = true
+		validSet[c] = true
 	}
 
 	validCount := 0
 	for _, b := range data {
-		if validSet[b] {
+		if validSet[rune(b)] {
 			validCount++
 		}
 	}
