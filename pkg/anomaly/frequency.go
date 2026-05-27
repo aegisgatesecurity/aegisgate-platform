@@ -276,7 +276,7 @@ func CalculateBase64Score(data []byte) float64 {
 	}
 
 	validCount := 0
-	for _, b := range data {
+	for _, b := range data { //nolint:gosec G115 - byte (0-255) always valid as rune
 		if validSet[rune(b)] {
 			validCount++
 		}
