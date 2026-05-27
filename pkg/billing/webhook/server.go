@@ -128,7 +128,9 @@ func (s *Server) Start() error {
 	}
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		s.logger.Printf("Server error: %v", err)
+		return err
 	}
+	return nil
 }
 
 // handleWebhook processes incoming Stripe webhook events
