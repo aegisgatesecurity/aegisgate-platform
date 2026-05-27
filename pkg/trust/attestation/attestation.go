@@ -8,10 +8,10 @@ import (
 
 // Service provides attestation functionality
 type Service struct {
-	mu        sync.RWMutex
+	mu           sync.RWMutex
 	attestations map[string]*Attestation
-	generator   *Generator
-	validator   *Validator
+	generator    *Generator
+	validator    *Validator
 }
 
 // NewService creates a new attestation service

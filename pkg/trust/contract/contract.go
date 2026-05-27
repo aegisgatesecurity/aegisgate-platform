@@ -19,29 +19,29 @@ type Capability string
 
 const (
 	// File System Capabilities
-	CapFileRead      Capability = "file:read"
-	CapFileWrite     Capability = "file:write"
-	CapFileDelete   Capability = "file:delete"
-	CapFileExecute  Capability = "file:execute"
+	CapFileRead    Capability = "file:read"
+	CapFileWrite   Capability = "file:write"
+	CapFileDelete  Capability = "file:delete"
+	CapFileExecute Capability = "file:execute"
 
 	// Network Capabilities
-	CapNetHTTP       Capability = "net:http"
-	CapNetHTTPS      Capability = "net:https"
-	CapNetInternal   Capability = "net:internal"
-	CapNetExternal   Capability = "net:external"
+	CapNetHTTP     Capability = "net:http"
+	CapNetHTTPS    Capability = "net:https"
+	CapNetInternal Capability = "net:internal"
+	CapNetExternal Capability = "net:external"
 
 	// Terminal Capabilities
-	CapTerminalExec  Capability = "terminal:execute"
-	CapTerminalSSH   Capability = "terminal:ssh"
+	CapTerminalExec Capability = "terminal:execute"
+	CapTerminalSSH  Capability = "terminal:ssh"
 
 	// Database Capabilities
-	CapDBRead        Capability = "db:read"
-	CapDBWrite       Capability = "db:write"
-	CapDBDelete      Capability = "db:delete"
+	CapDBRead   Capability = "db:read"
+	CapDBWrite  Capability = "db:write"
+	CapDBDelete Capability = "db:delete"
 
 	// API Capabilities
-	CapAPIInternal   Capability = "api:internal"
-	CapAPIExternal   Capability = "api:external"
+	CapAPIInternal Capability = "api:internal"
+	CapAPIExternal Capability = "api:external"
 
 	// Agent Capabilities
 	CapAgentCall     Capability = "agent:call"
@@ -54,7 +54,7 @@ const (
 	CapDataExport    Capability = "data:export"
 
 	// Admin Capabilities
-	CapAdmin         Capability = "admin:*"
+	CapAdmin Capability = "admin:*"
 )
 
 // Scope defines the scope of a capability
@@ -75,24 +75,24 @@ type Resource struct {
 
 // Condition defines a condition that must be met for a capability
 type Condition struct {
-	Type        string            `json:"type"`         // "time", "rate", "approval", "context"
-	Key         string            `json:"key"`          // condition identifier
-	Operator    string            `json:"operator"`     // "eq", "ne", "gt", "lt", "in", "not_in"
-	Value       interface{}       `json:"value"`        // comparison value
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	Type     string            `json:"type"`     // "time", "rate", "approval", "context"
+	Key      string            `json:"key"`      // condition identifier
+	Operator string            `json:"operator"` // "eq", "ne", "gt", "lt", "in", "not_in"
+	Value    interface{}       `json:"value"`    // comparison value
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // ContractRule defines a single rule within a capability contract
 type ContractRule struct {
-	ID          string       `json:"id"`
-	Capability  Capability   `json:"capability"`
-	Scope       Scope        `json:"scope"`
-	Resources   []Resource   `json:"resources,omitempty"`
-	Conditions  []Condition  `json:"conditions,omitempty"`
-	RiskLevel   RiskLevel    `json:"riskLevel"`
+	ID           string      `json:"id"`
+	Capability   Capability  `json:"capability"`
+	Scope        Scope       `json:"scope"`
+	Resources    []Resource  `json:"resources,omitempty"`
+	Conditions   []Condition `json:"conditions,omitempty"`
+	RiskLevel    RiskLevel   `json:"riskLevel"`
 	RequiresAppr bool        `json:"requiresApproval"`
-	MaxPerHour  int          `json:"maxPerHour,omitempty"`
-	ExpiresAt   *time.Time  `json:"expiresAt,omitempty"`
+	MaxPerHour   int         `json:"maxPerHour,omitempty"`
+	ExpiresAt    *time.Time  `json:"expiresAt,omitempty"`
 }
 
 // RiskLevel represents the risk level of a capability
@@ -118,20 +118,20 @@ const (
 
 // CapabilityContract represents a contract defining agent capabilities
 type CapabilityContract struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	AgentID     string           `json:"agentId"`
-	OwnerID     string           `json:"ownerId"`
-	Version     string           `json:"version"`
-	Rules       []ContractRule   `json:"rules"`
-	Status      ContractStatus   `json:"status"`
-	Tags        []string         `json:"tags,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	AgentID     string            `json:"agentId"`
+	OwnerID     string            `json:"ownerId"`
+	Version     string            `json:"version"`
+	Rules       []ContractRule    `json:"rules"`
+	Status      ContractStatus    `json:"status"`
+	Tags        []string          `json:"tags,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
-	Fingerprint string           `json:"fingerprint"` // SHA-256 of rules
-	CreatedAt   time.Time        `json:"createdAt"`
-	UpdatedAt   time.Time        `json:"updatedAt"`
-	ExpiresAt   *time.Time       `json:"expiresAt,omitempty"`
+	Fingerprint string            `json:"fingerprint"` // SHA-256 of rules
+	CreatedAt   time.Time         `json:"createdAt"`
+	UpdatedAt   time.Time         `json:"updatedAt"`
+	ExpiresAt   *time.Time        `json:"expiresAt,omitempty"`
 }
 
 // NewContract creates a new capability contract

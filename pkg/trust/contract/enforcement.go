@@ -163,8 +163,13 @@ func (e *DefaultEnforcer) evaluateCondition(cond Condition, ec *EnforcementConte
 func (e *DefaultEnforcer) evaluateTimeCondition(cond Condition) bool {
 	now := time.Now()
 	if cond.Operator == "between" {
-		startVal, ok1 := cond.Value.(map[string]interface{})["start"].(string)
-		endVal, ok2 := cond.Value.(map[string]interface{})["end"].(string)
+		// First check if Value is a map
+		valueMap, isMap := cond.Value.(map[string]interface{})
+		if !isMap {
+			return true // Be permissive on type error
+		}
+		startVal, ok1 := valueMap["start"].(string)
+		endVal, ok2 := valueMap["end"].(string)
 		if !ok1 || !ok2 {
 			return true
 		}

@@ -74,12 +74,12 @@ func (g *Generator) generateStatements(frameworks []Framework, contract *Contrac
 		Type:        "contract_compliance",
 		Description: "Agent operating within defined capability contracts",
 		Evidence: map[string]interface{}{
-			"contractId":    contract.ID,
-			"capabilities":  contract.Capabilities,
-			"status":        contract.Status,
+			"contractId":   contract.ID,
+			"capabilities": contract.Capabilities,
+			"status":       contract.Status,
 		},
-		Passed:   contract.Status == "active",
-		Details:  fmt.Sprintf("Contract %s is %s", contract.ID, contract.Status),
+		Passed:  contract.Status == "active",
+		Details: fmt.Sprintf("Contract %s is %s", contract.ID, contract.Status),
 	})
 
 	// Trust score statement
@@ -87,9 +87,9 @@ func (g *Generator) generateStatements(frameworks []Framework, contract *Contrac
 		Type:        "trust_score",
 		Description: "Agent trust score meets minimum threshold",
 		Evidence: map[string]interface{}{
-			"score":      metrics.TrustScore,
-			"level":      metrics.TrustLevel,
-			"threshold":  50.0,
+			"score":     metrics.TrustScore,
+			"level":     metrics.TrustLevel,
+			"threshold": 50.0,
 		},
 		Passed:  metrics.TrustScore >= 50.0,
 		Details: fmt.Sprintf("Trust score %.1f %s minimum threshold", metrics.TrustScore, map[bool]string{true: "meets", false: "below"}[metrics.TrustScore >= 50.0]),
@@ -143,7 +143,7 @@ func (g *Generator) frameworkStatement(fw Framework, metrics *MetricsSummary) St
 		Type:        string(fw),
 		Description: desc,
 		Evidence:    evidence,
-		Passed:     passed,
+		Passed:      passed,
 	}
 }
 
@@ -178,9 +178,9 @@ type ContractSummary struct {
 
 // MetricsSummary provides metrics for attestation generation
 type MetricsSummary struct {
-	TrustScore     float64 `json:"trustScore"`
-	TrustLevel     string  `json:"trustLevel"`
-	PIIDetections  int     `json:"piiDetections"`
-	AnomalyCount   int     `json:"anomalyCount"`
-	TotalRequests  int64   `json:"totalRequests"`
+	TrustScore    float64 `json:"trustScore"`
+	TrustLevel    string  `json:"trustLevel"`
+	PIIDetections int     `json:"piiDetections"`
+	AnomalyCount  int     `json:"anomalyCount"`
+	TotalRequests int64   `json:"totalRequests"`
 }

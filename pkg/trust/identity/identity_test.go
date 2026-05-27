@@ -624,9 +624,9 @@ func TestDERToPublicKey_TooShort(t *testing.T) {
 func TestNewAgentIdentity_AllFields(t *testing.T) {
 	metadata := map[string]string{"env": "prod", "region": "us-west-2"}
 	req := &RegisterRequest{
-		Name:    "full-agent",
-		Version: "2.0.0",
-		Owner:   "org-xyz",
+		Name:     "full-agent",
+		Version:  "2.0.0",
+		Owner:    "org-xyz",
 		Metadata: metadata,
 	}
 	identity, privateKey, err := NewAgentIdentity(req)
