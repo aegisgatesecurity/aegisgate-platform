@@ -29,9 +29,9 @@ func TestAnomalyDetector_Detect_NoAnomalies(t *testing.T) {
 	ctx := context.Background()
 
 	baseline := &BaselineMetrics{
-		AgentID:       "agent-1",
-		TotalEvents:   100,
-		SuccessRate:   0.95,
+		AgentID:        "agent-1",
+		TotalEvents:    100,
+		SuccessRate:    0.95,
 		DailyAvgEvents: 10,
 	}
 

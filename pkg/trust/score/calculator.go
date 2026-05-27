@@ -11,8 +11,8 @@ import (
 
 // Calculator calculates trust scores for agents
 type Calculator struct {
-	config     *Config
-	baseline   BaselineEngine
+	config   *Config
+	baseline BaselineEngine
 }
 
 // NewCalculator creates a new trust score calculator
@@ -75,7 +75,7 @@ func (c *Calculator) Calculate(ctx context.Context, agentID string) (*TrustScore
 		ComplianceMultiplier: math.Round(complianceMult*100) / 100,
 		BaseScore:            baseScore,
 		Factors:              factors,
-		CalculatedAt:        time.Now().UTC(),
+		CalculatedAt:         time.Now().UTC(),
 	}, nil
 }
 

@@ -21,10 +21,10 @@ type BaselineEngine interface {
 
 // InMemoryBaseline implements BaselineEngine with in-memory storage
 type InMemoryBaseline struct {
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	baselines map[string]*BaselineMetrics
-	events   map[string][]*BehaviorEvent
-	window   int
+	events    map[string][]*BehaviorEvent
+	window    int
 }
 
 // NewBaselineEngine creates a new baseline engine
@@ -35,7 +35,7 @@ func NewBaselineEngine(window int) BaselineEngine {
 	return &InMemoryBaseline{
 		baselines: make(map[string]*BaselineMetrics),
 		events:    make(map[string][]*BehaviorEvent),
-		window:   window,
+		window:    window,
 	}
 }
 

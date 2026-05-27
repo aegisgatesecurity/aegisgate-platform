@@ -23,7 +23,7 @@ type Keystore interface {
 
 // memKeystore implements Keystore with in-memory storage
 type memKeystore struct {
-	mu  sync.RWMutex
+	mu   sync.RWMutex
 	keys map[string]*ecdsa.PrivateKey
 }
 
