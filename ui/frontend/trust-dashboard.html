@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate - Agent Trust Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .trust-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; }
+        .trust-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .trust-score { font-size: 2rem; font-weight: bold; }
+        .trust-level { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; }
+        .trust-level.trusted { background: #10b981; color: white; }
+        .trust-level.high { background: #22c55e; color: white; }
+        .trust-level.medium { background: #eab308; color: black; }
+        .trust-level.low { background: #f97316; color: white; }
+        .trust-level.critical { background: #ef4444; color: white; }
+        .agent-list { max-height: 400px; overflow-y: auto; }
+        .agent-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+        .agent-item:last-child { border-bottom: none; }
+        .threat-feed { max-height: 300px; overflow-y: auto; }
+        .threat-item { padding: 0.75rem; border-left: 3px solid; margin-bottom: 0.5rem; }
+        .threat-item.critical { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+        .threat-item.high { border-color: #f97316; background: rgba(249,115,22,0.1); }
+        .threat-item.medium { border-color: #eab308; background: rgba(234,179,8,0.1); }
+        .compliance-bar { height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+        .compliance-fill { height: 100%; transition: width 0.3s; }
+        .compliance-fill.good { background: #22c55e; }
+        .compliance-fill.warning { background: #eab308; }
+        .compliance-fill.bad { background: #ef4444; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .framework-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .framework-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
+        .framework-score { font-size: 1.5rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="live-region" class="sr-only" aria-live="polite"></div>
+    
+    <header class="header" role="banner">
+        <h1><span aria-hidden="true">🔒</span> AegisGate <span class="version">v1.3.2</span></h1>
+        <nav><button id="logout-btn" type="button" aria-label="Logout"><span aria-hidden="true">🚪</span></button></nav>
+    </header>
+
+    <nav class="nav" role="navigation">
+        <a href="index.html" class="nav-link"><span>📊</span> Dashboard</a>
+        <a href="#agents" class="nav-link active" role="tab"><span>🤖</span> Agent Trust</a>
+        <a href="#logs" class="nav-link"><span>📋</span> Audit Logs</a>
+        <a href="#compliance" class="nav-link"><span>✅</span> Compliance</a>
+        <a href="settings.html" class="nav-link"><span>⚙️</span> Settings</a>
+    </nav>
+
+    <main id="main-content" role="main">
+        <h2>🤖 Agent Trust Dashboard</h2>
+        <p class="subtitle">Real-time monitoring of agent identities, trust scores, and behavioral anomalies</p>
+
+        <!-- Trust Overview Cards -->
+        <section class="trust-grid" aria-labelledby="trust-overview">
+            <div class="trust-card">
+                <div class="trust-card-header">
+                    <span>Total Agents</span>
+                    <span aria-hidden="true">🤖</span>
+                </div>
+                <div class="trust-score" id="total-agents">—</div>
+            </div>
+            <div class="trust-card">
+                <div class="trust-card-header">
+                    <span>Avg Trust Score</span>
+                    <span aria-hidden="true">📈</span>
+                </div>
+                <div class="trust-score" id="avg-trust-score">—</div>
+            </div>
+            <div class="trust-card">
+                <div class="trust-card-header">
+                    <span>Active Anomalies</span>
+                    <span aria-hidden="true">⚠️</span>
+                </div>
+                <div class="trust-score" id="total-anomalies">—</div>
+            </div>
+            <div class="trust-card">
+                <div class="trust-card-header">
+                    <span>Compliance Score</span>
+                    <span aria-hidden="true">✅</span>
+                </div>
+                <div class="trust-score" id="compliance-score">—</div>
+            </div>
+        </section>
+
+        <!-- Tabs for different views -->
+        <div class="tabs" role="tablist">
+            <button role="tab" class="tab active" data-tab="agents">🤖 Agents</button>
+            <button role="tab" class="tab" data-tab="threats">⚠️ Threats</button>
+            <button role="tab" class="tab" data-tab="compliance">✅ Compliance</button>
+        </div>
+
+        <!-- Agent Trust Tab -->
+        <div id="agents-tab" class="tab-content active">
+            <section aria-labelledby="agents-title">
+                <h3 id="agents-title">Registered Agents</h3>
+                <div id="agent-list" class="agent-list">
+                    <p class="loading">Loading agent data...</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Threat Feed Tab -->
+        <div id="threats-tab" class="tab-content">
+            <section aria-labelledby="threats-title">
+                <h3 id="threats-title">Active Threats</h3>
+                <div id="threat-feed" class="threat-feed">
+                    <p class="loading">Loading threat data...</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Compliance Tab -->
+        <div id="compliance-tab" class="tab-content">
+            <section aria-labelledby="compliance-title">
+                <h3 id="compliance-title">Framework Compliance</h3>
+                <div id="framework-list" class="framework-grid">
+                    <p class="loading">Loading compliance data...</p>
+                </div>
+                <div class="trust-card" style="margin-top: 1rem;">
+                    <h4>Audit Schedule</h4>
+                    <p><strong>Last Audit:</strong> <span id="last-audit">—</span></p>
+                    <p><strong>Next Audit:</strong> <span id="next-audit">—</span></p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Trust Score Legend -->
+        <section class="trust-card" style="margin-top: 1rem;">
+            <h4>Trust Score Levels</h4>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <span><span class="trust-level trusted">91-100</span> Trusted</span>
+                <span><span class="trust-level high">76-90</span> High</span>
+                <span><span class="trust-level medium">51-75</span> Medium</span>
+                <span><span class="trust-level low">26-50</span> Low</span>
+                <span><span class="trust-level critical">0-25</span> Critical</span>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <p>© 2026 AegisGate Security • <a href="https://aegisgatesecurity.io">aegisgatesecurity.io</a></p>
+    </footer>
+
+    <script>
+    class TrustDashboard {
+        constructor() {
+            this.apiBase = '/api/v1/trust';
+            this.refreshInterval = 10000; // 10 seconds
+            this.init();
+        }
+
+        async init() {
+            console.log('Trust Dashboard initialized');
+            this.setupTabs();
+            await this.loadData();
+            this.startAutoRefresh();
+        }
+
+        setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+                });
+            });
+        }
+
+        async loadData() {
+            try {
+                const response = await fetch(`${this.apiBase}/dashboard`);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.updateOverview(data.stats);
+                    this.updateAgents(data.agents || data.trustScores || []);
+                    this.updateThreats(data.threatFeed || []);
+                    this.updateCompliance(data.compliance);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        updateOverview(stats) {
+            this.setText('total-agents', stats.totalAgents ?? 0);
+            this.setText('avg-trust-score', (stats.avgTrustScore ?? 0).toFixed(1));
+            this.setText('total-anomalies', stats.totalAnomalies ?? 0);
+            this.setText('compliance-score', (stats.complianceScore ?? 0).toFixed(0) + '%');
+        }
+
+        updateAgents(agents) {
+            const container = document.getElementById('agent-list');
+            if (!agents || agents.length === 0) {
+                container.innerHTML = '<p class="empty-state">No agents registered yet</p>';
+                return;
+            }
+
+            container.innerHTML = agents.map(agent => `
+                <div class="agent-item">
+                    <div>
+                        <strong>${this.escapeHtml(agent.name || agent.agentId)}</strong>
+                        <br><small>${this.escapeHtml(agent.id || agent.agentId)}</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="trust-level ${agent.level || agent.trustLevel || 'unknown'}">${agent.score?.toFixed(0) || '—'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        updateThreats(threats) {
+            const container = document.getElementById('threat-feed');
+            if (!threats || threats.length === 0) {
+                container.innerHTML = '<p class="empty-state">No active threats</p>';
+                return;
+            }
+
+            container.innerHTML = threats.map(threat => {
+                const severity = threat.severity >= 7 ? 'critical' : threat.severity >= 5 ? 'high' : 'medium';
+                return `
+                    <div class="threat-item ${severity}">
+                        <strong>${this.escapeHtml(threat.type)}</strong>
+                        <p>${this.escapeHtml(threat.description)}</p>
+                        <small>${new Date(threat.timestamp).toLocaleString()}</small>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        updateCompliance(compliance) {
+            const container = document.getElementById('framework-list');
+            if (!compliance || !compliance.frameworks) {
+                container.innerHTML = '<p class="empty-state">Compliance data unavailable</p>';
+                return;
+            }
+
+            container.innerHTML = compliance.frameworks.map(fw => {
+                const fillClass = fw.score >= 90 ? 'good' : fw.score >= 70 ? 'warning' : 'bad';
+                return `
+                    <div class="framework-card">
+                        <h4>${this.escapeHtml(fw.name)}</h4>
+                        <div class="framework-score">${fw.score?.toFixed(0) || 0}%</div>
+                        <div class="compliance-bar">
+                            <div class="compliance-fill ${fillClass}" style="width: ${fw.score || 0}%"></div>
+                        </div>
+                        <small>${fw.controlsPass || 0}/${fw.controls || 0} controls</small>
+                    </div>
+                `;
+            }).join('');
+
+            this.setText('last-audit', compliance.lastAudit ? new Date(compliance.lastAudit).toLocaleDateString() : '—');
+            this.setText('next-audit', compliance.nextAudit ? new Date(compliance.nextAudit).toLocaleDateString() : '—');
+        }
+
+        setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        startAutoRefresh() {
+            setInterval(() => this.loadData(), this.refreshInterval);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => new TrustDashboard());
+    </script>
+</body>
+</html>
