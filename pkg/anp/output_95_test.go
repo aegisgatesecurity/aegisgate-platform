@@ -163,7 +163,11 @@ func TestGuardArtifact_AllContentTypes(t *testing.T) {
 func TestGuardTask_AllCombinations(t *testing.T) {
 	secCtx := NewSecurityContext("agent", "session")
 	secCtx.TrustScore = 75.0
-	combos := []struct{ sig, contract bool; minScore float64; rate int }{
+	combos := []struct {
+		sig, contract bool
+		minScore      float64
+		rate          int
+	}{
 		{false, false, 0, 100},
 		{true, false, 0, 100},
 		{false, true, 0, 100},
@@ -172,10 +176,10 @@ func TestGuardTask_AllCombinations(t *testing.T) {
 	}
 	for _, c := range combos {
 		g := NewGuardWithConfig(&Config{
-			RequireSignature:   c.sig,
-			RequireContract:    c.contract,
-			MinTrustScore:      c.minScore,
-			MaxTasksPerMinute:  c.rate,
+			RequireSignature:  c.sig,
+			RequireContract:   c.contract,
+			MinTrustScore:     c.minScore,
+			MaxTasksPerMinute: c.rate,
 		})
 		task := NewTask("task", "session", "agent")
 		if c.sig {
@@ -190,7 +194,11 @@ func TestGuardTask_AllCombinations(t *testing.T) {
 
 func TestGuardStep_AllCombinations(t *testing.T) {
 	secCtx := NewSecurityContext("agent", "session")
-	combos := []struct{ rate int; hash string; injection bool }{
+	combos := []struct {
+		rate      int
+		hash      string
+		injection bool
+	}{
 		{100, "", false},
 		{100, "hash123", false},
 		{100, "", true},
@@ -234,7 +242,7 @@ func TestGuardMessage_SecretPatterns(t *testing.T) {
 		BlockSocialEngineering: false,
 		ScanOutput:             true,
 		BlockPII:               false,
-		BlockSecrets:          true,
+		BlockSecrets:           true,
 	})
 	secCtx := NewSecurityContext("agent", "session")
 	patterns := []string{"api_key=abcdefghijklmnopqrstuvwxyz", "secret=supersecret", "password=verylongpassword"}
@@ -301,8 +309,8 @@ func TestCheckStepRateLimit_PerTask(t *testing.T) {
 
 func TestGuardTask_ContractRequired(t *testing.T) {
 	g := NewGuardWithConfig(&Config{
-		RequireContract: true,
-		RequireSignature: false,
+		RequireContract:   true,
+		RequireSignature:  false,
 		MaxTasksPerMinute: 100,
 	})
 	task := NewTask("task", "session", "agent")
@@ -313,7 +321,6 @@ func TestGuardTask_ContractRequired(t *testing.T) {
 		t.Error("Task with contract should be allowed")
 	}
 }
-
 
 func TestGuardTask_TrustScoreCheck(t *testing.T) {
 	g := NewGuardWithConfig(&Config{
