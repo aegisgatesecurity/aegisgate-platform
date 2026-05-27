@@ -56,7 +56,7 @@ import (
 )
 
 var (
-	version    = "2.0.1"
+	version    = "3.0.0"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -481,7 +481,8 @@ func main() {
 		// Register ACP endpoints
 		proxyMux.Handle("/acp/", acpMiddleware.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
+			//nolint:errcheck - ACP endpoint write errors are logged but non-fatal
+	if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
 				log.Printf("Warning: Failed to write ACP response: %v", err)
 			}
 		})))

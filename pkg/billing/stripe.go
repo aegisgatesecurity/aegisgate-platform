@@ -221,7 +221,7 @@ type WebhookEvent struct {
 
 // StripeClient wraps all Stripe operations
 // testStripeKeyPlaceholder is a test placeholder key for mock mode detection
-const testStripeKeyPlaceholder = "sk_test_placeholder"
+const testStripeKeyPlaceholder = "sk_test_placeholder" //nolint:gosec,trivyscan G101 - test placeholder
 
 type StripeClient struct {
 	secretKey      string
@@ -246,7 +246,7 @@ func NewStripeClient() *StripeClient {
 		baseURL:        "https://api.stripe.com/v1",
 	}
 
-	//nolint:gosec G101
+	//nolint:gosec G101,trivyscan
 	// #nosec G101 - This is a test placeholder, not a real credential
 	if secretKey == "" || secretKey == testStripeKeyPlaceholder || (!strings.HasPrefix(secretKey, "sk_live_") && !strings.HasPrefix(secretKey, "FAKE_SK_")) {
 		client.mockMode = true
