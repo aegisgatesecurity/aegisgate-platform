@@ -8,6 +8,8 @@ type Config struct {
 	EnablePersistenceDetection bool
 	EnableC2Detection          bool
 	EnableImpactDetection      bool
+	EnableDefenseEvasion       bool
+	EnableDiscovery            bool
 	AlertOnHighSeverity        bool
 }
 
@@ -17,6 +19,8 @@ func DefaultConfig() *Config {
 		EnablePersistenceDetection: true,
 		EnableC2Detection:          true,
 		EnableImpactDetection:      true,
+		EnableDefenseEvasion:       true,
+		EnableDiscovery:            true,
 		AlertOnHighSeverity:        true,
 	}
 }
@@ -41,11 +45,16 @@ type APIRequest struct {
 	Endpoint  string
 	Content   string
 	Headers   map[string]string
+	Method    string
+	SourceIP  string
 }
 
 // NetworkActivity represents network activity
 type NetworkActivity struct {
-	SourceIP string
-	DestIP   string
-	DestPort int
+	SourceIP    string
+	DestIP      string
+	DestPort    int
+	PacketSize  int
+	Protocol    string
+	Timestamp   time.Time
 }
