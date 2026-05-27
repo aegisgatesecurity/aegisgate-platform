@@ -20,6 +20,7 @@ require (
 	github.com/aegisgatesecurity/aegisgate v0.0.0-00010101000000-000000000000
 	github.com/aegisguardsecurity/aegisguard v0.0.0-00010101000000-000000000000
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/stretchr/testify v1.11.1
