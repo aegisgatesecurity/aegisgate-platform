@@ -7,6 +7,10 @@
 // This file implements the bridge gateway that routes agent LLM calls
 // through AegisGate for additional security scanning.
 //
+// SECURITY: This implementation uses fail-closed design - if AegisGate
+// is unreachable or the proxy fails, requests are BLOCKED rather than
+// passed through unscanned. This prevents security bypass attacks.
+//
 // =========================================================================
 
 package bridge
@@ -15,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -25,6 +30,17 @@ import (
 	"sync/atomic"
 	"time"
 )
+
+// ============================================================================
+// Error Definitions - Fail-Closed Security Errors
+// ============================================================================
+
+// ErrScannerUnavailable is returned when AegisGate scanning is unavailable
+// and fail-closed mode is enabled (default for security)
+var ErrScannerUnavailable = errors.New("AegisGate scanner unavailable: request blocked for security")
+
+// ErrBridgeDisabled is returned when bridge is explicitly disabled
+var ErrBridgeDisabled = errors.New("AegisGate bridge disabled: request blocked for security")
 
 // ============================================================================
 // Gateway
@@ -48,6 +64,9 @@ type GatewayStats struct {
 	Blocked      atomic.Int64
 	Failed       atomic.Int64
 	ThreatsFound atomic.Int64
+	// Security counters for fail-closed events
+	ScannerUnavailable atomic.Int64
+	ProxyFailures      atomic.Int64
 }
 
 // NewGateway creates a new bridge gateway
@@ -88,7 +107,7 @@ func NewGateway(config *Config) (*Gateway, error) {
 		transport: transport,
 	}
 
-	logger.Info("AegisGate bridge gateway initialized",
+	logger.Info("AegisGate bridge gateway initialized (fail-closed mode)",
 		"aegisgate_url", config.AegisGateURL,
 		"enabled", config.Enabled,
 		"timeout", config.Timeout,
@@ -98,35 +117,58 @@ func NewGateway(config *Config) (*Gateway, error) {
 }
 
 // ============================================================================
-// Core Routing
+// Core Routing - FAIL-CLOSED SECURITY
 // ============================================================================
 
 // RouteLLMCall routes an LLM API call through AegisGate
+//
+// SECURITY IMPLEMENTATION:
+// - If bridge is disabled: request is BLOCKED (not passed through)
+// - If AegisGate is unreachable: request is BLOCKED (fail-closed)
+// - If proxy fails: request is BLOCKED (fail-closed)
+//
+// This prevents attackers from bypassing security by causing the scanner
+// to become unavailable.
 func (g *Gateway) RouteLLMCall(ctx context.Context, req *LLMRequest) (*LLMResponse, error) {
 	startTime := time.Now()
 
 	g.stats.Requests.Add(1)
 
-	// Check if bridge is enabled
+	// SECURITY: Block if bridge is disabled
 	if !g.config.Enabled {
-		g.logger.Debug("Bridge disabled, passing through directly")
-		return g.passThrough(ctx, req)
+		g.logger.Error("Bridge disabled - BLOCKING request for security",
+			"request_id", req.RequestID,
+			"agent_id", req.AgentID,
+			"session_id", req.SessionID)
+		g.stats.Blocked.Add(1)
+		return nil, ErrBridgeDisabled
 	}
 
-	// Check if AegisGate is reachable
+	// SECURITY: Block if AegisGate is unreachable (fail-closed)
 	if !g.isAegisGateReachable(ctx) {
-		g.logger.Warn("AegisGate unreachable, falling back to direct call")
+		g.logger.Error("AegisGate unreachable - BLOCKING request (fail-closed security)",
+			"request_id", req.RequestID,
+			"agent_id", req.AgentID,
+			"session_id", req.SessionID,
+			"target_url", req.TargetURL)
 		g.stats.Failed.Add(1)
-		return g.passThrough(ctx, req)
+		g.stats.ScannerUnavailable.Add(1)
+		g.stats.Blocked.Add(1)
+		return nil, ErrScannerUnavailable
 	}
 
 	// Route through AegisGate
 	resp, err := g.proxyThroughAegisGate(ctx, req)
 	if err != nil {
-		g.logger.Error("AegisGate proxy failed", "error", err)
+		g.logger.Error("AegisGate proxy failed - BLOCKING request (fail-closed security)",
+			"error", err,
+			"request_id", req.RequestID,
+			"agent_id", req.AgentID,
+			"session_id", req.SessionID)
 		g.stats.Failed.Add(1)
-		// Fall back to direct call on proxy failure
-		return g.passThrough(ctx, req)
+		g.stats.ProxyFailures.Add(1)
+		g.stats.Blocked.Add(1)
+		return nil, fmt.Errorf("scanner proxy error: %w", err)
 	}
 
 	// Record stats
@@ -144,6 +186,10 @@ func (g *Gateway) RouteLLMCall(ctx context.Context, req *LLMRequest) (*LLMRespon
 
 	return resp, nil
 }
+
+// passThrough is REMOVED for security reasons
+// Previously this allowed unscanned traffic through when scanner was unavailable
+// Now all requests are blocked if scanner is unavailable (fail-closed design)
 
 // proxyThroughAegisGate routes the request through AegisGate proxy
 func (g *Gateway) proxyThroughAegisGate(ctx context.Context, req *LLMRequest) (*LLMResponse, error) {
@@ -235,41 +281,6 @@ func (g *Gateway) proxyThroughAegisGate(ctx context.Context, req *LLMRequest) (*
 	return nil, fmt.Errorf("all retries exhausted: %w", lastErr)
 }
 
-// passThrough makes a direct call without AegisGate proxying
-func (g *Gateway) passThrough(ctx context.Context, req *LLMRequest) (*LLMResponse, error) {
-	targetURL := req.TargetURL
-	if targetURL == "" {
-		targetURL = g.config.DefaultTarget
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, req.Method, targetURL, bytes.NewReader(req.Body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	for k, v := range req.Headers {
-		httpReq.Header.Set(k, v)
-	}
-
-	resp, err := g.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("direct call failed: %w", err)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	return &LLMResponse{
-		RequestID:  req.RequestID,
-		StatusCode: resp.StatusCode,
-		Body:       body,
-		Headers:    extractHeaders(resp.Header),
-	}, nil
-}
-
 // ============================================================================
 // Health & Status
 // ============================================================================
@@ -309,6 +320,20 @@ func (g *Gateway) GetStats() *Stats {
 	}
 }
 
+// GetSecurityStats returns detailed security statistics including fail-closed events
+func (g *Gateway) GetSecurityStats() *SecurityStats {
+	return &SecurityStats{
+		ScannerUnavailableCount: g.stats.ScannerUnavailable.Load(),
+		ProxyFailuresCount:      g.stats.ProxyFailures.Load(),
+	}
+}
+
+// SecurityStats holds detailed security-related statistics
+type SecurityStats struct {
+	ScannerUnavailableCount int64
+	ProxyFailuresCount      int64
+}
+
 // Close shuts down the gateway
 func (g *Gateway) Close() error {
 	g.transport.CloseIdleConnections()
@@ -326,9 +351,6 @@ func (g *Gateway) extractScanResult(header http.Header) *ScanResult {
 	threatHeader := header.Get("X-AegisGate-Threats")
 	blockReason := header.Get("X-AegisGate-Block-Reason")
 	allowed := header.Get("X-AegisGate-Allowed")
-
-	// Also try to get from response body (JSON format)
-	// This is a simplified version - full implementation would parse body
 
 	result := &ScanResult{
 		Allowed:     allowed != "false",
