@@ -167,7 +167,7 @@ func (r *Reconnaissance) detectServiceEnum(activity *NetworkActivity) bool {
 // ============================================================================
 
 type ResourceDevelopment struct {
-	cfg       *Config
+	cfg        *Config
 	mlPatterns []*regexp.Regexp
 }
 
@@ -286,7 +286,7 @@ func (rd *ResourceDevelopment) DetectCapabilityObtainment(ctx context.Context, r
 // ============================================================================
 
 type Persistence struct {
-	cfg              *Config
+	cfg               *Config
 	backdoorPatterns  []*regexp.Regexp
 	repersistPatterns []*regexp.Regexp
 }
@@ -739,7 +739,7 @@ func (d *Discovery) DetectVictimDiscovery(ctx context.Context, req *APIRequest) 
 
 type CommandControl struct {
 	cfg        *Config
-	c2Patterns  []*regexp.Regexp
+	c2Patterns []*regexp.Regexp
 }
 
 func NewCommandControl(cfg *Config) *CommandControl {
