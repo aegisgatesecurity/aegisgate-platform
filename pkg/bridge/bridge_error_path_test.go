@@ -26,7 +26,7 @@ import (
 func TestScanResponseWithContextErrorPath(t *testing.T) {
 	// Test error path that returns err from ScanWithContext
 	// This requires the guard.ScanWithContext to return an error
-	
+
 	scanner := NewResponseScanner()
 
 	// Test with various contexts and content to exercise error paths
@@ -215,23 +215,23 @@ func TestScanAndFilterErrorPath(t *testing.T) {
 func TestStrictModeComplianceReportsV2(t *testing.T) {
 	// Create strict mode scanner
 	config := &responseguard.ResponseGuardConfig{
-		EnablePIIScanner:       true,
+		EnablePIIScanner:      true,
 		EnableSecretDetection: true,
-		EnableToxicityFilter:   true,
-		EnableHallucination:    false,
-		StrictMode:             true,
-		MaxResponseTokens:      8192,
+		EnableToxicityFilter:  true,
+		EnableHallucination:   false,
+		StrictMode:            true,
+		MaxResponseTokens:     8192,
 	}
 	scanner := NewResponseScannerWithConfig(config)
 	ctx := context.Background()
 
 	// Test compliance report generation for all frameworks
 	frameworks := map[string]string{
-		"gdpr_email":  "Email: john@example.com",
-		"gdpr_phone":  "Phone: 555-123-4567",
-		"hipaa_dob":   "DOB: 01/15/1985",
-		"pci_card":    "Card: 4532123456789012",
-		"soc2_key":    "Key: sk-1234567890abcdef",
+		"gdpr_email": "Email: john@example.com",
+		"gdpr_phone": "Phone: 555-123-4567",
+		"hipaa_dob":  "DOB: 01/15/1985",
+		"pci_card":   "Card: 4532123456789012",
+		"soc2_key":   "Key: sk-1234567890abcdef",
 	}
 
 	for name, content := range frameworks {
@@ -282,11 +282,11 @@ func TestBridgeResponseThreatDetection(t *testing.T) {
 
 	// Test all threat types
 	threatContents := map[string][]string{
-		"pii":          {"Email: test@example.com", "SSN: 123-45-6789", "Phone: 555-1234"},
-		"secret":       {"Key: sk-1234567890", "Token: ghp_1234567890", "Password: secret"},
-		"toxicity":     {"You are terrible", "I hate you"},
+		"pii":           {"Email: test@example.com", "SSN: 123-45-6789", "Phone: 555-1234"},
+		"secret":        {"Key: sk-1234567890", "Token: ghp_1234567890", "Password: secret"},
+		"toxicity":      {"You are terrible", "I hate you"},
 		"hallucination": {"The sky is purple and cats are dogs"},
-		"mixed":        {"Email: test@example.com, Key: sk-1234567890, SSN: 123-45-6789"},
+		"mixed":         {"Email: test@example.com, Key: sk-1234567890, SSN: 123-45-6789"},
 	}
 
 	for threatType, contents := range threatContents {

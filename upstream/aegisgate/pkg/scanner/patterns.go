@@ -74,7 +74,7 @@ func DefaultPatterns() []*Pattern {
 		{Name: "BearerToken", Regex: regexp.MustCompile(`\bBearer\s+[a-zA-Z0-9_\-\.]+`), Severity: Medium, Category: CategoryCredential, Description: "Bearer token"},
 		{Name: "JWTToken", Regex: regexp.MustCompile(`\beyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*\b`), Severity: Medium, Category: CategoryCredential, Description: "JWT token"},
 		{Name: "SlackToken", Regex: regexp.MustCompile(`\bxox[baprs]-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*\b`), Severity: High, Category: CategoryCredential, Description: "Slack token"},
-		
+
 		// PROMPT INJECTION DETECTION (MITRE ATLAS LLM01)
 		{Name: "PromptInjectionCommand", Regex: regexp.MustCompile(`(?i)(?:ignore\s+(?:all\s+)?(?:previous|prior)\s+(?:instructions?|rules?|constraints?)|disregard\s+(?:your\s+)?(?:instructions?|rules?)|forget\s+(?:everything|all)\s+(?:you|we)\s+(?:have\s+)?told|temporary\s+instructions?)`), Severity: Critical, Category: CategoryPrompt, Description: "Command-style prompt injection"},
 		{Name: "PromptInjectionRolePlay", Regex: regexp.MustCompile(`(?i)(?:act\s+as\s+(?:a|an)|pretend\s+you\s+are\s+(?:a|an)|roleplay\s+(?:as|that)|simulate\s+(?:a|an)|you\s+are\s+now\s+(?:a|an)|new\s+(?:system|instruct))`), Severity: High, Category: CategoryPrompt, Description: "Role-play prompt injection"},
