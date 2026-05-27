@@ -392,7 +392,7 @@ func tryBase64Decode(data []byte) []byte {
 	// Simple Base64 decode attempt
 	const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
 
-	for _, b := range data {
+	for _, b := range data { //nolint:gosec G115 - byte (0-255) always valid as rune
 		found := false
 		for _, c := range base64Chars {
 			if c == rune(b) {
