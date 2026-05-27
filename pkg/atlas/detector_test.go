@@ -1426,14 +1426,14 @@ func TestEmptyEndpoint(t *testing.T) {
 func TestDetectionResult_Fields(t *testing.T) {
 	result := &DetectionResult{
 		TechniqueID: "TEST-01",
-		Technique:    "Test Technique",
-		Tactic:       "Test",
-		Alert:        true,
-		Severity:     "HIGH",
-		Reason:       "Test reason",
-		Metadata:     map[string]string{"key": "value"},
+		Technique:   "Test Technique",
+		Tactic:      "Test",
+		Alert:       true,
+		Severity:    "HIGH",
+		Reason:      "Test reason",
+		Metadata:    map[string]string{"key": "value"},
 	}
-	
+
 	if result.TechniqueID != "TEST-01" {
 		t.Errorf("TechniqueID = %s, want TEST-01", result.TechniqueID)
 	}
@@ -1444,13 +1444,13 @@ func TestDetectionResult_Fields(t *testing.T) {
 
 func TestNetworkActivity_Fields(t *testing.T) {
 	activity := &NetworkActivity{
-		SourceIP:    "192.168.1.1",
-		DestIP:      "10.0.0.1",
-		DestPort:    8080,
-		PacketSize:  1400,
-		Protocol:    "TCP",
+		SourceIP:   "192.168.1.1",
+		DestIP:     "10.0.0.1",
+		DestPort:   8080,
+		PacketSize: 1400,
+		Protocol:   "TCP",
 	}
-	
+
 	if activity.SourceIP != "192.168.1.1" {
 		t.Errorf("SourceIP = %s, want 192.168.1.1", activity.SourceIP)
 	}
