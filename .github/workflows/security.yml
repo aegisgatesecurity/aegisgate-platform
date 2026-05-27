@@ -205,9 +205,9 @@ jobs:
 
       - name: Generate dependency report
         run: |
-          go list -m -json all > dependencies.json
+          GOFLAGS=-mod=mod go list -m -json all > dependencies.json
           go mod download
-          go list -m -versions -json all > dependency-versions.json
+          GOFLAGS=-mod=mod go list -m -versions -json all > dependency-versions.json
 
       - name: Check for known vulnerable dependencies
         run: |
