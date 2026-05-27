@@ -51,10 +51,10 @@ type APIRequest struct {
 
 // NetworkActivity represents network activity
 type NetworkActivity struct {
-	SourceIP    string
-	DestIP      string
-	DestPort    int
-	PacketSize  int
-	Protocol    string
-	Timestamp   time.Time
+	SourceIP   string
+	DestIP     string
+	DestPort   int
+	PacketSize int
+	Protocol   string
+	Timestamp  time.Time
 }
