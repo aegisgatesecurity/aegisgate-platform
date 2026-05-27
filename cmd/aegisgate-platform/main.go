@@ -482,7 +482,7 @@ func main() {
 		proxyMux.Handle("/acp/", acpMiddleware.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			//nolint:errcheck - ACP endpoint write errors are logged but non-fatal
-	if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
+			if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
 				log.Printf("Warning: Failed to write ACP response: %v", err)
 			}
 		})))
