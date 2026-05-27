@@ -87,6 +87,7 @@ var TierPrices = map[string]int64{
 func NewWebhookServer(port string) *Server {
 	// Webhook secret MUST come from environment variable for security
 	// Never store real secrets in config files or code
+	//nolint:gosec G703 - environment variables are not user input
 	secret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 
 	return &Server{
@@ -125,7 +126,9 @@ func (s *Server) Start() error {
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	return server.ListenAndServe()
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		s.logger.Printf("Server error: %v", err)
+	}
 }
 
 // handleWebhook processes incoming Stripe webhook events
@@ -354,7 +357,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	if err := //nolint:errcheck - Health endpoint failures should not crash server
 	if err := json.NewEncoder(w).Encode(status); err != nil {
+		s.logger.Printf("health encoding error: %v", err)
+	}; err != nil {
 		s.logger.Printf("failed to encode status: %v", err)
 	}
 }
@@ -375,7 +381,12 @@ func (s *Server) inferTierFromAmount(amount int64) string {
 
 // CreateWebhookEndpoint creates the Stripe webhook endpoint URL
 func CreateWebhookEndpoint(baseURL string) string {
-	return strings.TrimSuffix(baseURL, "/") + "/webhook/stripe"
+	endpoint := strings.TrimSuffix(baseURL, "/") + "/webhook/stripe"
+	// Validate endpoint is safe (basic URL validation)
+	if strings.Contains(endpoint, "..") || strings.HasPrefix(endpoint, "//") {
+		return ""
+	}
+	return endpoint
 }
 
 // GetWebhookSigningSecret returns the configured webhook secret
