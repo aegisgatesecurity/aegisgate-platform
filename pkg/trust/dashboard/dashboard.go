@@ -191,7 +191,8 @@ func (d *Dashboard) serveDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	//nolint:errcheck - Encode errors after headers are typically client disconnects
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func (d *Dashboard) serveScores(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +202,8 @@ func (d *Dashboard) serveScores(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(scores)
+	//nolint:errcheck
+	_ = json.NewEncoder(w).Encode(scores)
 }
 
 func (d *Dashboard) serveAnomalies(w http.ResponseWriter, r *http.Request) {
@@ -212,7 +214,8 @@ func (d *Dashboard) serveAnomalies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(anomalies)
+	//nolint:errcheck
+	_ = json.NewEncoder(w).Encode(anomalies)
 }
 
 func (d *Dashboard) serveCompliance(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +225,8 @@ func (d *Dashboard) serveCompliance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data.Compliance)
+	//nolint:errcheck
+	_ = json.NewEncoder(w).Encode(data.Compliance)
 }
 
 // PublishEvent publishes an event to all listeners
