@@ -357,11 +357,9 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := //nolint:errcheck - Health endpoint failures should not crash server
+	//nolint:errcheck - Health endpoint failures should not crash server
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		s.logger.Printf("health encoding error: %v", err)
-	}; err != nil {
-		s.logger.Printf("failed to encode status: %v", err)
 	}
 }
 
