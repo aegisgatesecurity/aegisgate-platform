@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html"
 	"io"
 	"log/slog"
 	"net/http"
