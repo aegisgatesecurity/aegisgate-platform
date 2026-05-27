@@ -447,10 +447,10 @@ func TestDashboardStatsDefaults(t *testing.T) {
 
 func TestComplianceStatusFrameworks(t *testing.T) {
 	status := ComplianceStatus{
-		Overall:         "compliant",
-		Score:           95.0,
-		LastAudit:       time.Now().Add(-24 * time.Hour),
-		NextAudit:       time.Now().Add(7 * 24 * time.Hour),
+		Overall:   "compliant",
+		Score:     95.0,
+		LastAudit: time.Now().Add(-24 * time.Hour),
+		NextAudit: time.Now().Add(7 * 24 * time.Hour),
 		Frameworks: []FrameworkStatus{
 			{Name: "GDPR", Status: "compliant", Score: 98.0, Controls: 50, ControlsPass: 48},
 			{Name: "HIPAA", Status: "compliant", Score: 96.0, Controls: 45, ControlsPass: 44},

@@ -19,9 +19,9 @@ func TestDashboardServeAllEndpointsV2(t *testing.T) {
 
 	// Test all endpoints
 	endpoints := []struct {
-		path         string
-		expectCode   int
-		expectJSON   bool
+		path       string
+		expectCode int
+		expectJSON bool
 	}{
 		{"/api/v1/trust/dashboard", 200, true},
 		{"/api/v1/trust/scores", 200, true},

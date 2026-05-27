@@ -16,12 +16,12 @@ func TestBridgeCoverageBoost(t *testing.T) {
 	// Test 1: Scanner with config variations
 	for i := 0; i < 50; i++ {
 		scanner := NewResponseScannerWithConfig(&responseguard.ResponseGuardConfig{
-			EnablePIIScanner:       i%2 == 0,
+			EnablePIIScanner:      i%2 == 0,
 			EnableSecretDetection: i%3 == 0,
-			EnableToxicityFilter:   i%4 == 0,
-			EnableHallucination:    i%5 == 0,
-			StrictMode:             i%2 == 1,
-			MaxResponseTokens:      i * 100,
+			EnableToxicityFilter:  i%4 == 0,
+			EnableHallucination:   i%5 == 0,
+			StrictMode:            i%2 == 1,
+			MaxResponseTokens:     i * 100,
 		})
 
 		text := fmt.Sprintf("response-%d", i)
@@ -139,8 +139,8 @@ func TestBridgeResponsePaths(t *testing.T) {
 
 	// Test with various response content
 	testCases := []struct {
-		name    string
-		resp    *LLMResponse
+		name string
+		resp *LLMResponse
 	}{
 		{"nil_response", nil},
 		{"empty_body", &LLMResponse{RequestID: "1", Body: []byte{}}},
