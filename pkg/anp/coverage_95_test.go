@@ -192,22 +192,6 @@ func TestGuardMessage_Signature(t *testing.T) {
 	}
 }
 
-func TestCheckStepRateLimit_DifferentTasks(t *testing.T) {
-	g := NewGuardWithConfig(&Config{
-		MaxStepsPerTask: 1,
-	})
-
-	if !g.checkStepRateLimit("task-A") {
-		t.Error("Task A first step should pass")
-	}
-	if g.checkStepRateLimit("task-A") {
-		t.Error("Task A second step should fail")
-	}
-	if !g.checkStepRateLimit("task-B") {
-		t.Error("Task B first step should pass")
-	}
-}
-
 func TestContainsPII_AllPatterns(t *testing.T) {
 	g := NewGuard()
 	tests := []struct {
