@@ -88,8 +88,7 @@ func (r *Reconnaissance) DetectPortScanning(ctx context.Context, activity *Netwo
 // TA01-ST07: DNS Reconnaissance
 func (r *Reconnaissance) DetectDNSReconnaissance(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA01-ST07", Technique: "DNS Reconnaissance", Tactic: "Reconnaissance", Timestamp: time.Now()}
-	patterns := []string{"(?i)(dns.*lookup)", "(?i)(resolve.*domain)", "(?i)(mx.*records)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(dns.*lookup)", "(?i)(resolve.*domain)", "(?i)(mx.*records)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "DNS reconnaissance detected"
 			break
@@ -107,11 +106,10 @@ func (r *Reconnaissance) DetectActiveScanning(ctx context.Context, activity *Net
 	return result, nil
 }
 
-/// TA01-ST09: Vulnerability Scanning
+// TA01-ST09: Vulnerability Scanning
 func (r *Reconnaissance) DetectVulnerabilityScanning(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA01-ST09", Technique: "Vulnerability Scanning", Tactic: "Reconnaissance", Timestamp: time.Now()}
-	patterns := []string{"(?i)(scan.*vuln)", "(?i)(cve.*entries)", "(?i)(metasploit|nmap)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(scan.*vuln)", "(?i)(cve.*entries)", "(?i)(metasploit|nmap)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Vulnerability scanning detected"
 			break
@@ -120,12 +118,10 @@ func (r *Reconnaissance) DetectVulnerabilityScanning(ctx context.Context, req *A
 	return result, nil
 }
 
-
 // TA01-ST10: Identify Deployed Model
 func (r *Reconnaissance) DetectModelFingerprinting(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA01-ST10", Technique: "Identify Deployed Model", Tactic: "Reconnaissance", Timestamp: time.Now()}
-	patterns := []string{"(?i)(what model|tell me about|capabilities list)", "(?i)(model name|llm identification)", "(?i)(capabilities list)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(what model|tell me about|capabilities list)", "(?i)(model name|llm identification)", "(?i)(capabilities list)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Model fingerprinting detected"
 			break
@@ -137,8 +133,7 @@ func (r *Reconnaissance) DetectModelFingerprinting(ctx context.Context, req *API
 // TA01-ST11: Gather Training Data Information
 func (r *Reconnaissance) DetectTrainingDataProbing(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA01-ST11", Technique: "Gather Training Data Information", Tactic: "Reconnaissance", Timestamp: time.Now()}
-	patterns := []string{"(?i)(training data|when were you trained)", "(?i)(when trained|knowledge cutoff)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(training data|when were you trained)", "(?i)(when trained|knowledge cutoff)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Training data probing detected"
 			break
@@ -150,8 +145,7 @@ func (r *Reconnaissance) DetectTrainingDataProbing(ctx context.Context, req *API
 // TA01-ST12: Identify Victim
 func (r *Reconnaissance) DetectVictimIdentification(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA01-ST12", Technique: "Identify Victim", Tactic: "Reconnaissance", Timestamp: time.Now()}
-	patterns := []string{"(?i)(who.*am.*i|identify.*user)", "(?i)(what.*organization)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(who.*am.*i|identify.*user)", "(?i)(what.*organization)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "LOW", "Victim identification probe detected"
 			break
@@ -194,8 +188,7 @@ func NewResourceDevelopment(cfg *Config) *ResourceDevelopment {
 // TA02-ST01: Acquire Access to Developer Tools
 func (rd *ResourceDevelopment) DetectDeveloperToolAccess(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST01", Technique: "Acquire Access to Developer Tools", Tactic: "Resource Development", Timestamp: time.Now()}
-	endpoints := []string{"/v1/models", "/v1/fine-tunes", "/admin/", "/debug/", "/metrics"}
-	for _, ep := range endpoints {
+	for _, ep := range []string{"/v1/models", "/v1/fine-tunes", "/admin/", "/debug/", "/metrics"} {
 		if strings.Contains(req.Endpoint, ep) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", fmt.Sprintf("Developer tool access: %s", ep)
 			break
@@ -207,8 +200,7 @@ func (rd *ResourceDevelopment) DetectDeveloperToolAccess(ctx context.Context, re
 // TA02-ST02: Obtain Model Component
 func (rd *ResourceDevelopment) DetectModelComponentAccess(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST02", Technique: "Obtain Model Component", Tactic: "Resource Development", Timestamp: time.Now()}
-	components := []string{"/model/weights", "/embeddings/export", "/checkpoints/", "/model.tar.gz"}
-	for _, c := range components {
+	for _, c := range []string{"/model/weights", "/embeddings/export", "/checkpoints/", "/model.tar.gz"} {
 		if strings.Contains(req.Endpoint, c) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", fmt.Sprintf("Model component access: %s", c)
 			break
@@ -220,8 +212,7 @@ func (rd *ResourceDevelopment) DetectModelComponentAccess(ctx context.Context, r
 // TA02-ST03: Exploit Development
 func (rd *ResourceDevelopment) DetectExploitDevelopment(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST03", Technique: "Exploit Development", Tactic: "Resource Development", Timestamp: time.Now()}
-	patterns := []string{"(?i)(write.*exploit|craft.*payload)", "(?i)(buffer.*overflow)", "(?i)(shellcode)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(write.*exploit|craft.*payload)", "(?i)(buffer.*overflow)", "(?i)(shellcode)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Exploit development detected"
 			break
@@ -233,8 +224,7 @@ func (rd *ResourceDevelopment) DetectExploitDevelopment(ctx context.Context, req
 // TA02-ST04: Develop Capabilities
 func (rd *ResourceDevelopment) DetectCapabilityDevelopment(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST04", Technique: "Develop Capabilities", Tactic: "Resource Development", Timestamp: time.Now()}
-	patterns := []string{"(?i)(develop.*tool|create.*malware)", "(?i)(build.*backdoor)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(develop.*tool|create.*malware)", "(?i)(build.*backdoor)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Capability development detected"
 			break
@@ -258,8 +248,7 @@ func (rd *ResourceDevelopment) DetectMLArtefactAcquisition(ctx context.Context, 
 // TA02-ST06: Acquire Infrastructure
 func (rd *ResourceDevelopment) DetectInfrastructureAcquisition(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST06", Technique: "Acquire Infrastructure", Tactic: "Resource Development", Timestamp: time.Now()}
-	patterns := []string{"(?i)(obtain.*server|vps)", "(?i)(acquire.*domain)", "(?i)(cloud.*instance)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(obtain.*server|vps)", "(?i)(acquire.*domain)", "(?i)(cloud.*instance)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Infrastructure acquisition detected"
 			break
@@ -271,8 +260,7 @@ func (rd *ResourceDevelopment) DetectInfrastructureAcquisition(ctx context.Conte
 // TA02-ST07: Test Capabilities
 func (rd *ResourceDevelopment) DetectTestCapabilities(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST07", Technique: "Test Capabilities", Tactic: "Resource Development", Timestamp: time.Now()}
-	patterns := []string{"(?i)(test.*payload)", "(?i)(sandbox.*detection)", "(?i)(antivirus.*test)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(test.*payload)", "(?i)(sandbox.*detection)", "(?i)(antivirus|detect.*this)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Capability testing detected"
 			break
@@ -284,8 +272,7 @@ func (rd *ResourceDevelopment) DetectTestCapabilities(ctx context.Context, req *
 // TA02-ST08: Obtain Capabilities
 func (rd *ResourceDevelopment) DetectCapabilityObtainment(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA02-ST08", Technique: "Obtain Capabilities", Tactic: "Resource Development", Timestamp: time.Now()}
-	patterns := []string{"(?i)(buy.*exploit|hire.*hacker)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(buy.*exploit|hire.*hacker)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Capability obtainment detected"
 			break
@@ -300,7 +287,7 @@ func (rd *ResourceDevelopment) DetectCapabilityObtainment(ctx context.Context, r
 
 type Persistence struct {
 	cfg              *Config
-	backdoorPatterns []*regexp.Regexp
+	backdoorPatterns  []*regexp.Regexp
 	repersistPatterns []*regexp.Regexp
 }
 
@@ -339,8 +326,7 @@ func (p *Persistence) DetectBackdoorAccount(ctx context.Context, req *APIRequest
 // TA04-ST02: Modify Authentication Mechanism
 func (p *Persistence) DetectAuthenticationModification(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST02", Technique: "Modify Authentication Mechanism", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(disable.*auth)", "(?i)(skip.*verification)", "(?i)(remove.*2fa)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(disable.*auth)", "(?i)(skip.*verification)", "(?i)(remove.*2fa)", "(?i)(bypass.*login)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Authentication modification detected"
 			break
@@ -364,8 +350,7 @@ func (p *Persistence) DetectModelPersistence(ctx context.Context, req *APIReques
 // TA04-ST04: Embed Code in Model
 func (p *Persistence) DetectCodeEmbedding(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST04", Technique: "Embed Code in Model", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(embed.*code|poison.*training)", "(?i)(contaminate.*dataset)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(embed.*code|poison.*training)", "(?i)(contaminate.*dataset)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Code embedding in model detected"
 			break
@@ -377,8 +362,7 @@ func (p *Persistence) DetectCodeEmbedding(ctx context.Context, req *APIRequest) 
 // TA04-ST05: Service Worker
 func (p *Persistence) DetectServiceWorker(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST05", Technique: "Install Service Worker", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(register.*service.*worker)", "(?i)(persistent.*worker)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(register.*service.*worker)", "(?i)(service.*worker.*persist)", "(?i)(persist.*worker)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Service worker installation detected"
 			break
@@ -390,8 +374,7 @@ func (p *Persistence) DetectServiceWorker(ctx context.Context, req *APIRequest) 
 // TA04-ST06: Browser Modification
 func (p *Persistence) DetectBrowserModification(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST06", Technique: "Browser Modification", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(persist.*cookie)", "(?i)(local.*storage)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(persist.*cookie)", "(?i)(local.*storage)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Browser persistence detected"
 			break
@@ -403,8 +386,7 @@ func (p *Persistence) DetectBrowserModification(ctx context.Context, req *APIReq
 // TA04-ST07: External Model Service
 func (p *Persistence) DetectExternalModelService(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST07", Technique: "External Model Service", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(external.*model|third.*party.*llm)", "(?i)(redirect.*api)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(external.*model|third.*party.*llm)", "(?i)(redirect.*api)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "External model service detected"
 			break
@@ -416,8 +398,7 @@ func (p *Persistence) DetectExternalModelService(ctx context.Context, req *APIRe
 // TA04-ST08: Plugin Persistence
 func (p *Persistence) DetectPluginPersistence(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST08", Technique: "Plugin Persistence", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(install.*plugin|add.*extension)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(install.*plugin|add.*extension)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Plugin persistence detected"
 			break
@@ -429,8 +410,7 @@ func (p *Persistence) DetectPluginPersistence(ctx context.Context, req *APIReque
 // TA04-ST09: Scheduled Task
 func (p *Persistence) DetectScheduledTask(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST09", Technique: "Scheduled Task", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(schedule.*task|create.*cron)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(schedule.*task|create.*cron)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Scheduled task detected"
 			break
@@ -442,8 +422,7 @@ func (p *Persistence) DetectScheduledTask(ctx context.Context, req *APIRequest) 
 // TA04-ST10: Create Account
 func (p *Persistence) DetectAccountCreation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA04-ST10", Technique: "Create Account", Tactic: "Persistence", Timestamp: time.Now()}
-	patterns := []string{"(?i)(create.*user|register.*account)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(create.*user|register.*account)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Account creation detected"
 			break
@@ -490,8 +469,7 @@ func (de *DefenseEvasion) DetectModelDeception(ctx context.Context, req *APIRequ
 // TA07-ST02: Obfuscate Queries
 func (de *DefenseEvasion) DetectObfuscation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST02", Technique: "Obfuscate Queries", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(base64.*encode)", "(?i)(obfuscate.*prompt)", "(?i)(hide.*payload)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(base64.*encode)", "(?i)(obfuscate.*prompt)", "(?i)(hide.*payload)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Query obfuscation detected"
 			break
@@ -503,8 +481,7 @@ func (de *DefenseEvasion) DetectObfuscation(ctx context.Context, req *APIRequest
 // TA07-ST03: Exfiltrate Data or Model
 func (de *DefenseEvasion) DetectExfiltrationEvasion(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST03", Technique: "Exfiltrate Data or Model", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(compress.*data|zip.*steal)", "(?i)(encrypt.*exfil)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(compress.*data|zip.*steal|zip.*up)", "(?i)(encrypt.*exfil)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Exfiltration with evasion detected"
 			break
@@ -516,8 +493,7 @@ func (de *DefenseEvasion) DetectExfiltrationEvasion(ctx context.Context, req *AP
 // TA07-ST04: Disable Security Controls
 func (de *DefenseEvasion) DetectSecurityBypass(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST04", Technique: "Disable Security Controls", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(disable.*security)", "(?i)(skip.*guard)", "(?i)(override.*policy)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(disable.*security)", "(?i)(skip.*guard)", "(?i)(override.*policy)", "(?i)(bypass.*auth)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Security bypass detected"
 			break
@@ -529,8 +505,7 @@ func (de *DefenseEvasion) DetectSecurityBypass(ctx context.Context, req *APIRequ
 // TA07-ST05: Exfiltrate Model Weights
 func (de *DefenseEvasion) DetectModelWeightExfiltration(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST05", Technique: "Exfiltrate Model Weights", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(export.*weights|download.*model)", "(?i)(steal.*parameters)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(export.*weights|download.*model)", "(?i)(steal.*parameters)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Model weight exfiltration detected"
 			break
@@ -539,11 +514,10 @@ func (de *DefenseEvasion) DetectModelWeightExfiltration(ctx context.Context, req
 	return result, nil
 }
 
-/// TA07-ST06: Use Alternate Encoding
+// TA07-ST06: Use Alternate Encoding
 func (de *DefenseEvasion) DetectTimingEvasion(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST06", Technique: "Use Alternate Encoding", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(hex.*encoding)", "(?i)(unicode.*evasion)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(hex.*encoding)", "(?i)(unicode.*evasion)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Alternate encoding detected"
 			break
@@ -552,12 +526,10 @@ func (de *DefenseEvasion) DetectTimingEvasion(ctx context.Context, req *APIReque
 	return result, nil
 }
 
-
 // TA07-ST07: Deliberate Non-Action
 func (de *DefenseEvasion) DetectDeliberateNonAction(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST07", Technique: "Deliberate Non-Action", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(refuse.*to.*answer)", "(?i)(cannot.*assist)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(refuse.*to.*answer)", "(?i)(cannot.*assist)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Deliberate non-action detected"
 			break
@@ -569,8 +541,7 @@ func (de *DefenseEvasion) DetectDeliberateNonAction(ctx context.Context, req *AP
 // TA07-ST08: LLM Injection Transfer
 func (de *DefenseEvasion) DetectLLMEvasion(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST08", Technique: "LLM Evasion", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(translate.*malicious)", "(?i)(split.*payload)", "(?i)(context.*switching)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(translate.*malicious)", "(?i)(split.*payload)", "(?i)(context.*switching)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "LLM evasion pattern detected"
 			break
@@ -582,8 +553,7 @@ func (de *DefenseEvasion) DetectLLMEvasion(ctx context.Context, req *APIRequest)
 // TA07-ST09: Token Smuggling
 func (de *DefenseEvasion) DetectTokenSmuggling(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST09", Technique: "Token Smuggling", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(token.*padding|overflow.*token)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(token.*padding|overflow.*token)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Token smuggling detected"
 			break
@@ -595,8 +565,7 @@ func (de *DefenseEvasion) DetectTokenSmuggling(ctx context.Context, req *APIRequ
 // TA07-ST10: Adversarial Perturbation
 func (de *DefenseEvasion) DetectAdversarialPerturbation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST10", Technique: "Adversarial Perturbation", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(adversarial.*example|fgsm|pgd)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(adversarial.*example|fgsm|pgd)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Adversarial perturbation detected"
 			break
@@ -608,8 +577,7 @@ func (de *DefenseEvasion) DetectAdversarialPerturbation(ctx context.Context, req
 // TA07-ST11: Content Manipulation
 func (de *DefenseEvasion) DetectContentManipulation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST11", Technique: "Content Manipulation", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(manipulate.*response|alter.*output)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(manipulate.*response|alter.*output)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Content manipulation detected"
 			break
@@ -621,8 +589,7 @@ func (de *DefenseEvasion) DetectContentManipulation(ctx context.Context, req *AP
 // TA07-ST12: Chain of Thought Evasion
 func (de *DefenseEvasion) DetectChainOfThoughtEvasion(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA07-ST12", Technique: "Chain of Thought Evasion", Tactic: "Defense Evasion", Timestamp: time.Now()}
-	patterns := []string{"(?i)(skip.*reasoning|ignore.*cot)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(skip.*reasoning|ignore.*chain.*of.*thought|ignore.*cot)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Chain of thought evasion detected"
 			break
@@ -649,8 +616,7 @@ func NewDiscovery(cfg *Config) *Discovery {
 // TA09-ST01: Identify Agency Task
 func (d *Discovery) DetectTaskIdentification(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST01", Technique: "Identify Agency Task", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(what.*task|identify.*objective)", "(?i)(purpose.*of.*query)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(what.*task|identify.*objective)", "(?i)(purpose.*of.*query)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Task identification detected"
 			break
@@ -662,8 +628,7 @@ func (d *Discovery) DetectTaskIdentification(ctx context.Context, req *APIReques
 // TA09-ST02: Probe System Configuration
 func (d *Discovery) DetectSystemEnumeration(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST02", Technique: "Probe System Configuration", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(system.*config)", "(?i)(os.*version)", "(?i)(cpu.*info)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(system.*config)", "(?i)(os.*version|cpu.*details)", "(?i)(cpu.*info|architecture.*details)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "System enumeration detected"
 			break
@@ -675,8 +640,7 @@ func (d *Discovery) DetectSystemEnumeration(ctx context.Context, req *APIRequest
 // TA09-ST03: Identify Defensive Aids
 func (d *Discovery) DetectDefensiveAidIdentification(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST03", Technique: "Identify Defensive Aids", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(what.*filter|guard.*rail)", "(?i)(detect.*injection)", "(?i)(moderation.*endpoint)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(what.*filter|guard.*rail)", "(?i)(detect.*injection)", "(?i)(moderation.*endpoint)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Defensive aid identification detected"
 			break
@@ -688,8 +652,7 @@ func (d *Discovery) DetectDefensiveAidIdentification(ctx context.Context, req *A
 // TA09-ST04: Discover Sensitive Data
 func (d *Discovery) DetectSensitiveDataDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST04", Technique: "Discover Sensitive Data", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(find.*passwords|search.*credentials)", "(?i)(discover.*secrets)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(find.*passwords|search.*credentials)", "(?i)(discover.*secrets|search.*secrets)", "(?i)(discover.*sensitive)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Sensitive data discovery detected"
 			break
@@ -701,8 +664,7 @@ func (d *Discovery) DetectSensitiveDataDiscovery(ctx context.Context, req *APIRe
 // TA09-ST05: Discover File System
 func (d *Discovery) DetectFileSystemDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST05", Technique: "Discover File System", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(list.*files|ls.*directory)", "(?i)(find.*files)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(list.*files|ls.*directory)", "(?i)(find.*files)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Filesystem discovery detected"
 			break
@@ -714,8 +676,7 @@ func (d *Discovery) DetectFileSystemDiscovery(ctx context.Context, req *APIReque
 // TA09-ST06: Discover Network Services
 func (d *Discovery) DetectNetworkServiceDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST06", Technique: "Discover Network Services", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(scan.*network|discover.*services)", "(?i)(enumerate.*hosts)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(scan.*network|discover.*services)", "(?i)(enumerate.*hosts)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Network service discovery detected"
 			break
@@ -727,8 +688,7 @@ func (d *Discovery) DetectNetworkServiceDiscovery(ctx context.Context, req *APIR
 // TA09-ST07: Discover Environment
 func (d *Discovery) DetectEnvironmentDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST07", Technique: "Discover Environment", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(get.*env|environment.*variables)", "(?i)(config.*files)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(get.*env|environment.*variables)", "(?i)(config.*files)", "(?i)(list.*environment.*settings)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Environment discovery detected"
 			break
@@ -740,8 +700,7 @@ func (d *Discovery) DetectEnvironmentDiscovery(ctx context.Context, req *APIRequ
 // TA09-ST08: Discover API Keys
 func (d *Discovery) DetectAPIKeyDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST08", Technique: "Discover API Keys", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(find.*api.*key|search.*token)", "(?i)(discover.*credential)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(find.*api.*key|search.*token)", "(?i)(discover.*credential)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "API key discovery detected"
 			break
@@ -753,8 +712,7 @@ func (d *Discovery) DetectAPIKeyDiscovery(ctx context.Context, req *APIRequest) 
 // TA09-ST09: Discover Prompt Injection
 func (d *Discovery) DetectPromptInjectionDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST09", Technique: "Discover Prompt Injection", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(test.*injection|check.*guard)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(test.*injection|check.*guard)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "MEDIUM", "Prompt injection discovery detected"
 			break
@@ -766,8 +724,7 @@ func (d *Discovery) DetectPromptInjectionDiscovery(ctx context.Context, req *API
 // TA09-ST10: Discover Victim
 func (d *Discovery) DetectVictimDiscovery(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA09-ST10", Technique: "Discover Victim", Tactic: "Discovery", Timestamp: time.Now()}
-	patterns := []string{"(?i)(who.*uses.*this|find.*victim)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(who.*uses.*this|find.*victim)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "LOW", "Victim discovery detected"
 			break
@@ -802,8 +759,7 @@ func NewCommandControl(cfg *Config) *CommandControl {
 // TA10-ST01: LLM as C2
 func (cc *CommandControl) DetectLLMAsC2(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST01", Technique: "LLM as C2", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(llm.*command|model.*as.*proxy)", "(?i)(model.*phone.*home)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(llm.*command|model.*as.*proxy)", "(?i)(model.*phone.*home)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "LLM as C2 detected"
 			break
@@ -827,8 +783,7 @@ func (cc *CommandControl) DetectModelC2Proxy(ctx context.Context, req *APIReques
 // TA10-ST03: Establish Covert Channel
 func (cc *CommandControl) DetectCovertChannel(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST03", Technique: "Establish Covert Channel", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(first.*letter.*of.*each|hidden.*message)", "(?i)(encode.*in.*image)", "(?i)(secret.*message.*hidden)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(first.*letter.*of.*each|hidden.*message)", "(?i)(encode.*in.*image)", "(?i)(secret.*message.*hidden)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Covert channel detected"
 			break
@@ -840,8 +795,7 @@ func (cc *CommandControl) DetectCovertChannel(ctx context.Context, req *APIReque
 // TA10-ST04: Data Encoding
 func (cc *CommandControl) DetectDataEncodingForC2(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST04", Technique: "Data Encoding", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(encode.*command.*response)", "(?i)(embed.*command.*in.*output)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(encode.*command.*response)", "(?i)(embed.*command.*in.*output)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Data encoding for C2 detected"
 			break
@@ -853,8 +807,7 @@ func (cc *CommandControl) DetectDataEncodingForC2(ctx context.Context, req *APIR
 // TA10-ST05: Periodic Check-in
 func (cc *CommandControl) DetectPeriodicCheckin(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST05", Technique: "Periodic Check-in", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(check.*in|status.*report)", "(?i)(heartbeat)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(check.*in|status.*report)", "(?i)(heartbeat)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Periodic check-in detected"
 			break
@@ -866,8 +819,7 @@ func (cc *CommandControl) DetectPeriodicCheckin(ctx context.Context, req *APIReq
 // TA10-ST06: Obfuscated Command
 func (cc *CommandControl) DetectObfuscatedCommand(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST06", Technique: "Obfuscated Command", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(obfuscate.*command|steganography)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(obfuscate.*command|steganography)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Obfuscated command detected"
 			break
@@ -879,8 +831,7 @@ func (cc *CommandControl) DetectObfuscatedCommand(ctx context.Context, req *APIR
 // TA10-ST07: Non-Standard Protocol
 func (cc *CommandControl) DetectNonStandardProtocol(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST07", Technique: "Non-Standard Protocol", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(custom.*protocol|nonstandard.*channel)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(custom.*protocol|nonstandard.*channel)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Non-standard protocol detected"
 			break
@@ -892,8 +843,7 @@ func (cc *CommandControl) DetectNonStandardProtocol(ctx context.Context, req *AP
 // TA10-ST08: Protocol Impersonation
 func (cc *CommandControl) DetectProtocolImpersonation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA10-ST08", Technique: "Protocol Impersonation", Tactic: "Command and Control", Timestamp: time.Now()}
-	patterns := []string{"(?i)(impersonate.*protocol|mimic.*api)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(impersonate.*protocol|mimic.*api)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Protocol impersonation detected"
 			break
@@ -919,7 +869,7 @@ func NewImpact(cfg *Config) *Impact {
 		cfg: cfg,
 		dosPatterns: []*regexp.Regexp{
 			regexp.MustCompile("(?i)(repeat.*forever|infinite.*loop)"),
-			regexp.MustCompile("(?i)(denial.*service|resource.*exhaustion)"),
+			regexp.MustCompile("(?i)(denial.*service|resource.*exhaustion|exhaust.*resources)"),
 			regexp.MustCompile("(?i)(crash.*model)"),
 		},
 	}
@@ -940,8 +890,7 @@ func (i *Impact) DetectDenialOfService(ctx context.Context, req *APIRequest) (*D
 // TA12-ST02: Degrade Model Performance
 func (i *Impact) DetectModelDegradation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST02", Technique: "Degrade Model Performance", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(slow.*down|degrade.*performance)", "(?i)(corrupt.*model|poison.*model)"}
-	for _, pat := range patterns {
+	for _, pat := range []string{"(?i)(slow.*down|degrade.*performance|degrade.*quality)", "(?i)(corrupt.*model|poison.*model)"} {
 		if regexp.MustCompile(pat).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Model degradation detected"
 			break
@@ -953,8 +902,7 @@ func (i *Impact) DetectModelDegradation(ctx context.Context, req *APIRequest) (*
 // TA12-ST03: Data Destruction
 func (i *Impact) DetectDataDestruction(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST03", Technique: "Data Destruction", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(delete.*all|wipe.*data)", "(?i)(rm.*rf|format.*disk)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(delete.*all|wipe.*data)", "(?i)(rm.*rf|format.*disk)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Data destruction detected"
 			break
@@ -966,8 +914,7 @@ func (i *Impact) DetectDataDestruction(ctx context.Context, req *APIRequest) (*D
 // TA12-ST04: Data Encrypted for Impact
 func (i *Impact) DetectDataEncryptedForImpact(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST04", Technique: "Data Encrypted for Impact", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(encrypt.*ransomware)", "(?i)(encrypt.*demand)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(encrypt.*ransomware)", "(?i)(encrypt.*demand)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Ransomware pattern detected"
 			break
@@ -979,8 +926,7 @@ func (i *Impact) DetectDataEncryptedForImpact(ctx context.Context, req *APIReque
 // TA12-ST05: Defacement
 func (i *Impact) DetectDefacement(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST05", Technique: "Defacement", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(replace.*content)", "(?i)(deface.*page|hack)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(replace.*content)", "(?i)(deface.*page|hack)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Defacement detected"
 			break
@@ -992,8 +938,7 @@ func (i *Impact) DetectDefacement(ctx context.Context, req *APIRequest) (*Detect
 // TA12-ST06: Model Manipulation
 func (i *Impact) DetectModelManipulation(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST06", Technique: "Model Manipulation", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(manipulate.*output|bias.*model)", "(?i)(corrupt.*weights)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(manipulate.*output|bias.*model)", "(?i)(corrupt.*weights)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Model manipulation detected"
 			break
@@ -1005,8 +950,7 @@ func (i *Impact) DetectModelManipulation(ctx context.Context, req *APIRequest) (
 // TA12-ST07: Generated Content
 func (i *Impact) DetectGeneratedContent(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST07", Technique: "Generated Content", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(generate.*disinformation)", "(?i)(deepfake)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(generate.*disinformation)", "(?i)(deepfake)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "HIGH", "Generated content for impact detected"
 			break
@@ -1018,8 +962,7 @@ func (i *Impact) DetectGeneratedContent(ctx context.Context, req *APIRequest) (*
 // TA12-ST08: Theft of Model Weights
 func (i *Impact) DetectTheftOfModelWeights(ctx context.Context, req *APIRequest) (*DetectionResult, error) {
 	result := &DetectionResult{TechniqueID: "TA12-ST08", Technique: "Theft of Model Weights", Tactic: "Impact", Timestamp: time.Now()}
-	patterns := []string{"(?i)(download.*weights|extract.*model)", "(?i)(steal.*parameters)"}
-	for _, p := range patterns {
+	for _, p := range []string{"(?i)(download.*weights|extract.*model)", "(?i)(steal.*parameters)"} {
 		if regexp.MustCompile(p).MatchString(req.Content) {
 			result.Alert, result.Severity, result.Reason = true, "CRITICAL", "Model weight theft detected"
 			break
