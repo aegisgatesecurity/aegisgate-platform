@@ -89,7 +89,7 @@ func ShannonEntropy(data []byte) float64 {
 
 	// Count byte frequencies
 	freq := make(map[byte]int)
-	for _, b := range data {
+	for _, b := range data { //nolint:gosec G115 - byte (0-255) always valid as rune
 		freq[b]++
 	}
 
