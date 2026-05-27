@@ -18,6 +18,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"html"
 	"os"
 	"strings"
 	"time"
@@ -126,9 +127,9 @@ func (s *Server) Start() error {
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		s.logger.Printf("Server error: %v", err)
-	}
+	go server.ListenAndServe()
+		// Server running in background, return to caller
+		return
 }
 
 // handleWebhook processes incoming Stripe webhook events
