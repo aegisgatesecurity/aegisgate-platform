@@ -13,12 +13,12 @@ import (
 
 // Engine is the main trust score engine that coordinates all components
 type Engine struct {
-	mu        sync.RWMutex
+	mu         sync.RWMutex
 	calculator *Calculator
 	baseline   BaselineEngine
-	detector  *AnomalyDetector
-	scores    map[string]*TrustScore
-	config    *Config
+	detector   *AnomalyDetector
+	scores     map[string]*TrustScore
+	config     *Config
 }
 
 // NewEngine creates a new trust score engine
@@ -34,22 +34,22 @@ func NewEngine(config *Config) *Engine {
 	return &Engine{
 		calculator: calculator,
 		baseline:   baseline,
-		detector:  detector,
-		scores:    make(map[string]*TrustScore),
-		config:    config,
+		detector:   detector,
+		scores:     make(map[string]*TrustScore),
+		config:     config,
 	}
 }
 
 // RecordEvent records a behavior event and updates the score
 func (e *Engine) RecordEvent(ctx context.Context, agentID string, eventType EventType, capability string, severity int, description string) error {
 	event := &BehaviorEvent{
-		ID:         uuid.New().String(),
-		AgentID:    agentID,
-		Type:       eventType,
-		Capability: capability,
-		Severity:   severity,
+		ID:          uuid.New().String(),
+		AgentID:     agentID,
+		Type:        eventType,
+		Capability:  capability,
+		Severity:    severity,
 		Description: description,
-		Timestamp:  time.Now().UTC(),
+		Timestamp:   time.Now().UTC(),
 	}
 
 	// Record in baseline

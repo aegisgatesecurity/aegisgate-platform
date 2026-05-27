@@ -14,18 +14,18 @@ import (
 
 // InMemoryRegistry implements ContractRegistry with in-memory storage
 type InMemoryRegistry struct {
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	contracts map[string]*CapabilityContract
-	byAgent  map[string]string
-	byOwner  map[string][]string
+	byAgent   map[string]string
+	byOwner   map[string][]string
 }
 
 // NewInMemoryRegistry creates a new in-memory contract registry
 func NewInMemoryRegistry() *InMemoryRegistry {
 	return &InMemoryRegistry{
 		contracts: make(map[string]*CapabilityContract),
-		byAgent:  make(map[string]string),
-		byOwner:  make(map[string][]string),
+		byAgent:   make(map[string]string),
+		byOwner:   make(map[string][]string),
 	}
 }
 
@@ -232,7 +232,7 @@ type ListFilter struct {
 type SimpleRateLimiter struct {
 	mu       sync.Mutex
 	counters map[string]map[string]int64 // contractID:capability -> count
-	windows  map[string]time.Time         // contractID:capability -> window start
+	windows  map[string]time.Time        // contractID:capability -> window start
 }
 
 // NewSimpleRateLimiter creates a new simple rate limiter

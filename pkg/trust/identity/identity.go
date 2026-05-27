@@ -24,9 +24,9 @@ type AgentStatus string
 
 const (
 	AgentStatusRegistered AgentStatus = "registered"
-	AgentStatusActive    AgentStatus = "active"
-	AgentStatusSuspended AgentStatus = "suspended"
-	AgentStatusRevoked   AgentStatus = "revoked"
+	AgentStatusActive     AgentStatus = "active"
+	AgentStatusSuspended  AgentStatus = "suspended"
+	AgentStatusRevoked    AgentStatus = "revoked"
 )
 
 // AgentIdentity represents a registered AI agent with cryptographic identity
@@ -41,8 +41,8 @@ type AgentIdentity struct {
 	Metadata             map[string]string `json:"metadata,omitempty"`
 	CreatedAt            time.Time         `json:"createdAt"`
 	LastSeenAt           time.Time         `json:"lastSeenAt"`
-	SuspendedAt          *time.Time       `json:"suspendedAt,omitempty"`
-	RevokedAt            *time.Time       `json:"revokedAt,omitempty"`
+	SuspendedAt          *time.Time        `json:"suspendedAt,omitempty"`
+	RevokedAt            *time.Time        `json:"revokedAt,omitempty"`
 }
 
 // RegisterRequest contains the information needed to register a new agent
@@ -80,11 +80,11 @@ type VerifyResponse struct {
 
 // ListFilter contains optional filters for listing agents
 type ListFilter struct {
-	Owner  string       `json:"owner,omitempty"`
+	Owner  string      `json:"owner,omitempty"`
 	Status AgentStatus `json:"status,omitempty"`
-	Since  time.Time    `json:"since,omitempty"`
-	Limit  int          `json:"limit,omitempty"`
-	Offset int          `json:"offset,omitempty"`
+	Since  time.Time   `json:"since,omitempty"`
+	Limit  int         `json:"limit,omitempty"`
+	Offset int         `json:"offset,omitempty"`
 }
 
 // GenerateKeyPair generates a new ECDSA P-256 keypair

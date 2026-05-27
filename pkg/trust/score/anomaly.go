@@ -35,11 +35,11 @@ func NewAnomalyDetector(config *Config) *AnomalyDetector {
 type AnomalyType string
 
 const (
-	AnomalyTypeRateChange    AnomalyType = "rate_change"
-	AnomalyTypeCapability    AnomalyType = "capability_change"
-	AnomalyTypeBehavior     AnomalyType = "behavior_drift"
-	AnomalyTypeFailure      AnomalyType = "failure_spike"
-	AnomalyTypeUnknown      AnomalyType = "unknown"
+	AnomalyTypeRateChange AnomalyType = "rate_change"
+	AnomalyTypeCapability AnomalyType = "capability_change"
+	AnomalyTypeBehavior   AnomalyType = "behavior_drift"
+	AnomalyTypeFailure    AnomalyType = "failure_spike"
+	AnomalyTypeUnknown    AnomalyType = "unknown"
 )
 
 // Detect analyzes recent events and returns detected anomalies
@@ -99,8 +99,8 @@ func (d *AnomalyDetector) detectRateChange(agentID string, events []*BehaviorEve
 			Type:        string(AnomalyTypeRateChange),
 			Severity:    5,
 			Description: fmt.Sprintf("Event rate changed significantly: current=%.1f, baseline=%.1f", currentRate, baselineRate),
-			Deviation:   math.Abs(currentRate - baselineRate) / baselineRate,
-			Timestamp:    time.Now().UTC(),
+			Deviation:   math.Abs(currentRate-baselineRate) / baselineRate,
+			Timestamp:   time.Now().UTC(),
 			Resolved:    false,
 		}
 	}

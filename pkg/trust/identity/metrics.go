@@ -45,10 +45,10 @@ var (
 	})
 )
 
-func RecordRegistration()     { agentsRegisteredTotal.Inc(); activeAgentsGauge.Inc() }
-func RecordRevocation()       { agentsRevokedTotal.Inc(); activeAgentsGauge.Dec() }
-func RecordSuspension()       { agentsSuspendedTotal.Inc(); activeAgentsGauge.Dec() }
-func RecordReactivation()     { activeAgentsGauge.Inc() }
+func RecordRegistration() { agentsRegisteredTotal.Inc(); activeAgentsGauge.Inc() }
+func RecordRevocation()   { agentsRevokedTotal.Inc(); activeAgentsGauge.Dec() }
+func RecordSuspension()   { agentsSuspendedTotal.Inc(); activeAgentsGauge.Dec() }
+func RecordReactivation() { activeAgentsGauge.Inc() }
 func RecordVerification(success bool) {
 	if success {
 		verificationAttemptsTotal.WithLabelValues("success").Inc()
@@ -57,4 +57,4 @@ func RecordVerification(success bool) {
 	}
 }
 func RecordVerificationLatency(seconds float64) { verificationLatency.Observe(seconds) }
-func RecordKeyRotation()                       { keyRotationsTotal.Inc() }
+func RecordKeyRotation()                        { keyRotationsTotal.Inc() }

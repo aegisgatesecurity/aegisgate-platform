@@ -100,10 +100,10 @@ func TestScoreFactor(t *testing.T) {
 func TestBehaviorEvent(t *testing.T) {
 	be := BehaviorEvent{
 		ID:          "event-123",
-		AgentID:    "agent-456",
-		Type:       EventCapabilityAllowed,
-		Capability: "file:read",
-		Severity:   2,
+		AgentID:     "agent-456",
+		Type:        EventCapabilityAllowed,
+		Capability:  "file:read",
+		Severity:    2,
 		Description: "Allowed file read",
 	}
 	if be.ID != "event-123" {
@@ -117,7 +117,7 @@ func TestBehaviorEvent(t *testing.T) {
 func TestAnomaly(t *testing.T) {
 	a := Anomaly{
 		ID:          "anomaly-123",
-		AgentID:    "agent-456",
+		AgentID:     "agent-456",
 		Type:        "rate_change",
 		Severity:    6,
 		Description: "Unusual event rate",
