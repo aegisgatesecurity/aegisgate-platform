@@ -22,43 +22,43 @@ type Dashboard struct {
 
 // EventFeed provides real-time event streaming
 type EventFeed struct {
-	mu       sync.RWMutex
-	events   []Event
+	mu        sync.RWMutex
+	events    []Event
 	listeners map[string]chan Event
-	maxSize  int
+	maxSize   int
 }
 
 // Event represents a dashboard event
 type Event struct {
 	Type      string    `json:"type"`
-	AgentID  string    `json:"agentId,omitempty"`
+	AgentID   string    `json:"agentId,omitempty"`
 	Timestamp time.Time `json:"timestamp"`
 	Data      any       `json:"data,omitempty"`
 }
 
 // DashboardData represents the full dashboard state
 type DashboardData struct {
-	Agents        []*AgentSummary        `json:"agents"`
-	TrustScores   []*score.TrustScore   `json:"trustScores"`
-	Anomalies     []*score.Anomaly     `json:"anomalies"`
-	ThreatFeed    []ThreatEvent         `json:"threatFeed"`
-	Compliance    ComplianceStatus      `json:"compliance"`
-	RecentEvents  []Event               `json:"recentEvents"`
-	Stats         DashboardStats        `json:"stats"`
+	Agents       []*AgentSummary     `json:"agents"`
+	TrustScores  []*score.TrustScore `json:"trustScores"`
+	Anomalies    []*score.Anomaly    `json:"anomalies"`
+	ThreatFeed   []ThreatEvent       `json:"threatFeed"`
+	Compliance   ComplianceStatus    `json:"compliance"`
+	RecentEvents []Event             `json:"recentEvents"`
+	Stats        DashboardStats      `json:"stats"`
 }
 
 // AgentSummary provides a summary of an agent
 type AgentSummary struct {
-	ID             string             `json:"id"`
-	Name           string             `json:"name"`
-	TrustLevel    score.ScoreLevel  `json:"trustLevel"`
-	Score          float64            `json:"score"`
-	Capabilities   []string           `json:"capabilities"`
-	LastSeen       time.Time          `json:"lastSeen"`
-	IsOnline       bool               `json:"isOnline"`
-	RiskLevel      string             `json:"riskLevel"`
-	TotalRequests  int64              `json:"totalRequests"`
-	DeniedRequests int64             `json:"deniedRequests"`
+	ID             string           `json:"id"`
+	Name           string           `json:"name"`
+	TrustLevel     score.ScoreLevel `json:"trustLevel"`
+	Score          float64          `json:"score"`
+	Capabilities   []string         `json:"capabilities"`
+	LastSeen       time.Time        `json:"lastSeen"`
+	IsOnline       bool             `json:"isOnline"`
+	RiskLevel      string           `json:"riskLevel"`
+	TotalRequests  int64            `json:"totalRequests"`
+	DeniedRequests int64            `json:"deniedRequests"`
 }
 
 // ThreatEvent represents a threat feed event
@@ -74,7 +74,7 @@ type ThreatEvent struct {
 
 // ComplianceStatus represents the overall compliance posture
 type ComplianceStatus struct {
-	Overall    string             `json:"overall"`
+	Overall    string            `json:"overall"`
 	Score      float64           `json:"score"`
 	Frameworks []FrameworkStatus `json:"frameworks"`
 	LastAudit  time.Time         `json:"lastAudit"`
@@ -83,11 +83,11 @@ type ComplianceStatus struct {
 
 // FrameworkStatus represents compliance for a framework
 type FrameworkStatus struct {
-	Name        string  `json:"name"`
-	Status      string  `json:"status"`
-	Score       float64 `json:"score"`
-	Controls    int     `json:"controls"`
-	ControlsPass int    `json:"controlsPass"`
+	Name         string  `json:"name"`
+	Status       string  `json:"status"`
+	Score        float64 `json:"score"`
+	Controls     int     `json:"controls"`
+	ControlsPass int     `json:"controlsPass"`
 }
 
 // DashboardStats provides dashboard statistics
@@ -135,11 +135,11 @@ func (d *Dashboard) GetDashboardData(ctx context.Context) (*DashboardData, error
 
 	data := &DashboardData{
 		TrustScores:  scores,
-		Anomalies:   anomalies,
+		Anomalies:    anomalies,
 		RecentEvents: d.events.GetRecentEvents(50),
 		Stats: DashboardStats{
 			TotalAgents:     len(scores),
-			OnlineAgents:   len(scores),
+			OnlineAgents:    len(scores),
 			ComplianceScore: 95.0,
 		},
 	}
