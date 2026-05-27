@@ -1,3 +1,6 @@
+# CI Workflow for AegisGate Platform
+# Validates code quality, security, and DCO compliance
+
 name: CI
 
 on:
