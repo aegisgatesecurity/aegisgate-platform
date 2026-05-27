@@ -363,20 +363,6 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// inferTierFromAmount determines tier from payment amount (cents)
-func (s *Server) inferTierFromAmount(amount int64) string {
-	switch {
-	case amount >= 24900:
-		return "professional"
-	case amount >= 7900:
-		return "developer"
-	case amount >= 2900:
-		return "starter"
-	default:
-		return "developer"
-	}
-}
-
 // CreateWebhookEndpoint creates the Stripe webhook endpoint URL
 func CreateWebhookEndpoint(baseURL string) string {
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/webhook/stripe"
@@ -392,7 +378,29 @@ func GetWebhookSigningSecret() string {
 	return os.Getenv("STRIPE_WEBHOOK_SECRET")
 }
 
-// SetWebhookSigningSecret sets the webhook secret (for testing)
+
+// setWebhookSigningSecret sets the webhook secret (for testing)
+//
+//go:nosec G104
+func SetWebhookSigningSecret(secret string) {
+	if err := os.Setenv("STRIPE_WEBHOOK_SECRET", secret); err != nil {
+		// In test environment, this is acceptable to fail silently
+		return
+	}
+}
+
+// inferTierFromAmount determines tier from payment amount (cents)
+// Returns tier string: "community", "pro", or "enterprise"
+func (s *Server) inferTierFromAmount(amountCents int64) string {
+	switch {
+	case amountCents >= 29900: // $299/year
+		return "pro"
+	case amountCents >= 9900: // $99/year
+		return "community"
+	default:
+		return "community" // Default to community tier
+	}
+} (for testing)
 //
 //go:nosec G104
 func SetWebhookSigningSecret(secret string) {
