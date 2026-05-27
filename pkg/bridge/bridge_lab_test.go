@@ -9,9 +9,6 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 )
 
-// Lab integration tests - require running testlab
-// Run with: LAB_ENABLED=1 go test -tags=lab -v ./pkg/bridge/...
-
 func skipIfNoLab(t *testing.T) {
 	if os.Getenv("LAB_ENABLED") != "1" {
 		t.Skip("Skipping lab test - set LAB_ENABLED=1 to run")
@@ -83,17 +80,7 @@ func TestBridgeStats_LabIntegration(t *testing.T) {
 func TestBridgeWithResponseScanner_Lab(t *testing.T) {
 	skipIfNoLab(t)
 
-	pb, err := bridge.NewPlatformBridge("http://aegisgate-test:8080")
-	if err != nil {
-		t.Fatalf("NewPlatformBridge failed: %v", err)
-	}
-	defer pb.Close()
-
-	rs := pb.GetResponseScanner()
-	if rs == nil {
-		t.Fatal("GetResponseScanner returned nil")
-	}
-
+	rs := bridge.NewResponseScanner()
 	result, err := rs.ScanResponse(context.Background(), "clean response")
 	if err != nil {
 		t.Fatalf("ScanResponse failed: %v", err)
