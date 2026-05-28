@@ -8,8 +8,8 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-97.7%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Tests](https://img.shields.io/badge/Tests-2_548_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Test Coverage](https://img.shields.io/badge/Coverage-97.8%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 
 > **The only AI security platform with native HTTP API, MCP, AND A2A AND RESPONSE protection.** Four pillars. One gateway. Zero external dependencies.
@@ -90,7 +90,7 @@ Zero-trust guardrails for inter-agent communication — the first purpose-built 
 | 7 | **License Validation** | ECDSA P-256 cryptographic enforcement |
 | 8 | **Audit Logging** | RFC 5424 structured log per request |
 
-### 🛡️ Agent Response Security (v3.0)
+### 🛡️ Agent Response Security (v3.1)
 
 Protection for LLM outputs — the fourth pillar of AI security:
 
@@ -115,7 +115,7 @@ Protection for LLM outputs — the fourth pillar of AI security:
 
 ---
 
-### 🔐 ACP Protocol Security (v3.0)
+### 🔐 ACP Protocol Security (v3.1)
 
 **Agent Communication Protocol** — The newest pillar for agent-to-agent security.
 
@@ -201,7 +201,7 @@ flowchart TB
         B[🤖 MCP Client]
         C[🤝 A2A Agent]
     end
-    subgraph "AegisGate Platform v3.0.0"
+    subgraph "AegisGate Platform v3.1.0"
         subgraph "Entry Points"
             D["🌐 HTTP Proxy\n:8080"]
             E["🔗 MCP Server\n:8081"]
@@ -253,7 +253,7 @@ flowchart TB
 
 ---
 
-## ⚡ Performance (v3.0.0 Sprint 10 Benchmark)
+## ⚡ Performance (v3.1.0 Benchmark)
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
@@ -263,8 +263,8 @@ flowchart TB
 | **P99 Latency** | < 100ms | ~70 ms | ✅ |
 | **Error Rate** | < 0.1% | **0.00%** | ✅ |
 | **Binary Size** | < 50MB | **19.1 MB** | ✅ |
-| **Code Coverage** | 95%+ | **97.7%** | ✅ |
-| **Tests Passing** | — | **2,548** | ✅ |
+| **Code Coverage** | 95%+ | **97.8%** | ✅ |
+| **Tests Passing** | — | **5,484** | ✅ |
 | **CVEs** | 0 | **0** | ✅ |
 
 *Full methodology in [PERFORMANCE.md](PERFORMANCE.md). k6 load testing, 60+ second scenarios, real attack vectors.*
@@ -300,7 +300,7 @@ Includes HPA autoscaling, NetworkPolicy, ServiceMonitor, rolling updates.
 
 ```bash
 curl http://localhost:8443/health
-# {"status":"healthy","version":"v3.0.0","tier":"community",...}
+# {"status":"healthy","version":"v3.1.0","tier":"community",...}
 ```
 
 ---
@@ -369,7 +369,7 @@ response = requests.post(
 | **Zero CVEs** | All dependencies scanned, 0 vulnerabilities |
 | **Threat Model** | Full STRIDE analysis, CVSS scoring, MITRE ATLAS mapping |
 
-### Threat Model (v3.0 — ACP Protocol Added)
+### Threat Model (v3.1 — Full STRIDE Analysis)
 
 | Category | Coverage | Top Threat |
 |----------|----------|-----------|
@@ -490,7 +490,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| **v3.0.0** | ✅ Current | ACP Protocol shipped, 90.1% coverage, 164 tests |
+| **v3.1.0** | ✅ Current | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage, 5,484 tests |
 | **v2.0.0** | ✅ Supported | A2A guardrails shipped |
 | **v1.3.x** | ⚠️ Legacy | Community support only |
 
