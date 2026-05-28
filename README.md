@@ -4,15 +4,15 @@
 
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
-[![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases)
+![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-97.8%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+![Test Coverage](https://img.shields.io/badge/Coverage-97.8%25-green?logo=codecov)
+![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)
 [![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
 
-> **The only AI security platform with native HTTP API, MCP, AND A2A AND RESPONSE protection.** Four pillars. One gateway. Zero external dependencies.
+> **The only AI security platform with native HTTP API, MCP, A2A, ACP, AND RESPONSE protection.** Five pillars. One gateway. Zero external dependencies.
 
 [🌐 Website](https://aegisgatesecurity.io) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](docs/) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
@@ -33,10 +33,11 @@ Your AI infrastructure spans multiple attack surfaces — and most teams are onl
 | **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No native protection | ✅ Agent-to-agent verification |
 | **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection | ✅ Real-time response guard |
 | **ACP Protocol** | Message tampering, capability escalation, replay attacks | ❌ No native protection | ✅ HMAC-signed messages |
+| **ANP Protocol** | Protocol downgrade, routing manipulation, message injection | ❌ No native protection | ✅ Message validation, routing integrity |
 
 AegisGate fills these gaps with a single unified platform.
 
-**AegisGate secures all five in a single 19.1 MB binary you deploy in 60 seconds.**
+**AegisGate secures all six in a single 19 MB binary you deploy in 60 seconds.**
 
 ---
 
