@@ -4,7 +4,7 @@
 
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
-![Version](https://img.shields.io/github/v/tag/aegisgatesecurity/aegisgate-platform?label=Version&logo=semver)
+![Version](https://img.shields.io/badge/Version-v3.1.0-blue?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
