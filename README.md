@@ -378,6 +378,8 @@ response = requests.post(
 | **MCP Protocol** | 10 STRIDE threats | Session spoofing (CVSS 9.5) |
 | **A2A Agent** | 10 STRIDE threats | Impersonation (CVSS 9.1) |
 | **AI Response** | 11 STRIDE threats | PII disclosure (CVSS 9.1) |
+| **ANP Protocol** | 8 STRIDE threats | Protocol downgrade (CVSS 8.2) |
+| **ACP Protocol** | 9 STRIDE threats | Message tampering (CVSS 9.3) |
 
 ### SIEM Integration
 
@@ -402,7 +404,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 | **HTTP Security** | Bidirectional scanning · 144+ patterns · Rate limiting · Circuit breaker |
 | **MCP Security** | 8 guardrails · Session isolation · Tool authorization · STDIO validation |
 | **A2A Security** | mTLS · HMAC-SHA256 · Capability enforcement · Per-agent rate limiting |
-| **ACP Security** | HMAC verification · Per-session rate limiting · Message validation · Response scanning · Prometheus metrics |
+| **ACP Security** | HMAC verification · Per-session rate limiting · Message validation · Response scanning |
 | **Authentication** | OIDC/OAuth 2.0 + PKCE · SAML 2.0 · RBAC · API keys |
 | **Compliance** | ATLAS · NIST AI RMF · OWASP · HIPAA · PCI · SOC2 · ISO 27001/42001 · GDPR |
 | **Observability** | Prometheus metrics · RFC 5424 audit · Hash chain logs · Grafana dashboard |
