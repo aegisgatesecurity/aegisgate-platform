@@ -1,4 +1,3 @@
-
 ## [3.1.1] - 2026-06-05 - Tier Rate Limit Drift Fix
 
 ### Summary
