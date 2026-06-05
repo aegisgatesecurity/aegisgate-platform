@@ -21,6 +21,13 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+)
+
+// Error code constants (v3.1.1)
+const (
+	ErrInvalidTier = "invalid_tier"
 )
 
 // Server handles Stripe webhook HTTP requests
@@ -245,13 +252,26 @@ func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 		return nil
 	}
 
-	tier := session.Metadata["tier"]
-	if tier == "" {
-		tier = s.inferTierFromAmount(session.AmountTotal)
+	tierStr := session.Metadata["tier"]
+	if tierStr == "" {
+		tierStr = s.inferTierFromAmount(session.AmountTotal)
+	}
+
+	// v3.1.1: validate tier before passing to license generation.
+	// Rejects unknown values with a structured error to surface
+	// misconfiguration (e.g., typo in Stripe metadata, changed pricing
+	// tier that inferTierFromAmount no longer recognizes). This also
+	// normalizes alias inputs ("pro" -> "professional", "free" -> "community")
+	// for consistent downstream logging and email.
+	parsedTier, err := tier.ParseTier(tierStr)
+	if err != nil {
+		s.logger.Printf("ERROR: rejecting checkout %s: invalid tier %q (err=%v)",
+			session.ID, tierStr, err)
+		return fmt.Errorf("%s: %q: %w", ErrInvalidTier, tierStr, err)
 	}
 
 	if s.licenseGen != nil {
-		key, err := s.licenseGen.GenerateLicense(session.Customer, tier, 365)
+		key, err := s.licenseGen.GenerateLicense(session.Customer, parsedTier.String(), 365)
 		if err != nil {
 			return fmt.Errorf("failed to generate license: %w", err)
 		}
@@ -262,12 +282,12 @@ func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 
 		if s.emailService != nil {
 			expiresAt := time.Now().AddDate(1, 0, 0).Format("January 2, 2006")
-			if err := s.emailService.SendLicenseKey(session.CustomerEmail, key, tier, expiresAt); err != nil {
+			if err := s.emailService.SendLicenseKey(session.CustomerEmail, key, parsedTier.String(), expiresAt); err != nil {
 				s.logger.Printf("Warning: failed to send license email: %v", err)
 			}
 		}
 
-		s.logger.Printf("Generated license %s for %s (tier: %s)", key, session.CustomerEmail, tier)
+		s.logger.Printf("Generated license %s for %s (tier: %s)", key, session.CustomerEmail, parsedTier.String())
 	}
 
 	return nil

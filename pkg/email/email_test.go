@@ -121,7 +121,7 @@ func TestEmailClient_SendLicenseEmail(t *testing.T) {
 		LicenseKey:   "eyJwYXlsb2FkIjp7ImxpY2Vuc2VfaWQiOiJ0ZXN0In0=",
 		IssuedAt:     "Wed, 29 Apr 2026 12:00:00 -0700",
 		ExpiresAt:    "Wed, 29 May 2026 12:00:00 -0700",
-		Features:     []string{"starter_mode"},
+		Features:     []string{"beta_features"},
 		SupportEmail: "support@aegisgatesecurity.io",
 		CompanyName:  "AegisGate Security, LLC",
 		CompanyURL:   "https://aegisgatesecurity.io",

@@ -20,6 +20,7 @@ type Tier int
 
 const (
 	TierCommunity    Tier = iota // Free tier
+	TierStarter                  // Paid tier ($29/mo) — added in v3.1.1
 	TierDeveloper                // Paid tier
 	TierProfessional             // Paid tier
 	TierEnterprise               // Paid tier
@@ -30,6 +31,8 @@ func (t Tier) String() string {
 	switch t {
 	case TierCommunity:
 		return "community"
+	case TierStarter:
+		return "starter"
 	case TierDeveloper:
 		return "developer"
 	case TierProfessional:
@@ -46,6 +49,8 @@ func (t Tier) DisplayName() string {
 	switch t {
 	case TierCommunity:
 		return "Community"
+	case TierStarter:
+		return "Starter"
 	case TierDeveloper:
 		return "Developer"
 	case TierProfessional:
@@ -62,6 +67,8 @@ func ParseTier(name string) (Tier, error) {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "community", "free":
 		return TierCommunity, nil
+	case "starter":
+		return TierStarter, nil
 	case "developer", "dev":
 		return TierDeveloper, nil
 	case "professional", "pro":
@@ -82,39 +89,44 @@ func (t Tier) CanAccess(required Tier) bool {
 // Rate Limits — split by transport (proxy vs MCP)
 // ============================================================
 
-// RateLimitProxy returns the requests-per-minute limit for proxy traffic.
+// RateLimitProxy returns the proxy rate limit in RPM
 func (t Tier) RateLimitProxy() int {
 	switch t {
 	case TierCommunity:
 		return 120
+	case TierStarter:
+		return 600 // v3.1.1: added
 	case TierDeveloper:
-		return 600
+		return 1000 // v3.1.1: 600 → 1000 (drift fix)
 	case TierProfessional:
-		return 3000
+		return 10000 // v3.1.1: 3000 → 10000 (drift fix)
 	case TierEnterprise:
-		return -1 // Unlimited
+		return -1
 	default:
 		return 120
 	}
 }
 
-// RateLimitMCP returns the requests-per-minute limit for MCP tool calls.
+// RateLimitMCP returns the MCP rate limit in RPM
 func (t Tier) RateLimitMCP() int {
 	switch t {
 	case TierCommunity:
 		return 60
+	case TierStarter:
+		return 300 // v3.1.1: added
 	case TierDeveloper:
-		return 300
+		return 500 // v3.1.1: 300 → 500 (drift fix)
 	case TierProfessional:
-		return 1500
+		return 5000 // v3.1.1: 1500 → 5000 (drift fix)
 	case TierEnterprise:
-		return -1 // Unlimited
+		return -1
 	default:
 		return 60
 	}
 }
 
-// RateLimit returns the proxy RPM limit for backward compatibility.
+// RateLimit returns the rate limit in RPM (deprecated; use RateLimitProxy or RateLimitMCP)
+//
 // Deprecated: Use RateLimitProxy() or RateLimitMCP() for transport-specific limits.
 func (t Tier) RateLimit() int {
 	return t.RateLimitProxy()
@@ -125,10 +137,12 @@ func (t Tier) MaxUsers() int {
 	switch t {
 	case TierCommunity:
 		return 3
+	case TierStarter:
+		return 10 // v3.1.1: added
 	case TierDeveloper:
-		return 10
+		return 25 // v3.1.1: 10 → 25 (drift fix)
 	case TierProfessional:
-		return 50
+		return 100 // v3.1.1: 50 → 100 (drift fix)
 	case TierEnterprise:
 		return -1
 	default:
@@ -141,10 +155,12 @@ func (t Tier) MaxAgents() int {
 	switch t {
 	case TierCommunity:
 		return 2
+	case TierStarter:
+		return 5 // v3.1.1: added
 	case TierDeveloper:
-		return 5
+		return 25 // v3.1.1: 5 → 25 (Q4 generosity principle)
 	case TierProfessional:
-		return 25
+		return 100 // v3.1.1: 25 → 100 (drift fix)
 	case TierEnterprise:
 		return -1
 	default:
@@ -157,6 +173,8 @@ func (t Tier) LogRetentionDays() int {
 	switch t {
 	case TierCommunity:
 		return 7
+	case TierStarter:
+		return 30 // v3.1.1: added
 	case TierDeveloper:
 		return 30
 	case TierProfessional:
@@ -173,6 +191,8 @@ func (t Tier) SupportLevel() string {
 	switch t {
 	case TierCommunity:
 		return "community"
+	case TierStarter:
+		return "email" // v3.1.1: added (same as Developer per Q4)
 	case TierDeveloper:
 		return "email"
 	case TierProfessional:
@@ -193,6 +213,8 @@ func (t Tier) MaxConcurrentMCP() int {
 	switch t {
 	case TierCommunity:
 		return 5
+	case TierStarter:
+		return 25 // v3.1.1: added (Q3: matches Developer)
 	case TierDeveloper:
 		return 25
 	case TierProfessional:
@@ -209,6 +231,8 @@ func (t Tier) MaxMCPToolsPerSession() int {
 	switch t {
 	case TierCommunity:
 		return 20
+	case TierStarter:
+		return 50 // v3.1.1: added (inherits Developer value)
 	case TierDeveloper:
 		return 50
 	case TierProfessional:
@@ -225,6 +249,8 @@ func (t Tier) MCPExecTimeoutSeconds() int {
 	switch t {
 	case TierCommunity:
 		return 30
+	case TierStarter:
+		return 60 // v3.1.1: added (inherits Developer value)
 	case TierDeveloper:
 		return 60
 	case TierProfessional:
@@ -241,6 +267,8 @@ func (t Tier) MaxMCPSandboxMemoryMB() int {
 	switch t {
 	case TierCommunity:
 		return 256
+	case TierStarter:
+		return 512 // v3.1.1: added (inherits Developer value)
 	case TierDeveloper:
 		return 512
 	case TierProfessional:
