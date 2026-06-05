@@ -245,3 +245,51 @@ func TestAllFeatures(t *testing.T) {
 		t.Errorf("Total features should be at least 50, got %d", len(all))
 	}
 }
+
+// TestTrustPillar_TierMapping verifies the v3.2.0 Phase 4 Trust Framework
+// feature gate. Per the locked decision Q3, the Trust pillar is
+// Professional+ only. The signing primitives (Ed25519/ECDSA) are always
+// available as a Go library (pkg/trust/), but the *enforcement* (the
+// 5th-pillar runtime behavior) is gated to Professional and above.
+func TestTrustPillar_TierMapping(t *testing.T) {
+	// RequiredTier is Professional (NOT Enterprise — this is the second
+	// pillar after Compliance to land at Pro).
+	required := RequiredTier(FeatureTrustPillar)
+	if required != TierProfessional {
+		t.Errorf("FeatureTrustPillar required tier = %s, want Professional (per Q3 lock)", required)
+	}
+
+	// Community and Starter do NOT have the pillar.
+	for _, tier := range []Tier{TierCommunity, TierStarter} {
+		if HasFeature(tier, FeatureTrustPillar) {
+			t.Errorf("tier %s should NOT have FeatureTrustPillar (per Q3 lock)", tier)
+		}
+	}
+	// Developer does NOT have the pillar (gate is at Professional, not Dev).
+	if HasFeature(TierDeveloper, FeatureTrustPillar) {
+		t.Error("Developer should NOT have FeatureTrustPillar (gate is at Professional)")
+	}
+	// Professional and Enterprise DO have the pillar.
+	for _, tier := range []Tier{TierProfessional, TierEnterprise} {
+		if !HasFeature(tier, FeatureTrustPillar) {
+			t.Errorf("tier %s should have FeatureTrustPillar (per Q3 lock)", tier)
+		}
+	}
+}
+
+// TestTrustPillar_FeatureKey verifies the string key resolves to the
+// expected Feature constant. The key "trust_pillar" is the canonical
+// name used in feature negotiation (middleware, contract YAML, etc.).
+func TestTrustPillar_FeatureKey(t *testing.T) {
+	f, ok := FeatureForKey("trust_pillar")
+	if !ok {
+		t.Fatal("FeatureForKey(\"trust_pillar\") returned ok=false")
+	}
+	if f != FeatureTrustPillar {
+		t.Errorf("FeatureForKey(\"trust_pillar\") = %v, want FeatureTrustPillar", f)
+	}
+	// Unknown key returns false.
+	if _, ok := FeatureForKey("nonexistent_pillar"); ok {
+		t.Error("FeatureForKey(\"nonexistent_pillar\") should return ok=false")
+	}
+}

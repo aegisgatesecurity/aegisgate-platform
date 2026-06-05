@@ -412,6 +412,14 @@ const (
 	FeatureWhitelabel   Feature = "whitelabel"
 	FeatureCustomDomain Feature = "custom_domain"
 	FeatureVMSandbox    Feature = "mcp_vm_sandbox" // VM-level sandboxing
+	// v3.2.0 Phase 4: Trust Framework (5th pillar). The Trust pillar is the
+	// 5th architectural pillar of the platform (alongside HTTP Proxy, MCP,
+	// A2A, and Compliance). It provides cryptographic agent identity,
+	// per-session trust scoring, and signed attestations. Gated to
+	// Professional+ per the locked decision Q3. The signing primitives
+	// (Ed25519/ECDSA) exist in pkg/trust/attestation already; this feature
+	// flag enables them in the request lifecycle.
+	FeatureTrustPillar Feature = "trust_pillar"
 )
 
 // RequiredTier returns the minimum tier required for a feature
@@ -448,7 +456,8 @@ func RequiredTier(feature Feature) Tier {
 		FeatureSIEM, FeatureMultiTenant, FeaturePolicyEngine, FeatureDeptSeparation,
 		FeatureKubernetes, FeatureHelm,
 		FeaturePostgreSQL, FeatureS3, FeatureRetentionPol,
-		FeatureVaultSecrets, FeatureProcessSandbox:
+		FeatureVaultSecrets, FeatureProcessSandbox,
+		FeatureTrustPillar: // v3.2.0 Phase 4
 		return TierProfessional
 
 	// Enterprise
@@ -524,6 +533,8 @@ var featureKeyMap = map[string]Feature{
 	"deploy_autoscale": FeatureAutoScale, "deploy_multiregion": FeatureMultiRegion,
 	"storage_mongo": FeatureMongoDB, "whitelabel": FeatureWhitelabel,
 	"custom_domain": FeatureCustomDomain, "mcp_vm_sandbox": FeatureVMSandbox,
+	// v3.2.0 Phase 4: Trust Framework pillar
+	"trust_pillar": FeatureTrustPillar,
 }
 
 // TierHasFeatureKey checks if a tier has access to a feature given its string key.
