@@ -121,6 +121,7 @@ func TestBillingConfig_TierProducts(t *testing.T) {
 				t.Fatalf("tier_products.%s should be a rich object, got %T", key, val)
 			}
 			required := []string{"price_id", "product_id", "lookup_key", "buy_button_id"}
+			_ = required // see TestBillingConfig_ModuleProducts for the module variant
 			for _, field := range required {
 				if obj[field] == nil || obj[field] == "" {
 					t.Errorf("tier_products.%s missing %q field", key, field)
@@ -174,7 +175,7 @@ func TestBillingConfig_ModuleProducts(t *testing.T) {
 				t.Fatalf("module_products.%s should be an object, got %T", key, val)
 			}
 			// Required fields.
-			for _, field := range []string{"lookup_key", "monthly_cents", "display_name", "required_tier"} {
+			for _, field := range []string{"price_id", "product_id", "lookup_key", "buy_button_id", "monthly_cents", "display_name", "required_tier"} {
 				if obj[field] == nil {
 					t.Errorf("module_products.%s missing %q", key, field)
 				}
@@ -183,11 +184,16 @@ func TestBillingConfig_ModuleProducts(t *testing.T) {
 			if lk, _ := obj["lookup_key"].(string); lk != "module_"+key {
 				t.Errorf("module_products.%s.lookup_key = %q, want \"module_%s\"", key, lk, key)
 			}
-			// Price ID can be a PLACEHOLDER_* for v3.2.0 Phase 1.4 (founder
-			// is creating Stripe products in the background). Once the
-			// founder fills in real IDs, this check should be tightened.
-			if pid, _ := obj["price_id"].(string); pid != "" && !strings.HasPrefix(pid, "price_") && !strings.HasPrefix(pid, "PLACEHOLDER_") {
-				t.Errorf("module_products.%s.price_id = %q, want \"price_*\" or \"PLACEHOLDER_*\"", key, pid)
+			// Price ID must be a real Stripe price_ ID. v3.2.0 Phase 1.4
+			// started with PLACEHOLDER_* values during the founder's
+			// Stripe dashboard work; as of 2026-06-05 all 6 are filled
+			// in, so this is now strict.
+			if pid, _ := obj["price_id"].(string); !strings.HasPrefix(pid, "price_") {
+				t.Errorf("module_products.%s.price_id = %q, want \"price_*\" (PLACEHOLDER no longer allowed)", key, pid)
+			}
+			// buy_button_id must start with "buy_btn_".
+			if bid, _ := obj["buy_button_id"].(string); !strings.HasPrefix(bid, "buy_btn_") {
+				t.Errorf("module_products.%s.buy_button_id = %q, want \"buy_btn_*\"", key, bid)
 			}
 			// monthly_cents should be positive.
 			if cents, ok := obj["monthly_cents"].(float64); ok && cents <= 0 {
@@ -257,5 +263,44 @@ func TestBillingConfig_StarterConfig(t *testing.T) {
 	}
 	if v.StripeConfig.PublishableKey == "" {
 		t.Error("stripe_config.publishable_key is empty")
+	}
+}
+
+// TestBillingConfig_NoPlaceholders pins that all 6 module price_ids are
+// real (not PLACEHOLDER_*). As of 2026-06-05, all 6 modules have been
+// created in the Stripe dashboard and filled in here. This test ensures
+// no future commit accidentally re-introduces a placeholder.
+func TestBillingConfig_NoPlaceholders(t *testing.T) {
+	data, err := os.ReadFile("billing-config.json")
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	var v struct {
+		ModuleProducts map[string]struct {
+			PriceID   string `json:"price_id"`
+			ProductID string `json:"product_id"`
+		} `json:"module_products"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if len(v.ModuleProducts) != 6 {
+		t.Errorf("got %d module_products, want 6", len(v.ModuleProducts))
+	}
+	for name, m := range v.ModuleProducts {
+		t.Run(name, func(t *testing.T) {
+			if strings.HasPrefix(m.PriceID, "PLACEHOLDER") {
+				t.Errorf("module %s: price_id is still PLACEHOLDER: %q", name, m.PriceID)
+			}
+			if strings.HasPrefix(m.ProductID, "PLACEHOLDER") {
+				t.Errorf("module %s: product_id is still PLACEHOLDER: %q", name, m.ProductID)
+			}
+			if !strings.HasPrefix(m.PriceID, "price_") {
+				t.Errorf("module %s: price_id should start with 'price_', got %q", name, m.PriceID)
+			}
+			if !strings.HasPrefix(m.ProductID, "prod_") {
+				t.Errorf("module %s: product_id should start with 'prod_', got %q", name, m.ProductID)
+			}
+		})
 	}
 }
