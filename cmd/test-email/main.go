@@ -37,7 +37,7 @@ func main() {
 		LicenseKey:   licenseKey,
 		IssuedAt:     time.Now().Format("Mon, 02 Jan 2006 15:04:05 -0700"),
 		ExpiresAt:    time.Now().AddDate(0, 1, 0).Format("Mon, 02 Jan 2006 15:04:05 -0700"),
-		Features:     []string{"starter_mode"},
+		Features:     []string{"beta_features"},
 		SupportEmail: "support@aegisgatesecurity.io",
 		CompanyName:  "AegisGate Security, LLC",
 		CompanyURL:   "https://aegisgatesecurity.io",

@@ -1,4 +1,38 @@
 
+## [3.1.1] - 2026-06-05 - Tier Rate Limit Drift Fix
+
+### Summary
+Resolves critical drift between website-promised tier limits and code-enforced
+tier limits. Adds a first-class Starter tier. Removes the `starter_mode` feature
+flag that was masking the gap with a 50% underdelivery. Adds tier validation
+in the Stripe webhook handler to prevent unknown tier values from reaching
+license generation.
+
+### Bug Fixes
+- **CRITICAL**: Starter tier now modeled as a first-class tier in `pkg/tier/tier.go` (was missing; faked via `starter_mode` flag with 50% underdelivery vs. website)
+- **CRITICAL**: Developer tier rate limits corrected from 600/300 to 1000/500 RPM (proxy/MCP) to match website
+- **CRITICAL**: Professional tier rate limits corrected from 3000/1500 to 10000/5000 RPM to match website
+- **CRITICAL**: Developer tier MaxUsers corrected from 10 to 25
+- **CRITICAL**: Professional tier MaxUsers corrected from 50 to 100
+- **HIGH**: Developer tier MaxAgents corrected from 5 to 25 (per generosity principle)
+- **HIGH**: Professional tier MaxAgents corrected from 25 to 100
+- **MEDIUM**: `pkg/billing/webhook/server.go` now validates tier via `tier.ParseTier` before license generation; rejects unknown values with `invalid_tier` structured error
+
+### Removed
+- `starter_mode` feature flag from `pkg/mcpserver/guardrails.go` (no longer needed; Starter is a real tier)
+
+### Test Coverage
+- New `TestStarterTierString`, extended `TestCanAccess` with Starter cases, added `TestStarterMaxConcurrentMCP` in `pkg/tier/tier_test.go`
+- New `TestHandleCheckoutCompleted_RejectsInvalidTier`, `TestHandleCheckoutCompleted_AcceptsValidTiers`, `TestHandleCheckoutCompleted_NormalizesAliases`, `TestInferTierFromAmount_AllTiers`, `TestHandleCheckoutCompleted_DefaultsToDeveloperOnUnknownAmount` in `pkg/billing/webhook/tier_validation_test.go`
+- Removed `TestStarterModeFeature` and `TestStarterTier_FeatureFlag` from `pkg/mcpserver/`
+- Updated `TestHasFeatureHelper` to use placeholder feature name (`beta_features`)
+
+### Out of Scope (Deferred to v3.1.2)
+- HIPAA module extraction
+- Pro tier price change ($249 → $499)
+- Module-level pricing and gating
+- Pro tier rate limit upgrade for existing customers (no existing customers; auto-applied at first renewal)
+
 ## [2.0.1] - 2026-05-06 - Fail-Closed Security Hardening + SLA/SLO
 
 ### Summary

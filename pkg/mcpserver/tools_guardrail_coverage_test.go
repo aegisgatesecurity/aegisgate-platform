@@ -775,17 +775,17 @@ func TestOnToolCallWithAuth_ExistingSession(t *testing.T) {
 // =========================================================================
 
 func TestHasFeature_Found(t *testing.T) {
-	features := []string{"starter_mode", "beta_features"}
-	if !hasFeature(features, "starter_mode") {
-		t.Error("expected true for starter_mode")
-	}
+	features := []string{"beta_features", "gamma_features"}
 	if !hasFeature(features, "beta_features") {
 		t.Error("expected true for beta_features")
+	}
+	if !hasFeature(features, "gamma_features") {
+		t.Error("expected true for gamma_features")
 	}
 }
 
 func TestHasFeature_NotFound(t *testing.T) {
-	features := []string{"starter_mode"}
+	features := []string{"beta_features"}
 	if hasFeature(features, "nonexistent") {
 		t.Error("expected false for nonexistent feature")
 	}
@@ -800,34 +800,6 @@ func TestHasFeature_Nil(t *testing.T) {
 func TestHasFeature_Empty(t *testing.T) {
 	if hasFeature([]string{}, "any") {
 		t.Error("expected false for empty features")
-	}
-}
-
-// =========================================================================
-// Tests: Starter tier rate limit feature flag
-// =========================================================================
-
-func TestStarterTier_FeatureFlag(t *testing.T) {
-	g := NewGuardrailMiddleware(GuardrailConfig{
-		Enabled:      true,
-		PlatformTier: tier.TierDeveloper,
-		Features:     []string{"starter_mode"},
-	}, "test-server")
-
-	if g.rateLimitRPM != 150 {
-		t.Errorf("expected 150 RPM for Starter tier, got %d", g.rateLimitRPM)
-	}
-}
-
-func TestDeveloperTier_NoFeatureFlag(t *testing.T) {
-	g := NewGuardrailMiddleware(GuardrailConfig{
-		Enabled:      true,
-		PlatformTier: tier.TierDeveloper,
-		Features:     []string{},
-	}, "test-server")
-
-	if g.rateLimitRPM != 300 {
-		t.Errorf("expected 300 RPM for Developer tier, got %d", g.rateLimitRPM)
 	}
 }
 

@@ -13,6 +13,7 @@ func TestStringAllTiers(t *testing.T) {
 		want string
 	}{
 		{TierCommunity, "community"},
+		{TierStarter, "starter"}, // v3.1.1: added
 		{TierDeveloper, "developer"},
 		{TierProfessional, "professional"},
 		{TierEnterprise, "enterprise"},
@@ -33,6 +34,7 @@ func TestDisplayNameAllTiers(t *testing.T) {
 		want string
 	}{
 		{TierCommunity, "Community"},
+		{TierStarter, "Starter"}, // v3.1.1: added
 		{TierDeveloper, "Developer"},
 		{TierProfessional, "Professional"},
 		{TierEnterprise, "Enterprise"},
@@ -53,8 +55,9 @@ func TestMaxUsersAllTiers(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 3},
-		{TierDeveloper, 10},
-		{TierProfessional, 50},
+		{TierStarter, 10},       // v3.1.1: added
+		{TierDeveloper, 25},     // v3.1.1: 10 → 25 (drift fix)
+		{TierProfessional, 100}, // v3.1.1: 50 → 100 (drift fix)
 		{TierEnterprise, -1},
 		{Tier(99), 3},
 	}
@@ -73,8 +76,9 @@ func TestMaxAgentsAllTiers(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 2},
-		{TierDeveloper, 5},
-		{TierProfessional, 25},
+		{TierStarter, 5},        // v3.1.1: added
+		{TierDeveloper, 25},     // v3.1.1: 5 → 25 (Q4 generosity)
+		{TierProfessional, 100}, // v3.1.1: 25 → 100 (drift fix)
 		{TierEnterprise, -1},
 		{Tier(99), 2},
 	}
@@ -93,6 +97,7 @@ func TestSupportLevelAllTiers(t *testing.T) {
 		want string
 	}{
 		{TierCommunity, "community"},
+		{TierStarter, "email"}, // v3.1.1: added (same as Developer)
 		{TierDeveloper, "email"},
 		{TierProfessional, "priority"},
 		{TierEnterprise, "24x7"},
@@ -113,6 +118,7 @@ func TestMaxConcurrentMCPAllTiers(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 5},
+		{TierStarter, 25}, // v3.1.1: added (Q3: matches Developer)
 		{TierDeveloper, 25},
 		{TierProfessional, 100},
 		{TierEnterprise, -1},
@@ -133,6 +139,7 @@ func TestMaxMCPToolsPerSessionAllTiers(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 20},
+		{TierStarter, 50}, // v3.1.1: added (inherits Developer value)
 		{TierDeveloper, 50},
 		{TierProfessional, -1},
 		{TierEnterprise, -1},
@@ -153,6 +160,7 @@ func TestMCPExecTimeoutSecondsAllTiers(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 30},
+		{TierStarter, 60}, // v3.1.1: added (inherits Developer value)
 		{TierDeveloper, 60},
 		{TierProfessional, 300},
 		{TierEnterprise, -1},
@@ -173,6 +181,7 @@ func TestMaxMCPSandboxMemoryMBAllTiers(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 256},
+		{TierStarter, 512}, // v3.1.1: added (inherits Developer value)
 		{TierDeveloper, 512},
 		{TierProfessional, 2048},
 		{TierEnterprise, -1},
