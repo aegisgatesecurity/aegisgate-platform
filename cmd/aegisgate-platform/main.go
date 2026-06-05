@@ -693,6 +693,7 @@ func main() {
 	// caller's license from the request context. The new routes
 	// live alongside the existing /api/v1/compliance (audit
 	// export) endpoint; they don't conflict.
+	compliance.RegisterBuiltinFrameworks()
 	complianceScanner := compliance.NewScanner(nil, &compliance.ScannerOpts{CacheTTL: 5 * time.Minute})
 	complianceAPI := compliance.NewAPI(complianceScanner, licenseMgr)
 	dashMux.Handle("/api/v1/compliance/", complianceAPI)
