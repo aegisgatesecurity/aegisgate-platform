@@ -297,6 +297,32 @@ helm install aegisgate aegisgate/aegisgate-platform \
 
 Includes HPA autoscaling, NetworkPolicy, ServiceMonitor, rolling updates.
 
+### Build from Source
+
+Requires Go 1.26.4 or later. The binary is **not** distributed in the repo (untracked as of v3.2.0 — see `.gitignore`). Build it from the platform source:
+
+```bash
+git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
+cd aegisgate-platform
+go build -o aegisgate-platform ./cmd/aegisgate-platform/
+./aegisgate-platform --version
+# AegisGate Security Platform 3.2.0 (commit: ..., built: ...)
+```
+
+For a smaller production binary (no symbol table, stripped):
+
+```bash
+CGO_ENABLED=0 go build -ldflags="-s -w" -o aegisgate-platform ./cmd/aegisgate-platform/
+```
+
+To inject version metadata at build time (matches the published release binary):
+
+```bash
+VERSION=3.2.0 COMMIT=$(git rev-parse --short=8 HEAD) BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+  go build -ldflags="-s -w -X main.version=$VERSION -X main.commit=$COMMIT -X main.buildDate=$BUILD_DATE" \
+  -o aegisgate-platform ./cmd/aegisgate-platform/
+```
+
 ### Verify
 
 ```bash
