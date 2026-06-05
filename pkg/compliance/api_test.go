@@ -1,0 +1,430 @@
+// SPDX-License-Identifier: Apache-2.0
+// AegisGate Platform - Compliance HTTP API tests (v3.2.0 Phase 3.2)
+
+package compliance
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+)
+
+// newTestAPI returns an API with a fresh scanner and a manager
+// configured with no license (community default).
+func newTestAPI(t *testing.T) (*API, *license.Manager) {
+	t.Helper()
+	mgr, err := license.NewManager()
+	if err != nil {
+		t.Fatalf("license.NewManager: %v", err)
+	}
+	scanner := NewScanner(nil, nil)
+	return NewAPI(scanner, mgr), mgr
+}
+
+func doRequest(api *API, method, path string) *httptest.ResponseRecorder {
+	return doRequestWithContext(context.Background(), api, method, path)
+}
+
+func doRequestWithContext(ctx context.Context, api *API, method, path string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, nil).WithContext(ctx)
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	return w
+}
+
+func parseJSON(t *testing.T, body []byte) map[string]any {
+	t.Helper()
+	var m map[string]any
+	if err := json.Unmarshal(body, &m); err != nil {
+		t.Fatalf("parseJSON: %v (body=%s)", err, string(body))
+	}
+	return m
+}
+
+// ---- /health ----
+
+func TestAPI_Health(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/health")
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
+	}
+	body := parseJSON(t, w.Body.Bytes())
+	if body["status"] != "ok" {
+		t.Errorf("status = %v, want ok", body["status"])
+	}
+	if body["scannerPresent"] != true {
+		t.Error("scannerPresent should be true")
+	}
+}
+
+func TestAPI_Health_MethodNotAllowed(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "POST", "/api/v1/compliance/health")
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("status = %d, want 405", w.Code)
+	}
+}
+
+func TestAPI_Health_StripsPrefix(t *testing.T) {
+	api, _ := newTestAPI(t)
+	for _, path := range []string{"/api/v1/compliance/health", "/health"} {
+		w := doRequest(api, "GET", path)
+		if w.Code != http.StatusOK {
+			t.Errorf("path %q: status = %d, want 200", path, w.Code)
+		}
+	}
+}
+
+// ---- /scan ----
+
+func TestAPI_Scan_NoLicense(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/scan")
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200 (body=%s)", w.Code, w.Body.String())
+	}
+	body := parseJSON(t, w.Body.Bytes())
+	if body["customerTier"] != "community" {
+		t.Errorf("customerTier = %v, want community", body["customerTier"])
+	}
+	if body["hasLicense"] != false {
+		t.Error("hasLicense should be false for no license")
+	}
+	if body["licenseValid"] != false {
+		t.Error("licenseValid should be false for no license")
+	}
+	frameworks, _ := body["frameworks"].([]any)
+	if len(frameworks) == 0 {
+		t.Error("frameworks should not be empty")
+	}
+}
+
+func TestAPI_Scan_MethodNotAllowed(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "POST", "/api/v1/compliance/scan")
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("status = %d, want 405", w.Code)
+	}
+}
+
+func TestAPI_Scan_FrameworksHaveAllFields(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/scan")
+	body := parseJSON(t, w.Body.Bytes())
+	frameworks, _ := body["frameworks"].([]any)
+	if len(frameworks) == 0 {
+		t.Fatal("frameworks is empty")
+	}
+	for _, f := range frameworks {
+		fm, _ := f.(map[string]any)
+		if fm["framework"] == nil {
+			t.Error("framework field missing")
+		}
+		if fm["displayName"] == nil {
+			t.Error("displayName field missing")
+		}
+		if fm["enforced"] == nil {
+			t.Error("enforced field missing")
+		}
+		if fm["score"] == nil {
+			t.Error("score field missing")
+		}
+		if fm["implementationReady"] == nil {
+			t.Error("implementationReady field missing")
+		}
+	}
+}
+
+func TestAPI_Scan_StripsPrefix(t *testing.T) {
+	api, _ := newTestAPI(t)
+	for _, path := range []string{"/api/v1/compliance/scan", "/scan"} {
+		w := doRequest(api, "GET", path)
+		if w.Code != http.StatusOK {
+			t.Errorf("path %q: status = %d, want 200", path, w.Code)
+		}
+	}
+}
+
+func TestAPI_Scan_FieldsConsistent(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/scan")
+	body := parseJSON(t, w.Body.Bytes())
+	if body["scanDurationMs"] == nil {
+		t.Error("scanDurationMs missing")
+	}
+	if body["generatedAt"] == nil {
+		t.Error("generatedAt missing")
+	}
+}
+
+// ---- /report ----
+
+func TestAPI_Report_ValidFramework(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/report?framework=hipaa")
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200 (body=%s)", w.Code, w.Body.String())
+	}
+	body := parseJSON(t, w.Body.Bytes())
+	if body["framework"] != "hipaa" {
+		t.Errorf("framework = %v, want hipaa", body["framework"])
+	}
+	if body["enforced"] != false {
+		t.Error("enforced should be false for no-license community user")
+	}
+	if body["reasonNotEnforced"] == nil {
+		t.Error("reasonNotEnforced should be present for unenforced framework")
+	}
+}
+
+func TestAPI_Report_MissingFrameworkParam(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/report")
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestAPI_Report_UnknownFramework(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/report?framework=nonexistent")
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", w.Code)
+	}
+}
+
+func TestAPI_Report_MethodNotAllowed(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "POST", "/api/v1/compliance/report?framework=hipaa")
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("status = %d, want 405", w.Code)
+	}
+}
+
+// TestAPI_Report_Aliases: most framework name aliases can be
+// passed directly. Aliases with spaces (e.g., "nist ai rmf", "soc 2")
+// are accepted by normalizeFrameworkName but require URL encoding
+// in the actual HTTP request (the test below only covers aliases
+// that don't contain spaces).
+
+func TestAPI_Report_Aliases(t *testing.T) {
+	api, _ := newTestAPI(t)
+	cases := []struct {
+		alias    string
+		expected string
+	}{
+		{"nist_ai_rmf", "NIST.AI-1.500"},
+		{"nist-ai-rmf", "NIST.AI-1.500"},
+
+		{"pci-dss", "pci"},
+		{"pci_dss", "pci"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.alias, func(t *testing.T) {
+			w := doRequest(api, "GET", "/api/v1/compliance/report?framework="+tc.alias)
+			if w.Code != http.StatusOK {
+				t.Fatalf("alias %q: status = %d (body=%s)", tc.alias, w.Code, w.Body.String())
+			}
+			body := parseJSON(t, w.Body.Bytes())
+			if body["framework"] != tc.expected {
+				t.Errorf("alias %q: framework = %v, want %q", tc.alias, body["framework"], tc.expected)
+			}
+		})
+	}
+}
+
+func TestAPI_Report_AllEnforcedFrameworks(t *testing.T) {
+	api, _ := newTestAPI(t)
+	for _, fw := range []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips"} {
+		t.Run(fw, func(t *testing.T) {
+			w := doRequest(api, "GET", "/api/v1/compliance/report?framework="+fw)
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", w.Code)
+			}
+			body := parseJSON(t, w.Body.Bytes())
+			if body["framework"] != fw {
+				t.Errorf("framework = %v, want %s", body["framework"], fw)
+			}
+			if body["enforced"] != false {
+				t.Errorf("enforced = %v, want false (community, no module)", body["enforced"])
+			}
+			if body["module"] != fw {
+				t.Errorf("module = %v, want %s", body["module"], fw)
+			}
+		})
+	}
+}
+
+func TestAPI_Report_FreeFrameworkAlwaysEnforced(t *testing.T) {
+	api, _ := newTestAPI(t)
+	for _, fw := range []string{"ATLAS", "NIST.AI-1.500", "OWASP"} {
+		t.Run(fw, func(t *testing.T) {
+			w := doRequest(api, "GET", "/api/v1/compliance/report?framework="+fw)
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", w.Code)
+			}
+			body := parseJSON(t, w.Body.Bytes())
+			if body["enforced"] != true {
+				t.Errorf("free framework %s should be enforced for community", fw)
+			}
+		})
+	}
+}
+
+// ---- context license injection ----
+
+func TestAPI_ExtractLicense_NilContext(t *testing.T) {
+	api, mgr := newTestAPI(t)
+	// Manually extract a license from a context that has nothing
+	// injected.
+	lic := api.extractLicense(context.Background())
+	if lic != nil {
+		t.Errorf("expected nil for empty context, got %+v", lic)
+	}
+	// With a key set on the manager, fall through to it.
+	mgr.SetLicenseKey("dummy")
+	lic = api.extractLicense(context.Background())
+	if lic == nil {
+		t.Fatal("expected non-nil with manager-stored key")
+	}
+	// The dummy key won't validate, so lic is the invalid result.
+	if lic.Valid {
+		t.Error("dummy key should not be valid")
+	}
+}
+
+func TestAPI_ExtractLicense_FromContext(t *testing.T) {
+	api, mgr := newTestAPI(t)
+	ctx := license.ContextWithLicenseKey(context.Background(), "ctx-key")
+	lic := api.extractLicense(ctx)
+	if lic == nil {
+		t.Fatal("expected non-nil with context-injected key")
+	}
+	_ = mgr
+}
+
+// ---- routing ----
+
+func TestAPI_NotFound(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/nonexistent")
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", w.Code)
+	}
+}
+
+func TestAPI_AllRoutesMethodNotAllowed(t *testing.T) {
+	api, _ := newTestAPI(t)
+	for _, path := range []string{
+		"/api/v1/compliance/scan",
+		"/api/v1/compliance/report?framework=hipaa",
+	} {
+		w := doRequest(api, "POST", path)
+		if w.Code != http.StatusMethodNotAllowed {
+			t.Errorf("POST %s: status = %d, want 405", path, w.Code)
+		}
+	}
+}
+
+// ---- nil guards ----
+
+func TestAPI_NilScanner(t *testing.T) {
+	mgr, _ := license.NewManager()
+	api := &API{scanner: nil, mgr: mgr}
+	w := doRequest(api, "GET", "/api/v1/compliance/health")
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", w.Code)
+	}
+}
+
+func TestAPI_NilManager(t *testing.T) {
+	scanner := NewScanner(nil, nil)
+	api := &API{scanner: scanner, mgr: nil}
+	w := doRequest(api, "GET", "/api/v1/compliance/health")
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", w.Code)
+	}
+}
+
+// TestAPI_Report_Aliases_WithSpaces verifies that space-containing
+// aliases work when properly URL-encoded in the query string.
+func TestAPI_Report_Aliases_WithSpaces(t *testing.T) {
+	api, _ := newTestAPI(t)
+	cases := []struct {
+		alias    string
+		expected string
+	}{
+		{"nist ai rmf", "NIST.AI-1.500"},
+		{"soc 2", "soc2"},
+		{"iso 42001", "iso42001"},
+		{"fips 140-2", "fips"},
+		{"fips 140-3", "fips"},
+		{"owasp llm top 10", "OWASP"},
+		{"mitre atlas", "ATLAS"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.alias, func(t *testing.T) {
+			// Use url.QueryEscape to encode the space.
+			w := doRequest(api, "GET", "/api/v1/compliance/report?framework="+url.QueryEscape(tc.alias))
+			if w.Code != http.StatusOK {
+				t.Fatalf("alias %q: status = %d (body=%s)", tc.alias, w.Code, w.Body.String())
+			}
+			body := parseJSON(t, w.Body.Bytes())
+			if body["framework"] != tc.expected {
+				t.Errorf("alias %q: framework = %v, want %q", tc.alias, body["framework"], tc.expected)
+			}
+		})
+	}
+}
+
+// ---- normalizeFrameworkName ----
+
+func TestNormalizeFrameworkName(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{"hipaa", "hipaa"},
+		{"HIPAA", "hipaa"},
+		{"pci", "pci"},
+		{"pci-dss", "pci"},
+		{"pci_dss", "pci"},
+		{"PCI-DSS", "pci"},
+		{"soc2", "soc2"},
+
+		{"soc-2", "soc2"},
+		{"iso42001", "iso42001"},
+
+		{"iso-42001", "iso42001"},
+		{"iso27001", "iso27001"},
+		{"fedramp", "fedramp"},
+		{"fed-ramp", "fedramp"},
+		{"fips", "fips"},
+
+		{"fips140-2", "fips"},
+
+		{"nist_ai_rmf", "NIST.AI-1.500"},
+		{"nist-ai-rmf", "NIST.AI-1.500"},
+		{"NIST.AI-1.500", "NIST.AI-1.500"},
+		{"atlas", "ATLAS"},
+
+		{"ATLAS", "ATLAS"},
+		{"owasp", "OWASP"},
+
+		{"OWASP", "OWASP"},
+		{"unknown-thing", "unknown-thing"}, // pass-through
+	}
+	for _, tc := range cases {
+		t.Run(tc.input, func(t *testing.T) {
+			if got := normalizeFrameworkName(tc.input); got != tc.want {
+				t.Errorf("normalizeFrameworkName(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}
