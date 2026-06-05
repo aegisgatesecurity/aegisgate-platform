@@ -69,14 +69,53 @@ const (
 // LicensePayload represents the decoded license data
 // Note: This struct is serialized to JSON and signed
 type LicensePayload struct {
-	LicenseID  string    `json:"license_id"`  // UUID
-	Tier       string    `json:"tier"`        // Tier name
-	Customer   string    `json:"customer"`    // Customer identifier
-	IssuedAt   time.Time `json:"issued_at"`   // When license was issued
-	ExpiresAt  time.Time `json:"expires_at"`  // When license expires
-	Features   []string  `json:"features"`    // Optional specific features
-	MaxServers int       `json:"max_servers"` // Max servers allowed
-	MaxUsers   int       `json:"max_users"`   // Max users allowed
+	LicenseID  string    `json:"license_id"`        // UUID
+	Tier       string    `json:"tier"`              // Tier name
+	Customer   string    `json:"customer"`          // Customer identifier
+	IssuedAt   time.Time `json:"issued_at"`         // When license was issued
+	ExpiresAt  time.Time `json:"expires_at"`        // When license expires
+	Features   []string  `json:"features"`          // Optional specific features
+	Modules    []string  `json:"modules,omitempty"` // v3.2.0 Phase 1: purchased compliance modules (hipaa, pci, soc2, iso42001, fedramp, fips, trust)
+	MaxServers int       `json:"max_servers"`       // Max servers allowed
+	MaxUsers   int       `json:"max_users"`         // Max users allowed
+}
+
+// v3.2.0 Phase 1: canonical names of the 6 billable compliance modules.
+// These are the "modules" that a customer can purchase as add-ons to their
+// tier subscription. Prices are locked in aegisgate-pricing-decisions-locked-2026-06-04.
+// "trust" is reserved for a future Trust Framework module (Phase 4) and is
+// not yet billable.
+const (
+	ModuleHIPAA    = "hipaa"
+	ModulePCI      = "pci"
+	ModuleSOC2     = "soc2"
+	ModuleISO42001 = "iso42001"
+	ModuleFedRAMP  = "fedramp"
+	ModuleFIPS     = "fips"
+	ModuleTrust    = "trust" // reserved for future use
+)
+
+// AllModules is the canonical list of billable module names, in display order.
+// Used for validation when parsing Stripe webhook payloads.
+var AllModules = []string{
+	ModuleHIPAA,
+	ModulePCI,
+	ModuleSOC2,
+	ModuleISO42001,
+	ModuleFedRAMP,
+	ModuleFIPS,
+}
+
+// IsValidModule returns true if the given module name is a known billable module.
+// Unknown module names (typos, old format, etc.) are rejected.
+func IsValidModule(name string) bool {
+	for _, m := range AllModules {
+		if m == name {
+			return true
+		}
+	}
+	// Trust is reserved but not yet billable; reject for now.
+	return name == ModuleTrust
 }
 
 // ValidationResult contains the outcome of license validation
@@ -347,6 +386,52 @@ func (m *Manager) IsFeatureLicensed(result *ValidationResult, feature tier.Featu
 
 	// Check if tier has access to feature
 	return tier.HasFeature(result.Tier, feature)
+}
+
+// HasModule checks if a specific compliance module is owned by the license.
+//
+// v3.2.0 Phase 1: modules are billable add-ons purchased via Stripe
+// (Q1: instant via webhook; Q2: locked in at purchase price forever).
+// A module is owned if its name appears in LicensePayload.Modules.
+//
+// Returns false if:
+//   - result is nil or invalid
+//   - the module name is not in the license's Modules list
+//   - the module name is not a known billable module (defense against typos)
+//
+// Examples:
+//
+//	HasModule(result, ModuleHIPAA)    // true if the customer bought HIPAA
+//	HasModule(result, "hipaa")        // same, by string literal
+//	HasModule(result, "invalid")      // false (unknown module)
+func (m *Manager) HasModule(result *ValidationResult, moduleName string) bool {
+	if result == nil || !result.Valid {
+		return false
+	}
+	if !IsValidModule(moduleName) {
+		return false
+	}
+	for _, owned := range result.Payload.Modules {
+		if owned == moduleName {
+			return true
+		}
+	}
+	return false
+}
+
+// Modules returns the list of module names owned by the license.
+// Returns nil if the license is invalid.
+func (m *Manager) Modules(result *ValidationResult) []string {
+	if result == nil || !result.Valid {
+		return nil
+	}
+	out := make([]string, 0, len(result.Payload.Modules))
+	for _, m := range result.Payload.Modules {
+		if IsValidModule(m) {
+			out = append(out, m)
+		}
+	}
+	return out
 }
 
 // GetTier returns the current effective tier from a validation result
