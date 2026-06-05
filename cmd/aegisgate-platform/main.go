@@ -56,7 +56,7 @@ import (
 )
 
 var (
-	version    = "3.0.0"
+	version    = "3.1.0"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -325,15 +325,12 @@ func main() {
 		checks := map[string]map[string]interface{}{}
 		allHealthy := true
 
-		// Check 1: Proxy core
+		// Check 1: Proxy core - check if proxy was configured (started separately via proxyHTTPServer)
 		proxyHealth := proxyServer.GetHealth()
 		proxyEnabled := false
-		if enabled, ok := proxyHealth["enabled"].(bool); ok && enabled {
+		// Use bind_address as indicator - if set, proxy was configured and is listening
+		if bindAddr, ok := proxyHealth["bind_address"].(string); ok && bindAddr != "" {
 			proxyEnabled = true
-		}
-		checks["proxy"] = map[string]interface{}{
-			"enabled": proxyEnabled,
-			"healthy": proxyEnabled,
 		}
 		if !proxyEnabled {
 			allHealthy = false

@@ -88,8 +88,8 @@ type GuardrailConfig struct {
 	// AuditViolations controls whether limit violations are sent to the audit log
 	AuditViolations bool
 
-	// Features contains optional feature flags for tier-specific behavior
-	// Examples: "starter_mode" - reduces rate limits for $29 Starter tier
+	// Features contains optional feature flags for tier-specific behavior.
+	// Reserved for future use; v3.1.1 removes the previous starter_mode flag.
 	Features []string
 }
 
@@ -144,13 +144,9 @@ type GuardrailMiddleware struct {
 
 // NewGuardrailMiddleware creates a new guardrail middleware for the given tier
 func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMiddleware {
+	// Tier-based RPM now reads directly from tier.Tier.RateLimitMCP().
+	// No starter_mode shim — Starter is a first-class tier as of v3.1.1.
 	rpm := cfg.PlatformTier.RateLimitMCP()
-
-	// Starter tier ($29/mo) gets reduced rate limits while keeping Developer features
-	// Only applies when platform tier is Developer (Starter uses Developer tier in code)
-	if cfg.PlatformTier == tier.TierDeveloper && hasFeature(cfg.Features, "starter_mode") {
-		rpm = 150 // Starter: 150 RPM instead of 300 RPM for Developer tier
-	}
 
 	// Initialize tool authorizer matrix with default policies
 	toolAuth := toolauth.NewMatrix()
