@@ -1,3 +1,89 @@
+## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (In Progress)
+
+> **Status: In Progress** — v3.2.0 is the largest feature release in AegisGate's history. Phase 1 (module extraction) and Phase 4 (Trust Framework, the 6th pillar) are complete; Phase 2 (Pro $249→$499), Phase 3 (compliance scan engine), and Phase 5 (website) are pending. The v3.2.0 release tag will be created when Phase 4 is fully done.
+
+### Highlights
+
+#### Compliance Modules (Phase 1) — _Tier add-ons_
+
+Six billable compliance modules are now available as add-ons to any paid tier. Prices are locked from the pricing-table decision (2026-06-04) and will not change for existing customers (Q2: lock-in at purchase price forever).
+
+| Module | Price | Required Tier | Description |
+|---|---|---|---|
+| HIPAA | $99/mo | Developer+ | HIPAA-compliant logging, PHI detection, BAA support |
+| PCI-DSS | $99/mo | Developer+ | Payment card data detection, PCI-scoped audit logs |
+| SOC 2 | $149/mo | Developer+ | SOC 2 Type II control mapping, evidence collection |
+| ISO 42001 | $79/mo | Professional+ | ISO/IEC 42001 AI management system controls |
+| FedRAMP | $499/mo | Professional+ | FedRAMP Moderate/High control mapping, continuous monitoring |
+| FIPS 140-2/140-3 | $299/mo | Professional+ | FIPS-validated cryptography enforcement, HSM integration |
+
+Modules are purchased via Stripe checkout and activated instantly on the customer's license via the existing webhook (Q1: instant via Stripe webhook).
+
+**All 6 module products are now live in the Stripe dashboard** (2026-06-05). Buy buttons on the [website pricing page](https://aegisgatesecurity.io/pricing/).
+
+#### Trust Framework — 6th Pillar (Phase 4) — _Professional+ tier_
+
+The newest architectural pillar: continuous, per-agent cryptographic trust scoring with signed attestations. The Trust Framework gives security teams a real-time view of "is this agent behaving normally?" and "what was its score at the start vs end of this request?".
+
+**New code:**
+- `pkg/tier/tier.go` — `FeatureTrustPillar` constant (Pro+ gate)
+- `pkg/trust/session.go` — per-session trust accumulator on top of `score.Engine`
+- `pkg/trust/api.go` — HTTP API at `/api/v1/trust/` (7 endpoints)
+- `pkg/trust/hooks.go` — opt-in `Hooks` bridge for protocol packages
+
+**HTTP endpoints:**
+```
+GET /api/v1/trust/health                          -> liveness (no auth)
+GET /api/v1/trust/score?agent=ID                  -> lifetime trust score
+GET /api/v1/trust/score?session=ID                -> session score + ScoreDelta
+GET /api/v1/trust/sessions?active=true&agent=ID   -> list sessions
+GET /api/v1/trust/sessions?id=ID                  -> single session detail
+GET /api/v1/trust/attestations?agent=ID&since=TS  -> filtered attestations
+GET /api/v1/trust/attestations/latest?agent=ID    -> most recent (verified) attestation
+```
+
+**Tier gate (locked decision Q3):** Professional+.
+
+**Auth (locked decision Q4):** License key via `pkg/license.LicenseMiddleware`.
+
+### Bug Fixes
+
+- **MEDIUM**: `pkg/trust/score/baseline.go` `(*InMemoryBaseline).GetBaseline` was returning a pointer to a shared struct, causing a data race with concurrent `RecordEvent` callers. Now returns a deep copy. (Phase 8)
+- **LOW**: `pkg/compliance/atlas_coverage_test.go` `TestAtlas_Check_Timing` flake (5s limit was tight on busy CI runners). Bumped to 10s with a comment. (Phase 8)
+
+### Tooling
+
+- Go 1.26.3 → 1.26.4 (security fix for `crypto/x509` and `net/textproto` stdlib vulnerabilities). All GPG-signed commits.
+- `aegisgate-platform` binary is no longer tracked in git. Build from source: `go build -o aegisgate-platform ./cmd/aegisgate-platform/`. (Phase 7)
+- GPG signing configured for all commits. All v3.2.0 commits show `verified: true, reason: valid` on github.com.
+
+### Test Coverage
+
+- `pkg/tier`: 100.0% (was 91.2% pre-v3.1.1; +8.8pp from the Starter tier addition and 6 module constants)
+- `pkg/license`: 97.8% (added Modules field, HasModule, Modules, IsValidModule)
+- `pkg/compliance`: 95.3% (added gating.go with IsFrameworkEnforced, EvaluateGating)
+- `pkg/billing/webhook`: 93.8% (up from 61.9% pre-Phase 1.3; module parsing for 3 input shapes)
+- `pkg/trust`: 90.4% (new: session.go, api.go, hooks.go — 60+ new tests)
+- Overall: 93.7% (preserved at the v3.1.1 level)
+
+### Files Changed
+
+10 new files, 7 modified, 1 doc-only. See commit history for the per-commit breakdown.
+
+### v2.x Status
+
+**v2.x is end-of-life as of 2026-12-31.** No security updates will be issued after that date. v3.x is the only actively supported line.
+
+### Out of Scope (Deferred)
+
+- **Pro tier price change** — $249 → $499/mo; grandfathered for existing customers (Phase 2)
+- **Compliance scan engine** — `/api/v1/compliance/scan` and `/api/v1/compliance/report` endpoints (Phase 3)
+- **Website updates for 6-pillar hero** (Phase 5)
+- **External pentest** — vendor selection open (H4)
+- **Legal review** — ToS, Privacy, DPA (H1)
+
+---
+
 ## [3.1.1] - 2026-06-05 - Tier Rate Limit Drift Fix
 
 ### Summary
