@@ -69,15 +69,15 @@ const (
 // LicensePayload represents the decoded license data
 // Note: This struct is serialized to JSON and signed
 type LicensePayload struct {
-	LicenseID  string    `json:"license_id"`  // UUID
-	Tier       string    `json:"tier"`        // Tier name
-	Customer   string    `json:"customer"`    // Customer identifier
-	IssuedAt   time.Time `json:"issued_at"`   // When license was issued
-	ExpiresAt  time.Time `json:"expires_at"`  // When license expires
-	Features   []string  `json:"features"`    // Optional specific features
+	LicenseID  string    `json:"license_id"`        // UUID
+	Tier       string    `json:"tier"`              // Tier name
+	Customer   string    `json:"customer"`          // Customer identifier
+	IssuedAt   time.Time `json:"issued_at"`         // When license was issued
+	ExpiresAt  time.Time `json:"expires_at"`        // When license expires
+	Features   []string  `json:"features"`          // Optional specific features
 	Modules    []string  `json:"modules,omitempty"` // v3.2.0 Phase 1: purchased compliance modules (hipaa, pci, soc2, iso42001, fedramp, fips, trust)
-	MaxServers int       `json:"max_servers"` // Max servers allowed
-	MaxUsers   int       `json:"max_users"`   // Max users allowed
+	MaxServers int       `json:"max_servers"`       // Max servers allowed
+	MaxUsers   int       `json:"max_users"`         // Max users allowed
 }
 
 // v3.2.0 Phase 1: canonical names of the 6 billable compliance modules.
@@ -400,9 +400,10 @@ func (m *Manager) IsFeatureLicensed(result *ValidationResult, feature tier.Featu
 //   - the module name is not a known billable module (defense against typos)
 //
 // Examples:
-//   HasModule(result, ModuleHIPAA)    // true if the customer bought HIPAA
-//   HasModule(result, "hipaa")        // same, by string literal
-//   HasModule(result, "invalid")      // false (unknown module)
+//
+//	HasModule(result, ModuleHIPAA)    // true if the customer bought HIPAA
+//	HasModule(result, "hipaa")        // same, by string literal
+//	HasModule(result, "invalid")      // false (unknown module)
 func (m *Manager) HasModule(result *ValidationResult, moduleName string) bool {
 	if result == nil || !result.Valid {
 		return false
