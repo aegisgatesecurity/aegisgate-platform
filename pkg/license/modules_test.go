@@ -42,11 +42,11 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		// Unknown module names.
 		{"", false},
 		{"unknown", false},
-		{"hippa", false},   // typo
-		{"HIPAA", false},   // wrong case
-		{"hipaa ", false},  // trailing space
-		{" hipaa", false},  // leading space
-		{"gdpr", false},    // GDPR is a feature constant in tier.go but not a billable module
+		{"hippa", false},    // typo
+		{"HIPAA", false},    // wrong case
+		{"hipaa ", false},   // trailing space
+		{" hipaa", false},   // leading space
+		{"gdpr", false},     // GDPR is a feature constant in tier.go but not a billable module
 		{"iso27001", false}, // ISO 27001 is a feature constant but not a billable module
 		{"soc2_type2", false},
 	}
@@ -145,9 +145,9 @@ func TestHasModule_RejectsInvalidModuleName(t *testing.T) {
 func TestModules_ReturnsValidSubset(t *testing.T) {
 	result := makeValidResult([]string{
 		ModuleHIPAA,
-		"bogus_module",   // filtered out
+		"bogus_module", // filtered out
 		ModulePCI,
-		"another_bogus",  // filtered out
+		"another_bogus", // filtered out
 		ModuleSOC2,
 	})
 	mgr := &Manager{}
