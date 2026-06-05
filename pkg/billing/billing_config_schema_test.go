@@ -348,14 +348,22 @@ func TestBillingConfig_ProPriceIDsAreCurrent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
 	}
-	var v struct {
-		TierProducts map[string]struct {
-			PriceID     string `json:"price_id"`
-			BuyButtonID string `json:"buy_button_id"`
-		} `json:"tier_products"`
-	}
-	if err := json.Unmarshal(data, &v); err != nil {
-		t.Fatalf("Unmarshal: %v", err)
+	// tier_products is a map at the top level. Some entries are
+	// objects (with price_id, product_id, etc.); the "enterprise"
+	// entry is still a string (custom pricing, no Stripe Price).
+	var tpRaw map[string]json.RawMessage
+	{
+		var top map[string]json.RawMessage
+		if err := json.Unmarshal(data, &top); err != nil {
+			t.Fatalf("Unmarshal: %v", err)
+		}
+		tp, ok := top["tier_products"]
+		if !ok {
+			t.Fatal("tier_products not found in config")
+		}
+		if err := json.Unmarshal(tp, &tpRaw); err != nil {
+			t.Fatalf("Unmarshal tier_products: %v", err)
+		}
 	}
 	cases := []struct {
 		key        string
@@ -367,9 +375,20 @@ func TestBillingConfig_ProPriceIDsAreCurrent(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.key, func(t *testing.T) {
-			got, ok := v.TierProducts[tc.key]
+			raw, ok := tpRaw[tc.key]
 			if !ok {
 				t.Fatalf("missing key %s", tc.key)
+			}
+			// Skip non-object entries (e.g., enterprise = "").
+			if len(raw) == 0 || raw[0] != '{' {
+				t.Fatalf("tier_products.%s is not an object: %s", tc.key, string(raw))
+			}
+			var got struct {
+				PriceID     string `json:"price_id"`
+				BuyButtonID string `json:"buy_button_id"`
+			}
+			if err := json.Unmarshal(raw, &got); err != nil {
+				t.Fatalf("Unmarshal %s: %v", tc.key, err)
 			}
 			if got.PriceID != tc.wantPrice {
 				t.Errorf("price_id = %q, want %q", got.PriceID, tc.wantPrice)
