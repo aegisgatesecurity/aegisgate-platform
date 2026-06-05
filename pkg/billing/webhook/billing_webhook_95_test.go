@@ -533,6 +533,10 @@ func (f *billingFailingLicenseGen) ActivateLicense(key string, email string) err
 	return nil
 }
 
+func (f *billingFailingLicenseGen) AddModules(licenseKey string, customerID string, modules []string, priceCents int64) error {
+	return nil
+}
+
 func TestHandleCheckoutCompleted_BillingGenFails(t *testing.T) {
 	s := &Server{
 		logger:       log.Default(),

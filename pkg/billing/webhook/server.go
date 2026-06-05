@@ -14,6 +14,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -22,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
@@ -43,7 +45,17 @@ type Server struct {
 type LicenseGenerator interface {
 	GenerateLicense(customerID string, tier string, days int) (string, error)
 	ActivateLicense(key string, email string) error
+	// AddModules (v3.2.0 Phase 1.3) attaches billable compliance modules
+	// to an existing license. priceCents is the amount the customer paid
+	// at purchase time, captured here so future price changes don't affect
+	// existing customers (locked decision Q2: "lock in at purchase price
+	// forever"). tier and priceCents together form the audit trail.
+	AddModules(licenseKey string, customerID string, modules []string, priceCents int64) error
 }
+
+// ErrInvalidModule is returned when a module name in the webhook payload
+// is not a known billable module. v3.2.0 Phase 1.3.
+var ErrInvalidModule = errors.New("invalid module")
 
 // EmailService interface for sending license emails
 type EmailService interface {
@@ -71,6 +83,32 @@ type CheckoutSession struct {
 	AmountTotal   int64             `json:"amount_total"`
 	Currency      string            `json:"currency"`
 	Metadata      map[string]string `json:"metadata"`
+	// SubscriptionItems (v3.2.0 Phase 1.3) is the modern Stripe shape for
+	// multi-line-item checkouts. Each item has a Price with a lookup_key
+	// like "module_hipaa". We use this to detect module purchases when
+	// metadata.modules is not set.
+	SubscriptionItems SubscriptionItemsWrapper `json:"subscription_items,omitempty"`
+}
+
+// SubscriptionItemsWrapper is the envelope for Stripe's subscription_items
+// field on a checkout session. The actual line items are nested under
+// .data[].price.lookup_key.
+type SubscriptionItemsWrapper struct {
+	Data []SubscriptionItem `json:"data"`
+}
+
+// SubscriptionItem is a single line item in a Stripe subscription.
+type SubscriptionItem struct {
+	ID    string                `json:"id"`
+	Price SubscriptionItemPrice `json:"price"`
+}
+
+// SubscriptionItemPrice is the price sub-object of a subscription item.
+type SubscriptionItemPrice struct {
+	ID         string `json:"id"`
+	LookupKey  string `json:"lookup_key"`
+	UnitAmount int64  `json:"unit_amount"`
+	Nickname   string `json:"nickname"`
 }
 
 // Subscription represents Stripe subscription data
@@ -238,6 +276,113 @@ func (s *Server) verifySignature(payload []byte, sig string) error {
 	return fmt.Errorf("signature mismatch")
 }
 
+// ModuleLookupKeyPrefix is the prefix Stripe uses in price.lookup_key
+// for billable compliance modules. e.g., "module_hipaa", "module_pci".
+// v3.2.0 Phase 1.3: the canonical modern shape for module line items.
+const ModuleLookupKeyPrefix = "module_"
+
+// MetadataModulesKey is the session.metadata key for the legacy CSV shape.
+// v3.2.0 Phase 1.3: optional fallback for one-off add-ons or manual
+// checkouts. Value is a comma-separated list of module names.
+const MetadataModulesKey = "modules"
+
+// moduleFromLookupKey extracts a module name from a Stripe price.lookup_key.
+// Returns "" if the key is not a module key.
+//
+// Examples:
+//
+//	"module_hipaa"    -> "hipaa"
+//	"module_pci"      -> "pci"
+//	"module_iso42001" -> "iso42001"
+//	"professional"    -> "" (not a module key)
+//	""                -> ""
+//	"module_"         -> "" (missing module name)
+func moduleFromLookupKey(lookupKey string) string {
+	if !strings.HasPrefix(lookupKey, ModuleLookupKeyPrefix) {
+		return ""
+	}
+	name := strings.TrimPrefix(lookupKey, ModuleLookupKeyPrefix)
+	if name == "" {
+		return ""
+	}
+	return name
+}
+
+// parseModulesFromSession extracts the list of module names from a Stripe
+// checkout session, handling all 3 supported input shapes.
+//
+// Priority (highest to lowest):
+//  1. subscription_items.data[].price.lookup_key (modern Stripe shape)
+//  2. metadata.modules (CSV, legacy/manual shape)
+//  3. empty (no modules in this checkout)
+//
+// Returns the de-duplicated, validated list of module names. Unknown
+// modules are rejected with an error (typo defense).
+func (s *Server) parseModulesFromSession(session *CheckoutSession) ([]string, error) {
+	seen := map[string]bool{}
+	var modules []string
+
+	// Shape 1: subscription_items.data[].price.lookup_key
+	for _, item := range session.SubscriptionItems.Data {
+		name := moduleFromLookupKey(item.Price.LookupKey)
+		if name == "" {
+			continue // not a module line item
+		}
+		if !license.IsValidModule(name) {
+			return nil, fmt.Errorf("subscription line item has invalid module %q (lookup_key=%q): %w",
+				name, item.Price.LookupKey, ErrInvalidModule)
+		}
+		if !seen[name] {
+			seen[name] = true
+			modules = append(modules, name)
+		}
+	}
+
+	// Shape 2: metadata.modules (CSV)
+	if csv, ok := session.Metadata[MetadataModulesKey]; ok && csv != "" {
+		for _, raw := range strings.Split(csv, ",") {
+			name := strings.TrimSpace(raw)
+			if name == "" {
+				continue
+			}
+			if !license.IsValidModule(name) {
+				return nil, fmt.Errorf("metadata.%s contains invalid module %q: %w",
+					MetadataModulesKey, name, ErrInvalidModule)
+			}
+			if !seen[name] {
+				seen[name] = true
+				modules = append(modules, name)
+			}
+		}
+	}
+
+	// Shape 3: empty (legacy single-tier, no modules). Return empty slice.
+	return modules, nil
+}
+
+// moduleLineItemAmount returns the sum of unit_amounts for all module
+// line items in the session. Used for the priceCents argument to
+// AddModules (locked decision Q2: capture price at purchase time).
+// Returns 0 if no module line items.
+func (s *Server) moduleLineItemAmount(session *CheckoutSession, modules []string) int64 {
+	if len(modules) == 0 {
+		return 0
+	}
+	moduleSet := map[string]bool{}
+	for _, m := range modules {
+		moduleSet[m] = true
+	}
+	var total int64
+	for _, item := range session.SubscriptionItems.Data {
+		name := moduleFromLookupKey(item.Price.LookupKey)
+		if name == "" || !moduleSet[name] {
+			continue
+		}
+		total += item.Price.UnitAmount
+	}
+	return total
+}
+
 // handleCheckoutCompleted processes successful checkout
 func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 	var session CheckoutSession
@@ -270,6 +415,22 @@ func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 		return fmt.Errorf("%s: %q: %w", ErrInvalidTier, tierStr, err)
 	}
 
+	// v3.2.0 Phase 1.3: parse module line items from the session.
+	// 3 supported input shapes (see parseModulesFromSession):
+	//   1. subscription_items.data[].price.lookup_key (modern Stripe)
+	//   2. metadata.modules (CSV, legacy/manual)
+	//   3. empty (legacy single-tier only — no modules)
+	modules, err := s.parseModulesFromSession(&session)
+	if err != nil {
+		s.logger.Printf("ERROR: rejecting checkout %s: %v", session.ID, err)
+		return err
+	}
+	modulePriceCents := s.moduleLineItemAmount(&session, modules)
+	if len(modules) > 0 {
+		s.logger.Printf("Checkout %s: %d module(s) attached: %v (price: %d cents)",
+			session.ID, len(modules), modules, modulePriceCents)
+	}
+
 	if s.licenseGen != nil {
 		key, err := s.licenseGen.GenerateLicense(session.Customer, parsedTier.String(), 365)
 		if err != nil {
@@ -278,6 +439,19 @@ func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 
 		if err := s.licenseGen.ActivateLicense(key, session.CustomerEmail); err != nil {
 			s.logger.Printf("Warning: failed to activate license %s: %v", key, err)
+		}
+
+		// v3.2.0 Phase 1.3: if modules were purchased, attach them to the
+		// new license. AddModules records the price-at-purchase for Q2
+		// (lock-in forever). This call is independent of tier generation
+		// so it can also be used for adding modules to an existing license
+		// in a future API endpoint.
+		if len(modules) > 0 {
+			if err := s.licenseGen.AddModules(key, session.Customer, modules, modulePriceCents); err != nil {
+				return fmt.Errorf("failed to attach modules to license: %w", err)
+			}
+			s.logger.Printf("Attached %d module(s) to license %s at %d cents/mo",
+				len(modules), key, modulePriceCents)
 		}
 
 		if s.emailService != nil {
@@ -448,6 +622,26 @@ func (m *MockLicenseGenerator) ActivateLicense(key string, email string) error {
 	if _, exists := m.keys[key]; !exists {
 		return fmt.Errorf("license not found: %s", key)
 	}
+	return nil
+}
+
+// AddModules (v3.2.0 Phase 1.3) is a no-op in the mock; the real
+// implementation will update the LicensePayload.Modules field and
+// persist the price-at-purchase (locked decision Q2: lock-in forever).
+// We validate the key exists so tests catch missing-key bugs.
+func (m *MockLicenseGenerator) AddModules(licenseKey string, customerID string, modules []string, priceCents int64) error {
+	if _, exists := m.keys[licenseKey]; !exists {
+		return fmt.Errorf("license not found: %s", licenseKey)
+	}
+	if len(modules) == 0 {
+		return fmt.Errorf("no modules to add")
+	}
+	for _, name := range modules {
+		if !license.IsValidModule(name) {
+			return fmt.Errorf("invalid module: %s", name)
+		}
+	}
+	// Mock: nothing to persist. Real impl will update LicensePayload.Modules.
 	return nil
 }
 
