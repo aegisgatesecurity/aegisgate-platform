@@ -887,6 +887,10 @@ func (f *failingLicenseGen) ActivateLicense(key string, email string) error {
 	return &licenseError{msg: "activation disabled for testing"}
 }
 
+func (f *failingLicenseGen) AddModules(licenseKey string, customerID string, modules []string, priceCents int64) error {
+	return &licenseError{msg: "addmodules disabled for testing"}
+}
+
 type licenseError struct {
 	msg string
 }
