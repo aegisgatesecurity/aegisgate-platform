@@ -287,9 +287,16 @@ func (s *Scanner) scanModule(ctx context.Context, modReq ModuleRequirement, lic 
 	// Use the gating API to determine enforcement.
 	decision := EvaluateGating(modReq.Module, lic)
 	result.Enforced = decision.Enforced
-	if decision.Enforced {
+	// Always compute the control count, even when not enforced.
+	// The customer portal uses "this framework has N controls"
+	// to show "buy this module to enable scanning of all N
+	// controls" upgrade prompts. v3.2.0 Phase 3.4: real counts
+	// for HIPAA and PCI (registered in framework_registration.go);
+	// 0 for SOC 2 / ISO / FedRAMP / FIPS until their sub-packages
+	// are implemented.
+	result.Score, result.ControlsTotal, result.ControlsEnforced = s.scoreFramework(ctx, modReq.Module, modReq.Module)
+	if result.Enforced {
 		result.ReasonEnforced = string(decision.Reason)
-		result.Score, result.ControlsTotal, result.ControlsEnforced = s.scoreFramework(ctx, modReq.Module, modReq.Module)
 		if result.ControlsTotal > 0 {
 			result.CompliancePct = float64(result.ControlsEnforced) / float64(result.ControlsTotal) * 100
 		}
@@ -321,18 +328,26 @@ func (s *Scanner) scanFreeFramework(ctx context.Context, framework string, lic *
 	return result
 }
 
-// scoreFramework attempts to compute a real score using the
-// registered framework. If the framework isn't registered with
-// the registry (e.g., SOC 2 has no sub-package yet), returns 0/0/0
-// and the result is "framework entitled but no implementation".
+// scoreFramework returns (score, total, enforced) for the
+// framework. v3.2.0 Phase 3.4: the total comes from the
+// framework's registered control count (HIPAA and PCI have
+// real counts; SOC 2, ISO 42001, FedRAMP, FIPS return 0 until
+// their sub-packages are implemented). The enforced and score
+// fields return 0 — they would only be non-zero after a live
+// per-request scan (a much larger feature for a later release).
 func (s *Scanner) scoreFramework(ctx context.Context, framework, module string) (score float64, total int, enforced int) {
-	assessment, err := s.runAssessment(ctx, framework)
-	if err != nil || assessment == nil {
-		return 0, 0, 0
+	total = lookupControlCount(framework)
+	if total == 0 {
+		// Fall back to the registry-based assessment in case a
+		// framework is registered there (e.g., free frameworks
+		// with custom scoring).
+		assessment, err := s.runAssessment(ctx, framework)
+		if err == nil && assessment != nil {
+			total = assessment.Summary.Total
+			enforced = assessment.Summary.Compliant + assessment.Summary.Partial
+			score = assessment.Summary.Score
+		}
 	}
-	total = assessment.Summary.Total
-	enforced = assessment.Summary.Compliant + assessment.Summary.Partial
-	score = assessment.Summary.Score
 	return score, total, enforced
 }
 
