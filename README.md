@@ -4,7 +4,7 @@
 
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
-![Version](https://img.shields.io/badge/Version-v3.1.0-blue?label=Version&logo=semver)
+![Version](https://img.shields.io/badge/Version-v3.1.1-blue?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
@@ -202,7 +202,7 @@ flowchart TB
         B[🤖 MCP Client]
         C[🤝 A2A Agent]
     end
-    subgraph "AegisGate Platform v3.1.0"
+    subgraph "AegisGate Platform v3.1.1"
         subgraph "Entry Points"
             D["🌐 HTTP Proxy\n:8080"]
             E["🔗 MCP Server\n:8081"]
@@ -254,7 +254,7 @@ flowchart TB
 
 ---
 
-## ⚡ Performance (v3.1.0 Benchmark)
+## ⚡ Performance (v3.1.1 Benchmark)
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
@@ -301,7 +301,7 @@ Includes HPA autoscaling, NetworkPolicy, ServiceMonitor, rolling updates.
 
 ```bash
 curl http://localhost:8443/health
-# {"status":"healthy","version":"v3.1.0","tier":"community",...}
+# {"status":"healthy","version":"v3.1.1","tier":"community",...}
 ```
 
 ---
@@ -493,9 +493,13 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| **v3.1.0** | ✅ Current | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage, 5,484 tests |
-| **v2.0.0** | ✅ Supported | A2A guardrails shipped |
+| **v3.1.1** | ✅ Current | **Tier rate limit drift fix** (Starter modeled, Dev/Pro corrected), Go 1.26.4 security bump, 100% test coverage on `pkg/tier` |
+| **v3.1.0** | ✅ Supported | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage, 5,484 tests |
+| **v3.0.0** | ✅ Supported | AI Response Scanning (4th pillar), 24,806 RPS peak |
+| **v2.0.x** | ⚠️ **DEPRECATED** | End-of-life: **2026-12-31**. No security backports. Upgrade to v3.x required. |
 | **v1.3.x** | ⚠️ Legacy | Community support only |
+
+> **v3.x is the only actively supported line.** v2.x reached end-of-feature-life with v2.0.1 and will not receive security updates after 2026-12-31. Customers on v2.x should plan their v3.x upgrade. See [CHANGELOG.md](CHANGELOG.md) for the v2.x → v3.x migration guide.
 
 ---
 
