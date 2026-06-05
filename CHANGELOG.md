@@ -1,6 +1,6 @@
 ## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (In Progress)
 
-> **Status: In Progress** — v3.2.0 is the largest feature release in AegisGate's history. Phase 1 (module extraction) and Phase 4 (Trust Framework, the 6th pillar) are complete; Phase 2 (Pro $249→$499), Phase 3 (compliance scan engine), and Phase 5 (website) are pending. The v3.2.0 release tag will be created when Phase 4 is fully done.
+> **Status: In Progress** — v3.2.0 is the largest feature release in AegisGate's history. Phase 1 (module extraction), Phase 2 (Pro $249→$499), Phase 4 (Trust Framework, the 6th pillar), and Phase 3 (compliance scan engine) are complete. Phase 5 (website) is the only remaining work item. The v3.2.0 release tag will be created when Phase 5 ships.
 
 ### Highlights
 
@@ -20,6 +20,25 @@ Six billable compliance modules are now available as add-ons to any paid tier. P
 Modules are purchased via Stripe checkout and activated instantly on the customer's license via the existing webhook (Q1: instant via Stripe webhook).
 
 **All 6 module products are now live in the Stripe dashboard** (2026-06-05). Buy buttons on the [website pricing page](https://aegisgatesecurity.io/pricing/).
+
+#### Compliance Scan Engine (Phase 3) — _Completed 2026-06-05_
+
+The customer-facing compliance scan engine. The scanner answers two questions the customer portal needs:
+
+1. "Is my customer's compliance posture good right now?" — via `GET /api/v1/compliance/scan` returning per-framework Enforced/Score/ControlsTotal/ControlsEnforced/CompliancePct.
+2. "What modules do I need to buy to enable X?" — via `GET /api/v1/compliance/report?framework=X` returning MissingModules and UpgradeHint.
+
+Three HTTP endpoints, all under `/api/v1/compliance/`:
+
+```
+GET /health      -> liveness (no auth)
+GET /scan        -> full ScanReport (all 9+ frameworks)
+GET /report?framework=X  -> single framework detail (with aliases)
+```
+
+Framework name aliases (30+ accepted): `pci-dss`, `soc-2`, `iso 42001`, `fips 140-2`, `nist_ai_rmf`, `mitre atlas`, `owasp llm top 10`, etc. — all normalize to the canonical framework name.
+
+**Real control counts shipped:** HIPAA module registers 13 controls, PCI module registers 21 controls. Other modules (SOC 2, ISO 42001, FedRAMP, FIPS) return 0 until their sub-packages are implemented.
 
 #### Trust Framework — 6th Pillar (Phase 4) — _Professional+ tier_
 
@@ -77,7 +96,6 @@ GET /api/v1/trust/attestations/latest?agent=ID    -> most recent (verified) atte
 ### Out of Scope (Deferred)
 
 - **Pro tier price change** — $249 → $499/mo; grandfathered for existing customers (Phase 2)
-- **Compliance scan engine** — `/api/v1/compliance/scan` and `/api/v1/compliance/report` endpoints (Phase 3)
 - **Website updates for 6-pillar hero** (Phase 5)
 - **External pentest** — vendor selection open (H4)
 - **Legal review** — ToS, Privacy, DPA (H1)
