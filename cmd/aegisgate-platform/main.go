@@ -41,6 +41,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
@@ -684,6 +685,17 @@ func main() {
 
 	// Metrics endpoint (Prometheus)
 	dashMux.Handle("/metrics", metrics.Handler())
+
+	// Compliance scan engine (v3.2.0 Phase 3.3). Wraps the
+	// scanner with the HTTP API at /api/v1/compliance/* (scan,
+	// report, health). The license manager is the same one used
+	// for tier checks elsewhere; the API uses it to extract the
+	// caller's license from the request context. The new routes
+	// live alongside the existing /api/v1/compliance (audit
+	// export) endpoint; they don't conflict.
+	complianceScanner := compliance.NewScanner(nil, &compliance.ScannerOpts{CacheTTL: 5 * time.Minute})
+	complianceAPI := compliance.NewAPI(complianceScanner, licenseMgr)
+	dashMux.Handle("/api/v1/compliance/", complianceAPI)
 
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
