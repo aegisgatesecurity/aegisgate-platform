@@ -12,6 +12,12 @@ build/
 *.prof
 *.test-binary
 *.test-binary.*
+# AegisGate platform binary (built from cmd/aegisgate-platform/ — see README "Building from source")
+# Untracked in v3.2.0 Phase 7 (commit 9788e5e-era binary was the last tracked copy).
+/aegisgate-platform
+/aegisgate-platform-bin
+aegisgate-platform-*
+!/aegisgate-platform/  # never ignore the source directory itself
 # Ignore stray README docs (old or competition versions)
 README-OLD.md
 README_COMPETITION.md
