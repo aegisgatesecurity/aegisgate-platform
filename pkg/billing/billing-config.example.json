@@ -1,4 +1,5 @@
 {
+  "_comment": "v3.2.0 Phase 1.4: example/template file. Copy to billing-config.json and replace the PLACEHOLDER_* values with real Stripe Price IDs from https://dashboard.stripe.com/products. The tier_prices and tier_products (for the 5 main tiers) come pre-filled; only the 6 module_products need founder action.",
   "tier_prices": {
     "starter_annual": 29000,
     "starter_monthly": 2900,
@@ -8,28 +9,121 @@
     "professional_monthly": 24900
   },
   "tier_products": {
-    "starter_annual": "price_1TUpnpK2DQfk64XNQVQLqMRD",
-    "starter_monthly": "price_1TUpnpK2DQfk64XNQVQLqMRD",
-    "developer_annual": "price_1TUpwnK2DQfk64XNUJsYscrS",
-    "developer_monthly": "price_1TUponK2DQfk64XNe6WUb7NJ",
-    "professional_annual": "price_1TUpw1K2DQfk64XNDsGRxKpv",
-    "professional_monthly": "price_1TUpw1K2DQfk64XNDsGRxKpv",
+    "starter_annual": {
+      "price_id": "price_1TeyqAK2DQfk64XNy75DQDgp",
+      "product_id": "prod_UeHOe58Jur0kqZ",
+      "lookup_key": "tier_starter_annual",
+      "buy_button_id": "buy_btn_1Tez8VK2DQfk64XN8Ibi7Mip"
+    },
+    "starter_monthly": {
+      "price_id": "price_1TeypbK2DQfk64XNWSZDUVbS",
+      "product_id": "prod_UeHOvcX0zfSFqJ",
+      "lookup_key": "tier_starter_monthly",
+      "buy_button_id": "buy_btn_1Tez2dK2DQfk64XN34yWfv3Z"
+    },
+    "developer_annual": {
+      "price_id": "price_1Teyu1K2DQfk64XNowU6lQaQ",
+      "product_id": "prod_UeHSDtDT4rK8t5",
+      "lookup_key": "tier_developer_annual",
+      "buy_button_id": "buy_btn_1TezDrK2DQfk64XNjhDhfBDO"
+    },
+    "developer_monthly": {
+      "price_id": "price_1TeytUK2DQfk64XNRCQAD93O",
+      "product_id": "prod_UeHSDtDT4rK8t5",
+      "lookup_key": "tier_developer_monthly",
+      "buy_button_id": "buy_btn_1TezBqK2DQfk64XN7Y79VYM7"
+    },
+    "professional_annual": {
+      "price_id": "price_1Teyy3K2DQfk64XNMZegA40j",
+      "product_id": "prod_UeHXC3v0los7cZ",
+      "lookup_key": "tier_professional_annual",
+      "buy_button_id": "buy_btn_1TezHkK2DQfk64XN78H7ahQ9"
+    },
+    "professional_monthly": {
+      "price_id": "price_1TeyxdK2DQfk64XNO23ktikg",
+      "product_id": "prod_UeHWXXQHJ83JXW",
+      "lookup_key": "tier_professional_monthly",
+      "buy_button_id": "buy_btn_1TezFrK2DQfk64XNRXo9N2rF"
+    },
     "enterprise": ""
+  },
+  "module_products": {
+    "hipaa": {
+      "price_id": "PLACEHOLDER_MODULE_HIPAA",
+      "product_id": "PLACEHOLDER_MODULE_HIPAA_PROD",
+      "lookup_key": "module_hipaa",
+      "monthly_cents": 9900,
+      "display_name": "HIPAA Compliance Module",
+      "required_tier": "developer"
+    },
+    "pci": {
+      "price_id": "PLACEHOLDER_MODULE_PCI",
+      "product_id": "PLACEHOLDER_MODULE_PCI_PROD",
+      "lookup_key": "module_pci",
+      "monthly_cents": 9900,
+      "display_name": "PCI-DSS Compliance Module",
+      "required_tier": "developer"
+    },
+    "soc2": {
+      "price_id": "PLACEHOLDER_MODULE_SOC2",
+      "product_id": "PLACEHOLDER_MODULE_SOC2_PROD",
+      "lookup_key": "module_soc2",
+      "monthly_cents": 14900,
+      "display_name": "SOC 2 Compliance Module",
+      "required_tier": "developer"
+    },
+    "iso42001": {
+      "price_id": "PLACEHOLDER_MODULE_ISO42001",
+      "product_id": "PLACEHOLDER_MODULE_ISO42001_PROD",
+      "lookup_key": "module_iso42001",
+      "monthly_cents": 7900,
+      "display_name": "ISO 42001 AI Compliance Module",
+      "required_tier": "professional"
+    },
+    "fedramp": {
+      "price_id": "PLACEHOLDER_MODULE_FEDRAMP",
+      "product_id": "PLACEHOLDER_MODULE_FEDRAMP_PROD",
+      "lookup_key": "module_fedramp",
+      "monthly_cents": 49900,
+      "display_name": "FedRAMP Compliance Module",
+      "required_tier": "professional"
+    },
+    "fips": {
+      "price_id": "PLACEHOLDER_MODULE_FIPS",
+      "product_id": "PLACEHOLDER_MODULE_FIPS_PROD",
+      "lookup_key": "module_fips",
+      "monthly_cents": 29900,
+      "display_name": "FIPS 140-2/140-3 Compliance Module",
+      "required_tier": "professional"
+    }
   },
   "stripe_config": {
     "publishable_key": "${STRIPE_PUBLISHABLE_KEY}",
+    "webhook_endpoint": "https://api.aegisgatesecurity.io/webhook/stripe",
     "products": {
       "starter_annual": {
-        "product_id": "prod_UTnOhISU4LGix5",
-        "name": "AegisGate Security Platform - Starter Subscription (annual)"
+        "product_id": "prod_UeHOe58Jur0kqZ",
+        "name": "AegisGate Security Platform - Starter Tier (annual)"
+      },
+      "starter_monthly": {
+        "product_id": "prod_UeHOvcX0zfSFqJ",
+        "name": "AegisGate Security Platform - Starter Tier (monthly)"
       },
       "developer_annual": {
-        "product_id": "prod_UTnXc6wfRq24Is",
-        "name": "AegisGate Security Platform - Developer Subscription (annual)"
+        "product_id": "prod_UeHSDtDT4rK8t5",
+        "name": "AegisGate Security Platform - Developer Tier (annual)"
+      },
+      "developer_monthly": {
+        "product_id": "prod_UeHSDtDT4rK8t5",
+        "name": "AegisGate Security Platform - Developer Tier (monthly)"
       },
       "professional_annual": {
-        "product_id": "prod_UTnXYdVgMrSrzY",
-        "name": "AegisGate Security Platform - Professional Subscription (annual)"
+        "product_id": "prod_UeHXC3v0los7cZ",
+        "name": "AegisGate Security Platform - Professional Tier (annual)"
+      },
+      "professional_monthly": {
+        "product_id": "prod_UeHWXXQHJ83JXW",
+        "name": "AegisGate Security Platform - Professional Tier (monthly)"
       }
     }
   }
