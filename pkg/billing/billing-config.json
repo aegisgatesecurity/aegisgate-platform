@@ -1,5 +1,5 @@
 {
-  "_comment_v3.2.0": "v3.2.0 Phase 1.4: Updated with live Stripe Price IDs (2026-06-05). Tier Prices were regenerated in the Stripe dashboard. Module Price IDs are PLACEHOLDER_* — the founder will fill these in from https://dashboard.stripe.com/products as part of the module rollout. The webhook (Phase 1.3) reads lookup_key and unit_amount from the line item directly, so module purchases work even with placeholder price_id values.",
+  "_comment_v3.2.0": "v3.2.0 Phase 1.4: Updated with live Stripe Price IDs (2026-06-05). Tier Prices and 6 module Prices are all live in the Stripe dashboard. The webhook (Phase 1.3) reads lookup_key and unit_amount from the line item directly. Price IDs in this file are for invoice/audit-trail reconciliation and the customer portal.",
   "tier_prices": {
     "starter_annual": 29000,
     "starter_monthly": 2900,
@@ -49,58 +49,58 @@
   },
   "module_products": {
     "hipaa": {
-      "price_id": "PLACEHOLDER_MODULE_HIPAA",
-      "product_id": "PLACEHOLDER_MODULE_HIPAA_PROD",
+      "price_id": "price_1TeziTK2DQfk64XNIAfFuMKj",
+      "product_id": "prod_UeIJfrI764urCv",
       "lookup_key": "module_hipaa",
       "monthly_cents": 9900,
       "display_name": "HIPAA Compliance Module",
       "required_tier": "developer",
-      "_comment": "Founder TODO: create HIPAA Module product in Stripe dashboard. Set lookup_key to 'module_hipaa'. Set unit_amount to 9900 (cents). Replace PLACEHOLDER_* values."
+      "buy_button_id": "buy_btn_1Tezs0K2DQfk64XNDj0YlFV9"
     },
     "pci": {
-      "price_id": "PLACEHOLDER_MODULE_PCI",
-      "product_id": "PLACEHOLDER_MODULE_PCI_PROD",
+      "price_id": "price_1TezizK2DQfk64XNd94jsOdw",
+      "product_id": "prod_UeIJlcjs02nOjQ",
       "lookup_key": "module_pci",
       "monthly_cents": 9900,
       "display_name": "PCI-DSS Compliance Module",
       "required_tier": "developer",
-      "_comment": "Founder TODO: create PCI-DSS Module product. lookup_key: 'module_pci'. unit_amount: 9900."
+      "buy_button_id": "buy_btn_1TezwsK2DQfk64XNNtCrVuxu"
     },
     "soc2": {
-      "price_id": "PLACEHOLDER_MODULE_SOC2",
-      "product_id": "PLACEHOLDER_MODULE_SOC2_PROD",
+      "price_id": "price_1TezkWK2DQfk64XNju4fvxiz",
+      "product_id": "prod_UeILCR5QPuIbdf",
       "lookup_key": "module_soc2",
       "monthly_cents": 14900,
       "display_name": "SOC 2 Compliance Module",
       "required_tier": "developer",
-      "_comment": "Founder TODO: create SOC 2 Module product. lookup_key: 'module_soc2'. unit_amount: 14900."
+      "buy_button_id": "buy_btn_1TezyiK2DQfk64XNMMKeyYQO"
     },
     "iso42001": {
-      "price_id": "PLACEHOLDER_MODULE_ISO42001",
-      "product_id": "PLACEHOLDER_MODULE_ISO42001_PROD",
+      "price_id": "price_1TeznbK2DQfk64XNG11q38xt",
+      "product_id": "prod_UeIOU5K1HCH3Vn",
       "lookup_key": "module_iso42001",
       "monthly_cents": 7900,
       "display_name": "ISO 42001 AI Compliance Module",
       "required_tier": "professional",
-      "_comment": "Founder TODO: create ISO 42001 Module product. lookup_key: 'module_iso42001'. unit_amount: 7900."
+      "buy_button_id": "buy_btn_1Tf00WK2DQfk64XN0EvRqZcy"
     },
     "fedramp": {
-      "price_id": "PLACEHOLDER_MODULE_FEDRAMP",
-      "product_id": "PLACEHOLDER_MODULE_FEDRAMP_PROD",
+      "price_id": "price_1Tezp9K2DQfk64XNyX2vR5nj",
+      "product_id": "prod_UeIPsk3H8PksXv",
       "lookup_key": "module_fedramp",
       "monthly_cents": 49900,
       "display_name": "FedRAMP Compliance Module",
       "required_tier": "professional",
-      "_comment": "Founder TODO: create FedRAMP Module product. lookup_key: 'module_fedramp'. unit_amount: 49900."
+      "buy_button_id": "buy_btn_1Tf01sK2DQfk64XNvjoZTO32"
     },
     "fips": {
-      "price_id": "PLACEHOLDER_MODULE_FIPS",
-      "product_id": "PLACEHOLDER_MODULE_FIPS_PROD",
+      "price_id": "price_1Tezq5K2DQfk64XN0mNGglT9",
+      "product_id": "prod_UeIQ5haHNP9U4w",
       "lookup_key": "module_fips",
       "monthly_cents": 29900,
       "display_name": "FIPS 140-2/140-3 Compliance Module",
       "required_tier": "professional",
-      "_comment": "Founder TODO: create FIPS Module product. lookup_key: 'module_fips'. unit_amount: 29900."
+      "buy_button_id": "buy_btn_1Tf04ZK2DQfk64XNItWmUatb"
     }
   },
   "stripe_config": {
@@ -130,6 +130,30 @@
       "professional_monthly": {
         "product_id": "prod_UeHWXXQHJ83JXW",
         "name": "AegisGate Security Platform - Professional Tier (monthly)"
+      },
+      "module_hipaa": {
+        "product_id": "prod_UeIJfrI764urCv",
+        "name": "HIPAA Compliance Module (recurring)"
+      },
+      "module_pci": {
+        "product_id": "prod_UeIJlcjs02nOjQ",
+        "name": "PCI-DSS Compliance Module (recurring)"
+      },
+      "module_soc2": {
+        "product_id": "prod_UeILCR5QPuIbdf",
+        "name": "SOC 2 Compliance Module (recurring)"
+      },
+      "module_iso42001": {
+        "product_id": "prod_UeIOU5K1HCH3Vn",
+        "name": "ISO 42001 AI Compliance Module (recurring)"
+      },
+      "module_fedramp": {
+        "product_id": "prod_UeIPsk3H8PksXv",
+        "name": "FedRAMP Compliance Module (recurring)"
+      },
+      "module_fips": {
+        "product_id": "prod_UeIQ5haHNP9U4w",
+        "name": "FIPS 140-2/140-3 Compliance Module (recurring)"
       }
     }
   }
