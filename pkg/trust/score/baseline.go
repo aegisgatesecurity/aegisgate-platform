@@ -68,7 +68,13 @@ func (b *InMemoryBaseline) GetBaseline(ctx context.Context, agentID string) (*Ba
 	if !exists {
 		return &BaselineMetrics{AgentID: agentID, LastUpdated: time.Now().UTC()}, nil
 	}
-	return baseline, nil
+	// v3.2.0 Phase 8 race fix: return a deep copy so the caller can read the
+	// fields (TotalEvents, SuccessRate, etc.) without holding b.mu. The map
+	// stores a single *BaselineMetrics that updateBaselineLocked mutates in
+	// place; returning that pointer directly causes a data race when
+	// RecordEvent and Calculate run concurrently on the same agent.
+	copy := *baseline
+	return &copy, nil
 }
 
 func (b *InMemoryBaseline) UpdateBaseline(ctx context.Context, agentID string) error {
