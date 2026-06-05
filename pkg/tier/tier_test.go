@@ -9,6 +9,7 @@ func TestParseTier(t *testing.T) {
 		err   bool
 	}{
 		{"community", TierCommunity, false},
+		{"starter", TierStarter, false}, // v3.1.1: added
 		{"developer", TierDeveloper, false},
 		{"professional", TierProfessional, false},
 		{"enterprise", TierEnterprise, false},
@@ -46,6 +47,22 @@ func TestCanAccess(t *testing.T) {
 	if !TierProfessional.CanAccess(TierDeveloper) {
 		t.Error("Professional should access Developer features")
 	}
+	// v3.1.1: Starter tier access checks
+	if !TierStarter.CanAccess(TierCommunity) {
+		t.Error("Starter should access Community features")
+	}
+	if TierCommunity.CanAccess(TierStarter) {
+		t.Error("Community should NOT access Starter features")
+	}
+	if !TierDeveloper.CanAccess(TierStarter) {
+		t.Error("Developer should access Starter features")
+	}
+	if TierStarter.CanAccess(TierDeveloper) {
+		t.Error("Starter should NOT access Developer features")
+	}
+	if !TierProfessional.CanAccess(TierStarter) {
+		t.Error("Professional should access Starter features")
+	}
 }
 
 // TestRateLimits tests the deprecated RateLimit() method (backward compat)
@@ -66,8 +83,9 @@ func TestRateLimitProxy(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 120},
-		{TierDeveloper, 600},
-		{TierProfessional, 3000},
+		{TierStarter, 600},        // v3.1.1: added
+		{TierDeveloper, 1000},     // v3.1.1: 600 → 1000
+		{TierProfessional, 10000}, // v3.1.1: 3000 → 10000
 		{TierEnterprise, -1},
 	}
 	for _, tt := range tests {
@@ -85,8 +103,9 @@ func TestRateLimitMCP(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 60},
-		{TierDeveloper, 300},
-		{TierProfessional, 1500},
+		{TierStarter, 300},       // v3.1.1: added
+		{TierDeveloper, 500},     // v3.1.1: 300 → 500
+		{TierProfessional, 5000}, // v3.1.1: 1500 → 5000
 		{TierEnterprise, -1},
 	}
 	for _, tt := range tests {
@@ -104,6 +123,7 @@ func TestLogRetentionDays(t *testing.T) {
 		want int
 	}{
 		{TierCommunity, 7},
+		{TierStarter, 30}, // v3.1.1: added
 		{TierDeveloper, 30},
 		{TierProfessional, 90},
 		{TierEnterprise, -1},
@@ -121,6 +141,9 @@ func TestMCPSpecificLimits(t *testing.T) {
 	// MaxConcurrentMCP
 	if TierCommunity.MaxConcurrentMCP() != 5 {
 		t.Errorf("Community MaxConcurrentMCP = %d, want 5", TierCommunity.MaxConcurrentMCP())
+	}
+	if TierStarter.MaxConcurrentMCP() != 25 {
+		t.Errorf("Starter MaxConcurrentMCP = %d, want 25 (v3.1.1 Q3: matches Developer)", TierStarter.MaxConcurrentMCP())
 	}
 	if TierEnterprise.MaxConcurrentMCP() != -1 {
 		t.Errorf("Enterprise MaxConcurrentMCP = %d, want -1", TierEnterprise.MaxConcurrentMCP())
