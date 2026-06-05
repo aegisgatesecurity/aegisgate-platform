@@ -1,12 +1,12 @@
 {
-  "_comment": "v3.2.0 Phase 1.4: example/template file. Copy to billing-config.json. All 6 module Stripe Price IDs are now live (filled in 2026-06-05); the live billing-config.json has the same values. The example is a reference; the live file is the source of truth at runtime.",
+  "_comment": "v3.2.0 Phase 1.4 + 2: example/template. Pro price is $499/mo, $4990/yr. Copy to billing-config.json for live use.",
   "tier_prices": {
     "starter_annual": 29000,
     "starter_monthly": 2900,
     "developer_annual": 79000,
     "developer_monthly": 7900,
-    "professional_annual": 249000,
-    "professional_monthly": 24900
+    "professional_annual": 499000,
+    "professional_monthly": 49900
   },
   "tier_products": {
     "starter_annual": {
@@ -34,16 +34,16 @@
       "buy_button_id": "buy_btn_1TezBqK2DQfk64XN7Y79VYM7"
     },
     "professional_annual": {
-      "price_id": "price_1Teyy3K2DQfk64XNMZegA40j",
-      "product_id": "prod_UeHXC3v0los7cZ",
+      "price_id": "price_1Tf6NwK2DQfk64XNcsYRFodX",
+      "product_id": "prod_UePCqLsvxE9Ve4",
       "lookup_key": "tier_professional_annual",
-      "buy_button_id": "buy_btn_1TezHkK2DQfk64XN78H7ahQ9"
+      "buy_button_id": "buy_btn_1Tf6VcK2DQfk64XNyG8vnU5X"
     },
     "professional_monthly": {
-      "price_id": "price_1TeyxdK2DQfk64XNO23ktikg",
-      "product_id": "prod_UeHWXXQHJ83JXW",
+      "price_id": "price_1Tf6NWK2DQfk64XNNosvo3H6A",
+      "product_id": "prod_UePBERSjp7tWwg",
       "lookup_key": "tier_professional_monthly",
-      "buy_button_id": "buy_btn_1TezFrK2DQfk64XNRXo9N2rF"
+      "buy_button_id": "buy_btn_1Tf6RqK2DQfk64XNJId23XtS"
     },
     "enterprise": ""
   },

@@ -304,3 +304,79 @@ func TestBillingConfig_NoPlaceholders(t *testing.T) {
 		})
 	}
 }
+
+// TestBillingConfig_ProPriceIsLocked pins the Professional tier at $499/mo,
+// $4990/yr per the v3.2.0 Phase 2 decision. Update this test if the
+// pricing table changes.
+func TestBillingConfig_ProPriceIsLocked(t *testing.T) {
+	data, err := os.ReadFile("billing-config.json")
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	var v struct {
+		TierPrices map[string]int `json:"tier_prices"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	cases := []struct {
+		key  string
+		want int
+		desc string
+	}{
+		{"professional_monthly", 49900, "$499/mo"},
+		{"professional_annual", 499000, "$4990/yr"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.key, func(t *testing.T) {
+			got, ok := v.TierPrices[tc.key]
+			if !ok {
+				t.Fatalf("missing key %s", tc.key)
+			}
+			if got != tc.want {
+				t.Errorf("%s = %d cents ($%.2f), want %d cents (%s)",
+					tc.key, got, float64(got)/100, tc.want, tc.desc)
+			}
+		})
+	}
+}
+
+// TestBillingConfig_ProPriceIDsAreCurrent pins the current Pro Stripe
+// Price IDs. Update this test if the Stripe Prices are regenerated.
+func TestBillingConfig_ProPriceIDsAreCurrent(t *testing.T) {
+	data, err := os.ReadFile("billing-config.json")
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	var v struct {
+		TierProducts map[string]struct {
+			PriceID     string `json:"price_id"`
+			BuyButtonID string `json:"buy_button_id"`
+		} `json:"tier_products"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	cases := []struct {
+		key        string
+		wantPrice  string
+		wantButton string
+	}{
+		{"professional_monthly", "price_1Tf6NWK2DQfk64XNNosvo3H6A", "buy_btn_1Tf6RqK2DQfk64XNJId23XtS"},
+		{"professional_annual", "price_1Tf6NwK2DQfk64XNcsYRFodX", "buy_btn_1Tf6VcK2DQfk64XNyG8vnU5X"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.key, func(t *testing.T) {
+			got, ok := v.TierProducts[tc.key]
+			if !ok {
+				t.Fatalf("missing key %s", tc.key)
+			}
+			if got.PriceID != tc.wantPrice {
+				t.Errorf("price_id = %q, want %q", got.PriceID, tc.wantPrice)
+			}
+			if got.BuyButtonID != tc.wantButton {
+				t.Errorf("buy_button_id = %q, want %q", got.BuyButtonID, tc.wantButton)
+			}
+		})
+	}
+}
