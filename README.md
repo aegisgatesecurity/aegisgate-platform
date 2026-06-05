@@ -41,7 +41,7 @@ AegisGate fills these gaps with a single unified platform.
 
 ---
 
-## Five Pillars of AI Security
+## Six Pillars of AI Security (Trust Framework added in v3.2.0)
 
 ### 🌐 HTTP API Security
 
@@ -143,6 +143,63 @@ func main() {
 
 - **Coverage:** 90.1% | **Tests:** 164 | **Metrics:** 10 Prometheus counters
 
+### 🛡️ Trust Framework (v3.2.0) — _Professional+ tier_
+
+The newest pillar: continuous, per-agent cryptographic trust scoring
+with signed attestations. The Trust Framework gives security teams a
+real-time view of "is this agent behaving normally?" and "what was
+its score at the start vs end of this request?".
+
+| # | Capability | Description |
+|---|-----------|-------------|
+| 1 | **Per-Session Trust Score** | Every agent request gets a session; the score is a snapshot at start and live at end, with the delta exposed over HTTP |
+| 2 | **Cryptographic Identity** | ECDSA P-256 agent identity (already in `pkg/trust/identity/`); trust scores are bound to the verified identity |
+| 3 | **Behavior Multiplier** | Allowed vs denied vs anomalous events roll up into a 0.0–1.5 multiplier that scales the lifetime score |
+| 4 | **Compliance Multiplier** | Per-framework compliance checks (HIPAA, PCI, SOC 2, etc.) feed into the score |
+| 5 | **Anomaly Detection** | Standard-deviation-based anomaly detection on the baseline behavior (Phase 8 race fix in place) |
+| 6 | **Signed Attestations** | ECDSA-signed attestation records (`pkg/trust/attestation/`) — verify-able off-platform for audit |
+| 7 | **HTTP API** | `GET /api/v1/trust/score`, `GET /api/v1/trust/sessions`, `GET /api/v1/trust/attestations` for the customer portal |
+| 8 | **Opt-in Hooks** | Protocol packages embed `trust.Hooks` and call `CapabilityAllowed/Denied` at lifecycle points; zero-value Hooks are safe no-ops |
+
+**Endpoints (all under `/api/v1/trust/`):**
+
+```
+GET /health                          -> liveness (no auth)
+GET /score?agent=ID                  -> lifetime trust score
+GET /score?session=ID                -> session score + ScoreDelta
+GET /sessions?active=true&agent=ID   -> list sessions
+GET /sessions?id=ID                  -> single session detail
+GET /attestations?agent=ID&since=TS  -> filtered attestations
+GET /attestations/latest?agent=ID    -> most recent (verified) attestation
+```
+
+**Tier gate (locked decision Q3):** Professional+.
+
+**Auth (locked decision Q4):** License key via `pkg/license.LicenseMiddleware`.
+
+```go
+import "github.com/aegisgatesecurity/aegisgate-platform/pkg/trust"
+
+// Zero-value Hooks are safe no-ops; safe to embed unconditionally.
+hooks := &trust.Hooks{}
+
+// At request start:
+sessID := hooks.StartSession(ctx, "agent-1", map[string]string{
+    "source_ip": r.RemoteAddr,
+    "protocol":  "mcp",
+})
+
+// During processing:
+hooks.CapabilityAllowed(ctx, sessID, "tools/call", "read_file")
+
+// At request end:
+hooks.EndSession(ctx, sessID)
+```
+
+**Coverage:** 90.4% across `pkg/trust/` | **Tests:** 60+ across session/api/hooks
+
+---
+
 ## 🔐 Enterprise Authentication
 
 Production-grade SSO and access control — not stubs:
@@ -202,7 +259,7 @@ flowchart TB
         B[🤖 MCP Client]
         C[🤝 A2A Agent]
     end
-    subgraph "AegisGate Platform v3.1.1"
+    subgraph "AegisGate Platform v3.2.0"
         subgraph "Entry Points"
             D["🌐 HTTP Proxy\n:8080"]
             E["🔗 MCP Server\n:8081"]
@@ -220,6 +277,11 @@ flowchart TB
             M["🛡️ RBAC Engine"]
             N["🔑 Tool Authorization Matrix"]
             O["📜 License — ECDSA P-256"]
+        end
+        subgraph "Trust Framework (v3.2.0)"
+            TT["📊 Trust Score Engine"]
+            TA["📜 Attestation Signer/Verifier"]
+            TS["🪪 Per-Session Accumulator"]
         end
         subgraph "Compliance"
             P[ATLAS • NIST • OWASP]
@@ -242,13 +304,17 @@ flowchart TB
     D --> H & J & K
     E --> M & N & K
     F --> I & J & K
-    H --> P & Q
-    I --> M
+    H --> P & Q & TT
+    I --> M & TT
+    J --> TT
+    K --> TT
     L --> M
     O --> M
     M --> R
     K --> S
     T --> D & E & F
+    TA --> S
+    TS --> R
     P & Q --> U & V & W
 ```
 
