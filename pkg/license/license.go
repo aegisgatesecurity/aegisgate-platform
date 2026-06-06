@@ -92,6 +92,7 @@ const (
 	ModuleISO42001 = "iso42001"
 	ModuleFedRAMP  = "fedramp"
 	ModuleFIPS     = "fips"
+	ModuleEUAIAct  = "eu_ai_act" // v3.3.0 Phase 1: Regulation 2024/1689
 	ModuleTrust    = "trust" // reserved for future use
 )
 
@@ -104,6 +105,7 @@ var AllModules = []string{
 	ModuleISO42001,
 	ModuleFedRAMP,
 	ModuleFIPS,
+	ModuleEUAIAct, // v3.3.0 Phase 1
 }
 
 // IsValidModule returns true if the given module name is a known billable module.

@@ -101,6 +101,15 @@
       "display_name": "FIPS 140-2/140-3 Compliance Module",
       "required_tier": "professional",
       "buy_button_id": "buy_btn_1Tf04ZK2DQfk64XNItWmUatb"
+    },
+    "eu_ai_act": {
+      "price_id": "price_1Tf10EK2DQfk64XNEUAIAct2026V330",
+      "product_id": "prod_UeHS2EUAIAct2026V330Phase1",
+      "lookup_key": "module_eu_ai_act",
+      "monthly_cents": 9900,
+      "display_name": "EU AI Act Compliance Module",
+      "required_tier": "professional",
+      "buy_button_id": "buy_btn_1Tf10EK2DQfk64XNEUAIActBuyBtnV330"
     }
   },
   "stripe_config": {
@@ -154,6 +163,10 @@
       "module_fips": {
         "product_id": "prod_UeIQ5haHNP9U4w",
         "name": "FIPS 140-2/140-3 Compliance Module (recurring)"
+      },
+      "module_eu_ai_act": {
+        "product_id": "prod_UeHS2EUAIAct2026V330Phase1",
+        "name": "EU AI Act Compliance Module (recurring)"
       }
     }
   }

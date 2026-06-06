@@ -25,6 +25,7 @@ package compliance
 import (
 	"sync"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/eu-ai-act"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/hipaa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/pci"
 )
@@ -94,8 +95,17 @@ func RegisterBuiltinFrameworks() {
 		}()
 		pciMod := pci.NewPCIModule()
 		if pciMod != nil {
-			controls := pciMod.Controls()
-			registerFrameworkControls("pci", len(controls))
+		controls := pciMod.Controls()
+		registerFrameworkControls("pci", len(controls))
+		}
+		}()
+	// EU AI Act (v3.3.0 Phase 1).
+	func() {
+		defer func() { _ = recover() }()
+		mod := eu_ai_act.NewEUAIModule() // keep underscore alias name even though import path uses hyphens
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("eu_ai_act", len(controls))
 		}
 	}()
 }

@@ -451,7 +451,7 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 
 func TestModuleRequirementCount(t *testing.T) {
 	// 6 billable + 1 reserved (Trust) = 7.
-	if got := ModuleRequirementCount(); got != 7 {
-		t.Errorf("ModuleRequirementCount = %d, want 7", got)
+	if got := ModuleRequirementCount(); got != 8 {
+		t.Errorf("ModuleRequirementCount = %d, want 8 (6 v3.2.0 + EU AI Act v3.3.0 + Trust reserved)", got)
 	}
 }

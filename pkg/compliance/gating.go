@@ -85,6 +85,14 @@ var moduleRequirements = map[string]ModuleRequirement{
 		MinPriceCents:     29900, // $299/mo
 		HasImplementation: false, // no pkg/compliance/fips yet
 	},
+	// v3.3.0 Phase 1: EU AI Act (Regulation 2024/1689). 7th compliance framework.
+	license.ModuleEUAIAct: {
+		Module:            license.ModuleEUAIAct,
+		DisplayName:       "EU AI Act",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     9900, // $99/mo (founder-locked 2026-06-06)
+		HasImplementation: true, // pkg/compliance/eu-ai-act exists (v3.3.0)
+	},
 	// ModuleTrust is reserved for the future Trust Framework module
 	// (Phase 4). Not yet billable; listing it here as a placeholder so
 	// future code that checks for "trust" doesn't get a confusing "module
