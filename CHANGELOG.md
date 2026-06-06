@@ -1,6 +1,6 @@
-## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (In Progress)
+## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (Released)
 
-> **Status: In Progress** — v3.2.0 is the largest feature release in AegisGate's history. Phase 1 (module extraction), Phase 2 (Pro $249→$499), Phase 4 (Trust Framework, the 6th pillar), and Phase 3 (compliance scan engine) are complete. Phase 5 (website) is the only remaining work item. The v3.2.0 release tag will be created when Phase 5 ships.
+> **Status: Released.** v3.2.0 is the largest feature release in AegisGate's history. All 6 implementation phases (0, 1, 2, 3, 4, 5, 6, 7, 8) are complete. The `v3.2.0` GPG-signed annotated tag points at this commit; the GitHub Release is auto-built by `.github/workflows/release-v2.yml` (binary + cosign-signed container + SBOM attestation). The shields.io version badge on the website reads from the `v3.2.0` tag.
 
 ### Highlights
 
