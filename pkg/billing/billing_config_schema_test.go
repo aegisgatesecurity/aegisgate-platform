@@ -160,9 +160,9 @@ func TestBillingConfig_ModuleProducts(t *testing.T) {
 		t.Fatalf("Unmarshal: %v", err)
 	}
 
-	expected := []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips"}
+	expected := []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips", "eu_ai_act"}
 	if len(v.ModuleProducts) != len(expected) {
-		t.Errorf("got %d module_products, want %d (the 6 locked modules)", len(v.ModuleProducts), len(expected))
+		t.Errorf("got %d module_products, want %d (the 7 locked modules: 6 v3.2.0 + EU AI Act v3.3.0)", len(v.ModuleProducts), len(expected))
 	}
 	for _, key := range expected {
 		t.Run(key, func(t *testing.T) {
@@ -266,10 +266,12 @@ func TestBillingConfig_StarterConfig(t *testing.T) {
 	}
 }
 
-// TestBillingConfig_NoPlaceholders pins that all 6 module price_ids are
-// real (not PLACEHOLDER_*). As of 2026-06-05, all 6 modules have been
-// created in the Stripe dashboard and filled in here. This test ensures
-// no future commit accidentally re-introduces a placeholder.
+// TestBillingConfig_NoPlaceholders pins that all 7 module price_ids are
+// real (not PLACEHOLDER_*). As of 2026-06-05, all 6 v3.2.0 modules have
+// been created in the Stripe dashboard and filled in here. v3.3.0 Phase 1
+// added eu_ai_act as the 7th module (test mode IDs; flip to live when the
+// pentest + legal sign-off lands per V3.3.0-ROADMAP.md Phase 5).
+// This test ensures no future commit accidentally re-introduces a placeholder.
 func TestBillingConfig_NoPlaceholders(t *testing.T) {
 	data, err := os.ReadFile("billing-config.json")
 	if err != nil {
@@ -284,8 +286,8 @@ func TestBillingConfig_NoPlaceholders(t *testing.T) {
 	if err := json.Unmarshal(data, &v); err != nil {
 		t.Fatalf("Unmarshal: %v", err)
 	}
-	if len(v.ModuleProducts) != 6 {
-		t.Errorf("got %d module_products, want 6", len(v.ModuleProducts))
+	if len(v.ModuleProducts) != 7 {
+		t.Errorf("got %d module_products, want 7 (6 v3.2.0 + EU AI Act v3.3.0)", len(v.ModuleProducts))
 	}
 	for name, m := range v.ModuleProducts {
 		t.Run(name, func(t *testing.T) {

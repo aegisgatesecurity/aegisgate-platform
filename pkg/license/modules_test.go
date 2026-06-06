@@ -2,8 +2,9 @@
 // AegisGate Platform - Module ownership tests (v3.2.0 Phase 1)
 //
 // Tests the HasModule, Modules, and IsValidModule helpers added in v3.2.0.
-// These helpers enable the 6 billable compliance modules (hipaa, pci, soc2,
-// iso42001, fedramp, fips) to be checked on a LicensePayload.
+// These helpers enable the 7 billable compliance modules (hipaa, pci, soc2,
+// iso42001, fedramp, fips, eu_ai_act) to be checked on a LicensePayload.
+// v3.3.0 Phase 1 added eu_ai_act as the 7th billable module.
 
 package license
 
@@ -37,6 +38,7 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{ModuleISO42001, true},
 		{ModuleFedRAMP, true},
 		{ModuleFIPS, true},
+		{ModuleEUAIAct, true}, // v3.3.0 Phase 1
 		// Reserved for future use (Trust Framework Phase 4).
 		{ModuleTrust, true},
 		// Unknown module names.
@@ -60,13 +62,13 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 }
 
 func TestHasModule_AllValidModules_Owned(t *testing.T) {
-	// License owns all 6 modules.
+	// License owns all 7 modules.
 	result := makeValidResult([]string{
-		ModuleHIPAA, ModulePCI, ModuleSOC2, ModuleISO42001, ModuleFedRAMP, ModuleFIPS,
+		ModuleHIPAA, ModulePCI, ModuleSOC2, ModuleISO42001, ModuleFedRAMP, ModuleFIPS, ModuleEUAIAct,
 	})
 
 	modules := []string{
-		ModuleHIPAA, ModulePCI, ModuleSOC2, ModuleISO42001, ModuleFedRAMP, ModuleFIPS,
+		ModuleHIPAA, ModulePCI, ModuleSOC2, ModuleISO42001, ModuleFedRAMP, ModuleFIPS, ModuleEUAIAct,
 	}
 	for _, m := range modules {
 		t.Run(m, func(t *testing.T) {
@@ -187,9 +189,11 @@ func TestModules_EmptyAndInvalid(t *testing.T) {
 }
 
 func TestAllModules_Count(t *testing.T) {
-	// 6 billable modules + 1 reserved (Trust) = 7.
+	// 7 billable modules (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS, EU AI Act) + 1 reserved (Trust) = 8 total
+	// defined in license.go, but AllModules slice only contains the 7 billable ones (Trust is in IsValidModule
+	// only as a reserved future item, not in the billable list).
 	// This test pins the contract so accidental additions/removals are noticed.
-	if len(AllModules) != 6 {
-		t.Errorf("AllModules has %d items, want 6 (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS)", len(AllModules))
+	if len(AllModules) != 7 {
+		t.Errorf("AllModules has %d items, want 7 (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS, EU AI Act)", len(AllModules))
 	}
 }

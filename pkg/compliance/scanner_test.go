@@ -277,16 +277,17 @@ func TestScanner_Scan_ScanDurationSet(t *testing.T) {
 
 func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 	s := NewScanner(nil, nil)
-	rpt, _ := s.Scan(context.Background(), buildValidationResult(t, "professional", []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips"}))
-	// 7 billable (6 + reserved 'trust') + 3 free = 10 frameworks.
-	if len(rpt.Frameworks) != 10 {
-		t.Errorf("Frameworks count = %d, want 10", len(rpt.Frameworks))
+	rpt, _ := s.Scan(context.Background(), buildValidationResult(t, "professional", []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips", "eu_ai_act"}))
+	// 8 billable (7 + reserved 'trust') + 3 free = 11 frameworks (v3.3.0 added EU AI Act).
+	if len(rpt.Frameworks) != 11 {
+		t.Errorf("Frameworks count = %d, want 11", len(rpt.Frameworks))
 	}
-	// Verify the 6 billable modules are all there.
+	// Verify the 7 billable modules are all there (v3.3.0 added eu_ai_act).
 	expected := map[string]bool{
 		"hipaa": true, "pci": true, "soc2": true,
 		"iso42001": true, "fedramp": true, "fips": true,
-		"trust": true, // reserved
+		"eu_ai_act": true, // v3.3.0 Phase 1
+		"trust":   true, // reserved
 	}
 	for _, f := range rpt.Frameworks {
 		if f.Module != "" {
