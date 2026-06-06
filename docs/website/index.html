@@ -141,9 +141,40 @@
             margin: 20px 0;
             color: #999;
         }
+        .test-mode-banner {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-bottom: 3px solid #c05621;
+        }
+        .test-mode-banner code {
+            background: rgba(0,0,0,0.2);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            margin: 0 4px;
+        }
+        .new-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
+    <div class="test-mode-banner">
+        🟡 <strong>v3.3.0 Beta — Test Mode Active</strong> &nbsp;|&nbsp; Use Stripe test card <code>4242 4242 4242 4242</code> with any future expiry to simulate a purchase. <strong>No real money is charged.</strong> Live mode ships in v3.4.0.
+    </div>
     <header>
         <div class="container">
             <h1>🛡️ AegisGate Platform™</h1>
@@ -192,8 +223,8 @@
                     <p>One binary runs HTTP proxy (8080), MCP server (8081), and dashboard (8443). No separate deployments. No configuration drift.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>🔒 Free: MITRE ATLAS + NIST AI RMF</h3>
-                    <p>Core frameworks always free. HIPAA, PCI-DSS, SOC2, ISO modules available via <a href="https://aegisgatesecurity.io">aegisgatesecurity.io</a>.</p>
+                    <h3>🔒 10 Compliance Frameworks <span class="new-badge">v3.3.0</span></h3>
+                    <p><strong>Free:</strong> MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10 (Community tier, always on). <strong>Billable modules:</strong> HIPAA, PCI-DSS, SOC 2, ISO 42001, FedRAMP, FIPS 140-2/140-3, and <strong>EU AI Act (82 controls 🆕)</strong>. All gated via the Compliance Scan Engine.</p>
                 </div>
                 <div class="feature-card">
                     <h3>⚡ Lightning Performance</h3>
@@ -210,6 +241,38 @@
                 <div class="feature-card">
                     <h3>🏢 Production Ready</h3>
                     <p>97.7% test coverage. Docker + Kubernetes ready. Health checks. Graceful shutdown. 24/7 ready.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="features" style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
+        <div class="container">
+            <h2>🆕 v3.3.0: EU AI Act Compliance Module</h2>
+            <div style="max-width: 800px; margin: 0 auto; text-align: center; margin-bottom: 40px;">
+                <p style="font-size: 1.2rem; color: #4a5568;">
+                    AegisGate is the first AI security gateway with <strong>full EU AI Act (Regulation 2024/1689) coverage</strong>.
+                    <strong>82 controls</strong> across Articles 5, 9, 10, 11, 12, 13, 14, 15, 51-55. <strong>$99/mo, Professional+ tier.</strong>
+                </p>
+                <p style="font-size: 1rem; color: #718096; margin-top: 15px;">
+                    <a href="docs/compliance/eu-ai-act.md" style="color: #667eea;">📄 Customer 1-pager</a> &nbsp;|&nbsp;
+                    <a href="https://aegisgatesecurity.io/pricing" style="color: #667eea;">💳 See pricing</a> &nbsp;|&nbsp;
+                    <a href="https://github.com/aegisgatesecurity/aegisgate-platform" style="color: #667eea;">📦 View on GitHub</a>
+                </p>
+            </div>
+            <div class="feature-grid" style="margin-top: 20px;">
+                <div class="feature-card">
+                    <h3>8 Categories</h3>
+                    <p>Prohibited Practices, Risk Management, Data Governance, Technical Documentation, Record Keeping, Transparency, Human Oversight, Accuracy/Robustness/Cybersecurity, GPAI Models, plus 10 AegisGate AI extensions.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>9 of 82 Automated</h3>
+                    <p>Prohibited-practice pattern matching, prompt injection detection, data poisoning scanning, audit log integrity, human oversight markers, transparency disclosures. The remaining 73 are manual review items.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Compliance Scan Engine Integration</h3>
+                    <p>Pro + EU AI Act customers see the new framework alongside HIPAA, PCI, ISO 42001, FedRAMP, FIPS in every <code>/api/v1/compliance/scan</code> report. Real control counts (not 0 placeholders).</p>
                 </div>
             </div>
         </div>
