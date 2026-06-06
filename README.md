@@ -4,7 +4,7 @@
 
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
-![Version](https://img.shields.io/badge/Version-v3.1.1-blue?label=Version&logo=semver)
+![Version](https://img.shields.io/badge/Version-v3.2.0-blue?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
@@ -585,8 +585,9 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| **v3.1.1** | ✅ Current | **Tier rate limit drift fix** (Starter modeled, Dev/Pro corrected), Go 1.26.4 security bump, 100% test coverage on `pkg/tier` |
-| **v3.1.0** | ✅ Supported | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage, 5,484 tests |
+| **v3.2.0** | ✅ Current | **Compliance Modules** (HIPAA/PCI/SOC 2/ISO 42001/FedRAMP/FIPS add-on pricing, instant Stripe webhook activation), **Compliance Scan Engine** (`/api/v1/compliance/scan` + `/api/v1/compliance/report`), **Trust Framework — 5th pillar** (per-session Ed25519 attestations, `/api/v1/trust/score`, Professional+ tier), **Pro tier repriced** $249→$499/mo, 9,200+ tests |
+| **v3.1.1** | ✅ Supported | **Tier rate limit drift fix** (Starter modeled, Dev/Pro corrected), Go 1.26.4 security bump, 100% test coverage on `pkg/tier` |
+| **v3.1.0** | ⚠️ **DEPRECATED** | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage, 5,484 tests. End-of-life: **2026-09-30** (was 2027-06-27 prior to v3.2.0 supersession). Security backports only through EOL. |
 | **v3.0.0** | ✅ Supported | AI Response Scanning (4th pillar), 24,806 RPS peak |
 | **v2.0.x** | ⚠️ **DEPRECATED** | End-of-life: **2026-12-31**. No security backports. Upgrade to v3.x required. |
 | **v1.3.x** | ⚠️ Legacy | Community support only |
