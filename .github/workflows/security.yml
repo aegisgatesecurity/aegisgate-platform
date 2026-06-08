@@ -103,7 +103,7 @@ jobs:
         uses: actions/checkout@v6.0.3
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -124,7 +124,7 @@ jobs:
         run: docker build -t aegisgate-platform:scan .
 
       - name: Run Trivy image scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: 'aegisgate-platform:scan'
           format: 'sarif'
@@ -188,7 +188,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run TruffleHog OSS
-        uses: trufflesecurity/trufflehog@3.95.5
+        uses: trufflesecurity/trufflehog@v3.95.5
         if: github.event_name == 'pull_request'
         with:
           path: ./
