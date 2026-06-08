@@ -329,7 +329,8 @@ func (m *Middleware) unauthorized(w http.ResponseWriter, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("WWW-Authenticate", `Bearer, Token`)
 	w.WriteHeader(http.StatusUnauthorized)
-	fmt.Fprintf(w, `{"error":"unauthorized","message":"%s"}`, message)
+	//nolint:errcheck // encode errors after WriteHeader are typically client disconnects
+	_, _ = fmt.Fprintf(w, `{"error":"unauthorized","message":"%s"}`, message)
 }
 
 // GenerateToken creates a new JWT token for a user
@@ -393,7 +394,8 @@ func (m *Middleware) AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 		if tier != "enterprise" && tier != "professional" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, `{"error":"forbidden","message":"admin access required"}`)
+			//nolint:errcheck // encode errors after WriteHeader are typically client disconnects
+			_, _ = fmt.Fprintf(w, `{"error":"forbidden","message":"admin access required"}`)
 			return
 		}
 		next(w, r)
@@ -412,7 +414,8 @@ func (m *Middleware) RequireRole(required rbac.UserRole, next http.HandlerFunc) 
 		if !userRole.AtLeast(required) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, `{"error":"forbidden","message":"role %s required, got %s", "required": "%s", "current": "%s"}`, required, userRole, required, userRole)
+			//nolint:errcheck // encode errors after WriteHeader are typically client disconnects
+			_, _ = fmt.Fprintf(w, `{"error":"forbidden","message":"role %s required, got %s", "required": "%s", "current": "%s"}`, required, userRole, required, userRole)
 			return
 		}
 		next(w, r)
@@ -458,7 +461,8 @@ func (m *Middleware) RequirePermission(perm rbac.Permission, next http.HandlerFu
 		if !hasPerm {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, `{"error":"forbidden","message":"permission %s required"}`, perm.String())
+			//nolint:errcheck // encode errors after WriteHeader are typically client disconnects
+			_, _ = fmt.Fprintf(w, `{"error":"forbidden","message":"permission %s required"}`, perm.String())
 			return
 		}
 		next(w, r)

@@ -18,15 +18,6 @@
 //
 // Protocol: https://agentclientprotocol.com/
 //
-// Embedded Schema: https://agentclientprotocol.com/schema/schema.json
-//
 // =========================================================================
 
 package acp
-
-import _ "embed"
-
-// acpSchema contains the official ACP protocol JSON schema for validation
-//
-//go:embed schema.json
-var acpSchema []byte
