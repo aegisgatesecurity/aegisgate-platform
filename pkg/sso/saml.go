@@ -342,10 +342,11 @@ func (p *SAMLProvider) LoadIDPMetadata(metadataURL string, metadataBytes []byte)
 		// Parse certificates
 		for _, kd := range entityDescriptor.IDPSSODescriptor.KeyDescriptors {
 			if cert, err := parseCertificate(kd.KeyInfo.X509Data.X509Certificate); err == nil {
-				if kd.Use == "signing" {
+				switch kd.Use {
+				case "signing":
 					p.samlConfig.IDPSSODescriptor.SigningCertificates = append(
 						p.samlConfig.IDPSSODescriptor.SigningCertificates, cert)
-				} else if kd.Use == "encryption" {
+				case "encryption":
 					p.samlConfig.IDPSSODescriptor.EncryptionCertificates = append(
 						p.samlConfig.IDPSSODescriptor.EncryptionCertificates, cert)
 				}

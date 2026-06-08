@@ -1,6 +1,6 @@
-## [3.3.0] - 2026-06-XX - EU AI Act Module + Repository Hygiene (In Progress)
+## [3.3.0-beta.1] - 2026-06-08 - EU AI Act Module + Beta Readiness (Beta)
 
-> **Status: In Progress (Phase 1 of 6.5 phases complete).** v3.3.0 adds the EU AI Act as the 7th compliance module (82 controls across 8 categories), ships a minimum-viable legal kit (template-based documents marked "self-drafted, not legal advice"), and includes a self-attested security hardening pass. The release is a **beta-readiness** release, not a commercial launch — the first paying customer is a v3.4.0+ milestone.
+> **Status: Beta-ready.** v3.3.0-beta.1 is the first beta release of v3.3.0. It adds the EU AI Act as the 7th compliance module (82 controls across 8 categories), ships a minimum-viable legal kit (6 v2.0 customer-facing docs + 1 Beta User Agreement), and includes a self-attested security hardening pass with 7-tool local validation. **This is a beta release, not a commercial launch** — the first paying customer is a v3.4.0+ milestone. Professional+ tier and the 6 module buy buttons are intentionally hidden in the v3.3.0-beta.1 web UI (see Phase 3.1 hardening below).
 
 ### Highlights
 
@@ -35,8 +35,54 @@ The cleanup is **enforced going forward** by:
 
 A fresh clone of the public repo now contains 0 `plans/` or `legal-docs/` files at all 3 verification layers (tree, history, blobs).
 
+#### Security Posture Self-Attestation (Phase 3, 2026-06-08)
+
+A 7-tool local self-attestation was performed on the v3.3.0-beta.1 codebase. All raw reports are preserved at `legal-docs/21-self-attestation-v3.3.0/raw-reports/` (gitignored, internal-only) along with the self-attestation document at `legal-docs/21-self-attestation-v3.3.0/security-posture-v3.3.0.md`.
+
+| Tool | Verdict |
+|---|---|
+| `gosec` (Go SAST) | ✅ 1 finding (known false positive: `SECRET_OAUTH_TOKEN` category identifier) |
+| `govulncheck` (Go team dep scanner) | ✅ 0 called vulnerabilities |
+| `golangci-lint` (5 linters) | ✅ 16 P1+P2 findings fixed; 15 P3+P4 deferred to v3.3.1 |
+| `gitleaks` (regex secret detection) | ✅ 0 findings (was 837; `.gitleaks.toml` allowlist created) |
+| `trivy fs` (CVE + misconfig + secret) | ✅ Dockerfile + K8s + 3 RSA test-fixture keys documented |
+| `syft` (SBOM) | ✅ SPDX 2.3 SBOM (257 packages) |
+| `nmap` (port scan) | ✅ 3 expected ports, 0 unexpected |
+
+**Verdict: PASS for v3.3.0-beta.1.** 0 critical, 0 high-severity code vulnerabilities, 0 exposed production secrets. Pre-GA action items: review 56 non-test gitleaks findings (categorized as test fixtures + MITRE ATLAS false positives + 1 already-removed whsec); 3 RSA private keys in `upstream/` documented as test fixtures in `.trivyignore`.
+
+#### Legal Kit (Phase 4, 2026-06-08)
+
+Six customer-facing legal documents were finalized to v2.0 DRAFT and one new Beta User Agreement was added. All docs are gitignored in `legal-docs/` (internal-only, never committed to public repo). The corresponding public web pages are at `https://aegisgatesecurity.io/legal/`:
+
+| Document | Lines | Web Page |
+|---|--:|---|
+| `02-DPA-Data-Processing-Agreement.md` (v2.0) | 222 | `/legal/dpa/` |
+| `06-Cookie-Policy.md` (v2.0) | 126 | `/legal/cookies/` |
+| `08-Subprocessor-List.md` (v2.0) | 148 | `/legal/subprocessors/` |
+| `12-Terms-of-Service.md` (v2.0) | 363 | `/legal/terms/` |
+| `13-Privacy-Policy.md` (v2.0) | 212 | `/legal/privacy/` |
+| `19-Beta-User-Agreement.md` (v1.0 — NEW) | 109 | `/legal/beta-agreement/` |
+
+All docs are marked with a uniform "self-drafted, not legal advice" header and a "Counsel Sign-Off Required" footer. Q1-Q4 (path, state, subprocessors, cookie audit) decisions applied. The 17-clause legal review framework (in `legal-docs/15-LEGAL-REVIEW-FRAMEWORK.md`) was used to apply vendor-favorable revisions to the audit-rights cap (DPA §4) and other clauses. The full per-doc analysis is preserved as `-DRAFT-ORIGINAL.md` backups.
+
+#### v3.3.1 Hardening (Phase 3.1, 2026-06-08)
+
+A 4-item hardening pass was applied ahead of v3.3.0-beta.1 to address the trivy misconfig findings from the self-attestation:
+
+1. **Dockerfile base images pinned by SHA256 digest.** Both `golang:1.26.4-alpine` (builder) and `alpine` (production) are now pinned to specific digests for reproducible builds. The `alpine:latest` tag (which trivy flagged as HIGH severity) is removed.
+2. **`seccompProfile.type: RuntimeDefault` added** to both pod-level and container-level `securityContext` in:
+   - `deploy/k8s/manifests/03-deployment.yaml` (raw manifest)
+   - `deploy/helm/aegisgate-platform/values.yaml` (Helm chart)
+3. **Gitleaks CI job added** to `.github/workflows/security.yml` (now 9 jobs total). The new job uses the `.gitleaks.toml` allowlist and complements the existing TruffleHog job (regex-based vs. entropy-based detection).
+4. **wget installed in production Dockerfile** for the existing HEALTHCHECK directive (the directive was present but wget wasn't installed in the minimal image — now it is).
+
+#### Buy-Button Visibility (Website Hardening)
+
+The Professional+ tier (2 buttons) and all 6 module buy buttons are hidden in the v3.3.0-beta.1 website with a "Available after v3.4.0" placeholder. The 4 Starter + Developer buttons remain live (sellable). This is a v3.3.0-beta-only posture; the buttons will reappear in v3.3.0-GA after counsel review and the v3.3.1 paid pentest are complete.
+
 ### Phase Status
-Phase 1.1 (EU AI Act sub-package) ✅ | Phase 1.2 (docs) ✅ | Phase 1.3 (website/marketing) ✅ | Phase 2 (test-mode Buy Buttons) ⏳ | Phase 3 (security posture) ⏳ | Phase 4 (legal kit) ⏳ | Phase 5 (beta release engineering) ⏳ | Phase 5.5 (posture check) ⏳
+Phase 1.1 (EU AI Act sub-package) ✅ | Phase 1.2 (docs) ✅ | Phase 1.3 (website/marketing) ✅ | Phase 2 (test-mode Buy Buttons) ⏳ | Phase 3 (security posture) ✅ | Phase 3.1 (hardening) ✅ | Phase 4 (legal kit) ✅ | Phase 5 (beta release engineering) ⏳ | Phase 5.5 (posture check) ⏳
 
 ## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (Released)
 

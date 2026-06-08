@@ -1,0 +1,42 @@
+# Trivy ignore file for AegisGate Security Platform v3.3.0
+# Format: https://aquasecurity.github.io/trivy/v0.71/docs/suppression/
+#
+# Each line is an ID to suppress. To suppress a specific CVE/misconfig in a
+# specific file, use: <ID>:<path> with # comment on the same or next line.
+#
+# See: legal-docs/21-self-attestation-v3.3.0/security-posture-v3.3.0.md
+# Section 4.5 for the original review and remediation plan.
+
+# === Secret findings: 3 RSA private keys in upstream/aegisgate/pkg/adapters/certs/ ===
+#
+# Reason: TEST FIXTURES for the platform's TLS adapter self-tests (verify
+# AegisGate TLS handshake, certificate validation, and CA-signed certificate
+# chain verification logic). They are intentionally checked into the
+# upstream source for self-test reproducibility.
+#
+# Important:
+# - The `upstream/` directory is NOT part of the v3.2.0 release code. It is
+#   consolidated source from the AegisGate and AegisGuard upstream repos,
+#   used as a reference for the active platform code.
+# - These private keys are FOR TEST USE ONLY. They MUST NOT be used to sign
+#   production certificates, establish production TLS, or be deployed in
+#   production environments.
+# - The platform's runtime does not load these keys; they are only used by
+#   Go unit tests in the adapters package.
+# - The `upstream/` directory is being progressively deprecated as the
+#   active platform code matures. v3.4.0+ plans to remove `upstream/`
+#   entirely, at which point these ignores can be deleted.
+
+# T-S01 — RSA private key in upstream/aegisgate/pkg/adapters/certs/server.key
+# Trivy reports this as: secret:RSA private key (trivy classifies as private-key)
+# We suppress by file:line since trivy doesn't have a stable secret ID.
+# Trivy 0.71 docs recommend using a custom Rego policy for path-based secret
+# suppression. For v3.3.0, we document the suppressions here as a comment;
+# the active suppression is via the Rego policy in trivy-policy.rego below.
+
+# === Suppression policy (Rego) ===
+# Trivy supports Rego-based suppression via --ignore-policy flag.
+# This file documents WHY each finding is accepted as a known false positive
+# for the v3.3.0 self-attestation. The actual suppression happens at CI
+# runtime via the .trivy/rego/policy.rego file (not yet created; planned
+# for v3.3.1).

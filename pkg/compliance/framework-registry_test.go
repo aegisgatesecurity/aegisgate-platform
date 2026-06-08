@@ -74,9 +74,8 @@ func TestNewRegistryWithTierManager(t *testing.T) {
 }
 
 func TestRegistry_Register(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 
 	// Register framework in tier manager first
 	tm.RegisterFramework(FrameworkTier{
@@ -113,9 +112,8 @@ func TestRegistry_Register(t *testing.T) {
 }
 
 func TestRegistry_Unregister(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
@@ -140,9 +138,8 @@ func TestRegistry_Unregister(t *testing.T) {
 }
 
 func TestRegistry_Get(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
@@ -168,9 +165,8 @@ func TestRegistry_Get(t *testing.T) {
 }
 
 func TestRegistry_GetRegisteredFramework(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
@@ -198,9 +194,8 @@ func TestRegistry_GetRegisteredFramework(t *testing.T) {
 }
 
 func TestRegistry_ListAll(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 
 	// Empty registry
 	frameworks := registry.ListAll()
@@ -221,9 +216,8 @@ func TestRegistry_ListAll(t *testing.T) {
 }
 
 func TestRegistry_ListAllWithMetadata(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
@@ -237,9 +231,8 @@ func TestRegistry_ListAllWithMetadata(t *testing.T) {
 }
 
 func TestRegistry_Count(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 
 	if registry.Count() != 0 {
 		t.Error("Count() should be 0 for empty registry")
@@ -256,9 +249,8 @@ func TestRegistry_Count(t *testing.T) {
 }
 
 func TestRegistry_CountByTier(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
@@ -287,9 +279,8 @@ func TestRegistry_SetTier_GetTier(t *testing.T) {
 }
 
 func TestRegistry_Clear(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
@@ -301,9 +292,8 @@ func TestRegistry_Clear(t *testing.T) {
 }
 
 func TestRegistry_GenerateReport(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
@@ -324,9 +314,8 @@ func TestRegistry_GenerateReport(t *testing.T) {
 }
 
 func TestRegistry_EnableDisableFramework(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: TierCommunity})
 	_ = registry.Register(newMockFramework("test"))
 
@@ -350,9 +339,8 @@ func TestRegistry_EnableDisableFramework(t *testing.T) {
 }
 
 func TestRegistry_GetEnabledFrameworks(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	fw := newMockFramework("test")
 	fw.enabled = true
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: TierCommunity})
@@ -368,9 +356,8 @@ func TestRegistry_GetEnabledFrameworks(t *testing.T) {
 }
 
 func TestRegistry_GetDisabledFrameworks(t *testing.T) {
-	registry := NewRegistry()
 	tm := NewTierManager()
-	registry = NewRegistryWithTierManager(tm)
+	registry := NewRegistryWithTierManager(tm)
 	fw := newMockFramework("test")
 	fw.enabled = false
 	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: TierCommunity})

@@ -39,6 +39,12 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        seccompProfile:
+          # v3.3.1 hardening: use the container runtime's default seccomp
+          # profile (which is the secure default for most Linux distros and
+          # matches Docker's default profile). Was previously unset, which
+          # meant containers ran in "unconfined" mode (no syscall filtering).
+          type: RuntimeDefault
       containers:
         - name: aegisgate-platform
           image: ghcr.io/aegisgatesecurity/aegisgate-platform:1.3.4
@@ -90,6 +96,11 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            # v3.3.1 hardening: seccompProfile at the container level (defense in
+            # depth — the pod-level profile above is the primary, this is a backup
+            # for clusters that don't propagate pod-level profiles to containers).
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
