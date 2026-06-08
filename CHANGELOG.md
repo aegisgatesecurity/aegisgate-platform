@@ -1,3 +1,43 @@
+## [3.3.0] - 2026-06-XX - EU AI Act Module + Repository Hygiene (In Progress)
+
+> **Status: In Progress (Phase 1 of 6.5 phases complete).** v3.3.0 adds the EU AI Act as the 7th compliance module (82 controls across 8 categories), ships a minimum-viable legal kit (template-based documents marked "self-drafted, not legal advice"), and includes a self-attested security hardening pass. The release is a **beta-readiness** release, not a commercial launch — the first paying customer is a v3.4.0+ milestone.
+
+### Highlights
+
+#### EU AI Act Compliance Module (Phase 1.1, 2026-06-06)
+
+The 7th compliance module adds 82 controls across 8 categories of the EU AI Act. The sub-package is at `pkg/compliance/eu-ai-act/` and is gated by the existing license + module framework. Customers can enable EU AI Act reporting on Professional+ tier with a single Stripe checkout click, following the same instant-activation pattern as the existing 6 modules.
+
+| Category | Controls |
+|---|---|
+| Article 5 (Prohibited Practices) | 8 |
+| Article 9 (Risk Management) | 10 |
+| Article 10 (Data Governance) | 8 |
+| Articles 11+12 (Technical Docs + Logging) | 10 |
+| Articles 13+14 (Transparency + Human Oversight) | 14 |
+| Article 15 (Accuracy/Robustness/Cyber) | 12 |
+| Articles 51-55 (Post-Market Monitoring) | 10 |
+| AI-* (Foundation Model Controls) | 10 |
+| **Total** | **82** |
+
+The customer-facing documentation is at `docs/compliance/eu-ai-act.md` (1-page overview) and the per-control mapping is internal to the AegisGate Security team.
+
+#### Repository hygiene (2026-06-07)
+
+The public repo's history was rewritten to remove 22 internal-only files (1 `plans/` file in the current tree plus 21 in orphan history) that were reachable via `git log --all --reflog`. None of these files belong in a public open-source repo — the `plans/` files contained AegisGate Security LLC's commercial strategy, and the `legal-docs/` files contained draft legal documents.
+
+The cleanup is **enforced going forward** by:
+- A 12-line policy header in `.gitignore` explaining the rationale and a hard `# NEVER \`git add -f\`` directive
+- A new committed `.githooks/pre-commit` script that blocks any commit staging files under `plans/`, `legal-docs/`, or any internal wildcard pattern
+- `core.hooksPath = .githooks` set in the local repo config (defense in depth — even if a future contributor reverts the hook, `.gitignore` still blocks the file)
+- `git filter-repo` rewriting the history to remove all 22 leaked files and their blobs
+- The `v3.2.0` GPG-signed tag re-signed at the new SHA (release commit content is byte-identical to the original; shields.io, GitHub Releases, and container tags all continue to work)
+
+A fresh clone of the public repo now contains 0 `plans/` or `legal-docs/` files at all 3 verification layers (tree, history, blobs).
+
+### Phase Status
+Phase 1.1 (EU AI Act sub-package) ✅ | Phase 1.2 (docs) ✅ | Phase 1.3 (website/marketing) ✅ | Phase 2 (test-mode Buy Buttons) ⏳ | Phase 3 (security posture) ⏳ | Phase 4 (legal kit) ⏳ | Phase 5 (beta release engineering) ⏳ | Phase 5.5 (posture check) ⏳
+
 ## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (Released)
 
 > **Status: Released.** v3.2.0 is the largest feature release in AegisGate's history. All 6 implementation phases (0, 1, 2, 3, 4, 5, 6, 7, 8) are complete. The `v3.2.0` GPG-signed annotated tag points at this commit; the GitHub Release is auto-built by `.github/workflows/release-v2.yml` (binary + cosign-signed container + SBOM attestation). The shields.io version badge on the website reads from the `v3.2.0` tag.
