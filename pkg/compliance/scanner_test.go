@@ -287,7 +287,7 @@ func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 		"hipaa": true, "pci": true, "soc2": true,
 		"iso42001": true, "fedramp": true, "fips": true,
 		"eu_ai_act": true, // v3.3.0 Phase 1
-		"trust":   true, // reserved
+		"trust":     true, // reserved
 	}
 	for _, f := range rpt.Frameworks {
 		if f.Module != "" {
