@@ -354,8 +354,10 @@ func isLikelySessionID(value string, ts TokenStructure) bool {
 // isUpperAlphaNumeric checks if all chars are uppercase letters or digits.
 func isUpperAlphaNumeric(value string) bool {
 	for _, r := range value {
-		if !((r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')) {
-			return false
+		if r < 'A' || r > 'Z' {
+			if r < '0' || r > '9' {
+				return false
+			}
 		}
 	}
 	return true

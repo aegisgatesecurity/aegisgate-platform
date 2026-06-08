@@ -177,9 +177,9 @@ func (sd *RFC5424StructuredData) Build() string {
 	}
 
 	var b bytes.Buffer
-	b.WriteString(fmt.Sprintf("[%s ", sd.ID))
+	fmt.Fprintf(&b, "[%s ", sd.ID)
 	for i, p := range sd.Params {
-		b.WriteString(fmt.Sprintf("%s=\"%s\"", p.Name, escapeSDParam(p.Value)))
+		fmt.Fprintf(&b, "%s=\"%s\"", p.Name, escapeSDParam(p.Value))
 		if i < len(sd.Params)-1 {
 			b.WriteString(" ")
 		}
@@ -271,10 +271,10 @@ func (m *RFC5424Message) Build() string {
 	var b bytes.Buffer
 
 	// PRI - priority value
-	b.WriteString(fmt.Sprintf("<%d>", m.Priority))
+	fmt.Fprintf(&b, "<%d>", m.Priority)
 
 	// VERSION
-	b.WriteString(fmt.Sprintf("%d ", m.Version))
+	fmt.Fprintf(&b, "%d ", m.Version)
 
 	// TIMESTAMP - RFC3339 or NILVALUE
 	if m.Timestamp.IsZero() {

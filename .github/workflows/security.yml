@@ -189,6 +189,29 @@ jobs:
           name: trufflehog-results
           path: trufflehog-results.json
 
+  # Job 4.5: Gitleaks (lightweight secret detection, complementary to TruffleHog)
+  # Gitleaks runs regex-based secret detection with the .gitleaks.toml allowlist
+  # (the .gitleaks.toml allowlists known false positives like sk_test_placeholder,
+  # MITRE ATLAS technique names, the pk_live_ publishable key, and the test JWT
+  # in cmd/test-email/main.go). TruffleHog in the next job runs entropy-based
+  # detection with --only-verified. The two tools together give comprehensive
+  # coverage: gitleaks catches regex patterns fast, TruffleHog catches
+  # high-entropy secrets that gitleaks misses.
+  gitleaks:
+    name: Gitleaks - Regex Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # full history for secret detection
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # Job 5: Dependency Review
   dependency-review:
     name: Dependency Review
@@ -311,7 +334,7 @@ jobs:
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [govulncheck, gosec, trivy, trufflehog, standard-tools]
+    needs: [govulncheck, gosec, trivy, gitleaks, trufflehog, standard-tools]
     if: always()
     steps:
       - name: Generate Security Report
@@ -323,5 +346,7 @@ jobs:
           echo "| govulncheck | ${{ needs.govulncheck.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Gosec | ${{ needs.gosec.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gitleaks | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| TruffleHog | ${{ needs.trufflehog.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Standard Tools | ${{ needs.standard-tools.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM | ${{ needs.sbom.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY

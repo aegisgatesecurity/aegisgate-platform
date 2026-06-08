@@ -103,9 +103,10 @@ func (e *DefaultEnforcer) evaluateContract(ctx context.Context, contract *Capabi
 	if !contract.CanVerify() {
 		decision := DecisionExpired
 		reason := "contract is not active"
-		if contract.Status == ContractStatusSuspended {
+		switch contract.Status {
+		case ContractStatusSuspended:
 			reason = "contract is suspended"
-		} else if contract.Status == ContractStatusRevoked {
+		case ContractStatusRevoked:
 			reason = "contract is revoked"
 		}
 		return &EnforcementResult{Decision: decision, Reason: reason, Contract: contract}, nil

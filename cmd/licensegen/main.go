@@ -19,6 +19,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -220,7 +221,20 @@ func verifyKeyPair(privateKey *ecdsa.PrivateKey) error {
 		return fmt.Errorf("get embedded public key: %w", err)
 	}
 
-	if privateKey.PublicKey.X.Cmp(pubKey.X) != 0 || privateKey.PublicKey.Y.Cmp(pubKey.Y) != 0 {
+	// Compare via PKIX-marshaled bytes. Direct comparison of PublicKey.X and
+	// PublicKey.Y via big.Int.Cmp is deprecated as of Go 1.26 (SA1019) because
+	// the raw-coordinate API can produce invalid keys and bypasses internal
+	// optimizations. MarshalPKIXPublicKey is the recommended path for
+	// key-equivalence checks. See: https://pkg.go.dev/crypto/x509#MarshalPKIXPublicKey
+	privBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshal private public key: %w", err)
+	}
+	pubBytes, err := x509.MarshalPKIXPublicKey(pubKey)
+	if err != nil {
+		return fmt.Errorf("marshal embedded public key: %w", err)
+	}
+	if subtle.ConstantTimeCompare(privBytes, pubBytes) != 1 {
 		return fmt.Errorf("private key does not match embedded public key (key mismatch)")
 	}
 

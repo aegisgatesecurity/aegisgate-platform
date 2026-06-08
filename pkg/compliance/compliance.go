@@ -453,8 +453,8 @@ func (m *Manager) ExportFindings(format string) (string, error) {
 		sb.WriteString("Framework,Technique,Severity,Category,Description,Timestamp\n")
 		for _, r := range m.reportHistory {
 			for _, f := range r.Findings {
-				sb.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s\n",
-					f.Framework, f.Technique, f.Severity, f.Category, f.Description, f.Timestamp.Format(time.RFC3339)))
+				fmt.Fprintf(&sb, "%s,%s,%s,%s,%s,%s\n",
+					f.Framework, f.Technique, f.Severity, f.Category, f.Description, f.Timestamp.Format(time.RFC3339))
 			}
 		}
 		return sb.String(), nil

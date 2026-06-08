@@ -6,10 +6,12 @@
 package webhook
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -506,4 +508,128 @@ func makeWebhookRequest(body string, secret string) (*http.Request, *httptest.Re
 
 	w := httptest.NewRecorder()
 	return req, w
+}
+
+// ============================================================================
+// ToS Acceptance Audit Tests (v3.3.0 Phase 4)
+// ============================================================================
+
+// TestToSAcceptanceConstantsAreSet is a sanity check that the ToS version
+// and hash constants are populated. If these are empty, no audit line will
+// be useful — fail loudly so the deploy is blocked.
+func TestToSAcceptanceConstantsAreSet(t *testing.T) {
+	if ToSAcceptanceVersion == "" {
+		t.Error("ToSAcceptanceVersion is empty; audit trail will be missing the version identifier")
+	}
+	if ToSAcceptanceHash == "" {
+		t.Error("ToSAcceptanceHash is empty; audit trail will be missing the document hash")
+	}
+	if len(ToSAcceptanceHash) != 64 {
+		t.Errorf("ToSAcceptanceHash is %d chars, want 64 (SHA-256 hex length)", len(ToSAcceptanceHash))
+	}
+}
+
+// TestToSAcceptanceLoggedOnPaidCheckout verifies that a successful
+// checkout.session.completed event records a "ToS acceptance recorded"
+// audit line containing the customer email, session ID, ToS version,
+// and ToS hash. This is the durable record that the customer agreed
+// to the published Terms of Service at the time of purchase.
+func TestToSAcceptanceLoggedOnPaidCheckout(t *testing.T) {
+	server := NewWebhookServer("8080")
+	server.licenseGen = NewMockLicenseGenerator()
+	server.emailService = NewMockEmailService()
+
+	// Capture logger output to a buffer so the test can assert on it.
+	var logBuf bytes.Buffer
+	server.logger = log.New(&logBuf, "", 0)
+
+	session := CheckoutSession{
+		ID:            "cs_test_tos_audit",
+		CustomerEmail: "buyer@example.com",
+		Customer:      "cus_test_tos",
+		PaymentStatus: "paid",
+		Status:        "complete",
+		AmountTotal:   2900, // starter monthly
+		Metadata:      map[string]string{"tier": "starter"},
+	}
+
+	data, _ := json.Marshal(session)
+	event := WebhookPayload{
+		ID:      "evt_tos_audit",
+		Type:    "checkout.session.completed",
+		Created: 1234567890,
+	}
+	event.Data.Object = data
+
+	eventData, _ := json.Marshal(event)
+	body := string(eventData)
+	sig := createTestSignature([]byte(body), "")
+
+	req := httptest.NewRequest("POST", "/webhook/stripe", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Stripe-Signature", sig)
+	w := httptest.NewRecorder()
+
+	server.handleWebhook(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	logs := logBuf.String()
+
+	// 1) The early "ToS acceptance recorded" line must be present.
+	expectedVersionLine := "ToS acceptance recorded: session=" + session.ID +
+		" email=" + session.CustomerEmail +
+		" tos_version=" + ToSAcceptanceVersion +
+		" tos_hash=" + ToSAcceptanceHash
+	if !strings.Contains(logs, expectedVersionLine) {
+		t.Errorf("expected log line not found:\n  want: %s\n  got logs:\n%s", expectedVersionLine, logs)
+	}
+
+	// 2) The post-license "Generated license" line must include the ToS version.
+	expectedLicenseLine := "tos_version: " + ToSAcceptanceVersion
+	if !strings.Contains(logs, expectedLicenseLine) {
+		t.Errorf("expected ToS version in 'Generated license' log, want substring %q\ngot logs:\n%s", expectedLicenseLine, logs)
+	}
+}
+
+// TestToSAcceptanceNotLoggedForUnpaidCheckout verifies that an unpaid
+// checkout.session.completed does NOT record a ToS acceptance. Only paid
+// checkouts constitute acceptance; the audit log should not be polluted
+// with abandonments and failed authorizations.
+func TestToSAcceptanceNotLoggedForUnpaidCheckout(t *testing.T) {
+	server := NewWebhookServer("8080")
+	server.licenseGen = NewMockLicenseGenerator()
+
+	var logBuf bytes.Buffer
+	server.logger = log.New(&logBuf, "", 0)
+
+	session := CheckoutSession{
+		ID:            "cs_test_tos_unpaid",
+		CustomerEmail: "unpaid@example.com",
+		PaymentStatus: "unpaid",
+		AmountTotal:   2900,
+	}
+
+	data, _ := json.Marshal(session)
+	event := WebhookPayload{
+		ID:   "evt_tos_unpaid",
+		Type: "checkout.session.completed",
+	}
+	event.Data.Object = data
+
+	eventData, _ := json.Marshal(event)
+	body := string(eventData)
+
+	req := httptest.NewRequest("POST", "/webhook/stripe", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleWebhook(w, req)
+
+	logs := logBuf.String()
+	if strings.Contains(logs, "ToS acceptance recorded") {
+		t.Errorf("ToS acceptance should NOT be recorded for unpaid checkout, but got:\n%s", logs)
+	}
 }
