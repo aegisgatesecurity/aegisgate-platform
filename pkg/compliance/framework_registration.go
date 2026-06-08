@@ -95,10 +95,10 @@ func RegisterBuiltinFrameworks() {
 		}()
 		pciMod := pci.NewPCIModule()
 		if pciMod != nil {
-		controls := pciMod.Controls()
-		registerFrameworkControls("pci", len(controls))
+			controls := pciMod.Controls()
+			registerFrameworkControls("pci", len(controls))
 		}
-		}()
+	}()
 	// EU AI Act (v3.3.0 Phase 1).
 	func() {
 		defer func() { _ = recover() }()

@@ -93,7 +93,7 @@ const (
 	ModuleFedRAMP  = "fedramp"
 	ModuleFIPS     = "fips"
 	ModuleEUAIAct  = "eu_ai_act" // v3.3.0 Phase 1: Regulation 2024/1689
-	ModuleTrust    = "trust" // reserved for future use
+	ModuleTrust    = "trust"     // reserved for future use
 )
 
 // AllModules is the canonical list of billable module names, in display order.
