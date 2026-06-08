@@ -290,7 +290,3 @@ func containsPattern(patterns []string, pattern string) bool {
 	}
 	return false
 }
-
-func formatString(format string, args ...interface{}) string {
-	return fmt.Sprintf(format, args...)
-}

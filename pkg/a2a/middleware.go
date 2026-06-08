@@ -322,7 +322,7 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	agentID, err := m.auth.Authenticate(r)
 	if err != nil {
 		// Determine specific error code for better developer experience
-		code := A2A_ERR_AUTH
+		var code string
 		if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
 			code = A2A_ERR_AUTH_NO_CERT
 		} else {

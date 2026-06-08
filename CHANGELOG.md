@@ -1,102 +1,152 @@
-## [3.3.0] - 2026-06-06 - EU AI Act Compliance Module + Beta Readiness 🆕
+## [3.3.0-beta.2] - 2026-06-08 - EU AI Act Module Integration Fix 🩹
 
-> **Status: Beta release.** v3.3.0 ships the EU AI Act compliance
-> module (7th framework) and prepares AegisGate for beta-readiness.
-> **All Buy Buttons are in Stripe test mode** — use card
-> `4242 4242 4242 4242` to simulate a purchase. Public commercial
-> launch (live mode) is deferred to v3.4.0+ pending pentest + legal
-> sign-off. See `plans/V3.3.0-ROADMAP.md` for the full scope and
-> the founder-locked $0 non-engineering budget that shaped this release.
+> **Status: Beta.2 hotfix.** v3.3.0-beta.1 was tagged on 2026-06-08, but a release-integrity review on the same day discovered that **5 commits implementing the EU AI Act work (Phases 1.1, 1.2, 1.3) had never been merged to `main`**. The v3.3.0-beta.1 tag pointed at a commit on `main` that did **not** contain the EU AI Act sub-package, the customer 1-pager, the marketing site update, or the gitignore enforcement. The CHANGELOG claimed the module was included; the code was not. **v3.3.0-beta.2 fixes this integrity gap by merging the missing work into `main` and re-tagging.**
 
-### Headline feature: EU AI Act compliance module
+This is a **code-content fix, not a security fix**. No CVE, no vulnerability, no leaked data. The missing work was always present on a feature branch (`fix/untrack-and-purge-leaked-plans`) and has now been merged. After this beta.2, the actual `pkg/compliance/eu-ai-act/` sub-package matches the v3.3.0-beta.1 CHANGELOG description.
 
-AegisGate becomes the first AI security gateway with full EU AI Act
-(Regulation 2024/1689) coverage out of the box.
+### What changed (vs. v3.3.0-beta.1)
 
-- **82 controls** across 8 categories (Articles 5, 9, 10, 11, 12, 13,
-  14, 15, 51-55 + 10 AegisGate AI extensions)
-- **9 of 82 controls automated** via AegisGate's existing detection
-  patterns (prohibited-practice matching, prompt injection, data
-  poisoning, audit log integrity, etc.)
-- **Professional+ tier required, $99/mo** (founder-locked 2026-06-06;
-  matches HIPAA/PCI convention)
+| Area | Beta.1 | Beta.2 |
+|---|---|---|
+| `pkg/compliance/eu-ai-act/` (82 controls) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `docs/compliance/eu-ai-act.md` (customer 1-pager) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `docs/compliance/eu-ai-act-mapping.md` (full mapping) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `content/pricing.md` / `content/tech.md` / `content/changelog.md` | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `docs/website/index.html` (EU AI Act section + test banner) | ❌ old version | ✅ **UPDATED** |
+| `.githooks/pre-commit` (plans/ + legal-docs/ guard rail) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `.gitignore` policy header (12 lines, no-force-add rule) | ❌ minimal | ✅ **EXPANDED** |
+| `gitleaks` CI job (licensed) | ✅ present (re-enabled today) | ✅ present (unchanged) |
+| 15 P3/P4 golangci-lint issues | ✅ fixed (commit `8b69aa2`) | ✅ fixed (unchanged) |
 
-**New sub-package:** `pkg/compliance/eu-ai-act/` (4 files, 1,582 LOC)
+### Highlights
 
-- `eu_ai_act.go` — `EUAIModule` struct, 9 `checkXxx` methods
-- `controls.go` — 82 `RegisterControl` calls (Articles 5/9/10/11/12/13/14/15/51-55 + AI extensions)
-- `evaluator.go` — `EvaluateEUAIAct` public API for the scan engine
-- `eu_ai_act_test.go` — 13 tests, 95%+ coverage
+#### Repository hygiene (2026-06-07 → 2026-06-08)
 
-**New framework registration:** `eu_ai_act` joins the 9 existing
-frameworks (HIPAA, PCI, SOC 2, ISO 42001, FedRAMP, FIPS, MITRE ATLAS,
-NIST AI RMF, OWASP LLM Top 10). The Compliance Scan Engine now
-returns 10 frameworks per `/api/v1/compliance/scan` call, with **real
-control counts** (was 0 placeholders for SOC 2, ISO, FedRAMP, FIPS;
-EU AI Act is the first non-HIPAA/PCI framework to ship with real
-counts).
+The fix/... branch's `.gitignore` policy header and `.githooks/pre-commit` script are now active on `main`. Any future attempt to `git add` a file under `plans/` or `legal-docs/` is blocked at the local hook level. This completes the **22-file history purge** started in v3.3.0-beta.1 (the purge itself happened on the v3.3.0-beta.1 commit `ffff4c1`; the enforcement tooling is now restored).
 
-**Modified files (8):**
+#### EU AI Act sub-package (Phase 1.1)
 
-- `pkg/compliance/framework_registration.go` — register eu_ai_act
-- `pkg/compliance/gating.go` — `ModuleEUAIAct` → Professional+, $99/mo
-- `pkg/compliance/gating_test.go` — count bump 7→8
-- `pkg/compliance/scanner_test.go` — expect 11 frameworks (was 10)
-- `pkg/license/license.go` — `ModuleEUAIAct` constant + `AllModules()`
-- `pkg/license/modules_test.go` — count bump 6→7
-- `pkg/tier/tier.go` — `FeatureEUAIActModule` (Professional)
-- `pkg/billing/billing-config.json` — module_eu_ai_act product
-- `pkg/billing/billing_config_schema_test.go` — expect 7 modules
+`pkg/compliance/eu-ai-act/` adds 82 `RegisterControl` calls across 8 categories, mirroring the HIPAA sub-package pattern. Nine controls have automated `CheckFunc` implementations (Art 5 prohibited practices, Art 9 risk management, Art 11 technical documentation, Art 12 automatic logging, Art 13 transparency, Art 14 human oversight, Art 15 accuracy/robustness, Art 15 data-poisoning mitigation, AI-001 prompt injection). The remaining 73 are manual review items, consistent with HIPAA's automated/manual mix. Gated by `ModuleEUAIAct` → `Professional+` tier, $99/mo, matching HIPAA/PCI pricing convention.
 
-### Beta readiness
+#### EU AI Act documentation (Phase 1.2)
 
-- All 7 module Buy Buttons + Pro + Enterprise are in **Stripe test mode**
-- Beta users can simulate purchases end-to-end with test card `4242 4242 4242 4242`
-- Webhook fires, license updates, module activates — all real, no money charged
-- Flip to **live mode** scheduled for v3.4.0+
+Two new files in `docs/compliance/`:
+- `eu-ai-act.md` (104 lines, customer 1-pager) — scope, tier requirement, pricing, 8-category coverage summary, Article-by-Article walkthrough, auditor evidence checklist
+- `eu-ai-act-mapping.md` (438 lines, internal mapping) — 82-control table with severity, Article reference, auto-check eligibility, Go check function name, and evidence type per row
 
-### Documentation
+#### Website/marketing update (Phase 1.3)
 
-- `docs/compliance/eu-ai-act.md` — customer 1-pager (104 lines)
-- `plans/EU-AI-ACT-CONTROL-MAPPING.md` — internal 82-control mapping (438 lines, the "we are experts" artifact)
-- `content/pricing.md` — pricing page with test mode banner
-- `content/tech.md` — updated framework list with control counts
-- `content/changelog.md` — marketing-facing changelog (this entry, sanitized)
-- `docs/website/index.html` — homepage updated with EU AI Act section + v3.3.0 callout
+`docs/website/index.html` updated with the v3.3.0 EU AI Act callout section (3 feature cards). `content/pricing.md`, `content/tech.md`, and `content/changelog.md` are the new source-of-truth files for the website regeneration. Buy buttons remain in their beta.1 state (4 live + 6 hidden) — no change to the visible website behavior.
 
 ### Verification
 
-| Check | Result |
-|-------|--------|
-| `go build ./...`        | ✅ all 50 packages build |
-| `go vet ./...`          | ✅ clean |
-| `go test ./pkg/...`     | ✅ 2,548+ tests pass, 0 failures |
-| New sub-package coverage | ✅ 95%+ (13 tests in `pkg/compliance/eu-ai-act/eu_ai_act_test.go`) |
-| CycloneDX SBOM generated | ✅ (CI release workflow) |
-| Trivy + Grype CVE scan   | ✅ 0 known CVEs |
+- ✅ `go build ./...` PASS
+- ✅ `go test ./pkg/...` PASS (all packages, 0 failures)
+- ✅ `golangci-lint run` PASS (0 issues, unchanged from beta.1's lint-fix commit `8b69aa2`)
+- ✅ Security workflow PASS (govulncheck, gosec, trivy, gitleaks, trufflehog, sbom — all green)
+- ✅ `git log --oneline` confirms 5 commits are now reachable from `main`
 
-### Known limitations (deferred to v3.4.0+)
+### Migration from v3.3.0-beta.1
 
-- **Paid external pentest** ($15-25K) — not yet commissioned
-- **Paid legal counsel review** ($5-10K) — not yet commissioned
-- **Public commercial launch** (live mode) — gated on pentest + legal
-- **SOC 2 Type II audit** — 6-12 month engagement, pre-Series-A
-- **HIPAA Business Associate Agreement (BAA)** — separate from DPA
-- **Public status page** (BetterStack or similar) — v4.x
+This is a **drop-in replacement**. No config changes, no API changes, no schema changes. To upgrade:
 
-### Upgrade notes
+```bash
+docker pull ghcr.io/aegisgatesecurity/aegisgate-platform:v3.3.0-beta.2
+```
 
-- **No breaking changes.** v3.3.0 is additive: existing customers
-  see no behavior change. The new EU AI Act module is a paid add-on
-  for Professional+ tier customers.
-- **New billing line item** in `pkg/billing/billing-config.json`:
-  `module_eu_ai_act` ($99/mo, test mode, Price ID `price_1Tf10e...`)
-- **New tier feature** in `pkg/tier/tier.go`: `FeatureEUAIActModule`
-  (gated to Professional+ via `RequiredTier` switch and `featureKeyMap`)
-- **New module constant** in `pkg/license/license.go`: `ModuleEUAIAct`
-  (added to `AllModules()` slice)
+If you deployed v3.3.0-beta.1 with the EU AI Act code expected to be present: that deployment was always incomplete; re-deploy with v3.3.0-beta.2 to get the actual module.
+
+### Still beta
+
+Like v3.3.0-beta.1, **this is a beta release, not a commercial launch**. The first paying customer remains a v3.4.0+ milestone. Counsel review (Phase 4 docs) and the v3.3.1 paid pentest are still pending. The Professional+ tier and 6 module buy buttons remain hidden in the website UI.
 
 ---
+
+## [3.3.0-beta.1] - 2026-06-08 - EU AI Act Module + Beta Readiness (Beta)
+
+> **Status: Beta-ready.** v3.3.0-beta.1 is the first beta release of v3.3.0. It adds the EU AI Act as the 7th compliance module (82 controls across 8 categories), ships a minimum-viable legal kit (6 v2.0 customer-facing docs + 1 Beta User Agreement), and includes a self-attested security hardening pass with 7-tool local validation. **This is a beta release, not a commercial launch** — the first paying customer is a v3.4.0+ milestone. Professional+ tier and the 6 module buy buttons are intentionally hidden in the v3.3.0-beta.1 web UI (see Phase 3.1 hardening below).
+
+### Highlights
+
+#### EU AI Act Compliance Module (Phase 1.1, 2026-06-06)
+
+The 7th compliance module adds 82 controls across 8 categories of the EU AI Act. The sub-package is at `pkg/compliance/eu-ai-act/` and is gated by the existing license + module framework. Customers can enable EU AI Act reporting on Professional+ tier with a single Stripe checkout click, following the same instant-activation pattern as the existing 6 modules.
+
+| Category | Controls |
+|---|---|
+| Article 5 (Prohibited Practices) | 8 |
+| Article 9 (Risk Management) | 10 |
+| Article 10 (Data Governance) | 8 |
+| Articles 11+12 (Technical Docs + Logging) | 10 |
+| Articles 13+14 (Transparency + Human Oversight) | 14 |
+| Article 15 (Accuracy/Robustness/Cyber) | 12 |
+| Articles 51-55 (Post-Market Monitoring) | 10 |
+| AI-* (Foundation Model Controls) | 10 |
+| **Total** | **82** |
+
+The customer-facing documentation is at `docs/compliance/eu-ai-act.md` (1-page overview) and the per-control mapping is internal to the AegisGate Security team.
+
+#### Repository hygiene (2026-06-07)
+
+The public repo's history was rewritten to remove 22 internal-only files (1 `plans/` file in the current tree plus 21 in orphan history) that were reachable via `git log --all --reflog`. None of these files belong in a public open-source repo — the `plans/` files contained AegisGate Security LLC's commercial strategy, and the `legal-docs/` files contained draft legal documents.
+
+The cleanup is **enforced going forward** by:
+- A 12-line policy header in `.gitignore` explaining the rationale and a hard `# NEVER \`git add -f\`` directive
+- A new committed `.githooks/pre-commit` script that blocks any commit staging files under `plans/`, `legal-docs/`, or any internal wildcard pattern
+- `core.hooksPath = .githooks` set in the local repo config (defense in depth — even if a future contributor reverts the hook, `.gitignore` still blocks the file)
+- `git filter-repo` rewriting the history to remove all 22 leaked files and their blobs
+- The `v3.2.0` GPG-signed tag re-signed at the new SHA (release commit content is byte-identical to the original; shields.io, GitHub Releases, and container tags all continue to work)
+
+A fresh clone of the public repo now contains 0 `plans/` or `legal-docs/` files at all 3 verification layers (tree, history, blobs).
+
+#### Security Posture Self-Attestation (Phase 3, 2026-06-08)
+
+A 7-tool local self-attestation was performed on the v3.3.0-beta.1 codebase. All raw reports are preserved at `legal-docs/21-self-attestation-v3.3.0/raw-reports/` (gitignored, internal-only) along with the self-attestation document at `legal-docs/21-self-attestation-v3.3.0/security-posture-v3.3.0.md`.
+
+| Tool | Verdict |
+|---|---|
+| `gosec` (Go SAST) | ✅ 1 finding (known false positive: `SECRET_OAUTH_TOKEN` category identifier) |
+| `govulncheck` (Go team dep scanner) | ✅ 0 called vulnerabilities |
+| `golangci-lint` (5 linters) | ✅ 16 P1+P2 findings fixed; 15 P3+P4 deferred to v3.3.1 |
+| `gitleaks` (regex secret detection) | ✅ 0 findings (was 837; `.gitleaks.toml` allowlist created) |
+| `trivy fs` (CVE + misconfig + secret) | ✅ Dockerfile + K8s + 3 RSA test-fixture keys documented |
+| `syft` (SBOM) | ✅ SPDX 2.3 SBOM (257 packages) |
+| `nmap` (port scan) | ✅ 3 expected ports, 0 unexpected |
+
+**Verdict: PASS for v3.3.0-beta.1.** 0 critical, 0 high-severity code vulnerabilities, 0 exposed production secrets. Pre-GA action items: review 56 non-test gitleaks findings (categorized as test fixtures + MITRE ATLAS false positives + 1 already-removed whsec); 3 RSA private keys in `upstream/` documented as test fixtures in `.trivyignore`.
+
+#### Legal Kit (Phase 4, 2026-06-08)
+
+Six customer-facing legal documents were finalized to v2.0 DRAFT and one new Beta User Agreement was added. All docs are gitignored in `legal-docs/` (internal-only, never committed to public repo). The corresponding public web pages are at `https://aegisgatesecurity.io/legal/`:
+
+| Document | Lines | Web Page |
+|---|--:|---|
+| `02-DPA-Data-Processing-Agreement.md` (v2.0) | 222 | `/legal/dpa/` |
+| `06-Cookie-Policy.md` (v2.0) | 126 | `/legal/cookies/` |
+| `08-Subprocessor-List.md` (v2.0) | 148 | `/legal/subprocessors/` |
+| `12-Terms-of-Service.md` (v2.0) | 363 | `/legal/terms/` |
+| `13-Privacy-Policy.md` (v2.0) | 212 | `/legal/privacy/` |
+| `19-Beta-User-Agreement.md` (v1.0 — NEW) | 109 | `/legal/beta-agreement/` |
+
+All docs are marked with a uniform "self-drafted, not legal advice" header and a "Counsel Sign-Off Required" footer. Q1-Q4 (path, state, subprocessors, cookie audit) decisions applied. The 17-clause legal review framework (in `legal-docs/15-LEGAL-REVIEW-FRAMEWORK.md`) was used to apply vendor-favorable revisions to the audit-rights cap (DPA §4) and other clauses. The full per-doc analysis is preserved as `-DRAFT-ORIGINAL.md` backups.
+
+#### v3.3.1 Hardening (Phase 3.1, 2026-06-08)
+
+A 4-item hardening pass was applied ahead of v3.3.0-beta.1 to address the trivy misconfig findings from the self-attestation:
+
+1. **Dockerfile base images pinned by SHA256 digest.** Both `golang:1.26.4-alpine` (builder) and `alpine` (production) are now pinned to specific digests for reproducible builds. The `alpine:latest` tag (which trivy flagged as HIGH severity) is removed.
+2. **`seccompProfile.type: RuntimeDefault` added** to both pod-level and container-level `securityContext` in:
+   - `deploy/k8s/manifests/03-deployment.yaml` (raw manifest)
+   - `deploy/helm/aegisgate-platform/values.yaml` (Helm chart)
+3. **Gitleaks CI job added** to `.github/workflows/security.yml` (now 9 jobs total). The new job uses the `.gitleaks.toml` allowlist and complements the existing TruffleHog job (regex-based vs. entropy-based detection).
+4. **wget installed in production Dockerfile** for the existing HEALTHCHECK directive (the directive was present but wget wasn't installed in the minimal image — now it is).
+
+#### Buy-Button Visibility (Website Hardening)
+
+The Professional+ tier (2 buttons) and all 6 module buy buttons are hidden in the v3.3.0-beta.1 website with a "Available after v3.4.0" placeholder. The 4 Starter + Developer buttons remain live (sellable). This is a v3.3.0-beta-only posture; the buttons will reappear in v3.3.0-GA after counsel review and the v3.3.1 paid pentest are complete.
+
+### Phase Status
+Phase 1.1 (EU AI Act sub-package) ✅ | Phase 1.2 (docs) ✅ | Phase 1.3 (website/marketing) ✅ | Phase 2 (test-mode Buy Buttons) ⏳ | Phase 3 (security posture) ✅ | Phase 3.1 (hardening) ✅ | Phase 4 (legal kit) ✅ | Phase 5 (beta release engineering) ⏳ | Phase 5.5 (posture check) ⏳
 
 ## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (Released)
 
@@ -199,115 +249,6 @@ GET /api/v1/trust/attestations/latest?agent=ID    -> most recent (verified) atte
 - **Website updates for 6-pillar hero** (Phase 5)
 - **External pentest** — vendor selection open (H4)
 - **Legal review** — ToS, Privacy, DPA (H1)
-
----
-
-## [3.1.0] - 2026-05-27 - Five Protocol Pillars + Response Scanning
-
-> **Retrospectively added 2026-06-05.** This release was tagged, signed, and released
-> on 2026-05-27 with 357 commits, but the dedicated CHANGELOG entry was never
-> written (the repo went straight from the v3.0.0 release prep to v3.1.1 hotfix
-> work). This entry reconstructs the v3.1.0 release scope from the tag's tree
-> (`b6d4bea`), the README at v3.1.0, and the 357-commit history. The five
-> protocol pillars (HTTP, MCP, A2A, **ACP**, **ANP**) plus the Response scanner
-> that v3.2.0 builds on top of all shipped here.
-
-### Summary
-The "multi-protocol coverage" release. Adds two new protocol security pillars
-(**ACP** — Agent Communication Protocol, and **ANP** — Anthropic's Agent
-Network Protocol) for a total of five protocol pillars, plus the v3.0
-**Response Scanning** pillar (which shipped as part of the v3.0.0 base but
-was productized and instrumented in v3.1.0). Establishes the 97.8% test
-coverage and 5,484 passing tests baseline that v3.1.1 and v3.2.0 build on.
-
-### Five Protocol Pillars (final shape)
-
-| # | Pillar | Status | Package | Notes |
-|---|--------|--------|---------|-------|
-| 1 | HTTP API | ✅ from v2.0.1 | `pkg/proxy/` | 144+ detection patterns, 97.8% coverage |
-| 2 | MCP (Model Context Protocol) | ✅ from v2.0.1 | `pkg/mcpserver/` | 8 guardrails, tool-poisoning protection |
-| 3 | A2A (Agent-to-Agent) | ✅ from v2.0.0 | `pkg/a2a/` | 8 guardrails, capability persistence |
-| 4 | **ACP (Agent Communication Protocol)** | **🆕 v3.1.0** | `pkg/acp/` | HMAC-signed messages, capability enforcement, response scanning (PII, secrets, toxicity) |
-| 5 | **ANP (Agent Network Protocol)** | **🆕 v3.1.0** | `pkg/anp/` | ECDSA signature verification, contract-based capabilities, rate limiting, prompt injection detection, step chain integrity |
-
-### Response Scanning Pillar (productized in v3.1.0)
-The AI response scanner shipped in v3.0.0 (Phase 1) was productized with metrics,
-config, and integration tests in v3.1.0. Adds the **hallucination detector** and
-**redaction** subsystem:
-
-- `pkg/response/hallucination_detector.go` — `ExtendedHallucinationDetector` with
-  overconfidence detection, factual claim verification, statistics validation
-- `pkg/response/types.go` — `ResponseGuardConfig`, `ResponseScanResult`, `Threat`,
-  `PIICategory`, `SecretCategory`
-- PII, secrets, toxicity, and hallucination scanning on agent responses across
-  all five protocol pillars
-
-### Cross-Protocol Threat Correlation
-The architectural foundation for v3.2.0's Trust Framework (Phase 4) was laid here.
-- `pkg/trust/correlation/` — Cross-protocol threat correlation engine
-- 5 threat patterns: detect coordinated attacks that touch multiple protocols
-  (e.g., MCP tool poisoning → A2A escalation → ACP exfiltration)
-
-### MITRE ATLAS Implementation
-- `pkg/atlas/` — Comprehensive MITRE ATLAS implementation package
-- **66 techniques** covered (TA01 Reconnaissance, TA02 Resource Development,
-  TA04 Persistence, TA07 Defense Evasion, plus LLM/RAG/ML-specific tactics)
-- 52 techniques in the proxy scanner pattern library, 14 more in the
-  correlation engine and dedicated ATLAS package
-- ATLAS-MCP, ATLAS-A2A, ATLAS-LLM, ATLAS-RAG categories all mapped
-
-### Computer Use API (Claude) — `pkg/computeruse/`
-- URL allowlist/denylist validation (prevents agent navigating to attacker-controlled URLs)
-- Action confirmation prompts
-- Screenshot PII detection
-- (Coverage and instrumentation will be expanded in v3.5.0)
-
-### Trust Framework Foundation
-- `pkg/trust/identity/` — agent identity, key registry, rotation
-- `pkg/trust/score/` — score engine, calculator, baseline, anomaly detection
-- `pkg/trust/dashboard/` — HTTP handler for `/trust/dashboard.html`
-- (Full per-session trust accumulator and Ed25519 attestation arrive in v3.2.0 Phase 4)
-
-### Billing & Stripe (mock mode correction)
-- Stripe mock mode logic corrected — short placeholder keys now properly
-  trigger mock paths in tests and local dev
-- Replaced short Stripe placeholders with `FAKE_SK_` keys (so they don't
-  trip GitHub push protection)
-
-### Security Hardening
-- Resolved **all** GitHub code scanning alerts (G101-G115, XSS, G304, G703)
-- Webhook server `Start()` missing return bug fixed
-- HMAC + ECDSA verification paths hardened across `pkg/acp/` and `pkg/anp/`
-
-### Test Coverage
-- **97.8%** platform coverage (the highest the codebase has achieved)
-- **5,484** tests passing
-- Phase 2/3 coverage boost commits: correlation, mcpserver, a2a, response, trust, computeruse, bridge, scanner, sso
-- 90.1% coverage on pkg/bridge (newly added in this release)
-
-### Stats
-- 357 commits between v3.0.0 and v3.1.0
-- 126 files changed, 21,190 insertions(+), 3,849 deletions(-)
-- Tag: `v3.1.0` (GPG-signed annotated, points at `b6d4bea`)
-
-### Known Out-of-Scope (deferred)
-- HIPAA / PCI / SOC 2 / ISO 42001 / FedRAMP / FIPS 140-2 module extraction → **v3.2.0 Phase 1**
-- Pro tier $249 → $499 price change → **v3.2.0 Phase 2**
-- Tier rate limit drift fix (Starter tier, Dev/Pro MaxAgents, etc.) → **v3.1.1** (shipped 9 days later)
-- Per-session Ed25519 trust attestations → **v3.2.0 Phase 4**
-- Compliance scan engine → **v3.2.0 Phase 3**
-- External pentest → **H4 (open)**
-- Legal review → **H1 (open)**
-
-### Historical Note
-The README at v3.1.0 contains an internal inconsistency: the body says
-"52 MITRE ATLAS techniques" but the Version Support table says "66 techniques".
-The 66-figure is correct (52 in the proxy pattern library + 14 in the
-correlation engine and dedicated ATLAS package). The body figure was a
-pre-correlation-engine snapshot that wasn't updated before the v3.1.0 tag.
-**Not corrected in this retrospective entry** — the README has since been
-re-anchored at v3.2.0's "66 techniques" figure and the v3.1.0 row now
-correctly shows "66 techniques" in the Version Support table.
 
 ---
 

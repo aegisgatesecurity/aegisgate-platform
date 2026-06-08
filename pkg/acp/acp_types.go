@@ -25,7 +25,6 @@ type ACPMessage struct {
 	Params map[string]interface{} `json:"params,omitempty"`
 	Result interface{}            `json:"result,omitempty"`
 	Error  *ACPError              `json:"error,omitempty"`
-	_meta  map[string]interface{}
 }
 
 // AgentRequest represents a request from an agent

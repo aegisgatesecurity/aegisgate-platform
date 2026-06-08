@@ -197,22 +197,23 @@ func (km *KeyManager) LoadPrivateKey(keyID string, pemData []byte) error {
 	var privateKey crypto.PrivateKey
 	var err error
 
-	if block.Type == "PRIVATE KEY" {
+	switch block.Type {
+	case "PRIVATE KEY":
 		privateKey, err = x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err != nil {
 			return fmt.Errorf("failed to parse private key: %w", err)
 		}
-	} else if block.Type == "RSA PRIVATE KEY" {
+	case "RSA PRIVATE KEY":
 		privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
 			return fmt.Errorf("failed to parse RSA private key: %w", err)
 		}
-	} else if block.Type == "EC PRIVATE KEY" {
+	case "EC PRIVATE KEY":
 		privateKey, err = x509.ParseECPrivateKey(block.Bytes)
 		if err != nil {
 			return fmt.Errorf("failed to parse EC private key: %w", err)
 		}
-	} else {
+	default:
 		return fmt.Errorf("unsupported private key type: %s", block.Type)
 	}
 
