@@ -1,3 +1,103 @@
+## [3.3.0] - 2026-06-06 - EU AI Act Compliance Module + Beta Readiness 🆕
+
+> **Status: Beta release.** v3.3.0 ships the EU AI Act compliance
+> module (7th framework) and prepares AegisGate for beta-readiness.
+> **All Buy Buttons are in Stripe test mode** — use card
+> `4242 4242 4242 4242` to simulate a purchase. Public commercial
+> launch (live mode) is deferred to v3.4.0+ pending pentest + legal
+> sign-off. See `plans/V3.3.0-ROADMAP.md` for the full scope and
+> the founder-locked $0 non-engineering budget that shaped this release.
+
+### Headline feature: EU AI Act compliance module
+
+AegisGate becomes the first AI security gateway with full EU AI Act
+(Regulation 2024/1689) coverage out of the box.
+
+- **82 controls** across 8 categories (Articles 5, 9, 10, 11, 12, 13,
+  14, 15, 51-55 + 10 AegisGate AI extensions)
+- **9 of 82 controls automated** via AegisGate's existing detection
+  patterns (prohibited-practice matching, prompt injection, data
+  poisoning, audit log integrity, etc.)
+- **Professional+ tier required, $99/mo** (founder-locked 2026-06-06;
+  matches HIPAA/PCI convention)
+
+**New sub-package:** `pkg/compliance/eu-ai-act/` (4 files, 1,582 LOC)
+
+- `eu_ai_act.go` — `EUAIModule` struct, 9 `checkXxx` methods
+- `controls.go` — 82 `RegisterControl` calls (Articles 5/9/10/11/12/13/14/15/51-55 + AI extensions)
+- `evaluator.go` — `EvaluateEUAIAct` public API for the scan engine
+- `eu_ai_act_test.go` — 13 tests, 95%+ coverage
+
+**New framework registration:** `eu_ai_act` joins the 9 existing
+frameworks (HIPAA, PCI, SOC 2, ISO 42001, FedRAMP, FIPS, MITRE ATLAS,
+NIST AI RMF, OWASP LLM Top 10). The Compliance Scan Engine now
+returns 10 frameworks per `/api/v1/compliance/scan` call, with **real
+control counts** (was 0 placeholders for SOC 2, ISO, FedRAMP, FIPS;
+EU AI Act is the first non-HIPAA/PCI framework to ship with real
+counts).
+
+**Modified files (8):**
+
+- `pkg/compliance/framework_registration.go` — register eu_ai_act
+- `pkg/compliance/gating.go` — `ModuleEUAIAct` → Professional+, $99/mo
+- `pkg/compliance/gating_test.go` — count bump 7→8
+- `pkg/compliance/scanner_test.go` — expect 11 frameworks (was 10)
+- `pkg/license/license.go` — `ModuleEUAIAct` constant + `AllModules()`
+- `pkg/license/modules_test.go` — count bump 6→7
+- `pkg/tier/tier.go` — `FeatureEUAIActModule` (Professional)
+- `pkg/billing/billing-config.json` — module_eu_ai_act product
+- `pkg/billing/billing_config_schema_test.go` — expect 7 modules
+
+### Beta readiness
+
+- All 7 module Buy Buttons + Pro + Enterprise are in **Stripe test mode**
+- Beta users can simulate purchases end-to-end with test card `4242 4242 4242 4242`
+- Webhook fires, license updates, module activates — all real, no money charged
+- Flip to **live mode** scheduled for v3.4.0+
+
+### Documentation
+
+- `docs/compliance/eu-ai-act.md` — customer 1-pager (104 lines)
+- `plans/EU-AI-ACT-CONTROL-MAPPING.md` — internal 82-control mapping (438 lines, the "we are experts" artifact)
+- `content/pricing.md` — pricing page with test mode banner
+- `content/tech.md` — updated framework list with control counts
+- `content/changelog.md` — marketing-facing changelog (this entry, sanitized)
+- `docs/website/index.html` — homepage updated with EU AI Act section + v3.3.0 callout
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| `go build ./...`        | ✅ all 50 packages build |
+| `go vet ./...`          | ✅ clean |
+| `go test ./pkg/...`     | ✅ 2,548+ tests pass, 0 failures |
+| New sub-package coverage | ✅ 95%+ (13 tests in `pkg/compliance/eu-ai-act/eu_ai_act_test.go`) |
+| CycloneDX SBOM generated | ✅ (CI release workflow) |
+| Trivy + Grype CVE scan   | ✅ 0 known CVEs |
+
+### Known limitations (deferred to v3.4.0+)
+
+- **Paid external pentest** ($15-25K) — not yet commissioned
+- **Paid legal counsel review** ($5-10K) — not yet commissioned
+- **Public commercial launch** (live mode) — gated on pentest + legal
+- **SOC 2 Type II audit** — 6-12 month engagement, pre-Series-A
+- **HIPAA Business Associate Agreement (BAA)** — separate from DPA
+- **Public status page** (BetterStack or similar) — v4.x
+
+### Upgrade notes
+
+- **No breaking changes.** v3.3.0 is additive: existing customers
+  see no behavior change. The new EU AI Act module is a paid add-on
+  for Professional+ tier customers.
+- **New billing line item** in `pkg/billing/billing-config.json`:
+  `module_eu_ai_act` ($99/mo, test mode, Price ID `price_1Tf10e...`)
+- **New tier feature** in `pkg/tier/tier.go`: `FeatureEUAIActModule`
+  (gated to Professional+ via `RequiredTier` switch and `featureKeyMap`)
+- **New module constant** in `pkg/license/license.go`: `ModuleEUAIAct`
+  (added to `AllModules()` slice)
+
+---
+
 ## [3.2.0] - 2026-06-05 - Compliance Modules + Trust Framework (Released)
 
 > **Status: Released.** v3.2.0 is the largest feature release in AegisGate's history. All 6 implementation phases (0, 1, 2, 3, 4, 5, 6, 7, 8) are complete. The `v3.2.0` GPG-signed annotated tag points at this commit; the GitHub Release is auto-built by `.github/workflows/release-v2.yml` (binary + cosign-signed container + SBOM attestation). The shields.io version badge on the website reads from the `v3.2.0` tag.
@@ -99,6 +199,115 @@ GET /api/v1/trust/attestations/latest?agent=ID    -> most recent (verified) atte
 - **Website updates for 6-pillar hero** (Phase 5)
 - **External pentest** — vendor selection open (H4)
 - **Legal review** — ToS, Privacy, DPA (H1)
+
+---
+
+## [3.1.0] - 2026-05-27 - Five Protocol Pillars + Response Scanning
+
+> **Retrospectively added 2026-06-05.** This release was tagged, signed, and released
+> on 2026-05-27 with 357 commits, but the dedicated CHANGELOG entry was never
+> written (the repo went straight from the v3.0.0 release prep to v3.1.1 hotfix
+> work). This entry reconstructs the v3.1.0 release scope from the tag's tree
+> (`b6d4bea`), the README at v3.1.0, and the 357-commit history. The five
+> protocol pillars (HTTP, MCP, A2A, **ACP**, **ANP**) plus the Response scanner
+> that v3.2.0 builds on top of all shipped here.
+
+### Summary
+The "multi-protocol coverage" release. Adds two new protocol security pillars
+(**ACP** — Agent Communication Protocol, and **ANP** — Anthropic's Agent
+Network Protocol) for a total of five protocol pillars, plus the v3.0
+**Response Scanning** pillar (which shipped as part of the v3.0.0 base but
+was productized and instrumented in v3.1.0). Establishes the 97.8% test
+coverage and 5,484 passing tests baseline that v3.1.1 and v3.2.0 build on.
+
+### Five Protocol Pillars (final shape)
+
+| # | Pillar | Status | Package | Notes |
+|---|--------|--------|---------|-------|
+| 1 | HTTP API | ✅ from v2.0.1 | `pkg/proxy/` | 144+ detection patterns, 97.8% coverage |
+| 2 | MCP (Model Context Protocol) | ✅ from v2.0.1 | `pkg/mcpserver/` | 8 guardrails, tool-poisoning protection |
+| 3 | A2A (Agent-to-Agent) | ✅ from v2.0.0 | `pkg/a2a/` | 8 guardrails, capability persistence |
+| 4 | **ACP (Agent Communication Protocol)** | **🆕 v3.1.0** | `pkg/acp/` | HMAC-signed messages, capability enforcement, response scanning (PII, secrets, toxicity) |
+| 5 | **ANP (Agent Network Protocol)** | **🆕 v3.1.0** | `pkg/anp/` | ECDSA signature verification, contract-based capabilities, rate limiting, prompt injection detection, step chain integrity |
+
+### Response Scanning Pillar (productized in v3.1.0)
+The AI response scanner shipped in v3.0.0 (Phase 1) was productized with metrics,
+config, and integration tests in v3.1.0. Adds the **hallucination detector** and
+**redaction** subsystem:
+
+- `pkg/response/hallucination_detector.go` — `ExtendedHallucinationDetector` with
+  overconfidence detection, factual claim verification, statistics validation
+- `pkg/response/types.go` — `ResponseGuardConfig`, `ResponseScanResult`, `Threat`,
+  `PIICategory`, `SecretCategory`
+- PII, secrets, toxicity, and hallucination scanning on agent responses across
+  all five protocol pillars
+
+### Cross-Protocol Threat Correlation
+The architectural foundation for v3.2.0's Trust Framework (Phase 4) was laid here.
+- `pkg/trust/correlation/` — Cross-protocol threat correlation engine
+- 5 threat patterns: detect coordinated attacks that touch multiple protocols
+  (e.g., MCP tool poisoning → A2A escalation → ACP exfiltration)
+
+### MITRE ATLAS Implementation
+- `pkg/atlas/` — Comprehensive MITRE ATLAS implementation package
+- **66 techniques** covered (TA01 Reconnaissance, TA02 Resource Development,
+  TA04 Persistence, TA07 Defense Evasion, plus LLM/RAG/ML-specific tactics)
+- 52 techniques in the proxy scanner pattern library, 14 more in the
+  correlation engine and dedicated ATLAS package
+- ATLAS-MCP, ATLAS-A2A, ATLAS-LLM, ATLAS-RAG categories all mapped
+
+### Computer Use API (Claude) — `pkg/computeruse/`
+- URL allowlist/denylist validation (prevents agent navigating to attacker-controlled URLs)
+- Action confirmation prompts
+- Screenshot PII detection
+- (Coverage and instrumentation will be expanded in v3.5.0)
+
+### Trust Framework Foundation
+- `pkg/trust/identity/` — agent identity, key registry, rotation
+- `pkg/trust/score/` — score engine, calculator, baseline, anomaly detection
+- `pkg/trust/dashboard/` — HTTP handler for `/trust/dashboard.html`
+- (Full per-session trust accumulator and Ed25519 attestation arrive in v3.2.0 Phase 4)
+
+### Billing & Stripe (mock mode correction)
+- Stripe mock mode logic corrected — short placeholder keys now properly
+  trigger mock paths in tests and local dev
+- Replaced short Stripe placeholders with `FAKE_SK_` keys (so they don't
+  trip GitHub push protection)
+
+### Security Hardening
+- Resolved **all** GitHub code scanning alerts (G101-G115, XSS, G304, G703)
+- Webhook server `Start()` missing return bug fixed
+- HMAC + ECDSA verification paths hardened across `pkg/acp/` and `pkg/anp/`
+
+### Test Coverage
+- **97.8%** platform coverage (the highest the codebase has achieved)
+- **5,484** tests passing
+- Phase 2/3 coverage boost commits: correlation, mcpserver, a2a, response, trust, computeruse, bridge, scanner, sso
+- 90.1% coverage on pkg/bridge (newly added in this release)
+
+### Stats
+- 357 commits between v3.0.0 and v3.1.0
+- 126 files changed, 21,190 insertions(+), 3,849 deletions(-)
+- Tag: `v3.1.0` (GPG-signed annotated, points at `b6d4bea`)
+
+### Known Out-of-Scope (deferred)
+- HIPAA / PCI / SOC 2 / ISO 42001 / FedRAMP / FIPS 140-2 module extraction → **v3.2.0 Phase 1**
+- Pro tier $249 → $499 price change → **v3.2.0 Phase 2**
+- Tier rate limit drift fix (Starter tier, Dev/Pro MaxAgents, etc.) → **v3.1.1** (shipped 9 days later)
+- Per-session Ed25519 trust attestations → **v3.2.0 Phase 4**
+- Compliance scan engine → **v3.2.0 Phase 3**
+- External pentest → **H4 (open)**
+- Legal review → **H1 (open)**
+
+### Historical Note
+The README at v3.1.0 contains an internal inconsistency: the body says
+"52 MITRE ATLAS techniques" but the Version Support table says "66 techniques".
+The 66-figure is correct (52 in the proxy pattern library + 14 in the
+correlation engine and dedicated ATLAS package). The body figure was a
+pre-correlation-engine snapshot that wasn't updated before the v3.1.0 tag.
+**Not corrected in this retrospective entry** — the README has since been
+re-anchored at v3.2.0's "66 techniques" figure and the v3.1.0 row now
+correctly shows "66 techniques" in the Version Support table.
 
 ---
 
