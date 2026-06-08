@@ -147,7 +147,37 @@ jobs:
             echo "⚠️ Trivy image scan SARIF not generated (Docker build may have failed)"
           fi
 
-  # Job 4: Secret Detection
+  # Job 4: Secret Detection (Gitleaks)
+  gitleaks:
+    name: Gitleaks - Secret Detection (v8.x, licensed)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: gitleaks/gitleaks-action@v2
+        # NOTE: gitleaks-action@v2 requires GITLEAKS_LICENSE for organization
+        # repos. The free OSS license is configured as a repo secret at
+        # Settings → Secrets and variables → Actions → GITLEAKS_LICENSE.
+        # The local .gitleaks.toml at the repo root is the authoritative
+        # config (allowlist for known false positives).
+
+      - name: Upload Gitleaks SARIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-results
+          path: |
+            results.sarif
+            gitleaks-results.sarif
+
+  # Job 5: Secret Detection (TruffleHog)
   trufflehog:
     name: TruffleHog - Secret Detection
     runs-on: ubuntu-latest
@@ -189,18 +219,20 @@ jobs:
           name: trufflehog-results
           path: trufflehog-results.json
 
-  # NOTE: Gitleaks was previously integrated as a CI job (gitleaks-action@v2),
-  # but as of 2026-06-08, gitleaks-action@v2 requires a paid license key
-  # for organization-owned repos. The local .gitleaks.toml allowlist remains
-  # in place for ad-hoc local scans (see legal-docs/21-self-attestation-v3.3.0/).
-  #
-  # TruffleHog (next job) provides equivalent secret detection coverage
-  # (regex + entropy-based + --only-verified flag). The two tools use
-  # different detection heuristics and complement each other in the
-  # security stack; removing the gitleaks CI job is purely a cost /
-  # license-simplification decision, not a coverage decision.
+  # NOTE: As of 2026-06-08, Gitleaks and TruffleHog both run in CI as
+  # complementary secret-detection scanners. Gitleaks (gitleaks-action@v2)
+  # runs first using our free OSS license (configured as the
+  # GITLEAKS_LICENSE repo secret). TruffleHog (next job) provides
+  # additional coverage with different detection heuristics:
+  #   - Gitleaks: regex + entropy + git history, fast, runs on every push
+  #   - TruffleHog: regex + entropy + 800+ detectors, includes
+  #     verified-secret validation against live APIs
+  # The two tools use different detection heuristics and complement each
+  # other in the security stack. Both are configured to fail the build on
+  # any verified or unverified finding. The local .gitleaks.toml at the
+  # repo root remains the authoritative allowlist for known false positives.
 
-  # Job 5: Dependency Review
+  # Job 6: Dependency Review
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
@@ -231,7 +263,7 @@ jobs:
           name: dependency-report
           path: dependencies.json
 
-  # Job 6: Standard Go Tools
+  # Job 7: Standard Go Tools
   standard-tools:
     name: Go Standard Security Tools
     runs-on: ubuntu-latest
@@ -274,7 +306,7 @@ jobs:
           name: staticcheck-results
           path: staticcheck-results.txt
 
-  # Job 7: SBOM Generation
+  # Job 8: SBOM Generation
   sbom:
     name: Generate SBOM
     runs-on: ubuntu-latest
@@ -318,11 +350,11 @@ jobs:
             sbom.cyclonedx.json
             sbom.spdx.json
 
-  # Job 8: Security Summary
+  # Job 9: Security Summary
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [govulncheck, gosec, trivy, trufflehog, standard-tools]
+    needs: [govulncheck, gosec, trivy, gitleaks, trufflehog, standard-tools]
     if: always()
     steps:
       - name: Generate Security Report
@@ -334,11 +366,11 @@ jobs:
           echo "| govulncheck | ${{ needs.govulncheck.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Gosec | ${{ needs.gosec.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gitleaks (licensed) | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| TruffleHog | ${{ needs.trufflehog.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Standard Tools | ${{ needs.standard-tools.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| SBOM | ${{ needs.sbom.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Note: Gitleaks CI was removed in v3.3.0-beta.1 because" >> $GITHUB_STEP_SUMMARY
-          echo "gitleaks-action@v2 now requires a paid license for organization" >> $GITHUB_STEP_SUMMARY
-          echo "repos. Local .gitleaks.toml allowlist remains for ad-hoc scans." >> $GITHUB_STEP_SUMMARY
-          echo "TruffleHog provides equivalent secret detection in CI." >> $GITHUB_STEP_SUMMARY
+          echo "Note: Both Gitleaks (licensed OSS) and TruffleHog run as" >> $GITHUB_STEP_SUMMARY
+          echo "complementary secret-detection scanners. See SECURITY.md for" >> $GITHUB_STEP_SUMMARY
+          echo "details on the layered secret-scanning approach." >> $GITHUB_STEP_SUMMARY
