@@ -17,7 +17,6 @@ import (
 type Dashboard struct {
 	engine *score.Engine
 	events *EventFeed
-	mu     sync.RWMutex
 }
 
 // EventFeed provides real-time event streaming

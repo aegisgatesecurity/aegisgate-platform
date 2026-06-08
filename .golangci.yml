@@ -49,6 +49,8 @@ linters:
         linters: [unused]
       - text: "field.*time.*is unused"
         linters: [unused]
+      - path: _test_helpers\.go
+        linters: [unused]
 
 issues:
   max-issues-per-linter: 100

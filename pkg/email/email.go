@@ -254,13 +254,13 @@ func (c *EmailClient) send(to string, msg []byte) error {
 		if err != nil {
 			return fmt.Errorf("TLS connection failed: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		client, err := smtp.NewClient(conn, c.config.Host)
 		if err != nil {
 			return fmt.Errorf("SMTP client creation failed: %w", err)
 		}
-		defer client.Close()
+		defer func() { _ = client.Close() }()
 
 		if auth != nil {
 			if err := client.Auth(auth); err != nil {
