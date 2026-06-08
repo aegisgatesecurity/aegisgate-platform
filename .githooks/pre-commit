@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# =============================================================================
+# AegisGate Security — pre-commit guard rail
+# =============================================================================
+# Purpose: Enforce the .gitignore policy on plans/ and legal-docs/ by BLOCKING
+# any commit that stages files in those directories. This prevents the
+# "circumvent with `git add -f`" workaround from ever working again.
+#
+# This hook is committed to the repo and activated via:
+#   git config core.hooksPath .githooks
+# That way it travels with the repo and is enforced for every clone.
+#
+# If a doc needs to be published:
+#   1. Move it OUT of plans/ or legal-docs/ (e.g., into docs/).
+#   2. Strip business-sensitive content (ICP, vendor pricing, counsel work).
+#   3. Commit it under its new path. Do NOT force-add from the ignored dir.
+# =============================================================================
+
+set -euo pipefail
+
+# Get list of staged files (added, copied, modified, renamed).
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR || true)
+
+if [ -z "$STAGED" ]; then
+  exit 0  # nothing staged
+ fi
+
+# Pattern: any path starting with plans/ or legal-docs/ (or the legacy
+# wildcard patterns that the .gitignore uses: plans-*.md, SPRINT*.md,
+# BUSINESS*.md, PLAN*.md, ROADMAP-INTERNAL.md, CI_DEBT.md).
+BLOCKED=0
+BLOCKED_LIST=""
+
+for path in $STAGED; do
+  case "$path" in
+    plans/*|legal-docs/*|plans-*.md|SPRINT*.md|BUSINESS*.md|PLAN*.md|ROADMAP-INTERNAL.md|CI_DEBT.md)
+      BLOCKED=1
+      BLOCKED_LIST="$BLOCKED_LIST  - $path"$'\n'
+      ;;
+  esac
+done
+
+if [ "$BLOCKED" -eq 1 ]; then
+  cat >&2 <<'EOF'
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║  PRE-COMMIT BLOCKED: plans/ and legal-docs/ are gitignored internals    ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║                                                                         ║
+║  You tried to stage files that are part of AegisGate Security LLC's     ║
+║  internal commercial strategy, operational plans, or draft legal        ║
+║  documents. These must NEVER be committed to the public repo.           ║
+║                                                                         ║
+║  Blocked paths:                                                         ║
+EOF
+  printf '%b' "$BLOCKED_LIST" >&2
+  cat >&2 <<'EOF'
+║                                                                         ║
+║  To publish a doc, MOVE it out of plans/ or legal-docs/ (e.g., into     ║
+║  docs/), strip business-sensitive content, and commit it under its      ║
+║  new path. Do NOT use `git add -f` to bypass this rule.                 ║
+║                                                                         ║
+║  To skip this hook (NOT RECOMMENDED), use `git commit --no-verify`.     ║
+║  --no-verify should only be used in genuine emergencies; it will be     ║
+║  logged in the commit's reflog and is auditable.                        ║
+║                                                                         ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+EOF
+  exit 1
+fi
+
+exit 0

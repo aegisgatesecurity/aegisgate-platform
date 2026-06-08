@@ -72,7 +72,19 @@ vendor/
 .DS_Store
 Thumbs.db
 
-# Internal documentation
+# =============================================================================
+# INTERNAL / BUSINESS-SENSITIVE — NEVER FORCE-ADD (no `git add -f`)
+# =============================================================================
+# These directories contain AegisGate Security LLC's internal commercial
+# strategy, operational plans, and draft legal documents. They are NOT for
+# the public open-source repo. The pre-commit hook in .githooks/ blocks any
+# attempt to add files under these paths. Working copies live in the
+# /home/chaos/Desktop/AegisGate/ workspace, OUTSIDE this repository.
+#
+# If a doc becomes safe to publish, MOVE it to docs/ (or another public
+# location) and re-commit it under its new path. Never `git add -f` from
+# these directories. — AegisGate Security, 2026-06-07
+# =============================================================================
 plans/
 CI_DEBT.md
 plans-*.md
