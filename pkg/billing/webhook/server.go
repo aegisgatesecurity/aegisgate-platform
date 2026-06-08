@@ -32,6 +32,27 @@ const (
 	ErrInvalidTier = "invalid_tier"
 )
 
+// ToS audit constants (v3.3.0 Phase 4)
+//
+// ToSAcceptanceVersion is the human-readable identifier of the Terms of
+// Service that was published at aegisgatesecurity.io/legal/terms/ at the
+// time of purchase. It is recorded in the audit log on every successful
+// checkout so that the ToS version in effect at acceptance can be verified
+// later (e.g., to defend a contract dispute, to enforce §1.2 amendment
+// notice, or to identify the cohort of customers who accepted a given
+// DRAFT during the v3.3.0 beta window).
+//
+// ToSAcceptanceHash is the SHA-256 of the canonical ToS file (the .md
+// source published to the website) at the time the constant was set.
+// A change to either constant signals a new ToS version; customers
+// who accepted under the prior version are unaffected, per §1.2 of
+// the ToS (existing subscriptions continue under the version they
+// accepted).
+const (
+	ToSAcceptanceVersion = "2.0-v3.3.0-beta"
+	ToSAcceptanceHash    = "9c0263647e96ef21a8bc396026f3f3207e530ccb9459175e327b60e3d234b3ec"
+)
+
 // Server handles Stripe webhook HTTP requests
 type Server struct {
 	port         string
@@ -251,9 +272,10 @@ func (s *Server) verifySignature(payload []byte, sig string) error {
 		if len(kv) != 2 {
 			continue
 		}
-		if kv[0] == "t" {
+		switch kv[0] {
+		case "t":
 			timestamp = kv[1]
-		} else if kv[0] == "v1" {
+		case "v1":
 			signatures = append(signatures, kv[1])
 		}
 	}
@@ -397,6 +419,16 @@ func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 		return nil
 	}
 
+	// v3.3.0 Phase 4: record Terms-of-Service acceptance for this purchase.
+	// The audit log entry captures the ToS version in effect at the time of
+	// checkout (e.g., "2.0-v3.3.0-beta") and the SHA-256 of the canonical
+	// ToS file published at /legal/terms/. This is the durable record of
+	// the customer's acceptance under §1.4 of the ToS. The same data also
+	// gets recorded again after license generation (below) so the audit
+	// trail stays aligned even if license generation fails downstream.
+	s.logger.Printf("ToS acceptance recorded: session=%s email=%s tos_version=%s tos_hash=%s",
+		session.ID, session.CustomerEmail, ToSAcceptanceVersion, ToSAcceptanceHash)
+
 	tierStr := session.Metadata["tier"]
 	if tierStr == "" {
 		tierStr = s.inferTierFromAmount(session.AmountTotal)
@@ -461,7 +493,7 @@ func (s *Server) handleCheckoutCompleted(data json.RawMessage) error {
 			}
 		}
 
-		s.logger.Printf("Generated license %s for %s (tier: %s)", key, session.CustomerEmail, parsedTier.String())
+		s.logger.Printf("Generated license %s for %s (tier: %s, tos_version: %s)", key, session.CustomerEmail, parsedTier.String(), ToSAcceptanceVersion)
 	}
 
 	return nil

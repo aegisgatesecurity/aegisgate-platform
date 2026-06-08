@@ -37,9 +37,6 @@ var (
 
 	// Source attribution patterns
 	attributionRegex = regexp.MustCompile(`(?i)\b(source:|according to|based on|from|research|study|data)\b`)
-
-	// Contradiction markers
-	contradictionMarkers = []string{"however", "but", "although", "despite", "on the other hand"}
 )
 
 // ============================================================================

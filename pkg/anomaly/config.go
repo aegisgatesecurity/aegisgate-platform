@@ -143,10 +143,8 @@ func EnterpriseConfig() Config {
 
 // FromYAML loads configuration from YAML bytes.
 func FromYAML(data []byte) (Config, error) {
-	var config Config
-
 	// Initialize with defaults
-	config = DefaultConfig()
+	config := DefaultConfig()
 
 	// Unmarshal with default handling
 	err := yaml.Unmarshal(data, &config)

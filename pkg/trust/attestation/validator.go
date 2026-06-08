@@ -63,6 +63,9 @@ func (v *Validator) verifySignature(att *Attestation) error {
 	}
 
 	// Unmarshal public key
+	//nolint:staticcheck // SA1019: elliptic.Unmarshal is deprecated as of Go 1.21 in favor of crypto/ecdh.
+	// See the corresponding comment in generator.go:64 — migration is planned for v3.4.0+
+	// and requires a wider refactor of the trust/attestation package.
 	x, y := elliptic.Unmarshal(elliptic.P256(), att.SignerPublicKey)
 	if x == nil {
 		return fmt.Errorf("invalid public key")

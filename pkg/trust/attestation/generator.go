@@ -61,6 +61,11 @@ func (g *Generator) Generate(req *AttestationRequest, contract *ContractSummary,
 		return nil, fmt.Errorf("failed to sign attestation: %w", err)
 	}
 	att.Signature = sig
+	//nolint:staticcheck // SA1019: elliptic.Marshal is deprecated as of Go 1.21 in favor of crypto/ecdh.
+	// Migration to crypto/ecdh is planned for v3.4.0+ (see legal-docs/21-self-attestation-v3.3.0.md §5.3 P1);
+	// it requires a wider refactor of the trust/attestation package to change the
+	// SignerPublicKey encoding. For v3.3.0 we keep the existing SEC 1 encoding for
+	// backward compatibility with the validator (validator.go:66 uses elliptic.Unmarshal).
 	att.SignerPublicKey = elliptic.Marshal(elliptic.P256(), g.signingKey.PublicKey.X, g.signingKey.PublicKey.Y)
 
 	return att, nil

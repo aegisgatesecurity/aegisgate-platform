@@ -29,17 +29,26 @@ serviceAccount:
   name: ""
   annotations: {}
 
-# -- Pod security context (runs as non-root appuser)
+# -- Pod security context (runs as non-root appuser, seccomp RuntimeDefault)
+# v3.3.1 hardening: seccompProfile.type: RuntimeDefault applies the container
+# runtime's default seccomp profile (typically Docker's default, which blocks
+# dangerous syscalls). This is a v1.25+ K8s feature.
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
-# -- Container security context (read-only root FS, no privilege escalation)
+# -- Container security context (read-only root FS, no privilege escalation, seccomp RuntimeDefault)
+# v3.3.1 hardening: seccompProfile.type: RuntimeDefault at the container level
+# for defense in depth (in case pod-level profile is not propagated).
 securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
   capabilities:
     drop:
       - ALL

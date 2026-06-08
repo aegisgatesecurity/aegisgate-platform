@@ -218,7 +218,7 @@ func (c *EmailClient) buildMessage(to, subject, body string) ([]byte, error) {
 
 	var msg bytes.Buffer
 	for k, v := range headers {
-		msg.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
+		fmt.Fprintf(&msg, "%s: %s\r\n", k, v)
 	}
 	msg.WriteString("\r\n")
 	msg.WriteString(body)
@@ -254,13 +254,13 @@ func (c *EmailClient) send(to string, msg []byte) error {
 		if err != nil {
 			return fmt.Errorf("TLS connection failed: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		client, err := smtp.NewClient(conn, c.config.Host)
 		if err != nil {
 			return fmt.Errorf("SMTP client creation failed: %w", err)
 		}
-		defer client.Close()
+		defer func() { _ = client.Close() }()
 
 		if auth != nil {
 			if err := client.Auth(auth); err != nil {
@@ -307,6 +307,9 @@ func ValidateConfig(cfg Config) error {
 		return fmt.Errorf("SMTP port is required")
 	}
 	if cfg.From == "" {
+		//nolint:staticcheck // ST1005: "From" is a proper noun (config field name), not a sentence start.
+		// Error string convention says "don't capitalize first letter", but proper nouns
+		// referring to field names (From, To, Cc) are exempted to preserve meaning.
 		return fmt.Errorf("From email address is required")
 	}
 	return nil

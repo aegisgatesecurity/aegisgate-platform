@@ -220,7 +220,7 @@ const (
 	// SECRET_PRIVATE_KEY is private cryptographic keys
 	SECRET_PRIVATE_KEY SecretCategory = "private_key"
 
-	SECRET_OAUTH_TOKEN SecretCategory = "oauth_token" //nolint:gosec G101 - Category identifier, not a real token
+	SECRET_OAUTH_TOKEN SecretCategory = "oauth_token" //nolint:gosec // Category identifier, not a real token
 
 	// SECRET_PASSWORD is passwords
 	SECRET_PASSWORD SecretCategory = "password"

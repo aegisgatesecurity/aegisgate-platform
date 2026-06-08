@@ -160,7 +160,7 @@ func (r *Redactor) redactPII(text string) string {
 
 		if shouldRedact {
 			replacement := r.getReplacement(len(match.Value))
-			result = strings.Replace(result, match.Value, replacement, -1)
+			result = strings.ReplaceAll(result, match.Value, replacement)
 		}
 	}
 
@@ -186,7 +186,7 @@ func (r *Redactor) redactSecrets(text string) string {
 
 		if shouldRedact {
 			replacement := r.getReplacement(len(match.Value))
-			result = strings.Replace(result, match.Value, replacement, -1)
+			result = strings.ReplaceAll(result, match.Value, replacement)
 		}
 	}
 
