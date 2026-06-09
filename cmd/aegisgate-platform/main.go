@@ -88,6 +88,12 @@ var (
 	tierName      = flag.String("tier", "community", "Display tier (read-only; actual tier derived from license)")
 	showVersion   = flag.Bool("version", false, "Show version information")
 	embeddedMCP   = flag.Bool("embedded-mcp", false, "Start embedded AegisGuard MCP server (standalone mode)")
+	// Mode of operation: "production" (default), "demo" (sandboxed public demo),
+	// "staging" (pre-production testing). Demo mode disables license enforcement,
+	// forces the target to a mock upstream, and applies read-only safety
+	// restrictions to the admin dashboard. See cmd/aegisgate-platform/demo_mode.go
+	// for the full implementation of demo mode behavior.
+	mode = flag.String("mode", "production", "Operation mode: production, demo, or staging")
 )
 
 func main() {
@@ -104,7 +110,34 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Printf("AegisGate Security Platform v%s (commit: %s) starting...", version, commit)
+	// ============================================================
+	// Mode handling (production / demo / staging)
+	// ============================================================
+	// Demo mode is a public-facing sandbox for evaluation purposes.
+	// It applies the following safety restrictions:
+	//   1. License enforcement is disabled (uses a built-in dev license)
+	//   2. Target URL defaults to httpbin.org (mock upstream, no real LLM)
+	//   3. Admin dashboard is read-only (no real configuration changes)
+	//   4. Rate limits are stricter (100 req/hour per visitor)
+	//   5. Sample seed data is loaded at startup (threats, MCP tools, etc.)
+	//   6. State is auto-reset every 24 hours (handled by external cron)
+	// See cmd/aegisgate-platform/demo_mode.go for the full implementation.
+	normalizedMode := strings.ToLower(strings.TrimSpace(*mode))
+	switch normalizedMode {
+	case "production", "":
+		normalizedMode = "production" // default
+	case "demo":
+		log.Printf("[MODE] Running in DEMO mode (sandboxed, no real LLM calls)")
+		// Apply demo mode defaults: force target to mock upstream
+		*targetURL = "http://httpbin.org:80"
+	case "staging":
+		log.Printf("[MODE] Running in STAGING mode (pre-production testing)")
+	default:
+		log.Printf("[WARN] Unknown mode %q, defaulting to production. Valid modes: production, demo, staging", *mode)
+		normalizedMode = "production"
+	}
+
+	log.Printf("AegisGate Security Platform v%s (commit: %s) starting in %s mode...", version, commit, normalizedMode)
 
 	// Set build info for Prometheus metrics
 	metrics.SetBuildInfo(version, runtime.Version(), runtime.GOOS+"/"+runtime.GOARCH, commit)
