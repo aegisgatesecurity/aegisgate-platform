@@ -4,44 +4,109 @@
 
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
-![Version](https://img.shields.io/badge/Version-v3.2.0-blue?label=Version&logo=semver)
+![Version](https://img.shields.io/badge/Version-v3.3.0--beta.2-blue?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.26.3-00ADD8?logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.26.4-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
 ![Test Coverage](https://img.shields.io/badge/Coverage-97.8%25-green?logo=codecov)
 ![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)
-[![Docker](https://img.shields.io/badge/Docker-19.1MB-2496ED?logo=docker)](Dockerfile)
+[![Docker](https://img.shields.io/badge/Docker-13.3MB-2496ED?logo=docker)](Dockerfile)
+[![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 
-> **The only AI security platform with native HTTP API, MCP, A2A, ACP, AND RESPONSE protection.** Five pillars. One gateway. Zero external dependencies.
+> **The only AI security platform with native HTTP API, MCP, A2A, ACP, and RESPONSE protection.** Five pillars. One gateway. Zero external dependencies.
 
-[🌐 Website](https://aegisgatesecurity.io) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](docs/) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
+[🌐 Website](https://aegisgatesecurity.io) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](https://aegisgatesecurity.io/docs/) • [🇪🇺 EU AI Act](docs/compliance/eu-ai-act.md) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
 </div>
 
 ---
 
-## The Problem
+## 🆕 What's New in v3.3.0-beta.2 (2026-06-08)
 
-Your AI infrastructure spans multiple attack surfaces — and most teams are only protecting one. Traditional security solutions (WAFs, API gateways) weren't designed for AI-specific threats like prompt injection, agent impersonation, or tool poisoning.
+> **This is a beta release.** The first paying customer is a v3.4.0+ milestone. Use it for evaluation, integration testing, and compliance pre-audit work. Not yet production-recommended.
 
-### Attack Surface Comparison
+- 🇪🇺 **EU AI Act Compliance Module (NEW)** — 82 controls across 8 categories of the EU AI Act, gated to Professional+ tier. See [the dedicated section below](#-eu-ai-act-compliance-module) and the [full control mapping](docs/compliance/eu-ai-act-mapping.md).
+- 🩹 **Release-integrity fix from v3.3.0-beta.1** — beta.1 was tagged on 2026-06-08 but a same-day audit found that 5 commits (EU AI Act work + gitignore enforcement) had not been merged to `main`. **beta.2 fixes this gap.** No CVE, no vulnerability, no leaked data. The v3.3.0-beta.1 tag is kept at SHA `64d0ab5` for historical record; do not use it.
+- 🔒 **All 9 CI security jobs green** (gitleaks now included — we re-enabled it with our free OSS license)
+- ✅ **0 golangci-lint issues** (was 15 P3/P4 — all fixed in commit `8b69aa2`)
+- ⚙️ **All 8 GitHub Actions bumped** to latest (Node 20 → Node 24, deprecation warnings resolved)
+- 📜 **6 v2.0 customer-facing legal docs + 1 Beta Agreement** at [aegisgatesecurity.io/legal](https://aegisgatesecurity.io/legal/)
 
-| Attack Surface | Risk | Traditional | AegisGate |
-|---|---|---|---|
-| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ⚠️ WAFs exist (AI-agnostic) | ✅ AI-aware scanning, PII detection |
-| **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection | ✅ Built-in protocol guard |
-| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No native protection | ✅ Agent-to-agent verification |
-| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection | ✅ Real-time response guard |
-| **ACP Protocol** | Message tampering, capability escalation, replay attacks | ❌ No native protection | ✅ HMAC-signed messages |
-| **ANP Protocol** | Protocol downgrade, routing manipulation, message injection | ❌ No native protection | ✅ Message validation, routing integrity |
-
-AegisGate fills these gaps with a single unified platform.
-
-**AegisGate secures all six in a single 19 MB binary you deploy in 60 seconds.**
+**Read the full [v3.3.0-beta.2 release notes](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.3.0-beta.2).**
 
 ---
 
-## Six Pillars of AI Security (Trust Framework added in v3.2.0)
+## What is AegisGate?
+
+AegisGate is a **single-binary AI security gateway** that sits between your AI services and the rest of the world. It scans every request, response, tool call, and inter-agent message for AI-specific threats (prompt injection, PII leakage, agent impersonation, tool poisoning, hallucination, toxicity) — and produces auditor-ready evidence for 10 compliance frameworks.
+
+**In one sentence**: *AegisGate secures every AI interaction in a single 13.3 MB binary, with zero external dependencies, deployable in 60 seconds.*
+
+### Who It's For
+
+- **AI platform teams** building or operating LLM-based services who need to prevent prompt injection, data leakage, and abuse
+- **Security teams** who need a single control plane for all AI traffic (HTTP, MCP, A2A, ACP) instead of stitching together multiple products
+- **Compliance teams** preparing for SOC 2, ISO 27001, HIPAA, PCI-DSS, or EU AI Act audits who need auditor-ready evidence
+- **Solo developers, students, and beginners** who want a "deploy and forget" AI security layer with sensible defaults
+
+### Who It's NOT For
+
+- Anyone who doesn't use AI in production yet (you're not the target — come back when you ship)
+- Anyone looking for an LLM-side alignment tool (try NeMo Guardrails or Guardrails AI for that)
+- Anyone who needs a managed cloud service (AegisGate is self-hosted; you run the binary)
+
+---
+
+## The Problem
+
+Your AI infrastructure spans multiple attack surfaces — and most teams are only protecting one or two. Traditional security solutions (WAFs, API gateways, even LLM alignment tools) weren't designed for AI-specific threats across all the protocols you actually use.
+
+### Attack Surface Comparison
+
+| Attack Surface | Risk | Traditional WAFs | LLM Alignment Tools | AegisGate |
+|---|---|---|---|---|
+| **HTTP APIs** | Prompt injection, data leakage, PII exposure | ⚠️ AI-agnostic | ❌ No | ✅ AI-aware scanning, 144+ patterns |
+| **MCP Protocol** | Tool poisoning, session hijacking, supply-chain attacks | ❌ No native protection | ❌ No | ✅ Built-in protocol guard, 8 guardrails |
+| **A2A Communication** | Agent impersonation, data tampering, capability escalation | ❌ No native protection | ❌ No | ✅ mTLS, HMAC, capability enforcement |
+| **Agent Response** | PII leakage, secret exposure, hallucination, toxicity | ❌ No native protection | ⚠️ Some | ✅ Real-time response guard, 5 detectors |
+| **ACP Protocol** | Message tampering, capability escalation, replay attacks | ❌ No native protection | ❌ No | ✅ HMAC-signed messages |
+| **Trust / Audit** | No traceability of agent behavior across protocols | ❌ No native protection | ❌ No | ✅ Ed25519-signed attestations, 5th pillar |
+
+AegisGate fills these gaps with a single unified platform.
+
+**AegisGate secures all six in a single 13.3 MB binary you deploy in 60 seconds.**
+
+---
+
+## Why AegisGate? (vs. Other AI Security Tools)
+
+There are other AI security products. Here's how AegisGate compares on the dimensions that matter to enterprise security teams:
+
+| Capability | AegisGate | Lakera Guard | NeMo Guardrails | Rebuff | Protect AI |
+|---|---|---|---|---|---|
+| **Deployment model** | Self-hosted single binary | SaaS API only | Library (in-app) | Library (in-app) | Platform |
+| **HTTP proxy scanning** | ✅ | ✅ | ❌ | ❌ | ⚠️ |
+| **MCP protocol protection** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **A2A protocol protection** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **ACP protocol protection** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Response-side scanning** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Trust Framework (attestations)** | ✅ Ed25519-signed | ❌ | ❌ | ❌ | ⚠️ |
+| **MITRE ATLAS coverage** | ✅ 66 techniques | ⚠️ Partial | ❌ | ⚠️ Partial | ✅ |
+| **OWASP LLM Top 10** | ✅ 49 patterns | ✅ | ✅ | ✅ | ✅ |
+| **EU AI Act controls** | ✅ 82 controls | ❌ | ❌ | ❌ | ❌ |
+| **Multi-framework compliance** | ✅ 10 frameworks | ❌ | ❌ | ❌ | ⚠️ |
+| **Tamper-evident audit logs** | ✅ Hash chain + RFC 5424 | ❌ | ❌ | ❌ | ⚠️ |
+| **Open source** | ✅ Apache 2.0 | ❌ | ✅ Apache 2.0 | ✅ MIT | ❌ |
+| **Air-gap deployable** | ✅ Single binary | ❌ | ✅ Library | ✅ Library | ❌ |
+| **Hardware footprint** | 13.3 MB binary, < 256 MB RAM | n/a (SaaS) | In-process | In-process | n/a (platform) |
+
+**TL;DR**: If you need **protocol-level security** (MCP, A2A, ACP) + **compliance evidence** + **self-hosting**, AegisGate is the only option that covers all three. Library-style tools (NeMo, Rebuff) are great for in-app alignment but don't protect your network boundary. SaaS tools (Lakera) require sending your traffic to a third party.
+
+---
+
+## Five Pillars of AI Security
+
+AegisGate's protocol coverage is organized into **five pillars** that you can adopt independently or together. A **Trust Framework** sits across all five pillars as a cross-cutting audit and observability layer.
 
 ### 🌐 HTTP API Security
 
@@ -49,7 +114,7 @@ Bidirectional scanning of every request and response with **144+ detection patte
 
 | Category | Patterns | Coverage |
 |----------|----------|----------|
-| **MITRE ATLAS** | 52 techniques | Adversarial AI tactics |
+| **MITRE ATLAS** | 66 techniques | Adversarial AI tactics |
 | **OWASP LLM Top 10** | 49 patterns | LLM01–LLM10 |
 | **Secrets Scanning** | 44+ regex patterns | API keys, tokens, credentials |
 | **PII Detection** | 12+ patterns | GDPR/CCPA compliance |
@@ -200,6 +265,44 @@ hooks.EndSession(ctx, sessID)
 
 ---
 
+## 🇪🇺 EU AI Act Compliance Module (NEW in v3.3.0) — _Professional+ tier_
+
+The EU AI Act (Regulation 2024/1689) is the world's first comprehensive AI regulation. AegisGate's EU AI Act Compliance Module gives you a single source of truth for whether your AI system is compliant — across **82 controls** in **8 categories**.
+
+### What You Get
+
+- **82 controls** mapped to specific EU AI Act articles (Article 5, 9, 10, 11+12, 13+14, 15, 51-55, plus AI-* "Annex IV" technical documentation)
+- **8 categories**: Prohibited Practices, Risk Management, Data Quality, Technical Documentation, Record-Keeping, Human Oversight, Accuracy/Robustness, Conformity Assessment
+- **Automatic controls** (9 of 82) that AegisGate enforces in-line: input validation, data quality checks, log retention, accuracy benchmarks, etc.
+- **Manual controls** (73 of 82) that AegisGate helps you satisfy with checklists, evidence templates, and audit-ready reports
+- **Compliance scan endpoint**: `GET /api/v1/compliance/scan?framework=eu-ai-act` returns coverage %, missing-modules list, and remediation steps
+- **Full audit report**: `GET /api/v1/compliance/report?framework=eu-ai-act` returns the full control list with `enforced` / `manual` status and source module references
+
+### Who Needs It
+
+- **AI providers** placing "high-risk" AI systems (Annex III) on the EU market after **August 2026**
+- **Deployers** of AI systems used in employment, education, law enforcement, critical infrastructure, etc.
+- **General-purpose AI (GPAI)** model providers with > 10²⁵ FLOPs of training compute
+- **EU-based companies** and **non-EU companies** that place AI systems on the EU market
+
+### Tier & Pricing
+
+- **Tier gate**: Professional+ (Professional and Enterprise tiers)
+- **Pricing**: included with Professional and Enterprise; no separate module add-on
+- **BAA + DPA**: standard agreements cover EU AI Act data flows (see `/legal/`)
+
+### Documentation
+
+- 📘 **Customer 1-pager**: [docs/compliance/eu-ai-act.md](docs/compliance/eu-ai-act.md) — 104 lines, plain-English overview
+- 📚 **Full control mapping**: [docs/compliance/eu-ai-act-mapping.md](docs/compliance/eu-ai-act-mapping.md) — 438 lines, all 82 controls with article references
+- 🧪 **Sub-package**: [`pkg/compliance/eu-ai-act/`](pkg/compliance/eu-ai-act/) — 4 Go files, full implementation
+
+**Coverage:** 90%+ | **Tests:** 9+ in `eu_ai_act_test.go` | **Status:** Production-ready for beta evaluation
+
+> **This module is part of v3.3.0-beta.2.** The module is fully implemented and tested; counsel review of the legal interpretation is pending (v3.4.0+). Use it for **evaluation and pre-audit work**; defer your formal conformity assessment until counsel sign-off is complete.
+
+---
+
 ## 🔐 Enterprise Authentication
 
 Production-grade SSO and access control — not stubs:
@@ -219,21 +322,38 @@ Production-grade SSO and access control — not stubs:
 
 ## 📊 Compliance Frameworks
 
-Maps security controls to **9 frameworks** across all tiers:
+Maps security controls to **10 frameworks** across all tiers:
 
 | Framework | Category | Patterns | Tier |
 |-----------|----------|----------|------|
-| **MITRE ATLAS** | Adversarial AI | 52 techniques | Community |
+| **MITRE ATLAS** | Adversarial AI | 66 techniques | Community |
 | **NIST AI RMF 1.500** | AI Risk Management | Full coverage | Community |
 | **OWASP LLM Top 10** | LLM Security | 49 patterns | Community |
 | **GDPR** | Data Protection | PII detection, retention | Community |
 | **HIPAA** | Healthcare | PHI detection, BAA available | Professional |
 | **PCI-DSS** | Payment Security | Card data detection | Professional |
 | **SOC2 Type II** | Enterprise Controls | CC6.6 monitoring | Professional |
-| **ISO 27001** | Information Security | Full framework | Professional |
+| **ISO 27001** | Information Security | Full framework | Community |
 | **ISO 42001** | AI Management | AI-specific controls | Professional |
+| **🇪🇺 EU AI Act** | EU AI Regulation (2024/1689) | 82 controls, 8 categories | Professional+ |
 
 > All framework modules are **fail-closed** — if a compliance check cannot be evaluated, the request is blocked.
+
+### Compliance Module Pricing
+
+Six compliance modules are available as add-ons to any paid tier. Prices are locked at purchase (no increases for existing customers) and activated instantly via Stripe webhook.
+
+| Module | Price | Required Tier | Description |
+|--------|-------|---------------|-------------|
+| **HIPAA** | $99/mo | Developer+ | HIPAA-compliant logging, PHI detection, BAA support |
+| **PCI-DSS** | $99/mo | Developer+ | Payment card data detection, PCI-scoped audit logs |
+| **SOC 2** | $149/mo | Developer+ | SOC 2 Type II control mapping, evidence collection |
+| **ISO 42001** | $79/mo | Professional+ | ISO/IEC 42001 AI management system controls |
+| **FedRAMP** | $499/mo | Professional+ | FedRAMP Moderate/High control mapping, continuous monitoring |
+| **FIPS 140-2/140-3** | $299/mo | Professional+ | FIPS-validated cryptography enforcement, HSM integration |
+| **🇪🇺 EU AI Act** | Included | Professional+ | 82 controls across 8 categories (no separate charge) |
+
+> **Note**: The EU AI Act module is the **only compliance module included with the Professional+ tier** at no extra cost. The other 6 modules are add-ons. In beta, the 6 paid modules are hidden on the website pending counsel review; contact `sales@` for early access.
 
 ### Threat Model
 
@@ -259,7 +379,7 @@ flowchart TB
         B[🤖 MCP Client]
         C[🤝 A2A Agent]
     end
-    subgraph "AegisGate Platform v3.2.0"
+    subgraph "AegisGate Platform v3.3.0-beta.2"
         subgraph "Entry Points"
             D["🌐 HTTP Proxy\n:8080"]
             E["🔗 MCP Server\n:8081"]
@@ -320,7 +440,9 @@ flowchart TB
 
 ---
 
-## ⚡ Performance (v3.1.1 Benchmark)
+## ⚡ Performance (v3.1.1 Benchmark — representative of v3.3.0-beta.2)
+
+> **Note**: The performance numbers below are from a v3.1.1 benchmark (k6 load testing, 60+ second scenarios, real attack vectors). v3.3.0-beta.2 has more features (Trust Framework, EU AI Act) and a slightly larger binary, so actual performance is within the same order of magnitude but not re-measured. Re-benchmarking is on the v3.4.0 roadmap.
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
@@ -365,7 +487,7 @@ Includes HPA autoscaling, NetworkPolicy, ServiceMonitor, rolling updates.
 
 ### Build from Source
 
-Requires Go 1.26.4 or later. The binary is **not** distributed in the repo (untracked as of v3.2.0 — see `.gitignore`). Build it from the platform source:
+Requires Go 1.26.4 or later. The binary is **not** distributed in the repo (untracked in `.gitignore` — build it from the platform source):
 
 ```bash
 git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
@@ -393,7 +515,7 @@ VERSION=3.2.0 COMMIT=$(git rev-parse --short=8 HEAD) BUILD_DATE=$(date -u +%Y-%m
 
 ```bash
 curl http://localhost:8443/health
-# {"status":"healthy","version":"v3.1.1","tier":"community",...}
+# {"status":"healthy","version":"v3.3.0-beta.2","tier":"community",...}
 ```
 
 ---
@@ -507,44 +629,46 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 ## 🎯 Tier Comparison
 
-| Feature | Community | Developer | Professional |
-|---------|:---------:|:--------:|:------------:|
-| **Core Security** | | | |
-| HTTP Proxy | ✅ | ✅ | ✅ |
-| Secret Detection/Masking | ✅ | ✅ | ✅ |
-| PII Detection | ✅ | ✅ | ✅ |
-| **Response Guard** | | | |
-| Toxicity Detection | ✅ | ✅ | ✅ |
-| Hallucination Detection | — | ✅ | ✅ |
-| Real-time Response Scanning | ✅ | ✅ | ✅ |
-| **Protocol Guards** | | | |
-| MCP Guardrails | 8 | 8 | 8 |
-| A2A Guardrails | 8 | 8 | 8 |
-| ACP Protocol (HMAC-signed) | ✅ | ✅ | ✅ |
-| Message Tampering Protection | ✅ | ✅ | ✅ |
-| Replay Attack Prevention | ✅ | ✅ | ✅ |
-| Capability Escalation Control | ✅ | ✅ | ✅ |
-| Rate Limiting | ✅ | ✅ | ✅ |
-| **Compliance Frameworks** | | | |
-| MITRE ATLAS | ✅ | ✅ | ✅ |
-| NIST AI RMF | ✅ | ✅ | ✅ |
-| OWASP LLM Top 10 | ✅ | ✅ | ✅ |
-| **Access Control** | | | |
-| OIDC / SAML SSO | — | ✅ | ✅ |
-| RBAC | Basic | Advanced | Granular |
-| **Data Privacy** | | | |
-| GDPR | View | Full | Full |
-| HIPAA | — | — | ✅ |
-| PCI-DSS | — | — | ✅ |
-| SOC2 | — | — | ✅ |
-| ISO 27001 | — | — | ✅ |
-| **Integrations** | | | |
-| SIEM Integration | — | ✅ | ✅ |
-| Redis/SQLite | — | ✅ | ✅ |
-| PostgreSQL/S3 | — | — | ✅ |
-| Kubernetes/Helm | — | ✅ | ✅ |
+AegisGate ships in **5 tiers**: Community (free), Starter, Developer, Professional, and Enterprise. The first three are billed monthly or annually via Stripe; Professional and Enterprise are sales-led.
 
-> See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing) for full tier details.
+| Feature | Community | Starter | Developer | Professional | Enterprise |
+|---------|:---------:|:-------:|:---------:|:------------:|:----------:|
+| **Pricing** | Free | $29/mo or $290/yr | $79/mo or $790/yr | $499/mo or $4,990/yr | Contact sales |
+| **Core Security** | | | | | |
+| HTTP Proxy | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Secret Detection/Masking | ✅ | ✅ | ✅ | ✅ | ✅ |
+| PII Detection | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Response Guard** | | | | | |
+| Toxicity Detection | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Hallucination Detection | — | — | ✅ | ✅ | ✅ |
+| Real-time Response Scanning | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Protocol Guards** | | | | | |
+| MCP Guardrails | 8 | 8 | 8 | 8 | 8 |
+| A2A Guardrails | 8 | 8 | 8 | 8 | 8 |
+| ACP Protocol (HMAC-signed) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Message Tampering Protection | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Replay Attack Prevention | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Capability Escalation Control | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Rate Limiting | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Compliance Frameworks** | | | | | |
+| MITRE ATLAS | ✅ | ✅ | ✅ | ✅ | ✅ |
+| NIST AI RMF | ✅ | ✅ | ✅ | ✅ | ✅ |
+| OWASP LLM Top 10 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GDPR | View | Full | Full | Full | Full |
+| **Access Control** | | | | | |
+| OIDC / SAML SSO | — | ✅ | ✅ | ✅ | ✅ |
+| RBAC | Basic | Basic | Advanced | Granular | Custom |
+| **Integrations** | | | | | |
+| SIEM Integration | — | — | ✅ | ✅ | ✅ |
+| Redis/SQLite | — | ✅ | ✅ | ✅ | ✅ |
+| PostgreSQL/S3 | — | — | — | ✅ | ✅ |
+| Kubernetes/Helm | — | ✅ | ✅ | ✅ | ✅ |
+| **Trust Framework (5th pillar)** | — | — | — | ✅ | ✅ |
+| **🇪🇺 EU AI Act Module** | — | — | — | ✅ | ✅ |
+| **Compliance modules** | — | — | Add-on | Add-on + EU AI Act | All included |
+| **Support** | Community | Email | Email | Priority | Dedicated |
+
+> See [aegisgatesecurity.io/pricing](https://aegisgatesecurity.io/pricing) for full tier details, current promotions, and the live Buy Buttons. In beta, the Professional tier Buy Button and the 6 paid compliance module Buy Buttons are hidden pending counsel review and the v3.4.0 paid pentest; the 4 Starter + Developer buttons are live.
 
 ---
 
@@ -585,14 +709,51 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| **v3.2.0** | ✅ Current | **Compliance Modules** (HIPAA/PCI/SOC 2/ISO 42001/FedRAMP/FIPS add-on pricing, instant Stripe webhook activation), **Compliance Scan Engine** (`/api/v1/compliance/scan` + `/api/v1/compliance/report`), **Trust Framework — 5th pillar** (per-session Ed25519 attestations, `/api/v1/trust/score`, Professional+ tier), **Pro tier repriced** $249→$499/mo, 9,200+ tests |
+| **v3.3.0-beta.2** | ✅ **Current (Beta)** | **EU AI Act Module** (82 controls, 8 categories, Professional+ tier), **integrity hotfix from beta.1** (5 commits actually merged this time). Beta: first paying customer is v3.4.0+. |
+| **v3.3.0-beta.1** | ⚠️ Superseded | Original beta tagged 2026-06-08; release-integrity audit the same day found that EU AI Act work had not been merged to `main`. Tag preserved at SHA `64d0ab5` for historical record; do not use. |
+| **v3.2.0** | ✅ Supported | **Compliance Modules** (HIPAA/PCI/SOC 2/ISO 42001/FedRAMP/FIPS add-on pricing, instant Stripe webhook activation), **Compliance Scan Engine** (`/api/v1/compliance/scan` + `/api/v1/compliance/report`), **Trust Framework — 5th pillar** (per-session Ed25519 attestations, `/api/v1/trust/score`, Professional+ tier), **Pro tier repriced** $249→$499/mo, 5,484 tests |
 | **v3.1.1** | ✅ Supported | **Tier rate limit drift fix** (Starter modeled, Dev/Pro corrected), Go 1.26.4 security bump, 100% test coverage on `pkg/tier` |
-| **v3.1.0** | ⚠️ **DEPRECATED** | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage, 5,484 tests. End-of-life: **2026-09-30** (was 2027-06-27 prior to v3.2.0 supersession). Security backports only through EOL. |
+| **v3.1.0** | ⚠️ **DEPRECATED** | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage. End-of-life: **2026-09-30**. Security backports only through EOL. |
 | **v3.0.0** | ✅ Supported | AI Response Scanning (4th pillar), 24,806 RPS peak |
 | **v2.0.x** | ⚠️ **DEPRECATED** | End-of-life: **2026-12-31**. No security backports. Upgrade to v3.x required. |
 | **v1.3.x** | ⚠️ Legacy | Community support only |
 
 > **v3.x is the only actively supported line.** v2.x reached end-of-feature-life with v2.0.1 and will not receive security updates after 2026-12-31. Customers on v2.x should plan their v3.x upgrade. See [CHANGELOG.md](CHANGELOG.md) for the v2.x → v3.x migration guide.
+
+---
+
+## 📜 License
+
+AegisGate is released under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for the full text.
+
+**What Apache 2.0 means for you** (in plain English):
+- ✅ You can use AegisGate commercially, in closed-source products, and at scale — for free
+- ✅ You can modify AegisGate, distribute modifications, and create derivative works
+- ✅ You can sublicense AegisGate as part of a larger product
+- ⚠️ You **must** preserve copyright notices and the LICENSE file in any redistribution
+- ⚠️ You **must** state any significant changes you make to AegisGate
+- ⚠️ You **must not** use the "AegisGate" name, logo, or trademarks to endorse your product without permission (trademark is separate from copyright)
+
+**What Apache 2.0 means for AegisGate Security, LLC**:
+- We provide the software "as-is" with no warranty (see [DISCLAIMER](SECURITY.md#disclaimer))
+- We are not liable for any damages arising from use of the software
+- We do **not** grant you rights to the "AegisGate" trademark — you may refer to AegisGate as a product you use, but you may not brand your own product as "AegisGate"
+
+> **The Apache 2.0 license applies to the platform code only.** Customer-facing legal documents (BAA, MSA, EULA, etc.) are governed by separate agreements at [aegisgatesecurity.io/legal](https://aegisgatesecurity.io/legal/).
+
+---
+
+## 🤝 Contributing
+
+We welcome bug reports, security disclosures, documentation improvements, and feature requests.
+
+- 🐛 **Bug reports**: [GitHub Issues](https://github.com/aegisgatesecurity/aegisgate-platform/issues) (please include Go version, OS, and reproduction steps)
+- 🔒 **Security issues**: `security@aegisgatesecurity.io` (PGP key on request, 48-hour response time)
+- 💡 **Feature requests**: [GitHub Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions/discussions/categories/ideas)
+- 📖 **Documentation**: PRs welcome to [the website repo](https://github.com/aegisgatesecurity/aegisgate-site) (Hugo-based)
+- 🪝 **Pre-commit hook**: We enforce a guard rail via `.githooks/pre-commit` that blocks accidental staging of `plans/` and `legal-docs/` directories. Run `git config core.hooksPath .githooks` after cloning.
+
+**Code of Conduct**: Be kind. We follow the [Contributor Covenant 2.0](https://www.contributor-covenant.org/version/2/0/code_of_conduct/). A formal `CODE_OF_CONDUCT.md` is in the v3.4.0 backlog.
 
 ---
 
@@ -605,6 +766,7 @@ Supports: **Splunk** (CEF), **IBM QRadar** (LEEF), **ArcSight** (CEF), **Elastic
 - [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) — AI risk management
 - [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — LLM security
 - [RFC 5424](https://datatracker.ietf.org/doc/html/rfc5424) — Syslog protocol
+- [EU AI Act (Regulation 2024/1689)](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) — EU AI regulation that the v3.3.0 EU AI Act Module helps satisfy
 
 ---
 

@@ -120,3 +120,4 @@ docker-compose.test.yml
 billing-config.json
 pkg/billing/billing-config.json
 .env.example
+*.md.v*-backup
