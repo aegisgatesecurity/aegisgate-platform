@@ -36,6 +36,24 @@
 
 ---
 
+## 🚀 Try the Live Demo
+
+**Want to see AegisGate in action before reading another line of docs?** [Launch the live demo →](https://demo.aegisgatesecurity.io/)
+
+The demo runs the **actual AegisGate platform binary** in `--mode=demo` with real seed data — not a marketing mockup. You'll get:
+
+- 📊 **82 EU AI Act controls** across 8 categories of the EU AI Act, color-coded by compliance status
+- 🛡️ **20 pre-loaded threat detections** (prompt injection, DAN jailbreak, PII redaction, MCP tool abuse, A2A spoofing, etc.) with severity + MITRE ATLAS mapping
+- 🔌 **5 sample MCP tools** (file ops, web search, database query, code exec, agent messaging) with capability + permission matrices
+- 📈 **24-hour activity dashboard** with bar chart, top techniques, and threat categories
+- 💬 **Interactive playground** — click any of 12 example prompts (or write your own) to see how AegisGate responds in real time
+
+> No real LLM calls, no API keys needed, no email required to explore. Just point, click, and learn.
+
+**Best for:** product evaluators, security teams, compliance officers, and anyone who wants to feel the product before committing to a 60-second install.
+
+---
+
 ## What is AegisGate?
 
 AegisGate is a **single-binary AI security gateway** that sits between your AI services and the rest of the world. It scans every request, response, tool call, and inter-agent message for AI-specific threats (prompt injection, PII leakage, agent impersonation, tool poisoning, hallucination, toxicity) — and produces auditor-ready evidence for 10 compliance frameworks.
