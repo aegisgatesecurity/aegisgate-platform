@@ -15,7 +15,7 @@
 
 > **The only AI security platform with native HTTP API, MCP, A2A, ACP, and RESPONSE protection.** Five pillars. One gateway. Zero external dependencies.
 
-[🌐 Website](https://aegisgatesecurity.io) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](https://aegisgatesecurity.io/docs/) • [🇪🇺 EU AI Act](docs/compliance/eu-ai-act.md) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
+[🌐 Website](https://aegisgatesecurity.io) • [🚀 **Live Demo**](https://demo.aegisgatesecurity.io/) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](https://aegisgatesecurity.io/docs/) • [🇪🇺 EU AI Act](docs/compliance/eu-ai-act.md) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
 </div>
 
