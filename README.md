@@ -48,7 +48,9 @@ The demo runs the **actual AegisGate platform binary** in `--mode=demo` with rea
 - 📈 **24-hour activity dashboard** with bar chart, top techniques, and threat categories
 - 💬 **Interactive playground** — click any of 12 example prompts (or write your own) to see how AegisGate responds in real time
 
-> No real LLM calls, no API keys needed, no email required to explore. Just point, click, and learn.
+> ✅ **No LLM API keys, no Docker, no install** — the demo runs entirely in your browser.
+> 🔐 **Email signup required** — a quick 5-second gate so we can let you know when new features ship. We never share your email.
+> 🤖 **No real LLM calls** — the playground uses curated demo responses, so you can explore safely without burning API credits.
 
 **Best for:** product evaluators, security teams, compliance officers, and anyone who wants to feel the product before committing to a 60-second install.
 
