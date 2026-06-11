@@ -39,7 +39,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # Production stage: minimal Alpine, pinned by digest. Update digest when bumping Alpine.
 # Digest source: docker pull alpine:latest (as of 2026-06-08: alpine 3.23)
 FROM alpine@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
-RUN apk add --no-cache ca-certificates wget && adduser -D -g '' appuser
+RUN apk add --no-cache ca-certificates wget && \
+    apk upgrade --no-cache libssl3 libcrypto3 && \
+    adduser -D -g '' appuser
 
 # Copy binary and UI assets
 COPY --from=builder /aegisgate-platform /usr/local/bin/aegisgate-platform
