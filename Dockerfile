@@ -18,7 +18,7 @@
 
 # Builder stage: Go 1.26.4 on Alpine, pinned by digest for reproducibility.
 # Update digest when bumping the Go version. Digest source: docker pull golang:1.26.4-alpine
-FROM golang:1.26.4-alpine@sha256:f23e8b227fb4493eabe03bede4d5a32d04092da71962f1fb79b5f7d1e6c2a17f AS builder
+FROM golang:1.26.4-alpine@sha256:7a3e50096189ad57c9f9f865e7e4aa8585ed1585248513dc5cda498e2f41812c AS builder
 RUN apk add --no-cache git ca-certificates
 WORKDIR /build
 
