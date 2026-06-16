@@ -1023,6 +1023,23 @@ func main() {
 		log.Printf("[CVE] CVE HTTP API enabled at /api/v1/cve/{publish,verify} (publish is Enterprise-only)")
 	}
 
+	// Reporting HTTP endpoint (v3.5.0+ TODO-501).
+	// PDF generation is FREE (no tier gate). v0.1
+	// ships the ad-hoc PDF endpoint only;
+	// pdf-from-report is CLI-only.
+	wireReportHandlers(dashMux, authMiddleware)
+	log.Printf("[REPORT] Reporting HTTP API enabled at /api/v1/reports/pdf")
+
+	// SOC Timeline HTTP endpoint (v3.5.0+ TODO-502).
+	// SOC timeline is FREE (no tier gate). v0.1
+	// ships the read endpoint only; event recording
+	// is the correlation engine's responsibility
+	// (and currently has no callers in the platform
+	// tree; v0.2 will wire it into the 5 protocol
+	// pillars).
+	wireSOCHandlers(dashMux, authMiddleware)
+	log.Printf("[SOC] SOC Timeline HTTP API enabled at /api/v1/soc/incidents/:id/timeline")
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
