@@ -24,6 +24,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -141,6 +142,12 @@ func handleEvaluatorRun(w http.ResponseWriter, r *http.Request) {
 // The request body is the JSON-encoded envelope. The response is the
 // VerifyResultJSON shape. Critical failures (verification failure or
 // critical-severity runs) produce 422; valid envelopes produce 200.
+//
+// M3 fix (TODO-303 review, applied across all Tier 5
+// HTTP handlers for consistency): supports an optional
+// `expected_key_id` query parameter. Consistent with
+// the CLI's --key-id flag and with the a2a_intent +
+// aibom HTTP handlers.
 func handleEvaluatorVerify(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -165,6 +172,14 @@ func handleEvaluatorVerify(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "parse: " + err.Error()})
 		return
+	}
+	// Optional expected_key_id check.
+	if expectedKeyID := r.URL.Query().Get("expected_key_id"); expectedKeyID != "" {
+		if vr.Valid && vr.Envelope.Signature.KeyID != expectedKeyID {
+			vr.Valid = false
+			vr.Reason = fmt.Sprintf("key ID mismatch: have %q, want %q",
+				vr.Envelope.Signature.KeyID, expectedKeyID)
+		}
 	}
 	out := vr.ToJSON()
 	if !vr.Valid {

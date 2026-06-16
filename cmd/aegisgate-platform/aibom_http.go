@@ -24,6 +24,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -126,6 +127,12 @@ func handleAIBOMGenerate(w http.ResponseWriter, r *http.Request) {
 // POST /api/v1/aibom/verify. The request body is the
 // JSON-encoded envelope. The response is the
 // VerifyResultJSON shape.
+//
+// M3 fix (TODO-303 review, applied across all Tier 5
+// HTTP handlers for consistency): supports an optional
+// `expected_key_id` query parameter. Consistent with
+// the CLI's --key-id flag and with the evaluator +
+// a2a_intent HTTP handlers.
 func handleAIBOMVerify(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -145,6 +152,14 @@ func handleAIBOMVerify(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "parse: " + err.Error()})
 		return
+	}
+	// Optional expected_key_id check.
+	if expectedKeyID := r.URL.Query().Get("expected_key_id"); expectedKeyID != "" {
+		if vr.Valid && vr.Envelope.Signature.KeyID != expectedKeyID {
+			vr.Valid = false
+			vr.Reason = fmt.Sprintf("key ID mismatch: have %q, want %q",
+				vr.Envelope.Signature.KeyID, expectedKeyID)
+		}
 	}
 	if !vr.Valid {
 		w.WriteHeader(http.StatusUnprocessableEntity)
