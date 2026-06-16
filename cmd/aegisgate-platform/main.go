@@ -964,6 +964,17 @@ func main() {
 		log.Printf("[IOC-ADMIN] Federated IOC admin API enabled at /api/v1/ioc/admin/")
 	}
 
+	// AR-EaaS HTTP endpoint (v3.7.0+ TODO-301). Mounted on the
+	// dashboard mux (admin port) so the run/verify verbs are
+	// reachable for operators but NOT exposed to public proxy
+	// traffic. The endpoint uses an in-process stub target
+	// for v0.1; v0.2 will add a Go-plugin loader for
+	// caller-supplied targets.
+	if iocW != nil {
+		wireEvaluatorHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		log.Printf("[EVALUATOR] AR-EaaS HTTP API enabled at /api/v1/evaluator/{run,verify}")
+	}
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

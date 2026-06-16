@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: Apache-2.0
+// AegisGate Platform - CLI test helper for evaluator_subcommand_test.go
+//
+// runosexec.go bridges the testCmd helper in
+// evaluator_subcommand_test.go to the real os/exec package. The
+// split exists so the test file can use a typed wrapper without
+// pulling os/exec into its own imports (which would couple the
+// test to the host's os/exec availability).
+
+package main
+
+import (
+	"bytes"
+	"os/exec"
+	"syscall"
+)
+
+// testCmd is a small wrapper around exec.Cmd used by the CLI
+// subcommand tests. We define it in this file (the os/exec
+// bridge) so the test files don't need to import os/exec
+// directly. The fields are exported as needed by the tests.
+type testCmd struct {
+	Name string
+	Args []string
+	Dir  string
+	Env  []string
+}
+
+// CombinedOutput runs the command and returns the combined
+// stdout+stderr output. On non-zero exit, the returned error
+// is a *exitError (defined below).
+func (c *testCmd) CombinedOutput() ([]byte, error) {
+	return runOSExec(c.Name, c.Args, c.Dir, c.Env)
+}
+
+// runOSExec runs name with args in dir, with the given env. The
+// combined stdout+stderr is returned. If the process exits with
+// a non-zero code, the returned error is a *testExitError.
+func runOSExec(name string, args []string, dir string, env []string) ([]byte, error) {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	if env != nil {
+		cmd.Env = env
+	}
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+	err := cmd.Run()
+	if err == nil {
+		return buf.Bytes(), nil
+	}
+	// Extract the exit code.
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		// Try to get the wait status (Unix only).
+		if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+			return buf.Bytes(), &exitError{Code: status.ExitStatus()}
+		}
+		// Fallback: use ExitCode() (added in Go 1.12).
+		return buf.Bytes(), &exitError{Code: exitErr.ExitCode()}
+	}
+	return buf.Bytes(), err
+}
+
+// exitError is the error returned when a subprocess
+// exits with a non-zero code. Defined here (not in the test
+// file) so the runOSExec function can construct it.
+type exitError struct {
+	Code int
+}
+
+// Error implements the error interface.
+func (e *exitError) Error() string {
+	return "exit code " + intToStrCmd(e.Code)
+}
+
+// intToStrCmd formats a small non-negative int as a string.
+// Kept in the cmd package to avoid the strconv import in the
+// test file (it lives in the same package).
+func intToStrCmd(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	neg := n < 0
+	if neg {
+		n = -n
+	}
+	var buf [20]byte
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
+	}
+	if neg {
+		i--
+		buf[i] = '-'
+	}
+	return string(buf[i:])
+}
