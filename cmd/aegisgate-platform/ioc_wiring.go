@@ -58,7 +58,8 @@ type iocWiring struct {
 	Store    *ioc.Store
 	Producer *ioc.Producer
 	Sync     *ioc.Sync
-	Enabled  bool // true if either share or receive is enabled
+	KeyRing  *ioc.KeyRing // TODO-301: shared with the AR-EaaS HTTP endpoint
+	Enabled  bool         // true if either share or receive is enabled
 }
 
 // iocKeyFile is the on-disk filename for the persisted signing
@@ -189,6 +190,7 @@ func wireIOC(dataDir string, platformTier tier.Tier) (*iocWiring, string, error)
 		Store:    store,
 		Producer: producer,
 		Sync:     syncSub,
+		KeyRing:  keyring, // TODO-301: shared with the AR-EaaS HTTP endpoint
 		Enabled:  share || receive,
 	}, instanceID, nil
 }
