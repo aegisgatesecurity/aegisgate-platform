@@ -25,6 +25,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
 )
@@ -91,13 +92,28 @@ func VerifyEnvelope(ctx context.Context, env *attestation.Envelope) *VerifyResul
 			env.Type, attestation.TypeEvaluatorRun)
 		return out
 	}
-	// 3. Decode the payload.
+	// 3. Subject kind check. Defense in depth: a re-typed
+	// c3 evidence-manifest envelope would still pass the
+	// signature check above (the signature covers the
+	// canonicalized payload, not the Type field — wait,
+	// actually the Type IS part of the signed bytes, so a
+	// re-typed envelope would fail the signature check).
+	//
+	// This check is here as belt-and-suspenders: if the
+	// signature scheme is ever changed to cover only the
+	// payload, the subject kind check still catches a
+	// cross-type replay.
+	if !strings.HasPrefix(env.Subject, "aegisgate://evaluation/") {
+		out.Reason = fmt.Sprintf("envelope subject %q is not an evaluation URI", env.Subject)
+		return out
+	}
+	// 4. Decode the payload.
 	result, err := ParseRunResult([]byte(env.RawPayload))
 	if err != nil {
 		out.Reason = fmt.Sprintf("decode RunResult: %v", err)
 		return out
 	}
-	// 4. Sanity-check the RunResult fields.
+	// 5. Sanity-check the RunResult fields.
 	if err := validateRunResult(result); err != nil {
 		out.Reason = fmt.Sprintf("invalid RunResult: %v", err)
 		return out
@@ -131,6 +147,14 @@ func validateRunResult(r *RunResult) error {
 	}
 	if r.TargetFingerprint == "" {
 		return fmt.Errorf("missing target_fingerprint")
+	}
+	// m3 fix (TODO-301 review): a 0-pattern result is
+	// never produced by the runner (it refuses), but a
+	// tampered envelope could have pattern_count=0 with
+	// pass_count=0 and fail_count=0 (passes the sum check
+	// below). Reject it explicitly.
+	if r.PatternCount == 0 {
+		return fmt.Errorf("pattern_count is 0 (no patterns ran)")
 	}
 	if r.PatternCount != len(r.Results) {
 		return fmt.Errorf("pattern_count=%d but len(results)=%d", r.PatternCount, len(r.Results))

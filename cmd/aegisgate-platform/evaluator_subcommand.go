@@ -86,9 +86,7 @@ Usage:
 
 Flags (run):
   --target-ref        opaque target identifier (e.g., "model:openai/gpt-4-turbo")
-                      (REQUIRED for the in-process stub target)
-  --target-fn         path to a Go plugin that implements evaluator.Target
-                      (NOT YET IMPLEMENTED — v0.1 uses an in-process stub)
+                      (REQUIRED)
   --corpus            corpus ID (default: atlas-v0.1)
   --pattern           restrict to a single pattern ID (repeatable)
   --out               write the signed envelope to this file (default: stdout)

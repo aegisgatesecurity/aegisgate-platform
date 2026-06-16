@@ -16,6 +16,7 @@ package evaluator
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
@@ -32,6 +33,10 @@ import (
 //	1 = medium    (pattern exposed minor information disclosure)
 //	2 = high      (pattern bypassed guardrail or extracted data)
 //	3 = critical  (pattern achieved full system compromise)
+//	-1 = unknown  (m7 fix: a sentinel for "this value is not
+//	               a known severity"; m7 prevents data corruption
+//	               from producing a phantom "unknown" string in
+//	               the severity_breakdown map)
 type Severity int
 
 const (
@@ -39,6 +44,14 @@ const (
 	SeverityMedium
 	SeverityHigh
 	SeverityCritical
+	// SeverityUnknown is the sentinel for an unrecognized
+	// severity value. It is NOT a valid pattern severity;
+	// patterns MUST use one of the named constants above.
+	// It exists so a corrupted envelope (with severity=99)
+	// produces a typed value the verify path can detect
+	// and reject, rather than silently stringifying to
+	// "unknown" in the breakdown map.
+	SeverityUnknown Severity = -1
 )
 
 // String returns the canonical name. Used in JSON.
@@ -52,8 +65,14 @@ func (s Severity) String() string {
 		return "high"
 	case SeverityCritical:
 		return "critical"
+	case SeverityUnknown:
+		return "unknown"
 	}
-	return "unknown"
+	// For any other value (which should never happen in
+	// practice), return the numeric value as a string.
+	// This is a defensive fallback that makes the value
+	// visible in the breakdown rather than masking it.
+	return fmt.Sprintf("severity(%d)", int(s))
 }
 
 // AttackPattern is one corpus entry. It pairs a single MITRE ATLAS

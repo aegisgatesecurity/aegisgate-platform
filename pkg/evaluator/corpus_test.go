@@ -218,9 +218,16 @@ func TestSeverity_String(t *testing.T) {
 			t.Errorf("severity %d: got %q, want %q", sev, got, want)
 		}
 	}
-	// Unknown severity.
-	if got := Severity(99).String(); got != "unknown" {
-		t.Errorf("unknown severity: got %q, want %q", got, "unknown")
+	// Unknown severity. With the m7 fix, the named
+	// SeverityUnknown constant stringifies to "unknown";
+	// any other unknown value (e.g., 99) stringifies to
+	// "severity(99)" so the value is visible in the
+	// breakdown rather than masked.
+	if got := SeverityUnknown.String(); got != "unknown" {
+		t.Errorf("SeverityUnknown: got %q, want %q", got, "unknown")
+	}
+	if got := Severity(99).String(); got != "severity(99)" {
+		t.Errorf("unknown severity (99): got %q, want %q", got, "severity(99)")
 	}
 }
 

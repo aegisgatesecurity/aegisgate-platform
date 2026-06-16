@@ -341,11 +341,16 @@ func TestRun_PatternTimeoutFires(t *testing.T) {
 	c := DefaultCorpus()
 	kr := makeTestKeyRing(t)
 	r, _ := NewRunner(c, kr)
-	r.SetPatternTimeout(50 * time.Millisecond)
+	// m4 fix (TODO-301 review): the old test used 50ms
+	// timeout + 500ms target sleep, which is in the
+	// "might pass even if the timeout didn't fire" zone
+	// on a slow CI machine. The new test uses 1ms
+	// timeout + 100ms target sleep, which is in the
+	// "deterministically times out" zone.
 	slowTarget := &FuncTarget{
 		AnswerFn: func(ctx context.Context, prompt string) (string, error) {
 			select {
-			case <-time.After(500 * time.Millisecond):
+			case <-time.After(100 * time.Millisecond):
 				return "should have been cancelled", nil
 			case <-ctx.Done():
 				return "", ctx.Err()
@@ -356,7 +361,7 @@ func TestRun_PatternTimeoutFires(t *testing.T) {
 	}
 	out, err := r.Run(context.Background(), slowTarget, RunRequest{
 		TargetRef: "test:timeout",
-	})
+	}, WithPatternTimeout(1*time.Millisecond))
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -445,19 +450,46 @@ func TestHumanReport_AllLeak(t *testing.T) {
 }
 
 func TestSetPatternTimeout_DefaultRestore(t *testing.T) {
-	c := DefaultCorpus()
-	kr := makeTestKeyRing(t)
-	r, _ := NewRunner(c, kr)
-	r.SetPatternTimeout(100 * time.Millisecond)
-	r.SetPatternTimeout(0) // restore default
-	if r.patternTimeout != DefaultPatternTimeout {
-		t.Errorf("SetPatternTimeout(0): got %v, want default %v",
-			r.patternTimeout, DefaultPatternTimeout)
+	// m2 fix (TODO-301 review): the per-pattern timeout is
+	// now configured via the WithPatternTimeout RunOption,
+	// not the (removed) SetPatternTimeout method. Verify
+	// that:
+	//   1. A non-positive value restores the default.
+	//   2. An over-cap value is clamped to MaxPatternTimeout.
+	//   3. A normal value is used as-is.
+	//   4. No RunOption at all uses the default.
+	defaults := applyRunOptions(nil)
+	if defaults.patternTimeout != DefaultPatternTimeout {
+		t.Errorf("default: got %v, want %v", defaults.patternTimeout, DefaultPatternTimeout)
 	}
-	r.SetPatternTimeout(-1) // also restore default
-	if r.patternTimeout != DefaultPatternTimeout {
-		t.Errorf("SetPatternTimeout(-1): got %v, want default %v",
-			r.patternTimeout, DefaultPatternTimeout)
+	overrides := applyRunOptions([]RunOption{
+		WithPatternTimeout(0), // restore default
+	})
+	if overrides.patternTimeout != DefaultPatternTimeout {
+		t.Errorf("WithPatternTimeout(0): got %v, want %v",
+			overrides.patternTimeout, DefaultPatternTimeout)
+	}
+	overrides = applyRunOptions([]RunOption{
+		WithPatternTimeout(-1 * time.Second), // negative -> default
+	})
+	if overrides.patternTimeout != DefaultPatternTimeout {
+		t.Errorf("WithPatternTimeout(-1s): got %v, want %v",
+			overrides.patternTimeout, DefaultPatternTimeout)
+	}
+	overrides = applyRunOptions([]RunOption{
+		WithPatternTimeout(100 * time.Millisecond), // normal value
+	})
+	if overrides.patternTimeout != 100*time.Millisecond {
+		t.Errorf("WithPatternTimeout(100ms): got %v, want %v",
+			overrides.patternTimeout, 100*time.Millisecond)
+	}
+	// m2 fix: over-cap value clamped to MaxPatternTimeout.
+	overrides = applyRunOptions([]RunOption{
+		WithPatternTimeout(MaxPatternTimeout * 10), // way over cap
+	})
+	if overrides.patternTimeout != MaxPatternTimeout {
+		t.Errorf("WithPatternTimeout(over-cap): got %v, want %v (clamped to MaxPatternTimeout)",
+			overrides.patternTimeout, MaxPatternTimeout)
 	}
 }
 
