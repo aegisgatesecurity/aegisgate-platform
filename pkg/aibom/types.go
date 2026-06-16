@@ -217,6 +217,11 @@ type AIBOM struct {
 	// (e.g., "weekly prod snapshot"). Not signed separately;
 	// included in the AIBOM as a property.
 	GeneratorNotes string
+	// BOMVersion is the CycloneDX version field. Zero
+	// (the default) means "use version 1". Non-zero values
+	// override (callers like regeneration pipelines can
+	// track their own version counter).
+	BOMVersion int
 }
 
 // HTTPComponent describes the HTTP transport for the AIBOM.

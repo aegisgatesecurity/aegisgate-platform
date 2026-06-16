@@ -126,13 +126,31 @@ func Sign(bom *BOM, keyRing *ioc.KeyRing, opts ...SignerOption) (*attestation.En
 	// the BOM's deployment id. Same pattern as TODO-301
 	// C2 fix (16 hex = 64 bits of entropy, plenty for
 	// an identifier).
+	//
+	// C1 fix (TODO-302 review): the previous implementation
+	// dropped WithKeyID when WithIssuer was also supplied
+	// (the keyID was only consumed in the auto-issuer
+	// branch). Now: if the caller supplies BOTH a custom
+	// issuer AND a custom keyID, the keyID is appended to
+	// the custom issuer with a colon separator. This makes
+	// the WithKeyID/WithIssuer interaction explicit and
+	// observable (no silent drops).
 	issuer := o.issuer
 	if issuer == "" {
+		// Auto-generated issuer: buildIssuer() already
+		// includes the keyID. We pass the keyID explicitly
+		// so the caller can override it via WithKeyID.
 		keyID := o.keyID
 		if keyID == "" {
 			keyID = keyRing.CurrentKeyID()
 		}
 		issuer = buildIssuer(bom, keyID)
+	} else if o.keyID != "" {
+		// Custom issuer: append the keyID for correlation.
+		// If the caller supplied a custom issuer WITHOUT
+		// a keyID, the custom issuer stands as-is (the
+		// caller takes responsibility for the format).
+		issuer = issuer + ":" + o.keyID
 	}
 	if o.notes != "" {
 		issuer = issuer + ":" + sanitizeNotes(o.notes)
@@ -187,15 +205,10 @@ func buildIssuer(bom *BOM, keyID string) string {
 	if id == "" {
 		return "aibom:unknown:" + keyID
 	}
-	// Reuse the same shortFingerprint logic as TODO-301 C2.
-	// We inline the SHA-256 here to avoid an import cycle
-	// (pkg/aibom is consumed by pkg/evaluator? No, it's not;
-	// the SHA-256 is stdlib). 16 hex chars = 64 bits.
-	h := sha256Hex(id)
-	short := h
-	if len(short) > 16 {
-		short = short[:16]
-	}
+	// 16 hex chars = 64 bits of entropy (TODO-301 C2 fix
+	// pattern). hashSHA256Hex returns the full 64-char hex
+	// digest; we take the first 16.
+	short := hashSHA256Hex([]byte(id))[:16]
 	return "aibom:shortfp:" + short + ":" + keyID
 }
 
@@ -223,11 +236,4 @@ func applySignerOptions(opts []SignerOption) signerOptions {
 		opt(&o)
 	}
 	return o
-}
-
-// sha256Hex returns the hex SHA-256 of s. Inlined to keep
-// the imports list short (no need for crypto/sha256 in
-// every file).
-func sha256Hex(s string) string {
-	return hashSHA256Hex([]byte(s))
 }

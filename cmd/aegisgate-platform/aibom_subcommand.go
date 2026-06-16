@@ -123,17 +123,20 @@ func runAIBOMGenerate(args []string) int {
 		defer keyRingCleanup()
 	}
 
-	// 2. Generate the BOM. v0.1: no platform config
-	// enumeration; the BOM is built from the supplied
-	// options only.
-	bom, err := aibom.GenerateFromConfig(nil,
-		aibom.WithTier(*tier),
-		aibom.WithPlatformVersion(*platformVer),
-		aibom.WithInstanceID(*instanceID),
-		aibom.WithGeneratorNotes(*notes),
-	)
+	// 2. Generate the BOM. v0.1: the per-pillar data is
+	// left as zero values (the BOM still emits the 5
+	// pillars, but with Enabled=false). v0.2 will read
+	// the live platform config and populate them.
+	aibomOpts := aibom.AIBOMOptions{
+		Tier:            *tier,
+		PlatformVersion: *platformVer,
+		InstanceID:      *instanceID,
+		GeneratorNotes:  *notes,
+	}
+	a := aibom.BuildAIBOMFromOptions(aibomOpts)
+	bom, err := aibom.GenerateFromAIBOM(a)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "aibom generate: GenerateFromConfig: %v\n", err)
+		fmt.Fprintf(os.Stderr, "aibom generate: GenerateFromAIBOM: %v\n", err)
 		return 1
 	}
 

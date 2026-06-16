@@ -5,18 +5,17 @@
 // into a CycloneDX 1.6 SBOM. The output is what gets signed
 // by the envelope.
 //
-// # Two entry points
+// # Entry point
 //
-//  1. GenerateFromAIBOM(aibom) - the primary entry point.
-//     Takes a fully-populated AIBOM struct and returns a BOM.
-//     This is the testable, deterministic path: pass an AIBOM,
-//     get the same BOM every time (modulo GeneratedAt).
-//
-//  2. GenerateFromConfig(cfg, opts) - convenience helper.
-//     Takes the platform's *platformconfig.Config and a few
-//     optional extras (tier, instance id, prompts, corpora),
-//     builds the AIBOM internally, then calls
-//     GenerateFromAIBOM. This is the path the CLI/HTTP use.
+// GenerateFromAIBOM(aibom) is the only entry point in v0.1.
+// Callers build the AIBOM struct (with explicit per-pillar
+// data) and pass it in. The v0.1 review (C2 + m1) found that
+// a "config-driven" wrapper that hardcoded per-pillar data
+// was misleading to operators and auditors (the AIBOM would
+// claim "MCP enabled with sensitivity 75" when we didn't
+// actually read the config). v0.2 will add a real config-
+// driven wrapper that reads the live platform config; until
+// then, callers MUST build the AIBOM explicitly.
 //
 // # Determinism
 //
@@ -100,10 +99,19 @@ func GenerateFromAIBOM(a *AIBOM) (*BOM, error) {
 	// Build the AIBOM extension properties.
 	properties := buildAIBOMProperties(a)
 
+	// M2 fix (TODO-302 review): BOM.Version defaults to 1
+	// but can be overridden via the AIBOM struct (which
+	// BuildAIBOMFromOptions populates from AIBOMOptions).
+	// This is consistent with the CycloneDX spec's
+	// "subsequent revisions SHOULD increment" recommendation.
+	bomVersion := a.BOMVersion
+	if bomVersion <= 0 {
+		bomVersion = 1
+	}
 	return &BOM{
 		BOMFormat:    CycloneDXBOMFormat,
 		SpecVersion:  CycloneDXSpecVersion,
-		Version:      1,
+		Version:      bomVersion,
 		SerialNumber: serialNumber,
 		Metadata:     metadata,
 		Components:   components,
@@ -459,114 +467,72 @@ func buildAIBOMProperties(a *AIBOM) []Property {
 }
 
 // =====================================================================
-// GenerateFromConfig (convenience helper for the CLI / HTTP)
+// v0.1 helper: BuildAIBOMFromOptions
 // =====================================================================
-
-// ConfigGeneratorOption configures a single GenerateFromConfig
-// call. Functional-options pattern (per TODO-301 C1 lesson).
-type ConfigGeneratorOption func(*configGeneratorOptions)
-
-// configGeneratorOptions holds the per-call options.
-type configGeneratorOptions struct {
-	tier           string
-	instanceID     string
-	platformVer    string
-	prompts        []PromptComponent
-	corpora        []RAGCorpusComponent
-	model          *ModelComponent
-	generatorNotes string
-}
-
-// WithTier overrides the platform tier in the AIBOM.
-func WithTier(t string) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.tier = t }
-}
-
-// WithInstanceID overrides the instance id in the AIBOM.
-func WithInstanceID(id string) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.instanceID = id }
-}
-
-// WithPlatformVersion overrides the platform version in the
-// AIBOM. If not set, "unknown" is emitted.
-func WithPlatformVersion(v string) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.platformVer = v }
-}
-
-// WithPrompts adds operator-supplied prompts to the AIBOM.
-func WithPrompts(prompts []PromptComponent) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.prompts = prompts }
-}
-
-// WithCorpora adds operator-supplied RAG corpora to the AIBOM.
-func WithCorpora(corpora []RAGCorpusComponent) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.corpora = corpora }
-}
-
-// WithModel registers an AI model for the deployment.
-// v0.1: not used by the CLI; v0.2 will add --model flags.
-func WithModel(m ModelComponent) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.model = &m }
-}
-
-// WithGeneratorNotes adds a free-form note to the AIBOM.
-func WithGeneratorNotes(n string) ConfigGeneratorOption {
-	return func(o *configGeneratorOptions) { o.generatorNotes = n }
-}
-
-// GenerateFromConfig is a convenience wrapper that builds
-// an AIBOM from the platform config + options, then calls
-// GenerateFromAIBOM. v0.1: the config parameter is unused
-// (the AIBOM is built from the options only); v0.2 will
-// enumerate from the config.
 //
-// The config parameter is the platform's *platformconfig.Config.
-// We accept interface{} at the public API for now and will
-// narrow the type in v0.2 (when the enumeration logic is
-// actually written). For v0.1, this is a thin shim that
-// produces a structurally-valid AIBOM with placeholder
-// per-pillar data.
-func GenerateFromConfig(_ interface{}, opts ...ConfigGeneratorOption) (*BOM, error) {
-	o := applyConfigOptions(opts)
-	a := &AIBOM{
-		DeploymentID:    uuid.NewString(),
-		PlatformVersion: o.platformVer,
-		PlatformTier:    o.tier,
-		InstanceID:      o.instanceID,
-		GeneratedAt:     time.Now().UTC(),
-		Prompts:         o.prompts,
-		Corpora:         o.corpora,
-		GeneratorNotes:  o.generatorNotes,
-	}
-	if a.Prompts == nil {
-		a.Prompts = []PromptComponent{} // empty, not nil
-	}
-	if a.Corpora == nil {
-		a.Corpora = []RAGCorpusComponent{}
-	}
-	if o.model != nil {
-		a.Model = *o.model
-	}
-	// v0.1: HTTP/MCP/A2A/ACP/ANP components are placeholders.
-	// The CLI / HTTP handlers populate them from the platform's
-	// runtime state (which the config interface does not
-	// expose). For now, we leave them as "unknown" so the
-	// AIBOM is still valid CycloneDX.
-	a.HTTP = HTTPComponent{Enabled: true, TLSVersion: "1.3"}
-	a.MCP = MCPComponent{Enabled: true, PromptInjectionDetectionEnabled: true, PromptInjectionSensitivity: 75}
-	a.A2A = A2AComponent{Enabled: true}
-	a.ACP = ACPComponent{Enabled: true, HMACAlgorithm: "SHA-256"}
-	a.ANP = ANPComponent{Enabled: true, DefaultConfig: true}
-	return GenerateFromAIBOM(a)
+// v0.1 BuildAIBOMFromOptions builds an AIBOM from a small
+// struct of options. The struct is the CLI/HTTP-friendly
+// shape (tier, version, instance id, notes); the AIBOM
+// per-pillar fields are NOT populated by this helper (the
+// per-pillar data requires reading the live platform config,
+// which v0.1 does not do — see the C2/m1 fix in the
+// TODO-302 review).
+//
+// Callers that want per-pillar data MUST build the AIBOM
+// struct directly. This helper is intentionally minimal
+// (just the platform-level metadata) so the AIBOM is
+// honest about what's in it.
+
+// AIBOMOptions is the v0.1 CLI/HTTP-friendly option struct.
+// The AIBOM type itself is the full internal model; this
+// struct is the minimal external view.
+type AIBOMOptions struct {
+	Tier            string
+	PlatformVersion string
+	InstanceID      string
+	GeneratorNotes  string
+	// BOMVersion is the CycloneDX version field. CycloneDX
+	// recommends that "subsequent revisions to the same
+	// BOM SHOULD increment the version." v0.1 always
+	// defaults to 1; callers can override (e.g., a
+	// regeneration pipeline that tracks version locally).
+	BOMVersion int
+	// Model is optional. Empty ModelComponent means "not
+	// registered" (the BOM omits the model component).
+	Model ModelComponent
+	// Prompts is optional. Empty slice means "no prompts
+	// registered" (the BOM omits the prompt components).
+	Prompts []PromptComponent
+	// Corpora is optional. Empty slice means "no corpora
+	// registered" (the BOM omits the RAG components).
+	Corpora []RAGCorpusComponent
 }
 
-// applyConfigOptions returns the effective options.
-func applyConfigOptions(opts []ConfigGeneratorOption) configGeneratorOptions {
-	o := configGeneratorOptions{}
-	for _, opt := range opts {
-		opt(&o)
+// BuildAIBOMFromOptions builds a v0.1 AIBOM from CLI/HTTP
+// options. The per-pillar fields (HTTP, MCP, A2A, ACP, ANP)
+// are left as zero values (Enabled=false, etc.); the BOM
+// will still emit the 5 pillars (the validator requires
+// them) but with explicit "disabled" data.
+//
+// This is the explicit v0.1 scope: "I haven't read the
+// live config, so I report 'unknown' for everything."
+// v0.2 will replace this with a config-driven path.
+func BuildAIBOMFromOptions(opts AIBOMOptions) *AIBOM {
+	return &AIBOM{
+		DeploymentID:    uuid.NewString(),
+		PlatformVersion: opts.PlatformVersion,
+		PlatformTier:    opts.Tier,
+		InstanceID:      opts.InstanceID,
+		GeneratedAt:     time.Now().UTC(),
+		Model:           opts.Model,
+		Prompts:         opts.Prompts,
+		Corpora:         opts.Corpora,
+		GeneratorNotes:  opts.GeneratorNotes,
+		BOMVersion:      opts.BOMVersion, // 0 = default to 1 in GenerateFromAIBOM
+		// HTTP, MCP, A2A, ACP, ANP are zero-valued. The
+		// generator emits them anyway (with Enabled=false
+		// and no other data) so the validator is happy.
 	}
-	return o
 }
 
 // =====================================================================
