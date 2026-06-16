@@ -7,6 +7,8 @@ package acp
 
 import (
 	"sync"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 )
 
 // CapabilityEnforcer enforces ACP capabilities
@@ -54,10 +56,28 @@ func (ce *CapabilityEnforcer) Check(identity, capability string) bool {
 
 	if caps, exists := ce.capabilities[identity]; exists {
 		if allowed, exists := caps[capability]; exists {
+			if !allowed {
+				logging.Record(logging.Event{
+					Type:     "acp_capability",
+					Severity: logging.SeverityHigh,
+					Action:   "deny",
+					Message:  "ACP capability denied: identity=" + identity + " capability=" + capability,
+					User:     identity,
+				})
+			}
 			return allowed
 		}
 	}
 
+	if !ce.defaultAllowed {
+		logging.Record(logging.Event{
+			Type:     "acp_capability",
+			Severity: logging.SeverityHigh,
+			Action:   "deny",
+			Message:  "ACP capability denied (default-deny): identity=" + identity + " capability=" + capability,
+			User:     identity,
+		})
+	}
 	return ce.defaultAllowed
 }
 

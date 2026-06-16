@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 )
 
@@ -102,7 +103,31 @@ func (rs *A2AResponseScanner) ScanA2AMessage(ctx context.Context, message interf
 		return &responseguard.ResponseScanResult{Allowed: true}, nil
 	}
 
-	return rs.ScanResponse(ctx, content, agentID)
+	result, err := rs.ScanResponse(ctx, content, agentID)
+	if err != nil {
+		return result, err
+	}
+
+	if !result.Allowed || len(result.Threats) > 0 {
+		threatType := "a2a_threat"
+		if len(result.Threats) > 0 {
+			threatType = result.Threats[0].Type
+		}
+		sev := logging.SeverityMedium
+		if !result.Allowed {
+			sev = logging.SeverityHigh
+		}
+		logging.Record(logging.Event{
+			Type:       "a2a_message",
+			Severity:   sev,
+			Action:     "scan",
+			Message:    "A2A message threat detected: " + threatType,
+			User:       agentID,
+			ThreatType: threatType,
+		})
+	}
+
+	return result, nil
 }
 
 // UpdateAgentStats updates scanning statistics for an agent

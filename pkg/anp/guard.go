@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 )
 
@@ -81,23 +82,58 @@ func (g *Guard) GuardTask(ctx context.Context, task *Task, secCtx *SecurityConte
 	}
 
 	if !g.checkTaskRateLimit(secCtx.AgentID) {
+		logging.Record(logging.Event{
+			Type:     "anp_task",
+			Severity: logging.SeverityHigh,
+			Action:   "block",
+			Message:  "ANP task blocked: task rate limit exceeded",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, "task rate limit exceeded", "anp_rate_limit", "high"), nil
 	}
 
 	if g.cfg.RequireSignature && len(task.Signature) == 0 {
+		logging.Record(logging.Event{
+			Type:     "anp_task",
+			Severity: logging.SeverityCritical,
+			Action:   "block",
+			Message:  "ANP task blocked: task signature required",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, "task signature required", "anp_task_origin_check", "critical"), nil
 	}
 
 	if g.cfg.RequireContract && secCtx.ContractID == "" {
+		logging.Record(logging.Event{
+			Type:     "anp_task",
+			Severity: logging.SeverityHigh,
+			Action:   "block",
+			Message:  "ANP task blocked: contract required for task creation",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, "contract required for task creation", "anp_capability_check", "high"), nil
 	}
 
 	if secCtx.TrustScore > 0 && secCtx.TrustScore < g.cfg.MinTrustScore {
+		logging.Record(logging.Event{
+			Type:     "anp_task",
+			Severity: logging.SeverityHigh,
+			Action:   "block",
+			Message:  "ANP task blocked: trust score below minimum",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, fmt.Sprintf("trust score %.2f below minimum %.2f", secCtx.TrustScore, g.cfg.MinTrustScore), "anp_trust_threshold", "high"), nil
 	}
 
 	for key, value := range task.Metadata {
 		if g.detectInjection(key + ":" + value) {
+			logging.Record(logging.Event{
+				Type:     "anp_task",
+				Severity: logging.SeverityCritical,
+				Action:   "block",
+				Message:  "ANP task blocked: injection detected in metadata field " + key,
+				User:     secCtx.AgentID,
+			})
 			return NewGuardResult(DecisionBlock, fmt.Sprintf("injection detected in metadata field: %s", key), "anp_injection_scan", "critical"), nil
 		}
 	}
@@ -120,14 +156,35 @@ func (g *Guard) GuardTaskOutput(ctx context.Context, task *Task, output string, 
 	}
 
 	if g.cfg.BlockPII && len(result.DetectedPII) > 0 {
+		logging.Record(logging.Event{
+			Type:     "anp_task_output",
+			Severity: logging.SeverityHigh,
+			Action:   "block",
+			Message:  "ANP task output blocked: PII detected",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, "PII detected in task output", "anp_output_pii", "high"), nil
 	}
 
 	if g.cfg.BlockSecrets && len(result.DetectedSecrets) > 0 {
+		logging.Record(logging.Event{
+			Type:     "anp_task_output",
+			Severity: logging.SeverityCritical,
+			Action:   "block",
+			Message:  "ANP task output blocked: secrets detected",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, "secrets detected in task output", "anp_output_secrets", "critical"), nil
 	}
 
 	if g.cfg.BlockToxicContent && !result.Allowed {
+		logging.Record(logging.Event{
+			Type:     "anp_task_output",
+			Severity: logging.SeverityHigh,
+			Action:   "block",
+			Message:  "ANP task output blocked: toxic content detected",
+			User:     secCtx.AgentID,
+		})
 		return NewGuardResult(DecisionBlock, "toxic content detected in task output", "anp_output_toxicity", "high"), nil
 	}
 

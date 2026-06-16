@@ -12,8 +12,11 @@ package response
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 )
 
 // ============================================================================
@@ -210,6 +213,40 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 	rg.addComplianceReports(result)
 
 	result.LatencyMs = time.Since(startTime).Milliseconds()
+
+	// Record the scan outcome in the global ring buffer for evidence
+	// packages. Only record when something was detected (PII, secrets,
+	// threats) or when the response was blocked - a clean scan would
+	// otherwise pollute the ring with N normal events per minute.
+	if len(result.Threats) > 0 || !result.Allowed || len(result.DetectedPII) > 0 || len(result.DetectedSecrets) > 0 {
+		eventSev := logging.SeverityInfo
+		threatSummary := ""
+		if len(result.Threats) > 0 {
+			threatSummary = result.Threats[0].Type
+			for i, t := range result.Threats {
+				if i == 0 {
+					continue
+				}
+				threatSummary += "," + t.Type
+				if i >= 2 {
+					threatSummary += ",..."
+					break
+				}
+			}
+		}
+		if !result.Allowed {
+			eventSev = logging.SeverityHigh
+		} else if len(result.Threats) > 0 {
+			eventSev = logging.SeverityMedium
+		}
+		logging.Record(logging.Event{
+			Type:     "response_scan",
+			Severity: eventSev,
+			Message: fmt.Sprintf("threats=%d pii=%d secrets=%d allowed=%t summary=%s",
+				len(result.Threats), len(result.DetectedPII), len(result.DetectedSecrets), result.Allowed, threatSummary),
+		})
+	}
+
 	return result, nil
 }
 

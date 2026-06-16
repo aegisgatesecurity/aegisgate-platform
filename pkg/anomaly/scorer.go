@@ -1,8 +1,11 @@
 package anomaly
 
 import (
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 )
 
 // ScorerConfig defines weights and thresholds for anomaly scoring.
@@ -300,6 +303,21 @@ func Scan(data []byte, config ScorerConfig) ScoreResult {
 		result.Reason = "Anomaly detected, flagging for review"
 	} else {
 		result.Reason = "Normal content"
+	}
+
+	// Record anomaly events in the global ring buffer for evidence
+	// packages. Only record anomalous/alert events (clean scans would
+	// dominate the ring buffer volume without adding signal).
+	if result.IsAnomalous || result.ShouldBlock {
+		sev := logging.SeverityMedium
+		if result.ShouldBlock {
+			sev = logging.SeverityHigh
+		}
+		logging.Record(logging.Event{
+			Type:     "anomaly_score",
+			Severity: sev,
+			Message:  fmt.Sprintf("score=%.3f %s", score.Total, result.Reason),
+		})
 	}
 
 	return result
