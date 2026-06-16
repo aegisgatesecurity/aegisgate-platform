@@ -49,6 +49,13 @@ const (
 
 	// TODO-305 CVE-for-AI Feed entry.
 	TypeCVEEntry Type = "cve.entry.v1"
+	// TypeDigest is the CISO Posture Digest (TODO-601).
+	// The Digest is a regulator-acceptable PDF report
+	// summarizing the platform's security posture over
+	// a period (daily/weekly/monthly). It is signed
+	// with the envelope to provide tamper-evidence
+	// and third-party verifiability.
+	TypeDigest Type = "digest.v1"
 )
 
 // TypeSpec is the human-readable metadata for a registered
@@ -127,6 +134,14 @@ var allTypes = map[Type]TypeSpec{
 		Owner:       "pkg/cve",
 		Description: "CVE-for-AI Feed entry (TODO-305).",
 	},
+	TypeDigest: {
+		Domain:      "digest",
+		Name:        "posture",
+		Version:     1,
+		SchemaURL:   "https://aegisgatesecurity.io/schemas/digest.v1.json",
+		Owner:       "pkg/digest",
+		Description: "CISO Posture Digest (TODO-601).",
+	},
 }
 
 // subjectScheme is the URI scheme for envelope subjects. This
@@ -150,6 +165,7 @@ var knownKinds = map[string]bool{
 	"evaluation": true,
 	"cve":        true,
 	"intent":     true,
+	"digest":     true, // TODO-601: CISO Posture Digest
 }
 
 // ValidateType returns an error if t is not in the registry.
