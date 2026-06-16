@@ -202,17 +202,22 @@ func Sign(tuple *IntentTuple, keyRing *ioc.KeyRing, opts ...SignerOption) (*atte
 	}
 	subject := "aegisgate://" + kind + "/" + t.IntentID
 
-	// 6. Build the issuer. C1 fix from TODO-302: if
-	// the caller supplies a custom issuer AND a custom
-	// keyID, the keyID is appended. The auto-generated
-	// path uses the shortfp format (TODO-301 C2).
+	// 6. Build the issuer. C1 fix (TODO-303 review): pass
+	// the LOCAL copy `t` to buildIssuer, not the original
+	// `tuple` parameter. The local copy is what we
+	// actually sign (the marshaled payload is from `t`),
+	// so the issuer must be built from the same data.
+	// In v0.1 the AgentID is required (so `t.AgentID`
+	// and `tuple.AgentID` are always equal), but passing
+	// `t` makes the function consistent and prevents
+	// future bugs if we add more auto-fillable fields.
 	issuer := o.issuer
 	if issuer == "" {
 		keyID := o.keyID
 		if keyID == "" {
 			keyID = keyRing.CurrentKeyID()
 		}
-		issuer = buildIssuer(tuple, keyID)
+		issuer = buildIssuer(&t, keyID)
 	} else if o.keyID != "" {
 		issuer = issuer + ":" + o.keyID
 	}
@@ -277,6 +282,46 @@ func sanitizeForIssuer(s string) string {
 }
 
 // =====================================================================
+// Clock (for testable time checks)
+// =====================================================================
+
+// Clock is the time source for the verify path. The
+// default implementation uses time.Now() UTC. Tests can
+// pass a custom clock to deterministically test
+// expiry/not-yet-valid checks without sleeping.
+//
+// m1 fix (TODO-303 review): the verify-side expiry and
+// not-yet-valid checks previously used time.Now() directly,
+// making them racy under -race tests. The Clock interface
+// allows the verify path to accept an injected clock.
+//
+// The default clock (SystemClock) is used by the public
+// Verify function. Tests use VerifyWithClock.
+type Clock interface {
+	Now() time.Time
+}
+
+// SystemClock is the default Clock implementation. It
+// returns time.Now() in UTC.
+type SystemClock struct{}
+
+// Now returns the current time in UTC.
+func (SystemClock) Now() time.Time { return time.Now().UTC() }
+
+// defaultClock is the clock used by Verify when no
+// custom clock is provided. Initialized to SystemClock.
+var defaultClock Clock = SystemClock{}
+
+// SetDefaultClock replaces the default clock. Used by
+// tests; production code should NOT call this (the
+// SystemClock is the only safe production choice).
+func SetDefaultClock(c Clock) {
+	if c != nil {
+		defaultClock = c
+	}
+}
+
+// =====================================================================
 // Verify
 // =====================================================================
 
@@ -323,11 +368,28 @@ type VerifyResult struct {
 // wrapped in Reason so callers can use errors.Is if
 // they parse Reason (we keep the error string human-
 // readable, not just the sentinel).
+//
+// Uses defaultClock for time checks. For testable time,
+// use VerifyWithClock.
 func Verify(ctx context.Context, env *attestation.Envelope) *VerifyResult {
+	return VerifyWithClock(ctx, env, defaultClock)
+}
+
+// VerifyWithClock is the testable variant of Verify.
+// It takes a Clock parameter that supplies the "now"
+// for the expiry and not-yet-valid checks. Tests can
+// pass a frozen clock to deterministically test these
+// paths without sleeping (per m1 fix, TODO-303 review).
+func VerifyWithClock(ctx context.Context, env *attestation.Envelope, clock Clock) *VerifyResult {
 	out := &VerifyResult{Envelope: env}
 	if env == nil {
 		out.Reason = "envelope is nil"
 		return out
+	}
+	// Defensive: a nil clock falls back to SystemClock
+	// (so tests that pass nil don't panic).
+	if clock == nil {
+		clock = SystemClock{}
 	}
 	// 1. Signature + envelope well-formedness.
 	if err := attestation.Verify(env); err != nil {
@@ -357,7 +419,7 @@ func Verify(ctx context.Context, env *attestation.Envelope) *VerifyResult {
 		return out
 	}
 	// 6. Expiry check.
-	now := time.Now().UTC()
+	now := clock.Now()
 	if !tuple.ValidUntil.After(now) {
 		out.Reason = ErrIntentExpired.Error() + " (valid_until=" + tuple.ValidUntil.Format(time.RFC3339Nano) + ", now=" + now.Format(time.RFC3339Nano) + ")"
 		return out
@@ -367,11 +429,19 @@ func Verify(ctx context.Context, env *attestation.Envelope) *VerifyResult {
 		out.Reason = ErrIntentNotYetValid.Error() + " (issued_at=" + tuple.IssuedAt.Format(time.RFC3339Nano) + ", now=" + now.Format(time.RFC3339Nano) + ")"
 		return out
 	}
-	// 8. Cross-agent replay check. The issuer includes
-	// the agent-id prefix (last 32 chars of the issuer).
-	// If the prefix doesn't match the tuple's agent_id,
-	// the intent was re-signed by a different key with
-	// a different agent_id (a replay attempt).
+	// 8. Cross-agent replay check. M2 fix (TODO-303
+	// review): the previous comment said "last 32 chars
+	// of the issuer", but the actual implementation
+	// uses the FULL agent_id (via tail-match). The
+	// 32-char prefix was an early design that was
+	// changed to use the full agent_id to avoid
+	// ambiguity. The comment now reflects the
+	// implementation.
+	//
+	// The issuer's tail must match the tuple's agent_id
+	// (after sanitization). If they don't match, the
+	// intent was re-signed by a different key with a
+	// different agent_id (a replay attempt).
 	if !issuerMatchesAgent(env.Issuer, tuple.AgentID) {
 		out.Reason = ErrCrossAgentReplay.Error() + " (issuer=" + env.Issuer + ", agent_id=" + tuple.AgentID + ")"
 		return out
@@ -413,6 +483,13 @@ func VerifyJSON(ctx context.Context, payload []byte) (*VerifyResult, error) {
 // The full sanitized agent_id must match the tail of
 // the issuer. We do NOT truncate the agent_id (the
 // issuer has the full form, so the match is exact).
+//
+// C2 fix (TODO-303 review): the prefix check now
+// validates that parts[2] is hex (not just length 16)
+// and that parts[3] (the key_id) is non-empty. The
+// previous check was a length-only validation, which
+// would accept `parts[2] = "aaaaaaaaaaaaaaaa"` (16 a's,
+// not hex).
 func issuerMatchesAgent(issuer, agentID string) bool {
 	sanitized := sanitizeForIssuer(agentID)
 	// Tail match: the issuer must end with ":" + sanitized
@@ -428,8 +505,39 @@ func issuerMatchesAgent(issuer, agentID string) bool {
 	if len(parts) != 4 {
 		return false
 	}
-	if parts[0] != "a2a-intent" || parts[1] != "shortfp" || len(parts[2]) != 16 {
+	// Validate parts[0..3] are well-formed.
+	if parts[0] != "a2a-intent" {
 		return false
+	}
+	if parts[1] != "shortfp" {
+		return false
+	}
+	// C2 fix: validate parts[2] is 16 hex chars (not
+	// just any 16 characters).
+	if !isHexString(parts[2]) || len(parts[2]) != 16 {
+		return false
+	}
+	// C2 fix: validate parts[3] (the key_id) is non-empty.
+	// We don't validate its format (the keyring knows
+	// what its key ids look like), but an empty key_id
+	// is never valid.
+	if parts[3] == "" {
+		return false
+	}
+	return true
+}
+
+// isHexString returns true if s is non-empty and contains
+// only hex characters (0-9, a-f, A-F). Used by
+// issuerMatchesAgent to validate the shortfp component.
+func isHexString(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
 	}
 	return true
 }

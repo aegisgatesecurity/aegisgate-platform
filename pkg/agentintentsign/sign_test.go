@@ -9,7 +9,6 @@ package agentintentsign
 
 import (
 	"context"
-	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -399,55 +398,11 @@ func TestVerify_HappyPath(t *testing.T) {
 	}
 }
 
-func TestVerify_ExpiredIntent(t *testing.T) {
-	// Verify-side expiry check. We can't use Sign with a
-	// 1ms TTL (Sign rejects past-valid_until at sign
-	// time), and we can't tamper with the payload (the
-	// signature would no longer verify). So we test
-	// the verify-side expiry via a different angle:
-	// construct an envelope with a past ValidUntil in
-	// the payload, but DON'T sign it. The Verify
-	// function should reject it on the validity check
-	// (NOT the signature check, because the signature
-	// check comes first in the order). So this test
-	// covers the case where a valid signature points
-	// to an expired intent.
-	//
-	// v0.1: we accept that this requires either a
-	// clock abstraction (not yet added) or a
-	// SignExpired test helper. For now, the test
-	// asserts the verify path's defense-in-depth:
-	// if an expired envelope somehow makes it past
-	// the signature check, the expiry check catches
-	// it. We construct the envelope manually.
-	tup := makeTestTuple()
-	tup.IssuedAt = time.Now().UTC().Add(-2 * time.Hour)
-	tup.ValidUntil = time.Now().UTC().Add(-1 * time.Hour)
-	// Build the payload bytes.
-	payloadBytes, _ := json.Marshal(tup)
-	// Build a minimal envelope. We don't need a real
-	// signature for this test (the expiry check comes
-	// after the signature check, but the signature
-	// check will fail first; the test verifies the
-	// expiry-check error message format).
-	env := &attestation.Envelope{
-		Type:       attestation.TypeAgentIntent,
-		Subject:    "aegisgate://intent/test-expired",
-		Issuer:     "a2a-intent:shortfp:1234567890abcdef:k-test:agent_test",
-		RawPayload: payloadBytes,
-	}
-	// The verify will fail on signature first. But
-	// we can at least verify the verify path runs
-	// without panic and produces a structured result.
-	vr := Verify(context.Background(), env)
-	if vr.Valid {
-		t.Error("expired intent: expected Valid=false")
-	}
-	// We don't assert on Reason content (it'll be the
-	// signature error, not the expiry error) — the
-	// point of this test is to ensure the verify path
-	// doesn't panic on an expired payload.
-}
+// TestVerify_ExpiredIntent was removed in the m1 fix
+// (TODO-303 review). The test is now superseded by
+// TestVerifyWithClock_Expired, which actually tests
+// the expiry check (not just that the verify path
+// doesn't panic on an expired payload).
 
 func TestVerify_TamperedPayload(t *testing.T) {
 	tup := makeTestTuple()
@@ -525,30 +480,11 @@ func TestVerify_CrossAgentReplay(t *testing.T) {
 	// replay check is a defense-in-depth layer.
 }
 
-func TestVerify_NotYetValid(t *testing.T) {
-	// IssuedAt in the future. The verify path detects this.
-	// We can't use Sign (it would accept it; IssuedAt is
-	// just a field). Then we manually set the payload to
-	// have a future IssuedAt.
-	tup := makeTestTuple()
-	kr := makeTestKeyRing(t)
-	env, _ := Sign(tup, kr)
-	// Tamper: set IssuedAt to the future.
-	futureTime := time.Now().UTC().Add(1 * time.Hour).Format(time.RFC3339Nano)
-	env.RawPayload = []byte(strings.ReplaceAll(string(env.RawPayload), `"issued_at":"`+tup.IssuedAt.Format(time.RFC3339Nano)+`"`, `"issued_at":"`+futureTime+`"`))
-	// The above string-replace is fragile (it depends on
-	// the JSON encoding format). If the format differs
-	// (e.g., the encoder uses a different timestamp format),
-	// the replace is a no-op and the test is silent. So
-	// we also check by string contains.
-	if !strings.Contains(string(env.RawPayload), futureTime) {
-		t.Skipf("could not tamper with IssuedAt (JSON format mismatch); test inconclusive")
-	}
-	vr := Verify(context.Background(), env)
-	if vr.Valid {
-		t.Error("issued_at in future: expected Valid=false")
-	}
-}
+// TestVerify_NotYetValid was removed in the m1 fix
+// (TODO-303 review). The test is now superseded by
+// TestVerifyWithClock_NotYetValid, which actually tests
+// the not-yet-valid check (not just that the verify
+// path doesn't panic on a tampered payload).
 
 func TestVerify_RoundtripJSON(t *testing.T) {
 	tup := makeTestTuple()
@@ -688,6 +624,53 @@ func TestIssuerMatchesAgent_MalformedIssuer(t *testing.T) {
 	}
 }
 
+// C2 fix tests: validate that issuerMatchesAgent catches
+// non-hex shortfp and empty key_id.
+func TestIssuerMatchesAgent_NonHexShortfp(t *testing.T) {
+	// Construct an issuer with 16 non-hex chars in the
+	// shortfp position. The check should reject it.
+	issuer := "a2a-intent:shortfp:zzzzzzzzzzzzzzzz:k-test:agent_test"
+	if issuerMatchesAgent(issuer, "agent_test") {
+		t.Error("non-hex shortfp: expected no-match")
+	}
+}
+
+func TestIssuerMatchesAgent_ShortShortfp(t *testing.T) {
+	// Shortfp shorter than 16 chars.
+	issuer := "a2a-intent:shortfp:abc123:k-test:agent_test"
+	if issuerMatchesAgent(issuer, "agent_test") {
+		t.Error("short shortfp: expected no-match")
+	}
+}
+
+func TestIssuerMatchesAgent_EmptyKeyID(t *testing.T) {
+	// Empty key_id (colons with nothing between).
+	issuer := "a2a-intent:shortfp:abcdef1234567890::agent_test"
+	if issuerMatchesAgent(issuer, "agent_test") {
+		t.Error("empty key_id: expected no-match")
+	}
+}
+
+func TestIsHexString(t *testing.T) {
+	cases := map[string]bool{
+		"":             false, // empty
+		"abc":          true,
+		"ABC":          true,
+		"123":          true,
+		"abcdef123456": true,
+		"ABCDEF123456": true,
+		"ghij":         false, // non-hex letters
+		"abc!":         false, // punctuation
+		"abc def":      false, // space
+		"abc\ndef":     false, // newline
+	}
+	for input, want := range cases {
+		if got := isHexString(input); got != want {
+			t.Errorf("isHexString(%q): got %v, want %v", input, got, want)
+		}
+	}
+}
+
 // --------------------------------------------------------------------
 // applySignerOptions tests
 // --------------------------------------------------------------------
@@ -725,6 +708,96 @@ func TestApplySignerOptions_Override(t *testing.T) {
 	if o.subjectKind != "custom" || o.issuer != "custom:issuer" || o.keyID != "k-foo" ||
 		o.context != "ctx" || o.intentID != "iid" || !o.issuedAt.Equal(time.Unix(100, 0)) {
 		t.Errorf("overrides: %+v", o)
+	}
+}
+
+// --------------------------------------------------------------------
+// VerifyWithClock tests (m1 fix)
+// --------------------------------------------------------------------
+
+// frozenClock is a Clock that returns a fixed time. Used
+// to test the verify-side expiry and not-yet-valid checks
+// without sleeping.
+type frozenClock struct {
+	t time.Time
+}
+
+func (f frozenClock) Now() time.Time { return f.t }
+
+func TestVerifyWithClock_Expired(t *testing.T) {
+	tup := makeTestTuple()
+	kr := makeTestKeyRing(t)
+	env, err := Sign(tup, kr)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	// Use a clock 2 hours in the future; the intent
+	// (valid for 1 hour from now) is now expired.
+	future := time.Now().UTC().Add(2 * time.Hour)
+	vr := VerifyWithClock(context.Background(), env, frozenClock{t: future})
+	if vr.Valid {
+		t.Error("expired intent (with frozen clock): expected Valid=false")
+	}
+	if !strings.Contains(vr.Reason, "expired") {
+		t.Errorf("reason: got %q, want contains 'expired'", vr.Reason)
+	}
+}
+
+func TestVerifyWithClock_NotYetValid(t *testing.T) {
+	tup := makeTestTuple()
+	kr := makeTestKeyRing(t)
+	env, err := Sign(tup, kr)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	// Use a clock 2 hours in the past; the intent's
+	// IssuedAt is in the future relative to the clock.
+	past := time.Now().UTC().Add(-2 * time.Hour)
+	vr := VerifyWithClock(context.Background(), env, frozenClock{t: past})
+	if vr.Valid {
+		t.Error("not-yet-valid intent (with frozen clock): expected Valid=false")
+	}
+	if !strings.Contains(vr.Reason, "not yet valid") {
+		t.Errorf("reason: got %q, want contains 'not yet valid'", vr.Reason)
+	}
+}
+
+func TestVerifyWithClock_NilClock(t *testing.T) {
+	// A nil clock should fall back to SystemClock
+	// (defensive: tests that pass nil don't panic).
+	tup := makeTestTuple()
+	kr := makeTestKeyRing(t)
+	env, _ := Sign(tup, kr)
+	vr := VerifyWithClock(context.Background(), env, nil)
+	if !vr.Valid {
+		t.Errorf("nil clock with valid envelope: expected valid, got invalid (reason=%s)", vr.Reason)
+	}
+}
+
+func TestSystemClock_Now(t *testing.T) {
+	before := time.Now().UTC()
+	got := SystemClock{}.Now()
+	after := time.Now().UTC()
+	if got.Before(before) || got.After(after) {
+		t.Errorf("SystemClock.Now() = %v, want between %v and %v", got, before, after)
+	}
+}
+
+func TestSetDefaultClock(t *testing.T) {
+	// Save and restore the default clock.
+	saved := defaultClock
+	defer func() { defaultClock = saved }()
+	// Set a frozen clock.
+	frozen := frozenClock{t: time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)}
+	SetDefaultClock(frozen)
+	// Verify it took effect.
+	if defaultClock.Now() != frozen.Now() {
+		t.Error("SetDefaultClock: default clock not updated")
+	}
+	// Setting nil is a no-op (defensive).
+	SetDefaultClock(nil)
+	if defaultClock.Now() != frozen.Now() {
+		t.Error("SetDefaultClock(nil): default clock was changed")
 	}
 }
 

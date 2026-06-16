@@ -124,9 +124,16 @@ func (it *IntentTuple) Validate() error {
 // many ecosystems), but restricted enough to prevent
 // control-character injection.
 //
-// Allowed: ASCII letters, digits, '-', '_', '.', ':', '/',
-// '@', 'v' (for semver suffixes like "v1.2.0"). The 'v'
-// is allowed as a standalone character (semver convention).
+// M1 fix (TODO-303 review): the previous comment
+// incorrectly described 'v' as "a standalone character
+// (semver convention)". The character class
+// [a-zA-Z0-9._:/@-] already includes 'v' (it's a
+// lowercase letter). The corrected comment accurately
+// describes the regex: ASCII letters, digits, and the
+// punctuation characters '-', '_', '.', ':', '/', '@'.
+// The 'v' is allowed as part of any token (e.g., for
+// semver suffixes like "v1.2.0"), but it's not special
+// in the regex itself.
 var agentIDPattern = regexp.MustCompile(`^[a-zA-Z0-9._:/@-]+$`)
 
 func isValidAgentID(s string) bool {
