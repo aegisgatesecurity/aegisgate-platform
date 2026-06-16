@@ -69,7 +69,12 @@ func handleEvaluatorRun(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed (use POST)"})
 		return
 	}
-	// Parse the request body.
+	// Parse the request body. The run request is small
+	// (a few hundred bytes of JSON), so 64KB is more
+	// than enough. The verify request is larger (the
+	// signed envelope can be ~10KB for a 10-pattern eval)
+	// but still well under 1MB; see handleEvaluatorVerify
+	// for that limit.
 	body, err := io.ReadAll(io.LimitReader(r.Body, 64*1024))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -143,6 +148,12 @@ func handleEvaluatorVerify(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed (use POST)"})
 		return
 	}
+	// The verify request body is a signed envelope, which
+	// for a 10-pattern eval is ~10KB and for a 100-pattern
+	// eval is ~100KB. 1MB is well above the largest
+	// reasonable envelope (and below the Go stdlib's default
+	// max header size of 1MB, so a malicious client cannot
+	// exhaust memory by sending a 100MB body).
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1024*1024)) // 1MB max
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
