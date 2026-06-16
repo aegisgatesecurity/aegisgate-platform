@@ -1010,6 +1010,19 @@ func main() {
 		log.Printf("[PROMPT-CACHE] Prompt-cache HTTP API enabled at /api/v1/prompt-cache/{attest,verify}")
 	}
 
+	// CVE Entry HTTP endpoint (v3.7.0+ TODO-305).
+	// Mounted on the dashboard mux (admin port) for the
+	// same reason as the other Tier 5 endpoints. The
+	// publish side is Enterprise-only (the tier check is
+	// inline in the handler); the verify side is free.
+	// v0.1: standalone publish+verify only; the static
+	// portal at cve.aegisgatesecurity.io is a separate
+	// workstream (deferred).
+	if iocW != nil {
+		wireCVEHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		log.Printf("[CVE] CVE HTTP API enabled at /api/v1/cve/{publish,verify} (publish is Enterprise-only)")
+	}
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
