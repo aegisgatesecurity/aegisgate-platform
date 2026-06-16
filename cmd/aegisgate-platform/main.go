@@ -975,6 +975,17 @@ func main() {
 		log.Printf("[EVALUATOR] AR-EaaS HTTP API enabled at /api/v1/evaluator/{run,verify}")
 	}
 
+	// AIBOM HTTP endpoint (v3.7.0+ TODO-302). Mounted on the
+	// dashboard mux (admin port) so the generate/verify verbs
+	// are reachable for operators but NOT exposed to public
+	// proxy traffic. v0.1: the generate endpoint produces
+	// placeholder data for the 5 protocol pillars. v0.2 will
+	// wire the pillars to the live platform config.
+	if iocW != nil {
+		wireAIBOMHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		log.Printf("[AIBOM] AIBOM HTTP API enabled at /api/v1/aibom/{generate,verify}")
+	}
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
