@@ -986,6 +986,18 @@ func main() {
 		log.Printf("[AIBOM] AIBOM HTTP API enabled at /api/v1/aibom/{generate,verify}")
 	}
 
+	// A2A Intent Signing HTTP endpoint (v3.7.0+ TODO-303).
+	// Mounted on the dashboard mux (admin port) so the
+	// sign/verify verbs are reachable for operators but
+	// NOT exposed to public proxy traffic. v0.1: standalone
+	// sign+verify only; v0.2 will integrate with pkg/a2a/
+	// middleware (intent becomes an optional header on
+	// A2A requests).
+	if iocW != nil {
+		wireA2AIntentHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		log.Printf("[A2A-INTENT] A2A intent HTTP API enabled at /api/v1/a2a/intent/{sign,verify}")
+	}
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
