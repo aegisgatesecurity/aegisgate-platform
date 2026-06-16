@@ -16,7 +16,7 @@
 # -- Image configuration
 image:
   repository: ghcr.io/aegisgatesecurity/aegisgate-platform
-  tag: "1.3.2"
+  tag: "v3.4.0-beta.1"
   pullPolicy: IfNotPresent
   # pullSecrets: []
 
@@ -159,6 +159,51 @@ redis:
   #   enabled: true
   #   size: 1Gi
 
+# -- Federated IOC Library (v3.4.0+ Track 6)
+# The Federated IOC Library is a feature-flagged addition:
+# default is OFF (opt-in). Operators enable share and/or
+# receive via the values below. Both require Professional+
+# tier (license-derived).
+ioc:
+  # share: enable publishing this instance's IOCs to peers
+  # (default false = opt-in). When enabled, the platform
+  # produces signed bundles of locally-detected threats and
+  # serves them at /api/v1/ioc/manifest for peer fetches.
+  share: false
+  # receive: enable fetching IOCs from configured peers
+  # (default false = opt-in). When enabled, the platform
+  # pulls peer bundles on the gossip interval and ingests
+  # IOCs after signature + reputation checks. Requires
+  # Professional+ tier.
+  receive: false
+  # peers: comma-separated list of peer base URLs to fetch
+  # bundles from. Example: https://peer-a.example.com,https://peer-b.example.com
+  peers: ""
+  # storeDir: on-disk path for the IOC store. Defaults to
+  # ${AEGISGATE_DATA_DIR}/ioc which is the per-pod PVC.
+  storeDir: /data/ioc
+  # gossipInterval: how often to fetch peer bundles. Go
+  # duration syntax. Default 5m (matches the platform default).
+  # Lower values mean faster IOC freshness but more network
+  # traffic. 1m is a reasonable minimum.
+  gossipInterval: 5m
+
+# -- Cross-Protocol Evidence (v3.4.0+ c1)
+# Enables the cross-protocol evidence aggregation primitive.
+# The single signed artifact at /api/v1/compliance/evidence/cross_protocol/build
+# answers the CISO question "did AegisGate detect prompt
+# injection via MCP or HTTP in Q1?" with one signed JSON.
+crossProtocolEvidence:
+  enabled: true
+
+# -- Verifiable Compliance Primitive (v3.4.0+ c3)
+# Exposes the platform's evidence-signing public key at the
+# canonical /.well-known/aegisgate-evidence-pubkey.pem URL so
+# auditors can fetch it and verify manifests without platform
+# access. The verify endpoint also accepts ?expected_key_id=
+# for rotation-guard refusals of retired-key manifests.
+verifiableCompliance:
+  enabled: true
 # -- Extra CLI arguments passed to the binary
 extraArgs: []
   # - "--log-level=debug"

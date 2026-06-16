@@ -42,7 +42,9 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
@@ -57,7 +59,7 @@ import (
 )
 
 var (
-	version    = "3.2.0"
+	version    = "3.4.0-beta.1"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -94,10 +96,60 @@ var (
 	// restrictions to the admin dashboard. See cmd/aegisgate-platform/demo_mode.go
 	// for the full implementation of demo mode behavior.
 	mode = flag.String("mode", "production", "Operation mode: production, demo, or staging")
+
+	// IOC (Federated IOC Library v3.5.0+ Track 6 Task 3):
+	// opt-in sharing of Indicators of Compromise across instances.
+	// --ioc-share enables serving the /api/v1/ioc/manifest endpoint
+	// (any tier can share, default off).
+	// --ioc-receive enables fetching peer bundles (requires
+	// Professional tier or above, default off).
+	// Both are also settable via AEGISGATE_IOC_SHARE and
+	// AEGISGATE_IOC_RECEIVE env vars; the flag wins.
+	iocShare          = flag.Bool("ioc-share", false, "Opt in to serving IOC manifests to peers (AEGISGATE_IOC_SHARE)")
+	iocReceive        = flag.Bool("ioc-receive", false, "Opt in to fetching IOC manifests from peers; requires Professional+ tier (AEGISGATE_IOC_RECEIVE)")
+	iocPeers          = flag.String("ioc-peers", "", "Comma-separated peer base URLs for IOC gossip (e.g. https://aegis-b.example.com:8443,https://aegis-c.example.com:8443). Env: AEGISGATE_IOC_PEERS")
+	iocStoreDir       = flag.String("ioc-store-dir", "", "Directory for IOC store persistence (default: <DataDir>/ioc)")
+	iocGossipInterval = flag.Duration("ioc-gossip-interval", 5*time.Minute, "Interval between peer IOC fetches in RunReceiver. Env: AEGISGATE_IOC_GOSSIP_INTERVAL (Go duration: 30s, 5m, 1h)")
+	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS")
 )
+
+// iocWiringPtr is the package-level pointer to the IOC wiring
+// result, populated in main() after the persistence layer is up.
+// It is consumed by the proxy mux mount (for the /api/v1/ioc/
+// handler) and by the testlab dashboard. nil if the IOC library
+// failed to initialize.
+var iocWiringPtr *iocWiring
+
+// iocAdminAPIPtr is the package-level pointer to the IOC admin
+// API handler, populated in main() after the IOC wiring is up.
+// nil if the IOC library failed to initialize. The admin API
+// is mounted on the dashboard mux, not the proxy mux.
+var iocAdminAPIPtr *iocAdminAPI
 
 func main() {
 	flag.Parse()
+
+	// ============================================================
+	// Audit ring buffer + global event recorder (v3.3.0+ Track 6)
+	// ============================================================
+	//
+	// The ring buffer is the substrate that compliance evidence
+	// packages read from (via the EventSource interface). The recorder
+	// is the global hook that the 6 event-emitting subsystems
+	// (response, anomaly, mcpserver, a2a, acp, anp) call to record
+	// events. Wiring happens here, BEFORE any subsystem can record,
+	// to avoid losing the first few events.
+	//
+	// Capacity: 10K events is the platform default. This holds
+	// roughly 1 hour of activity at 3 events/second sustained. If
+	// the ring overflows, the oldest events are dropped (acceptable
+	// for evidence purposes - we only need a representative sample).
+	//
+	// On shutdown, the recorder is disabled (SetDefault(nil)) so
+	// no more events are added to the (possibly half-flushed) buffer.
+	auditRing := logging.NewRingBuffer(logging.DefaultCapacity)
+	logging.SetDefault(auditRing)
+	defer logging.SetDefault(nil) // disable on shutdown
 
 	// fileExists helper function for configuration files
 	fileExists := func(filename string) bool {
@@ -241,6 +293,116 @@ func main() {
 		persistenceCfg.AuditDir, platformTier.LogRetentionDays())
 
 	// ============================================================
+	// Component 0a: Federated IOC Library (v3.5.0+ Track 6)
+	// ============================================================
+	// Initializes the IOC store, signing key, and instance ID
+	// on disk under ${DataDir}/ioc/. The producer is then
+	// layered on top of the existing audit ring buffer
+	// (see installIOCRecorder call below, just before Component 1)
+	// so every logging.Record() event flows through the
+	// producer's allow-list. Events that pass the allow-list are
+	// fingerprinted and written to the IOC store.
+	//
+	// Opt-in: the share/receive flags are resolved from CLI
+	// (--ioc-share / --ioc-receive) or env (AEGISGATE_IOC_SHARE /
+	// AEGISGATE_IOC_RECEIVE). Both default to false. The IOC
+	// library is always constructed (so /api/v1/ioc/health
+	// reports the correct status), but EnableShare / EnableReceive
+	// are false unless the operator explicitly opts in.
+	//
+	// The library is also always constructed (even if both flags
+	// are false) so the /api/v1/ioc/health endpoint returns the
+	// correct 503 status, and so flipping the flags on at runtime
+	// (via a future admin API) works without re-initialization.
+	iocW, iocInstanceID, iocErr := wireIOC(persistenceCfg.DataDir, platformTier)
+	if iocErr != nil {
+		// IOC init failure is non-fatal: log and continue with
+		// nil wiring. The /api/v1/ioc/health endpoint will
+		// return 500 if a peer tries to fetch a manifest, but
+		// the rest of the platform is unaffected.
+		log.Printf("⚠️  Federated IOC library init failed: %v (continuing without IOC sharing)", iocErr)
+		iocW = nil
+	}
+	if iocW != nil {
+		log.Printf("Federated IOC: instance_id=%s, share=%v, receive=%v, peers=%d, store=%s",
+			iocInstanceID,
+			iocW.Sync != nil, // EnableShare is implicit; we check via Sync
+			iocW.Sync != nil, // same for receive; the Sync is constructed either way
+			len(iocW.Sync.Peers()),
+			persistenceCfg.DataDir+"/ioc")
+		// Resolve the actual share/receive booleans for the
+		// install + start logic below.
+		share, receive, _ := resolveIOCFlags()
+		// Layer the producer on top of the existing audit ring
+		// buffer and install as the new default recorder. This
+		// MUST happen before Component 1 (proxy) so that the
+		// proxy's first record() call is captured as an IOC.
+		installIOCRecorder(auditRing, iocW.Producer, share, receive)
+		// Start the background goroutines. The flusher is always
+		// started (the store may have on-disk state to load).
+		// The receiver is only started if receive is enabled
+		// (tier gate is enforced inside sync.RunReceiver).
+		go iocW.Store.RunFlusher(ctx)
+		if receive {
+			go iocW.Sync.RunReceiver(ctx)
+		}
+		// Construct the reputation store and attach to the
+		// sync. Persists alongside the IOC store at
+		// ${DataDir}/ioc/reputation.json. Threshold defaults
+		// to 0.3 (a peer must have >30% acceptance rate to
+		// be ingested from).
+		rep, repErr := ioc.NewReputationStore(ioc.ReputationConfig{
+			Threshold: ioc.DefaultReputationThreshold,
+			HalfLife:  ioc.DefaultReputationHalfLife,
+			DiskPath:  filepath.Join(persistenceCfg.DataDir, "ioc", "reputation.json"),
+		})
+		if repErr != nil {
+			log.Printf("⚠️  Federated IOC reputation init failed: %v (continuing without reputation)", repErr)
+		} else {
+			iocW.Sync.SetReputation(rep)
+			log.Printf("Federated IOC: reputation store attached (threshold=%.2f, half-life=%s)",
+				ioc.DefaultReputationThreshold, ioc.DefaultReputationHalfLife)
+		}
+		// Construct the bootstrap Discoverer (v3.5.0+ Task 5).
+		// Polls the configured seeds and learns about new
+		// peers, up to MaxPeers. This is the pragmatic
+		// alternative to mDNS / DNS-SD that works in any
+		// network environment (cloud, on-prem, hybrid).
+		// The Discoverer is opt-in: enabled only if
+		// AEGISGATE_IOC_BOOTSTRAP_PEERS is set or
+		// --ioc-bootstrap-peers is passed.
+		bootstrapPeers := *iocBootstrapPeers
+		if bootstrapPeers == "" {
+			bootstrapPeers = os.Getenv("AEGISGATE_IOC_BOOTSTRAP_PEERS")
+		}
+		var bootstrapSeeds []string
+		for _, p := range strings.Split(bootstrapPeers, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				bootstrapSeeds = append(bootstrapSeeds, p)
+			}
+		}
+		if len(bootstrapSeeds) > 0 {
+			discoverer, derr := ioc.NewDiscoverer(ioc.DiscoveryConfig{
+				Seeds: bootstrapSeeds,
+				Sync:  iocW.Sync,
+			})
+			if derr != nil {
+				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", derr)
+			} else {
+				go discoverer.Run(ctx)
+				log.Printf("Federated IOC: bootstrap discovery enabled (seeds=%d, interval=%s, max=%d)",
+					len(bootstrapSeeds),
+					ioc.DefaultDiscoveryInterval,
+					ioc.DefaultMaxDiscoveredPeers)
+			}
+		}
+		// Expose to the rest of main via package-level vars so
+		// the mux mount and the testlab handlers can reach it.
+		iocWiringPtr = iocW
+	}
+
+	// ============================================================
 	// Component 0b: Certificate Initialization (first-run TLS setup)
 	// ============================================================
 	// Generates self-signed CA + server certificates on first startup.
@@ -299,6 +461,38 @@ func main() {
 
 	// Create mux for AegisGate proxy + management endpoints
 	proxyMux := http.NewServeMux()
+
+	// -------------------
+	// Federated IOC Library endpoints (v3.5.0+ Track 6)
+	// -------------------
+	// Mounts the IOC manifest + health endpoints on the proxy mux.
+	// The handler enforces the EnableShare gate internally: if
+	// --ioc-share is not set, /api/v1/ioc/manifest returns 403
+	// and /api/v1/ioc/health returns 503. The handler is mounted
+	// unconditionally so the health endpoint can report the
+	// current state (healthy / disabled / unavailable).
+	//
+	// We mount under /api/v1/ioc/ to match the existing platform
+	// convention (/api/v1/compliance/, /api/v1/posture/, etc.).
+	if iocWiringPtr != nil {
+		proxyMux.Handle("/api/v1/ioc/", iocWiringPtr.Sync.Handler())
+		log.Printf("Federated IOC: handler mounted at /api/v1/ioc/")
+	}
+
+	// IOC admin API (v3.5.0+ Track 6 Task 5): mount on the
+	// dashboard mux, NOT the proxy mux. The admin endpoints
+	// require authentication (provided by the existing
+	// dashboard auth) and are not exposed to public proxy
+	// traffic. Routes:
+	//   GET  /api/v1/ioc/admin/status
+	//   POST /api/v1/ioc/admin/share
+	//   POST /api/v1/ioc/admin/receive
+	//   GET  /api/v1/ioc/admin/keyring
+	//   POST /api/v1/ioc/admin/keyring/rotate
+	//   GET  /api/v1/ioc/admin/reputation
+	// The admin API is mounted later (in the dashboard mux
+	// block) so it is reachable on the admin port.
+	iocAdminAPIPtr = newIOCAdminAPI(iocWiringPtr)
 
 	// -------------------
 	// A2A Guardrails Middleware Integration
@@ -448,9 +642,15 @@ func main() {
 		proxyServer.ServeHTTP(w, r)
 	})
 
+	// Wrap the proxy handler chain with the audit recorder middleware
+	// (Track 6 Task 1) so every proxy request/response is captured in
+	// the global ring buffer for compliance evidence packages.
+	proxyHandler := proxyRecorderMiddleware(
+		security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)))
+
 	proxyHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%d", *proxyPort),
-		Handler:      security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)),
+		Handler:      proxyHandler,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -730,6 +930,39 @@ func main() {
 	complianceScanner := compliance.NewScanner(nil, &compliance.ScannerOpts{CacheTTL: 5 * time.Minute})
 	complianceAPI := compliance.NewAPI(complianceScanner, licenseMgr)
 	dashMux.Handle("/api/v1/compliance/", complianceAPI)
+
+	// Evidence Package API (v3.3.0+ Track 2). Constructed from the live
+	// Scanner + License manager + a persistent signing key. The API
+	// exposes:
+	//   POST /api/v1/compliance/evidence          -> build a new manifest
+	//   GET  /api/v1/compliance/evidence          -> list stored manifests
+	//   GET  /api/v1/compliance/evidence/:id      -> fetch a manifest by ID
+	//   GET  /api/v1/compliance/evidence/:id/verify -> verify a manifest
+	// Mounted under the same prefix as the compliance API so the
+	// existing /api/v1/compliance/* auth context applies.
+	// Pass auditRing as the EventSource so evidence packages get real
+	// audit anchors (source="ring_buffer") instead of "unavailable".
+	evidenceHandler, wellKnownHandler, evErr := newEvidenceAPIForPlatform(complianceScanner, licenseMgr, auditRing, "./var")
+	if evErr != nil {
+		log.Printf("[EVIDENCE] Failed to initialize evidence API: %v", evErr)
+	} else {
+		dashMux.Handle("/api/v1/compliance/evidence", evidenceHandler)
+		// Well-known public key handler. Mounted on the dashboard
+		// mux (NOT /api/v1/) so it's reachable at the canonical
+		// /.well-known/aegisgate-evidence-pubkey.pem URL. v3.4.0
+		// primitive that closes the verifiable compliance loop.
+		dashMux.Handle("/.well-known/aegisgate-evidence-pubkey.pem", wellKnownHandler)
+		log.Printf("[EVIDENCE] Compliance evidence API enabled at /api/v1/compliance/evidence and /.well-known/aegisgate-evidence-pubkey.pem")
+	}
+
+	// IOC admin API (v3.5.0+ Track 6 Task 5). Mounted on the
+	// dashboard mux (admin port) so the runtime share/receive
+	// toggles, key rotation, and reputation views are reachable
+	// for operators but NOT exposed to public proxy traffic.
+	if iocAdminAPIPtr != nil {
+		dashMux.Handle("/api/v1/ioc/admin/", iocAdminAPIPtr.Handler())
+		log.Printf("[IOC-ADMIN] Federated IOC admin API enabled at /api/v1/ioc/admin/")
+	}
 
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

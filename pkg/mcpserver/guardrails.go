@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/toolauth"
@@ -301,6 +302,13 @@ func (g *GuardrailMiddleware) OnToolCall(sessionID, toolName string) error {
 		atomic.AddInt64(&g.blockedRequests, 1)
 		g.logger.Warn("Tool call from UNTRACKED session — DENYING by default",
 			"session_id", sessionID, "tool", toolName)
+		logging.Record(logging.Event{
+			Type:       "mcp_tool_call",
+			Severity:   logging.SeverityHigh,
+			Message:    "untracked session denied",
+			User:       sessionID,
+			ThreatType: "untracked_session",
+		})
 		return fmt.Errorf("tool call denied: session %s not tracked (possible race condition or session expiry)", sessionID)
 	}
 
@@ -316,6 +324,13 @@ func (g *GuardrailMiddleware) OnToolCall(sessionID, toolName string) error {
 				"reason", ErrSessionToolLimit,
 				"error", err)
 		}
+		logging.Record(logging.Event{
+			Type:       "mcp_tool_call",
+			Severity:   logging.SeverityMedium,
+			Message:    "session tool limit reached",
+			User:       sessionID,
+			ThreatType: "session_tool_limit",
+		})
 		return err
 	}
 

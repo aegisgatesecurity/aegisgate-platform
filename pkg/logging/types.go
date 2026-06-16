@@ -6,6 +6,7 @@ package logging
 
 import (
 	"os"
+	"time"
 )
 
 // Severity represents the severity level of a log event.
@@ -21,6 +22,10 @@ const (
 
 // Event represents a security or log event to be formatted.
 type Event struct {
+	// Time is when the event occurred. Optional - if zero, the event
+	// is treated as occurring at the time it was added to a ring buffer
+	// (which sets Time to time.Now() at Add() time).
+	Time time.Time `json:"time,omitempty"`
 	// Unique identifier for this event
 	ID string `json:"id"`
 	// Event type (e.g., "auth", "request", "threat")
@@ -49,6 +54,15 @@ type Event struct {
 	ComplianceFramework string `json:"complianceFramework,omitempty"`
 	// Compliance control ID
 	ComplianceControl string `json:"complianceControl,omitempty"`
+	// FrameworkRefs is a precomputed cross-framework reference map
+	// for the detection tuple (Type, ThreatType, Pattern). Keys are
+	// canonical framework IDs (e.g., "mitre_atlas", "nist_ai_rmf",
+	// "owasp_llm", "cwe", "cve"); values are the cross-reference
+	// IDs in that framework (e.g., ["T0024"] for MITRE ATLAS tactic
+	// "Exploit Public-Facing Application"). Populated by the
+	// FrameworkRefCache attached to logging.Record(); empty if no
+	// mapping is known for this detection. Tier 1 (TODO-401).
+	FrameworkRefs map[string][]string `json:"frameworkRefs,omitempty"`
 }
 
 // SyslogFormatter formats events as RFC 5424 syslog messages.
