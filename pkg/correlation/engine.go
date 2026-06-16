@@ -159,6 +159,35 @@ func (e *Engine) Analyze(ctx context.Context, agentID, sessionID string) (*Corre
 	return result, nil
 }
 
+// ListEventsBySession returns all events for the
+// given session ID, across all agents. The events
+// are returned in insertion order (the caller is
+// expected to sort by timestamp if needed).
+//
+// This is the data source for the SOC incident
+// timeline (TODO-502). The engine stores events
+// keyed by `agentID:sessionID`; this method scans
+// all keys and filters by session ID match.
+//
+// Returns nil (not an error) if no events match.
+// The caller is responsible for sorting.
+func (e *Engine) ListEventsBySession(_ context.Context, sessionID string) ([]*Event, error) {
+	if sessionID == "" {
+		return nil, fmt.Errorf("correlation: ListEventsBySession: sessionID is required")
+	}
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	var result []*Event
+	for _, events := range e.events {
+		for _, evt := range events {
+			if evt.SessionID == sessionID {
+				result = append(result, evt)
+			}
+		}
+	}
+	return result, nil
+}
+
 // matchPatterns matches events against threat patterns
 func (e *Engine) matchPatterns(events []*Event, result *CorrelationResult) {
 	for _, pattern := range e.patterns {
