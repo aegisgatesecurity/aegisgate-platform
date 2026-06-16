@@ -998,6 +998,18 @@ func main() {
 		log.Printf("[A2A-INTENT] A2A intent HTTP API enabled at /api/v1/a2a/intent/{sign,verify}")
 	}
 
+	// Prompt Cache Poisoning Detection HTTP endpoint
+	// (v3.7.0+ TODO-304). Mounted on the dashboard mux
+	// (admin port) for the same reason as A2A intent: the
+	// attest/verify verbs are reachable for operators but
+	// NOT exposed to public proxy traffic. v0.1: standalone
+	// attest+verify only; v0.2 will integrate with pkg/ioc/
+	// (cache-poisoning events become IOCs).
+	if iocW != nil {
+		wirePromptCacheHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		log.Printf("[PROMPT-CACHE] Prompt-cache HTTP API enabled at /api/v1/prompt-cache/{attest,verify}")
+	}
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
