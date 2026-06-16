@@ -1040,6 +1040,20 @@ func main() {
 	wireSOCHandlers(dashMux, authMiddleware)
 	log.Printf("[SOC] SOC Timeline HTTP API enabled at /api/v1/soc/incidents/:id/timeline")
 
+	// CISO Posture Digest HTTP endpoint
+	// (v3.6.0+ TODO-601+602). Mounted on the
+	// dashboard mux. The generate side is
+	// Professional+ (the digest is a
+	// customer-facing artifact); the verify side
+	// is free. v0.1 ships a stub (BuildDigest
+	// with no sources); v0.2 wires the real source
+	// pipeline (PostureSource, IOCSource,
+	// AuditSource).
+	if iocW != nil {
+		wireDigestHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		log.Printf("[DIGEST] CISO Digest HTTP API enabled at /api/v1/digest/{generate,verify} (generate is Professional+)")
+	}
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
