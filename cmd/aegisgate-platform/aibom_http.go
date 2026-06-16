@@ -94,13 +94,18 @@ func handleAIBOMGenerate(w http.ResponseWriter, r *http.Request) {
 	if req.PlatformVersion == "" {
 		req.PlatformVersion = "unknown"
 	}
-	// Build the BOM.
-	bom, err := aibom.GenerateFromConfig(nil,
-		aibom.WithTier(req.Tier),
-		aibom.WithPlatformVersion(req.PlatformVersion),
-		aibom.WithInstanceID(req.InstanceID),
-		aibom.WithGeneratorNotes(req.Notes),
-	)
+	// Build the AIBOM and BOM. v0.1: the per-pillar data
+	// is left as zero values (the BOM still emits the 5
+	// pillars, but with Enabled=false). v0.2 will read
+	// the live platform config and populate them.
+	aibomOpts := aibom.AIBOMOptions{
+		Tier:            req.Tier,
+		PlatformVersion: req.PlatformVersion,
+		InstanceID:      req.InstanceID,
+		GeneratorNotes:  req.Notes,
+	}
+	a := aibom.BuildAIBOMFromOptions(aibomOpts)
+	bom, err := aibom.GenerateFromAIBOM(a)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "generate: " + err.Error()})

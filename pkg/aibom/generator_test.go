@@ -340,18 +340,19 @@ func TestBoolToString(t *testing.T) {
 }
 
 // --------------------------------------------------------------------
-// GenerateFromConfig (the convenience wrapper)
+// BuildAIBOMFromOptions (the v0.1 helper)
 // --------------------------------------------------------------------
 
-func TestGenerateFromConfig_Basic(t *testing.T) {
-	bom, err := GenerateFromConfig(nil,
-		WithTier("professional"),
-		WithPlatformVersion("3.4.0-beta.1"),
-		WithInstanceID("test-inst"),
-		WithGeneratorNotes("test run"),
-	)
+func TestBuildAIBOMFromOptions_Basic(t *testing.T) {
+	a := BuildAIBOMFromOptions(AIBOMOptions{
+		Tier:            "professional",
+		PlatformVersion: "3.4.0-beta.1",
+		InstanceID:      "test-inst",
+		GeneratorNotes:  "test run",
+	})
+	bom, err := GenerateFromAIBOM(a)
 	if err != nil {
-		t.Fatalf("GenerateFromConfig: %v", err)
+		t.Fatalf("GenerateFromAIBOM: %v", err)
 	}
 	if bom == nil {
 		t.Fatal("BOM is nil")
@@ -371,17 +372,18 @@ func TestGenerateFromConfig_Basic(t *testing.T) {
 	}
 }
 
-func TestGenerateFromConfig_WithPromptsAndCorpora(t *testing.T) {
+func TestBuildAIBOMFromOptions_WithPromptsAndCorpora(t *testing.T) {
 	prompts := []PromptComponent{
 		{ID: "p1", SHA256: "abc", ByteSize: 10, Source: "src1"},
 	}
 	corpora := []RAGCorpusComponent{
 		{ID: "c1", SHA256: "def", DocumentCount: 5, Source: "src2"},
 	}
-	bom, _ := GenerateFromConfig(nil,
-		WithPrompts(prompts),
-		WithCorpora(corpora),
-	)
+	a := BuildAIBOMFromOptions(AIBOMOptions{
+		Prompts: prompts,
+		Corpora: corpora,
+	})
+	bom, _ := GenerateFromAIBOM(a)
 	promptCount := 0
 	corpusCount := 0
 	for _, c := range bom.Components {
@@ -397,9 +399,10 @@ func TestGenerateFromConfig_WithPromptsAndCorpora(t *testing.T) {
 	}
 }
 
-func TestGenerateFromConfig_WithModel(t *testing.T) {
+func TestBuildAIBOMFromOptions_WithModel(t *testing.T) {
 	m := ModelComponent{Provider: "anthropic", ModelID: "claude-opus-4", Version: "20250514", IsRegistered: true}
-	bom, _ := GenerateFromConfig(nil, WithModel(m))
+	a := BuildAIBOMFromOptions(AIBOMOptions{Model: m})
+	bom, _ := GenerateFromAIBOM(a)
 	found := false
 	for _, c := range bom.Components {
 		if c.BOMRef == "aegisgate-model" {
@@ -411,26 +414,21 @@ func TestGenerateFromConfig_WithModel(t *testing.T) {
 	}
 }
 
-// --------------------------------------------------------------------
-// applyConfigOptions tests
-// --------------------------------------------------------------------
-
-func TestApplyConfigOptions_Empty(t *testing.T) {
-	o := applyConfigOptions(nil)
-	if o.tier != "" || o.platformVer != "" || o.instanceID != "" {
-		t.Errorf("empty options: %+v", o)
-	}
-}
-
-func TestApplyConfigOptions_Override(t *testing.T) {
-	o := applyConfigOptions([]ConfigGeneratorOption{
-		WithTier("tier1"),
-		WithPlatformVersion("v1"),
-		WithInstanceID("id1"),
-		WithGeneratorNotes("n1"),
+func TestBuildAIBOMFromOptions_BOMVersion(t *testing.T) {
+	// M2 fix: BOMVersion can be overridden.
+	a := BuildAIBOMFromOptions(AIBOMOptions{
+		PlatformVersion: "3.4.0-beta.1",
+		BOMVersion:      7,
 	})
-	if o.tier != "tier1" || o.platformVer != "v1" || o.instanceID != "id1" || o.generatorNotes != "n1" {
-		t.Errorf("options: %+v", o)
+	bom, _ := GenerateFromAIBOM(a)
+	if bom.Version != 7 {
+		t.Errorf("BOMVersion: got %d, want 7", bom.Version)
+	}
+	// Default is 1.
+	a = BuildAIBOMFromOptions(AIBOMOptions{PlatformVersion: "3.4.0-beta.1"})
+	bom, _ = GenerateFromAIBOM(a)
+	if bom.Version != 1 {
+		t.Errorf("BOMVersion default: got %d, want 1", bom.Version)
 	}
 }
 

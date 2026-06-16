@@ -95,8 +95,8 @@ func TestSign_WithCustomOptions(t *testing.T) {
 	bom := makeTestBOM(t)
 	kr := makeTestKeyRing(t)
 	// WithIssuer takes precedence over the auto-generated
-	// issuer (which is aibom:shortfp:...:key-id). The keyID
-	// and notes are appended to the custom issuer.
+	// issuer. The keyID is appended to the custom issuer
+	// (C1 fix). The notes are appended after the keyID.
 	env, err := Sign(bom, kr,
 		WithSubjectKind("deployment"),
 		WithIssuer("custom:issuer:here"),
@@ -107,15 +107,49 @@ func TestSign_WithCustomOptions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sign: %v", err)
 	}
-	// Notes are appended with a colon separator. The keyID
-	// is NOT appended to a custom issuer (it's only used
-	// in the auto-generated issuer path).
-	if env.Issuer != "custom:issuer:here:test notes" {
-		t.Errorf("issuer: got %q, want %q", env.Issuer, "custom:issuer:here:test notes")
+	// C1 fix: the keyID is appended to the custom issuer.
+	if env.Issuer != "custom:issuer:here:k-test123:test notes" {
+		t.Errorf("issuer: got %q, want %q", env.Issuer, "custom:issuer:here:k-test123:test notes")
 	}
 	// Verify the envelope.
 	if err := attestation.Verify(env); err != nil {
 		t.Errorf("attestation.Verify: %v", err)
+	}
+}
+
+func TestSign_WithCustomIssuer_ButNoKeyID(t *testing.T) {
+	// C1 fix: when the caller provides a custom issuer
+	// BUT no keyID, the keyID is NOT appended (no double-
+	// append; the caller is responsible for the format).
+	bom := makeTestBOM(t)
+	kr := makeTestKeyRing(t)
+	env, err := Sign(bom, kr,
+		WithIssuer("custom:only:issuer"),
+		WithNotes("test notes"),
+	)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	if env.Issuer != "custom:only:issuer:test notes" {
+		t.Errorf("issuer: got %q, want %q", env.Issuer, "custom:only:issuer:test notes")
+	}
+}
+
+func TestSign_AutoIssuer_WithKeyID(t *testing.T) {
+	// C1 fix: when the caller does NOT provide a custom
+	// issuer but DOES provide a keyID, the keyID is used
+	// in the auto-generated path.
+	bom := makeTestBOM(t)
+	kr := makeTestKeyRing(t)
+	env, err := Sign(bom, kr,
+		WithKeyID("k-custom"),
+	)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	// The auto-generated issuer is "aibom:shortfp:<16-hex>:k-custom".
+	if !strings.Contains(env.Issuer, ":k-custom") {
+		t.Errorf("issuer: got %q, want :k-custom suffix", env.Issuer)
 	}
 }
 
