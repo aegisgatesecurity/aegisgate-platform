@@ -213,12 +213,16 @@ func (f *Feed) WriteJSONFile(path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o600)
 }
 
 // ReadJSONFile reads a feed from a file.
 func ReadJSONFile(path string) (*Feed, error) {
-	data, err := os.ReadFile(path)
+	cleanPath, err := cleanFilePath(path)
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, err
 	}

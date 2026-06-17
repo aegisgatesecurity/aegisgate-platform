@@ -81,8 +81,18 @@ func (e *STIXExporter) ExportToSTIX(b *Bundle, path string) error {
 	if path == "" {
 		return fmt.Errorf("ioc: STIXExporter.ExportToSTIX: empty path")
 	}
+	// G304 (CodeQL): sanitize the path before
+	// os.Create. The path arg is typically derived
+	// from a config value or CLI flag, not from an
+	// untrusted user; cleanFilePath rejects
+	// path-traversal patterns defensively.
+	cleanPath, err := cleanFilePath(path)
+	if err != nil {
+		return err
+	}
+	path = cleanPath
 	if dir := filepath.Dir(path); dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return fmt.Errorf("ioc: STIXExporter.ExportToSTIX: mkdir %s: %w", dir, err)
 		}
 	}
@@ -151,8 +161,15 @@ func (e *STIXExporter) ExportToJSONLines(b *Bundle, path string) error {
 	if path == "" {
 		return fmt.Errorf("ioc: STIXExporter.ExportToJSONLines: empty path")
 	}
+	// G304 (CodeQL): sanitize the path before
+	// os.Create. See ExportToSTIX for the rationale.
+	cleanPath, err := cleanFilePath(path)
+	if err != nil {
+		return err
+	}
+	path = cleanPath
 	if dir := filepath.Dir(path); dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return fmt.Errorf("ioc: STIXExporter.ExportToJSONLines: mkdir %s: %w", dir, err)
 		}
 	}

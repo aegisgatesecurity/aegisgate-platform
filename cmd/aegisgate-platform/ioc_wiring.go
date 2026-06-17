@@ -283,6 +283,16 @@ func resolveBoolFlag(cliValue bool, envName string) bool {
 // random hex string (16 random bytes). It is opaque; no customer
 // data is encoded in it.
 func loadOrGenerateInstanceID(path string) (string, error) {
+	// G304 (CodeQL): sanitize the path. The path is
+	// a server-controlled config value, but CodeQL's
+	// taint analysis still flags it. The safeFilePath
+	// call satisfies the linter and rejects
+	// path-traversal patterns defensively.
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		return "", err
+	}
+	path = cleanPath
 	if data, err := os.ReadFile(path); err == nil {
 		id := strings.TrimSpace(string(data))
 		if len(id) >= 16 {

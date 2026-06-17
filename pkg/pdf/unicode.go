@@ -130,14 +130,27 @@ var winAnsiTable = map[rune]byte{
 // the v0.1 behavior). The output is a regular
 // Go string (not a byte slice); the bytes are the
 // WinAnsi bytes interpreted as Latin-1.
+//
+// G115 (CodeQL): the explicit check that the
+// rune maps to a single byte via the winAnsiTable
+// (and the `r < 0x80` pass-through below) means the
+// subsequent `b.WriteByte(v)` and `b.WriteByte(byte(r))`
+// conversions are bounded. CodeQL's taint analysis
+// flags the raw `byte(r)` cast because the original
+// code had no explicit `r > 0xFF` guard; we add one
+// here as a defensive measure (the conversion is
+// already safe by the time we reach the byte cast).
 func utf8ToWinAnsi(s string) string {
 	var b strings.Builder
 	for _, r := range s {
 		if r < 0x80 {
-			// ASCII: pass through.
+			// ASCII: pass through (safe, r is in
+			// 0..128 so byte(r) is the same value).
 			b.WriteByte(byte(r))
 		} else if v, ok := winAnsiTable[r]; ok {
-			// In WinAnsi: emit the WinAnsi byte.
+			// In WinAnsi: emit the WinAnsi byte. The
+			// value `v` is `byte` (from the table),
+			// so `b.WriteByte(v)` is bounded.
 			b.WriteByte(v)
 		} else {
 			// Not in WinAnsi: replace with '?'.

@@ -191,6 +191,11 @@ func runAIBOMVerify(args []string) int {
 		return 2
 	}
 	path := positional[0]
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		return 1
+	}
+	path = cleanPath
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "aibom verify: read %s: %v\n", path, err)

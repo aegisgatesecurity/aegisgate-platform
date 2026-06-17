@@ -162,7 +162,7 @@ func runDigestGenerate(args []string) int {
 			return 1
 		}
 		_ = verified
-		if err := os.WriteFile(*outPDF, pdfBytes, 0o644); err != nil {
+		if err := os.WriteFile(*outPDF, pdfBytes, 0o600); err != nil {
 			fmt.Fprintf(os.Stderr, "digest generate: write PDF %s: %v\n", *outPDF, err)
 			return 1
 		}
@@ -180,6 +180,11 @@ func runDigestVerify(args []string) int {
 		return 2
 	}
 	path := args[0]
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		return 1
+	}
+	path = cleanPath
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "digest verify: read %s: %v\n", path, err)

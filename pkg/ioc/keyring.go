@@ -174,6 +174,16 @@ type keyRingOnDisk struct {
 // loadOrGenerateIOCKey), it is auto-migrated to v2: the
 // single key becomes the current key in a v2 ring.
 func loadKeyRing(persist string) (*KeyRing, error) {
+	// G304 (CodeQL): sanitize the path before
+	// os.ReadFile. The persist arg is typically
+	// derived from a config value or CLI flag, not
+	// from an untrusted user; cleanFilePath rejects
+	// path-traversal patterns defensively.
+	cleanPath, err := cleanFilePath(persist)
+	if err != nil {
+		return nil, err
+	}
+	persist = cleanPath
 	kr := &KeyRing{
 		keys:    make(map[string]*ringKey),
 		persist: persist,
