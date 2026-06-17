@@ -18,10 +18,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // runAttestationSubcommand implements the "aegisgate attestation"
@@ -100,7 +100,7 @@ func runAttestationVerify(args []string) {
 	}
 	path = cleanPath
 	// Read the envelope from the file.
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "attestation verify: read %s: %v\n", path, err)
 		os.Exit(1)

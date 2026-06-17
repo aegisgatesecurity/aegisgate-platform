@@ -293,7 +293,7 @@ func loadOrGenerateInstanceID(path string) (string, error) {
 		return "", err
 	}
 	path = cleanPath
-	if data, err := os.ReadFile(path); err == nil {
+	if data, err := os.ReadFile(filepath.Clean(path)); err == nil {
 		id := strings.TrimSpace(string(data))
 		if len(id) >= 16 {
 			return id, nil
@@ -307,7 +307,7 @@ func loadOrGenerateInstanceID(path string) (string, error) {
 		return "", fmt.Errorf("generate instance ID: %w", err)
 	}
 	id := fmt.Sprintf("%x", idBytes)
-	if err := os.WriteFile(path, []byte(id), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Clean(path), []byte(id), 0o600); err != nil {
 		return "", fmt.Errorf("write instance ID: %w", err)
 	}
 	return id, nil

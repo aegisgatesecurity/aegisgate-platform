@@ -103,7 +103,7 @@ func loadOrCreateEvidenceKey(path string) (*ecdsa.PrivateKey, string, error) {
 		return nil, "", err
 	}
 	path = cleanPath
-	if data, err := os.ReadFile(path); err == nil {
+	if data, err := os.ReadFile(filepath.Clean(path)); err == nil {
 		hexStr := string(data)
 		dBytes, err := hex.DecodeString(hexStr)
 		if err != nil {
@@ -129,7 +129,7 @@ func loadOrCreateEvidenceKey(path string) (*ecdsa.PrivateKey, string, error) {
 	// See the migration note in loadOrCreateEvidenceKey above.
 	dBytes := key.D.Bytes()
 	hexStr := hex.EncodeToString(dBytes)
-	if err := os.WriteFile(path, []byte(hexStr), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Clean(path), []byte(hexStr), 0o600); err != nil {
 		return nil, "", fmt.Errorf("persist key: %w", err)
 	}
 	return key, evidenceKeyID(key), nil
