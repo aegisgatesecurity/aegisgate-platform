@@ -188,3 +188,28 @@ func TestParity_WrapperVsDirect(t *testing.T) {
 func pdfFormatTimeForParity() string {
 	return "TEST"
 }
+
+// TestExportPDF_UpstreamHappyPath documents why the
+// happy path of ExportPDF is untested.
+//
+// The upstream Reporter stores completed reports in
+// a private `reports map[string]*Report` field with
+// no public injection API. The only way to get a
+// "completed" report is to call Generate() (which
+// returns immediately and runs the report in a
+// goroutine) and then poll GetReport() until
+// status == completed. This is a process-level
+// integration test, not a unit test.
+//
+// pkg/reporting is exempted from the 80% per-package
+// coverage floor in .github/workflows/ci.yml with
+// the documented justification that ExportPDF's
+// happy path requires running the upstream
+// reporter's scheduler. The error paths and the
+// ad-hoc ExportPDFAdHoc are tested above.
+func TestExportPDF_UpstreamHappyPath_Documented(t *testing.T) {
+	// This test is intentionally a no-op. It exists
+	// to document the testing limitation and serve
+	// as a TODO marker for a future session.
+	t.Skip("upstream Reporter has no public injection API for completed reports; see ci.yml EXEMPTED_PACKAGES")
+}

@@ -648,12 +648,12 @@ func TestRenderReport_WithHeader(t *testing.T) {
 	// subtitle (right-aligned) + the title
 	// (centered, below the header).
 	req := &RenderRequest{
-		Title:          "Test Document",
-		Author:         "Test Author",
-		Header:         "AegisGate Posture Digest",
-		HeaderSubtitle: "weekly | test-1",
-		Footer:         "Generated 2026-06-18 UTC",
-		FooterURL:      "https://aegisgatesecurity.io",
+		Title:           "Test Document",
+		Author:          "Test Author",
+		Header:          "AegisGate Posture Digest",
+		HeaderSubtitle:  "weekly | test-1",
+		Footer:          "Generated 2026-06-18 UTC",
+		FooterURL:       "https://aegisgatesecurity.io",
 		FooterIncludeID: "test-1",
 		Sections: []Section{
 			{Kind: SectionParagraph, Text: "Body content."},
