@@ -52,15 +52,28 @@ func RenderDigestPDF(digest *Digest) ([]byte, error) {
 	}
 	// Build the PDF sections.
 	sections := buildPDFSections(digest)
-	// Render.
+	// Render with v0.2 branding:
+	//   - Header: "AegisGate Posture Digest" (left-aligned
+	//     wordmark on every page)
+	//   - HeaderSubtitle: the period + digest ID
+	//     (right-aligned; identifies the digest instance)
+	//   - Footer: "Generated <timestamp> UTC" (the v0.1 text)
+	//   - FooterURL: the platform's public URL
+	//   - FooterIncludeID: the digest ID (so the auditor
+	//     can match the PDF to the signed envelope)
+	headerSubtitle := fmt.Sprintf("%s | %s", digest.Period, digest.ID)
 	req := &pdf.RenderRequest{
-		Title:       digest.Title,
-		Author:      "AegisGate Platform",
-		Subject:     string(digest.Period),
-		Keywords:    "aegisgate, ciso, posture, digest",
-		Footer:      fmt.Sprintf("Generated %s -- AegisGate Posture Digest", time.Now().UTC().Format("2006-01-02 15:04 UTC")),
-		GeneratedAt: digest.GeneratedAt,
-		Sections:    sections,
+		Title:           digest.Title,
+		Author:          "AegisGate Platform",
+		Subject:         string(digest.Period),
+		Keywords:        "aegisgate, ciso, posture, digest",
+		Header:          "AegisGate Posture Digest",
+		HeaderSubtitle:  headerSubtitle,
+		Footer:          fmt.Sprintf("Generated %s UTC", digest.GeneratedAt.UTC().Format("2006-01-02 15:04")),
+		FooterURL:       "https://aegisgatesecurity.io",
+		FooterIncludeID: digest.ID,
+		GeneratedAt:     digest.GeneratedAt,
+		Sections:        sections,
 	}
 	return pdf.RenderReport(req)
 }

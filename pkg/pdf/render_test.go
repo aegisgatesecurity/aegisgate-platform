@@ -604,9 +604,107 @@ func TestRenderReport_EmptyTableRendersOK(t *testing.T) {
 // Sanitize
 // =====================================================================
 
+// bytesContainsBytes returns true if data contains
+// substr (raw bytes). Defined here because the
+// alternative (importing bytes) would require a
+// runtime import; this keeps the test file
+// self-contained.
+func bytesContainsBytes(data, substr []byte) bool {
+	if len(substr) == 0 {
+		return true
+	}
+	if len(substr) > len(data) {
+		return false
+	}
+	for i := 0; i <= len(data)-len(substr); i++ {
+		match := true
+		for j := 0; j < len(substr); j++ {
+			if data[i+j] != substr[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
 func TestSanitizeASCII(t *testing.T) {
 	got := sanitizeASCII("hello (world)")
 	if got != "hello \\(world\\)" {
 		t.Errorf("sanitizeASCII = %q, want %q", got, "hello \\(world\\)")
+	}
+}
+
+// =====================================================================
+// v0.2 branding
+// =====================================================================
+
+func TestRenderReport_WithHeader(t *testing.T) {
+	// v0.2: when Header is set, the page 1 should
+	// contain the header text (left-aligned) + the
+	// subtitle (right-aligned) + the title
+	// (centered, below the header).
+	req := &RenderRequest{
+		Title:          "Test Document",
+		Author:         "Test Author",
+		Header:         "AegisGate Posture Digest",
+		HeaderSubtitle: "weekly | test-1",
+		Footer:         "Generated 2026-06-18 UTC",
+		FooterURL:      "https://aegisgatesecurity.io",
+		FooterIncludeID: "test-1",
+		Sections: []Section{
+			{Kind: SectionParagraph, Text: "Body content."},
+		},
+	}
+	data, err := RenderReport(req)
+	if err != nil {
+		t.Fatalf("RenderReport: %v", err)
+	}
+	if !bytesHasPrefix(data, "%PDF-1.4") {
+		t.Errorf("Output is not a valid PDF")
+	}
+	// The header should appear in the output.
+	if !bytesContainsBytes(data, []byte("AegisGate Posture Digest")) {
+		t.Errorf("Output does not contain the header")
+	}
+	// The subtitle should appear in the output.
+	if !bytesContainsBytes(data, []byte("weekly | test-1")) {
+		t.Errorf("Output does not contain the subtitle")
+	}
+	// The footer URL should appear in the output.
+	if !bytesContainsBytes(data, []byte("https://aegisgatesecurity.io")) {
+		t.Errorf("Output does not contain the footer URL")
+	}
+	// The footer ID should appear in the output.
+	if !bytesContainsBytes(data, []byte("ID: test-1")) {
+		t.Errorf("Output does not contain the footer ID")
+	}
+}
+
+func TestRenderReport_WithoutHeader(t *testing.T) {
+	// v0.1 behavior: when Header is empty, the
+	// page 1 should have the centered title only
+	// (no header text).
+	req := &RenderRequest{
+		Title: "Test Document",
+		Sections: []Section{
+			{Kind: SectionParagraph, Text: "Body content."},
+		},
+	}
+	data, err := RenderReport(req)
+	if err != nil {
+		t.Fatalf("RenderReport: %v", err)
+	}
+	if !bytesHasPrefix(data, "%PDF-1.4") {
+		t.Errorf("Output is not a valid PDF")
+	}
+	// No "AegisGate" branding in the body (the
+	// footer defaults to "AegisGate Platform" which
+	// is the v0.1 default).
+	if !bytesContainsBytes(data, []byte("AegisGate Platform")) {
+		t.Errorf("v0.1 default footer not present")
 	}
 }

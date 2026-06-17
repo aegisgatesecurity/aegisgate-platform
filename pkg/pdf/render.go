@@ -94,6 +94,13 @@ func (d *document) addObject(content []byte) int {
 // page number. Adds the content stream object (empty
 // at this point; the caller appends to it) and
 // schedules the page object for flushPage.
+//
+// v0.2 branding: if d.req.Header is non-empty, render
+// a left-aligned "AegisGate" wordmark in bold + a
+// right-aligned HeaderSubtitle (the period string) on
+// the top of every page, instead of the centered title
+// on page 1. If d.req.Header is empty, the v0.1
+// behavior is used (centered title only on page 1).
 func (d *document) addPage() int {
 	// Increment the page index BEFORE emitting the
 	// content, so the footer shows the correct page
@@ -111,11 +118,62 @@ func (d *document) addPage() int {
 	d.currentPageY = d.req.PageSize.Height - 50
 	d.currentPageContent.Reset()
 
-	// Emit the title on the first page.
-	if d.currentPageIndex == 1 {
-		d.emitText(d.req.Title, fontHelveticaB, FontTitle, 50, d.currentPageY, true)
-		d.currentPageY -= FontTitle + 20
+	// Emit the title (v0.1 behavior) OR the branded
+	// header (v0.2 behavior).
+	if d.req.Header != "" {
+		// v0.2 branded header: left-aligned wordmark +
+		// right-aligned subtitle. The wordmark uses
+		// the bold font; the subtitle uses regular.
+		// We emit the wordmark on the left, then
+		// measure its width and emit the subtitle on
+		// the right.
+		d.emitText(d.req.Header, fontHelveticaB, FontHeader, 50, d.currentPageY, false)
+		if d.req.HeaderSubtitle != "" {
+			// Measure the wordmark width so the
+			// subtitle is right-aligned to the page
+			// edge (with a 50pt margin).
+			wordmarkWidth := textWidth(d.req.Header, fontHelveticaB, FontHeader)
+			subtitleX := d.req.PageSize.Width - 50 - textWidth(d.req.HeaderSubtitle, fontHelvetica, FontHeader)
+			// If the wordmark would overlap the
+			// subtitle, fall back to left-aligned
+			// subtitle on the next line.
+			if subtitleX < wordmarkWidth+10 {
+				// Fall back: wordmark only.
+				d.emitText(d.req.Header, fontHelveticaB, FontHeader, 50, d.currentPageY, false)
+			} else {
+				d.emitText(d.req.HeaderSubtitle, fontHelvetica, FontHeader, subtitleX, d.currentPageY, false)
+			}
+		}
+		// After the header, add a thin separator line
+		// (a horizontal rule made of 4 short lines)
+		// for visual separation from the body.
+		// The separator is at currentPageY - 3 (just
+		// below the header text).
+		sepY := d.currentPageY - 3
+		pageWidth := d.req.PageSize.Width - 100 // 50pt margins
+		// The separator is rendered as 4 short
+		// underscore characters evenly spaced across
+		// the page width.
+		for i := 0; i < 4; i++ {
+			x := 50.0 + float64(i)*(pageWidth/4) + pageWidth/8
+			d.emitText("_", fontHelvetica, FontHeader-2, x, sepY, false)
+		}
+		d.currentPageY -= FontHeader + 10
+		// On page 1, ALSO render the title centered
+		// below the header (so the document still has
+		// a clear "title page" feel).
+		if d.currentPageIndex == 1 {
+			d.emitText(d.req.Title, fontHelveticaB, FontTitle, 50, d.currentPageY, true)
+			d.currentPageY -= FontTitle + 20
+		}
+	} else {
+		// v0.1 behavior: centered title on page 1.
+		if d.currentPageIndex == 1 {
+			d.emitText(d.req.Title, fontHelveticaB, FontTitle, 50, d.currentPageY, true)
+			d.currentPageY -= FontTitle + 20
+		}
 	}
+
 	// Emit the footer on every page. The page
 	// separator is ASCII-only (the em-dash is not in
 	// Latin-1 and would be replaced with '?' by
@@ -124,7 +182,15 @@ func (d *document) addPage() int {
 	if footerText == "" {
 		footerText = "AegisGate Platform"
 	}
-	footerWithPage := fmt.Sprintf("%s -- Page %d", footerText, d.currentPageIndex)
+	footerParts := []string{footerText}
+	if d.req.FooterIncludeID != "" {
+		footerParts = append(footerParts, "ID: "+d.req.FooterIncludeID)
+	}
+	if d.req.FooterURL != "" {
+		footerParts = append(footerParts, d.req.FooterURL)
+	}
+	footerParts = append(footerParts, fmt.Sprintf("Page %d", d.currentPageIndex))
+	footerWithPage := strings.Join(footerParts, " -- ")
 	footerY := 30.0
 	d.emitText(footerWithPage, fontHelvetica, FontFooter, 50, footerY, false)
 

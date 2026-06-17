@@ -73,6 +73,13 @@ const (
 	FontBody     = 10.0
 	FontFooter   = 8.0
 	FontTableHdr = 10.0
+	// FontHeader (v0.2) is the top-of-page header
+	// font. Smaller than FontTitle (so the header is
+	// visually distinct from the title on page 1) but
+	// larger than FontFooter (so it reads as a
+	// "header" not a "footer"). v0.1 doesn't have a
+	// header; v0.2 introduces one.
+	FontHeader = 12.0
 )
 
 // Standard PDF font (Helvetica family; built into every
@@ -92,6 +99,14 @@ const (
 // the v0.1 analog of `reporting.Report` (upstream
 // `pkg/reporting.Report`) but simplified to only the
 // fields the PDF renderer needs.
+//
+// v0.2 adds:
+//   - Header (top-of-page banner; replaces the
+//     centered title on page 1 if non-empty)
+//   - FooterURL (appended to the footer text;
+//     defaults to "https://aegisgatesecurity.io")
+//   - FooterIncludeID (appends the digest ID to the
+//     footer; useful for audit traceability)
 type RenderRequest struct {
 	// Title is the document title. REQUIRED.
 	Title string
@@ -113,6 +128,24 @@ type RenderRequest struct {
 	// Footer is the footer text. OPTIONAL. The page
 	// number is appended automatically.
 	Footer string
+	// Header (v0.2) is the top-of-page banner. If
+	// non-empty, it replaces the centered title on
+	// page 1 with a left-aligned "AegisGate" wordmark
+	// + a right-aligned period string. If empty, the
+	// v0.1 behavior is used (centered title only).
+	Header string
+	// HeaderSubtitle (v0.2) is the right-aligned
+	// subtitle of the header (e.g., the digest
+	// period). Only used if Header is non-empty.
+	HeaderSubtitle string
+	// FooterURL (v0.2) is the URL appended to the
+	// footer text. Default: "https://aegisgatesecurity.io".
+	FooterURL string
+	// FooterIncludeID (v0.2) is the digest ID
+	// appended to the footer text. Set by the digest
+	// renderer; the report renderer can also set it
+	// for the c3 manifest.
+	FooterIncludeID string
 	// GeneratedAt is the document creation time. Set by
 	// RenderReport if zero.
 	GeneratedAt time.Time
