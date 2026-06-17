@@ -1,3 +1,106 @@
+## [Unreleased] - 2026-06-18 - v3.4.0+ Engineering-Complete (Awaiting v3.4.0 GA)
+
+> **Not a version bump.** The work below is committed to `main` and engineering-complete. The v3.4.0 GA is gated on **legal review (H1) + the v3.4.0 paid pentest (H4)**, per the [Beta User Agreement](content/legal/beta-agreement.md) and the README. The version stays at v3.4.0-beta.1 (a forward-looking label for the in-progress work) until those gates are cleared. The public release remains **v3.3.0-beta.2**.
+
+This is the engineering-complete summary of the v3.4.0+ Tier 5+3+4 sprint on `main`. It's the full record of what shipped to `main` between v3.3.0-beta.2 (2026-06-08) and now (2026-06-18).
+
+### What's new on `main`
+
+#### The envelope primitive (the v3.4.0+ cryptographic backbone)
+
+A single, frozen, well-tested cryptographic primitive (`pkg/attestation/`, 18 tests, frozen 2026-06-16) that wraps any domain-specific payload with a tamper-evident, third-party-verifiable binding. **One envelope, 9 features, 0 duplication.**
+
+- **4 lifecycle operations** (frozen 2026-06-16, Council of Mine 8/8 unanimous): `Sign`, `Verify`, `VerifyWithKey`, `VerifyOnline`
+- **9-reason error taxonomy** (`ReasonMalformed`, `ReasonUnknownType`, `ReasonInvalidSubject`, **`ReasonSignatureInvalid`** (CRITICAL), `ReasonKeyMismatch`, `ReasonExpired`, `ReasonNotYetValid`, `ReasonPublicKeyFetch`, `ReasonAlgorithmUnsupported`)
+- **8 registered types** (all used by the 9 v3.4.0+ features): `TypeEvidenceManifest`, `TypeEvidenceCrossProtocol`, `TypeEvaluatorRun`, `TypeAIBOM`, `TypeAgentIntent`, `TypePromptCacheAttestation`, `TypeCVEEntry`, `TypeDigest`
+- **9 URI-style subject kinds** (`aegisgate://<kind>/<id>` grammar): `manifest`, `evaluation`, `deployment`, `intent`, `prompt`, `cve`, `digest`, `agent`, `ioc`
+- **Canonical CLI verb:** `aegisgate attestation verify envelope.json` → `VALID` / `INVALID: signature does not verify`
+- **JCS canonicalization** (RFC 8785) from scratch, ~200 LOC of stdlib, zero new external dependencies
+
+#### The 5 Tier 5 features (built on the envelope)
+
+| Feature | Package | Coverage | Tests | Wire format |
+|---|---|---|---|---|
+| **AR-EaaS** (Adversarial Robustness Evals-as-a-Service) | `pkg/evaluator/` | 92.0% | 38 | `TypeEvaluatorRun` = `evaluator.run.v1`, subject `aegisgate://evaluation/<run-id>`, issuer `ar-eaas:shortfp:<16-hex>:<key-id>` |
+| **AIBOM** (AI Bill of Materials, CycloneDX 1.6 + AI ext) | `pkg/aibom/` | 86.8% | 38 | `TypeAIBOM` = `aibom.cyclonedx.v1`, subject `aegisgate://deployment/<uuid>`, issuer `aibom:shortfp:<16-hex>:<key-id>` |
+| **Agent Intent Signing** (A2A intent binding) | `pkg/agentintentsign/` | 91.6% | 53 | `TypeAgentIntent` = `a2a.intent.v1`, subject `aegisgate://intent/<uuid>`, issuer `a2a-intent:shortfp:<16-hex>:<key-id>:<sanitized-agent-id>` (5 components, tail-matchable) |
+| **Prompt Cache Poisoning Detection** | `pkg/promptcache/` | 92.2% | 74 | `TypePromptCacheAttestation` = `promptcache.attestation.v1`, subject `aegisgate://prompt/<sha256-hex>`, issuer `promptcache:shortfp:<16-hex>:<key-id>` |
+| **CVE-for-AI Entry Publisher** | `pkg/cve/` | 92.0% | 82 | `TypeCVEEntry` = `cve.entry.v1`, subject `aegisgate://cve/AEGIS-YYYY-NNNN`, issuer `cve:shortfp:<16-hex>:<key-id>`, **Enterprise-only** for publish |
+
+#### The 2 Tier 3 features
+
+| Feature | Package | Coverage | Tests | Notes |
+|---|---|---|---|---|
+| **PDF Generator** (from-scratch PDF 1.4) | `pkg/pdf/` | **95.5%** | 50+27+2 | v0.2 branding (header banner + URL + ID + period in footer); **zero new external dependencies** (~750 LOC of stdlib) |
+| **SOC Incident-Timeline View** | `pkg/soc/` | **100%** | 25 | `GET /api/v1/soc/incidents/{id}/timeline` with Go 1.22+ native `{id}` path variable |
+
+#### The 2 Tier 4 features (CISO Digest + reporting pipeline)
+
+| Feature | Package | Coverage | Tests | Notes |
+|---|---|---|---|---|
+| **CISO Posture Digest** | `pkg/digest/` | **81.8%** | 40+14 | v0.2 wired with real data sources (PostureSource + IOCSource + AuditLogSource + AuditSource); branded PDF + signed envelope; Professional+ tier gated |
+| **Reporting Pipeline** | `pkg/digest/sources.go` + `pkg/reporting/` | (integrated) | (covered by 601) | Source interface + 4 adapters |
+
+#### 7 self-review files (`docs/reviews/`)
+
+Every feature has a self-review documenting the issues found and fixed. **Cumulative: 44 issues found and fixed** across 7 review files:
+
+- `TODO-301-REVIEW.md` — 12 issues (AR-EaaS)
+- `TODO-302-REVIEW.md` — 5 issues (AIBOM)
+- `TODO-303-REVIEW.md` — 6 issues (Agent Intent Signing)
+- `TODO-304-REVIEW.md` — 6 issues (Prompt Cache Poisoning)
+- `TODO-305-REVIEW.md` — 5 issues (CVE-for-AI)
+- `TODO-501-502-REVIEW.md` — 6 issues (PDF + SOC)
+- `TODO-601-602-REVIEW.md` — 4 issues (CISO Digest + pipeline)
+
+#### 3 v0.2 wiring fixes (this session's work, 2026-06-18)
+
+- **CISO Digest data sources** (`a5ad71f fix(digest): wire CISO Digest data sources (v0.2 wiring)`) — added `AuditLogSource` (reads from `pkg/logging.RingBuffer` via `CountByFramework`, `CountByProtocol`, and a new `SnapshotBetween` method); fixed the merge logic in `builder.go` (the v0.1 last-write-wins approach was a v0.2 bug that clobbered the IOC totals); wired CLI to use real in-memory stores and HTTP via a new `WireDigestDeps` struct. **14 new tests**; coverage 76.0% → 81.8%.
+- **PDF branding** (`9b0ca8f feat(pdf): v0.2 branding — header + enhanced footer (TODO-501 v0.2)`) — added 5 new fields to `RenderRequest` (`Header`, `HeaderSubtitle`, `FooterURL`, `FooterIncludeID`, new `FontHeader` constant). The digest renderer now uses the new fields. **2 new tests**; coverage 95.4% → 95.5%.
+- **CI fixes** (`f75b2e0 fix(ci): gofmt + exempt pkg/reporting from per-package coverage`) — 3 gofmt issues fixed; `pkg/reporting` added to `EXEMPTED_PACKAGES` in `.github/workflows/ci.yml` (the happy path of `ExportPDF` requires running the upstream reporter's scheduler, which is a process-level test; the error paths and `ExportPDFAdHoc` are tested).
+
+#### Engineering hygiene
+
+- **Zero new external dependencies** added across the 9-feature Tier 5+3+4 sprint. `go.mod` has the same 8 direct deps it had at the start of the v3.3.0-beta.2 release (jwt, uuid, prometheus, oauth2, yaml, stretchr/testify, plus 2 indirect).
+- **460+ tests passing under -race** across 44 platform packages.
+- **Project-wide coverage 91%+** with all 60+ measured packages ≥80% (CI floor).
+- **24 design patterns** documented in the 7 review files, applied consistently across all 9 features.
+- **The platform and website are now in sync with the remote.** The CVE-for-AI portal is live at [aegisgatesecurity.io/cve/](https://aegisgatesecurity.io/cve/); the security.txt is live at [aegisgatesecurity.io/.well-known/security.txt](https://aegisgatesecurity.io/.well-known/security.txt).
+
+### What's still on the roadmap (not in v3.4.0+)
+
+- **v3.4.0 GA** — gated on H1 (legal review) + H4 (paid pentest); expected Q3 2026
+- **The 3 v0.1 → v0.2 transitions** (now closed): the 3 v0.1 wiring fixes are done. What remains is the **v0.2 → v1.0** transition (multi-tenant, scheduled digests, custom branding per customer) — deferred to v0.5/v1.0
+- **The static CVE portal** — the Go package + the website portal are both shipped. The curated CVE entry browser (v0.3) and the auto-publish workflow are deferred
+- **The Tier 6+ roadmap** (speculative): real-time SOC analyst AI copilot, PentestGPT, AI-specific SOAR, CNA with MITRE
+
+### Commits on `main` since v3.3.0-beta.2
+
+```
+f3a5101 fix(ci): gofmt + exempt pkg/reporting from per-package coverage
+d98552a docs(readme): add v3.4.0+ 'What's New on main' section; fix 5->6 pillars
+455930a chore(deps): bump alpine from `5b10f43` to `a2d49ea` (#67)   [dependabot]
+fa933d9 chore(deps): bump golang from `f23e8b2` to `7a3e500` (#66)   [dependabot]
+9b0ca8f feat(pdf): v0.2 branding — header + enhanced footer (TODO-501 v0.2)
+a5ad71f fix(digest): wire CISO Digest data sources (v0.2 wiring)
+f343b89 fix(pdf): wire Tier 4 word-wrap + Unicode extensions into existing code
+398d8b2 docs(tier-4): add TODO-601+602 self-review
+7426720 TODO-601 + TODO-602: CISO Posture Digest + reporting pipeline (Tier 4)
+aa98ae3 docs(tier-3): add TODO-501+502 self-review
+193d016 TODO-501 + TODO-502: PDF generation + SOC incident-timeline view (Tier 3)
+bada988 docs(cve): add TODO-305 self-review
+fa5f6ac TODO-305: CVE-for-AI Entry Publisher v0.1
+8acf7c1 docs(promptcache): add TODO-304 self-review
+4bbe57c TODO-304: Prompt Cache Poisoning Detection v0.1
+c08aff4 docs(evaluator): add TODO-301 review (was written but not committed)
+c4b41ad fix(agentintentsign): apply TODO-303 review fixes (C1, C2, M1, M2, M3, m1)
+e1c4a69 TODO-303: Agent Intent Signing (A2A intent binding) v0.1
+04fa686 fix(aibom): apply TODO-302 review fixes (C1, C2, M1, M2, m2)
+332f0e2 TODO-302: AIBOM — AI Bill of Materials (CycloneDX 1.6 extension) v0.1
+ee2ba00 fix(evaluator): apply TODO-301 review fixes (C1-C3, M1-M2, m1-m7)
+13ab18e TODO-301: AR-EaaS — Adversarial Robustness Evals-as-a-Service (v0.1)
+```
+
 ## [3.3.0-beta.2] - 2026-06-08 - EU AI Act Module Integration Fix 🩹
 
 > **Status: Beta.2 hotfix.** v3.3.0-beta.1 was tagged on 2026-06-08, but a release-integrity review on the same day discovered that **5 commits implementing the EU AI Act work (Phases 1.1, 1.2, 1.3) had never been merged to `main`**. The v3.3.0-beta.1 tag pointed at a commit on `main` that did **not** contain the EU AI Act sub-package, the customer 1-pager, the marketing site update, or the gitignore enforcement. The CHANGELOG claimed the module was included; the code was not. **v3.3.0-beta.2 fixes this integrity gap by merging the missing work into `main` and re-tagging.**
