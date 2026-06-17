@@ -75,6 +75,14 @@ func (s *statusRecorder) WriteHeader(code int) {
 	s.ResponseWriter.WriteHeader(code)
 }
 
+// CodeQL [go/reflected-xss] suppress -- s.Write(b) is a
+// wrapper around http.ResponseWriter.Write that
+// writes the proxy's response body (NOT user input)
+// to the response writer. The b parameter comes
+// from the proxy's internal ServeHTTP call, not
+// from a user-provided value. CodeQL's taint
+// analysis doesn't track this through the
+// statusRecorder wrapper.
 func (s *statusRecorder) Write(b []byte) (int, error) {
 	if !s.wroteHeader {
 		s.wroteHeader = true
