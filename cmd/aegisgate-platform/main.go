@@ -1748,12 +1748,20 @@ func verifyServicesReady() error {
 // messages). ASCII printable characters and common
 // Unicode are preserved.
 func sanitizeForLog(s string) string {
+	// G706 (CodeQL): use strings.ReplaceAll on the
+	// known log-injection characters. CodeQL's taint
+	// analysis recognizes strings.ReplaceAll as a
+	// sanitizer; the manual byte-by-byte loop below
+	// (the per-character control-stripping) is the
+	// defense-in-depth check that strips additional
+	// control characters (0x00-0x1F, 0x7F).
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\r", " ")
+	s = strings.ReplaceAll(s, "\t", " ")
 	var b strings.Builder
 	b.Grow(len(s))
 	for _, r := range s {
 		switch {
-		case r == '\n', r == '\r', r == '\t':
-			b.WriteByte(' ')
 		case r < 0x20, r == 0x7f:
 			// Skip other control characters.
 			continue

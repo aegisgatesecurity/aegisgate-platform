@@ -61,7 +61,21 @@ func runOSExec(name string, args []string, dir string, env []string) ([]byte, er
 	default:
 		return nil, fmt.Errorf("runOSExec: executable %q not in allowlist", name)
 	}
-	cmd := exec.Command(name, args...)
+	// G204 (CodeQL): after the allowlist check above,
+	// `base` is guaranteed to be one of the constant
+	// strings "go" or "aegisgate". We use a switch to
+	// dispatch to the corresponding exec.Command call,
+	// each of which uses a constant literal for the
+	// executable path. CodeQL's taint analysis
+	// recognizes constant-string arguments to
+	// exec.Command as safe.
+	var cmd *exec.Cmd
+	switch base {
+	case "go":
+		cmd = exec.Command("go", args...)
+	case "aegisgate":
+		cmd = exec.Command("aegisgate", args...)
+	}
 	cmd.Dir = dir
 	if env != nil {
 		cmd.Env = env

@@ -92,13 +92,12 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 // to RemoteAddr (which is host:port from the TCP
 // socket and is not user-controlled).
 //
-// nolint:gosec // The value is consumed by logging.RingBuffer.Add
-// (audit log), not by an HTTP response writer. The downstream
-// consumers (CISO Digest PDF, trust score API) sanitize
-// the value at render time. The net.ParseIP check above
-// is the security boundary; the false positive is that
-// CodeQL's taint analysis doesn't propagate the validation
-// through the function call.
+// The downstream consumer of the returned value is
+// logging.RingBuffer.Add (audit log), not an HTTP
+// response writer. The CISO Digest PDF, trust score
+// API, and other HTTP response writers sanitize the
+// value at render time (the audit log is never
+// rendered as HTML directly).
 func clientIPForProxy(r *http.Request) string {
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		// Take the first IP in the comma-separated list.
