@@ -29,9 +29,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/agentintentsign"
+	"os"
+	"path/filepath"
 )
 
 // runA2AIntentSubcommand implements the "aegisgate a2a
@@ -199,7 +199,7 @@ func runA2AIntentVerify(args []string) int {
 		return 1
 	}
 	path = cleanPath
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a intent verify: read %s: %v\n", path, err)
 		return 1

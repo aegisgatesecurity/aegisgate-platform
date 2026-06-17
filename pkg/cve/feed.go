@@ -32,10 +32,10 @@ package cve
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
-
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 // =====================================================================
@@ -213,7 +213,7 @@ func (f *Feed) WriteJSONFile(path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0o600)
+	return os.WriteFile(filepath.Clean(path), data, 0o600)
 }
 
 // ReadJSONFile reads a feed from a file.

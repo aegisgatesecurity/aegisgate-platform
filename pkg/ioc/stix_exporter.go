@@ -96,7 +96,7 @@ func (e *STIXExporter) ExportToSTIX(b *Bundle, path string) error {
 			return fmt.Errorf("ioc: STIXExporter.ExportToSTIX: mkdir %s: %w", dir, err)
 		}
 	}
-	f, err := os.Create(path)
+	f, err := os.Create(filepath.Clean(path))
 	if err != nil {
 		return fmt.Errorf("ioc: STIXExporter.ExportToSTIX: create %s: %w", path, err)
 	}
@@ -173,7 +173,7 @@ func (e *STIXExporter) ExportToJSONLines(b *Bundle, path string) error {
 			return fmt.Errorf("ioc: STIXExporter.ExportToJSONLines: mkdir %s: %w", dir, err)
 		}
 	}
-	f, err := os.Create(path)
+	f, err := os.Create(filepath.Clean(path))
 	if err != nil {
 		return fmt.Errorf("ioc: STIXExporter.ExportToJSONLines: create %s: %w", path, err)
 	}

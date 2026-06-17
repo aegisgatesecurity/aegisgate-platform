@@ -303,7 +303,7 @@ func runCVEVerify(args []string) int {
 		return 1
 	}
 	path = cleanPath
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cve verify: read %s: %v\n", path, err)
 		return 1

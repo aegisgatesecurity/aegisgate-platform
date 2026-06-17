@@ -18,12 +18,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
-	"time"
-
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/digest"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 // runDigestSubcommand implements the "aegisgate
@@ -185,7 +185,7 @@ func runDigestVerify(args []string) int {
 		return 1
 	}
 	path = cleanPath
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "digest verify: read %s: %v\n", path, err)
 		return 1
