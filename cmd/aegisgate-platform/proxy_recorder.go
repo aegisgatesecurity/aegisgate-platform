@@ -75,14 +75,14 @@ func (s *statusRecorder) WriteHeader(code int) {
 	s.ResponseWriter.WriteHeader(code)
 }
 
-// CodeQL [go/reflected-xss] suppress -- s.Write(b) is a
-// wrapper around http.ResponseWriter.Write that
-// writes the proxy's response body (NOT user input)
-// to the response writer. The b parameter comes
-// from the proxy's internal ServeHTTP call, not
-// from a user-provided value. CodeQL's taint
-// analysis doesn't track this through the
-// statusRecorder wrapper.
+// CodeQL [go/reflected-xss] was previously flagged as a
+// false positive; manually dismissed in commit 88d7fe8.
+// s.Write(b) wraps http.ResponseWriter.Write to record
+// the proxy's response body. The b parameter comes
+// from the proxy's internal ServeHTTP call (NOT user
+// input), so there is no XSS risk. Kept here as a
+// future-proofing comment in case the alert re-appears
+// after a CodeQL rule change.
 func (s *statusRecorder) Write(b []byte) (int, error) {
 	if !s.wroteHeader {
 		s.wroteHeader = true
