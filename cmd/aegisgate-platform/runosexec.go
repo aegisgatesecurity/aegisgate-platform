@@ -11,7 +11,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 )
 
@@ -36,7 +38,24 @@ func (c *testCmd) CombinedOutput() ([]byte, error) {
 // runOSExec runs name with args in dir, with the given env. The
 // combined stdout+stderr is returned. If the process exits with
 // a non-zero code, the returned error is a *testExitError.
+//
+// G204 (CodeQL): the call site is a test harness (cmd/aegisgate-
+// platform/evaluator_subcommand_test.go) that only invokes `go
+// build` and the test binary. The allowlist below restricts
+// the executable name to those two cases, satisfying the
+// linter's "no subprocess with a variable" check.
 func runOSExec(name string, args []string, dir string, env []string) ([]byte, error) {
+	// G204 linter guard: only allow the test-harness commands.
+	// The base name (no directory component) must be in the
+	// allowlist. This prevents path-traversal-style attacks
+	// even though the call site is internal.
+	base := filepath.Base(name)
+	switch base {
+	case "go", "aegisgate":
+		// allowed
+	default:
+		return nil, fmt.Errorf("runOSExec: executable %q not in allowlist", name)
+	}
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
 	if env != nil {

@@ -94,6 +94,11 @@ func runAttestationVerify(args []string) {
 		os.Exit(2)
 	}
 	path := positional[0]
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		os.Exit(1)
+	}
+	path = cleanPath
 	// Read the envelope from the file.
 	data, err := os.ReadFile(path)
 	if err != nil {

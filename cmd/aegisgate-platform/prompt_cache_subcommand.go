@@ -187,7 +187,7 @@ func runPromptCacheAttest(args []string) int {
 	if *outFile != "" {
 		// Ensure the directory exists.
 		if dir := filepath.Dir(*outFile); dir != "" && dir != "." {
-			if err := os.MkdirAll(dir, 0o755); err != nil {
+			if err := os.MkdirAll(dir, 0o750); err != nil {
 				fmt.Fprintf(os.Stderr, "prompt-cache attest: mkdir %s: %v\n", dir, err)
 				return 1
 			}
@@ -230,6 +230,11 @@ func runPromptCacheVerify(args []string) int {
 		return 2
 	}
 	path := positional[0]
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		return 1
+	}
+	path = cleanPath
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "prompt-cache verify: read %s: %v\n", path, err)

@@ -144,7 +144,7 @@ func writePDF(outFile string, pdfBytes []byte) int {
 		}
 		return 0
 	}
-	if err := os.WriteFile(outFile, pdfBytes, 0o644); err != nil {
+	if err := os.WriteFile(outFile, pdfBytes, 0o600); err != nil {
 		fmt.Fprintf(os.Stderr, "report: write file: %v\n", err)
 		return 1
 	}

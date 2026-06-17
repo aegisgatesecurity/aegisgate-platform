@@ -388,7 +388,7 @@ func main() {
 				Sync:  iocW.Sync,
 			})
 			if derr != nil {
-				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", derr)
+				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", sanitizeForLog(derr.Error()))
 			} else {
 				go discoverer.Run(ctx)
 				log.Printf("Federated IOC: bootstrap discovery enabled (seeds=%d, interval=%s, max=%d)",
@@ -1734,4 +1734,27 @@ func verifyServicesReady() error {
 		log.Printf("[STARTUP-CONFIRM] Port %d ready", port)
 	}
 	return nil
+}
+
+// sanitizeForLog strips newlines and control characters
+// from a string before it's used in a log message. This
+// prevents log injection (G706) when the string contains
+// user-controlled values (e.g., peer URLs in error
+// messages). ASCII printable characters and common
+// Unicode are preserved.
+func sanitizeForLog(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch {
+		case r == '\n', r == '\r', r == '\t':
+			b.WriteByte(' ')
+		case r < 0x20, r == 0x7f:
+			// Skip other control characters.
+			continue
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }

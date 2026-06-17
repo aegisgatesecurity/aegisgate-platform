@@ -92,8 +92,17 @@ func newEvidenceAPIForPlatform(complianceSc *compliance.Scanner, licenseMgr *lic
 // so the signing key is shared (or accept per-host keys, which means
 // manifests verify only on the host that signed them - v0.2 work).
 func loadOrCreateEvidenceKey(path string) (*ecdsa.PrivateKey, string, error) {
-	//nolint:gosec // G304: path is a trusted, server-controlled config value
-	// (from --data-dir or the default ./var directory), not user input.
+	// G304 (CodeQL): sanitize the path. The path is
+	// a server-controlled config value (from --data-dir
+	// or the default ./var directory), not user input,
+	// but CodeQL's taint analysis still flags it. The
+	// safeFilePath call satisfies the linter and
+	// rejects path-traversal patterns defensively.
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		return nil, "", err
+	}
+	path = cleanPath
 	if data, err := os.ReadFile(path); err == nil {
 		hexStr := string(data)
 		dBytes, err := hex.DecodeString(hexStr)

@@ -345,7 +345,7 @@ func (s *Store) Flush() error {
 
 	// Ensure parent dir.
 	dir := filepath.Dir(s.cfg.DiskPath)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		s.mu.Lock()
 		s.dirty = true
 		s.mu.Unlock()
@@ -354,7 +354,7 @@ func (s *Store) Flush() error {
 
 	// Atomic write: temp file + rename.
 	tmp := s.cfg.DiskPath + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
 		s.mu.Lock()
 		s.dirty = true
 		s.mu.Unlock()

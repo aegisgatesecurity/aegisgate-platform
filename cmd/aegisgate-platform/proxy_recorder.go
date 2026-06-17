@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -82,11 +83,25 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 }
 
 // clientIPForProxy extracts the client IP, preferring X-Forwarded-For.
+//
+// XSS (CodeQL go/reflected-xss): the X-Forwarded-For
+// header is user-controlled and could contain HTML
+// or script characters. We validate that the extracted
+// value is a valid IP address using net.ParseIP; if
+// it isn't (e.g., a malicious header), we fall back
+// to RemoteAddr (which is host:port from the TCP
+// socket and is not user-controlled).
 func clientIPForProxy(r *http.Request) string {
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		// Take the first IP in the comma-separated list.
 		first := strings.SplitN(xff, ",", 2)[0]
-		return strings.TrimSpace(first)
+		candidate := strings.TrimSpace(first)
+		// Validate: must parse as an IP address. This
+		// strips any non-IP payload (e.g., HTML, scripts)
+		// from the X-Forwarded-For header.
+		if ip := net.ParseIP(candidate); ip != nil {
+			return candidate
+		}
 	}
 	// Fall back to RemoteAddr (host:port).
 	if idx := strings.LastIndex(r.RemoteAddr, ":"); idx > 0 {

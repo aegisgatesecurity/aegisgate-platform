@@ -251,6 +251,11 @@ func runEvaluatorVerify(args []string) int {
 		return 2
 	}
 	path := positional[0]
+	cleanPath, err := safeFilePath(path)
+	if err != nil {
+		return 1
+	}
+	path = cleanPath
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "evaluator verify: read %s: %v\n", path, err)
@@ -321,16 +326,20 @@ func loadOrEphemeralKeyRing(path string) (*ioc.KeyRing, func(), error) {
 		if err != nil {
 			return nil, nil, fmt.Errorf("create temp dir: %w", err)
 		}
+		// removeTempDir removes the temp dir, suppressing
+		// the RemoveAll error. Cleanup is best-effort
+		// during error paths.
+		removeTempDir := func() { _ = os.RemoveAll(tmpDir) }
 		kr, err := ioc.LoadKeyRing(filepath.Join(tmpDir, "kr.json"))
 		if err != nil {
-			os.RemoveAll(tmpDir)
+			removeTempDir()
 			return nil, nil, fmt.Errorf("load ephemeral keyring: %w", err)
 		}
 		if _, err := kr.Rotate(); err != nil {
-			os.RemoveAll(tmpDir)
+			removeTempDir()
 			return nil, nil, fmt.Errorf("rotate ephemeral keyring: %w", err)
 		}
-		return kr, func() { os.RemoveAll(tmpDir) }, nil
+		return kr, removeTempDir, nil
 	}
 	// Persistent: load the file (or create + rotate if missing).
 	kr, err := ioc.LoadKeyRing(path)
