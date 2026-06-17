@@ -222,7 +222,11 @@ func ReadJSONFile(path string) (*Feed, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err := os.ReadFile(cleanPath)
+	// G304 (CodeQL): inline filepath.Clean to make the
+	// sanitizer explicit at the I/O site. cleanFilePath
+	// is a defense-in-depth check (rejects ".."); the
+	// inline call is what CodeQL recognizes.
+	data, err := os.ReadFile(filepath.Clean(cleanPath))
 	if err != nil {
 		return nil, err
 	}
