@@ -61,27 +61,14 @@ func runOSExec(name string, args []string, dir string, env []string) ([]byte, er
 	default:
 		return nil, fmt.Errorf("runOSExec: executable %q not in allowlist", name)
 	}
-	// G204 (CodeQL): the allowlist check above
-	// ensures the executable name is one of {"go",
-	// "aegisgate"}. We dispatch via a switch on the
-	// validated `base` value. The exec.Command call
-	// uses a constant string for the executable name;
-	// the args slice is constructed by the test caller
-	// and is not user-controlled (the test harness
-	// passes a fixed args slice for each invocation).
-	//
-	// nolint:gosec // G204 (subprocess with variable): the
-	// allowlist check above and the constant-string
-	// dispatch below are the security controls; the
-	// explicit nolint documents the allowlist
-	// validation that precedes the exec.Command call.
+	// #nosec G204 -- base is validated by the allowlist check above.
 	var cmd *exec.Cmd
 	switch base {
 	case "go":
-		// nolint:gosec // G204: base is validated above
+		// #nosec G204 -- base is "go" (constant string).
 		cmd = exec.Command("go", args...)
 	case "aegisgate":
-		// nolint:gosec // G204: base is validated above
+		// #nosec G204 -- base is "aegisgate" (constant string).
 		cmd = exec.Command("aegisgate", args...)
 	}
 	cmd.Dir = dir

@@ -388,18 +388,26 @@ func main() {
 				Sync:  iocW.Sync,
 			})
 			if derr != nil {
-				// G706 (CodeQL log injection): inline
-				// strings.ReplaceAll on the error string
-				// BEFORE the log.Printf call. CodeQL
-				// recognizes strings.ReplaceAll as a
-				// sanitizer; the call must be inline at
-				// the log site (not inside a function
-				// call like sanitizeForLog).
+				// #nosec G706 -- log injection: the
+				// error string is sanitized via the
+				// strings.ReplaceAll calls below (the
+				// recognized gosec sanitizer for newlines
+				// + carriage returns). CodeQL's taint
+				// analysis can't follow the value through
+				// the function call, so the sanitizer is
+				// inlined here.
 				sanitized := strings.ReplaceAll(derr.Error(), "\n", " ")
 				sanitized = strings.ReplaceAll(sanitized, "\r", " ")
 				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", sanitized)
 			} else {
 				go discoverer.Run(ctx)
+				// #nosec G706 -- log injection: this
+				// log message has no user-controlled
+				// values (all args are constants or
+				// ints). The false positive is because
+				// gosec flags all log.Printf calls that
+				// use %d/%s verbs in a function that
+				// also has a taint source.
 				log.Printf("Federated IOC: bootstrap discovery enabled (seeds=%d, interval=%s, max=%d)",
 					len(bootstrapSeeds),
 					ioc.DefaultDiscoveryInterval,

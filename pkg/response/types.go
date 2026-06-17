@@ -220,7 +220,7 @@ const (
 	// SECRET_PRIVATE_KEY is private cryptographic keys
 	SECRET_PRIVATE_KEY SecretCategory = "private_key"
 
-	SECRET_OAUTH_TOKEN SecretCategory = "oauth_token" //nolint:gosec // Category identifier, not a real token
+	SECRET_OAUTH_TOKEN SecretCategory = "oauth_token" // #nosec G101 -- Category identifier, not a real token. The value is a Go const string used as a label in the audit log (not a credential); the gosec G101 false positive is documented and suppressed here.
 
 	// SECRET_PASSWORD is passwords
 	SECRET_PASSWORD SecretCategory = "password"
