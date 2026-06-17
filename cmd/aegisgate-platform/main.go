@@ -1050,7 +1050,14 @@ func main() {
 	// pipeline (PostureSource, IOCSource,
 	// AuditSource).
 	if iocW != nil {
-		wireDigestHandlers(dashMux, authMiddleware, iocW.KeyRing)
+		wireDigestHandlers(dashMux, authMiddleware, WireDigestDeps{
+			KeyRing:  iocW.KeyRing,
+			IOCStore: iocW.Store,
+			AuditLog: auditRing,
+			// Posture + SIEMDispatcher are not
+			// wired in v0.2; the digest's
+			// posture field is "unknown".
+		})
 		log.Printf("[DIGEST] CISO Digest HTTP API enabled at /api/v1/digest/{generate,verify} (generate is Professional+)")
 	}
 

@@ -177,17 +177,19 @@ func BuildDigest(ctx context.Context, sources []Source, opts BuilderOptions) (*D
 }
 
 // mergeInto merges the partial's non-zero fields
-// into the merged Digest. v0.1: simple field-by-
-// field copy.
+// into the merged Digest. v0.2: IOC counts and
+// anomaly counts use field-level merging (the
+// totals accumulate, the maps merge) rather than
+// last-write-wins.
 func mergeInto(merged, partial *Digest) {
 	if partial == nil {
 		return
 	}
 	if partial.IOCsBlocked != nil {
-		merged.IOCsBlocked = partial.IOCsBlocked
+		merged.IOCsBlocked = mergeIOCSummary(merged.IOCsBlocked, partial.IOCsBlocked)
 	}
 	if partial.AnomaliesDetected != nil {
-		merged.AnomaliesDetected = partial.AnomaliesDetected
+		merged.AnomaliesDetected = mergeAnomalySummary(merged.AnomaliesDetected, partial.AnomaliesDetected)
 	}
 	if partial.Posture != nil {
 		merged.Posture = partial.Posture
@@ -198,6 +200,119 @@ func mergeInto(merged, partial *Digest) {
 	if len(partial.TopThreats) > 0 {
 		merged.TopThreats = partial.TopThreats
 	}
+}
+
+// mergeIOCSummary merges two IOCSummary values
+// field-by-field: the totals sum, the maps
+// merge (with the partial's keys overriding
+// the merged's keys on collision; the partial
+// is assumed to be the more recent / authoritative
+// source for the same key).
+//
+// If either side is nil, the other side is
+// returned (with the maps initialized to empty
+// if needed). If both are nil, a new empty
+// IOCSummary is returned.
+func mergeIOCSummary(a, b *IOCSummary) *IOCSummary {
+	if a == nil {
+		if b == nil {
+			return &IOCSummary{
+				ByCategory:  make(map[string]int),
+				ByFramework: make(map[string]int),
+				ByProtocol:  make(map[string]int),
+			}
+		}
+		out := *b
+		if out.ByCategory == nil {
+			out.ByCategory = make(map[string]int)
+		}
+		if out.ByFramework == nil {
+			out.ByFramework = make(map[string]int)
+		}
+		if out.ByProtocol == nil {
+			out.ByProtocol = make(map[string]int)
+		}
+		return &out
+	}
+	if b == nil {
+		out := *a
+		if out.ByCategory == nil {
+			out.ByCategory = make(map[string]int)
+		}
+		return &out
+	}
+	out := &IOCSummary{
+		Total:       a.Total + b.Total,
+		ByCategory:  make(map[string]int),
+		ByFramework: make(map[string]int),
+		ByProtocol:  make(map[string]int),
+	}
+	for k, v := range a.ByCategory {
+		out.ByCategory[k] = v
+	}
+	for k, v := range b.ByCategory {
+		out.ByCategory[k] = v
+	}
+	for k, v := range a.ByFramework {
+		out.ByFramework[k] = v
+	}
+	for k, v := range b.ByFramework {
+		out.ByFramework[k] = v
+	}
+	for k, v := range a.ByProtocol {
+		out.ByProtocol[k] = v
+	}
+	for k, v := range b.ByProtocol {
+		out.ByProtocol[k] = v
+	}
+	return out
+}
+
+// mergeAnomalySummary merges two AnomalySummary
+// values field-by-field: the totals sum, the maps
+// merge.
+func mergeAnomalySummary(a, b *AnomalySummary) *AnomalySummary {
+	if a == nil {
+		if b == nil {
+			return &AnomalySummary{
+				ByProtocol: make(map[string]int),
+				BySeverity: make(map[string]int),
+			}
+		}
+		out := *b
+		if out.ByProtocol == nil {
+			out.ByProtocol = make(map[string]int)
+		}
+		if out.BySeverity == nil {
+			out.BySeverity = make(map[string]int)
+		}
+		return &out
+	}
+	if b == nil {
+		out := *a
+		if out.ByProtocol == nil {
+			out.ByProtocol = make(map[string]int)
+		}
+		return &out
+	}
+	out := &AnomalySummary{
+		Total:      a.Total + b.Total,
+		ByProtocol: make(map[string]int),
+		BySeverity: make(map[string]int),
+	}
+	for k, v := range a.ByProtocol {
+		out.ByProtocol[k] = v
+	}
+	for k, v := range b.ByProtocol {
+		out.ByProtocol[k] = v
+	}
+	for k, v := range a.BySeverity {
+		out.BySeverity[k] = v
+	}
+	for k, v := range b.BySeverity {
+		out.BySeverity[k] = v
+	}
+	return out
 }
 
 // computeOverallStatus returns "red" if any source

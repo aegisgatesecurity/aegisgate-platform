@@ -20,15 +20,41 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/audit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/digest"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/posture"
 )
+
+// WireDigestDeps bundles the dependencies the
+// digest's source pipeline needs. The HTTP
+// handler receives this from the platform's main
+// loop; the CLI uses its own in-memory stores.
+type WireDigestDeps struct {
+	KeyRing  *ioc.KeyRing
+	IOCStore *ioc.Store          // optional; nil means no IOC source
+	AuditLog *logging.RingBuffer // optional; nil means no AuditLog source
+	Posture  *posture.Checker    // optional; nil means posture is "unknown"
+	// SIEMDispatcher is currently unused by the
+	// digest's source pipeline (the AuditLogSource
+	// covers the heavy lifting; the SIEM dispatcher's
+	// stats are a redundant signal). Reserved for
+	// future use.
+	SIEMDispatcher *audit.SIEMDispatcher
+}
 
 // wireDigestHandlers registers the /api/v1/digest/*
 // HTTP routes. The keyring is shared with the other
 // Tier 5 + Tier 4 endpoints.
-func wireDigestHandlers(mux *http.ServeMux, authMW *auth.Middleware, kr *ioc.KeyRing) {
+//
+// v0.2: the source pipeline (PostureSource,
+// IOCSource, AuditLogSource) is wired with the
+// platform's real dependencies. The CLI is a
+// developer tool; the digest's HTTP endpoint is
+// the production path.
+func wireDigestHandlers(mux *http.ServeMux, authMW *auth.Middleware, deps WireDigestDeps) {
 	// Generate: Professional+. The tier check is
 	// done inline (the auth.Middleware exposes a
 	// tier string in the request context).
@@ -44,11 +70,11 @@ func wireDigestHandlers(mux *http.ServeMux, authMW *auth.Middleware, kr *ioc.Key
 			})
 			return
 		}
-		handleDigestGenerate(w, r, kr)
+		handleDigestGenerate(w, r, deps)
 	}))
 	// Verify: free.
 	mux.HandleFunc("/api/v1/digest/verify", authMW.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		handleDigestVerify(w, r, kr)
+		handleDigestVerify(w, r, deps.KeyRing)
 	}))
 }
 
@@ -61,7 +87,12 @@ func wireDigestHandlers(mux *http.ServeMux, authMW *auth.Middleware, kr *ioc.Key
 //	}
 //
 // The response is the signed envelope (JSON).
-func handleDigestGenerate(w http.ResponseWriter, r *http.Request, kr *ioc.KeyRing) {
+//
+// v0.2: the source pipeline is wired with the
+// platform's real dependencies (IOC store, audit
+// log, posture checker). The HTTP endpoint is the
+// production path; the CLI is a developer tool.
+func handleDigestGenerate(w http.ResponseWriter, r *http.Request, deps WireDigestDeps) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -83,10 +114,11 @@ func handleDigestGenerate(w http.ResponseWriter, r *http.Request, kr *ioc.KeyRin
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "parse body: " + err.Error()})
 		return
 	}
-	// Build the digest. v0.1: no sources wired
-	// (the source pipeline is v0.2). The digest
-	// just contains the period and the timestamp.
-	d, err := digest.BuildDigest(context.Background(), nil, digest.BuilderOptions{
+	// Build the digest. v0.2: the source pipeline
+	// is wired with the platform's real dependencies
+	// (IOC store + audit log + posture checker).
+	sources := buildDigestSources(deps)
+	d, err := digest.BuildDigest(context.Background(), sources, digest.BuilderOptions{
 		Period: digest.Period(req.Period),
 		Clock:  digest.SystemClock{},
 	})
@@ -96,7 +128,7 @@ func handleDigestGenerate(w http.ResponseWriter, r *http.Request, kr *ioc.KeyRin
 		return
 	}
 	// Sign.
-	env, err := digest.SignDigest(d, kr)
+	env, err := digest.SignDigest(d, deps.KeyRing)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "sign: " + err.Error()})
@@ -192,4 +224,36 @@ func handleDigestVerify(w http.ResponseWriter, r *http.Request, kr *ioc.KeyRing)
 		"end_time":       verified.EndTime,
 		"pdf_size":       len(pdfBytes),
 	})
+}
+
+// buildDigestSources builds the list of digest
+// sources from the platform's real dependencies.
+// Sources with nil dependencies are skipped (the
+// corresponding digest field will be empty/zero).
+//
+// v0.2 wiring:
+//   - IOCSource is always present if the IOC store
+//     is non-nil (which it is in production)
+//   - AuditLogSource is always present if the audit
+//     log ring buffer is non-nil (which it is in
+//     production)
+//   - PostureSource is optional (nil means posture
+//     field is "unknown")
+//   - AuditSource (SIEM dispatcher) is reserved for
+//     future use; not currently wired
+func buildDigestSources(deps WireDigestDeps) []digest.Source {
+	var sources []digest.Source
+	if deps.IOCStore != nil {
+		sources = append(sources, digest.NewIOCSource(deps.IOCStore))
+	}
+	if deps.AuditLog != nil {
+		sources = append(sources, digest.NewAuditLogSource(deps.AuditLog))
+	}
+	if deps.Posture != nil {
+		sources = append(sources, digest.NewPostureSource(deps.Posture))
+	}
+	if deps.SIEMDispatcher != nil {
+		sources = append(sources, digest.NewAuditSource(deps.SIEMDispatcher))
+	}
+	return sources
 }

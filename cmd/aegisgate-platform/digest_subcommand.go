@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/digest"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 )
 
 // runDigestSubcommand implements the "aegisgate
@@ -98,9 +100,32 @@ func runDigestGenerate(args []string) int {
 	if keyRingCleanup != nil {
 		defer keyRingCleanup()
 	}
-	// Build the digest with no sources (a v0.1
-	// placeholder; v0.2 wires real sources).
-	d, err := digest.BuildDigest(context.Background(), nil, digest.BuilderOptions{
+	// Build the real source pipeline (v0.2 wiring):
+	//   - In-memory IOC store
+	//   - In-memory audit log ring buffer
+	//   - No-op posture checker (the CLI is a
+	//     standalone tool, not the platform's main
+	//     loop; the posture is set to "unknown")
+	//   - Nil SIEM dispatcher
+	//
+	// For a production digest, the platform's main
+	// loop wires the real IOC store + the real audit
+	// log + the real posture checker. The CLI is a
+	// developer/CI tool; the data sources it can see
+	// are limited to what's in-memory.
+	iocStore, iocCleanup := newInMemoryIOCStore()
+	defer iocCleanup()
+	auditRing := logging.NewRingBuffer(logging.DefaultCapacity)
+	defer auditRing.Clear()
+	// Build the source list.
+	sources := []digest.Source{
+		digest.NewIOCSource(iocStore),
+		digest.NewAuditLogSource(auditRing),
+		digest.NewPostureSource(nil), // no posture checker in CLI mode
+		digest.NewAuditSource(nil),   // no SIEM dispatcher in CLI mode
+	}
+	// Build the digest with the real source pipeline.
+	d, err := digest.BuildDigest(context.Background(), sources, digest.BuilderOptions{
 		Period: digest.Period(*period),
 		Clock:  digest.SystemClock{},
 	})
@@ -204,5 +229,20 @@ func init() {
 		args := stripDigestSubcommand(os.Args[1:])
 		runDigestSubcommand(args)
 		// Unreachable: runDigestSubcommand calls os.Exit.
+	}
+}
+
+// newInMemoryIOCStore returns a fresh in-memory IOC
+// store. Used by the CLI for standalone operation
+// (no platform main loop). The store is in-memory
+// only (DiskPath is empty); the caller is
+// responsible for the cleanup func.
+func newInMemoryIOCStore() (*ioc.Store, func()) {
+	s, err := ioc.NewStore(ioc.StoreConfig{})
+	if err != nil {
+		panic(fmt.Sprintf("digest: NewStore: %v", err))
+	}
+	return s, func() {
+		// v0.2: in-memory only; no flush to disk.
 	}
 }

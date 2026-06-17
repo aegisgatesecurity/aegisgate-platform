@@ -162,6 +162,16 @@ func (r *RingBuffer) CountByFramework(_ context.Context, start, end time.Time) (
 // primitive that powers the cross-protocol evidence
 // aggregation (c1) - a single signed assertion of activity
 // across all 5 protocol pillars.
+// SnapshotBetween returns the raw list of events in the
+// [start, end] time window, in chronological order.
+// This is the public counterpart to snapshotInWindow.
+// v0.2 added (for the CISO Digest AuditLogSource): the
+// audit log adapter needs to iterate over the events in
+// the window to filter by severity (high/critical) and
+// to derive the anomaly breakdowns by protocol.
+func (r *RingBuffer) SnapshotBetween(start, end time.Time) []Event {
+	return r.snapshotInWindow(start, end)
+}
 //
 // The "response_scan" type (used by pkg/response/guard.go) is
 // the HTTP protocol pillar. The convention is a best-effort
