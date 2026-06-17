@@ -13,7 +13,7 @@
 [![Docker](https://img.shields.io/badge/Docker-13.3MB-2496ED?logo=docker)](Dockerfile)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 
-> **The only AI security platform with native HTTP API, MCP, A2A, ACP, and RESPONSE protection.** Five pillars. One gateway. Zero external dependencies.
+> **The only AI security platform with native HTTP API, MCP, A2A, ACP, and RESPONSE protection — plus the Trust Framework (6th pillar).** Six pillars. One gateway. Zero external dependencies.
 
 [🌐 Website](https://aegisgatesecurity.io) • [🚀 **Live Demo**](https://demo.aegisgatesecurity.io/) • [📊 Pricing](https://aegisgatesecurity.io/pricing/) • [📚 Docs](https://aegisgatesecurity.io/docs/) • [🇪🇺 EU AI Act](docs/compliance/eu-ai-act.md) • [🔒 Security](SECURITY.md) • [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
@@ -33,6 +33,60 @@
 - 📜 **6 v2.0 customer-facing legal docs + 1 Beta Agreement** at [aegisgatesecurity.io/legal](https://aegisgatesecurity.io/legal/)
 
 **Read the full [v3.3.0-beta.2 release notes](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.3.0-beta.2).**
+
+---
+
+## 🛠️ What's New on `main` since v3.3.0-beta.2 (Engineering-Complete; Awaiting v3.4.0 GA)
+
+> **Not a version bump.** The work below is committed to `main` and engineering-complete. The v3.4.0 GA is gated on **legal review (H1) + the v3.4.0 paid pentest (H4)**, per the [Beta User Agreement](content/legal/beta-agreement.md) and the [CHANGELOG](CHANGELOG.md#unreleased---2026-06-18---v340-engineering-complete--awaiting-v34-ga). The version stays at v3.4.0-beta.1 (a forward-looking label for the in-progress work) until those gates are cleared.
+
+The `main` branch now includes the **envelope primitive** (a tamper-evident cryptographic primitive shared by 9 features), the **5 Tier 5 features** (AR-EaaS, AIBOM, Agent Intent Signing, Prompt Cache Poisoning Detection, CVE-for-AI Feed), the **2 Tier 3 features** (PDF generator + SOC incident-timeline view), the **2 Tier 4 features** (CISO Posture Digest + reporting pipeline), and the **3 v0.2 wiring fixes** (CISO Digest data sources, PDF branding, CVE portal). The platform and the website at [aegisgatesecurity.io](https://aegisgatesecurity.io) are now in sync.
+
+### 6 pillars (was 5)
+
+The public Trust Framework (Pillar 6) is now in the public-facing model. AegisGate is the only AI security tool with **all 6 pillars**: HTTP API, MCP, A2A, ACP, RESPONSE, and Trust Framework.
+
+### The envelope primitive (the v3.4.0+ cryptographic backbone)
+
+A single, frozen, well-tested cryptographic primitive (`pkg/attestation/`, 18 tests) that wraps any domain-specific payload (AIBOM, AR-EaaS result, agent intent, prompt cache attestation, CVE entry, CISO Digest, evidence manifest) with a tamper-evident, third-party-verifiable binding. **8 registered types, 9 subject kinds, 9-reason error taxonomy, 4 lifecycle operations** (`Sign` / `Verify` / `VerifyWithKey` / `VerifyOnline`). v3.4.0+ replaces the v3.3.0 Trust Framework's Ed25519 attestation format with the envelope's ECDSA P-256 format, unifying the crypto on P-256.
+
+### The 9 features built on the envelope
+
+- **AR-EaaS** (`pkg/evaluator/`, 38 tests, 92.0% coverage) — 10-pattern MITRE ATLAS corpus (T0018 prompt injection, T0023 jailbreak, T0024 data exfiltration, T0048 model integrity erosion) with signed attestation
+- **AIBOM** (`pkg/aibom/`, 38 tests, 86.8% coverage) — CycloneDX 1.6 SBOM + AI extension; reference implementation of the AIBOM spec
+- **Agent Intent Signing** (`pkg/agentintentsign/`, 53 tests, 91.6% coverage) — mTLS proves identity; intent signing proves "I, agent X, said I'd do Y for reason R"
+- **Prompt Cache Poisoning Detection** (`pkg/promptcache/`, 74 tests, 92.2% coverage) — hash-and-sign the prompt, verify on read
+- **CVE-for-AI Feed** (`pkg/cve/`, 82 tests, 92.0% coverage) — signed CVE entries; portal at [aegisgatesecurity.io/cve/](https://aegisgatesecurity.io/cve/) (live preview)
+- **PDF Generator** (`pkg/pdf/`, 95.5% coverage after v0.2 branding) — from-scratch PDF 1.4 with word-wrap + WinAnsi Unicode + branded header + enhanced footer; **zero new external dependencies**
+- **SOC Incident-Timeline View** (`pkg/soc/`, 25 tests, 100% coverage) — chronological events per session with cross-protocol aggregation
+- **CISO Posture Digest** (`pkg/digest/`, 81.8% coverage after v0.2 wiring) — branded PDF digest with real IOC + audit-log breakdowns, signed envelope, Professional+ tier gated
+- **Reporting Pipeline** (`pkg/digest/sources.go` + `pkg/reporting/`) — `Source` interface + 4 adapters (PostureSource, IOCSource, AuditLogSource, AuditSource) wired into the platform's real dependencies
+
+### 7 self-review files (`docs/reviews/`)
+
+Every feature has a self-review documenting the issues found and fixed. **Cumulative: 44 issues found and fixed** across 7 review files:
+
+- `TODO-301-REVIEW.md` — 12 issues (AR-EaaS)
+- `TODO-302-REVIEW.md` — 5 issues (AIBOM)
+- `TODO-303-REVIEW.md` — 6 issues (Agent Intent Signing)
+- `TODO-304-REVIEW.md` — 6 issues (Prompt Cache Poisoning)
+- `TODO-305-REVIEW.md` — 5 issues (CVE-for-AI)
+- `TODO-501-502-REVIEW.md` — 6 issues (PDF + SOC)
+- `TODO-601-602-REVIEW.md` — 4 issues (CISO Digest + pipeline)
+
+### Engineering hygiene
+
+- **Zero new external dependencies** added across the 9-feature Tier 5+3+4 sprint. `go.mod` has the same 8 direct deps it had at the start of the v3.3.0-beta.2 release.
+- **460+ tests passing under -race** across 44 platform packages.
+- **Project-wide coverage 91%+** with all 60+ measured packages ≥80% (CI floor).
+- **24 design patterns** documented in the 7 review files, applied consistently across all 9 features.
+- **The platform and website are now in sync with the remote.** The CVE-for-AI portal is live at [aegisgatesecurity.io/cve/](https://aegisgatesecurity.io/cve/); the security.txt is live at [aegisgatesecurity.io/.well-known/security.txt](https://aegisgatesecurity.io/.well-known/security.txt).
+
+### The 3 v0.2 wiring fixes (this session's work)
+
+- **CISO Digest data sources** — the digest's IOCsBlocked + AnomaliesDetected fields now have real breakdowns (was a no-op source in v0.1). The Source interface + 4 adapters (PostureSource, IOCSource, AuditLogSource, AuditSource) are wired into the production CLI (in-memory stores) and HTTP endpoint (real platform stores via a new `WireDigestDeps` struct).
+- **PDF branding** — the PDF generator now supports a branded header (left-aligned "AegisGate Posture Digest" wordmark + right-aligned "<period> | <digest-id>" subtitle + thin separator) and an enhanced footer (Generated timestamp + ID + URL + Page N).
+- **CVE-for-AI portal** — the static portal at [aegisgatesecurity.io/cve/](https://aegisgatesecurity.io/cve/) is live with one illustrative CVE entry, the feed format docs, the verify-an-entry instructions, the security.txt at [/.well-known/security.txt](https://aegisgatesecurity.io/.well-known/security.txt), and a placeholder [feed.json](https://aegisgatesecurity.io/feed.json) (the production feed goes live with v3.4.0 GA).
 
 ---
 
@@ -124,9 +178,9 @@ There are other AI security products. Here's how AegisGate compares on the dimen
 
 ---
 
-## Five Pillars of AI Security
+## Six Pillars of AI Security
 
-AegisGate's protocol coverage is organized into **five pillars** that you can adopt independently or together. A **Trust Framework** sits across all five pillars as a cross-cutting audit and observability layer.
+AegisGate's protocol coverage is organized into **six pillars** that you can adopt independently or together. The **Trust Framework** is the 6th pillar (new in v3.2.0+, expanded in v3.4.0+ with the envelope primitive), and it ties together the five protocol pillars with cryptographically-signed attestations and a per-session trust score.
 
 ### 🌐 HTTP API Security
 
