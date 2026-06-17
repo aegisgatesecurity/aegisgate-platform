@@ -11,20 +11,24 @@
 // v0.1 supports:
 //   - Title (centered, large font)
 //   - Author / Subject / Keywords metadata
-//   - Multi-paragraph body text (left-aligned)
+//   - Multi-paragraph body text (left-aligned, with
+//     real word-wrap so long lines don't overflow)
 //   - Section headings (bold, larger font)
 //   - Tables (header row in bold, body rows in regular)
 //   - Page breaks (manual via NewPage, automatic on
 //     overflow)
 //   - Footer with page number
+//   - Unicode text (most Western European characters
+//     via WinAnsiEncoding; non-Latin scripts replaced
+//     with '?')
 //
 // v0.1 does NOT support:
 //   - Images / charts
-//   - Unicode text (Latin-1 only; non-Latin-1
-//     characters are replaced with '?')
-//   - Custom fonts (standard Helvetica family only)
-//   - Real text wrapping (text is rendered verbatim;
-//     long lines may overflow the page width)
+//   - Non-Western-European Unicode (replaced with '?')
+//   - Custom fonts (standard Helvetica family only;
+//     word-wrap tables cover F1-F4)
+//   - Hyphenation (long words that exceed the line
+//     width overflow rather than break)
 //
 // Design notes:
 //

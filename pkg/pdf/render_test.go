@@ -347,13 +347,29 @@ func TestPdfEscape_Backslash(t *testing.T) {
 }
 
 func TestPdfEscape_NonASCII(t *testing.T) {
+	// v0.2 behavior: WinAnsi-encodable characters
+	// (like é) are preserved as their WinAnsi bytes;
+	// non-WinAnsi characters are replaced with '?'.
 	got := pdfEscape("héllo")
-	// The é should be replaced with '?'.
-	if !strings.Contains(got, "?") {
-		t.Errorf("pdfEscape non-ASCII = %q, expected '?' replacement", got)
+	// é is 0xE9 in WinAnsi. The other characters
+	// are ASCII.
+	if !strings.Contains(got, "\xE9") {
+		t.Errorf("pdfEscape 'héllo' = %q, expected to contain 0xE9 (é)", got)
 	}
-	if strings.Contains(got, "é") {
-		t.Errorf("pdfEscape non-ASCII = %q, should not contain original non-ASCII", got)
+	// The original é (Unicode 0x00E9) is now
+	// represented as the WinAnsi byte 0xE9, not as
+	// the original Unicode code point.
+	if strings.ContainsRune(got, 'é') {
+		t.Errorf("pdfEscape 'héllo' = %q, should contain WinAnsi byte 0xE9, not Unicode é", got)
+	}
+}
+
+func TestPdfEscape_NonWinAnsi(t *testing.T) {
+	// Non-WinAnsi characters (e.g., Chinese) are
+	// replaced with '?'.
+	got := pdfEscape("你好")
+	if !strings.Contains(got, "?") {
+		t.Errorf("pdfEscape '你好' = %q, expected '?' replacement", got)
 	}
 }
 
