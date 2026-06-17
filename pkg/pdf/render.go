@@ -171,12 +171,18 @@ func (d *document) emitHeading(text string) error {
 	return nil
 }
 
-// emitParagraph writes a paragraph of text. v0.1
-// renders the text verbatim (no word wrap); long
-// lines may overflow the page width. This is a
-// known v0.1 limitation (see doc.go).
+// emitParagraph writes a paragraph of text with
+// word-wrap. v0.1 rendered text verbatim; v0.2 uses
+// WrapText to break long lines at word boundaries
+// so they fit within the page width. The cursor
+// advances by FontBody+2 per line.
+//
+// Multi-line paragraphs (text with embedded \n) are
+// supported: each line is wrapped independently.
 func (d *document) emitParagraph(text string) error {
-	for _, line := range strings.Split(text, "\n") {
+	maxWidth := MaxTextWidth(d.req.PageSize)
+	lines := WrapText(text, fontHelvetica, FontBody, maxWidth)
+	for _, line := range lines {
 		if !d.hasRoom(FontBody + 4) {
 			d.flushPage()
 			d.addPage()
@@ -280,19 +286,19 @@ func (d *document) flushPage() {
 // The text is wrapped in a BT/ET block (PDF text
 // object). The font and size are set inline. The
 // string is escaped (parentheses and backslashes are
-// escaped per PDF 1.4 spec).
+// escaped per PDF 1.4 spec, then converted from
+// UTF-8 to WinAnsiEncoding by pdfEscape).
 //
 // `center` is a hint: if true, the text is rendered
 // centered horizontally relative to the page width.
+// v0.2 uses the real word widths (textWidth); v0.1
+// used the approximation 0.5*size per char.
 func (d *document) emitText(s, font string, size, x, y float64, center bool) {
 	if center {
-		// PDF doesn't have a "center" command; we
-		// approximate by measuring the text width
-		// (Helvetica: average 0.5 * size per char)
-		// and shifting x.
-		charWidth := size * 0.5
-		textWidth := float64(len(s)) * charWidth
-		x = (d.req.PageSize.Width - textWidth) / 2
+		// Use the real word widths (from the
+		// charWidthTable) to center accurately.
+		textW := textWidth(s, font, size)
+		x = (d.req.PageSize.Width - textW) / 2
 	}
 	escaped := pdfEscape(s)
 	fmt.Fprintf(&d.currentPageContent, "BT /%s %.1f Tf %.0f %.0f Td (%s) Tj ET\n",
@@ -363,22 +369,47 @@ func (d *document) assemble() ([]byte, error) {
 // Helpers
 // =====================================================================
 
-// pdfEscape escapes a string for use in a PDF text
-// object. Per PDF 1.4 spec, parentheses and
-// backslashes must be escaped. Non-ASCII characters
-// are replaced with '?' (v0.1 limitation; see doc.go).
+// pdfEscape converts a string for use in a PDF text
+// object. The string is first converted from UTF-8
+// to WinAnsiEncoding (so non-ASCII characters like
+// é, ñ, ü are preserved as their WinAnsi byte
+// equivalents), then the WinAnsi bytes are escaped
+// per PDF 1.4 spec (parentheses and backslashes
+// are escaped).
+//
+// IMPORTANT: After utf8ToWinAnsi, the result is a
+// Go string containing WinAnsi bytes, which is NOT
+// valid UTF-8 (bytes 0x80-0xFF are not valid
+// UTF-8 sequences by themselves). We MUST iterate
+// over the raw bytes, not the runes, because
+// `for _, c := range` would decode as UTF-8 and
+// turn the WinAnsi bytes into U+FFFD (replacement
+// character).
+//
+// Characters not in WinAnsi (e.g., non-Latin
+// scripts) are replaced with '?' (the v0.1
+// behavior, retained for compatibility). v0.2 could
+// add a "embed Unicode font" path.
 func pdfEscape(s string) string {
+	// First, convert UTF-8 to WinAnsi. The result is
+	// a Go string where each byte is a WinAnsi byte.
+	winAnsi := utf8ToWinAnsi(s)
+	// Iterate over the raw bytes (NOT runes).
 	var b strings.Builder
-	for _, r := range s {
+	b.Grow(len(winAnsi))
+	for i := 0; i < len(winAnsi); i++ {
+		c := winAnsi[i]
 		switch {
-		case r == '(' || r == ')' || r == '\\':
+		case c == '(' || c == ')' || c == '\\':
 			b.WriteByte('\\')
-			b.WriteRune(r)
-		case r < 128:
-			b.WriteRune(r)
+			b.WriteByte(c)
+		case c < 128:
+			b.WriteByte(c)
 		default:
-			// Non-ASCII: replace with '?' (v0.1).
-			b.WriteByte('?')
+			// Latin-1 supplement (0x80-0xFF): emit
+			// as-is. PDF text objects can hold
+			// any Latin-1 character directly.
+			b.WriteByte(c)
 		}
 	}
 	return b.String()
