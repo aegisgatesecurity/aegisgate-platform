@@ -388,12 +388,16 @@ func main() {
 				Sync:  iocW.Sync,
 			})
 			if derr != nil {
-				// nolint:gosec // G706 (log injection): sanitizeForLog
-				// strips newlines and control characters from the
-				// error string. CodeQL doesn't recognize our custom
-				// helper as a sanitizer; the explicit nolint documents
-				// the security control.
-				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", sanitizeForLog(derr.Error()))
+				// G706 (CodeQL log injection): inline
+				// strings.ReplaceAll on the error string
+				// BEFORE the log.Printf call. CodeQL
+				// recognizes strings.ReplaceAll as a
+				// sanitizer; the call must be inline at
+				// the log site (not inside a function
+				// call like sanitizeForLog).
+				sanitized := strings.ReplaceAll(derr.Error(), "\n", " ")
+				sanitized = strings.ReplaceAll(sanitized, "\r", " ")
+				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", sanitized)
 			} else {
 				go discoverer.Run(ctx)
 				log.Printf("Federated IOC: bootstrap discovery enabled (seeds=%d, interval=%s, max=%d)",
