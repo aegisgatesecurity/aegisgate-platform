@@ -168,21 +168,21 @@ func TestAuditLogSource_HappyPath(t *testing.T) {
 	now := time.Now().UTC()
 	ring := newTestRingBuffer(
 		logging.Event{
-			Time:               now.Add(-30 * time.Minute),
-			Type:               "response_scan",
-			Severity:           "high",
+			Time:                now.Add(-30 * time.Minute),
+			Type:                "response_scan",
+			Severity:            "high",
 			ComplianceFramework: "GDPR",
 		},
 		logging.Event{
-			Time:               now.Add(-15 * time.Minute),
-			Type:               "response_scan",
-			Severity:           "high",
+			Time:                now.Add(-15 * time.Minute),
+			Type:                "response_scan",
+			Severity:            "high",
 			ComplianceFramework: "GDPR",
 		},
 		logging.Event{
-			Time:               now.Add(-10 * time.Minute),
-			Type:               "mcp_tool_call",
-			Severity:           "critical",
+			Time:                now.Add(-10 * time.Minute),
+			Type:                "mcp_tool_call",
+			Severity:            "critical",
 			ComplianceFramework: "HIPAA",
 		},
 	)
@@ -376,9 +376,9 @@ func TestBuildDigest_MergesMultipleSources(t *testing.T) {
 	)
 	ring := newTestRingBuffer(
 		logging.Event{
-			Time:               now.Add(-30 * time.Minute),
-			Type:               "response_scan",
-			Severity:           "high",
+			Time:                now.Add(-30 * time.Minute),
+			Type:                "response_scan",
+			Severity:            "high",
 			ComplianceFramework: "GDPR",
 		},
 	)

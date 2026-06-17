@@ -172,7 +172,7 @@ func (r *RingBuffer) CountByFramework(_ context.Context, start, end time.Time) (
 func (r *RingBuffer) SnapshotBetween(start, end time.Time) []Event {
 	return r.snapshotInWindow(start, end)
 }
-//
+
 // The "response_scan" type (used by pkg/response/guard.go) is
 // the HTTP protocol pillar. The convention is a best-effort
 // parser, not a strict taxonomy: any Type starting with
