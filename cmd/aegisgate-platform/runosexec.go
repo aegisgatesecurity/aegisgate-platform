@@ -44,6 +44,11 @@ func (c *testCmd) CombinedOutput() ([]byte, error) {
 // build` and the test binary. The allowlist below restricts
 // the executable name to those two cases, satisfying the
 // linter's "no subprocess with a variable" check.
+//
+// nolint:gosec // G204 (subprocess with variable): the allowlist
+// check above (`switch base { case "go", "aegisgate": ... }`)
+// is the security control; the explicit nolint documents the
+// allowlist validation that precedes the exec.Command call.
 func runOSExec(name string, args []string, dir string, env []string) ([]byte, error) {
 	// G204 linter guard: only allow the test-harness commands.
 	// The base name (no directory component) must be in the

@@ -388,6 +388,11 @@ func main() {
 				Sync:  iocW.Sync,
 			})
 			if derr != nil {
+				// nolint:gosec // G706 (log injection): sanitizeForLog
+				// strips newlines and control characters from the
+				// error string. CodeQL doesn't recognize our custom
+				// helper as a sanitizer; the explicit nolint documents
+				// the security control.
 				log.Printf("⚠️  IOC discoverer init failed: %v (continuing without discovery)", sanitizeForLog(derr.Error()))
 			} else {
 				go discoverer.Run(ctx)

@@ -140,10 +140,18 @@ var winAnsiTable = map[rune]byte{
 // code had no explicit `r > 0xFF` guard; we add one
 // here as a defensive measure (the conversion is
 // already safe by the time we reach the byte cast).
+// nolint:gosec // G115 (integer overflow): r is bounded by the
+// `r >= 0 && r < 0x80` check above; the `byte(r)` cast is safe.
+// The original CodeQL concern was that CodeQL's taint analysis
+// didn't track the bound through the if-statement; the explicit
+// `r >= 0` makes the bound visible to the static analyzer.
 func utf8ToWinAnsi(s string) string {
 	var b strings.Builder
 	for _, r := range s {
-		if r < 0x80 {
+		// G115 (CodeQL): the bound is `r >= 0 && r < 0x80`
+		// (the `r >= 0` is implicit for `rune` but explicit
+		// here to satisfy CodeQL's taint analysis).
+		if r >= 0 && r < 0x80 {
 			// ASCII: pass through (safe, r is in
 			// 0..128 so byte(r) is the same value).
 			b.WriteByte(byte(r))
