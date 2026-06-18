@@ -18,6 +18,11 @@ build/
 /aegisgate-platform-bin
 aegisgate-platform-*
 !/aegisgate-platform/  # never ignore the source directory itself
+
+# Build tool test binaries (from go test ./tools/...)
+/build-lens-extension
+/tools/build-lens-extension/build-lens-extension
+/tools/build-lens-extension/build-lens-extension.exe
 # Ignore stray README docs (old or competition versions)
 README-OLD.md
 README_COMPETITION.md
