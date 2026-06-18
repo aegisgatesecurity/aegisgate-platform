@@ -195,11 +195,79 @@ type IOC struct {
 	// is also kept on the IOC for display purposes. Never a
 	// hostname, IP, or customer identifier.
 	Source string `json:"source"`
+
+	// =====================================================================
+	// Lens-specific additive fields (v3.5.0+ Lens Phase 2)
+	// =====================================================================
+	// All fields below are ADDITIVE: they have omitempty and default
+	// zero values that the existing Gateway-only IOCs will use. The
+	// fingerprint computation in fingerprint.go is UNCHANGED — these
+	// fields are display-only and do not affect the canonical
+	// fingerprint input. This means:
+	//
+	//   - Existing on-disk IOCs (pre-Lens) deserialize cleanly with
+	//     these new fields empty.
+	//   - A pre-Lens instance and a Lens-aware instance that observe
+	//     the same logical event produce the same fingerprint.
+	//   - The gossip protocol (TAXII/STIX export) is backward
+	//     compatible: recipients that don't know about these fields
+	//     will simply ignore them.
+	//
+	// The fields were added in 2026-06-18 for AegisGate Lens Phase 2.
+	// See plans/AEGISGATE-LENS-PIVOT-2026-06-18.md and
+	// plans/AEGISGATE-LENS-ARCHITECTURE-v1.md for the design.
+	// =====================================================================
+
+	// Category classifies the sensitive-data category that the
+	// Lens detected, when the IOC originated from a Lens event.
+	// Empty for non-Lens IOCs. Examples: "pii_email", "pii_phone",
+	// "pii_ssn", "pii_credit_card", "secret_api_key", "source_code".
+	// This is the enum used by the Lens's §1.1 event schema; see
+	// pkg/lensbackend/validation.go for the canonical list.
+	Category string `json:"category,omitempty"`
+
+	// Pattern is the canonicalized name of the regex pattern that
+	// matched (e.g., "aws_access_key_v1", "luhn_visa_16").
+	// Empty for non-Lens IOCs. Never the regex itself and never
+	// the matched value — those would leak the detection rule.
+	Pattern string `json:"pattern,omitempty"`
+
+	// SourceProvider identifies which AI provider the IOC
+	// originated from, when the IOC came from a Lens event.
+	// Empty for non-Lens IOCs. Examples: "chatgpt", "claude",
+	// "gemini", "copilot". This is the provider enum used by
+	// the Lens; the value is the AI provider's canonical name,
+	// not a URL or hostname.
+	SourceProvider string `json:"sourceProvider,omitempty"`
+
+	// AffectsLens is true if this IOC should be propagated to
+	// AegisGate Lens installations as a pattern to detect. The
+	// Lens pulls a filtered subset of the IOC store on its
+	// pattern update channel. False for IOCs that are
+	// Gateway-only (e.g., a prompt-injection fingerprint that
+	// is meaningful at the proxy layer but not in the browser).
+	AffectsLens bool `json:"affectsLens,omitempty"`
+
+	// AffectsGateway is true if this IOC should be propagated
+	// to AegisGate Gateway installations as a detection rule.
+	// The Gateway pulls a filtered subset of the IOC store on
+	// its detection update channel. False for IOCs that are
+	// Lens-only (e.g., a browser-only sensitive-data detection
+	// that has no meaning at the proxy layer).
+	AffectsGateway bool `json:"affectsGateway,omitempty"`
 }
 
 // Valid reports whether the IOC has the minimum required fields
 // to be stored / shared. An IOC with an empty fingerprint or an
 // unknown IOCType is invalid.
+//
+// Lens-specific note: the five additive fields (Category, Pattern,
+// SourceProvider, AffectsLens, AffectsGateway) are optional. An
+// IOC with all five empty is a valid Gateway-only IOC; an IOC
+// with at least one of Category or SourceProvider set is a
+// valid Lens IOC. Either way, the IOC is Valid() iff the
+// fingerprint, type, severity, count, and timestamps pass the
+// checks below. See plans/AEGISGATE-LENS-PIVOT-2026-06-18.md.
 func (i *IOC) Valid() bool {
 	if i == nil {
 		return false
@@ -217,6 +285,16 @@ func (i *IOC) Valid() bool {
 		return false
 	}
 	if i.FirstSeen.IsZero() || i.LastSeen.IsZero() {
+		return false
+	}
+	// Lens-specific validation: if a lens-specific field is set,
+	// it must be coherent with the others. We don't reject Lens
+	// IOCs that have, e.g., Category set but Pattern empty, but
+	// we do reject combinations that make no sense.
+	if i.SourceProvider != "" && i.AffectsLens == false && i.AffectsGateway == false {
+		// A SourceProvider with neither AffectsLens nor
+		// AffectsGateway is meaningless — the IOC would be
+		// created but never used. Reject.
 		return false
 	}
 	return true
