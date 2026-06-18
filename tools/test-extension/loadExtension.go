@@ -38,7 +38,7 @@ func loadExtension(cdp *devtoolsClient, cfg *Config) error {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
 	// Read the content script.
-	script, err := os.ReadFile(filepath.Join(cfg.Dist, "content.js")) // #nosec G304 -- dist is a developer CLI arg, content.js is a hardcoded path
+	script, err := os.ReadFile(filepath.Join(cfg.Dist, "content.js")) // #nosec G304 G703 -- dist is a developer CLI arg, content.js is a hardcoded path
 	if err != nil {
 		return fmt.Errorf("read content.js: %w", err)
 	}
@@ -62,7 +62,7 @@ func loadExtension(cdp *devtoolsClient, cfg *Config) error {
 		return fmt.Errorf("enable Runtime: %w", err)
 	}
 	// Navigate to the mock AI provider page.
-	htmlPath := filepath.Join(cfg.TestdataDir, cfg.Provider+".html")
+	htmlPath := filepath.Join(cfg.TestdataDir, cfg.Provider+".html") // #nosec G703 -- testdataDir is a developer CLI arg
 	htmlURL, err := fileURL(htmlPath)
 	if err != nil {
 		return fmt.Errorf("build file URL: %w", err)
