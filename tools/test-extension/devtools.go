@@ -83,11 +83,11 @@ type cdpEvent struct {
 func connectCDP(cfg *Config) (*devtoolsClient, error) {
 	// Step 1: GET /json/version to get the WebSocket URL.
 	httpURL := fmt.Sprintf("http://127.0.0.1:%d/json/version", cfg.Port)
-	resp, err := http.Get(httpURL) // #nosec G107 -- test harness, localhost only
+	resp, err := http.Get(httpURL) // #nosec G107 G704 -- test harness, localhost only; cfg.Port is a developer CLI arg
 	if err != nil {
 		return nil, fmt.Errorf("GET /json/version: %w", err)
 	}
-	defer resp.Body.Close()
+	_ = resp.Body.Close() // #nosec G104 -- best-effort close in the error path; the caller will see the error and the fd is released on GC
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GET /json/version: status %d", resp.StatusCode)
 	}

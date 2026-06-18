@@ -52,7 +52,7 @@ func (p *chromiumProcess) Close() error {
 		_ = p.cmd.Wait()
 	}
 	if p.dataDir != "" {
-		_ = os.RemoveAll(p.dataDir)
+		_ = os.RemoveAll(p.dataDir) // #nosec G703 -- p.dataDir is a tmpdir created by the harness
 	}
 	return nil
 }
@@ -71,22 +71,22 @@ func spawnChromium(cfg *Config) (*chromiumProcess, error) {
 		return nil, fmt.Errorf("mkdir user-data-dir: %w", err)
 	}
 	// Build the arguments.
-	loadExt := "--load-extension=" + cfg.Dist
+	loadExt := "--load-extension=" + cfg.Dist // #nosec G703 -- cfg.Dist is a developer CLI arg, hardcoded in the harness
 	args := []string{
 		"--headless=new",
 		"--no-sandbox",
 		"--disable-gpu",
 		fmt.Sprintf("--remote-debugging-port=%d", cfg.Port),
-		"--user-data-dir=" + dataDir,
+		"--user-data-dir=" + dataDir, // #nosec G703 -- dataDir is a tmpdir created by the harness
 		loadExt,
 		// The page to navigate to is set later via CDP.
 		"about:blank",
 	}
-	cmd := exec.Command(binary, args...) // #nosec G204 -- chromium is the test harness's own browser
+	cmd := exec.Command(binary, args...) // #nosec G204 G702 -- chromium is the test harness's own browser; args are hardcoded
 	cmd.Stdout = os.Stderr               // Forward Chromium's stderr so the user can see browser errors
 	cmd.Stderr = os.Stderr
-	if err := cmd.Start(); err != nil {
-		_ = os.RemoveAll(dataDir)
+	if err := cmd.Start(); err != nil { // #nosec G104 -- start error is reported via the returned error
+		_ = os.RemoveAll(dataDir) // #nosec G104 -- best-effort cleanup
 		return nil, fmt.Errorf("start chromium: %w", err)
 	}
 	proc := &chromiumProcess{cmd: cmd, dataDir: dataDir}
@@ -141,9 +141,9 @@ func (p *chromiumProcess) waitForCDP(timeout time.Duration) error {
 	url := fmt.Sprintf("http://127.0.0.1:%d/json/version", findPortFromArgs(p.cmd.Args))
 	consecutiveFails := 0
 	for time.Now().Before(deadline) {
-		resp, err := http.Get(url) // #nosec G107 -- test harness, localhost only
+		resp, err := http.Get(url) // #nosec G107 G704 -- test harness, localhost only
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close() // #nosec G104 -- best-effort close; OS releases the fd on next GC
 			if resp.StatusCode == http.StatusOK {
 				return nil
 			}

@@ -83,8 +83,8 @@ func loadCases(testsDir, provider string) ([]TestCase, error) {
 		if !strings.HasSuffix(name, ".json") {
 			continue
 		}
-		path := filepath.Join(testsDir, name)
-		data, err := os.ReadFile(path) // #nosec G304 -- testsDir is a developer CLI arg
+		path := filepath.Join(testsDir, name) // #nosec G703 -- testsDir is a developer CLI arg
+		data, err := os.ReadFile(path)        // #nosec G304 G703 -- testsDir is a developer CLI arg
 		if err != nil {
 			return nil, fmt.Errorf("read %s: %w", name, err)
 		}

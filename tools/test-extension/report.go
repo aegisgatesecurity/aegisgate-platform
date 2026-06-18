@@ -54,7 +54,7 @@ func emitReport(cfg *Config, report *TestReport) error {
 	if err != nil {
 		return fmt.Errorf("marshal report: %w", err)
 	}
-	if err := os.WriteFile(cfg.Output, data, 0o644); err != nil { // #nosec G304 G306 -- output path is a developer CLI arg, build artifact
+	if err := os.WriteFile(cfg.Output, data, 0o644); err != nil { // #nosec G304 G306 G703 -- output path is a developer CLI arg, build artifact
 		return fmt.Errorf("write report: %w", err)
 	}
 	// Human-readable summary to stderr.

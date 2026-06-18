@@ -194,7 +194,7 @@ func parseArgs(args []string) (*Config, error) {
 // validateInputs checks that the required inputs exist.
 func validateInputs(cfg *Config) error {
 	// The dist directory must exist.
-	info, err := os.Stat(cfg.Dist)
+	info, err := os.Stat(cfg.Dist) // #nosec G703 -- cfg.Dist is a developer CLI arg
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("dist directory does not exist: %s", cfg.Dist)
@@ -215,8 +215,8 @@ func validateInputs(cfg *Config) error {
 		"welcome.js",
 	}
 	for _, f := range required {
-		path := filepath.Join(cfg.Dist, f)
-		if _, err := os.Stat(path); err != nil { // #nosec G304 -- dist is a developer CLI arg; required file list is hardcoded
+		path := filepath.Join(cfg.Dist, f)       // #nosec G703 -- `f` is a hardcoded list; cfg.Dist is a developer CLI arg
+		if _, err := os.Stat(path); err != nil { // #nosec G304 G703 -- dist is a developer CLI arg; required file list is hardcoded
 			if os.IsNotExist(err) {
 				return fmt.Errorf("required dist file missing: %s", f)
 			}
@@ -224,7 +224,7 @@ func validateInputs(cfg *Config) error {
 		}
 	}
 	// The tests directory must exist.
-	testsInfo, err := os.Stat(cfg.Tests)
+	testsInfo, err := os.Stat(cfg.Tests) // #nosec G703 -- cfg.Tests is a developer CLI arg
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("tests directory does not exist: %s", cfg.Tests)
@@ -235,8 +235,8 @@ func validateInputs(cfg *Config) error {
 		return fmt.Errorf("tests is not a directory: %s", cfg.Tests)
 	}
 	// The testdata HTML for the provider must exist.
-	htmlPath := filepath.Join(cfg.TestdataDir, cfg.Provider+".html")
-	if _, err := os.Stat(htmlPath); err != nil { // #nosec G304 -- testdataDir is a developer CLI arg
+	htmlPath := filepath.Join(cfg.TestdataDir, cfg.Provider+".html") // #nosec G703 -- testdataDir is a developer CLI arg
+	if _, err := os.Stat(htmlPath); err != nil {                     // #nosec G304 G703 -- testdataDir is a developer CLI arg
 		if os.IsNotExist(err) {
 			return fmt.Errorf("testdata HTML missing for provider %q: %s", cfg.Provider, htmlPath)
 		}
