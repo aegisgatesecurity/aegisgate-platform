@@ -24,13 +24,10 @@
 package main
 
 import (
-	"bufio"
-	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -135,10 +132,14 @@ func findChromium(supplied string) (string, error) {
 }
 
 // waitForCDP polls the CDP port until it accepts connections,
-// or until the timeout expires.
+// or until the timeout expires. If the chromium process exits
+// before the port becomes ready, the http.Get will start
+// failing and we'll time out (a less informative error, but
+// avoids importing golang.org/x/sys/unix just for signal 0).
 func (p *chromiumProcess) waitForCDP(timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	url := fmt.Sprintf("http://127.0.0.1:%d/json/version", findPortFromArgs(p.cmd.Args))
+	consecutiveFails := 0
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(url) // #nosec G107 -- test harness, localhost only
 		if err == nil {
@@ -147,12 +148,12 @@ func (p *chromiumProcess) waitForCDP(timeout time.Duration) error {
 				return nil
 			}
 		}
-		// Also check if the process is still alive.
-		if p.cmd.Process != nil {
-			if state, _ := p.cmd.Process.Wait(); state != nil {
-				// Process exited. Capture any stderr output.
-				return p.diagnoseFailure()
-			}
+		consecutiveFails++
+		// If we've failed many times in a row, the process
+		// is likely dead. Break early to surface a
+		// better error.
+		if consecutiveFails > 20 {
+			return p.diagnoseFailure()
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -189,55 +190,4 @@ func (p *chromiumProcess) diagnoseFailure() error {
 	// already exited. The caller should look at the
 	// forwarded stderr.
 	return fmt.Errorf("chromium exited before CDP became ready; check stderr above for the error message")
-}
-
-// killStaleChromium kills any chromium processes that may
-// be running on the CDP port from a previous run. This is
-// a best-effort cleanup, not a hard guarantee.
-func killStaleChromium(port int) {
-	// No-op on non-Linux platforms. On Linux, we'd use
-	// `fuser -k <port>/tcp` or similar. For now, the
-	// runner is expected to use a unique port per test
-	// run, or the OS will eventually reap the stale
-	// process.
-	_ = port
-}
-
-// runWithStderr runs a command and returns its combined
-// stderr. Used for the --version smoke test.
-func runWithStderr(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...) // #nosec G204 -- test helper, name is hardcoded
-	out, err := cmd.CombinedOutput()
-	return string(out), err
-}
-
-// chromiumVersion is a helper that returns the chromium
-// version string. Used in test reports.
-func chromiumVersion(binary string) string {
-	// Try `--version` first.
-	out, err := runWithStderr(binary, "--version")
-	if err != nil {
-		// Some chromium versions don't have --version;
-		// try --no-sandbox --version.
-		out, err = runWithStderr(binary, "--no-sandbox", "--version")
-		if err != nil {
-			return "unknown"
-		}
-	}
-	// The version line is the first line of the output.
-	scanner := bufio.NewScanner(strings.NewReader(out))
-	if scanner.Scan() {
-		return strings.TrimSpace(scanner.Text())
-	}
-	return strings.TrimSpace(out)
-}
-
-// init verifies chromium is available at the start of
-// the test run. This is a no-op if the user doesn't run
-// the tests; it provides an early-fail check.
-func init() {
-	// The init() block intentionally does nothing. The
-	// actual chromium check happens in spawnChromium.
-	_ = filepath.Separator // suppress unused import
-	_ = context.Background
 }

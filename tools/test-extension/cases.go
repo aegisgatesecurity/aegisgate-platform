@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // TestCase is a single test case from the Lens repo's
@@ -60,40 +61,41 @@ type TestCase struct {
 	Notes string `json:"notes"`
 }
 
-// loadCases loads the test cases for the given provider
-// from the Lens repo's test/ directory. The file path is
+// loadCases loads all test cases from the Lens repo's
+// test/ directory. We scan the directory for *.json files
+// (rather than maintaining a hardcoded list of category
+// names) so the harness is robust to new test categories
+// being added in future versions of the Lens repo.
 //
-//	<tests>/<category>.json
-//
-// The lens schema is that each test file contains an array
-// of TestCase objects, one per scenario.
+// The `provider` argument is currently unused but reserved
+// for future provider-specific filtering.
 func loadCases(testsDir, provider string) ([]TestCase, error) {
-	var all []TestCase
-	// The test files in the Lens repo are named by
-	// category: pii_email.json, pii_credit_card.json, etc.
-	// We load all of them.
-	categories := []string{
-		"pii_email",
-		"pii_phone",
-		"pii_ssn",
-		"pii_credit_card",
-		"secret_api_key",
-		"source_code",
-		"false_positives",
+	entries, err := os.ReadDir(testsDir)
+	if err != nil {
+		return nil, fmt.Errorf("read tests dir: %w", err)
 	}
-	for _, cat := range categories {
-		path := filepath.Join(testsDir, cat+".json")
+	var all []TestCase
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		path := filepath.Join(testsDir, name)
 		data, err := os.ReadFile(path) // #nosec G304 -- testsDir is a developer CLI arg
 		if err != nil {
-			if os.IsNotExist(err) {
-				// Missing test file is not fatal; skip.
-				continue
-			}
-			return nil, fmt.Errorf("read %s: %w", path, err)
+			return nil, fmt.Errorf("read %s: %w", name, err)
 		}
 		var cases []TestCase
 		if err := json.Unmarshal(data, &cases); err != nil {
-			return nil, fmt.Errorf("parse %s: %w", path, err)
+			// Skip files that aren't valid TestCase JSON
+			// (e.g., README.json, package.json). The
+			// failure is non-fatal because the harness is
+			// robust to extra files in the test/ dir.
+			_ = name // suppress unused warning
+			continue
 		}
 		all = append(all, cases...)
 	}
