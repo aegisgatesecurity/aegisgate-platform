@@ -23,6 +23,8 @@ aegisgate-platform-*
 /build-lens-extension
 /tools/build-lens-extension/build-lens-extension
 /tools/build-lens-extension/build-lens-extension.exe
+/tools/test-extension/test-extension
+/tools/test-extension/test-extension.exe
 # Ignore stray README docs (old or competition versions)
 README-OLD.md
 README_COMPETITION.md
