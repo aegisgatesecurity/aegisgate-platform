@@ -164,7 +164,7 @@ func validateInputs(cfg *Config) error {
 		"storage.ts",
 	}
 	for _, f := range required {
-		path := filepath.Join(cfg.Src, f)
+		path := filepath.Join(cfg.Src, f) // #nosec G703 -- `f` is a hardcoded list of required source files; cfg.Src is a developer-supplied CLI arg
 		if _, err := os.Stat(path); err != nil {
 			if os.IsNotExist(err) {
 				return fmt.Errorf("required source file missing: %s", f)

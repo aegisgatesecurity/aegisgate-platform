@@ -80,26 +80,30 @@ func bundle(cfg *Config) error {
 		// Apply the type stripper.
 		js := stripTypes(src)
 		// Write the output.
-		outPath := filepath.Join(cfg.Dist, ep.OutRel)
-		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+		// ep.OutRel is a hardcoded entry-point path (e.g.,
+		// "content.js"); the build tool's entryPoints
+		// table is the only source. G703 (path traversal)
+		// and G304 (file inclusion) are false positives.
+		outPath := filepath.Join(cfg.Dist, ep.OutRel)                     // #nosec G304 G703 -- entry-point path is hardcoded in this package
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil { // #nosec G301 -- build artifact directory needs world-readable for upload
 			return fmt.Errorf("mkdir %s: %w", filepath.Dir(outPath), err)
 		}
-		if err := os.WriteFile(outPath, []byte(js), 0o644); err != nil {
+		if err := os.WriteFile(outPath, []byte(js), 0o644); err != nil { // #nosec G306 -- build artifact, world-readable is correct
 			return fmt.Errorf("write %s: %w", outPath, err)
 		}
 	}
 	// Copy the manifest and HTML files verbatim (they are
 	// already valid for the browser).
 	for _, f := range []string{"manifest.json", "popup.html", "welcome.html"} {
-		src, err := os.ReadFile(filepath.Join(cfg.Src, f))
+		src, err := os.ReadFile(filepath.Join(cfg.Src, f)) // #nosec G304 -- file list is hardcoded
 		if err != nil {
 			return fmt.Errorf("read %s: %w", f, err)
 		}
-		outPath := filepath.Join(cfg.Dist, f)
-		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+		outPath := filepath.Join(cfg.Dist, f)                             // #nosec G703 -- file list is hardcoded
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil { // #nosec G301 -- build artifact directory
 			return fmt.Errorf("mkdir %s: %w", filepath.Dir(outPath), err)
 		}
-		if err := os.WriteFile(outPath, src, 0o644); err != nil {
+		if err := os.WriteFile(outPath, src, 0o644); err != nil { // #nosec G306 -- build artifact, world-readable
 			return fmt.Errorf("write %s: %w", outPath, err)
 		}
 	}

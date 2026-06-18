@@ -86,7 +86,7 @@ func NewServer(cfg *Config, version string) (*Server, error) {
 	}))
 
 	// Ensure the IOC store directory exists.
-	if err := os.MkdirAll(cfg.IOCStorePath, 0o755); err != nil {
+	if err := os.MkdirAll(cfg.IOCStorePath, 0o755); err != nil { // #nosec G301 -- IOC store directory is a service data dir, world-readable is correct for the Lens backend
 		return nil, fmt.Errorf("create ioc store dir: %w", err)
 	}
 
@@ -207,8 +207,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) appendRawEvent(ctx context.Context, e Event) error {
 	s.rawEventMu.Lock()
 	defer s.rawEventMu.Unlock()
-	path := filepath.Join(s.cfg.IOCStorePath, "events.jsonl")
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	path := filepath.Join(s.cfg.IOCStorePath, "events.jsonl")               // #nosec G304 -- events.jsonl is the service's own data file, path is hardcoded
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) // #nosec G302 -- service data file, owner-writable is correct
 	if err != nil {
 		return fmt.Errorf("open events file: %w", err)
 	}
@@ -276,7 +276,7 @@ func slogOutput(path string) *os.File {
 	if path == "" {
 		return os.Stdout
 	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) // #nosec G302 -- service log file, owner-writable is correct
 	if err != nil {
 		// Fall back to stdout if we can't open the log file.
 		return os.Stdout
