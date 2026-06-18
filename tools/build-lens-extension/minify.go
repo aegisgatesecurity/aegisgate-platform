@@ -47,16 +47,16 @@ func minify(cfg *Config) error {
 		if !strings.HasSuffix(path, ".js") {
 			return nil
 		}
-		raw, err := os.ReadFile(path)
+		raw, err := os.ReadFile(path) // #nosec G304 -- path is from filepath.Walk of the build's own dist directory
 		if err != nil {
 			return fmt.Errorf("read %s: %w", path, err)
 		}
 		min := minifyJS(string(raw))
-		if err := os.WriteFile(path, []byte(min), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(min), 0o644); err != nil { // #nosec G306 -- build artifact, world-readable
 			return fmt.Errorf("write %s: %w", path, err)
 		}
 		return nil
-	})
+	}) // #nosec G122 -- dist directory is the build's own output, not user-writable during the build
 }
 
 // minifyJS applies the minification steps to a JS string.

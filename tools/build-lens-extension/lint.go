@@ -119,7 +119,7 @@ func lintAll(srcDir string) ([]LintViolation, error) {
 
 // lintFile runs all lint rules on a single file.
 func lintFile(path string) ([]LintViolation, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 G703 -- path is from filepath.Walk of the Lens source directory, which is the build tool's developer-supplied input
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
 	}

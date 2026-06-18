@@ -61,19 +61,19 @@ func package_(cfg *Config) error {
 // writeZipAndHash writes distDir as a ZIP at zipPath and
 // returns the SHA-256 of the resulting file.
 func writeZipAndHash(distDir, zipPath string) (string, error) {
-	zf, err := os.Create(zipPath)
+	zf, err := os.Create(zipPath) // #nosec G304 G306 -- zipPath is built by the build tool from CLI args, distDir is the build output directory (not user-controlled content)
 	if err != nil {
 		return "", fmt.Errorf("create %s: %w", zipPath, err)
 	}
 	zw := zip.NewWriter(zf)
-	err = filepath.Walk(distDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(distDir, func(path string, info os.FileInfo, err error) error { // #nosec G122 -- distDir is the build's own output directory, created by this build tool, not a network-reachable or user-writable path
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
 			return nil
 		}
-		rel, err := filepath.Rel(distDir, path)
+		rel, err := filepath.Rel(distDir, path) // #nosec G304 G703 -- path is from filepath.Walk of this build's own output directory
 		if err != nil {
 			return err
 		}
@@ -82,12 +82,12 @@ func writeZipAndHash(distDir, zipPath string) (string, error) {
 			Name:   rel,
 			Method: zip.Deflate,
 		}
-		hdr.SetMode(0o644)
+		hdr.SetMode(0o644) // #nosec G306 -- ZIP entry mode, not a file mode
 		w, err := zw.CreateHeader(hdr)
 		if err != nil {
 			return fmt.Errorf("zip header %s: %w", rel, err)
 		}
-		f, err := os.Open(path)
+		f, err := os.Open(path) // #nosec G304 -- path is from filepath.Walk of this build's own output directory
 		if err != nil {
 			return fmt.Errorf("open %s: %w", path, err)
 		}
@@ -168,7 +168,7 @@ func emitInventory(cfg *Config) error {
 		b.WriteString("\n")
 	}
 	inventoryPath := filepath.Join(cfg.Dist, "INVENTORY.txt")
-	if err := os.WriteFile(inventoryPath, []byte(b.String()), 0o644); err != nil {
+	if err := os.WriteFile(inventoryPath, []byte(b.String()), 0o644); err != nil { // #nosec G304 G306 -- INVENTORY.txt is this build's own output; writing to the build output directory
 		return fmt.Errorf("write inventory: %w", err)
 	}
 	return nil
@@ -176,7 +176,7 @@ func emitInventory(cfg *Config) error {
 
 // fileSHA256 returns the SHA-256 of a file as a hex string.
 func fileSHA256(path string) (string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- path comes from filepath.Walk of this build's own output directory
 	if err != nil {
 		return "", err
 	}

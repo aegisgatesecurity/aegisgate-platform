@@ -77,15 +77,15 @@ func validateSchema(cfg *Config) error {
 	}
 	// Write the schema to <dist>/schema.json. We use the Go
 	// side as the authoritative source.
-	if err := os.MkdirAll(cfg.Dist, 0o755); err != nil {
+	if err := os.MkdirAll(cfg.Dist, 0o755); err != nil { // #nosec G301 -- build output directory
 		return fmt.Errorf("mkdir dist: %w", err)
 	}
 	b, err := json.MarshalIndent(goSchema, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal schema: %w", err)
 	}
-	schemaPath := filepath.Join(cfg.Dist, "schema.json")
-	if err := os.WriteFile(schemaPath, b, 0o644); err != nil {
+	schemaPath := filepath.Join(cfg.Dist, "schema.json")       // #nosec G304 G703 -- schema.json is this build's own output, path is hardcoded
+	if err := os.WriteFile(schemaPath, b, 0o644); err != nil { // #nosec G306 -- build artifact
 		return fmt.Errorf("write schema: %w", err)
 	}
 	return nil
@@ -110,7 +110,7 @@ func extractGoEventSchema() (*Schema, error) {
 	if err != nil {
 		return nil, err
 	}
-	src, err := os.ReadFile(goFile)
+	src, err := os.ReadFile(goFile) // #nosec G304 -- Go file is a fixed, build-time path computed by walking up from cwd, not from user input
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", goFile, err)
 	}
@@ -255,7 +255,7 @@ func parseGoFields(body string) (map[string]goField, error) {
 // Like the Go parser, this is a simple regex-based parser.
 // The TS source is hand-written, so a regex is sufficient.
 func extractTSLensEventSchema(srcDir string) (*Schema, error) {
-	typesFile := filepath.Join(srcDir, "types.ts")
+	typesFile := filepath.Join(srcDir, "types.ts") // #nosec G304 G703 -- types.ts is the canonical schema file in the Lens source, path is from --src CLI arg (developer-controlled build input)
 	src, err := os.ReadFile(typesFile)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", typesFile, err)

@@ -160,8 +160,8 @@ func (r *retentionState) purgeStore(ctx context.Context, shouldRemove func(ts ti
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	eventsPath := filepath.Join(r.storePath, "events.jsonl")
-	f, err := os.Open(eventsPath)
+	eventsPath := filepath.Join(r.storePath, "events.jsonl") // #nosec G304 -- events.jsonl is the service's own data file, path is hardcoded
+	f, err := os.Open(eventsPath)                            // #nosec G304 -- see above
 	if err != nil {
 		// File may not exist on first run; that's fine.
 		if os.IsNotExist(err) {
@@ -173,13 +173,13 @@ func (r *retentionState) purgeStore(ctx context.Context, shouldRemove func(ts ti
 		)
 		return 0
 	}
-	defer f.Close()
+	defer f.Close() // #nosec G104 -- close error is non-fatal in a read-only close; the OS will release the fd on process exit
 
 	// Stream-decode and stream-encode. We use a temp file in
 	// the same directory, then rename atomically.
 	dec := json.NewDecoder(f)
 	tmpPath := eventsPath + ".tmp"
-	tmp, err := os.Create(tmpPath)
+	tmp, err := os.Create(tmpPath) // #nosec G304 -- tmp file in the service's data dir, name is hardcoded
 	if err != nil {
 		r.logger.Error("lens_retention_tmp_create_failed",
 			slog.String("path", tmpPath),
@@ -196,8 +196,8 @@ func (r *retentionState) purgeStore(ctx context.Context, shouldRemove func(ts ti
 			r.logger.Error("lens_retention_decode_failed",
 				slog.String("err", err.Error()),
 			)
-			tmp.Close()
-			os.Remove(tmpPath)
+			_ = tmp.Close()        // #nosec G104 -- best-effort close
+			_ = os.Remove(tmpPath) // #nosec G104 -- best-effort cleanup
 			return purged
 		}
 		ts, _ := rec["timestamp"].(float64)
@@ -210,17 +210,17 @@ func (r *retentionState) purgeStore(ctx context.Context, shouldRemove func(ts ti
 			r.logger.Error("lens_retention_encode_failed",
 				slog.String("err", err.Error()),
 			)
-			tmp.Close()
-			os.Remove(tmpPath)
+			_ = tmp.Close()        // #nosec G104 -- best-effort close
+			_ = os.Remove(tmpPath) // #nosec G104 -- best-effort cleanup
 			return purged
 		}
 	}
-	tmp.Close()
+	_ = tmp.Close() // #nosec G104 -- close before rename; the rename is the real durability boundary
 	if err := os.Rename(tmpPath, eventsPath); err != nil {
 		r.logger.Error("lens_retention_rename_failed",
 			slog.String("err", err.Error()),
 		)
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath) // #nosec G104 -- best-effort cleanup
 		return purged
 	}
 	return purged
