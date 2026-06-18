@@ -68,6 +68,11 @@ type Config struct {
 	// "./test-report.json".
 	Output string
 
+	// TestdataDir is the path to the directory containing
+	// the mock AI provider HTML pages. Defaults to
+	// "./testdata" relative to the test-extension binary.
+	TestdataDir string
+
 	// Verbose enables verbose logging.
 	Verbose bool
 }
@@ -145,9 +150,16 @@ func parseArgs(args []string) (*Config, error) {
 	tests := fs.String("tests", "", "path to the Lens test/ directory (required)")
 	provider := fs.String("provider", "chatgpt", "AI provider to mock (chatgpt, claude, gemini, copilot)")
 	chromium := fs.String("chromium", "", "path to the chromium binary (default: chromium in $PATH)")
+	// Port 0 means "OS-assigned". This is the safest default
+	// (no port conflict with an existing chromium instance)
+	// but requires the test harness to read the assigned
+	// port from chromium's stderr or /json/version response.
+	// For now, we use a fixed default of 9222 (the standard
+	// Chromium DevTools port); users can override with --port.
 	port := fs.Int("port", 9222, "CDP debugging port")
 	timeout := fs.Duration("timeout", 30*time.Second, "per-operation timeout")
 	output := fs.String("output", "./test-report.json", "path to the JSON test report")
+	testdataDir := fs.String("testdata", "./testdata", "path to the testdata/ directory containing mock HTML pages")
 	verbose := fs.Bool("verbose", false, "enable verbose logging")
 	if err := fs.Parse(args); err != nil {
 		return nil, err
@@ -174,6 +186,7 @@ func parseArgs(args []string) (*Config, error) {
 		Port:         *port,
 		Timeout:      *timeout,
 		Output:       *output,
+		TestdataDir:  *testdataDir,
 		Verbose:      *verbose,
 	}, nil
 }
@@ -222,8 +235,8 @@ func validateInputs(cfg *Config) error {
 		return fmt.Errorf("tests is not a directory: %s", cfg.Tests)
 	}
 	// The testdata HTML for the provider must exist.
-	htmlPath := filepath.Join("testdata", cfg.Provider+".html")
-	if _, err := os.Stat(htmlPath); err != nil {
+	htmlPath := filepath.Join(cfg.TestdataDir, cfg.Provider+".html")
+	if _, err := os.Stat(htmlPath); err != nil { // #nosec G304 -- testdataDir is a developer CLI arg
 		if os.IsNotExist(err) {
 			return fmt.Errorf("testdata HTML missing for provider %q: %s", cfg.Provider, htmlPath)
 		}

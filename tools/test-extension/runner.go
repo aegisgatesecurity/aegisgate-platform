@@ -67,13 +67,17 @@ func runTests(cdp *devtoolsClient, cfg *Config, cases []TestCase) (*TestReport, 
 
 // runOneTest runs a single test case and returns the result.
 func runOneTest(ctx context.Context, cdp *devtoolsClient, cfg *Config, c TestCase) TestResult {
-	// Step 1: Set the prompt textarea's value to the case's input.
+	// Step 1: Set the prompt input's value to the case's input.
+	// Use querySelector (not getElementById) so that the
+	// same expression works for both id selectors
+	// ("prompt-textarea") and attribute selectors
+	// ("div[contenteditable='true']" for claude/gemini).
 	setExpr := fmt.Sprintf(`
 		(() => {
-			const ta = document.getElementById('%s');
-			if (!ta) return false;
-			ta.value = %q;
-			ta.dispatchEvent(new Event('input', { bubbles: true }));
+			const el = document.querySelector(%q);
+			if (!el) return false;
+			el.value = %q;
+			el.dispatchEvent(new Event('input', { bubbles: true }));
 			return true;
 		})()
 	`, promptSelector(cfg.Provider), c.Input)
@@ -194,20 +198,22 @@ func strPtr(s *string) string {
 }
 
 // promptSelector returns the CSS selector for the prompt
-// textarea for the given AI provider. These match the
-// selectors in src/content.ts.
+// input for the given AI provider. The selectors match the
+// ones in src/content.ts. The returned selector is suitable
+// for use with document.querySelector (so id selectors are
+// prefixed with #, and attribute selectors are unchanged).
 func promptSelector(provider string) string {
 	switch provider {
 	case "chatgpt":
-		return "prompt-textarea" // #id selector
+		return "#prompt-textarea" // id selector
 	case "claude":
 		return "div[contenteditable='true']"
 	case "gemini":
 		return "div[contenteditable='true']"
 	case "copilot":
-		return "userInput"
+		return "#userInput" // id selector
 	}
-	return "prompt-textarea"
+	return "#prompt-textarea" // default
 }
 
 // TestReport is the top-level result of a test run.

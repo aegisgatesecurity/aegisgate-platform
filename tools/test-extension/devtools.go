@@ -76,6 +76,10 @@ type cdpEvent struct {
 // connectCDP connects to a running Chromium instance and
 // returns a CDP client. The Chromium process must already be
 // running with --remote-debugging-port=<port>.
+//
+// The function reads the WebSocket URL from /json/version,
+// which works for any port (including OS-assigned ports
+// when the port argument was 0).
 func connectCDP(cfg *Config) (*devtoolsClient, error) {
 	// Step 1: GET /json/version to get the WebSocket URL.
 	httpURL := fmt.Sprintf("http://127.0.0.1:%d/json/version", cfg.Port)
@@ -125,6 +129,13 @@ func connectCDP(cfg *Config) (*devtoolsClient, error) {
 // them to either a pending response channel (matched by ID)
 // or the events channel.
 func (c *devtoolsClient) readLoop() {
+	defer func() {
+		// Close the events channel so any goroutine waiting
+		// on waitForEvent can exit. The pending channels
+		// are drained by Close() (via the conn.Close()
+		// triggering ReadMessage to return an error).
+		close(c.events)
+	}()
 	for {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {

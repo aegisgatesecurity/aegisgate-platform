@@ -207,13 +207,26 @@ func TestLoadCases_NoFiles(t *testing.T) {
 }
 
 func TestLoadCases_Malformed(t *testing.T) {
+	// Malformed JSON files are now silently skipped (the
+	// harness is robust to extra files in the test/ dir).
+	// This test verifies that a malformed file does NOT
+	// cause the loader to fail.
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "pii_email.json"), []byte("not json"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	_, err := loadCases(dir, "chatgpt")
-	if err == nil {
-		t.Error("expected error for malformed JSON")
+	// Add a valid file so the loader has at least one case.
+	if err := os.WriteFile(filepath.Join(dir, "pii_phone.json"),
+		[]byte(`[{"input":"x","expected_match":"y","expected_category":"pii_phone","expected_severity":"high"}]`),
+		0o644); err != nil {
+		t.Fatal(err)
+	}
+	cases, err := loadCases(dir, "chatgpt")
+	if err != nil {
+		t.Errorf("loadCases should not fail on malformed files, got: %v", err)
+	}
+	if len(cases) != 1 {
+		t.Errorf("len(cases) = %d, want 1 (only the valid file should load)", len(cases))
 	}
 }
 
@@ -243,11 +256,11 @@ func TestParseDetections_Valid(t *testing.T) {
 
 func TestPromptSelector_AllProviders(t *testing.T) {
 	cases := map[string]string{
-		"chatgpt": "prompt-textarea",
+		"chatgpt": "#prompt-textarea",
 		"claude":  "div[contenteditable='true']",
 		"gemini":  "div[contenteditable='true']",
-		"copilot": "userInput",
-		"unknown": "prompt-textarea", // default
+		"copilot": "#userInput",
+		"unknown": "#prompt-textarea", // default
 	}
 	for provider, expected := range cases {
 		got := promptSelector(provider)

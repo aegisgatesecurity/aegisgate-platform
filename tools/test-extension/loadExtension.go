@@ -62,7 +62,7 @@ func loadExtension(cdp *devtoolsClient, cfg *Config) error {
 		return fmt.Errorf("enable Runtime: %w", err)
 	}
 	// Navigate to the mock AI provider page.
-	htmlPath := filepath.Join("testdata", cfg.Provider+".html")
+	htmlPath := filepath.Join(cfg.TestdataDir, cfg.Provider+".html")
 	htmlURL, err := fileURL(htmlPath)
 	if err != nil {
 		return fmt.Errorf("build file URL: %w", err)
@@ -83,50 +83,102 @@ func loadExtension(cdp *devtoolsClient, cfg *Config) error {
 // getter on window.__lens_detections that returns the
 // current detections array.
 func wrapScriptForTest(script string) string {
-	// The simplest approach: prepend a small wrapper that
-	// hooks into the detect() function. But the content
-	// script is bundled and minified, so we can't easily
-	// hook individual functions.
+	// The content script stores its detections in
+	// `this.currentDetections` (a class field), which is
+	// not accessible from the global scope. We work
+	// around this by scraping the DOM: the content script
+	// adds a banner with <li> elements, each containing
+	// text of the form:
+	//   "Email address (high) — match: \"john.doe@example.com\""
 	//
-	// Instead, we inject a MutationObserver in the test
-	// wrapper that watches the DOM for the warning banner
-	// the content script adds. The banner's text content
-	// contains the detection descriptions.
+	// The test wrapper installs a MutationObserver that
+	// scrapes the banner and parses the text into a
+	// structured detections array.
 	//
-	// For now, the test harness uses a simpler approach:
-	// the content script is expected to set
-	// window.__lens_detections directly. We add a tiny
-	// monkey-patch in the wrapper that polls every 50ms
-	// and reads the DOM.
+	// The category-to-slug mapping is also handled here
+	// (e.g., "Email address" -> "pii_email") to match the
+	// expected JSON values in the test corpus.
+	//
+	// We also set a __lens_test_pending counter that the
+	// harness can poll to detect when the content script
+	// has processed the input event. This avoids the
+	// 50ms-poll race condition.
 	return `
 (function() {
+  // category-from-display-name lookup. The content
+  // script's describeCategory() returns the human-readable
+  // names; we map them back to the wire-format slugs.
+  const categoryFromDisplay = {
+    'Email address': 'pii_email',
+    'Phone number': 'pii_phone',
+    'Social Security number': 'pii_ssn',
+    'Credit card number': 'pii_credit_card',
+    'API key or token': 'secret_api_key',
+    'Source code (private key)': 'source_code'
+  };
   window.__lens_detections = [];
+  window.__lens_test_input_count = 0;
+  window.__lens_test_scan_count = 0;
   function scan() {
+    window.__lens_test_scan_count++;
     const banner = document.getElementById('__aegisgate_lens_banner__');
-    if (banner) {
-      const items = banner.querySelectorAll('li');
-      const dets = [];
-      items.forEach(li => {
-        const text = li.textContent;
-        // Parse the banner's list items. The format is
-        // "<category> (<severity>) — match: "<match>""
-        // but the actual format depends on the content
-        // script. We just record the raw text.
-        dets.push({
-          category: 'unknown',
-          severity: 'unknown',
-          match: text,
-          start: 0,
-          end: 0,
-          pattern: 'banner'
-        });
-      });
-      window.__lens_detections = dets;
-    } else {
+    if (!banner) {
       window.__lens_detections = [];
+      return;
     }
+    const items = banner.querySelectorAll('li');
+    const dets = [];
+    items.forEach(li => {
+      const text = li.textContent;
+      // Format: "Category (severity) — match: \"MATCH\""
+      // Use a regex to parse. The em-dash is U+2014.
+      const m = text.match(/^(.+?) \(([^)]+)\) — match: "(.+)"$/);
+      if (!m) {
+        console.warn('[lens-test] failed to parse banner item:', JSON.stringify(text));
+        return;
+      }
+      const displayCat = m[1];
+      const sev = m[2];
+      const match = m[3];
+      const cat = categoryFromDisplay[displayCat] || 'unknown';
+      dets.push({
+        category: cat,
+        severity: sev,
+        match: match,
+        start: 0,
+        end: 0,
+        pattern: 'banner'
+      });
+    });
+    window.__lens_detections = dets;
   }
+  // Use a MutationObserver for the banner's children so
+  // we react immediately to new detections, not on a
+  // 50ms poll. Falls back to setInterval if MutationObserver
+  // is unavailable (very old browsers).
+  const target = document.body;
+  if (typeof MutationObserver !== 'undefined') {
+    const obs = new MutationObserver(scan);
+    obs.observe(target, { childList: true, subtree: true });
+  } else {
+    setInterval(scan, 50);
+  }
+  // Also poll at 50ms for the case where the content
+  // script mutates the banner's textContent without
+  // adding/removing children.
   setInterval(scan, 50);
+  // Hook the input event listener to count input events
+  // and trigger a scan after the content script has
+  // run. The content script's listener runs synchronously
+  // on 'input'; we add our listener with capture phase
+  // false (default) so we run AFTER the content script.
+  document.addEventListener('input', function(e) {
+    window.__lens_test_input_count++;
+    // The content script's handler has already run
+    // synchronously by the time we get here. Scan
+    // immediately to capture the new detections.
+    setTimeout(scan, 0);
+  }, false);
 })();
 ` + script
 }
