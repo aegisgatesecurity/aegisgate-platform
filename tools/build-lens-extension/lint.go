@@ -97,7 +97,7 @@ func lint(cfg *Config) error {
 // lintAll walks the source directory and returns all violations.
 func lintAll(srcDir string) ([]LintViolation, error) {
 	var all []LintViolation
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error { // #nosec G703 G122 -- srcDir is the developer-supplied --src CLI arg
 		if err != nil {
 			return err
 		}

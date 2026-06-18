@@ -135,7 +135,7 @@ func parseArgs(args []string) (*Config, error) {
 // contains the expected files.
 func validateInputs(cfg *Config) error {
 	// The source directory must exist.
-	info, err := os.Stat(cfg.Src)
+	info, err := os.Stat(cfg.Src) // #nosec G703 -- cfg.Src is a developer-supplied CLI arg
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("source directory does not exist: %s", cfg.Src)
@@ -164,8 +164,8 @@ func validateInputs(cfg *Config) error {
 		"storage.ts",
 	}
 	for _, f := range required {
-		path := filepath.Join(cfg.Src, f) // #nosec G703 -- `f` is a hardcoded list of required source files; cfg.Src is a developer-supplied CLI arg
-		if _, err := os.Stat(path); err != nil {
+		path := filepath.Join(cfg.Src, f)        // #nosec G703 -- `f` is a hardcoded list of required source files; cfg.Src is a developer-supplied CLI arg
+		if _, err := os.Stat(path); err != nil { // #nosec G703 -- see above
 			if os.IsNotExist(err) {
 				return fmt.Errorf("required source file missing: %s", f)
 			}
