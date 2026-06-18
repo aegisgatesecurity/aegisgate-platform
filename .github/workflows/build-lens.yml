@@ -1,0 +1,140 @@
+# =========================================================================
+# AegisGate Platform - Build-Lens Workflow
+# =========================================================================
+#
+# Belt-and-suspenders check: builds the AegisGate Lens
+# extension using the Platform's own build tool. This
+# catches breakages in the build tool early, before they
+# affect the Lens repo's CI.
+#
+# Triggers:
+#   - Weekly schedule (catches dependency rot)
+#   - Push to main (catches Platform-side changes)
+#   - Manual dispatch (for ad-hoc verification)
+#
+# The Lens source is checked out from
+# github.com/aegisgatesecurity/aegisgate-lens. If the
+# aegisgate-lens repo is private at the time this runs,
+# the workflow will fail; that's the desired behavior (we
+# want to know about the visibility mismatch).
+#
+# v3.5.0+ Lens Phase 2.
+# =========================================================================
+
+name: Build Lens
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/build-lens-extension/**"
+      - "tools/test-extension/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tools/build-lens-extension/**"
+      - "tools/test-extension/**"
+  schedule:
+    # Weekly on Sunday at 04:00 UTC (after the privacy policy
+    # weekly scan at 03:00).
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+
+env:
+  GO_VERSION: "1.26.4"
+  # The Lens repo. Must be public (or this workflow's token
+  # must have access to it). If the repo is renamed or
+  # moved, update this constant.
+  LENS_REPO: aegisgatesecurity/aegisgate-lens
+  # The branch of the Lens repo to build. main is the
+  # canonical branch; v0.1 pre-release lives on main until
+  # the v0.1.0 tag is cut.
+  LENS_BRANCH: main
+  LENS_VERSION: "0.1.0"
+
+permissions:
+  contents: read
+  packages: write
+
+# Don't cancel in-progress runs; the build is fast and we
+# want full history.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  build-lens:
+    name: Build Lens from Platform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Platform repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout Lens repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.LENS_REPO }}
+          ref: ${{ env.LENS_BRANCH }}
+          fetch-depth: 1
+          path: /tmp/lens-src
+
+      - name: Verify build tool compiles
+        run: |
+          go build -o /dev/null ./tools/build-lens-extension/
+          go build -o /dev/null ./tools/test-extension/
+
+      - name: Build the Lens extension
+        run: |
+          mkdir -p /tmp/lens-dist
+          go run ./tools/build-lens-extension/ \
+            --src /tmp/lens-src/src \
+            --dist /tmp/lens-dist \
+            --version "$LENS_VERSION" \
+            --commit "platform-ci-${{ github.run_id }}"
+
+      - name: Verify JS files are syntactically valid
+        run: |
+          for f in /tmp/lens-dist/*.js /tmp/lens-dist/popup/*.js; do
+            node --check "$f"
+          done
+
+      - name: Run the test harness (no Chromium)
+        # We don't have a real Chromium in this CI without
+        # explicit installation. The unit tests in the test
+        # harness's go test are enough to verify the
+        # harness's correctness.
+        run: |
+          go test -race -count=1 -v ./tools/test-extension/...
+          go test -race -count=1 ./tools/build-lens-extension/...
+
+      - name: Upload build artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lens-dist-${{ github.run_id }}
+          path: /tmp/lens-dist
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Summarize
+        if: always()
+        run: |
+          echo "## Lens build summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/lens-dist/INVENTORY.txt ]; then
+            echo "Files in dist:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/lens-dist/INVENTORY.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Build failed; no dist/ produced." >> $GITHUB_STEP_SUMMARY
+          fi
