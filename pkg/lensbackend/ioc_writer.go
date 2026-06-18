@@ -107,18 +107,18 @@ func (w *iocWriter) add(ctx context.Context, e Event) error {
 	if !ok {
 		// New IOC. Create it.
 		stored = &ioc.IOC{
-			Fingerprint:     key,
-			Type:            categoryToIOCType(e.Category),
-			Severity:        severityToIOC(e.Severity),
-			Source:          "lens",
-			Category:        e.Category,
-			Pattern:         patternFromCategory(e.Category),
-			SourceProvider:  sourceProviderFromDomainHash(e.DomainHash),
-			AffectsLens:     true,
-			AffectsGateway:  true,
-			FirstSeen:       time.Unix(e.Timestamp, 0).UTC(),
-			LastSeen:        time.Unix(e.Timestamp, 0).UTC(),
-			Count:           1,
+			Fingerprint:    key,
+			Type:           categoryToIOCType(e.Category),
+			Severity:       severityToIOC(e.Severity),
+			Source:         "lens",
+			Category:       e.Category,
+			Pattern:        patternFromCategory(e.Category),
+			SourceProvider: sourceProviderFromDomainHash(e.DomainHash),
+			AffectsLens:    true,
+			AffectsGateway: true,
+			FirstSeen:      time.Unix(e.Timestamp, 0).UTC(),
+			LastSeen:       time.Unix(e.Timestamp, 0).UTC(),
+			Count:          1,
 		}
 		w.pending[key] = stored
 	} else {
@@ -193,10 +193,10 @@ func patternFromCategory(category string) string {
 // is still valid; it just has a less specific SourceProvider).
 func sourceProviderFromDomainHash(domainHash string) string {
 	mapping := map[string]string{
-		ComputeDomainHash("chatgpt.com"):      "chatgpt",
-		ComputeDomainHash("chat.openai.com"):  "chatgpt",
-		ComputeDomainHash("claude.ai"):        "claude",
-		ComputeDomainHash("gemini.google.com"): "gemini",
+		ComputeDomainHash("chatgpt.com"):           "chatgpt",
+		ComputeDomainHash("chat.openai.com"):       "chatgpt",
+		ComputeDomainHash("claude.ai"):             "claude",
+		ComputeDomainHash("gemini.google.com"):     "gemini",
 		ComputeDomainHash("copilot.microsoft.com"): "copilot",
 	}
 	if v, ok := mapping[domainHash]; ok {

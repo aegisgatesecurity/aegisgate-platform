@@ -69,25 +69,31 @@ func newAuditLogger(ring *logging.RingBuffer, logger *slog.Logger) *auditLogger 
 // will record. Adding a field to this list is a privacy-policy
 // change and requires updating the policy and the threat model.
 const (
-	auditFieldRequestID   = "request_id"
-	auditFieldTimestamp   = "timestamp"
-	auditFieldDomainHash  = "domain_hash"
-	auditFieldCategory    = "category"
-	auditFieldUserAction  = "user_action"
-	auditFieldStatus      = "status"
-	auditFieldLatencyMS   = "latency_ms"
-	auditFieldReason      = "reason"
+	auditFieldRequestID  = "request_id"
+	auditFieldTimestamp  = "timestamp"
+	auditFieldDomainHash = "domain_hash"
+	auditFieldCategory   = "category"
+	auditFieldUserAction = "user_action"
+	auditFieldStatus     = "status"
+	auditFieldLatencyMS  = "latency_ms"
+	auditFieldReason     = "reason"
 )
 
 // RecordReceived logs that an event was received from the
 // extension, before validation. The status is "received".
 func (a *auditLogger) RecordReceived(ctx context.Context, requestID, domainHash, category string) {
+	if a == nil {
+		return
+	}
 	a.emit(ctx, requestID, domainHash, category, "", "received", 0, "")
 }
 
 // RecordAccepted logs that an event was accepted and forwarded
 // to the IOC aggregator.
 func (a *auditLogger) RecordAccepted(ctx context.Context, requestID, domainHash, category, userAction string, latencyMS int64) {
+	if a == nil {
+		return
+	}
 	a.emit(ctx, requestID, domainHash, category, userAction, "accepted", latencyMS, "")
 }
 
@@ -95,12 +101,18 @@ func (a *auditLogger) RecordAccepted(ctx context.Context, requestID, domainHash,
 // is a machine-readable string (e.g., "invalid_category",
 // "domain_hash_mismatch", "no_tls_sni").
 func (a *auditLogger) RecordRejected(ctx context.Context, requestID, domainHash, category, reason string, latencyMS int64) {
+	if a == nil {
+		return
+	}
 	a.emit(ctx, requestID, domainHash, category, "", "rejected", latencyMS, reason)
 }
 
 // RecordRateLimited logs that a request was rate-limited.
 // The reason is "per_installation" or "global".
 func (a *auditLogger) RecordRateLimited(ctx context.Context, requestID, domainHash, reason string) {
+	if a == nil {
+		return
+	}
 	a.emit(ctx, requestID, domainHash, "", "", "rate_limited", 0, reason)
 }
 
@@ -149,7 +161,7 @@ func (a *auditLogger) emit(ctx context.Context, requestID, domainHash, category,
 // formatAuditMessage produces a compact, machine-parseable
 // audit message. Format:
 //
-//   <requestID> <domainHash> <category> <userAction> <status> <reason>
+//	<requestID> <domainHash> <category> <userAction> <status> <reason>
 //
 // All fields are positional, space-separated, and have already
 // been validated by the audit-logger entry points to be safe
