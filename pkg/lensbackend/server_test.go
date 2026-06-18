@@ -230,10 +230,10 @@ func TestRateLimiter(t *testing.T) {
 func TestServerHealthz(t *testing.T) {
 	dir := t.TempDir()
 	srv, err := NewServer(&Config{
-		Port:           0, // unused
-		IOCStorePath:   dir,
+		Port:            0, // unused
+		IOCStorePath:    dir,
 		RateLimitPerMin: 10000,
-		BearerToken:    "test-token",
+		BearerToken:     "test-token",
 	}, "test-version")
 	if err != nil {
 		t.Fatal(err)
@@ -264,10 +264,10 @@ func TestServerHealthz(t *testing.T) {
 func TestServerRequiresBearerToken(t *testing.T) {
 	dir := t.TempDir()
 	srv, err := NewServer(&Config{
-		Port:           0,
-		IOCStorePath:   dir,
+		Port:            0,
+		IOCStorePath:    dir,
 		RateLimitPerMin: 10000,
-		BearerToken:    "secret-token",
+		BearerToken:     "secret-token",
 	}, "test-version")
 	if err != nil {
 		t.Fatal(err)
@@ -314,10 +314,10 @@ func TestServerEmptyTokenReturns503(t *testing.T) {
 	dir := t.TempDir()
 	// BearerToken deliberately empty.
 	srv, err := NewServer(&Config{
-		Port:           0,
-		IOCStorePath:   dir,
+		Port:            0,
+		IOCStorePath:    dir,
 		RateLimitPerMin: 10000,
-		BearerToken:    "",
+		BearerToken:     "",
 	}, "test-version")
 	if err != nil {
 		t.Fatal(err)

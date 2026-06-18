@@ -51,13 +51,13 @@ type Server struct {
 	version string
 
 	// Dependencies, populated by NewServer.
-	store   *ioc.Store
-	ioc     *iocWriter
-	audit   *auditLogger
-	rate    *LensRateLimiter
-	retent  *retentionState
-	ring    *logging.RingBuffer
-	hmgr    *httpAuthMiddleware
+	store  *ioc.Store
+	ioc    *iocWriter
+	audit  *auditLogger
+	rate   *LensRateLimiter
+	retent *retentionState
+	ring   *logging.RingBuffer
+	hmgr   *httpAuthMiddleware
 
 	// httpServer is the net/http.Server. It is constructed
 	// in NewServer and started in ListenAndServe.

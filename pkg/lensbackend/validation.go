@@ -187,14 +187,14 @@ var ErrInvalidEvent = errors.New("invalid event")
 //
 // The list of checks:
 //
-//   1. domain_hash is exactly 16 lowercase hex characters
-//   2. category is in AllCategories
-//   3. severity is in {info, low, medium, high, critical}
-//   4. user_action is in AllUserActions
-//   5. timestamp is within ±24 hours of backend wall clock
-//   6. model_version is non-empty and contains a "+"
-//   7. lens_version is non-empty
-//   8. confidence is in [0.0, 1.0]
+//  1. domain_hash is exactly 16 lowercase hex characters
+//  2. category is in AllCategories
+//  3. severity is in {info, low, medium, high, critical}
+//  4. user_action is in AllUserActions
+//  5. timestamp is within ±24 hours of backend wall clock
+//  6. model_version is non-empty and contains a "+"
+//  7. lens_version is non-empty
+//  8. confidence is in [0.0, 1.0]
 func (e *Event) Validate() error {
 	if len(e.DomainHash) != 16 {
 		return fmt.Errorf("%w: domain_hash must be 16 hex chars, got %d", ErrInvalidEvent, len(e.DomainHash))
