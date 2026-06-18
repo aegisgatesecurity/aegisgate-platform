@@ -85,25 +85,25 @@ func bundle(cfg *Config) error {
 		// table is the only source. G703 (path traversal)
 		// and G304 (file inclusion) are false positives.
 		outPath := filepath.Join(cfg.Dist, ep.OutRel)                     // #nosec G304 G703 -- entry-point path is hardcoded in this package
-		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil { // #nosec G301 -- build artifact directory needs world-readable for upload
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil { // #nosec G301 G703 -- build artifact directory needs world-readable for upload; outPath is hardcoded
 			return fmt.Errorf("mkdir %s: %w", filepath.Dir(outPath), err)
 		}
-		if err := os.WriteFile(outPath, []byte(js), 0o644); err != nil { // #nosec G306 -- build artifact, world-readable is correct
+		if err := os.WriteFile(outPath, []byte(js), 0o644); err != nil { // #nosec G304 G306 G703 -- build artifact, world-readable; outPath is from hardcoded entryPoints table
 			return fmt.Errorf("write %s: %w", outPath, err)
 		}
 	}
 	// Copy the manifest and HTML files verbatim (they are
 	// already valid for the browser).
 	for _, f := range []string{"manifest.json", "popup.html", "welcome.html"} {
-		src, err := os.ReadFile(filepath.Join(cfg.Src, f)) // #nosec G304 -- file list is hardcoded
+		src, err := os.ReadFile(filepath.Join(cfg.Src, f)) // #nosec G304 G703 -- file list is hardcoded; cfg.Src is a developer CLI arg
 		if err != nil {
 			return fmt.Errorf("read %s: %w", f, err)
 		}
 		outPath := filepath.Join(cfg.Dist, f)                             // #nosec G703 -- file list is hardcoded
-		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil { // #nosec G301 -- build artifact directory
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil { // #nosec G301 G703 -- build artifact directory; outPath is hardcoded
 			return fmt.Errorf("mkdir %s: %w", filepath.Dir(outPath), err)
 		}
-		if err := os.WriteFile(outPath, src, 0o644); err != nil { // #nosec G306 -- build artifact, world-readable
+		if err := os.WriteFile(outPath, src, 0o644); err != nil { // #nosec G304 G306 G703 -- build artifact, world-readable, hardcoded path
 			return fmt.Errorf("write %s: %w", outPath, err)
 		}
 	}
@@ -134,7 +134,7 @@ func bundleFile(srcDir, rel string, seen map[string]bool) (string, error) {
 	}
 	seen[rel] = true
 	path := filepath.Join(srcDir, rel)
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(path) // #nosec G304 G703 -- rel is a relative path from a regex match on an `import` line; build tool is developer-controlled
 	if err != nil {
 		// If the file has a .js extension and the .ts
 		// version exists, try that. This handles the case
@@ -143,7 +143,7 @@ func bundleFile(srcDir, rel string, seen map[string]bool) (string, error) {
 		if strings.HasSuffix(rel, ".js") {
 			tsRel := strings.TrimSuffix(rel, ".js") + ".ts"
 			tsPath := filepath.Join(srcDir, tsRel)
-			if _, err := os.Stat(tsPath); err == nil {
+			if _, err := os.Stat(tsPath); err == nil { // #nosec G304 G703 -- tsPath is derived from rel from a regex match on an `import` line
 				raw, err = os.ReadFile(tsPath)
 				if err != nil {
 					return "", fmt.Errorf("read %s: %w", tsPath, err)

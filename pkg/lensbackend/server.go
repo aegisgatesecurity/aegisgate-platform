@@ -108,7 +108,7 @@ func NewServer(cfg *Config, version string) (*Server, error) {
 	// Load the HMAC key for rate limiting, if configured.
 	var hmacKey []byte
 	if cfg.HMACKeyPath != "" {
-		hk, err := os.ReadFile(cfg.HMACKeyPath)
+		hk, err := os.ReadFile(cfg.HMACKeyPath) // #nosec G304 G703 -- HMAC key path is from the LENS_HMAC_KEY env var, which the operator configures; not user-reachable
 		if err != nil {
 			return nil, fmt.Errorf("read hmac key: %w", err)
 		}
@@ -208,7 +208,7 @@ func (s *Server) appendRawEvent(ctx context.Context, e Event) error {
 	s.rawEventMu.Lock()
 	defer s.rawEventMu.Unlock()
 	path := filepath.Join(s.cfg.IOCStorePath, "events.jsonl")               // #nosec G304 -- events.jsonl is the service's own data file, path is hardcoded
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) // #nosec G302 -- service data file, owner-writable is correct
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) // #nosec G302 G304 G703 -- service data file, owner-writable; hardcoded path
 	if err != nil {
 		return fmt.Errorf("open events file: %w", err)
 	}
@@ -276,7 +276,7 @@ func slogOutput(path string) *os.File {
 	if path == "" {
 		return os.Stdout
 	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) // #nosec G302 -- service log file, owner-writable is correct
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) // #nosec G302 G304 -- service log file, owner-writable; path is from LENS_LOG_PATH config
 	if err != nil {
 		// Fall back to stdout if we can't open the log file.
 		return os.Stdout

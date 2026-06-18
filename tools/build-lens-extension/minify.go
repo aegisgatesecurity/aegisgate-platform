@@ -37,7 +37,7 @@ import (
 // minify runs the minifier on every .js file in the dist
 // directory. The minifier replaces each file in-place.
 func minify(cfg *Config) error {
-	return filepath.Walk(cfg.Dist, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(cfg.Dist, func(path string, info os.FileInfo, err error) error { // #nosec G122 G703 -- dist is this build's own output directory
 		if err != nil {
 			return err
 		}
@@ -47,12 +47,12 @@ func minify(cfg *Config) error {
 		if !strings.HasSuffix(path, ".js") {
 			return nil
 		}
-		raw, err := os.ReadFile(path) // #nosec G304 -- path is from filepath.Walk of the build's own dist directory
+		raw, err := os.ReadFile(path) // #nosec G122 G304 G703 -- path is from filepath.Walk of the build's own dist directory
 		if err != nil {
 			return fmt.Errorf("read %s: %w", path, err)
 		}
 		min := minifyJS(string(raw))
-		if err := os.WriteFile(path, []byte(min), 0o644); err != nil { // #nosec G306 -- build artifact, world-readable
+		if err := os.WriteFile(path, []byte(min), 0o644); err != nil { // #nosec G122 G306 G703 -- build artifact, world-readable
 			return fmt.Errorf("write %s: %w", path, err)
 		}
 		return nil

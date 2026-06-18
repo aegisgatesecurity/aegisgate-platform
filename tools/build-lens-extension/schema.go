@@ -77,15 +77,18 @@ func validateSchema(cfg *Config) error {
 	}
 	// Write the schema to <dist>/schema.json. We use the Go
 	// side as the authoritative source.
-	if err := os.MkdirAll(cfg.Dist, 0o755); err != nil { // #nosec G301 -- build output directory
+	if err := os.MkdirAll(cfg.Dist, 0o755); err != nil { // #nosec G301 G703 -- build output directory
 		return fmt.Errorf("mkdir dist: %w", err)
 	}
 	b, err := json.MarshalIndent(goSchema, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal schema: %w", err)
 	}
-	schemaPath := filepath.Join(cfg.Dist, "schema.json")       // #nosec G304 G703 -- schema.json is this build's own output, path is hardcoded
-	if err := os.WriteFile(schemaPath, b, 0o644); err != nil { // #nosec G306 -- build artifact
+	schemaPath := filepath.Join(cfg.Dist, "schema.json")
+	// G304 and G703 on the WriteFile line below; G304 is file
+	// inclusion, G703 is path traversal. The path is this
+	// build's own output, hardcoded.
+	if err := os.WriteFile(schemaPath, b, 0o644); err != nil { // #nosec G304 G703 G306 -- schema.json is this build's own output, hardcoded path
 		return fmt.Errorf("write schema: %w", err)
 	}
 	return nil
@@ -256,7 +259,7 @@ func parseGoFields(body string) (map[string]goField, error) {
 // The TS source is hand-written, so a regex is sufficient.
 func extractTSLensEventSchema(srcDir string) (*Schema, error) {
 	typesFile := filepath.Join(srcDir, "types.ts") // #nosec G304 G703 -- types.ts is the canonical schema file in the Lens source, path is from --src CLI arg (developer-controlled build input)
-	src, err := os.ReadFile(typesFile)
+	src, err := os.ReadFile(typesFile)             // #nosec G304 G703 -- see above
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", typesFile, err)
 	}
