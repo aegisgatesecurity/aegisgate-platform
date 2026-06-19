@@ -138,8 +138,13 @@ lens-testlab-test: ## Run the lensbackend testlab integration tests (requires lo
 	@if [ ! -d "$(TESTLAB_DIR)" ]; then \
 		echo "==> testlab/ not present; skipping lens-testlab-test"; \
 		echo "    (testlab/ is local-only; see .gitignore)"; \
-		echo "    To run the testlab integration tests, the testlab/"; \
-		echo "    directory must be present with scripts/setup.sh."; \
+		echo "    To run the testlab integration tests:"; \
+		echo "      1. Place testlab/ in this repo (it's local-only)."; \
+		echo "      2. chmod +x testlab/scripts/setup.sh testlab/scripts/teardown.sh"; \
+		echo "      3. Build the test Docker images:"; \
+		echo "           docker build -t testlab-aegisgate-test:local -f testlab/Dockerfile.testlab ."; \
+		echo "           docker build -t aegisgate-lensbackend:test -f testlab/Dockerfile.lensbackend ."; \
+		echo "      4. Run: make lens-testlab-test"; \
 		exit 0; \
 	fi
 	@if [ ! -x "$(TESTLAB_DIR)/scripts/setup.sh" ]; then \
@@ -148,13 +153,12 @@ lens-testlab-test: ## Run the lensbackend testlab integration tests (requires lo
 		exit 1; \
 	fi
 	@echo "==> Starting testlab (Postgres + Redis + Mailpit + Keycloak)"
-	@cd $(TESTLAB_DIR) && ./scripts/setup.sh
-	@echo "==> Running lensbackend integration tests against the testlab"
-	@cd $(TESTLAB_DIR) && (LAB_ENABLED=1 go test -tags=lab -count=1 -v ./../pkg/lensbackend/... ; \
-		TEST_EXIT=$$? ; \
-		echo "==> Stopping testlab (test exited with $$TEST_EXIT)" ; \
-		./scripts/teardown.sh ; \
-		exit $$TEST_EXIT )
+	@cd $(TESTLAB_DIR) && bash -c '\
+		set -e ; \
+		trap "./scripts/teardown.sh ; echo \"==> Stopped testlab\" ; exit 0" EXIT ; \
+		./scripts/setup.sh ; \
+		echo "==> Running lensbackend integration tests against the testlab" ; \
+		LAB_ENABLED=1 go test -tags=lab -count=1 -v ./../pkg/lensbackend/...'
 
 lens-test: lens-build lens-harness-test lens-testlab-test ## Run all Lens tests (build + harness + testlab if available)
 
