@@ -67,7 +67,17 @@ var entryPoints = []entryPoint{
 // entry point reads its source file plus all transitively
 // imported files, applies the type stripper, and writes
 // the result to the output path.
+//
+// bundle also generates the four Chrome Web Store icon
+// sizes (16, 32, 48, 128) from assets/lens-icon-source.png
+// to <dist>/icons/. If no source icon is present, icon
+// generation is silently skipped (v0.1 behavior); v0.2
+// will require it.
 func bundle(cfg *Config) error {
+	// Generate icons first (before any other output).
+	if err := generateIcons(cfg.Dist); err != nil {
+		return fmt.Errorf("generate icons: %w", err)
+	}
 	seen := make(map[string]bool)
 	for _, ep := range entryPoints {
 		// Reset the seen map for each entry point so we
