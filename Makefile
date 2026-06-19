@@ -202,3 +202,42 @@ lens-e2e: lens-test ## End-to-end: build + harness + (if testlab) integration te
 lens-clean: ## Remove the Lens build artifacts
 	@rm -rf $(LENS_DIST_DIR)
 
+
+# =========================================================================
+# Manual test target (real Chrome via Chrome DevTools Protocol)
+# =========================================================================
+# Runs the Lens extension in a REAL Chrome browser and drives
+# it against a REAL AI provider page (Duck.ai by default; no
+# account required). Takes screenshots and verifies the
+# privacy commitments (no prompt content over the wire) via
+# real network log inspection.
+#
+# This is the "rock-solid" test that catches issues that
+# headless testdata can't: real-DOM quirks, CSP issues,
+# browser-specific behavior.
+#
+# Requires: google-chrome-stable (or chromium) installed.
+# Does NOT require the testlab/ directory.
+MANUAL_TEST_OUT ?= $(LENS_DIST_DIR)/../manual-test-output
+
+manual-test: ## Run the Lens in real Chrome against a real AI provider page
+	@echo "==> Building Lens extension"
+	@$(MAKE) lens-build
+	@echo "==> Running manual test (real Chrome + real Duck.ai)"
+	@cd ./tools/manual-test && go run . \
+		--dist $(LENS_DIST_DIR) \
+		--provider duck \
+		--output $(MANUAL_TEST_OUT) \
+		--headless=false
+	@echo "==> Manual test report: $(MANUAL_TEST_OUT)/MANUAL_TEST_REPORT.md"
+
+manual-test-headless: ## Same as manual-test but with --headless (no display required)
+	@echo "==> Building Lens extension"
+	@$(MAKE) lens-build
+	@echo "==> Running manual test (headless Chrome + real Duck.ai)"
+	@cd ./tools/manual-test && go run . \
+		--dist $(LENS_DIST_DIR) \
+		--provider duck \
+		--output $(MANUAL_TEST_OUT) \
+		--headless=true
+	@echo "==> Manual test report: $(MANUAL_TEST_OUT)/MANUAL_TEST_REPORT.md"
