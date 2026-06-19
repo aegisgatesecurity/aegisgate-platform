@@ -68,7 +68,11 @@ func minifyJS(src string) string {
 	lines := strings.Split(src, "\n")
 	var out []string
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
+		// Preserve leading whitespace (indentation); only
+		// trim trailing whitespace. The Lens extension has
+		// deeply nested code; preserving indentation makes
+		// debugged stack traces and source maps readable.
+		line = strings.TrimRight(line, " 	")
 		if line == "" {
 			continue
 		}
