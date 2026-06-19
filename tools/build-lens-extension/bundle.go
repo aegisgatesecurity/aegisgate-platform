@@ -203,6 +203,160 @@ func bundleFile(srcDir, rel string, seen map[string]bool) (string, error) {
 	return out, nil
 }
 
+// stripAsCasts removes `as Type` casts from a string.
+// Handles nested generics (e.g., `as Record<string, unknown>`),
+// parens, brackets, and strings. The eat stops at a non-type
+// character (a comma, semicolon, newline, closing paren/bracket
+// of an outer expression, etc.) so we never eat across
+// statement or field separators.
+func stripAsCasts(src string) string {
+	var out strings.Builder
+	parenDepth := 0
+	bracketDepth := 0
+	inString := byte(0)
+	tmplBraceDepth := 0
+	i := 0
+	for i < len(src) {
+		c := src[i]
+		if inString != 0 {
+			out.WriteByte(c)
+			if c == '\\' && i+1 < len(src) {
+				i++
+				out.WriteByte(src[i])
+				i++
+				continue
+			}
+			if c == inString {
+				if inString == '`' && i+1 < len(src) && src[i+1] == '$' && i+2 < len(src) && src[i+2] == '{' {
+					tmplBraceDepth = 1
+					i += 2
+					continue
+				}
+				inString = 0
+			}
+			i++
+			continue
+		}
+		if c == '"' || c == '\'' || c == '`' {
+			out.WriteByte(c)
+			inString = c
+			i++
+			continue
+		}
+		if tmplBraceDepth > 0 {
+			out.WriteByte(c)
+			if c == '{' {
+				tmplBraceDepth++
+			} else if c == '}' {
+				tmplBraceDepth--
+				if tmplBraceDepth == 0 {
+					inString = '`'
+				}
+			}
+			i++
+			continue
+		}
+		// Look for ` as ` pattern (preceded by identifier char).
+		// Indices: i=space, i+1='a', i+2='s', i+3=space, i+4=type start.
+		// So we need i+4 < len(src) to safely read src[i+4].
+		// Handle JSDoc / block comments `/* ... */` so we don't
+		// mistake `as` inside a comment for a cast.
+		if c == '/' && i+1 < len(src) && src[i+1] == '*' {
+			out.WriteByte(c)
+			out.WriteByte(src[i+1])
+			i += 2
+			for i+1 < len(src) {
+				if src[i] == '*' && src[i+1] == '/' {
+					out.WriteByte('*')
+					out.WriteByte('/')
+					i += 2
+					break
+				}
+				out.WriteByte(src[i])
+				i++
+			}
+			continue
+		}
+		// Handle line comments `// ...` (until end of line).
+		if c == '/' && i+1 < len(src) && src[i+1] == '/' {
+			out.WriteByte(c)
+			out.WriteByte(src[i+1])
+			i += 2
+			for i < len(src) && src[i] != '\n' {
+				out.WriteByte(src[i])
+				i++
+			}
+			continue
+		}
+		if c == ' ' && i+4 < len(src) && src[i+1] == 'a' && src[i+2] == 's' && src[i+3] == ' ' &&
+			i > 0 && isIdentChar(src[i-1]) &&
+			isIdentChar(src[i+4]) {
+
+
+			// Find end of the type. Track nesting of generics,
+			// parens, brackets. Strings are already handled above.
+			depthAngle := 0
+			j := i + 4 // past ' as '
+			for j < len(src) {
+				cj := src[j]
+				if cj == '<' {
+					depthAngle++
+				} else if cj == '>' {
+					if depthAngle == 0 {
+						break
+					}
+					depthAngle--
+				} else if cj == '(' {
+					parenDepth++
+				} else if cj == ')' {
+					if parenDepth == 0 {
+						break
+					}
+					parenDepth--
+				} else if cj == '[' {
+					bracketDepth++
+				} else if cj == ']' {
+					if bracketDepth == 0 {
+						break
+					}
+					bracketDepth--
+				} else if cj == '|' || cj == '&' {
+				// Union/intersection types — allowed in cast
+				} else if cj == ',' || cj == ';' || cj == '\n' {
+					if depthAngle == 0 && parenDepth == 0 && bracketDepth == 0 {
+						break
+					}
+				} else if cj == '{' || cj == '}' || cj == '=' {
+					if depthAngle == 0 && parenDepth == 0 && bracketDepth == 0 {
+						break
+					}
+				}
+				j++
+			}
+			// Skip the ' as ' through the type.
+			i = j
+			continue
+		}
+		out.WriteByte(c)
+		switch c {
+		case '(':
+			parenDepth++
+		case ')':
+			if parenDepth > 0 {
+				parenDepth--
+			}
+		case '[':
+			bracketDepth++
+		case ']':
+			if bracketDepth > 0 {
+				bracketDepth--
+			}
+		}
+		i++
+	}
+	return out.String()
+}
+
 // stripTypes removes TypeScript type annotations from a
 // JavaScript source. The result is valid ES2020 JavaScript.
 //
@@ -226,22 +380,40 @@ func stripTypes(src string) string {
 	src = removeTypeAliasLines(src)
 	// Step 3: Remove `import type { ... }` and `import { type X }` lines.
 	src = removeTypeOnlyImports(src)
-	// Step 4: Remove `as Type` casts.
-	src = regexp.MustCompile(`\s+as\s+[A-Za-z_][A-Za-z0-9_<>,\s\[\]|&]*`).ReplaceAllString(src, "")
+	// Step 4: Remove `as Type` casts. This is a state
+	// machine that respects generic nesting (e.g.,
+	// `as Record<string, unknown>`), parens, brackets, and
+	// strings. A simple regex would over-eat across
+	// statement separators.
+	src = stripAsCasts(src)
 	// Step 5: Remove `<Type>` casts in expression position.
 	src = removeTypeCasts(src)
+	// Step 5b: Remove generic type arguments `<T>`, `<T, U>`
+	// after capital-letter identifiers (Map<string, V>,
+	// Promise<void>, ReadonlyMap<string, T>).
+	src = stripGenericArgs(src)
 	// Step 6: Remove parameter type annotations `(x: T, y: U)`.
 	src = stripParamTypes(src)
 	// Step 7: Remove variable type annotations `let x: T = ...`.
 	src = stripVarTypes(src)
 	// Step 8: Remove function return type annotations `): T {`.
 	src = stripReturnTypes(src)
+	// Step 9: Remove `private`/`public`/`protected`/`readonly`
+	// modifiers from class member declarations. These are
+	// TS-only; the resulting code uses default visibility.
+	src = stripVarModifiers(src)
+	// Step 10: Remove `export ` keywords.
+	src = stripExports(src)
 	return src
 }
 
 // removeInterfaceBlocks removes `interface Foo { ... }` blocks.
 func removeInterfaceBlocks(src string) string {
-	re := regexp.MustCompile(`(?ms)^export?\s*interface\s+\w+(?:\s+extends\s+[^{]+)?\s*\{.*?^\}`)
+	// Match `interface Foo { ... }` (with optional `export`).
+	// Uses (?ms) for multi-line dot-match and ^$ at newlines.
+	// The `.*?` is non-greedy so it matches the FIRST closing
+	// `}` (the interface's own closing).
+	re := regexp.MustCompile(`(?ms)^(?:export\s+)?interface\s+\w+(?:\s+extends\s+[^{]+)?\s*\{.*?^\}`)
 	return re.ReplaceAllString(src, "")
 }
 
@@ -315,23 +487,39 @@ func removeTypeCasts(src string) string {
 // stripParamTypes removes type annotations from function
 // parameters. Handles both `function f(x: T, y: U)` and
 // `(x: T, y: U) => ...`.
+// stripGenericArgs removes generic type arguments from a
+// TypeScript type. Handles `Map<string, V>`, `Set<Category>`,
+// `Promise<void>`, `ReadonlyMap<string, T>`, and bare
+// `Promise<T>`. The pattern matches a capital-letter
+// identifier (or capital-letter followed by alnum/underscore)
+// followed by `<...>`. The angle brackets and their content
+// are removed.
+//
+// We do NOT match generic args after lowercase identifiers
+// because that would corrupt comparisons like `arr < 10`.
+//
+// We do NOT match across newlines. The <...> must be on the
+// same line as the identifier (most TS generics are written
+// this way; multi-line generics are rare).
+//
+// Limitations: nested generic args like
+// `Map<Set<Foo>>` are not handled (the regex stops at the
+// first `>`). For our use case, we either avoid nested
+// generics in source or pre-process them.
+func stripGenericArgs(src string) string {
+	pat := regexp.MustCompile(`(\b[A-Z][A-Za-z0-9_]*)<(?:[^<>\[\]]|\[[^<>\[\]]*\])*>`)
+	return pat.ReplaceAllString(src, "$1")
+}
+
 //
 // The regex matches `: T` (where T is a type) immediately
 // after an identifier inside a parameter list.
 func stripParamTypes(src string) string {
-	// Match `: Type` inside parens that follow `function`,
-	// `=>`, `(`, `,`, or a newline (top-level).
-	// We process line-by-line because this is hard to do
-	// correctly across multi-line parameter lists with a
-	// single regex.
-	lines := strings.Split(src, "\n")
-	for i, line := range lines {
-		// Count parens; we're in a parameter list if the
-		// open-paren count exceeds the close-paren count.
-		// (Simplified: just strip the obvious cases.)
-		lines[i] = stripParamTypesInLine(line)
-	}
-	return strings.Join(lines, "\n")
+	// Process the WHOLE source, not line-by-line. Multi-line
+	// parameter lists (e.g., `function f(\n  x: T,\n)`) are
+	// common in TypeScript and we need paren state to flow
+	// across newlines.
+	return stripParamTypesInLine(src)
 }
 
 // stripParamTypesInLine strips parameter types from a single
@@ -354,30 +542,28 @@ func stripParamTypes(src string) string {
 // literals with `${...}` expressions are tracked
 // separately: the `{` inside `${...}` increments a
 // template-brace depth, not the regular brace depth.
-func stripParamTypesInLine(line string) string {
+func stripParamTypesInLine(src string) string {
 	var out strings.Builder
-	parenDepth := 0
-	braceDepth := 0
+	// prevSig is the last significant (non-whitespace, non-comment)
+	// character. Used to distinguish `(x: T)` (param) from
+	// `{ x: 1 }` (object literal).
+	exprStart := byte(0) // 0, '(' or '{' or other last sig char
 	tmplBraceDepth := 0
 	inString := byte(0) // 0, '"', '\'', or '`'
 	i := 0
-	for i < len(line) {
-		c := line[i]
+	for i < len(src) {
+		c := src[i]
 		if inString != 0 {
 			out.WriteByte(c)
-			if c == '\\' && i+1 < len(line) {
+			if c == '\\' && i+1 < len(src) {
 				i++
-				out.WriteByte(line[i])
+				out.WriteByte(src[i])
 				i++
 				continue
 			}
 			if c == inString {
-				// End of string. For template literals, we
-				// also need to track ${} expressions.
-				if inString == '`' && i+1 < len(line) && line[i+1] == '$' && i+2 < len(line) && line[i+2] == '{' {
-					// Enter template expression.
+				if inString == '`' && i+1 < len(src) && src[i+1] == '$' && i+2 < len(src) && src[i+2] == '{' {
 					tmplBraceDepth = 1
-					// Don't close the string.
 					i += 2
 					continue
 				}
@@ -386,13 +572,42 @@ func stripParamTypesInLine(line string) string {
 			i++
 			continue
 		}
+		// Handle JSDoc / block comments `/* ... */` so quote
+		// chars inside the comment don't confuse the string
+		// tracker.
+		if c == '/' && i+1 < len(src) && src[i+1] == '*' {
+			out.WriteByte(c)
+			out.WriteByte(src[i+1])
+			i += 2
+			for i+1 < len(src) {
+				if src[i] == '*' && src[i+1] == '/' {
+					out.WriteByte('*')
+					out.WriteByte('/')
+					i += 2
+					break
+				}
+				out.WriteByte(src[i])
+				i++
+			}
+			continue
+		}
+		// Handle line comments `// ...` (until end of line).
+		if c == '/' && i+1 < len(src) && src[i+1] == '/' {
+			out.WriteByte(c)
+			out.WriteByte(src[i+1])
+			i += 2
+			for i < len(src) && src[i] != '\n' {
+				out.WriteByte(src[i])
+				i++
+			}
+			continue
+		}
 		if c == '"' || c == '\'' || c == '`' {
 			out.WriteByte(c)
 			inString = c
 			i++
 			continue
 		}
-		// Inside a template expression like `${...}`.
 		if tmplBraceDepth > 0 {
 			out.WriteByte(c)
 			if c == '{' {
@@ -400,41 +615,47 @@ func stripParamTypesInLine(line string) string {
 			} else if c == '}' {
 				tmplBraceDepth--
 				if tmplBraceDepth == 0 {
-					// Back to the template literal body.
 					inString = '`'
 				}
 			}
 			i++
 			continue
 		}
-		out.WriteByte(c)
-		if c == '(' {
-			parenDepth++
-		} else if c == ')' {
-			parenDepth--
-			if parenDepth < 0 {
-				parenDepth = 0
-			}
-		} else if c == '{' {
-			braceDepth++
-		} else if c == '}' {
-			braceDepth--
-			if braceDepth < 0 {
-				braceDepth = 0
-			}
-		} else if c == ':' && parenDepth > braceDepth {
-			if i > 0 && isIdentChar(line[i-1]) {
-				// Consume the type.
-				i++
-				for i < len(line) {
-					c2 := line[i]
-					if c2 == ',' || c2 == '=' || c2 == ')' {
-						break
-					}
-					i++
+		// Check for type-annotation colon BEFORE writing c.
+		// A colon is a TS type annotation when:
+		//   - exprStart == '(' (we are directly in a param list,
+		//     not in an object literal inside the parens)
+		//   - the previous char is an identifier char
+		if c == ':' && exprStart == '(' && i > 0 && isIdentChar(src[i-1]) {
+			// Consume the type. Stop at `,`, `)`, `=`, `;`,
+			// or newline.
+			i++
+			for i < len(src) {
+				c2 := src[i]
+				if c2 == ',' || c2 == '=' || c2 == ')' || c2 == '\n' || c2 == ';' {
+					break
 				}
-				continue
+				i++
 			}
+			continue
+		}
+		out.WriteByte(c)
+		switch c {
+		case '(':
+			exprStart = '('
+		case '{':
+			// `{` opens an object literal in expression
+			// position. Detect expression position by what came
+			// before: `(`, `,`, `=`, `=>`, `?`, `:`, etc.
+			switch exprStart {
+			case 0, '(', ',', '=', '?', ':', '>', '!', '+', '-', '*', '/', '%', '&', '|', '^', '~', '[', ';':
+				exprStart = '{'
+			}
+		default:
+			// Don't update exprStart on regular chars — we want
+			// it to track the EXPRESSION START (the `(` or `{`),
+			// not the last char. This is what lets us distinguish
+			// `x: T` (param) from `{ x: 1 }` (object property).
 		}
 		i++
 	}
@@ -449,13 +670,39 @@ func isIdentChar(c byte) bool {
 		c == '_' || c == '$'
 }
 
+// isWhitespace reports whether c is a whitespace character.
+func isWhitespace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+}
+
 // stripVarTypes removes `let x: T`, `const x: T`, `var x: T`.
 // The colon + type is on the same line as the declaration.
 func stripVarTypes(src string) string {
-	// Match `let|const|var <ident> : <type> [= ...]` and
-	// remove the `: <type>`.
-	pat := regexp.MustCompile(`(?m)(\b(?:let|const|var)\s+\w+)\s*:\s*[A-Za-z_][A-Za-z0-9_<>,\s\[\]\.\|&\-]*`)
-	return pat.ReplaceAllString(src, "$1")
+	// Match:
+	//   - `let|const|var NAME : TYPE` (regular vars)
+	//   - `(private|public|...) NAME : TYPE` (class fields)
+	//   - `NAME : TYPE` (class fields without modifier)
+	// The type can include generics, array types, union types,
+	// but stops at `=` (default value), `,` (next field), `;`
+	// (statement end), `{` (object body), or `}` (block end).
+	//
+	// We preserve any leading modifier/decl keyword in the
+	// replacement so we don't break the resulting code.
+	pat := regexp.MustCompile(`(?m)((?:^|\b)(?:(?:private|public|protected|readonly)\s+)?(?:(?:let|const|var)\s+)?)(\b\w+)(\s*:\s*(?:\[[^\]]*\]|[A-Z][A-Za-z0-9_<>|]*|(?:number|string|boolean|bigint|symbol|object|unknown|void|never)(?:\[\])?)[\s,;)}{=}\]])`)
+	return pat.ReplaceAllStringFunc(src, func(m string) string {
+		sub := pat.FindStringSubmatch(m)
+		// sub[1] is the prefix (modifier + decl), sub[2] is the
+		// identifier, sub[3] is `: TYPE ...` (we want to keep
+		// only the part after the type, which is the closing
+		// char/space of the type annotation).
+		// For simplicity, just keep the prefix + identifier and
+		// let the user re-add the trailing char if needed.
+		_ = sub
+		// Extract the last char of sub[3] which is the char after
+		// the type (one of `,`, `;`, `)`, `}`, `{`, `=`, `\s`).
+		tail := sub[3][len(sub[3])-1:]
+		return sub[1] + sub[2] + tail
+	})
 }
 
 // stripReturnTypes removes function return type annotations
@@ -464,4 +711,42 @@ func stripReturnTypes(src string) string {
 	// Match `): T {` or `): T => {`. The `T` is a type.
 	pat := regexp.MustCompile(`(\)):\s*[A-Za-z_][A-Za-z0-9_<>,\s\[\]\.\|&\-]*(\s*[\{=])`)
 	return pat.ReplaceAllString(src, "$1$2")
+}
+
+// stripVarModifiers removes TS-only class member modifiers
+// (private, public, protected, readonly) from declarations.
+// These modifiers are not valid in plain JavaScript; the
+// resulting class uses default visibility.
+//
+// The regex matches the modifier + whitespace at the start
+// of a line (after optional indent). The indent is captured
+// and preserved in the replacement.
+func stripVarModifiers(src string) string {
+	// Loop until no more matches, to handle multiple modifiers
+	// in a row (e.g., `private readonly cfg: any;`).
+	for i := 0; i < 5; i++ {
+		pat := regexp.MustCompile(`(?m)^([ \t]*)(?:private|public|protected|readonly)[ \t]+`)
+		newSrc := pat.ReplaceAllStringFunc(src, func(m string) string {
+			sub := pat.FindStringSubmatch(m)
+			return sub[1]
+		})
+		if newSrc == src {
+			break
+		}
+		src = newSrc
+	}
+	return src
+}
+
+// stripExports removes leading `export ` keywords from all
+// declarations. This is needed for content scripts (which
+// are classic scripts, not modules — `export` is a syntax
+// error in classic scripts).
+//
+// Service workers are modules in MV3 and need their exports
+// preserved. The main.go code calls stripExports only on
+// content.js (not on service-worker.js).
+func stripExports(src string) string {
+	pat := regexp.MustCompile(`(?m)^[ \t]*export[ \t]+`)
+	return pat.ReplaceAllString(src, "")
 }

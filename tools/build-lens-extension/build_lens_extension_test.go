@@ -67,17 +67,57 @@ const a = 1;`,
 		{
 			name: "var type",
 			in:   "let x: number = 1;",
-			out:  "let x= 1;",
+			out:  "let x = 1;",
 		},
 		{
+			// After the build-3 fix, the type stripper correctly
+			// removes parameter type annotations (e.g., `: number`)
+			// entirely. The previous behavior left the `: ` in
+			// place, producing invalid JS like `function f(x:, y:)`.
 			name: "param type",
 			in:   "function f(x: number, y: string) { return x; }",
-			out:  "function f(x:, y:) { return x; }",
+			out:  "function f(x, y) { return x; }",
 		},
 		{
 			name: "return type",
 			in:   "function f(): number { return 1; }",
 			out:  "function f(){ return 1; }",
+		},
+		{
+			// After the build-3 fix, generic type arguments are
+			// stripped. Capital-letter identifiers only; lowercase
+			// (variable) identifiers with `<` are preserved as
+			// less-than operators.
+			name: "generic type arg after new",
+			in:   "const m = new Map<string, RegexPattern[]>();",
+			out:  "const m = new Map();",
+		},
+		{
+			name: "generic type arg after Set",
+			in:   "const set = new Set<Category>();",
+			out:  "const set = new Set();",
+		},
+		{
+			name: "generic type arg bare",
+			in:   "Promise<void>",
+			out:  "Promise",
+		},
+		{
+			name: "generic type arg ReadonlyMap",
+			in:   "ReadonlyMap<string, ProviderInfo>",
+			out:  "ReadonlyMap",
+		},
+		{
+			// Lowercase identifiers with `<` must NOT be stripped.
+			// This is a less-than operator.
+			name: "lowercase less-than preserved",
+			in:   "arr.filter(x => x < 10)",
+			out:  "arr.filter(x => x < 10)",
+		},
+		{
+			name: "lowercase less-than with capital ID",
+			in:   "if (a < b && c > d) { foo(); }",
+			out:  "if (a < b && c > d) { foo(); }",
 		},
 		{
 			name: "object literal with type-like keys (regression for C-2)",
@@ -92,7 +132,7 @@ const a = 1;`,
 		{
 			name: "array of strings",
 			in:   "const arr: string[] = [\"a\", \"b\"];",
-			out:  "const arr= [\"a\", \"b\"];",
+			out:  "const arr = [\"a\", \"b\"];",
 		},
 	}
 	for _, c := range cases {
