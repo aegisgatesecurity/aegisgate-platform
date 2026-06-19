@@ -129,3 +129,4 @@ pkg/billing/billing-config.json
 .env.example
 *.md.v*-backup
 test-extension/test-extension
+tools/manual-test/manual-test
