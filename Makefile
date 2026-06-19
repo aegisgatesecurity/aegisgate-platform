@@ -155,12 +155,16 @@ lens-testlab-test: ## Run the lensbackend testlab integration tests (requires lo
 	@echo "==> Starting testlab (Postgres + Redis + Mailpit + Keycloak)"
 	@cd $(TESTLAB_DIR) && bash -c '\
 		set -e ; \
-		trap "./scripts/teardown.sh ; echo \"==> Stopped testlab\" ; exit 0" EXIT ; \
+		trap "./scripts/teardown.sh ; echo \"==> Stopped testlab\"" EXIT ; \
 		./scripts/setup.sh ; \
 		echo "==> Running lensbackend integration tests against the testlab" ; \
 		LAB_ENABLED=1 go test -tags=lab -count=1 -v ./../pkg/lensbackend/...'
 
-lens-test: lens-build lens-harness-test lens-testlab-test ## Run all Lens tests (build + harness + testlab if available)
+# Note: lens-test depends on build + harness (sequential).
+# testlab is independent -- we run it via lens-testlab-test.
+# We don't fail the whole lens-test if testlab fails (since
+# testlab is local-only); we just print a warning.
+lens-test: lens-build lens-harness-test ## Run the public Lens tests (build + harness)
 
 lens-e2e: lens-test ## End-to-end: build + harness + (if testlab) integration test
 	@echo ""
@@ -170,13 +174,29 @@ lens-e2e: lens-test ## End-to-end: build + harness + (if testlab) integration te
 	@echo ""
 	@echo "  Build:                PASSED"
 	@echo "  Test harness:         PASSED"
+	TESTLAB_RESULT=SKIPPED
 	@if [ -d "$(TESTLAB_DIR)" ]; then \
-		echo "  Testlab integration:  PASSED"; \
+		echo "  Testlab integration:  (running...)" ; \
+		if $(MAKE) --no-print-directory lens-testlab-test 2>/tmp/lens-testlab.log; then \
+			echo "  Testlab integration:  PASSED" ; \
+			rm -f /tmp/lens-testlab.log ; \
+			TESTLAB_RESULT=PASSED ; \
+		else \
+			echo "  Testlab integration:  FAILED (see /tmp/lens-testlab.log)" ; \
+			echo "---- last 30 lines of testlab output ----" ; \
+			tail -30 /tmp/lens-testlab.log ; \
+			echo "---- end testlab output ----" ; \
+			TESTLAB_RESULT=FAILED ; \
+		fi ; \
 	else \
-		echo "  Testlab integration:  SKIPPED (testlab/ is local-only)"; \
+		echo "  Testlab integration:  SKIPPED (testlab/ is local-only)" ; \
 	fi
 	@echo ""
-	@echo "  All available Lens tests passed."
+	@if [ "@TESTLAB_RESULT@" = "PASSED" ] || [ "@TESTLAB_RESULT@" = "SKIPPED" ]; then \
+		echo "  All available Lens tests passed." ; \
+	else \
+		echo "  One or more Lens tests FAILED." ; \
+	fi
 	@echo ""
 
 lens-clean: ## Remove the Lens build artifacts
