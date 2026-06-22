@@ -2,6 +2,13 @@
 # AegisGate Platform - Lens Release Workflow with SLSA Build Level 3
 # =========================================================================
 #
+# Pinned to SLSA generator SHA f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
+# (tag v2.1.0). SHA pinning is REQUIRED for SLSA Build Level 3 — the
+# provenance must attest to the EXACT generator code that ran, and
+# mutable refs (tags, branches) violate the "non-forgeable" property.
+# To upgrade the generator, update BOTH the SHA and the comment.
+
+#
 # Purpose
 # -------
 # Builds the AegisGate Lens browser extension ZIP and a Model bundle
@@ -204,7 +211,7 @@ jobs:
     name: Generate SLSA Build Level 3 provenance
     needs: build
     if: success()
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
     permissions:
       actions: read
       id-token: write
