@@ -38,7 +38,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 
 # Production stage: minimal Alpine, pinned by digest. Update digest when bumping Alpine.
 # Digest source: docker pull alpine:latest (as of 2026-06-08: alpine 3.23)
-FROM alpine@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4
+FROM alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 RUN apk add --no-cache ca-certificates wget && \
     apk upgrade --no-cache libssl3 libcrypto3 && \
     adduser -D -g '' appuser
