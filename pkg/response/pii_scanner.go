@@ -81,10 +81,10 @@ func (ps *PIIScanner) initDefaultPatterns() {
 	// US: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1XXXXXXXXXX
 	// International: +, country code, formats vary
 	// Phone numbers (North American): require 10 digits with proper delimiters.
-// Format: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1XXXXXXXXXX
-// Tightened 2026-06-20: previous regex matched any 7+ digit sequence.
-// New regex requires exactly 10 digits (with optional +1 country code).
-ps.patterns[PII_PHONE] = regexp.MustCompile(`\b\+?1?[-.\s]?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b`)
+	// Format: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1XXXXXXXXXX
+	// Tightened 2026-06-20: previous regex matched any 7+ digit sequence.
+	// New regex requires exactly 10 digits (with optional +1 country code).
+	ps.patterns[PII_PHONE] = regexp.MustCompile(`\b\+?1?[-.\s]?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b`)
 
 	// US Passport Numbers (9 characters, alphanumeric)
 	ps.patterns[PII_PASSPORT] = regexp.MustCompile(`\b[A-Z0-9]{9}\b`)

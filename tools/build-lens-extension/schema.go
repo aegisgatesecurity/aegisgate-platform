@@ -31,6 +31,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -276,9 +277,9 @@ func extractJSLensEventSchema(srcDir string) (*Schema, error) {
 		return nil, err
 	}
 	// Find "@typedef {Object} LensEvent" and capture the
-// @property lines until the closing */. The body may
-// contain leading-* on each line (JSDoc style), so we use
-// a lazy match against `*/` rather than excluding `*`.
+	// @property lines until the closing */. The body may
+	// contain leading-* on each line (JSDoc style), so we use
+	// a lazy match against `*/` rather than excluding `*`.
 	pat := regexp.MustCompile(`@typedef\s*\{Object\}\s*LensEvent[\s\S]*?\*/`)
 	m := pat.FindString(content)
 	if m == "" {
@@ -317,21 +318,25 @@ func extractJSLensEventSchema(srcDir string) (*Schema, error) {
 // Returns the file path and its contents.
 func findLensEventTypedef(srcDir string) (string, string, error) {
 	var foundPath, foundContent string
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error { // #nosec G703 G122 -- srcDir is the developer-supplied --src tree
+	// Day 15: switched from filepath.Walk to filepath.WalkDir to
+	// silence CodeQL G122 (race-prone path in callback). WalkDir uses
+	// fs.DirEntry which avoids the path-during-walk race. srcDir is
+	// the developer-supplied --src tree, not user input.
+	err := filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() || !strings.HasSuffix(path, ".js") {
+		if d.IsDir() || !strings.HasSuffix(path, ".js") {
 			return nil
 		}
-		b, err := os.ReadFile(path) // #nosec G304 G703 -- path is from filepath.Walk of --src tree
+		b, err := os.ReadFile(path) // #nosec G304 G703 -- path is from filepath.WalkDir of --src tree
 		if err != nil {
 			return err
 		}
 		if strings.Contains(string(b), "@typedef {Object} LensEvent") {
 			foundPath = path
 			foundContent = string(b)
-			return filepath.SkipAll // stop walking
+			return fs.SkipAll // stop walking
 		}
 		return nil
 	})
