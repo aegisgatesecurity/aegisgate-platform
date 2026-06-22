@@ -6,13 +6,13 @@
 // main.go is the CLI entry point. It parses arguments, then
 // runs the build pipeline in order:
 //
-//   parseArgs -> validateInputs -> validateSchema -> lint -> bundle
-//     -> minify -> package -> emitInventory
+//   parseArgs -> validateInputs -> validateSchema -> lint
+//     -> bundle -> generateIcons -> package -> emitInventory
 //
 // Each stage is a separate function. Failures short-circuit
 // the pipeline and return a non-zero exit code.
 //
-// v3.5.0+ Lens Phase 2.
+// v0.1.0+ Lens Phase 1 (plain-JS pivot, 2026-06-19).
 // =========================================================================
 
 package main
@@ -34,6 +34,7 @@ const (
 	exitLintFailed     = 4
 	exitBundleFailed   = 5
 	exitPackageFailed  = 6
+	exitIconsFailed    = 7
 )
 
 // Config is the parsed CLI configuration.
@@ -91,8 +92,8 @@ func run(cfg *Config) error {
 	if err := bundle(cfg); err != nil {
 		return &stageError{stage: "bundle", err: err}
 	}
-	if err := minify(cfg); err != nil {
-		return &stageError{stage: "minify", err: err}
+	if err := generateIcons(cfg.Dist); err != nil {
+		return &stageError{stage: "icons", err: err}
 	}
 	if err := package_(cfg); err != nil {
 		return &stageError{stage: "package", err: err}
@@ -146,22 +147,25 @@ func validateInputs(cfg *Config) error {
 		return fmt.Errorf("source is not a directory: %s", cfg.Src)
 	}
 	// Required files in the source directory.
+	// All source files are plain JavaScript (no TypeScript).
+	// Subdirectories are preserved by the bundle stage.
 	required := []string{
 		"manifest.json",
-		"content.ts",
-		"service-worker.ts",
+		"content.js",
+		"service-worker.js",
 		"popup.html",
-		"popup.ts",
+		"popup.js",
 		"welcome.html",
-		"welcome.ts",
-		"types.ts",
-		"privacy/schema.ts",
-		"privacy/domain_hash.ts",
-		"detectors/regex.ts",
-		"detectors/luhn.ts",
-		"detectors/index.ts",
-		"api/client.ts",
-		"storage.ts",
+		"welcome.js",
+		"privacy/schema.js",
+		"privacy/domain_hash.js",
+		"detectors/regex.js",
+		"detectors/luhn.js",
+		"detectors/index.js",
+		"detectors/from_platform.js",
+		"api/client.js",
+		"storage.js",
+		"util/logger.js",
 	}
 	for _, f := range required {
 		path := filepath.Join(cfg.Src, f)        // #nosec G703 -- `f` is a hardcoded list of required source files; cfg.Src is a developer-supplied CLI arg
@@ -197,8 +201,10 @@ func errToExit(err error) int {
 			return exitSchemaFailed
 		case "lint":
 			return exitLintFailed
-		case "bundle", "minify":
+		case "bundle":
 			return exitBundleFailed
+		case "icons":
+			return exitIconsFailed
 		case "package", "inventory":
 			return exitPackageFailed
 		}

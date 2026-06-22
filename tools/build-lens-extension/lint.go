@@ -42,12 +42,12 @@
 //      connections. connect() is a footgun for privacy
 //      products because it can leak data over time.
 //
-// The linter reads each .ts file in the source directory
+// The linter reads each .js file in the source directory
 // and runs the checks line-by-line. A single violation
 // fails the build (in strict mode; the soft mode counts
 // violations and reports them but does not fail).
 //
-// v3.5.0+ Lens Phase 2.
+// v0.1.0+ Lens Phase 1 (plain-JS pivot, 2026-06-19).
 // =========================================================================
 
 package main
@@ -104,7 +104,7 @@ func lintAll(srcDir string) ([]LintViolation, error) {
 		if info.IsDir() {
 			return nil
 		}
-		if !strings.HasSuffix(path, ".ts") && !strings.HasSuffix(path, ".html") {
+		if !strings.HasSuffix(path, ".js") && !strings.HasSuffix(path, ".html") {
 			return nil
 		}
 		vs, err := lintFile(path)

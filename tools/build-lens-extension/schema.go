@@ -5,23 +5,25 @@
 //
 // schema.go reads the Go Event struct in
 // pkg/lensbackend/validation.go, generates a JSON Schema
-// from the struct tags, and asserts that the TypeScript
-// LensEvent type in the Lens repo declares the same fields
-// with the same JSON names and types.
+// from the struct tags, and asserts that the JSDoc
+// `@typedef {Object} LensEvent` block in the Lens source
+// declares the same fields with the same JSON names and
+// types.
 //
 // This is the cross-language contract. The Go side and the
-// TypeScript side are both sources of truth for the wire
+// JavaScript side are both sources of truth for the wire
 // format; if they drift, the build fails.
 //
 // We use a hand-rolled JSON Schema generator (no third-party
 // library) that reads the Go source file as text, parses the
 // struct definition, and produces a JSON Schema document.
-// The validation is then: for every field in the Go struct,
-// is there a corresponding field in the TypeScript LensEvent
-// interface? For every field in the TypeScript interface,
-// is there a corresponding field in the Go struct?
+// The JS side is parsed from the JSDoc @typedef block in
+// api/client.js. The validation is then: for every field
+// in the Go struct, is there a corresponding @property in
+// the JSDoc typedef? For every @property, is there a
+// corresponding field in the Go struct?
 //
-// v3.5.0+ Lens Phase 2.
+// v0.1.0+ Lens Phase 1 (plain-JS pivot, 2026-06-19).
 // =========================================================================
 
 package main
@@ -67,12 +69,12 @@ func validateSchema(cfg *Config) error {
 	if err != nil {
 		return fmt.Errorf("extract Go schema: %w", err)
 	}
-	tsSchema, err := extractTSLensEventSchema(cfg.Src)
+	jsSchema, err := extractJSLensEventSchema(cfg.Src)
 	if err != nil {
-		return fmt.Errorf("extract TypeScript schema: %w", err)
+		return fmt.Errorf("extract JavaScript schema: %w", err)
 	}
-	// Cross-check: every field in Go must be in TS and vice versa.
-	if err := crossCheckSchemas(goSchema, tsSchema); err != nil {
+	// Cross-check: every field in Go must be in JS and vice versa.
+	if err := crossCheckSchemas(goSchema, jsSchema); err != nil {
 		return err
 	}
 	// Write the schema to <dist>/schema.json. We use the Go
@@ -252,35 +254,51 @@ func parseGoFields(body string) (map[string]goField, error) {
 	return fields, nil
 }
 
-// extractTSLensEventSchema reads the TypeScript types.ts and
-// extracts the LensEvent interface.
+// extractJSLensEventSchema reads every .js file in the
+// Lens source tree, looking for the JSDoc `@typedef {Object}
+// LensEvent` block. It then parses the `@property` lines
+// of that block to extract the wire-format fields.
+//
+// The plain-JS source has no TypeScript interfaces; the
+// LensEvent type is documented as a JSDoc @typedef block
+// in api/client.js. The build tool's cross-language
+// contract is: the JSDoc @typedef must agree field-for-
+// field with the Go struct in pkg/lensbackend/validation.go.
 //
 // Like the Go parser, this is a simple regex-based parser.
-// The TS source is hand-written, so a regex is sufficient.
-func extractTSLensEventSchema(srcDir string) (*Schema, error) {
-	typesFile := filepath.Join(srcDir, "types.ts") // #nosec G304 G703 -- types.ts is the canonical schema file in the Lens source, path is from --src CLI arg (developer-controlled build input)
-	src, err := os.ReadFile(typesFile)             // #nosec G304 G703 -- see above
+// The JS source is hand-written and the schema is small
+// (~9 fields), so a regex is sufficient.
+func extractJSLensEventSchema(srcDir string) (*Schema, error) {
+	// Walk the source tree and find the file containing
+	// the LensEvent typedef.
+	srcFile, content, err := findLensEventTypedef(srcDir)
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", typesFile, err)
+		return nil, err
 	}
-	content := string(src)
-	// Find "export interface LensEvent {"
-	pat := regexp.MustCompile(`(?s)export\s+interface\s+LensEvent\s*\{(.*?)\n\}`)
-	m := pat.FindStringSubmatch(content)
-	if m == nil {
-		return nil, fmt.Errorf("interface LensEvent not found in %s", typesFile)
+	// Find "@typedef {Object} LensEvent" and capture the
+// @property lines until the closing */. The body may
+// contain leading-* on each line (JSDoc style), so we use
+// a lazy match against `*/` rather than excluding `*`.
+	pat := regexp.MustCompile(`@typedef\s*\{Object\}\s*LensEvent[\s\S]*?\*/`)
+	m := pat.FindString(content)
+	if m == "" {
+		return nil, fmt.Errorf("@typedef LensEvent not found in %s", srcFile)
 	}
-	body := m[1]
 	fields := make(map[string]SchemaField)
-	// Parse each field line: "field_name: type; // optional comment"
-	// OR for optional fields: "field_name?: type;"
-	fieldPat := regexp.MustCompile(`(?m)^\s*(\w+)(\?)?:\s*([^;]+);`)
-	for _, fm := range fieldPat.FindAllStringSubmatch(body, -1) {
-		name := fm[1]
-		optional := fm[2] == "?"
-		typ := strings.TrimSpace(fm[3])
-		// Map TS types to JSON Schema types.
-		jsonType := tsTypeToJSONType(typ)
+	// Parse each @property line: "@property {type} name" or
+	// "@property {type} [name]" (the brackets mark an optional
+	// field, per JSDoc convention).
+	propPat := regexp.MustCompile(`@property\s*\{([^}]+)\}\s*\[?(\w+)\]?`)
+	for _, fm := range propPat.FindAllStringSubmatch(m, -1) {
+		typ := strings.TrimSpace(fm[1])
+		name := fm[2]
+		// Detect optional via leading bracket in original match.
+		// The regex consumes the optional brackets so we re-check
+		// the full match: if it's `[name]` it's optional.
+		fullMatch := fm[0]
+		optional := strings.Contains(fullMatch, "["+name+"]")
+		// Map JS types to JSON Schema types.
+		jsonType := jsTypeToJSONType(typ)
 		fields[name] = SchemaField{
 			Name:     name,
 			Type:     jsonType,
@@ -288,21 +306,55 @@ func extractTSLensEventSchema(srcDir string) (*Schema, error) {
 		}
 	}
 	return &Schema{
-		Title:   "AegisGate Lens Event (TypeScript)",
+		Title:   "AegisGate Lens Event (JavaScript)",
 		Version: "0.1.0",
 		Fields:  fields,
 	}, nil
 }
 
-// tsTypeToJSONType maps a TypeScript type to a JSON Schema type.
-// We recognize:
-//   - Primitive types: string, number, boolean
-//   - Type aliases for primitives: any identifier is treated
-//     as string (the Lens's Category/Severity/UserAction
-//     are all string enums; LensEvent.id is string).
-//   - Array types: not used in the schema for v0.1.
-func tsTypeToJSONType(typ string) string {
+// findLensEventTypedef walks srcDir looking for the first
+// .js file containing "@typedef {Object} LensEvent".
+// Returns the file path and its contents.
+func findLensEventTypedef(srcDir string) (string, string, error) {
+	var foundPath, foundContent string
+	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error { // #nosec G703 G122 -- srcDir is the developer-supplied --src tree
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(path, ".js") {
+			return nil
+		}
+		b, err := os.ReadFile(path) // #nosec G304 G703 -- path is from filepath.Walk of --src tree
+		if err != nil {
+			return err
+		}
+		if strings.Contains(string(b), "@typedef {Object} LensEvent") {
+			foundPath = path
+			foundContent = string(b)
+			return filepath.SkipAll // stop walking
+		}
+		return nil
+	})
+	if err != nil {
+		return "", "", err
+	}
+	if foundPath == "" {
+		return "", "", fmt.Errorf("no .js file contains @typedef {Object} LensEvent (searched %s)", srcDir)
+	}
+	return foundPath, foundContent, nil
+}
+
+// jsTypeToJSONType maps a JSDoc @property type to a JSON
+// Schema type. We recognize:
+//   - {string}, {number}, {boolean} primitives
+//   - {TypeName} aliases (treated as string; the Lens uses
+//     string-based enums for Category, Severity, UserAction)
+//   - {TypeName[]} array types (treated as the element type)
+//   - {?} or {*} treated as string (conservative)
+func jsTypeToJSONType(typ string) string {
 	typ = strings.TrimSpace(typ)
+	// Strip trailing [] for arrays.
+	typ = strings.TrimSuffix(typ, "[]")
 	switch typ {
 	case "string":
 		return "string"
@@ -311,48 +363,48 @@ func tsTypeToJSONType(typ string) string {
 	case "boolean":
 		return "boolean"
 	}
-	// Treat any other identifier as a string (the Lens
-	// uses string-based enums via type aliases).
+	// Treat any other identifier (Category, Severity, etc.)
+	// as string. The wire format stores enums as strings.
 	return "string"
 }
 
-// crossCheckSchemas asserts that the Go and TypeScript
+// crossCheckSchemas asserts that the Go and JavaScript
 // schemas describe the same wire format.
-func crossCheckSchemas(goSchema, tsSchema *Schema) error {
-	// Every Go field must be in TS.
+func crossCheckSchemas(goSchema, jsSchema *Schema) error {
+	// Every Go field must be in JS.
 	goNames := make([]string, 0, len(goSchema.Fields))
 	for n := range goSchema.Fields {
 		goNames = append(goNames, n)
 	}
 	sort.Strings(goNames)
 	for _, name := range goNames {
-		if _, ok := tsSchema.Fields[name]; !ok {
-			return fmt.Errorf("field %q is in Go but missing in TypeScript", name)
+		if _, ok := jsSchema.Fields[name]; !ok {
+			return fmt.Errorf("field %q is in Go but missing in JavaScript", name)
 		}
 	}
-	// Every TS field must be in Go.
-	tsNames := make([]string, 0, len(tsSchema.Fields))
-	for n := range tsSchema.Fields {
-		tsNames = append(tsNames, n)
+	// Every JS field must be in Go.
+	jsNames := make([]string, 0, len(jsSchema.Fields))
+	for n := range jsSchema.Fields {
+		jsNames = append(jsNames, n)
 	}
-	sort.Strings(tsNames)
-	for _, name := range tsNames {
+	sort.Strings(jsNames)
+	for _, name := range jsNames {
 		if _, ok := goSchema.Fields[name]; !ok {
-			return fmt.Errorf("field %q is in TypeScript but missing in Go", name)
+			return fmt.Errorf("field %q is in JavaScript but missing in Go", name)
 		}
 	}
 	// Type cross-check (only for primitives; ignore aliases).
 	for name, goF := range goSchema.Fields {
-		tsF, ok := tsSchema.Fields[name]
+		jsF, ok := jsSchema.Fields[name]
 		if !ok {
 			continue
 		}
 		goJSONType := goTypeToJSONType(goF.Type)
-		tsJSONType := tsTypeToJSONType(tsF.Type)
-		if goJSONType != "" && tsJSONType != "" && goJSONType != tsJSONType {
+		jsJSONType := jsTypeToJSONType(jsF.Type)
+		if goJSONType != "" && jsJSONType != "" && goJSONType != jsJSONType {
 			return fmt.Errorf(
-				"field %q has type %q in Go but type %q in TypeScript",
-				name, goF.Type, tsF.Type,
+				"field %q has type %q in Go but type %q in JavaScript",
+				name, goF.Type, jsF.Type,
 			)
 		}
 	}

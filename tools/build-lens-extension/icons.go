@@ -24,7 +24,7 @@
 // step, BEFORE the manifest.json is written. The output
 // icons go to <dist>/icons/.
 //
-// v3.5.0+ Lens Phase 2.
+// v0.1.0+ Lens Phase 1 (plain-JS pivot, 2026-06-19).
 // =========================================================================
 
 package main
