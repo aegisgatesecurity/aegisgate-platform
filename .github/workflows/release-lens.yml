@@ -1,4 +1,4 @@
-name: Release Lens debug v7
+name: Release Lens with SLSA provenance
 
 "on":
   push:
@@ -7,7 +7,7 @@ name: Release Lens debug v7
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag name'
+        description: 'Lens tag to build (e.g., lens-v0.2.2)'
         required: true
         type: string
 
@@ -16,11 +16,106 @@ permissions:
   id-token: write
   attestations: write
 
+env:
+  GO_VERSION: '1.26.4'
+  LENS_REPO: aegisgatesecurity/aegisgate-lens
+
 jobs:
-  attest:
+  build:
+    name: Build Lens extension
     runs-on: ubuntu-latest
     steps:
-      - run: echo "step1 ok"
-      - uses: actions/attest-build-provenance@v3
+      - name: Resolve tag
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION="${TAG#lens-v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Lens release::Building ${TAG} from ${LENS_REPO}@${TAG}"
+
+      - name: Checkout Platform repo (the build tool)
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
         with:
-          subject-path: README.md
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout Lens source at the tagged commit
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.LENS_REPO }}
+          ref: ${{ steps.meta.outputs.tag }}
+          path: lens-src
+
+      - name: Build the Lens extension
+        shell: bash
+        run: |
+          mkdir -p /tmp/lens-dist
+          go run ./tools/build-lens-extension/ \
+            --src lens-src/src \
+            --dist /tmp/lens-dist \
+            --version "${{ steps.meta.outputs.version }}" \
+            --commit "lens-src:${GITHUB_SHA}"
+
+      - name: Locate the produced ZIP
+        shell: bash
+        run: |
+          # The build tool writes the ZIP to filepath.Dir(--dist)
+          # named "lens-<version>-<shortsha>.zip". Search /tmp with
+          # 2>/dev/null to ignore permission-denied errors on
+          # /tmp/systemd-private-* dirs (which broke find in v6).
+          # We search ONLY in /tmp (not the full fs) for safety.
+          ZIP=$(find /tmp -maxdepth 3 -name "lens-${{ steps.meta.outputs.version }}-*.zip" 2>/dev/null | head -1)
+          if [ -z "$ZIP" ]; then
+            echo "::error::Build tool did not produce a Lens .zip"
+            echo "::error::Searched: /tmp/**/lens-${{ steps.meta.outputs.version }}-*.zip"
+            find /tmp -maxdepth 3 -name "lens-${{ steps.meta.outputs.version }}-*.zip" 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p /tmp/lens-artifacts
+          # Canonical name for the release asset (was the build tool's
+          # output name with the version's short sha).
+          cp "$ZIP" "/tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
+          echo "Built artifact: $(basename "$ZIP")"
+          echo "Release asset: aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
+          ls -la /tmp/lens-artifacts/
+
+      - name: Generate SLSA Build Level 2 provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: /tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip
+
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: AegisGate Lens v${{ steps.meta.outputs.version }}
+          generate_release_notes: true
+          body: |
+            AegisGate Lens v${{ steps.meta.outputs.version }}
+
+            This release includes a SLSA Build Level 2 provenance attestation
+            published to the GitHub Attestations store. Verify before installing:
+
+            ```bash
+            # Verify the ZIP was built from this tag by the canonical
+            # AegisGate Platform release workflow.
+            gh attestation verify \
+              --owner aegisgatesecurity \
+              --repo aegisgate-platform \
+              aegisgate-lens-${{ steps.meta.outputs.version }}.zip
+            ```
+
+            A passing verify confirms the ZIP was built by GitHub Actions
+            workflow .github/workflows/release-lens.yml in
+            github.com/aegisgatesecurity/aegisgate-platform.
+          files: |
+            /tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip
