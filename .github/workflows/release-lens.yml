@@ -1,4 +1,4 @@
-name: Release Lens with SLSA provenance (debug v2)
+name: Release Lens with SLSA provenance (debug v3 - add provenance job)
 
 "on":
   push:
@@ -13,6 +13,8 @@ name: Release Lens with SLSA provenance (debug v2)
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 env:
   GO_VERSION: '1.26.4'
@@ -86,3 +88,16 @@ jobs:
         with:
           name: lens-zip
           path: /tmp/lens-artifacts/
+
+  provenance:
+    needs: build
+    if: success()
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
+    permissions:
+      actions: read
+      id-token: write
+      contents: read
+      attestations: write
+    with:
+      base64-subjects: ${{ needs.build.outputs.hashes }}
+      upload-assets: true
