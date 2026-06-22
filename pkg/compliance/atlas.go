@@ -107,7 +107,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "LLMJailbreak",
 		Description: "Hypothetical Scenario Jailbreak",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(hypothetical\s+(scenario|jailbreak|attack|exploit|question)|imagine\s+(you\s+(are|were)|a\s+world\s+where|that\s+you\s+have\s+no\s+rules)|just\s+(pretend|assume)\s+(you\s+have\s+no\s+rules|for\s+this\s+exercise|there\s+are\s+no\s+rules)|as\s+a\s+(thought\s+experiment|hypothetical\s+scenario)|in\s+a\s+fictional\s+scenario\s+where\s+you\s+have\s+no\s+rules|harmless\s+example\s+of\s+(jailbreak|exploit|hacking|attack))`),
+		Regex:       regexp.MustCompile(`(?i)(hypothetical\s+(scenario|jailbreak|attack|exploit|question)|imagine\s+(you\s+(are|were)|a\s+world\s+where|that\s+you\s+have\s+no\s+rules)|what\s+if\s+you\s+(are|were)|just\s+(pretend|assume)\s+(you\s+have\s+no\s+rules|for\s+this\s+exercise|there\s+are\s+no\s+rules)|as\s+a\s+(thought\s+experiment|hypothetical\s+scenario)|in\s+a\s+fictional\s+scenario\s+where\s+you\s+have\s+no\s+rules|harmless\s+example\s+of\s+(jailbreak|exploit|hacking|attack))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{

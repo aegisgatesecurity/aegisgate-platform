@@ -91,9 +91,14 @@ jobs:
           path: lens-src
 
       - name: Verify build tool compiles
+        # Day 15 fix: tools/test-extension/ is a Go submodule with its
+        # own go.mod. Running `go build ./tools/test-extension/` from
+        # the Platform root fails because the parent module doesn't
+        # contain it. All commands targeting the submodule must run
+        # from INSIDE the submodule directory.
         run: |
           go build -o /dev/null ./tools/build-lens-extension/
-          go build -o /dev/null ./tools/test-extension/
+          (cd tools/test-extension && go build -o /dev/null ./. )
 
       - name: Build the Lens extension
         run: |
@@ -106,6 +111,7 @@ jobs:
 
       - name: Verify JS files are syntactically valid
         run: |
+          shopt -s nullglob
           for f in /tmp/lens-dist/*.js /tmp/lens-dist/popup/*.js; do
             node --check "$f"
           done
@@ -115,8 +121,9 @@ jobs:
         # explicit installation. The unit tests in the test
         # harness's go test are enough to verify the
         # harness's correctness.
+        # Day 15 fix: run go test from INSIDE each submodule.
         run: |
-          go test -race -count=1 -v ./tools/test-extension/...
+          (cd tools/test-extension && go test -race -count=1 -v ./...)
           go test -race -count=1 ./tools/build-lens-extension/...
 
       - name: Upload build artifact

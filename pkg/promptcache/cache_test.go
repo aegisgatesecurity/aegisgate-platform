@@ -357,7 +357,13 @@ func TestAttest_AttestedAtAutoSet(t *testing.T) {
 func TestAttest_ValidUntilAutoComputed(t *testing.T) {
 	kr := makeTestKeyRing(t)
 	pa := makeTestAttestation(t, "test", "acme-corp:prod-gateway")
-	pa.AttestedAt = time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)
+	// Day 16 fix: use a clock-relative AttestedAt instead of a hardcoded
+	// date. The hardcoded 2026-06-18 made the resulting ValidUntil
+	// (AttestedAt + TTL) fall in the past once the wall clock advanced
+	// past 14:00 UTC on that day, which broke the assertion below.
+	// Use time.Now() minus 1 hour so the test is anchored to the
+	// present and won't drift with wall-clock time.
+	pa.AttestedAt = time.Now().UTC().Add(-1 * time.Hour)
 	pa.ValidUntil = time.Time{} // clear so WithTTL takes effect
 	env, err := Attest(pa, kr, WithTTL(2*time.Hour))
 	if err != nil {
@@ -367,7 +373,7 @@ func TestAttest_ValidUntilAutoComputed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseAttestation: %v", err)
 	}
-	want := time.Date(2026, 6, 18, 14, 0, 0, 0, time.UTC)
+	want := pa.AttestedAt.Add(2 * time.Hour)
 	if !att.ValidUntil.Equal(want) {
 		t.Errorf("ValidUntil = %v, want %v", att.ValidUntil, want)
 	}

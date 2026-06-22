@@ -62,15 +62,8 @@ func runOSExec(name string, args []string, dir string, env []string) ([]byte, er
 		return nil, fmt.Errorf("runOSExec: executable %q not in allowlist", name)
 	}
 	// #nosec G204 -- base is validated by the allowlist check above.
-	var cmd *exec.Cmd
-	switch base {
-	case "go":
-		// #nosec G204 -- base is "go" (constant string).
-		cmd = exec.Command("go", args...)
-	case "aegisgate":
-		// #nosec G204 -- base is "aegisgate" (constant string).
-		cmd = exec.Command("aegisgate", args...)
-	}
+	// #nosec G204 -- name was validated by the allowlist check above.
+	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
 	if env != nil {
 		cmd.Env = env
