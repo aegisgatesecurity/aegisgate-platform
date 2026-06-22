@@ -1,4 +1,4 @@
-name: Release Lens (debug v5 - minimal SLSA call)
+name: Release Lens (debug v6 - actions/attest-build-provenance)
 
 "on":
   push:
@@ -19,8 +19,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      hashes: ${{ steps.hashes.outputs.hashes }}
     steps:
       - name: Resolve tag
         id: meta
@@ -62,26 +60,7 @@ jobs:
           mkdir -p /tmp/lens-artifacts
           cp "$ZIP" "/tmp/lens-artifacts/aegisgate-lens-test.zip"
 
-      - name: SHA-256
-        id: hashes
-        shell: bash
-        run: |
-          HASHES=$(sha256sum /tmp/lens-artifacts/*.zip | base64 -w0)
-          echo "hashes=${HASHES}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Attest ZIP
+        uses: actions/attest-build-provenance@v3
         with:
-          name: lens-zip
-          path: /tmp/lens-artifacts/
-
-  provenance:
-    needs: build
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
-    permissions:
-      actions: read
-      id-token: write
-      contents: read
-      attestations: write
-    with:
-      base64-subjects: ${{ needs.build.outputs.hashes }}
+          subject-path: /tmp/lens-artifacts/aegisgate-lens-test.zip
