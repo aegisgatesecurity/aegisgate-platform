@@ -67,20 +67,25 @@ jobs:
       - name: Locate the produced ZIP
         shell: bash
         run: |
-          # The build tool (tools/build-lens-extension/package.go:46)
-          # writes the ZIP to filepath.Dir(--dist) named
-          # "lens-<version>-<commit[:7]>.zip". With --dist /tmp/lens-dist
-          # and --commit "lens-src:${GITHUB_SHA}", the path is
-          # "/tmp/lens-<version>-<first 7 of commit>.zip".
-          # We don't trust find because /tmp/systemd-private-* dirs
-          # cause permission errors that break pipes. Compute the path
-          # from inputs.
-          SHORT_SHA="$(echo "lens-src:${GITHUB_SHA}" | cut -c1-7)"
-          ZIP="/tmp/lens-${{ steps.meta.outputs.version }}-${SHORT_SHA}.zip"
+          # Build tool (tools/build-lens-extension/package.go:46) writes
+          # ZIP as: filepath.Join(filepath.Dir(cfg.Dist), zipName)
+          # where zipName = fmt.Sprintf("lens-%s-%s.zip", cfg.Version,
+          #   cfg.Commit[:7])
+          #
+          # With --dist /tmp/lens-dist and --commit "lens-src:$GITHUB_SHA":
+          #   filepath.Dir("/tmp/lens-dist") = "/tmp"
+          #   shortSHA  = "lens-src:abc1234..."[:7] = "lens-sr"
+          #   zipPath   = "/tmp/lens-<version>-lens-sr.zip"
+          #
+          # This is a fixed string (NOT derived from GITHUB_SHA[:7]).
+          ZIP="/tmp/lens-${{ steps.meta.outputs.version }}-lens-sr.zip"
           if [ ! -f "$ZIP" ]; then
             echo "::error::Expected ZIP at $ZIP not found"
             echo "::error::Listing /tmp for any lens-*.zip:"
             ls -la /tmp/lens-*.zip 2>&1 || true
+            # Also check what /tmp contains at depth 1.
+            echo "::error::Top-level /tmp contents (first 20):"
+            ls /tmp/ 2>&1 | head -20 || true
             exit 1
           fi
           mkdir -p /tmp/lens-artifacts
