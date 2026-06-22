@@ -1,4 +1,4 @@
-name: Release Lens (debug v1)
+name: Release Lens with SLSA provenance (debug v2)
 
 "on":
   push:
@@ -14,8 +14,75 @@ name: Release Lens (debug v1)
 permissions:
   contents: write
 
+env:
+  GO_VERSION: '1.26.4'
+  LENS_REPO: aegisgatesecurity/aegisgate-lens
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hashes.outputs.hashes }}
+      version: ${{ steps.meta.outputs.version }}
     steps:
-      - run: echo "hello world"
+      - name: Resolve tag
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#lens-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Platform
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Checkout Lens
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.LENS_REPO }}
+          ref: ${{ steps.meta.outputs.tag }}
+          path: lens-src
+
+      - name: Build
+        shell: bash
+        run: |
+          mkdir -p /tmp/lens-dist
+          go run ./tools/build-lens-extension/ \
+            --src lens-src/src \
+            --dist /tmp/lens-dist \
+            --version "${{ steps.meta.outputs.version }}" \
+            --commit "lens-src:${{ github.sha }}"
+
+      - name: Locate ZIP
+        shell: bash
+        run: |
+          ZIP=$(find /tmp -maxdepth 2 -name 'aegisgate-lens-*.zip' -print -quit)
+          if [ -z "$ZIP" ]; then
+            echo "::error::Build tool did not produce a Lens .zip"
+            exit 1
+          fi
+          mkdir -p /tmp/lens-artifacts
+          cp "$ZIP" "/tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
+          ls -la /tmp/lens-artifacts/
+
+      - name: SHA-256
+        id: hashes
+        shell: bash
+        run: |
+          HASHES=$(sha256sum /tmp/lens-artifacts/*.zip | base64 -w0)
+          echo "hashes=${HASHES}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lens-zip
+          path: /tmp/lens-artifacts/
