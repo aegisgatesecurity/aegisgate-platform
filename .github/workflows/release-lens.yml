@@ -1,18 +1,3 @@
-# =========================================================================
-# AegisGate Platform - Lens Release Workflow with SLSA Build Level 3
-# =========================================================================
-#
-# Pinned to SLSA generator SHA f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
-# (tag v2.1.0). SHA pinning is REQUIRED for SLSA Build Level 3 — the
-# provenance must attest to the EXACT generator code that ran, and
-# mutable refs (tags, branches) violate the "non-forgeable" property.
-# To upgrade the generator, update BOTH the SHA and the comment.
-#
-# Day 18 incremental build (Option B):
-#   Commit 1 (110b2bd): build tool JSDoc typedef fix.
-#   Commit 2 (this): full SLSA provenance workflow.
-# =========================================================================
-
 name: Release Lens with SLSA provenance
 
 "on":
@@ -22,7 +7,7 @@ name: Release Lens with SLSA provenance
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag name to build (e.g., lens-v0.2.2)'
+        description: 'Lens tag to build (e.g., lens-v0.2.2)'
         required: true
         type: string
 
@@ -34,17 +19,13 @@ permissions:
 env:
   GO_VERSION: '1.26.4'
   LENS_REPO: aegisgatesecurity/aegisgate-lens
-  LENS_BRANCH: main
 
 jobs:
   build:
     name: Build Lens extension
     runs-on: ubuntu-latest
-    outputs:
-      hashes: ${{ steps.hashes.outputs.hashes }}
-      version: ${{ steps.meta.outputs.version }}
     steps:
-      - name: Resolve tag and version
+      - name: Resolve tag
         id: meta
         shell: bash
         run: |
@@ -53,10 +34,10 @@ jobs:
           else
             TAG="${GITHUB_REF#refs/tags/}"
           fi
-          # Tag like "lens-v0.2.2" -> version "0.2.2"
           VERSION="${TAG#lens-v}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Lens release::Building ${TAG} from ${LENS_REPO}@${TAG}"
 
       - name: Checkout Platform repo (the build tool)
         uses: actions/checkout@v6
@@ -74,6 +55,7 @@ jobs:
           path: lens-src
 
       - name: Build the Lens extension
+        shell: bash
         run: |
           mkdir -p /tmp/lens-dist
           go run ./tools/build-lens-extension/ \
@@ -85,115 +67,57 @@ jobs:
       - name: Locate the produced ZIP
         shell: bash
         run: |
-          ZIP=$(find /tmp -maxdepth 2 -name 'aegisgate-lens-*.zip' -print -quit)
-          if [ -z "$ZIP" ]; then
-            echo "::error::Build tool did not produce a Lens .zip"
+          # The build tool (tools/build-lens-extension/package.go:46)
+          # writes the ZIP to filepath.Dir(--dist) named
+          # "lens-<version>-<commit[:7]>.zip". With --dist /tmp/lens-dist
+          # and --commit "lens-src:${GITHUB_SHA}", the path is
+          # "/tmp/lens-<version>-<first 7 of commit>.zip".
+          # We don't trust find because /tmp/systemd-private-* dirs
+          # cause permission errors that break pipes. Compute the path
+          # from inputs.
+          SHORT_SHA="$(echo "lens-src:${GITHUB_SHA}" | cut -c1-7)"
+          ZIP="/tmp/lens-${{ steps.meta.outputs.version }}-${SHORT_SHA}.zip"
+          if [ ! -f "$ZIP" ]; then
+            echo "::error::Expected ZIP at $ZIP not found"
+            echo "::error::Listing /tmp for any lens-*.zip:"
+            ls -la /tmp/lens-*.zip 2>&1 || true
             exit 1
           fi
           mkdir -p /tmp/lens-artifacts
           cp "$ZIP" "/tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
-          echo "ZIP: $ZIP"
+          echo "Built artifact: $(basename "$ZIP")"
+          echo "Release asset: aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
           ls -la /tmp/lens-artifacts/
 
-      - name: Compute SHA-256 of the ZIP for provenance
-        id: hashes
-        shell: bash
-        run: |
-          # The generic SLSA generator expects base64-encoded
-          # sha256sum output.
-          HASHES=$(sha256sum /tmp/lens-artifacts/*.zip | base64 -w0)
-          echo "hashes=${HASHES}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Generate SLSA Build Level 2 provenance
+        uses: actions/attest-build-provenance@v3
         with:
-          name: lens-zip-${{ steps.meta.outputs.version }}
-          path: /tmp/lens-artifacts/
-          retention-days: 14
-
-  provenance:
-    name: Generate SLSA Build Level 3 provenance
-    needs: build
-    if: success()
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
-    permissions:
-      actions: read
-      id-token: write
-      contents: read
-      attestations: write
-    with:
-      base64-subjects: ${{ needs.build.outputs.hashes }}
-      # Upload the signed provenance to the GitHub Attestations store.
-      upload-assets: true
-
-  release:
-    name: Create GitHub Release
-    needs: [build, provenance]
-    if: success()
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      attestations: read
-    steps:
-      - name: Resolve tag
-        id: meta
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${GITHUB_REF#refs/tags/}"
-          fi
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${TAG#lens-v}" >> "$GITHUB_OUTPUT"
-
-      - name: Download built artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: lens-zip-${{ steps.meta.outputs.version }}
-          path: /tmp/lens-artifacts/
-
-      - name: Download provenance attestation
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          SUBJECT_SHA=$(sha256sum /tmp/lens-artifacts/*.zip | awk '{print $1}' | head -1)
-          gh attestation download "$SUBJECT_SHA" \
-            --repo "${{ github.repository }}" \
-            > "/tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.intoto.jsonl"
-          ls -la /tmp/lens-artifacts/
+          subject-path: /tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip
 
       - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          TAG="${{ steps.meta.outputs.tag }}"
-          VERSION="${{ steps.meta.outputs.version }}"
-          NOTES=$(cat <<EOF
-          AegisGate Lens v${VERSION}
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: AegisGate Lens v${{ steps.meta.outputs.version }}
+          generate_release_notes: true
+          body: |
+            AegisGate Lens v${{ steps.meta.outputs.version }}
 
-          This release includes a SLSA Build Level 3 provenance attestation.
-          Verify before installing:
+            This release includes a SLSA Build Level 2 provenance attestation
+            published to the GitHub Attestations store. Verify before installing:
 
-          \`\`\`bash
-          go install github.com/slsa-framework/slsa-verifier/cli/slsa-verifier@latest
+            ```bash
+            # Verify the ZIP was built from this tag by the canonical
+            # AegisGate Platform release workflow.
+            gh attestation verify \
+              --owner aegisgatesecurity \
+              --repo aegisgate-platform \
+              aegisgate-lens-${{ steps.meta.outputs.version }}.zip
+            ```
 
-          slsa-verifier verify-artifact \\
-            --provenance-path aegisgate-lens-${VERSION}.intoto.jsonl \\
-            --source-uri github.com/aegisgatesecurity/aegisgate-platform \\
-            --source-tag ${TAG} \\
-            aegisgate-lens-${VERSION}.zip
-          \`\`\`
-
-          A passing verify confirms the ZIP was built by the canonical
-          GitHub Actions workflow at github.com/aegisgatesecurity/
-          aegisgate-platform/.github/workflows/release-lens.yml.
-          EOF
-          )
-          gh release create "$TAG" \
-            --title "AegisGate Lens v${VERSION}" \
-            --notes "$NOTES" \
-            /tmp/lens-artifacts/*
-          echo "Release $TAG published with $(ls /tmp/lens-artifacts/ | wc -l) assets."
+            A passing verify confirms the ZIP was built by GitHub Actions
+            workflow .github/workflows/release-lens.yml in
+            github.com/aegisgatesecurity/aegisgate-platform.
+          files: |
+            /tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip
