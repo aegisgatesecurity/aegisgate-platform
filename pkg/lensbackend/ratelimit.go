@@ -118,25 +118,43 @@ func (l *LensRateLimiter) installationKey(domainHash string) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// Middleware returns an http.Handler middleware that enforces both
-// the per-installation and global rate limits. If either limit is
-// exceeded, the response is HTTP 429 Too Many Requests with a
-// Retry-After header. The domain_hash for the per-installation key
-// is read from the X-Lens-Domain-Hash header (set by the extension
-// in handlers.go before this middleware runs).
-func (l *LensRateLimiter) Middleware(next http.Handler) http.Handler {
+// GlobalMiddleware returns an http.Handler middleware that enforces
+// the GLOBAL rate limit only. The per-installation limit is checked
+// inside HandleTelemetry after the body is decoded (so the
+// domain_hash from the event body — not a header — is the bucket
+// key). This split was made on 2026-06-22 during pen-test Day 11
+// after the original Middleware was found to read a header that
+// HandleTelemetry set after the middleware had already run, leaving
+// the per-installation limit silently disabled in production.
+func (l *LensRateLimiter) GlobalMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !l.AllowGlobal() {
 			writeTooManyRequests(w, "global rate limit exceeded")
 			return
 		}
-		dh := r.Header.Get("X-Lens-Domain-Hash")
-		if dh != "" && !l.AllowInstallation(dh) {
-			writeTooManyRequests(w, "per-installation rate limit exceeded")
-			return
-		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// Middleware is preserved as a synonym for GlobalMiddleware so
+// existing callers (e.g. server.go's wiring) continue to compile.
+// New code should call GlobalMiddleware directly.
+//
+// Deprecated: prefer GlobalMiddleware. The per-installation check
+// cannot live in a generic middleware because it requires the
+// decoded event body, which the middleware cannot see without
+// duplicating the JSON decode.
+func (l *LensRateLimiter) Middleware(next http.Handler) http.Handler {
+	return l.GlobalMiddleware(next)
+}
+
+// CheckInstallation enforces the per-installation rate limit for
+// the given domain_hash. Returns true if the event should be
+// accepted, false if the per-installation bucket is exhausted.
+// Called by HandleTelemetry after body decode + domain_hash
+// verification.
+func (l *LensRateLimiter) CheckInstallation(domainHash string) bool {
+	return l.AllowInstallation(domainHash)
 }
 
 // writeTooManyRequests is a small helper to write a 429 response.

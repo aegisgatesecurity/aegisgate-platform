@@ -189,6 +189,7 @@ func TestLabTelemetryRejectsUnknownFields(t *testing.T) {
 	_, tok, cleanup := labServer(t)
 	defer cleanup()
 	body := []byte(fmt.Sprintf(`{
+		"lens_event_version": 1,
 		"domain_hash": "%s",
 		"category": "pii_email",
 		"severity": "high",
