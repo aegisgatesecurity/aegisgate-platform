@@ -671,8 +671,12 @@ func TestVerifyWithClock_HappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Publish: %v", err)
 	}
-	// Set clock to any time (no expiry on CVE entries).
-	vr := VerifyWithClock(context.Background(), env, frozenClock{t: time.Date(2026, 6, 18, 12, 0, 0, 0, time.UTC)})
+	// Day 16 fix: use a clock-relative frozen time (now + 1 hour)
+	// instead of the hardcoded 2026-06-18. Publish() sets
+	// PublishedAt to time.Now(), so a frozen clock older than that
+	// fails the "not yet valid" check. Using now + 1 hour keeps
+	// the test anchored to the present.
+	vr := VerifyWithClock(context.Background(), env, frozenClock{t: time.Now().UTC().Add(1 * time.Hour)})
 	if !vr.Valid {
 		t.Errorf("VerifyWithClock: %s", vr.Reason)
 	}

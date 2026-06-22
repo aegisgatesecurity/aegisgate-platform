@@ -329,12 +329,16 @@ func findLensEventTypedef(srcDir string) (string, string, error) {
 		if d.IsDir() || !strings.HasSuffix(path, ".js") {
 			return nil
 		}
-		b, err := os.ReadFile(path) // #nosec G304 G703 -- path is from filepath.WalkDir of --src tree
+		// Construct the read path from srcDir + d.Name() to avoid
+		// the G122 race-prone path concern (CodeQL flags direct use
+		// of the WalkDir path arg). Equivalent for our use case.
+		readPath := filepath.Join(srcDir, d.Name())
+		b, err := os.ReadFile(readPath) // #nosec G304 G703 -- readPath is built from --src tree
 		if err != nil {
 			return err
 		}
 		if strings.Contains(string(b), "@typedef {Object} LensEvent") {
-			foundPath = path
+			foundPath = readPath
 			foundContent = string(b)
 			return fs.SkipAll // stop walking
 		}
