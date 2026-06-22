@@ -67,21 +67,23 @@ jobs:
       - name: Locate the produced ZIP
         shell: bash
         run: |
-          # The build tool writes the ZIP to filepath.Dir(--dist)
-          # named "lens-<version>-<shortsha>.zip". Search /tmp with
-          # 2>/dev/null to ignore permission-denied errors on
-          # /tmp/systemd-private-* dirs (which broke find in v6).
-          # We search ONLY in /tmp (not the full fs) for safety.
-          ZIP=$(find /tmp -maxdepth 3 -name "lens-${{ steps.meta.outputs.version }}-*.zip" 2>/dev/null | head -1)
-          if [ -z "$ZIP" ]; then
-            echo "::error::Build tool did not produce a Lens .zip"
-            echo "::error::Searched: /tmp/**/lens-${{ steps.meta.outputs.version }}-*.zip"
-            find /tmp -maxdepth 3 -name "lens-${{ steps.meta.outputs.version }}-*.zip" 2>/dev/null || true
+          # The build tool (tools/build-lens-extension/package.go:46)
+          # writes the ZIP to filepath.Dir(--dist) named
+          # "lens-<version>-<commit[:7]>.zip". With --dist /tmp/lens-dist
+          # and --commit "lens-src:${GITHUB_SHA}", the path is
+          # "/tmp/lens-<version>-<first 7 of commit>.zip".
+          # We don't trust find because /tmp/systemd-private-* dirs
+          # cause permission errors that break pipes. Compute the path
+          # from inputs.
+          SHORT_SHA="$(echo "lens-src:${GITHUB_SHA}" | cut -c1-7)"
+          ZIP="/tmp/lens-${{ steps.meta.outputs.version }}-${SHORT_SHA}.zip"
+          if [ ! -f "$ZIP" ]; then
+            echo "::error::Expected ZIP at $ZIP not found"
+            echo "::error::Listing /tmp for any lens-*.zip:"
+            ls -la /tmp/lens-*.zip 2>&1 || true
             exit 1
           fi
           mkdir -p /tmp/lens-artifacts
-          # Canonical name for the release asset (was the build tool's
-          # output name with the version's short sha).
           cp "$ZIP" "/tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
           echo "Built artifact: $(basename "$ZIP")"
           echo "Release asset: aegisgate-lens-${{ steps.meta.outputs.version }}.zip"
