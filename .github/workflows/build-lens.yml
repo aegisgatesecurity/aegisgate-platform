@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Platform repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
@@ -80,7 +80,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Checkout Lens repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ env.LENS_REPO }}
           ref: ${{ env.LENS_BRANCH }}
