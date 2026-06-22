@@ -280,7 +280,7 @@ func extractJSLensEventSchema(srcDir string) (*Schema, error) {
 	// @property lines until the closing */. The body may
 	// contain leading-* on each line (JSDoc style), so we use
 	// a lazy match against `*/` rather than excluding `*`.
-	pat := regexp.MustCompile(`@typedef\s*\{Object\}\s*LensEvent[\s\S]*?\*/`)
+	pat := regexp.MustCompile(`(?:^|\s|\*)\s*@typedef\s*\{Object\}\s*LensEvent[\s\S]*?\*/`)
 	m := pat.FindString(content)
 	if m == "" {
 		return nil, fmt.Errorf("@typedef LensEvent not found in %s", srcFile)
@@ -329,15 +329,20 @@ func findLensEventTypedef(srcDir string) (string, string, error) {
 		if d.IsDir() || !strings.HasSuffix(path, ".js") {
 			return nil
 		}
-		// Construct the read path from srcDir + d.Name() to avoid
-		// the G122 race-prone path concern (CodeQL flags direct use
-		// of the WalkDir path arg). Equivalent for our use case.
-		readPath := filepath.Join(srcDir, d.Name())
-		b, err := os.ReadFile(readPath) // #nosec G304 G703 -- readPath is built from --src tree
+		// Use the WalkDir 'path' argument directly (not d.Name(),
+		// which loses subdirectory info on recursive walks). The
+		// path is relative to srcDir, so it's safe to read directly.
+		readPath := path
+		b, err := os.ReadFile(readPath) // #nosec G304 G703 -- path is from WalkDir of --src tree
 		if err != nil {
 			return err
 		}
-		if strings.Contains(string(b), "@typedef {Object} LensEvent") {
+		// Look for "@typedef {Object} LensEvent" with optional
+		// leading whitespace AND/OR JSDoc asterisk prefix (e.g.,
+		// " * @typedef ..."). The previous literal-string check
+		// missed JSDoc-formatted typedefs because the "* " prefix
+		// wasn't recognized. Day 18 fix.
+		if strings.Contains(string(b), "typedef {Object} LensEvent") {
 			foundPath = readPath
 			foundContent = string(b)
 			return fs.SkipAll // stop walking
