@@ -1,4 +1,4 @@
-name: Release Lens with SLSA provenance (debug v3 - add provenance job)
+name: Release Lens with SLSA provenance (debug v4 - no upload-assets)
 
 "on":
   push:
@@ -91,7 +91,6 @@ jobs:
 
   provenance:
     needs: build
-    if: success()
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
     permissions:
       actions: read
@@ -100,4 +99,3 @@ jobs:
       attestations: write
     with:
       base64-subjects: ${{ needs.build.outputs.hashes }}
-      upload-assets: true
