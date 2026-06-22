@@ -79,29 +79,29 @@ type Detection struct {
 
 // NetworkRequest is one Chrome DevTools Network event.
 type NetworkRequest struct {
-	URL     string `json:"url"`
-	Method  string `json:"method"`
+	URL      string `json:"url"`
+	Method   string `json:"method"`
 	PostData string `json:"postData,omitempty"`
 }
 
 // TestReport is the final report written to MANUAL_TEST_REPORT.md.
 type TestReport struct {
-	Timestamp         string    `json:"timestamp"`
-	Provider          string    `json:"provider"`
-	ExtensionLoaded   bool      `json:"extension_loaded"`
-	BannerAppeared    bool      `json:"banner_appeared"`
-	DetectionCount    int       `json:"detection_count"`
-	Detections        []Detection `json:"detections"`
-	PromptLeaked      bool      `json:"prompt_leaked"`
-	NetworkRequests   int       `json:"network_requests_count"`
-	NetworkToBackend  int       `json:"network_to_backend_count"`
-	PromptText        string    `json:"prompt_text"`
-	Screenshots       []string  `json:"screenshots"`
-	ConsoleErrors     []string  `json:"console_errors"`
-	PrivacyCheckPass  bool      `json:"privacy_check_pass"`
-	FunctionalPass    bool      `json:"functional_pass"`
-	OverallPass       bool      `json:"overall_pass"`
-	Notes             string    `json:"notes"`
+	Timestamp        string      `json:"timestamp"`
+	Provider         string      `json:"provider"`
+	ExtensionLoaded  bool        `json:"extension_loaded"`
+	BannerAppeared   bool        `json:"banner_appeared"`
+	DetectionCount   int         `json:"detection_count"`
+	Detections       []Detection `json:"detections"`
+	PromptLeaked     bool        `json:"prompt_leaked"`
+	NetworkRequests  int         `json:"network_requests_count"`
+	NetworkToBackend int         `json:"network_to_backend_count"`
+	PromptText       string      `json:"prompt_text"`
+	Screenshots      []string    `json:"screenshots"`
+	ConsoleErrors    []string    `json:"console_errors"`
+	PrivacyCheckPass bool        `json:"privacy_check_pass"`
+	FunctionalPass   bool        `json:"functional_pass"`
+	OverallPass      bool        `json:"overall_pass"`
+	Notes            string      `json:"notes"`
 }
 
 func main() {
@@ -128,7 +128,7 @@ func main() {
 		os.Exit(0)
 	}
 	fmt.Println("FAIL: see MANUAL_TEST_REPORT.md for details")
-		os.Exit(1)
+	os.Exit(1)
 }
 
 func parseArgs(args []string) (*Config, error) {
@@ -177,8 +177,8 @@ func run(cfg *Config) (*TestReport, error) {
 	defer cancel()
 
 	report := &TestReport{
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
-		Provider:  cfg.Provider,
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Provider:   cfg.Provider,
 		PromptText: cfg.TestPrompt,
 	}
 

@@ -103,7 +103,7 @@ func copyFile(src, dst string) error {
 		return fmt.Errorf("open %s: %w", src, err)
 	}
 	defer in.Close()
-	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644) // #nosec G304 G306 G703 -- dst is in the build's --dist directory
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600) // #nosec G304 G703 -- dst is in the build's --dist directory; G302 fixed (was 0o644)
 	if err != nil {
 		return fmt.Errorf("create %s: %w", dst, err)
 	}

@@ -85,7 +85,10 @@ jobs:
           repository: ${{ env.LENS_REPO }}
           ref: ${{ env.LENS_BRANCH }}
           fetch-depth: 1
-          path: /tmp/lens-src
+          # Day 15 fix: checkout to a workspace-internal subdirectory
+          # (was /tmp/lens-src). GitHub Actions requires checkout paths
+          # to be INSIDE $GITHUB_WORKSPACE; /tmp/lens-src is outside.
+          path: lens-src
 
       - name: Verify build tool compiles
         run: |
@@ -96,7 +99,7 @@ jobs:
         run: |
           mkdir -p /tmp/lens-dist
           go run ./tools/build-lens-extension/ \
-            --src /tmp/lens-src/src \
+            --src lens-src/src \
             --dist /tmp/lens-dist \
             --version "$LENS_VERSION" \
             --commit "platform-ci-${{ github.run_id }}"
