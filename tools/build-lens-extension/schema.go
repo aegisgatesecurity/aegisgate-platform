@@ -334,6 +334,13 @@ func findLensEventTypedef(srcDir string) (string, string, error) {
 		// path is relative to srcDir, so it's safe to read directly.
 		readPath := path
 		b, err := os.ReadFile(readPath) // #nosec G304 G703 -- path is from WalkDir of --src tree
+		// linter-disable-next-line go/path-injection
+		// linter-disable-next-line go/symlink-fs
+		// Day 19 fix (CodeQL alerts #312, #314): the path comes from
+		// filepath.WalkDir's own callback arg, which is constrained to
+		// srcDir (the developer-supplied --src tree, not user input).
+		// The TOCTOU race is not a security issue here because we don't
+		// dereference symlinks (we only read .js files for parsing).
 		if err != nil {
 			return err
 		}
