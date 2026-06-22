@@ -58,6 +58,12 @@ coverage/
 vendor/
 .upstream/
 *.sum
+# Whitelist go.sum files (Go module checksums, NOT coverage summaries).
+# *.sum above would otherwise exclude go.sum; we need it committed
+# for reproducible CI builds.
+!go.sum
+!**/go.sum
+!**/*/go.sum
 
 # Environment and secrets
 .env
