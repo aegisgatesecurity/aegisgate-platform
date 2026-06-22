@@ -124,6 +124,17 @@ var AllUserActions = []UserAction{
 // backend's JSON decoder uses RejectUnknownFields so any extra
 // fields in the request body are rejected.
 type Event struct {
+	// LensEventVersion is the schema version of this event. The
+	// extension emits 1 (see plans/AEGISGATE-LENS-DAY-2-SCHEMA-V1.md
+	// in the lens-repo-bootstrap repo). The backend accepts ONLY
+	// version 1 today; events with no version or other versions
+	// are rejected. Added 2026-06-22 after Day 11 pen-test revealed
+	// a cross-repo drift: the extension had been emitting versioned
+	// events since Day 2 but the Go struct didn't know about the
+	// field, so every event was rejected with "unknown field
+	// lens_event_version" thanks to DisallowUnknownFields.
+	LensEventVersion int `json:"lens_event_version"`
+
 	// DomainHash is the 16-hex-character SHA-256 prefix of the
 	// AI provider's hostname. Computed locally by the extension.
 	// The backend re-computes the SHA-256 of the TLS SNI in the
@@ -196,6 +207,15 @@ var ErrInvalidEvent = errors.New("invalid event")
 //  7. lens_version is non-empty
 //  8. confidence is in [0.0, 1.0]
 func (e *Event) Validate() error {
+	// Schema versioning: only accept events with version == 1.
+	// Events with no version (legacy v0) are rejected. Future versions
+	// (v2+) are rejected until the schema is bumped. See
+	// plans/AEGISGATE-LENS-DAY-2-SCHEMA-V1.md.
+	if e.LensEventVersion != 1 {
+		return fmt.Errorf("%w: lens_event_version must be 1, got %d",
+			ErrInvalidEvent, e.LensEventVersion)
+	}
+
 	if len(e.DomainHash) != 16 {
 		return fmt.Errorf("%w: domain_hash must be 16 hex chars, got %d", ErrInvalidEvent, len(e.DomainHash))
 	}

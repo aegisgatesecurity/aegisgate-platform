@@ -284,7 +284,7 @@ func TestHandlers_HandleTelemetry_UnknownField(t *testing.T) {
 	srv := newServerForTest(t, "test-token")
 	ts := httptest.NewServer(srv.Mux())
 	defer ts.Close()
-	body := `{"domain_hash":"abc","category":"pii_email","severity":"high","user_action":"send_anyway","timestamp":1234567890,"model_version":"0.1.0+x","lens_version":"0.1.0","confidence":1.0,"prompt_content":"forbidden"}`
+	body := `{"lens_event_version":1,"domain_hash":"abc","category":"pii_email","severity":"high","user_action":"send_anyway","timestamp":1234567890,"model_version":"0.1.0+x","lens_version":"0.1.0","confidence":1.0,"prompt_content":"forbidden"}`
 	req, _ := http.NewRequest("POST", ts.URL+"/api/v1/lens/telemetry", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer test-token")
 	req.Header.Set("Content-Type", "application/json")

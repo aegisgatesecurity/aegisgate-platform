@@ -110,10 +110,18 @@ func (h *Handlers) HandleTelemetry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set the X-Lens-Domain-Hash header for the rate-limit
-	// middleware (this happens before the middleware runs, in
-	// server.go's wiring). The middleware reads it.
-	r.Header.Set("X-Lens-Domain-Hash", event.DomainHash)
+	// Per-installation rate limit check. Day 11 pen-test found
+	// that the previous X-Lens-Domain-Hader-based middleware was
+	// reading a header set AFTER the middleware had run, so the
+	// per-install limit was silently disabled. We now enforce it
+	// here, AFTER body decode + domain_hash verification, using
+	// the actual event.DomainHash (which we just verified matches
+	// the TLS SNI).
+	if !h.server.rate.CheckInstallation(event.DomainHash) {
+		h.server.audit.RecordRejected(r.Context(), requestID, event.DomainHash, event.Category, "per_install_rate_limit", time.Since(start).Milliseconds())
+		writeTooManyRequests(w, "per-installation rate limit exceeded")
+		return
+	}
 
 	// Forward to the IOC writer.
 	if err := h.server.ioc.add(r.Context(), event); err != nil {

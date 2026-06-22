@@ -68,14 +68,18 @@ func TestComputeDomainHash(t *testing.T) {
 
 func TestEventValidate(t *testing.T) {
 	good := Event{
-		DomainHash:   "eb3a78617eafc7aa",
-		Category:     "pii_email",
-		Severity:     "high",
-		UserAction:   "send_anyway",
-		Timestamp:    time.Now().Unix(),
-		ModelVersion: "0.1.0+regex-v1",
-		LensVersion:  "0.1.0",
-		Confidence:   1.0,
+		// Day 11 pen-test: LensEventVersion is now required (was missing
+		// from the Go struct until cross-repo wire-protocol drift was
+		// caught by Attack 04). Test fixture must include it.
+		LensEventVersion: 1,
+		DomainHash:       "eb3a78617eafc7aa",
+		Category:         "pii_email",
+		Severity:         "high",
+		UserAction:       "send_anyway",
+		Timestamp:        time.Now().Unix(),
+		ModelVersion:     "0.1.0+regex-v1",
+		LensVersion:      "0.1.0",
+		Confidence:       1.0,
 	}
 	if err := good.Validate(); err != nil {
 		t.Errorf("good event rejected: %v", err)
@@ -83,8 +87,13 @@ func TestEventValidate(t *testing.T) {
 
 	bad := []Event{
 		// DomainHash too short.
+		{LensEventVersion: 1, Category: "pii_email", Severity: "high", UserAction: "send_anyway",
+			Timestamp: time.Now().Unix(), ModelVersion: "0.1.0+x", LensVersion: "0.1.0", Confidence: 1.0},
+		// LensEventVersion missing (legacy v0 event).
 		{Category: "pii_email", Severity: "high", UserAction: "send_anyway",
 			Timestamp: time.Now().Unix(), ModelVersion: "0.1.0+x", LensVersion: "0.1.0", Confidence: 1.0},
+		// LensEventVersion = 2 (future).
+		replaceField(good, "LensEventVersion", 2),
 		// Invalid category.
 		replaceField(good, "Category", "unknown_cat"),
 		// Invalid severity.
@@ -112,6 +121,8 @@ func TestEventValidate(t *testing.T) {
 func replaceField(e Event, field, value any) Event {
 	out := e
 	switch field {
+	case "LensEventVersion":
+		out.LensEventVersion = value.(int)
 	case "Category":
 		out.Category = value.(string)
 	case "Severity":
@@ -132,6 +143,7 @@ func replaceField(e Event, field, value any) Event {
 
 func TestDecodeEventRejectsUnknownFields(t *testing.T) {
 	body := []byte(`{
+		"lens_event_version": 1,
 		"domain_hash": "eb3a78617eafc7aa",
 		"category": "pii_email",
 		"severity": "high",

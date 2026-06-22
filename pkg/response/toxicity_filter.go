@@ -31,7 +31,7 @@ func (tf *ToxicityFilter) initDefaultPatterns() {
 	defer tf.mu.Unlock()
 
 	// Violence patterns
-	tf.categories[TOXICITY_VIOLENCE] = regexp.MustCompile(`(?i)\b(kill|murder|assassinate|execute|strangle|poison|shoot|stab|slit|dismember)\b`)
+	tf.categories[TOXICITY_VIOLENCE] = regexp.MustCompile(`(?i)\b(kill|murder|assassinate|strangle|poison|shoot|stab|slit|dismember|butcher|slay)\b`)
 
 	// Weapons patterns
 	tf.categories[TOXICITY_WEAPONS] = regexp.MustCompile(`(?i)\b(bomb|explosive|grenade|machine\s*gun|ak-47|ar-15|ricin|anthrax)\b`)

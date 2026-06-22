@@ -272,7 +272,7 @@ func GetOwaspPatterns() []OwaspPattern {
 			Name:        "DAN Attack Pattern",
 			Description: "Do Anything Now attack pattern",
 			Severity:    "critical",
-			Regex:       regexp.MustCompile(`(?i)(DAN|do\s*anything\s*now|stay\s*in\s*character|you\s*are\s*now\s*free)`),
+			Regex:       regexp.MustCompile(`(?i)(do\s*anything\s*now|stay\s*in\s*character|you\s*are\s*now\s*free|\bDAN\s+(?:mode|jailbreak|attack|prompt))`),
 			Suggestion:  "Detect DAN-style jailbreak attempts",
 		},
 		{
@@ -319,7 +319,7 @@ func GetOwaspPatterns() []OwaspPattern {
 			Name:        "HTML Injection",
 			Description: "Potential HTML injection in LLM output",
 			Severity:    "high",
-			Regex:       regexp.MustCompile(`(?i)<\s*(script|iframe|object|embed|link|meta|style|base|form)[^>]*>`),
+			Regex:       regexp.MustCompile(`(?i)<\s*(script\b[^>]*>[^<]*</\s*script\s*>|iframe\s+[^>]*src\s*=|object\s+[^>]*data\s*=|embed\s+[^>]*src\s*=|meta\s+http-equiv\s*=\s*["']?refresh|form\s+[^>]*action\s*=\s*["']?\s*javascript|on(load|error|click|mouseover)\s*=\s*["'][^"']*["'])`),
 			Suggestion:  "Sanitize HTML output before rendering",
 		},
 		{
@@ -346,7 +346,7 @@ func GetOwaspPatterns() []OwaspPattern {
 			Name:        "SQL Injection Payload",
 			Description: "Generated SQL injection payload",
 			Severity:    "critical",
-			Regex:       regexp.MustCompile(`(?i)(UNION\s+SELECT|SELECT\s+.*\s+FROM|INSERT\s+INTO|DROP\s+TABLE|DELETE\s+FROM)`),
+			Regex:       regexp.MustCompile(`(?i)(UNION\s+(ALL\s+)?SELECT|INSERT\s+INTO\s+\w+|DROP\s+(TABLE|DATABASE)|DELETE\s+FROM\s+\w+\s+WHERE|SELECT\s+\*\s+FROM\s+(?:information_schema|sys\.|mysql\.|pg_catalog))`),
 			Suggestion:  "Review output for SQL injection payloads",
 		},
 		{
@@ -366,7 +366,7 @@ func GetOwaspPatterns() []OwaspPattern {
 			Name:        "Excessive Context",
 			Description: "Request for very long context generation",
 			Severity:    "medium",
-			Regex:       regexp.MustCompile(`(?i)(generate|write|create|produce)\s+(a|an)?\s*(very\s+)?(long|large|extensive|huge)\s*(article|story|document|text|list|essay)`),
+			Regex:       regexp.MustCompile(`(?i)(generate|write|create|produce)\s+(a|an)?\s*(very\s+)?(long|large|extensive|huge|10000-word|100000-word|long\s+and\s+detailed|comprehensive|exhaustive)\s*(article|story|document|text|list|essay|response|output|paragraphs?)`),
 			Suggestion:  "Implement output length limits",
 		},
 		{

@@ -80,7 +80,11 @@ func (ps *PIIScanner) initDefaultPatterns() {
 	// Phone Numbers
 	// US: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1XXXXXXXXXX
 	// International: +, country code, formats vary
-	ps.patterns[PII_PHONE] = regexp.MustCompile(`\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}\b`)
+	// Phone numbers (North American): require 10 digits with proper delimiters.
+// Format: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1XXXXXXXXXX
+// Tightened 2026-06-20: previous regex matched any 7+ digit sequence.
+// New regex requires exactly 10 digits (with optional +1 country code).
+ps.patterns[PII_PHONE] = regexp.MustCompile(`\b\+?1?[-.\s]?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b`)
 
 	// US Passport Numbers (9 characters, alphanumeric)
 	ps.patterns[PII_PASSPORT] = regexp.MustCompile(`\b[A-Z0-9]{9}\b`)
@@ -93,7 +97,7 @@ func (ps *PIIScanner) initDefaultPatterns() {
 	ps.patterns[PII_HEALTH] = regexp.MustCompile(`(?i)\b(?:mrn|patient|health|medical|hipaa)\b[^\d]*\d{5,12}`)
 
 	// Date of Birth variations
-	ps.patterns[PII_DATE_OF_BIRTH] = regexp.MustCompile(`\b(?:DOB|Date of Birth|Birth Date|Birthday|Born):?\s*(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b`)
+	ps.patterns[PII_DATE_OF_BIRTH] = regexp.MustCompile(`(?i)\b(?:DOB|Date of Birth|Birth Date|Birthday|Born):?\s*(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b`)
 
 	// Bank Account Numbers (various formats, 8-17 digits)
 	ps.patterns[PII_BANK_ACCOUNT] = regexp.MustCompile(`(?i)\b(?:account|acct|acct#|savings|checking|accountnum|acctno):?\s*\d{8,17}\b`)
