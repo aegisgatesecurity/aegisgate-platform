@@ -73,7 +73,7 @@
 
 name: Release Lens with SLSA provenance
 
-on:
+"on":
   push:
     tags:
       - 'lens-v*'
@@ -219,6 +219,11 @@ jobs:
       attestations: write
     with:
       base64-subjects: ${{ needs.build.outputs.hashes }}
+      # Upload the signed provenance to the GitHub Attestations store
+      # (and to the GH Release if we attach it). This makes the
+      # provenance verifiable via 'gh attestation verify' or
+      # slsa-verifier CLI.
+      upload-assets: true
       # Pin by full semver tag as required by slsa-verifier.
       # The generator itself signs with the workflow's OIDC token;
       # pinning the workflow ref proves the provenance came from
