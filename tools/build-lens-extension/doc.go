@@ -1,26 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Lens - Build Tool (v3.5.0+ Lens Phase 2)
+// AegisGate Lens - Build Tool (v0.1.0+ Lens Phase 1 plain-JS)
 // =========================================================================
 //
 // Package main implements the build tool for the AegisGate Lens
 // browser extension. The build tool is a single Go program that:
 //
-//  1. Reads the TypeScript source files from the Lens repo
+//  1. Reads the plain JavaScript source files from the Lens repo
 //     (github.com/aegisgatesecurity/aegisgate-lens/src/).
-//  2. Validates the schema (the TS types MUST match the Go
-//     Event struct in pkg/lensbackend/validation.go).
+//  2. Validates the schema (the JSDoc `@typedef {Object} LensEvent`
+//     block in api/client.js MUST match the Go Event struct in
+//     pkg/lensbackend/validation.go).
 //  3. Lints the source for forbidden patterns (eval, Function,
 //     innerHTML, fetch outside the allowlist, prompt content
 //     in log lines, etc. — see the §10.1 Privacy Policy CI check).
-//  4. Bundles the source into a single dist/content.js,
-//     dist/service-worker.js, and dist/popup/welcome JS+HTML
-//     (no transpilation; the source is hand-written ES2020).
-//  5. Minifies the JS (strips leading whitespace, blank lines,
-//     comments) — ~30% size reduction.
-//  6. Copies the manifest, assets, and the four icon PNGs.
-//  7. Packages the dist/ directory into a single ZIP.
-//  8. Computes the SHA-256 of every file and emits
+//  4. Copies the source files into dist/ preserving the
+//     directory structure (util/, detectors/, privacy/, api/,
+//     etc.). No transpilation, no bundling, no minification —
+//     the source is already valid ES2020 plain JavaScript.
+//  5. Generates the four Chrome Web Store icon sizes (16, 32,
+//     48, 128) from the source PNG (lens-icon-source.png,
+//     byte-identical to websites/aegisgate-site/public/logo.png).
+//     Auto-crops transparent/white padding; nearest-neighbor
+//     resize for crisp pixel rendering.
+//  6. Packages the dist/ directory into a single ZIP.
+//  7. Computes the SHA-256 of every file and emits
 //     INVENTORY.txt for the release notes.
 //
 // The build tool has zero third-party dependencies. The
@@ -42,10 +46,19 @@
 //	├── manifest.json
 //	├── content.js
 //	├── service-worker.js
-//	├── popup/popup.html
-//	├── popup/popup.js
+//	├── popup.html
+//	├── popup.js
 //	├── welcome.html
 //	├── welcome.js
+//	├── util/logger.js
+//	├── storage.js
+//	├── privacy/domain_hash.js
+//	├── privacy/schema.js
+//	├── detectors/regex.js
+//	├── detectors/luhn.js
+//	├── detectors/index.js
+//	├── detectors/from_platform.js
+//	├── api/client.js
 //	├── icons/icon-16.png
 //	├── icons/icon-32.png
 //	├── icons/icon-48.png
@@ -61,13 +74,14 @@
 //	2  source not found or unreadable
 //	3  schema validation failed
 //	4  lint check failed
-//	5  bundle or minify failed
+//	5  bundle failed
 //	6  package failed
+//	7  icon generation failed
 //
 // The build is deterministic. Given the same inputs (src/,
 // version, commit), the output is byte-for-byte identical.
 // This is required for the release artifact identity.
 //
-// v3.5.0+ Lens Phase 2.
+// v0.1.0+ Lens Phase 1 (plain-JS pivot, 2026-06-19).
 // =========================================================================
 package main

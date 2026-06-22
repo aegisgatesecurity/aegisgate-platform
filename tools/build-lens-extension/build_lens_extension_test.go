@@ -25,128 +25,8 @@ import (
 	"time"
 )
 
-// TestStripTypes_BasicCases verifies the type-stripper
-// handles the common cases correctly.
-func TestStripTypes_BasicCases(t *testing.T) {
-	cases := []struct {
-		name string
-		in   string
-		out  string
-	}{
-		{
-			name: "interface block",
-			in: `export interface Foo {
-x: number;
-y: string;
-}
-const a = 1;`,
-			out: "\nconst a = 1;",
-		},
-		{
-			name: "type alias single line",
-			in:   "export type X = number;",
-			out:  "",
-		},
-		{
-			name: "type alias multi-line",
-			in: `export type X =
-  | { a: 1 }
-  | { b: 2 };`,
-			out: "",
-		},
-		{
-			name: "import type",
-			in:   "import type { Foo } from \"./bar.js\";\nconst a = 1;",
-			out:  "const a = 1;",
-		},
-		{
-			name: "as cast",
-			in:   "const x = foo as string;",
-			out:  "const x = foo;",
-		},
-		{
-			name: "var type",
-			in:   "let x: number = 1;",
-			out:  "let x = 1;",
-		},
-		{
-			// After the build-3 fix, the type stripper correctly
-			// removes parameter type annotations (e.g., `: number`)
-			// entirely. The previous behavior left the `: ` in
-			// place, producing invalid JS like `function f(x:, y:)`.
-			name: "param type",
-			in:   "function f(x: number, y: string) { return x; }",
-			out:  "function f(x, y) { return x; }",
-		},
-		{
-			name: "return type",
-			in:   "function f(): number { return 1; }",
-			out:  "function f(){ return 1; }",
-		},
-		{
-			// After the build-3 fix, generic type arguments are
-			// stripped. Capital-letter identifiers only; lowercase
-			// (variable) identifiers with `<` are preserved as
-			// less-than operators.
-			name: "generic type arg after new",
-			in:   "const m = new Map<string, RegexPattern[]>();",
-			out:  "const m = new Map();",
-		},
-		{
-			name: "generic type arg after Set",
-			in:   "const set = new Set<Category>();",
-			out:  "const set = new Set();",
-		},
-		{
-			name: "generic type arg bare",
-			in:   "Promise<void>",
-			out:  "Promise",
-		},
-		{
-			name: "generic type arg ReadonlyMap",
-			in:   "ReadonlyMap<string, ProviderInfo>",
-			out:  "ReadonlyMap",
-		},
-		{
-			// Lowercase identifiers with `<` must NOT be stripped.
-			// This is a less-than operator.
-			name: "lowercase less-than preserved",
-			in:   "arr.filter(x => x < 10)",
-			out:  "arr.filter(x => x < 10)",
-		},
-		{
-			name: "lowercase less-than with capital ID",
-			in:   "if (a < b && c > d) { foo(); }",
-			out:  "if (a < b && c > d) { foo(); }",
-		},
-		{
-			name: "object literal with type-like keys (regression for C-2)",
-			in:   "chrome.runtime.sendMessage({ type: \"x\", enabled: true });",
-			out:  "chrome.runtime.sendMessage({ type: \"x\", enabled: true });",
-		},
-		{
-			name: "template literal with colon in expression (regression for build-1)",
-			in:   "return fail(`unknown field: ${key}`);",
-			out:  "return fail(`unknown field: ${key}`);",
-		},
-		{
-			name: "array of strings",
-			in:   "const arr: string[] = [\"a\", \"b\"];",
-			out:  "const arr = [\"a\", \"b\"];",
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			got := stripTypes(c.in)
-			if got != c.out {
-				t.Errorf("stripTypes mismatch:\n  in:  %q\n  got: %q\n  want: %q", c.in, got, c.out)
-			}
-		})
-	}
-}
-
 // TestSchemaCrossCheck verifies the schema cross-check
-// accepts matching Go/TS schemas and rejects mismatches.
+// accepts matching Go/JS schemas and rejects mismatches.
 func TestSchemaCrossCheck(t *testing.T) {
 	goSchema := &Schema{
 		Title: "Test",
@@ -155,20 +35,20 @@ func TestSchemaCrossCheck(t *testing.T) {
 			"bar": {Name: "bar", Type: "int64", Required: false},
 		},
 	}
-	tsSchemaMatching := &Schema{
+	jsSchemaMatching := &Schema{
 		Title: "Test",
 		Fields: map[string]SchemaField{
 			"foo": {Name: "foo", Type: "string", Required: true},
 			"bar": {Name: "bar", Type: "number", Required: false},
 		},
 	}
-	tsSchemaMissingField := &Schema{
+	jsSchemaMissingField := &Schema{
 		Title: "Test",
 		Fields: map[string]SchemaField{
 			"foo": {Name: "foo", Type: "string", Required: true},
 		},
 	}
-	tsSchemaExtraField := &Schema{
+	jsSchemaExtraField := &Schema{
 		Title: "Test",
 		Fields: map[string]SchemaField{
 			"foo": {Name: "foo", Type: "string", Required: true},
@@ -176,7 +56,7 @@ func TestSchemaCrossCheck(t *testing.T) {
 			"baz": {Name: "baz", Type: "string", Required: true},
 		},
 	}
-	tsSchemaTypeMismatch := &Schema{
+	jsSchemaTypeMismatch := &Schema{
 		Title: "Test",
 		Fields: map[string]SchemaField{
 			"foo": {Name: "foo", Type: "string", Required: true},
@@ -184,16 +64,16 @@ func TestSchemaCrossCheck(t *testing.T) {
 		},
 	}
 
-	if err := crossCheckSchemas(goSchema, tsSchemaMatching); err != nil {
+	if err := crossCheckSchemas(goSchema, jsSchemaMatching); err != nil {
 		t.Errorf("matching schemas should pass: %v", err)
 	}
-	if err := crossCheckSchemas(goSchema, tsSchemaMissingField); err == nil {
+	if err := crossCheckSchemas(goSchema, jsSchemaMissingField); err == nil {
 		t.Error("missing field should fail")
 	}
-	if err := crossCheckSchemas(goSchema, tsSchemaExtraField); err == nil {
+	if err := crossCheckSchemas(goSchema, jsSchemaExtraField); err == nil {
 		t.Error("extra field should fail")
 	}
-	if err := crossCheckSchemas(goSchema, tsSchemaTypeMismatch); err == nil {
+	if err := crossCheckSchemas(goSchema, jsSchemaTypeMismatch); err == nil {
 		t.Error("type mismatch should fail")
 	}
 }
@@ -271,7 +151,7 @@ func TestBuild_AllJSValidSyntax(t *testing.T) {
 // linter catches eval, innerHTML, etc.
 func TestBuild_LintCatchesForbiddenPatterns(t *testing.T) {
 	tmpDir := t.TempDir()
-	srcFile := filepath.Join(tmpDir, "bad.ts")
+	srcFile := filepath.Join(tmpDir, "bad.js")
 	if err := os.WriteFile(srcFile, []byte("const x = eval('1+1');\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +177,7 @@ func TestBuild_LintCatchesForbiddenPatterns(t *testing.T) {
 // no violations.
 func TestBuild_LintCleanFilePasses(t *testing.T) {
 	tmpDir := t.TempDir()
-	srcFile := filepath.Join(tmpDir, "good.ts")
+	srcFile := filepath.Join(tmpDir, "good.js")
 	content := `// SPDX-License-Identifier: Apache-2.0
 const x = 1;
 const y = "hello";
@@ -312,28 +192,6 @@ if (x > 0) { console.info("positive"); }
 	}
 	if len(vs) > 0 {
 		t.Errorf("expected no violations, got: %+v", vs)
-	}
-}
-
-// TestMinify_StripsCommentsAndBlankLines verifies the
-// minifier reduces a file with comments and blank lines.
-func TestMinify_StripsCommentsAndBlankLines(t *testing.T) {
-	in := `// Header comment
-const x = 1;
-
-/* Block comment
-   spanning multiple
-   lines
-*/
-const y = 2;
-// Trailing comment
-`
-	out := minifyJS(in)
-	if strings.Contains(out, "// Header") {
-		t.Errorf("minifier did not strip line comment: %q", out)
-	}
-	if strings.Contains(out, "/* Block") {
-		t.Errorf("minifier did not strip block comment: %q", out)
 	}
 }
 
