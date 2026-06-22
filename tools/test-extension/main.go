@@ -205,19 +205,37 @@ func validateInputs(cfg *Config) error {
 		return fmt.Errorf("dist is not a directory: %s", cfg.Dist)
 	}
 	// Required files in the dist directory.
+	// Day 15 fix: accept both flat (popup.html at root) and nested
+	// (popup/popup.html) layouts. The Platform's tools/build-lens-extension
+	// produces the flat layout; some forks use nested. Check both.
 	required := []string{
 		"manifest.json",
 		"content.js",
 		"service-worker.js",
-		"popup/popup.html",
-		"popup/popup.js",
+		"popup.html",
+		"popup.js",
 		"welcome.html",
 		"welcome.js",
+	}
+	// Nested-layout fallback: if a popup file is missing at root,
+	// also accept the nested layout (popup/popup.html). The Platform's
+	// current build-lens-extension produces flat layout; older forks
+	// used nested. Day 15 update: accept both for forward-compat.
+	nestedFor := map[string]string{
+		"popup.html": "popup/popup.html",
+		"popup.js":   "popup/popup.js",
 	}
 	for _, f := range required {
 		path := filepath.Join(cfg.Dist, f)       // #nosec G703 -- `f` is a hardcoded list; cfg.Dist is a developer CLI arg
 		if _, err := os.Stat(path); err != nil { // #nosec G304 G703 -- dist is a developer CLI arg; required file list is hardcoded
 			if os.IsNotExist(err) {
+				if alt, ok := nestedFor[f]; ok {
+					nestedPath := filepath.Join(cfg.Dist, alt)
+					if _, err2 := os.Stat(nestedPath); err2 == nil {
+						// Nested layout; this root-level file isn't required.
+						continue
+					}
+				}
 				return fmt.Errorf("required dist file missing: %s", f)
 			}
 			return fmt.Errorf("stat %s: %w", f, err)
