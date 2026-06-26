@@ -75,6 +75,32 @@ func bundle(cfg *Config) error {
 		return fmt.Errorf("copy .html files: %w", err)
 	}
 
+	// 3b. Copy every .wasm file (vendored ONNX Runtime WASM core).
+	//     These are loaded by ort.min.js via fetch(chrome.runtime.getURL(...)).
+	//     Without them, ort cannot initialize the inference session.
+	//     Day 32: Path C - vendor ONNX Runtime Web (Lesson #98).
+	wasmCount, err := copyTree(cfg.Src, cfg.Dist, ".wasm")
+	if err != nil {
+		return fmt.Errorf("copy .wasm files: %w", err)
+	}
+
+	// 3c. Copy every .mjs file (WASM loader glue for ort).
+	//     The .mjs files are ESM modules that ort.min.js dynamically
+	//     imports to bootstrap the WASM core.
+	mjsCount, err := copyTree(cfg.Src, cfg.Dist, ".mjs")
+	if err != nil {
+		return fmt.Errorf("copy .mjs files: %w", err)
+	}
+
+	// 3d. Copy the vendor/ directory LICENSE and SHA256SUMS files
+	//     (attribution and integrity verification artifacts).
+	//     These are required for license compliance (MIT for ort)
+	//     and threat-model documentation.
+	vendorDocCount, err := copyVendorDocs(cfg.Src, cfg.Dist)
+	if err != nil {
+		return fmt.Errorf("copy vendor docs: %w", err)
+	}
+
 	// 4. Copy the icons/ directory if it exists. icons.go
 	//    generates the icons into <src>/icons/ during build;
 	//    if the user runs `build-lens-extension` before
@@ -87,8 +113,8 @@ func bundle(cfg *Config) error {
 		return fmt.Errorf("copy icons: %w", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "bundled: %d .js + %d .html + %d icons\n",
-		jsCount, htmlCount, iconCount)
+	fmt.Fprintf(os.Stderr, "bundled: %d .js + %d .html + %d .wasm + %d .mjs + %d icons + %d vendor-docs\n",
+		jsCount, htmlCount, wasmCount, mjsCount, iconCount, vendorDocCount)
 	return nil
 }
 
@@ -149,7 +175,55 @@ func copyTree(srcRoot, dstRoot, ext string) (int, error) {
 	return count, err
 }
 
-// copyDirIfExists copies a directory tree from src to dst if
+// copyVendorDocs copies LICENSE and SHA256SUMS files from any
+// vendored component directory (src/vendor/<name>/) to dist. These
+// are required for license compliance (MIT for ONNX Runtime) and
+// threat-model documentation (SHA-256 pins).
+func copyVendorDocs(srcRoot, dstRoot string) (int, error) {
+	vendorDir := filepath.Join(srcRoot, "vendor")
+	info, err := os.Stat(vendorDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	if !info.IsDir() {
+		return 0, nil
+	}
+	count := 0
+	entries, err := os.ReadDir(vendorDir)
+	if err != nil {
+		return 0, err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		subDir := filepath.Join(vendorDir, entry.Name())
+		subEntries, err := os.ReadDir(subDir)
+		if err != nil {
+			return 0, err
+		}
+		for _, f := range subEntries {
+			if f.IsDir() {
+				continue
+			}
+			name := f.Name()
+			// Only copy LICENSE, SHA256SUMS, SOURCES.txt, README.md
+			if name != "LICENSE" && name != "SHA256SUMS" && name != "SOURCES.txt" && name != "README.md" {
+				continue
+			}
+			src := filepath.Join(subDir, name)
+			dst := filepath.Join(dstRoot, "vendor", entry.Name(), name)
+			if err := copyFile(src, dst); err != nil {
+				return 0, err
+			}
+			count++
+		}
+	}
+	return count, nil
+}
 // src exists. Returns the number of files copied, or 0 if src
 // doesn't exist. Returns an error only for unexpected failures.
 func copyDirIfExists(src, dst string) (int, error) {
