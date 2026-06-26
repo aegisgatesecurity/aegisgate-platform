@@ -102,6 +102,14 @@ func lintAll(srcDir string) ([]LintViolation, error) {
 			return err
 		}
 		if info.IsDir() {
+			// Skip the vendor/ directory: third-party code is
+			// vendored as-is and not subject to the Lens source
+			// linter rules (Day 32, Path C - vendored ONNX Runtime).
+			// The vendor/ contents are verified by SHA-256 pinning
+			// (see tools/verify-vendor.sh) rather than by lint.
+			if path != srcDir && filepath.Base(path) == "vendor" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if !strings.HasSuffix(path, ".js") && !strings.HasSuffix(path, ".html") {
