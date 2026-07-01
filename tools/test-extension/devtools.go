@@ -141,13 +141,13 @@ type cdpEvent struct {
 // to issue page-level commands (the pageSessionID is set).
 //
 // Flow (matches the CDP canonical pattern):
-//   1. GET /json/version → browser WebSocket URL
-//   2. Open browser WebSocket
-//   3. Browser-level: Target.setDiscoverTargets({discover: true})
-//   4. Browser-level: Target.getTargets → find a "page" type target
-//   5. Browser-level: Target.attachToTarget({targetId, flatten: true})
-//      → returns {sessionId}
-//   6. Set devtoolsClient.pageSessionID = sessionId
+//  1. GET /json/version → browser WebSocket URL
+//  2. Open browser WebSocket
+//  3. Browser-level: Target.setDiscoverTargets({discover: true})
+//  4. Browser-level: Target.getTargets → find a "page" type target
+//  5. Browser-level: Target.attachToTarget({targetId, flatten: true})
+//     → returns {sessionId}
+//  6. Set devtoolsClient.pageSessionID = sessionId
 func connectCDP(cfg *Config) (*devtoolsClient, error) {
 	// Step 1: GET /json/version
 	httpURL := fmt.Sprintf("http://127.0.0.1:%d/json/version", cfg.Port)
@@ -218,10 +218,10 @@ func connectCDP(cfg *Config) (*devtoolsClient, error) {
 
 // cdpTarget is a subset of Target.getTargets response
 type cdpTarget struct {
-	TargetID            string `json:"targetId"`
-	Type                string `json:"type"`
-	Title               string `json:"title"`
-	URL                 string `json:"url"`
+	TargetID             string `json:"targetId"`
+	Type                 string `json:"type"`
+	Title                string `json:"title"`
+	URL                  string `json:"url"`
 	WebSocketDebuggerURL string `json:"webSocketDebuggerUrl,omitempty"`
 }
 
