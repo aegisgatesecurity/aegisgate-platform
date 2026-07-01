@@ -95,7 +95,7 @@ jobs:
           ls -la /tmp/lens-artifacts/
 
       - name: Generate SLSA Build Level 2 provenance
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: /tmp/lens-artifacts/aegisgate-lens-${{ steps.meta.outputs.version }}.zip
 
