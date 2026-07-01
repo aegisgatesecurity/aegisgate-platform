@@ -224,6 +224,7 @@ func copyVendorDocs(srcRoot, dstRoot string) (int, error) {
 	}
 	return count, nil
 }
+
 // src exists. Returns the number of files copied, or 0 if src
 // doesn't exist. Returns an error only for unexpected failures.
 func copyDirIfExists(src, dst string) (int, error) {
