@@ -369,6 +369,11 @@ func (c *devtoolsClient) evaluate(ctx context.Context, expression string) (json.
 // the extension's content script (since we can't easily load
 // an actual Chrome extension in headless mode without
 // chrome.loadExtension()).
+//
+// v3.5.1+ (Bug C follow-up): no worldName specified, so the
+// script runs in the main world (the default). This is
+// required for the dist's ContentScript to attach input
+// listeners that fire on the page's prompt textarea.
 func (c *devtoolsClient) addScriptToEvaluateOnNewDocument(ctx context.Context, script string) error {
 	_, err := c.call("Page.addScriptToEvaluateOnNewDocument", map[string]interface{}{
 		"source": script,
