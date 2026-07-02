@@ -335,7 +335,7 @@ func extractNamedSliceFile(path, source, frameworkName string) ([]PatternDef, er
 				}
 			}
 		}
-		block := text[blockStart:blockEnd+1]
+		block := text[blockStart : blockEnd+1]
 		varName := m[1]
 		// Map varName to category. e.g., "injectionPatterns" -> "injection".
 		// Match the codegen tool: strip Patterns/Regexp/Regex suffix
