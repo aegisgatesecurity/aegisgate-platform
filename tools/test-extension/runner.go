@@ -139,17 +139,79 @@ func runOneTest(ctx context.Context, cdp *devtoolsClient, cfg *Config, c TestCas
 	return assertDetections(c, detections)
 }
 
-// parseDetections converts the CDP result (which is a
-// json.RawMessage of an array) into []lensDetection.
+// parseDetections converts the CDP result (a Runtime.evaluate
+// RemoteObject JSON wrapper) into []lensDetection.
+//
+// CDP's Runtime.evaluate returns a RemoteObject with this shape:
+//
+//	{
+//	  "type": "object",
+//	  "subtype": "array",
+//	  "className": "Array",
+//	  "value": [ ... actual array ... ],
+//	  "description": "Array(N)"
+//	}
+//
+// When returnByValue is true, the .value field contains the
+// JSON-serialized return value. The original implementation
+// (Bug C) tried to unmarshal the whole RemoteObject as the
+// array, which fails for objects and arrays alike.
+//
+// This implementation extracts .value first, then unmarshals
+// the inner array. Falls back to treating the raw input as a
+// bare array (for direct callers that pass the array directly,
+// which is what the unit tests do).
 func parseDetections(raw json.RawMessage) ([]lensDetection, error) {
 	if len(raw) == 0 {
 		return nil, nil
 	}
+	// CDP's Runtime.evaluate response is double-wrapped:
+	//   {
+	//     "result": {           <-- outer cdpResponse.Result
+	//       "type": "object",
+	//       "value": [ ... ]    <-- the actual array (RemoteObject.value)
+	//     }
+	//   }
+	// We need to extract result.value to get the array.
+	var outer struct {
+		Result json.RawMessage `json:"result"`
+	}
+	if err := json.Unmarshal(raw, &outer); err != nil || len(outer.Result) == 0 {
+		// Fallback: input might be a bare array or unwrapped RemoteObject.
+		return parseDetectionsFallback(raw)
+	}
+	// Now parse the RemoteObject: { type, value, ... }
+	var remoteObj struct {
+		Value json.RawMessage `json:"value"`
+	}
+	if err := json.Unmarshal(outer.Result, &remoteObj); err != nil || len(remoteObj.Value) == 0 {
+		// RemoteObject didn't have a .value field. Try parsing result directly.
+		return parseDetectionsFallback(outer.Result)
+	}
 	var dets []lensDetection
-	if err := json.Unmarshal(raw, &dets); err != nil {
+	if err := json.Unmarshal(remoteObj.Value, &dets); err != nil {
 		return nil, err
 	}
 	return dets, nil
+}
+
+// parseDetectionsFallback tries to parse the raw input as either a
+// bare JSON array (legacy call shape) or an unwrapped RemoteObject
+// (in case the cdpResponse layer is absent in some test paths).
+func parseDetectionsFallback(raw json.RawMessage) ([]lensDetection, error) {
+	// Try as a bare array first.
+	var dets []lensDetection
+	if err := json.Unmarshal(raw, &dets); err == nil {
+		return dets, nil
+	}
+	// Try as a RemoteObject (no cdpResponse wrapper).
+	var remoteObj struct {
+		Value json.RawMessage `json:"value"`
+	}
+	if err := json.Unmarshal(raw, &remoteObj); err == nil && len(remoteObj.Value) > 0 {
+		return dets, json.Unmarshal(remoteObj.Value, &dets)
+	}
+	return nil, fmt.Errorf("parseDetections: cannot extract detections array from %q", string(raw))
 }
 
 // assertDetections checks the actual detections against the

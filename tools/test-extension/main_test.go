@@ -390,3 +390,67 @@ func TestWrapScriptForTest(t *testing.T) {
 		t.Error("wrapped script should contain the original script")
 	}
 }
+
+func TestParseDetections_RemoteObjectEmpty(t *testing.T) {
+	// CDP RemoteObject wrapping an empty array (false positive case).
+	raw := json.RawMessage(`{"type":"object","subtype":"array","className":"Array","value":[],"description":"Array(0)"}`)
+	dets, err := parseDetections(raw)
+	if err != nil {
+		t.Fatalf("parseDetections failed: %v", err)
+	}
+	if len(dets) != 0 {
+		t.Errorf("expected 0 detections, got %d", len(dets))
+	}
+}
+
+func TestParseDetections_RemoteObjectWithDetections(t *testing.T) {
+	// CDP RemoteObject wrapping an array of two detections.
+	raw := json.RawMessage(`{"type":"object","subtype":"array","className":"Array","value":[{"category":"pii_email","severity":"high","match":"john.doe@example.com","start":13,"end":33,"pattern":"email_v1"},{"category":"pii_phone","severity":"high","match":"555-1234","start":0,"end":8,"pattern":"phone_v1"}],"description":"Array(2)"}`)
+	dets, err := parseDetections(raw)
+	if err != nil {
+		t.Fatalf("parseDetections failed: %v", err)
+	}
+	if len(dets) != 2 {
+		t.Fatalf("expected 2 detections, got %d", len(dets))
+	}
+	if dets[0].Category != "pii_email" || dets[0].Match != "john.doe@example.com" {
+		t.Errorf("dets[0] = %+v, want pii_email / john.doe@example.com", dets[0])
+	}
+	if dets[1].Category != "pii_phone" || dets[1].Match != "555-1234" {
+		t.Errorf("dets[1] = %+v, want pii_phone / 555-1234", dets[1])
+	}
+}
+
+func TestParseDetections_BareArrayFallback(t *testing.T) {
+	// Direct unit-test calls pass a bare array (not wrapped in RemoteObject).
+	// The original code expected this shape; the new code should still handle it.
+	raw := json.RawMessage(`[{"category":"pii_ssn","severity":"critical","match":"123-45-6789","start":10,"end":21,"pattern":"ssn_v1"}]`)
+	dets, err := parseDetections(raw)
+	if err != nil {
+		t.Fatalf("parseDetections failed: %v", err)
+	}
+	if len(dets) != 1 {
+		t.Fatalf("expected 1 detection, got %d", len(dets))
+	}
+	if dets[0].Category != "pii_ssn" {
+		t.Errorf("dets[0].Category = %q, want pii_ssn", dets[0].Category)
+	}
+}
+
+func TestParseDetections_EmptyInput(t *testing.T) {
+	// nil or empty input should return (nil, nil) — false positive case.
+	dets, err := parseDetections(nil)
+	if err != nil {
+		t.Fatalf("parseDetections(nil) failed: %v", err)
+	}
+	if dets != nil {
+		t.Errorf("expected nil detections, got %v", dets)
+	}
+	dets, err = parseDetections(json.RawMessage(""))
+	if err != nil {
+		t.Fatalf("parseDetections(empty) failed: %v", err)
+	}
+	if dets != nil {
+		t.Errorf("expected nil detections, got %v", dets)
+	}
+}
