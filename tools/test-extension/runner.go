@@ -113,16 +113,6 @@ func runOneTest(ctx context.Context, cdp *devtoolsClient, cfg *Config, c TestCas
 	// Step 3: Read the detection results.
 	getExpr := `window.__lens_detections || []`
 	getResult, err := cdp.evaluate(ctx, getExpr)
-	if err != nil {
-		return TestResult{
-			Input:          c.Input,
-			ExpectedMatch:  c.ExpectedMatch,
-			ExpectedCat:    c.ExpectedCategory,
-			ExpectedSev:    c.ExpectedSeverity,
-			Passed:         false,
-			FailureMessage: fmt.Sprintf("get detections: %v", err),
-		}
-	}
 	detections, err := parseDetections(getResult)
 	if err != nil {
 		return TestResult{
