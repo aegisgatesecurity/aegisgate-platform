@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/shared/crypto/enhanced"
+	"github.com/aegisgatesecurity/aegisguard/pkg/shared/crypto/enhanced"
 )
 
 func TestNewSHA256(t *testing.T) {

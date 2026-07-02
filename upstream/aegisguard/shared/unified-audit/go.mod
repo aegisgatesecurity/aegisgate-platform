@@ -1,4 +1,4 @@
-module github.com/aegisguardsecurity/aegisguard/shared/unified-audit
+module github.com/aegisgatesecurity/aegisguard/shared/unified-audit
 
 go 1.25
 

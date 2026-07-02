@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	agentcomm "github.com/aegisguardsecurity/aegisguard/pkg/agent-comm"
-	mcpserver "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
-	ratelimit "github.com/aegisguardsecurity/aegisguard/pkg/ratelimit"
+	agentcomm "github.com/aegisgatesecurity/aegisguard/pkg/agent-comm"
+	mcpserver "github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
+	ratelimit "github.com/aegisgatesecurity/aegisguard/pkg/ratelimit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

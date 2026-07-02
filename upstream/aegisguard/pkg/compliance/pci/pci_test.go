@@ -13,7 +13,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

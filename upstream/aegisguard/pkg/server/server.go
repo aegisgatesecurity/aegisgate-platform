@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	agentcomm "github.com/aegisguardsecurity/aegisguard/pkg/agent-comm"
-	mcpserver "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
-	audit "github.com/aegisguardsecurity/aegisguard/pkg/audit"
-	contextisolator "github.com/aegisguardsecurity/aegisguard/pkg/context-isolator"
-	policyengine "github.com/aegisguardsecurity/aegisguard/pkg/policy"
-	ratelimit "github.com/aegisguardsecurity/aegisguard/pkg/ratelimit"
-	toolregistry "github.com/aegisguardsecurity/aegisguard/pkg/tool-registry"
+	agentcomm "github.com/aegisgatesecurity/aegisguard/pkg/agent-comm"
+	mcpserver "github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
+	audit "github.com/aegisgatesecurity/aegisguard/pkg/audit"
+	contextisolator "github.com/aegisgatesecurity/aegisguard/pkg/context-isolator"
+	policyengine "github.com/aegisgatesecurity/aegisguard/pkg/policy"
+	ratelimit "github.com/aegisgatesecurity/aegisguard/pkg/ratelimit"
+	toolregistry "github.com/aegisgatesecurity/aegisguard/pkg/tool-registry"
 )
 
 // ServerConfig holds all configuration for the AegisGuard server

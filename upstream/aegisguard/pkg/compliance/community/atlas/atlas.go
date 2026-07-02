@@ -13,7 +13,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/common"
 )
 
 const (

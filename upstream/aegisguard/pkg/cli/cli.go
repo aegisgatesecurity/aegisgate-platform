@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/cli/commands"
-	"github.com/aegisguardsecurity/aegisguard/pkg/config"
+	"github.com/aegisgatesecurity/aegisguard/pkg/cli/commands"
+	"github.com/aegisgatesecurity/aegisguard/pkg/config"
 )
 
 // AgentCLI represents the AegisGuard CLI
