@@ -13,7 +13,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // RBACAuthorizer implements MCP ToolAuthorizer using AegisGuard RBAC

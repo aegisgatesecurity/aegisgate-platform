@@ -200,7 +200,15 @@ func copyVendorDocs(srcRoot, dstRoot string) (int, error) {
 		if !entry.IsDir() {
 			continue
 		}
-		subDir := filepath.Join(vendorDir, entry.Name())
+		entryName := entry.Name()
+		// Path-traversal defense (CodeQL G703): entryName comes
+		// from a directory listing and could be a symlink or contain
+		// path separators if the directory was tampered with. Skip
+		// anything that isn't a single, safe path component.
+		if !isSafePathComponent(entryName) {
+			continue
+		}
+		subDir := filepath.Join(vendorDir, entryName)
 		subEntries, err := os.ReadDir(subDir)
 		if err != nil {
 			return 0, err
@@ -209,13 +217,18 @@ func copyVendorDocs(srcRoot, dstRoot string) (int, error) {
 			if f.IsDir() {
 				continue
 			}
-			name := f.Name()
+			fName := f.Name()
+			// Path-traversal defense (CodeQL G703): same as above
+			if !isSafePathComponent(fName) {
+				continue
+			}
+			name := fName
 			// Only copy LICENSE, SHA256SUMS, SOURCES.txt, README.md
 			if name != "LICENSE" && name != "SHA256SUMS" && name != "SOURCES.txt" && name != "README.md" {
 				continue
 			}
 			src := filepath.Join(subDir, name)
-			dst := filepath.Join(dstRoot, "vendor", entry.Name(), name)
+			dst := filepath.Join(dstRoot, "vendor", entryName, name)
 			if err := copyFile(src, dst); err != nil {
 				return 0, err
 			}
@@ -258,4 +271,23 @@ func copyDirIfExists(src, dst string) (int, error) {
 		return nil
 	})
 	return count, err
+}
+
+// isSafePathComponent returns true if name is a single path component
+// (no separators, no "..", no leading dot). Used by copyVendorDocs to
+// defend against path-traversal (CodeQL G703) when consuming names
+// from a directory listing. The build tool only copies files from
+// src/vendor/<component>/{LICENSE,SHA256SUMS,...}, so legitimate
+// component names are always plain identifiers like "onnxruntime".
+func isSafePathComponent(name string) bool {
+	if name == "" || name == "." || name == ".." {
+		return false
+	}
+	if strings.HasPrefix(name, ".") {
+		return false
+	}
+	if strings.ContainsAny(name, "/\\") {
+		return false
+	}
+	return true
 }

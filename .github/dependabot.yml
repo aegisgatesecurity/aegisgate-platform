@@ -19,8 +19,8 @@ updates:
       # Vendored upstream — no external repo, local replace only
       - dependency-name: "github.com/aegisgatesecurity/aegisgate"
       - dependency-name: "github.com/aegisgatesecurity/aegisgate/*"
-      - dependency-name: "github.com/aegisguardsecurity/aegisguard"
-      - dependency-name: "github.com/aegisguardsecurity/aegisguard/*"
+      - dependency-name: "github.com/aegisgatesecurity/aegisguard"
+      - dependency-name: "github.com/aegisgatesecurity/aegisguard/*"
 
   # Docker base images
   - package-ecosystem: "docker"

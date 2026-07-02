@@ -12,8 +12,8 @@ package factory
 
 import (
 	"context"
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/common"
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/registry"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/registry"
 )
 
 // FrameworkFactory creates and configures compliance registries

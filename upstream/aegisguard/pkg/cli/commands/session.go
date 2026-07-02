@@ -8,8 +8,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/config"
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/config"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // ============================================================================

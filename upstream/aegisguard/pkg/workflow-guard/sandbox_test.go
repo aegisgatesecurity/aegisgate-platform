@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	agentprotocol "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol"
+	agentprotocol "github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol"
 )
 
 func TestNewSandbox(t *testing.T) {

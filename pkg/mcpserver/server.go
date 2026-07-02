@@ -19,11 +19,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
-	"github.com/aegisguardsecurity/aegisguard/pkg/audit"
-	"github.com/aegisguardsecurity/aegisguard/pkg/authorization"
-	"github.com/aegisguardsecurity/aegisguard/pkg/context-isolator"
-	"github.com/aegisguardsecurity/aegisguard/pkg/policy"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
+	"github.com/aegisgatesecurity/aegisguard/pkg/audit"
+	"github.com/aegisgatesecurity/aegisguard/pkg/authorization"
+	"github.com/aegisgatesecurity/aegisguard/pkg/context-isolator"
+	"github.com/aegisgatesecurity/aegisguard/pkg/policy"
 )
 
 // Config holds configuration for the embedded MCP server

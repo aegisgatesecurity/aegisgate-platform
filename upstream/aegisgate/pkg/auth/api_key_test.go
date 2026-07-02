@@ -98,7 +98,7 @@ func TestAPIKeyJSONMarshaling(t *testing.T) {
 		ID:        "test-id",
 		Name:      "Test Key",
 		KeyHash:   "secret_hash_should_not_appear",
-		KeyPrefix: "sk_live_PLACEHOLDER",
+		KeyPrefix: "sk_live_",
 		UserID:    "user-123",
 		Scopes:    []APIKeyScope{ScopeRead},
 		Active:    true,
@@ -153,7 +153,7 @@ func TestGenerateKey(t *testing.T) {
 	if resp.Key == "" {
 		t.Error("Key should be populated")
 	}
-	if !contains(resp.Key, "sk_live_PLACEHOLDER") {
+	if !contains(resp.Key, "sk_live_") {
 		t.Error("Key should have prefix")
 	}
 
@@ -178,7 +178,7 @@ func TestGenerateKey(t *testing.T) {
 
 func TestHashKey(t *testing.T) {
 	svc, _ := NewAPIKeyService(nil, nil)
-	key := "sk_live_PLACEHOLDER"
+	key := "sk_live_"
 	hash1 := svc.hashKey(key)
 	hash2 := svc.hashKey(key)
 

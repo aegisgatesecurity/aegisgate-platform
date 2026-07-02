@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol"
 )
 
 // Sandbox provides workflow-level security controls

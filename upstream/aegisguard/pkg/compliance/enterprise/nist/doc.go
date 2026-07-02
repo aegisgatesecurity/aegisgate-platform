@@ -13,7 +13,7 @@
 //
 // # Usage
 //
-//	import "github.com/aegisguardsecurity/aegisguard/pkg/compliance/enterprise/nist"
+//	import "github.com/aegisgatesecurity/aegisguard/pkg/compliance/enterprise/nist"
 //
 //	checker := nist.NewNISTFramework()
 //	finding, _ := checker.Check(nil)

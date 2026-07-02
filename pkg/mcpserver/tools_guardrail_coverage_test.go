@@ -25,7 +25,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/toolauth"
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
 )
 
 // =========================================================================

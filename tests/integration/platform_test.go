@@ -35,7 +35,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/dashboard"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
-	mcp "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
+	mcp "github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
 )
 
 // startTestProxy starts a proxy server for testing and returns cleanup function

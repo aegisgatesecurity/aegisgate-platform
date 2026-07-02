@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/api/handlers"
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/api/handlers"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // Server represents the REST API server
