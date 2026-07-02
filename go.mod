@@ -9,17 +9,17 @@ replace (
 	// AegisGate submodules (resolve from vendored upstream)
 	github.com/aegisgatesecurity/aegisgate/pkg/resilience => ./upstream/aegisgate/pkg/resilience
 	github.com/aegisgatesecurity/aegisgate/pkg/resilience/ratelimit => ./upstream/aegisgate/pkg/resilience/ratelimit
-	github.com/aegisguardsecurity/aegisguard => ./upstream/aegisguard
+	github.com/aegisgatesecurity/aegisguard => ./upstream/aegisguard
 
 	// AegisGuard submodules (resolve from vendored upstream)
-	github.com/aegisguardsecurity/aegisguard/pkg/unified-audit => ./upstream/aegisguard/pkg/unified-audit
-	github.com/aegisguardsecurity/aegisguard/shared/unified-audit => ./upstream/aegisguard/shared/unified-audit
+	github.com/aegisgatesecurity/aegisguard/pkg/unified-audit => ./upstream/aegisguard/pkg/unified-audit
+	github.com/aegisgatesecurity/aegisguard/shared/unified-audit => ./upstream/aegisguard/shared/unified-audit
 )
 
 require (
 	github.com/aegisgatesecurity/aegisgate v0.0.0-00010101000000-000000000000
 	github.com/aegisgatesecurity/aegisgate/pkg/resilience/ratelimit v0.0.0
-	github.com/aegisguardsecurity/aegisguard v0.0.0-00010101000000-000000000000
+	github.com/aegisgatesecurity/aegisguard v0.0.0-00010101000000-000000000000
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.18.0

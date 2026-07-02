@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
 )
 
 // TestGuardrailHandler_NilConnection_Covered covers conn == nil path in GuardrailHandler
