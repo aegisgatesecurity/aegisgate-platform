@@ -8,8 +8,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/config"
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/config"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // ToolInfo represents information about a tool

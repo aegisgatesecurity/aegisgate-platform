@@ -13,7 +13,7 @@ package mcp
 import (
 	"context"
 
-	toolexecutor "github.com/aegisguardsecurity/aegisguard/pkg/tool-executor"
+	toolexecutor "github.com/aegisgatesecurity/aegisguard/pkg/tool-executor"
 )
 
 // ToolExecutorAdapter adapts the tool executor to the MCP handler

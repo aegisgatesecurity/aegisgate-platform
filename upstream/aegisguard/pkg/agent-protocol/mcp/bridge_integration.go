@@ -45,7 +45,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/bridge"
+	"github.com/aegisgatesecurity/aegisguard/pkg/bridge"
 )
 
 // ============================================================================

@@ -22,10 +22,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
-	"github.com/aegisguardsecurity/aegisguard/pkg/audit"
-	"github.com/aegisguardsecurity/aegisguard/pkg/authorization"
-	"github.com/aegisguardsecurity/aegisguard/pkg/context-isolator"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
+	"github.com/aegisgatesecurity/aegisguard/pkg/audit"
+	"github.com/aegisgatesecurity/aegisguard/pkg/authorization"
+	"github.com/aegisgatesecurity/aegisguard/pkg/context-isolator"
 )
 
 // ============================================================================

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/common"
 )
 
 func TestAtlasFramework_Name(t *testing.T) {

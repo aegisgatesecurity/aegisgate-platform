@@ -14,7 +14,7 @@
 //
 //	AI Agent -> AegisGuard (MCP) -> Bridge -> AegisGate (HTTP Proxy) -> LLM Provider
 //
-// Import path: Uses real upstream module github.com/aegisguardsecurity/aegisguard/pkg/bridge
+// Import path: Uses real upstream module github.com/aegisgatesecurity/aegisguard/pkg/bridge
 // via go.mod replace directive.
 // =========================================================================
 
@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	// Import canonical bridge types from AegisGuard source
-	guardbridge "github.com/aegisguardsecurity/aegisguard/pkg/bridge"
+	guardbridge "github.com/aegisgatesecurity/aegisguard/pkg/bridge"
 )
 
 // ============================================================================

@@ -16,7 +16,7 @@ import (
 	"log/slog"
 	"time"
 
-	rbac "github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	rbac "github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // AegisGuardHandler is the complete MCP request handler for AegisGuard

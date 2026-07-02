@@ -9,7 +9,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	// Verify we can also import the upstream types directly
-	guardbridge "github.com/aegisguardsecurity/aegisguard/pkg/bridge"
+	guardbridge "github.com/aegisgatesecurity/aegisguard/pkg/bridge"
 )
 
 func TestNewPlatformBridge(t *testing.T) {

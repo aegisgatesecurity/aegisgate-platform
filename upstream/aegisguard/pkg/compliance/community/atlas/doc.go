@@ -14,7 +14,7 @@
 //
 // # Usage
 //
-//	import "github.com/aegisguardsecurity/aegisguard/pkg/compliance/community/atlas"
+//	import "github.com/aegisgatesecurity/aegisguard/pkg/compliance/community/atlas"
 //
 //	checker := atlas.NewAtlasFramework()
 //	finding, _ := checker.Check(nil)

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	agentprotocol "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol"
+	agentprotocol "github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol"
 )
 
 // Adapter converts between OpenClaw and MCP protocols

@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/config"
+	"github.com/aegisgatesecurity/aegisguard/pkg/config"
 )
 
 // HealthStatus represents the health status of a component

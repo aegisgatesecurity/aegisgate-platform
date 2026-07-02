@@ -4,7 +4,7 @@ package toolauthorizer
 import (
 	"context"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol"
 )
 
 // Matrix manages the authorization policies for tool calls

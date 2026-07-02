@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/common"
 )
 
 // Registry manages all compliance frameworks for AegisGuard

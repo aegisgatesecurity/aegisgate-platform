@@ -10,7 +10,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/core"
-	aglicense "github.com/aegisguardsecurity/aegisguard/pkg/license"
+	aglicense "github.com/aegisgatesecurity/aegisguard/pkg/license"
 )
 
 // ToAegisGateTier converts a platform tier to AegisGate's core.Tier
