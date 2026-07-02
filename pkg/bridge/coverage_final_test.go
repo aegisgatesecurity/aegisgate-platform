@@ -8,7 +8,7 @@ import (
 
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 
-	guardbridge "github.com/aegisguardsecurity/aegisguard/pkg/bridge"
+	guardbridge "github.com/aegisgatesecurity/aegisguard/pkg/bridge"
 )
 
 // ============================================================================

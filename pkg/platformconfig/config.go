@@ -23,7 +23,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate/pkg/config"
-	agconfig "github.com/aegisguardsecurity/aegisguard/pkg/config"
+	agconfig "github.com/aegisgatesecurity/aegisguard/pkg/config"
 	"gopkg.in/yaml.v3"
 )
 

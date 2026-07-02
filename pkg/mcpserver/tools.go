@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
-	"github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
-	toolexecutor "github.com/aegisguardsecurity/aegisguard/pkg/tool-executor"
+	"github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
+	toolexecutor "github.com/aegisgatesecurity/aegisguard/pkg/tool-executor"
 )
 
 // RegisterBuiltInTools registers the standard MCP tool set, gated by tier.

@@ -27,7 +27,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
-	mcp "github.com/aegisguardsecurity/aegisguard/pkg/agent-protocol/mcp"
+	mcp "github.com/aegisgatesecurity/aegisguard/pkg/agent-protocol/mcp"
 )
 
 // --------------------------------------------------------------------------
