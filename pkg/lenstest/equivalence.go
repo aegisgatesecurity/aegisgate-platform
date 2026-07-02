@@ -28,18 +28,18 @@ package lenstest
 // Source of truth: detectors/regex.js (the hand-written patterns).
 var HandWrittenEquivalents = map[string][]string{
 	// Hand-written -> ported equivalents.
-	"email_v1":           {"secret_detector_secret_api_key_v1", "pii_scanner_pii_email_v1"},
-	"phone_na_v1":        {"pii_scanner_pii_phone_v1"},
-	"ssn_v1":             {"pii_scanner_pii_ssn_v1"},
-	"credit_card_visa_v1":   {"pii_scanner_pii_credit_card_v1", "computeruse_guard_Computer_Use"},
+	"email_v1":                  {"secret_detector_secret_api_key_v1", "pii_scanner_pii_email_v1"},
+	"phone_na_v1":               {"pii_scanner_pii_phone_v1"},
+	"ssn_v1":                    {"pii_scanner_pii_ssn_v1"},
+	"credit_card_visa_v1":       {"pii_scanner_pii_credit_card_v1", "computeruse_guard_Computer_Use"},
 	"credit_card_mastercard_v1": {"pii_scanner_pii_credit_card_v1", "computeruse_guard_Computer_Use"},
-	"credit_card_amex_v1":     {"pii_scanner_pii_credit_card_v1", "computeruse_guard_Computer_Use"},
-	"aws_access_key_v1":   {"secret_detector_secret_aws_key_v1"},
-	"github_pat_v1":       {"secret_detector_secret_api_key_v1"},
-	"github_oauth_v1":     {"secret_detector_secret_api_key_v1"},
-	"stripe_live_key_v1":  {"secret_detector_secret_api_key_v1"},
-	"google_api_key_v1":   {"secret_detector_secret_google_api_key_v1"},
-	"rsa_private_key_v1":  {"secret_detector_secret_private_key_v1"},
+	"credit_card_amex_v1":       {"pii_scanner_pii_credit_card_v1", "computeruse_guard_Computer_Use"},
+	"aws_access_key_v1":         {"secret_detector_secret_aws_key_v1"},
+	"github_pat_v1":             {"secret_detector_secret_api_key_v1"},
+	"github_oauth_v1":           {"secret_detector_secret_api_key_v1"},
+	"stripe_live_key_v1":        {"secret_detector_secret_api_key_v1"},
+	"google_api_key_v1":         {"secret_detector_secret_google_api_key_v1"},
+	"rsa_private_key_v1":        {"secret_detector_secret_private_key_v1"},
 }
 
 // FindAcceptableNames returns the list of detection names that

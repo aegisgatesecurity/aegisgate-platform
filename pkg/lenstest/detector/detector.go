@@ -3,9 +3,9 @@
 //
 // Usage:
 //
-//   res, err := lenstest.Detect(ctx, "some prompt")
-//   if err != nil { ... }
-//   for _, d := range res.Detections { ... }
+//	res, err := lenstest.Detect(ctx, "some prompt")
+//	if err != nil { ... }
+//	for _, d := range res.Detections { ... }
 //
 // This is the canonical way to exercise the production detector
 // from Go tests. The same code path runs in the browser via the
@@ -58,10 +58,10 @@ type DetectResult struct {
 //
 // Not safe for concurrent use; create one per goroutine if needed.
 type Detector struct {
-	Script string // path to /tmp/detect.js
-	DistRoot string // path to /tmp/lens-FINAL28
-	NodePath string // path to node binary (default: "node")
-	Timeout time.Duration // per-call timeout (default: 30s)
+	Script   string        // path to /tmp/detect.js
+	DistRoot string        // path to /tmp/lens-FINAL28
+	NodePath string        // path to node binary (default: "node")
+	Timeout  time.Duration // per-call timeout (default: 30s)
 }
 
 // NewDetector returns a Detector with defaults.
