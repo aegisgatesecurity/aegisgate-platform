@@ -181,7 +181,7 @@ func copyTree(srcRoot, dstRoot, ext string) (int, error) {
 // threat-model documentation (SHA-256 pins).
 func copyVendorDocs(srcRoot, dstRoot string) (int, error) {
 	vendorDir := filepath.Join(srcRoot, "vendor")
-	info, err := os.Stat(vendorDir)
+	info, err := os.Stat(vendorDir) // #nosec G703 -- vendorDir is derived from the developer-supplied --src tree (same pattern as copyDirIfExists at line 244)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return 0, nil
