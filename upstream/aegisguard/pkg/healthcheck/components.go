@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/audit"
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/audit"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // ============================================================================

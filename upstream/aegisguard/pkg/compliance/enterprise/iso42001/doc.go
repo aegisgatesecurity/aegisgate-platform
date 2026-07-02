@@ -14,7 +14,7 @@
 //
 // # Usage
 //
-//	import "github.com/aegisguardsecurity/aegisguard/pkg/compliance/enterprise/iso42001"
+//	import "github.com/aegisgatesecurity/aegisguard/pkg/compliance/enterprise/iso42001"
 //
 //	checker := iso42001.NewISO42001Framework()
 //	finding, _ := checker.Check(nil)

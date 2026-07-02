@@ -1,4 +1,4 @@
-module github.com/aegisguardsecurity/aegisguard
+module github.com/aegisgatesecurity/aegisguard
 
 go 1.25.0
 
@@ -26,16 +26,16 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 )
 
-replace github.com/aegisguardsecurity/aegisguard/pkg/unified-audit => ./pkg/unified-audit
+replace github.com/aegisgatesecurity/aegisguard/pkg/unified-audit => ./pkg/unified-audit
 
-replace github.com/aegisguardsecurity/aegisguard/shared/unified-audit => ./shared/unified-audit
+replace github.com/aegisgatesecurity/aegisguard/shared/unified-audit => ./shared/unified-audit
 
-replace github.com/aegisguardsecurity/aegisguard/pkg/compliance => ./pkg/compliance
+replace github.com/aegisgatesecurity/aegisguard/pkg/compliance => ./pkg/compliance
 
-replace github.com/aegisguardsecurity/aegisguard/pkg/bridge => ./pkg/bridge
+replace github.com/aegisgatesecurity/aegisguard/pkg/bridge => ./pkg/bridge
 
-replace github.com/aegisguardsecurity/aegisguard/pkg/observability => ./pkg/observability
+replace github.com/aegisgatesecurity/aegisguard/pkg/observability => ./pkg/observability
 
-replace github.com/aegisguardsecurity/aegisguard/pkg/audit => ./pkg/audit
+replace github.com/aegisgatesecurity/aegisguard/pkg/audit => ./pkg/audit
 
-replace github.com/aegisguardsecurity/aegisguard/pkg/mcp => ./pkg/mcp
+replace github.com/aegisgatesecurity/aegisguard/pkg/mcp => ./pkg/mcp

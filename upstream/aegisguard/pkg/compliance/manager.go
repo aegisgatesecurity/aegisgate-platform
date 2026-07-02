@@ -14,9 +14,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/common"
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/factory"
-	"github.com/aegisguardsecurity/aegisguard/pkg/compliance/registry"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/factory"
+	"github.com/aegisgatesecurity/aegisguard/pkg/compliance/registry"
 )
 
 // Manager provides a high-level API for compliance operations

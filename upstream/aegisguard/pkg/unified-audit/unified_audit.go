@@ -2,7 +2,7 @@ package unifiedaudit
 
 import (
 	"context"
-	"github.com/aegisguardsecurity/aegisguard/shared/unified-audit"
+	"github.com/aegisgatesecurity/aegisguard/shared/unified-audit"
 )
 
 // AuditLog wraps the shared AuditLog type for local use.

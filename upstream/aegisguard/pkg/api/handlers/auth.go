@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // AuthHandler handles authorization-related API requests

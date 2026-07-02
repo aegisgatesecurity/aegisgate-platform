@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aegisguardsecurity/aegisguard/pkg/rbac"
+	"github.com/aegisgatesecurity/aegisguard/pkg/rbac"
 )
 
 // ConnectionSessionManager handles MCP connection-to-session binding
