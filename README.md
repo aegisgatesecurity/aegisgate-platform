@@ -12,6 +12,7 @@
 ![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)
 [![Docker](https://img.shields.io/badge/Docker-13.3MB-2496ED?logo=docker)](Dockerfile)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
+[![🛡️ Lens](https://img.shields.io/badge/Lens-v0.3.0--rc1-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
 
 > **The only AI security platform with native HTTP API, MCP, A2A, ACP, and RESPONSE protection — plus the Trust Framework (6th pillar).** Six pillars. One gateway. Zero external dependencies.
 
@@ -830,6 +831,27 @@ We welcome bug reports, security disclosures, documentation improvements, and fe
 **Code of Conduct**: Be kind. We follow the [Contributor Covenant 2.0](https://www.contributor-covenant.org/version/2/0/code_of_conduct/). A formal `CODE_OF_CONDUCT.md` is in the v3.4.0 backlog.
 
 ---
+
+## 🔗 Related Products
+
+AegisGate is a privacy-first security platform with a two-product line:
+
+- **[AegisGate Lens](https://github.com/aegisgatesecurity/aegisgate-lens)**
+  (this repo's sibling) — Free, privacy-first browser extension that
+  protects users across 6 AI providers (ChatGPT, Claude, Gemini,
+  Copilot, duck.ai, Perplexity) with 6-facet detection (PII, secrets,
+  XSS, prompt-injection, toxicity, compliance). 233/233 tests, zero
+  external dependencies, 8K-context ModernBERT model, Ed25519-signed
+  bundles, SLSA L2 provenance. [Product page](https://aegisgatesecurity.io/lens/) ·
+  [Lens vs Platform comparison](https://aegisgatesecurity.io/lens/compare/) ·
+  [Install from Chrome Web Store](https://chromewebstore.google.com/category/extensions/ai)
+
+The Lens is the consumer-facing layer. AegisGate Platform (this repo)
+is the server-side gateway: HTTP API, MCP, A2A, ACP, RESPONSE, plus
+the Trust Framework (6th pillar). The two products share the detection
+corpus and the MITRE ATLAS mapping. A Lens-detected threat can be
+promoted to a Platform-wide policy rule automatically (T2.2.2,
+roadmap).
 
 ## 🙏 Acknowledgments
 
