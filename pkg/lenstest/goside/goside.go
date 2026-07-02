@@ -128,7 +128,7 @@ func New(platformRoot string) (*Detector, error) {
 // the deriveOwaspCategory function. We replicate the same mapping
 // here so that Go-side category names match JS detector names.
 func extractOwaspFile(path string) ([]PatternDef, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path comes from filepath.WalkDir on the test corpus directory; not user input
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func owaspCategoryMap(category string) string {
 // with "atlas_" (e.g., "atlas_promptinjection"). This matches the
 // JS detector's category names.
 func extractAtlasFile(path string) ([]PatternDef, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path comes from filepath.WalkDir on the test corpus directory; not user input
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ func extractAtlasFile(path string) ([]PatternDef, error) {
 // Shape: varName = []*regexp.Regexp{ regexp.MustCompile(`...`), ... }
 // All regexes in a slice get the same source category.
 func extractNamedSliceFile(path, source, frameworkName string) ([]PatternDef, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path comes from filepath.WalkDir on the test corpus directory; not user input
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func extractNamedSliceFile(path, source, frameworkName string) ([]PatternDef, er
 // just need regex strings and the surrounding variable name.
 // Output is suitable for direct comparison to the JS patterns.
 func extractFromFile(path, source string) ([]PatternDef, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path comes from filepath.WalkDir on the test corpus directory; not user input
 	if err != nil {
 		return nil, err
 	}
