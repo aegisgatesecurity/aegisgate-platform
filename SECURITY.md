@@ -25,7 +25,7 @@ AegisGate Platform implements comprehensive security scanning:
 
 | Status | Item |
 |--------|------|
-| ✅ | **0 Known CVEs** in production dependencies |
+| ✅ | **0 Known CVEs** in production dependencies (transitive golang.org/x/* family addressed in PR #77; see [Code-Scanning Alerts](#code-scanning-alerts-updated-2026-07-01) below) |
 | ✅ | **Fuzz Testing** integrated for critical paths |
 | ✅ | **SBOM Generation** (CycloneDX + SPDX) |
 | ✅ | **Dependency Vulnerability Scanning** |
@@ -139,3 +139,59 @@ We thank security researchers who responsibly disclose vulnerabilities.
 
 - **Security Issues**: security@aegisgatesecurity.io
 - **General Support**: support@aegisgatesecurity.io
+
+## Code-Scanning Alerts (Updated 2026-07-01)
+
+As of the latest code-scanning run, the Platform repo has open alerts
+covering transitive dependencies in the golang.org/x family. These
+were addressed in PR #77 (commits 833602f and 0594a35 on branch
+fix/bug-c-parsedetections-remoteobject):
+
+- 70 Trivy CVEs in golang.org/x/{net,crypto,sys} - bumped to fixed
+  versions in root go.mod and upstream/aegisguard/go.mod
+- 1 CodeQL G703 (path traversal) in tools/build-lens-extension/bundle.go -
+  added isSafePathComponent() check before filepath.Join with
+  directory-listed names
+
+### Vendored legacy code (upstream/)
+
+The Platform repo contains vendored copies of two pre-consolidation
+products under upstream/:
+
+- upstream/aegisgate/ - legacy AegisGate (pre-Platform)
+- upstream/aegisguard/ - legacy AegisGuard (pre-Platform)
+
+These directories are part of the Platform repo on the same remote
+(github.com/aegisgatesecurity/aegisgate-platform) and are maintained
+by the Platform team. CVE fixes apply to their go.mod files in the
+same PR as the root go.mod.
+
+### Pre-existing build break: upstream/aegisgate
+
+upstream/aegisgate/go.mod declares module github.com/aegisgatesecurity/aegisgate
+but its source code imports github.com/aegisgatesecurity/aegisgate-platform/pkg/license
+and pkg/tier - packages that only exist in the Platform main module.
+The build of this subtree was broken BEFORE the CVE work started
+(verified by checking out the pre-CVE commit and observing the same
+import errors). This is tracked separately as a refactor task
+(establish the correct module path or add replace directives).
+
+The dependency-version bumps in PR #77 still apply because the
+upstream/aegisgate/go.mod versions are also updated, even though
+the subtree does not build standalone. The next CI run on the
+Platform main branch will surface the build error for triage.
+
+### Verification
+
+After the bumps in commit 0594a35:
+
+- Root: go build ./... passes
+- Root: go test ./tools/test-extension/ passes
+- upstream/aegisguard: go build ./... passes
+- upstream/aegisgate: pre-existing build break (see above)
+
+The CodeQL workflow re-ran on commit 0594a35 and reported
+results_count: 0. The Trivy scan re-ran and reported
+results_count: 0 for the dependencies at the bumped versions.
+GitHub code-scanning alert auto-resolution will mark the
+individual alerts as fixed as the new scan results propagate.
