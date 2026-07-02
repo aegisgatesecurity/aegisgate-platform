@@ -105,7 +105,7 @@ func (d *Detector) DetectBatch(ctx context.Context, prompts []string) ([]DetectR
 	}
 
 	// Build command
-	cmd := exec.CommandContext(ctx, d.NodePath, d.Script)
+	cmd := exec.CommandContext(ctx, d.NodePath, d.Script) // #nosec G204 -- d.NodePath and d.Script are from the test harness config (set by the test runner), not user input
 	cmd.Env = append(os.Environ(),
 		"LENS_DIST_ROOT="+d.DistRoot,
 	)
