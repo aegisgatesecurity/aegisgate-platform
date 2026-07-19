@@ -53,7 +53,7 @@ func TestBillingConfig_TierPrices(t *testing.T) {
 	}
 
 	expected := []string{
-		
+
 		"developer_monthly", "developer_annual",
 		"professional_monthly", "professional_annual",
 	}
@@ -105,7 +105,7 @@ func TestBillingConfig_TierProducts(t *testing.T) {
 
 	// 6 paid tiers should have rich objects; enterprise can be "".
 	richKeys := []string{
-		
+
 		"developer_monthly", "developer_annual",
 		"professional_monthly", "professional_annual",
 	}

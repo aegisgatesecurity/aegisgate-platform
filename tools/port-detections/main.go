@@ -257,10 +257,11 @@ func extractFromFile(path, source string) ([]patternExtraction, error) {
 // extractOwaspFile extracts patterns from OWASP LLM Top 10.
 //
 // Shape:
-//   return []OwaspPattern{
-//       {ID: "LLM01-001", Category: "LLM01", Name: "...", Regex: regexp.MustCompile(`...`)},
-//       ...
-//   }
+//
+//	return []OwaspPattern{
+//	    {ID: "LLM01-001", Category: "LLM01", Name: "...", Regex: regexp.MustCompile(`...`)},
+//	    ...
+//	}
 func extractOwaspFile(path string) ([]patternExtraction, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -464,14 +465,15 @@ func deriveOwaspFramework(id string) string {
 // extractAtlasFile extracts patterns from MITRE ATLAS compliance file.
 //
 // Shape (similar to OWASP):
-//   f.patterns = append(f.patterns, &Pattern{
-//       ID: "T1535.001",
-//       Technique: "T1535",
-//       Severity: SeverityHigh,
-//       Category: "PromptInjection",
-//       Description: "...",
-//       Regex: regexp.MustCompile(`...`),
-//   })
+//
+//	f.patterns = append(f.patterns, &Pattern{
+//	    ID: "T1535.001",
+//	    Technique: "T1535",
+//	    Severity: SeverityHigh,
+//	    Category: "PromptInjection",
+//	    Description: "...",
+//	    Regex: regexp.MustCompile(`...`),
+//	})
 func extractAtlasFile(path string) ([]patternExtraction, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -550,10 +552,11 @@ func extractAtlasFile(path string) ([]patternExtraction, error) {
 // extractNamedSliceFile extracts patterns from a file with named regexp slices.
 //
 // Shape:
-//   m.subliminalPatterns = []*regexp.Regexp{
-//       regexp.MustCompile(`(?i)...`),
-//       regexp.MustCompile(`(?i)...`),
-//   }
+//
+//	m.subliminalPatterns = []*regexp.Regexp{
+//	    regexp.MustCompile(`(?i)...`),
+//	    regexp.MustCompile(`(?i)...`),
+//	}
 //
 // The slice name becomes the Lens-side category hint.
 func extractNamedSliceFile(path, source, frameworkName, frameworkID string) ([]patternExtraction, error) {
@@ -1096,14 +1099,14 @@ func flagArg(flags string) string {
 func deriveMaskedCategory(jsPattern, fallback string) string {
 	// Common prefixes we can identify.
 	prefixes := map[string]string{
-		`sk-[a-zA-Z0-9]{48}`:           "secret_openai_key",
-		`sk-proj-`:                     "secret_openai_key",
-		`sk-ant-`:                      "secret_anthropic_key",
-		`AIza`:                         "secret_google_api_key",
-		`SK[0-9a-fA-F]{32}`:            "secret_twilio_key",
-		`SG\.[a-zA-Z0-9_-]{22}\.`:      "secret_sendgrid_key",
-		`api[_-]?key|apikey`:           "secret_generic_api_key",
-		`token|auth`:                   "secret_generic_token",
+		`sk-[a-zA-Z0-9]{48}`:      "secret_openai_key",
+		`sk-proj-`:                "secret_openai_key",
+		`sk-ant-`:                 "secret_anthropic_key",
+		`AIza`:                    "secret_google_api_key",
+		`SK[0-9a-fA-F]{32}`:       "secret_twilio_key",
+		`SG\.[a-zA-Z0-9_-]{22}\.`: "secret_sendgrid_key",
+		`api[_-]?key|apikey`:      "secret_generic_api_key",
+		`token|auth`:              "secret_generic_token",
 	}
 	for prefix, cat := range prefixes {
 		if strings.Contains(jsPattern, prefix) {

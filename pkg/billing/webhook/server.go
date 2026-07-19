@@ -144,7 +144,7 @@ type Subscription struct {
 
 // Tier pricing map (cents)
 var TierPrices = map[string]int64{
-	
+
 	"developer":    7900,
 	"professional": 24900,
 }

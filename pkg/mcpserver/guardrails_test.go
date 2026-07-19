@@ -576,7 +576,7 @@ func TestRateLimit_StatsRPM(t *testing.T) {
 		t    tier.Tier
 		rpm  int
 	}{
-		{"Community", tier.TierCommunity, 0},  // v3.5.0: -1 (soft-throttle) displays as 0
+		{"Community", tier.TierCommunity, 0},          // v3.5.0: -1 (soft-throttle) displays as 0
 		{"Developer", tier.TierDeveloper, 500},        // v3.1.1: 300 → 500
 		{"Professional", tier.TierProfessional, 5000}, // v3.1.1: 1500 → 5000
 		{"Enterprise", tier.TierEnterprise, 0},        // 0 = unlimited (shown as 0 in stats)

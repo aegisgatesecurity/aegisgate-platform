@@ -630,7 +630,7 @@ func findLeakablePattern(s, pattern string) string {
 	return ""
 }
 
-func isDigitByte(c byte) bool    { return c >= '0' && c <= '9' }
+func isDigitByte(c byte) bool { return c >= '0' && c <= '9' }
 func isDigit4(s string) bool {
 	return len(s) == 4 && isDigitByte(s[0]) && isDigitByte(s[1]) && isDigitByte(s[2]) && isDigitByte(s[3])
 }

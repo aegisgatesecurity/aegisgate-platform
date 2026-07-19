@@ -71,7 +71,7 @@ func TestRateLimitProxy(t *testing.T) {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, -1},      // v3.5.0: no hard cap (soft-throttle policy)
+		{TierCommunity, -1}, // v3.5.0: no hard cap (soft-throttle policy)
 		{TierDeveloper, 1000},
 		{TierProfessional, 10000},
 		{TierEnterprise, -1},
@@ -90,7 +90,7 @@ func TestRateLimitMCP(t *testing.T) {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, -1},     // v3.5.0: no hard cap (soft-throttle policy)
+		{TierCommunity, -1}, // v3.5.0: no hard cap (soft-throttle policy)
 		{TierDeveloper, 500},
 		{TierProfessional, 5000},
 		{TierEnterprise, -1},
