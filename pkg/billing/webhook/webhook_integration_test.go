@@ -158,7 +158,7 @@ func TestHandleCheckoutSessionCompletedWithMockServicesProfessional(t *testing.T
 	}
 }
 
-func TestHandleCheckoutSessionCompletedWithMockServicesStarter(t *testing.T) {
+func TestHandleCheckoutSessionCompletedWithMockServicesDeveloper(t *testing.T) {
 	handler := DefaultHandler("whsec_test")
 	licenseSvc := newMockLicenseService()
 	emailSvc := newMockEmailService()
@@ -167,14 +167,14 @@ func TestHandleCheckoutSessionCompletedWithMockServicesStarter(t *testing.T) {
 
 	ctx := context.Background()
 	event := &StripeEvent{
-		ID:   "evt_starter",
+		ID:   "evt_developer",
 		Type: "checkout.session.completed",
-		Data: json.RawMessage(`{"id": "cs_starter", "customer_email": "starter@test.com", "customer": "cus_starter", "payment_status": "paid", "amount_total": 2900}`),
+		Data: json.RawMessage(`{"id": "cs_developer", "customer_email": "developer@test.com", "customer": "cus_developer", "payment_status": "paid", "amount_total": 2900}`),
 	}
 
 	err := handler.handleCheckoutSessionCompleted(ctx, event)
 	if err != nil {
-		t.Errorf("handleCheckoutSessionCompleted() starter tier error = %v", err)
+		t.Errorf("handleCheckoutSessionCompleted() developer tier error = %v", err)
 	}
 }
 
@@ -391,10 +391,10 @@ func TestTierInferenceComplete(t *testing.T) {
 		{10000, "developer"},
 		{20000, "developer"},
 		{24899, "developer"},
-		{2900, "starter"},
-		{5000, "starter"},
-		{7000, "starter"},
-		{7899, "starter"},
+		{7900, "developer"},
+		{7900, "developer"},
+		{7900, "developer"},
+		{7899, "developer"},
 		{2899, "developer"},
 		{0, "developer"},
 		{-100, "developer"},

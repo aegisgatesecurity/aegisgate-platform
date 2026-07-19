@@ -4,7 +4,7 @@
 //
 // Verifies that the Stripe webhook handler:
 //   1. Rejects checkout sessions with unknown tier values (returns invalid_tier)
-//   2. Accepts all 4 valid tier values (starter, developer, professional, enterprise)
+//   2. Accepts 3 valid tier values (developer, professional, enterprise)
 //   3. Normalizes tier aliases (pro -> professional, free -> community)
 //   4. inferTierFromAmount returns the right tier for each price bucket
 // =========================================================================
@@ -20,7 +20,7 @@ import (
 )
 
 // makeCheckoutSession builds a JSON CheckoutSession payload for testing.
-// Tier can be a metadata tier string ("starter", "pro", "garbage") or empty
+// Tier can be a metadata tier string ("developer", "pro", "garbage") or empty
 // to force inference from amount.
 func makeCheckoutSession(id, email string, amountCents int64, metadataTier string) json.RawMessage {
 	md := map[string]string{}
@@ -47,7 +47,7 @@ func TestHandleCheckoutCompleted_RejectsInvalidTier(t *testing.T) {
 	gen := NewMockLicenseGenerator()
 	server.WithLicenseGenerator(gen)
 
-	// "starthr" is a typo of "starter" — should be rejected
+	// "developr" is a typo of "developer" — should be rejected
 	data := makeCheckoutSession("cs_invalid_001", "test1@example.com", 2900, "starthr")
 
 	err := server.handleCheckoutCompleted(data)
@@ -67,7 +67,7 @@ func TestHandleCheckoutCompleted_RejectsInvalidTier(t *testing.T) {
 // TestHandleCheckoutCompleted_AcceptsValidTiers verifies that all 4 valid
 // tier values pass validation and result in license generation.
 func TestHandleCheckoutCompleted_AcceptsValidTiers(t *testing.T) {
-	validTiers := []string{"starter", "developer", "professional", "enterprise"}
+	validTiers := []string{"developer", "professional", "enterprise"}
 	for _, tname := range validTiers {
 		t.Run(tname, func(t *testing.T) {
 			server := NewWebhookServer("8080")
@@ -107,7 +107,7 @@ func TestHandleCheckoutCompleted_NormalizesAliases(t *testing.T) {
 		{"pro", "professional"},
 		{"free", "community"},
 		{"PRO", "professional"},    // case-insensitive
-		{"  Starter  ", "starter"}, // whitespace-trimmed
+		{"  Developer  ", "developer"}, // whitespace-trimmed
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
@@ -131,9 +131,9 @@ func TestInferTierFromAmount_AllTiers(t *testing.T) {
 		amountCents int64
 		want        string
 	}{
-		{2900, "starter"},
 		{7900, "developer"},
-		{24900, "professional"},
+		{7900, "developer"},
+		{49900, "professional"},
 		{99999, "professional"}, // enterprise falls into professional bucket
 	}
 	for _, c := range cases {

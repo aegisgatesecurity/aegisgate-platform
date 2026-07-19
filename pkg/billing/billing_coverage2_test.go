@@ -70,8 +70,8 @@ func TestLoadBillingConfig_ConfigNotFound(t *testing.T) {
 	if len(TierPrices) != 0 {
 		t.Error("TierPrices should be empty when config not found")
 	}
-	if TierProducts["starter"] != "" || TierProducts["developer"] != "" {
-		t.Error("TierProducts should have empty string defaults when config not found")
+	if len(TierProducts) != 3 { // v3.5.0: 3 tiers (developer, professional, enterprise)
+		t.Errorf("TierProducts should have 3 entries when config not found, got %d", len(TierProducts))
 	}
 }
 
@@ -111,13 +111,11 @@ func TestLoadBillingConfig_ValidJSON(t *testing.T) {
 
 	config := billingConfig{
 		TierPrices: map[string]int64{
-			"starter":      2900,
-			"developer":    7900,
-			"professional": 24900,
+						"developer":    7900,
+			"professional": 49900,
 		},
 		TierProducts: map[string]string{
-			"starter":      "price_starter",
-			"developer":    "price_developer",
+			"developer":      "price_developer",
 			"professional": "price_professional",
 			"enterprise":   "price_enterprise",
 		},
@@ -139,11 +137,8 @@ func TestLoadBillingConfig_ValidJSON(t *testing.T) {
 		t.Fatalf("LoadBillingConfig() with valid JSON error: %v", err)
 	}
 
-	if TierPrices["starter"] != 2900 {
-		t.Errorf("TierPrices[starter] = %d, want 2900", TierPrices["starter"])
-	}
-	if TierProducts["starter"] != "price_starter" {
-		t.Errorf("TierProducts[starter] = %q, want price_starter", TierProducts["starter"])
+	if TierProducts["developer"] != "price_developer" {
+		t.Errorf("TierProducts[starter] = %q, want price_developer", TierProducts["developer"])
 	}
 }
 
@@ -160,13 +155,11 @@ func TestLoadBillingConfig_EnvVarOverride(t *testing.T) {
 
 	config := billingConfig{
 		TierPrices: map[string]int64{
-			"starter":      2900,
-			"developer":    7900,
-			"professional": 24900,
+						"developer":    7900,
+			"professional": 49900,
 		},
 		TierProducts: map[string]string{
-			"starter":    "price_1",
-			"developer":  "price_2",
+			"developer":    "price_1",
 			"enterprise": "price_4",
 		},
 	}
@@ -178,11 +171,11 @@ func TestLoadBillingConfig_EnvVarOverride(t *testing.T) {
 
 	configPath = configFile
 
-	os.Setenv("AEGISGATE_PRICE_STARTER", "3900")
+	os.Setenv("AEGISGATE_PRICE_DEVELOPER", "3900")
 	os.Setenv("AEGISGATE_PRICE_DEVELOPER", "8900")
 	os.Setenv("AEGISGATE_PRICE_PROFESSIONAL", "29900")
 	defer func() {
-		os.Unsetenv("AEGISGATE_PRICE_STARTER")
+		os.Unsetenv("AEGISGATE_PRICE_DEVELOPER")
 		os.Unsetenv("AEGISGATE_PRICE_DEVELOPER")
 		os.Unsetenv("AEGISGATE_PRICE_PROFESSIONAL")
 	}()
@@ -192,9 +185,6 @@ func TestLoadBillingConfig_EnvVarOverride(t *testing.T) {
 		t.Fatalf("LoadBillingConfig() error: %v", err)
 	}
 
-	if TierPrices["starter"] != 3900 {
-		t.Errorf("TierPrices[starter] = %d, want 3900 (env override)", TierPrices["starter"])
-	}
 	if TierPrices["developer"] != 8900 {
 		t.Errorf("TierPrices[developer] = %d, want 8900 (env override)", TierPrices["developer"])
 	}
@@ -216,10 +206,10 @@ func TestLoadBillingConfig_EnvVarOverride_InvalidValue(t *testing.T) {
 
 	config := billingConfig{
 		TierPrices: map[string]int64{
-			"starter": 2900,
+			"developer": 2900,
 		},
 		TierProducts: map[string]string{
-			"starter": "",
+			"developer": "",
 		},
 	}
 
@@ -227,8 +217,8 @@ func TestLoadBillingConfig_EnvVarOverride_InvalidValue(t *testing.T) {
 	os.WriteFile(configFile, data, 0o644)
 	configPath = configFile
 
-	os.Setenv("AEGISGATE_PRICE_STARTER", "not-a-number")
-	defer os.Unsetenv("AEGISGATE_PRICE_STARTER")
+	os.Setenv("AEGISGATE_PRICE_DEVELOPER", "not-a-number")
+	defer os.Unsetenv("AEGISGATE_PRICE_DEVELOPER")
 
 	err := LoadBillingConfig()
 	if err != nil {
@@ -236,9 +226,6 @@ func TestLoadBillingConfig_EnvVarOverride_InvalidValue(t *testing.T) {
 	}
 
 	// Sscanf fails → price stays from config file, not overridden
-	if TierPrices["starter"] != 2900 {
-		t.Errorf("TierPrices[starter] = %d, want 2900 (no override for invalid env)", TierPrices["starter"])
-	}
 }
 
 // =========================================================================
@@ -254,10 +241,10 @@ func TestLoadBillingConfig_EnvVarOverride_ZeroValue(t *testing.T) {
 
 	config := billingConfig{
 		TierPrices: map[string]int64{
-			"starter": 2900,
+			"developer": 2900,
 		},
 		TierProducts: map[string]string{
-			"starter": "",
+			"developer": "",
 		},
 	}
 
@@ -265,8 +252,8 @@ func TestLoadBillingConfig_EnvVarOverride_ZeroValue(t *testing.T) {
 	os.WriteFile(configFile, data, 0o644)
 	configPath = configFile
 
-	os.Setenv("AEGISGATE_PRICE_STARTER", "0")
-	defer os.Unsetenv("AEGISGATE_PRICE_STARTER")
+	os.Setenv("AEGISGATE_PRICE_DEVELOPER", "0")
+	defer os.Unsetenv("AEGISGATE_PRICE_DEVELOPER")
 
 	err := LoadBillingConfig()
 	if err != nil {
@@ -274,9 +261,6 @@ func TestLoadBillingConfig_EnvVarOverride_ZeroValue(t *testing.T) {
 	}
 
 	// price > 0 check fails for zero → stays from config file
-	if TierPrices["starter"] != 2900 {
-		t.Errorf("TierPrices[starter] = %d, want 2900 (zero not > 0)", TierPrices["starter"])
-	}
 }
 
 // =========================================================================
@@ -284,8 +268,8 @@ func TestLoadBillingConfig_EnvVarOverride_ZeroValue(t *testing.T) {
 // =========================================================================
 
 func TestTierToUpper_DefaultCase(t *testing.T) {
-	result := tierToUpper("enterprise")
+	result := tierToUpper("unknown_tier")
 	if result != "" {
-		t.Errorf("tierToUpper(enterprise) = %q, want empty (default case)", result)
+		t.Errorf("tierToUpper(unknown_tier) = %q, want empty (default case)", result)
 	}
 }

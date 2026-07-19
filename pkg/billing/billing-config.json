@@ -1,173 +1,159 @@
 {
-  "_comment_v3.2.0": "v3.2.0 Phase 1.4: tier Price IDs and module products. v3.2.0 Phase 2 (2026-06-05): Pro tier price change $249->$499/mo, $2490->$4990/yr. Corrected Stripe IDs after the $399 typo. Existing Pro customers: grandfathered at $249 if any (none at this release; Q2: lock-in at purchase price applies to modules). Webhook (Phase 1.3) reads lookup_key and unit_amount from the line item directly; Price IDs in this file are for invoice/audit-trail reconciliation and the customer portal.",
-  "tier_prices": {
-    "starter_annual": 29000,
-    "starter_monthly": 2900,
-    "developer_annual": 79000,
-    "developer_monthly": 7900,
-    "professional_annual": 499000,
-    "professional_monthly": 49900
-  },
-  "tier_products": {
-    "starter_annual": {
-      "price_id": "price_1TeyqAK2DQfk64XNy75DQDgp",
-      "product_id": "prod_UeHOe58Jur0kqZ",
-      "lookup_key": "tier_starter_annual",
-      "buy_button_id": "buy_btn_1Tez8VK2DQfk64XN8Ibi7Mip"
+    "tier_prices": {
+        "developer_annual": 79000,
+        "developer_monthly": 7900,
+        "professional_annual": 499000,
+        "professional_monthly": 49900
     },
-    "starter_monthly": {
-      "price_id": "price_1TeypbK2DQfk64XNWSZDUVbS",
-      "product_id": "prod_UeHOvcX0zfSFqJ",
-      "lookup_key": "tier_starter_monthly",
-      "buy_button_id": "buy_btn_1Tez2dK2DQfk64XN34yWfv3Z"
+    "tier_products": {
+        "developer_annual": {
+            "price_id": "price_1Teyu1K2DQfk64XNowU6lQaQ",
+            "product_id": "prod_UeHSDtDT4rK8t5",
+            "lookup_key": "tier_developer_annual",
+            "buy_button_id": "buy_btn_1TezDrK2DQfk64XNjhDhfBDO"
+        },
+        "developer_monthly": {
+            "price_id": "price_1TeytUK2DQfk64XNRCQAD93O",
+            "product_id": "prod_UeHSDtDT4rK8t5",
+            "lookup_key": "tier_developer_monthly",
+            "buy_button_id": "buy_btn_1TezBqK2DQfk64XN7Y79VYM7"
+        },
+        "professional_annual": {
+            "price_id": "price_1Tf6NwK2DQfk64XNcsYRFodX",
+            "product_id": "prod_UePCqLsvxE9Ve4",
+            "lookup_key": "tier_professional_annual",
+            "buy_button_id": "buy_btn_1Tf6VcK2DQfk64XNyG8vnU5X"
+        },
+        "professional_monthly": {
+            "price_id": "price_1Tf6NWK2DQfk64XNNosvo3H6A",
+            "product_id": "prod_UePBERSjp7tWwg",
+            "lookup_key": "tier_professional_monthly",
+            "buy_button_id": "buy_btn_1Tf6RqK2DQfk64XNJId23XtS"
+        },
+        "enterprise": ""
     },
-    "developer_annual": {
-      "price_id": "price_1Teyu1K2DQfk64XNowU6lQaQ",
-      "product_id": "prod_UeHSDtDT4rK8t5",
-      "lookup_key": "tier_developer_annual",
-      "buy_button_id": "buy_btn_1TezDrK2DQfk64XNjhDhfBDO"
+    "module_products": {
+        "hipaa": {
+            "price_id": "price_1TeziTK2DQfk64XNIAfFuMKj",
+            "product_id": "prod_UeIJfrI764urCv",
+            "lookup_key": "module_hipaa",
+            "monthly_cents": 9900,
+            "display_name": "HIPAA Compliance Module",
+            "required_tier": "developer",
+            "buy_button_id": "buy_btn_1Tezs0K2DQfk64XNDj0YlFV9"
+        },
+        "pci": {
+            "price_id": "price_1TezizK2DQfk64XNd94jsOdw",
+            "product_id": "prod_UeIJlcjs02nOjQ",
+            "lookup_key": "module_pci",
+            "monthly_cents": 9900,
+            "display_name": "PCI-DSS Compliance Module",
+            "required_tier": "developer",
+            "buy_button_id": "buy_btn_1TezwsK2DQfk64XNNtCrVuxu"
+        },
+        "soc2": {
+            "price_id": "price_1TezkWK2DQfk64XNju4fvxiz",
+            "product_id": "prod_UeILCR5QPuIbdf",
+            "lookup_key": "module_soc2",
+            "monthly_cents": 14900,
+            "display_name": "SOC 2 Compliance Module",
+            "required_tier": "developer",
+            "buy_button_id": "buy_btn_1TezyiK2DQfk64XNMMKeyYQO"
+        },
+        "iso42001": {
+            "price_id": "price_1TeznbK2DQfk64XNG11q38xt",
+            "product_id": "prod_UeIOU5K1HCH3Vn",
+            "lookup_key": "module_iso42001",
+            "monthly_cents": 7900,
+            "display_name": "ISO 42001 AI Compliance Module",
+            "required_tier": "professional",
+            "buy_button_id": "buy_btn_1Tf00WK2DQfk64XN0EvRqZcy"
+        },
+        "fedramp": {
+            "price_id": "price_1Tezp9K2DQfk64XNyX2vR5nj",
+            "product_id": "prod_UeIPsk3H8PksXv",
+            "lookup_key": "module_fedramp",
+            "monthly_cents": 49900,
+            "display_name": "FedRAMP Compliance Module",
+            "required_tier": "professional",
+            "buy_button_id": "buy_btn_1Tf01sK2DQfk64XNvjoZTO32"
+        },
+        "fips": {
+            "price_id": "price_1Tezq5K2DQfk64XN0mNGglT9",
+            "product_id": "prod_UeIQ5haHNP9U4w",
+            "lookup_key": "module_fips",
+            "monthly_cents": 29900,
+            "display_name": "FIPS 140-2/140-3 Compliance Module",
+            "required_tier": "professional",
+            "buy_button_id": "buy_btn_1Tf04ZK2DQfk64XNItWmUatb"
+        },
+        "eu_ai_act": {
+            "price_id": "price_1Tf10EK2DQfk64XNEUAIAct2026V330",
+            "product_id": "prod_UeHS2EUAIAct2026V330Phase1",
+            "lookup_key": "module_eu_ai_act",
+            "monthly_cents": 9900,
+            "display_name": "EU AI Act Compliance Module",
+            "required_tier": "professional",
+            "buy_button_id": "buy_btn_1Tf10EK2DQfk64XNEUAIActBuyBtnV330"
+        }
     },
-    "developer_monthly": {
-      "price_id": "price_1TeytUK2DQfk64XNRCQAD93O",
-      "product_id": "prod_UeHSDtDT4rK8t5",
-      "lookup_key": "tier_developer_monthly",
-      "buy_button_id": "buy_btn_1TezBqK2DQfk64XN7Y79VYM7"
+    "stripe_config": {
+        "publishable_key": "pk_live_51TT0vSK2DQfk64XNCkz1nS9rVZEZyUQXUtpS4aylNiMlTqo53fQ0vhif7wskRXnx3GB5o1jMZfAfcAqmB8po1QWI00cIxRUy9u",
+        "webhook_endpoint": "https://api.aegisgatesecurity.io/webhook/stripe",
+        "products": {
+            "starter_annual": {
+                "product_id": "prod_UeHOe58Jur0kqZ",
+                "name": "AegisGate Security Platform - Starter Tier (annual)"
+            },
+            "starter_monthly": {
+                "product_id": "prod_UeHOvcX0zfSFqJ",
+                "name": "AegisGate Security Platform - Starter Tier (monthly)"
+            },
+            "developer_annual": {
+                "product_id": "prod_UeHSDtDT4rK8t5",
+                "name": "AegisGate Security Platform - Developer Tier (annual)"
+            },
+            "developer_monthly": {
+                "product_id": "prod_UeHSDtDT4rK8t5",
+                "name": "AegisGate Security Platform - Developer Tier (monthly)"
+            },
+            "professional_annual": {
+                "product_id": "prod_UeHXC3v0los7cZ",
+                "name": "AegisGate Security Platform - Professional Tier (annual)"
+            },
+            "professional_monthly": {
+                "product_id": "prod_UeHWXXQHJ83JXW",
+                "name": "AegisGate Security Platform - Professional Tier (monthly)"
+            },
+            "module_hipaa": {
+                "product_id": "prod_UeIJfrI764urCv",
+                "name": "HIPAA Compliance Module (recurring)"
+            },
+            "module_pci": {
+                "product_id": "prod_UeIJlcjs02nOjQ",
+                "name": "PCI-DSS Compliance Module (recurring)"
+            },
+            "module_soc2": {
+                "product_id": "prod_UeILCR5QPuIbdf",
+                "name": "SOC 2 Compliance Module (recurring)"
+            },
+            "module_iso42001": {
+                "product_id": "prod_UeIOU5K1HCH3Vn",
+                "name": "ISO 42001 AI Compliance Module (recurring)"
+            },
+            "module_fedramp": {
+                "product_id": "prod_UeIPsk3H8PksXv",
+                "name": "FedRAMP Compliance Module (recurring)"
+            },
+            "module_fips": {
+                "product_id": "prod_UeIQ5haHNP9U4w",
+                "name": "FIPS 140-2/140-3 Compliance Module (recurring)"
+            },
+            "module_eu_ai_act": {
+                "product_id": "prod_UeHS2EUAIAct2026V330Phase1",
+                "name": "EU AI Act Compliance Module (recurring)"
+            }
+        }
     },
-    "professional_annual": {
-      "price_id": "price_1Tf6NwK2DQfk64XNcsYRFodX",
-      "product_id": "prod_UePCqLsvxE9Ve4",
-      "lookup_key": "tier_professional_annual",
-      "buy_button_id": "buy_btn_1Tf6VcK2DQfk64XNyG8vnU5X"
-    },
-    "professional_monthly": {
-      "price_id": "price_1Tf6NWK2DQfk64XNNosvo3H6A",
-      "product_id": "prod_UePBERSjp7tWwg",
-      "lookup_key": "tier_professional_monthly",
-      "buy_button_id": "buy_btn_1Tf6RqK2DQfk64XNJId23XtS"
-    },
-    "enterprise": ""
-  },
-  "module_products": {
-    "hipaa": {
-      "price_id": "price_1TeziTK2DQfk64XNIAfFuMKj",
-      "product_id": "prod_UeIJfrI764urCv",
-      "lookup_key": "module_hipaa",
-      "monthly_cents": 9900,
-      "display_name": "HIPAA Compliance Module",
-      "required_tier": "developer",
-      "buy_button_id": "buy_btn_1Tezs0K2DQfk64XNDj0YlFV9"
-    },
-    "pci": {
-      "price_id": "price_1TezizK2DQfk64XNd94jsOdw",
-      "product_id": "prod_UeIJlcjs02nOjQ",
-      "lookup_key": "module_pci",
-      "monthly_cents": 9900,
-      "display_name": "PCI-DSS Compliance Module",
-      "required_tier": "developer",
-      "buy_button_id": "buy_btn_1TezwsK2DQfk64XNNtCrVuxu"
-    },
-    "soc2": {
-      "price_id": "price_1TezkWK2DQfk64XNju4fvxiz",
-      "product_id": "prod_UeILCR5QPuIbdf",
-      "lookup_key": "module_soc2",
-      "monthly_cents": 14900,
-      "display_name": "SOC 2 Compliance Module",
-      "required_tier": "developer",
-      "buy_button_id": "buy_btn_1TezyiK2DQfk64XNMMKeyYQO"
-    },
-    "iso42001": {
-      "price_id": "price_1TeznbK2DQfk64XNG11q38xt",
-      "product_id": "prod_UeIOU5K1HCH3Vn",
-      "lookup_key": "module_iso42001",
-      "monthly_cents": 7900,
-      "display_name": "ISO 42001 AI Compliance Module",
-      "required_tier": "professional",
-      "buy_button_id": "buy_btn_1Tf00WK2DQfk64XN0EvRqZcy"
-    },
-    "fedramp": {
-      "price_id": "price_1Tezp9K2DQfk64XNyX2vR5nj",
-      "product_id": "prod_UeIPsk3H8PksXv",
-      "lookup_key": "module_fedramp",
-      "monthly_cents": 49900,
-      "display_name": "FedRAMP Compliance Module",
-      "required_tier": "professional",
-      "buy_button_id": "buy_btn_1Tf01sK2DQfk64XNvjoZTO32"
-    },
-    "fips": {
-      "price_id": "price_1Tezq5K2DQfk64XN0mNGglT9",
-      "product_id": "prod_UeIQ5haHNP9U4w",
-      "lookup_key": "module_fips",
-      "monthly_cents": 29900,
-      "display_name": "FIPS 140-2/140-3 Compliance Module",
-      "required_tier": "professional",
-      "buy_button_id": "buy_btn_1Tf04ZK2DQfk64XNItWmUatb"
-    },
-    "eu_ai_act": {
-      "price_id": "price_1Tf10EK2DQfk64XNEUAIAct2026V330",
-      "product_id": "prod_UeHS2EUAIAct2026V330Phase1",
-      "lookup_key": "module_eu_ai_act",
-      "monthly_cents": 9900,
-      "display_name": "EU AI Act Compliance Module",
-      "required_tier": "professional",
-      "buy_button_id": "buy_btn_1Tf10EK2DQfk64XNEUAIActBuyBtnV330"
-    }
-  },
-  "stripe_config": {
-    "publishable_key": "pk_live_51TT0vSK2DQfk64XNCkz1nS9rVZEZyUQXUtpS4aylNiMlTqo53fQ0vhif7wskRXnx3GB5o1jMZfAfcAqmB8po1QWI00cIxRUy9u",
-    "webhook_endpoint": "https://api.aegisgatesecurity.io/webhook/stripe",
-    "products": {
-      "starter_annual": {
-        "product_id": "prod_UeHOe58Jur0kqZ",
-        "name": "AegisGate Security Platform - Starter Tier (annual)"
-      },
-      "starter_monthly": {
-        "product_id": "prod_UeHOvcX0zfSFqJ",
-        "name": "AegisGate Security Platform - Starter Tier (monthly)"
-      },
-      "developer_annual": {
-        "product_id": "prod_UeHSDtDT4rK8t5",
-        "name": "AegisGate Security Platform - Developer Tier (annual)"
-      },
-      "developer_monthly": {
-        "product_id": "prod_UeHSDtDT4rK8t5",
-        "name": "AegisGate Security Platform - Developer Tier (monthly)"
-      },
-      "professional_annual": {
-        "product_id": "prod_UeHXC3v0los7cZ",
-        "name": "AegisGate Security Platform - Professional Tier (annual)"
-      },
-      "professional_monthly": {
-        "product_id": "prod_UeHWXXQHJ83JXW",
-        "name": "AegisGate Security Platform - Professional Tier (monthly)"
-      },
-      "module_hipaa": {
-        "product_id": "prod_UeIJfrI764urCv",
-        "name": "HIPAA Compliance Module (recurring)"
-      },
-      "module_pci": {
-        "product_id": "prod_UeIJlcjs02nOjQ",
-        "name": "PCI-DSS Compliance Module (recurring)"
-      },
-      "module_soc2": {
-        "product_id": "prod_UeILCR5QPuIbdf",
-        "name": "SOC 2 Compliance Module (recurring)"
-      },
-      "module_iso42001": {
-        "product_id": "prod_UeIOU5K1HCH3Vn",
-        "name": "ISO 42001 AI Compliance Module (recurring)"
-      },
-      "module_fedramp": {
-        "product_id": "prod_UeIPsk3H8PksXv",
-        "name": "FedRAMP Compliance Module (recurring)"
-      },
-      "module_fips": {
-        "product_id": "prod_UeIQ5haHNP9U4w",
-        "name": "FIPS 140-2/140-3 Compliance Module (recurring)"
-      },
-      "module_eu_ai_act": {
-        "product_id": "prod_UeHS2EUAIAct2026V330Phase1",
-        "name": "EU AI Act Compliance Module (recurring)"
-      }
-    }
-  }
+    "_comment_v3.5.0": "v3.5.0: Starter tier removed (footgun: customers could buy Starter from Stripe but ParseTier would reject it, silently falling back to Community). 4 tiers: Community (free), Developer ($79/mo), Professional ($499/mo), Enterprise (custom)."
 }

@@ -655,13 +655,13 @@ func TestInferTierFromAmount_BillingEdgeCases(t *testing.T) {
 	}{
 		{0, "developer"},
 		{2899, "developer"},
-		{2900, "starter"},
-		{5000, "starter"},
-		{7899, "starter"},
+		{7900, "developer"},
+		{7900, "developer"},
+		{7899, "developer"},
 		{7900, "developer"},
 		{10000, "developer"},
 		{24899, "developer"},
-		{24900, "professional"},
+		{49900, "professional"},
 		{50000, "professional"},
 		{100000, "professional"},
 	}
@@ -681,8 +681,8 @@ func TestInferTierFromAmount_BillingEdgeCases(t *testing.T) {
 // ============================================================================
 
 func TestTierPrices_BillingValues(t *testing.T) {
-	if TierPrices["starter"] != 2900 {
-		t.Errorf("Expected starter price 2900, got %d", TierPrices["starter"])
+	if TierPrices["developer"] != 7900 {
+		t.Errorf("Expected starter price 2900, got %d", TierPrices["developer"])
 	}
 	if TierPrices["developer"] != 7900 {
 		t.Errorf("Expected developer price 7900, got %d", TierPrices["developer"])
@@ -733,7 +733,7 @@ func TestMockLicenseGenerator_BillingNotFound(t *testing.T) {
 func TestMockLicenseGenerator_BillingMultiple(t *testing.T) {
 	m := NewMockLicenseGenerator()
 
-	key1, _ := m.GenerateLicense("cus_1", "starter", 30)
+	key1, _ := m.GenerateLicense("cus_1", "developer", 30)
 	key2, _ := m.GenerateLicense("cus_2", "developer", 365)
 	key3, _ := m.GenerateLicense("cus_3", "professional", 730)
 

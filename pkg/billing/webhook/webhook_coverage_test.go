@@ -78,7 +78,7 @@ func TestHandleInvoicePaid_LargeAmount(t *testing.T) {
 	invoiceData, _ := json.Marshal(map[string]interface{}{
 		"id":          "in_large",
 		"customer":    "cus_large",
-		"amount_paid": 2490000,
+		"amount_paid": 4990000,
 		"currency":    "usd",
 	})
 	err := srv.handleInvoicePaid(invoiceData)
@@ -211,7 +211,7 @@ func TestVerifySignature_MultipleSignatures(t *testing.T) {
 
 func TestInferTierFromAmount_Professional(t *testing.T) {
 	srv := &Server{}
-	for _, amt := range []int64{30000, 24900, 25000, 50000} {
+	for _, amt := range []int64{49900, 50000, 100000} {
 		if tier := srv.inferTierFromAmount(amt); tier != "professional" {
 			t.Errorf("inferTierFromAmount(%d) = %s, want professional", amt, tier)
 		}
@@ -227,14 +227,6 @@ func TestInferTierFromAmount_Developer(t *testing.T) {
 	}
 }
 
-func TestInferTierFromAmount_Starter(t *testing.T) {
-	srv := &Server{}
-	for _, amt := range []int64{2900, 3000, 5000, 7800} {
-		if tier := srv.inferTierFromAmount(amt); tier != "starter" {
-			t.Errorf("inferTierFromAmount(%d) = %s, want starter", amt, tier)
-		}
-	}
-}
 
 func TestInferTierFromAmount_Default(t *testing.T) {
 	srv := &Server{}

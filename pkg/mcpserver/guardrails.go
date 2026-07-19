@@ -90,7 +90,7 @@ type GuardrailConfig struct {
 	AuditViolations bool
 
 	// Features contains optional feature flags for tier-specific behavior.
-	// Reserved for future use; v3.1.1 removes the previous starter_mode flag.
+	// Reserved for future use; v3.5.0: Starter tier removed. No starter_mode flag exists.
 	Features []string
 }
 
@@ -146,7 +146,7 @@ type GuardrailMiddleware struct {
 // NewGuardrailMiddleware creates a new guardrail middleware for the given tier
 func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMiddleware {
 	// Tier-based RPM now reads directly from tier.Tier.RateLimitMCP().
-	// No starter_mode shim — Starter is a first-class tier as of v3.1.1.
+	// No starter_mode shim — Starter tier was removed in v3.5.0 (footgun: customers could buy Starter but get Community for free).
 	rpm := cfg.PlatformTier.RateLimitMCP()
 
 	// Initialize tool authorizer matrix with default policies

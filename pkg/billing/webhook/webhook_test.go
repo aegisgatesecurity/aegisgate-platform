@@ -443,14 +443,10 @@ func TestInferTierFromAmount(t *testing.T) {
 		amount int64
 		want   string
 	}{
-		{29900, "professional"}, // >= 24900
-		{24900, "professional"}, // >= 24900
-		{24899, "developer"},    // >= 7900
-		{7900, "developer"},     // >= 7900
-		{7899, "starter"},       // >= 2900
-		{2900, "starter"},       // >= 2900
-		{2899, "developer"},     // default fallback
-		{0, "developer"},        // default fallback
+		{49900, "professional"}, // Professional: $499/mo
+		{7900, "developer"},     // Developer: $79/mo
+		{7899, "developer"},     // Below Developer, defaults to developer (Community is free)
+		{0, "developer"},        // Default fallback
 	}
 	for _, tc := range tests {
 		if got := h.inferTierFromAmount(tc.amount); got != tc.want {

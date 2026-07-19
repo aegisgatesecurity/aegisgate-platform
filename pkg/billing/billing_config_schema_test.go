@@ -53,7 +53,7 @@ func TestBillingConfig_TierPrices(t *testing.T) {
 	}
 
 	expected := []string{
-		"starter_monthly", "starter_annual",
+		
 		"developer_monthly", "developer_annual",
 		"professional_monthly", "professional_annual",
 	}
@@ -73,7 +73,6 @@ func TestBillingConfig_TierPrices(t *testing.T) {
 	pairs := []struct {
 		monthly, annual string
 	}{
-		{"starter_monthly", "starter_annual"},
 		{"developer_monthly", "developer_annual"},
 		{"professional_monthly", "professional_annual"},
 	}
@@ -106,7 +105,7 @@ func TestBillingConfig_TierProducts(t *testing.T) {
 
 	// 6 paid tiers should have rich objects; enterprise can be "".
 	richKeys := []string{
-		"starter_monthly", "starter_annual",
+		
 		"developer_monthly", "developer_annual",
 		"professional_monthly", "professional_annual",
 	}
@@ -239,9 +238,9 @@ func TestBillingConfig_ModulePricesMatchLockedTable(t *testing.T) {
 	}
 }
 
-// TestBillingConfig_StarterConfig verifies the stripe_config section
+// TestBillingConfig_WebhookEndpoint verifies that the billing config
 // has the webhook endpoint and publishable key.
-func TestBillingConfig_StarterConfig(t *testing.T) {
+func TestBillingConfig_WebhookEndpoint(t *testing.T) {
 	data, err := os.ReadFile("billing-config.json")
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)

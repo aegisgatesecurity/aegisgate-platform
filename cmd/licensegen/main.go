@@ -37,7 +37,7 @@ import (
 
 var (
 	flagCustomer   = flag.String("customer", "", "Customer name or identifier (required)")
-	flagTier       = flag.String("tier", "professional", "License tier: community, developer, professional, enterprise")
+	flagTier       = flag.String("tier", "professional", "License tier: community, developer, professional, enterprise (Starter removed v3.5.0)")
 	flagDuration   = flag.String("duration", "365d", "License duration (e.g., 30d, 365d, never)")
 	flagKey        = flag.String("key", "", "Path to ECDSA P-256 private key PEM file (required)")
 	flagOutput     = flag.String("output", "", "Output file path (default: stdout)")

@@ -9,12 +9,14 @@ func TestParseTier(t *testing.T) {
 		err   bool
 	}{
 		{"community", TierCommunity, false},
-		{"starter", TierStarter, false}, // v3.1.1: added
 		{"developer", TierDeveloper, false},
 		{"professional", TierProfessional, false},
 		{"enterprise", TierEnterprise, false},
 		{"free", TierCommunity, false},
 		{"pro", TierProfessional, false},
+		{"dev", TierDeveloper, false},
+		{"ent", TierEnterprise, false},
+		{"starter", TierCommunity, true}, // v3.5.0: Starter removed; "starter" is now invalid
 		{"invalid", TierCommunity, true},
 	}
 	for _, tt := range tests {
@@ -47,45 +49,31 @@ func TestCanAccess(t *testing.T) {
 	if !TierProfessional.CanAccess(TierDeveloper) {
 		t.Error("Professional should access Developer features")
 	}
-	// v3.1.1: Starter tier access checks
-	if !TierStarter.CanAccess(TierCommunity) {
-		t.Error("Starter should access Community features")
-	}
-	if TierCommunity.CanAccess(TierStarter) {
-		t.Error("Community should NOT access Starter features")
-	}
-	if !TierDeveloper.CanAccess(TierStarter) {
-		t.Error("Developer should access Starter features")
-	}
-	if TierStarter.CanAccess(TierDeveloper) {
-		t.Error("Starter should NOT access Developer features")
-	}
-	if !TierProfessional.CanAccess(TierStarter) {
-		t.Error("Professional should access Starter features")
+	if TierDeveloper.CanAccess(TierProfessional) {
+		t.Error("Developer should NOT access Professional features")
 	}
 }
 
 // TestRateLimits tests the deprecated RateLimit() method (backward compat)
 func TestRateLimits(t *testing.T) {
 	// RateLimit() is deprecated but must return RateLimitProxy() for compat
-	if TierCommunity.RateLimit() != 120 {
-		t.Errorf("Community rate limit = %d, want 120", TierCommunity.RateLimit())
+	if TierCommunity.RateLimit() != -1 {
+		t.Errorf("Community rate limit = %d, want -1 (soft-throttle)", TierCommunity.RateLimit())
 	}
 	if TierEnterprise.RateLimit() != -1 {
 		t.Errorf("Enterprise rate limit = %d, want -1 (unlimited)", TierEnterprise.RateLimit())
 	}
 }
 
-// TestRateLimitProxy tests the new split rate limit for proxy traffic
+// TestRateLimitProxy tests the proxy rate limits (soft-throttle policy v3.5.0+)
 func TestRateLimitProxy(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, 120},
-		{TierStarter, 600},        // v3.1.1: added
-		{TierDeveloper, 1000},     // v3.1.1: 600 → 1000
-		{TierProfessional, 10000}, // v3.1.1: 3000 → 10000
+		{TierCommunity, -1},      // v3.5.0: no hard cap (soft-throttle policy)
+		{TierDeveloper, 1000},
+		{TierProfessional, 10000},
 		{TierEnterprise, -1},
 	}
 	for _, tt := range tests {
@@ -96,16 +84,15 @@ func TestRateLimitProxy(t *testing.T) {
 	}
 }
 
-// TestRateLimitMCP tests the new split rate limit for MCP tool calls
+// TestRateLimitMCP tests the MCP rate limits (soft-throttle policy v3.5.0+)
 func TestRateLimitMCP(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, 60},
-		{TierStarter, 300},       // v3.1.1: added
-		{TierDeveloper, 500},     // v3.1.1: 300 → 500
-		{TierProfessional, 5000}, // v3.1.1: 1500 → 5000
+		{TierCommunity, -1},     // v3.5.0: no hard cap (soft-throttle policy)
+		{TierDeveloper, 500},
+		{TierProfessional, 5000},
 		{TierEnterprise, -1},
 	}
 	for _, tt := range tests {
@@ -116,14 +103,13 @@ func TestRateLimitMCP(t *testing.T) {
 	}
 }
 
-// TestLogRetentionDays tests the updated 7-day Community retention
+// TestLogRetentionDays tests log retention per tier
 func TestLogRetentionDays(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
 		{TierCommunity, 7},
-		{TierStarter, 30}, // v3.1.1: added
 		{TierDeveloper, 30},
 		{TierProfessional, 90},
 		{TierEnterprise, -1},
@@ -136,14 +122,14 @@ func TestLogRetentionDays(t *testing.T) {
 	}
 }
 
-// TestMCPSpecificLimits tests the new MCP guardrail methods
+// TestMCPSpecificLimits tests the MCP guardrail methods
 func TestMCPSpecificLimits(t *testing.T) {
 	// MaxConcurrentMCP
 	if TierCommunity.MaxConcurrentMCP() != 5 {
 		t.Errorf("Community MaxConcurrentMCP = %d, want 5", TierCommunity.MaxConcurrentMCP())
 	}
-	if TierStarter.MaxConcurrentMCP() != 25 {
-		t.Errorf("Starter MaxConcurrentMCP = %d, want 25 (v3.1.1 Q3: matches Developer)", TierStarter.MaxConcurrentMCP())
+	if TierDeveloper.MaxConcurrentMCP() != 25 {
+		t.Errorf("Developer MaxConcurrentMCP = %d, want 25", TierDeveloper.MaxConcurrentMCP())
 	}
 	if TierEnterprise.MaxConcurrentMCP() != -1 {
 		t.Errorf("Enterprise MaxConcurrentMCP = %d, want -1", TierEnterprise.MaxConcurrentMCP())
@@ -231,7 +217,6 @@ func TestHasFeature(t *testing.T) {
 
 func TestAllFeatures(t *testing.T) {
 	commFeatures := AllFeatures(TierCommunity)
-	// Community now has 30 features (expanded from 10)
 	if len(commFeatures) < 25 {
 		t.Errorf("Community should have at least 25 features, got %d", len(commFeatures))
 	}
@@ -246,28 +231,32 @@ func TestAllFeatures(t *testing.T) {
 	}
 }
 
+// TestStarterTierRejected verifies that "starter" is rejected by ParseTier.
+// The Starter tier was removed in v3.5.0 because it was a footgun: customers
+// could buy Starter from Stripe ($29/mo), but ParseTier would reject
+// "starter", silently falling back to Community (free). They paid for
+// something they didn't receive.
+func TestStarterTierRejected(t *testing.T) {
+	_, err := ParseTier("starter")
+	if err == nil {
+		t.Error("ParseTier(\"starter\") should return an error (Starter tier removed in v3.5.0)")
+	}
+}
+
 // TestTrustPillar_TierMapping verifies the v3.2.0 Phase 4 Trust Framework
 // feature gate. Per the locked decision Q3, the Trust pillar is
-// Professional+ only. The signing primitives (Ed25519/ECDSA) are always
-// available as a Go library (pkg/trust/), but the *enforcement* (the
-// 5th-pillar runtime behavior) is gated to Professional and above.
+// Professional+ only.
 func TestTrustPillar_TierMapping(t *testing.T) {
-	// RequiredTier is Professional (NOT Enterprise — this is the second
-	// pillar after Compliance to land at Pro).
 	required := RequiredTier(FeatureTrustPillar)
 	if required != TierProfessional {
 		t.Errorf("FeatureTrustPillar required tier = %s, want Professional (per Q3 lock)", required)
 	}
 
-	// Community and Starter do NOT have the pillar.
-	for _, tier := range []Tier{TierCommunity, TierStarter} {
+	// Community and Developer do NOT have the pillar.
+	for _, tier := range []Tier{TierCommunity, TierDeveloper} {
 		if HasFeature(tier, FeatureTrustPillar) {
 			t.Errorf("tier %s should NOT have FeatureTrustPillar (per Q3 lock)", tier)
 		}
-	}
-	// Developer does NOT have the pillar (gate is at Professional, not Dev).
-	if HasFeature(TierDeveloper, FeatureTrustPillar) {
-		t.Error("Developer should NOT have FeatureTrustPillar (gate is at Professional)")
 	}
 	// Professional and Enterprise DO have the pillar.
 	for _, tier := range []Tier{TierProfessional, TierEnterprise} {
@@ -278,8 +267,7 @@ func TestTrustPillar_TierMapping(t *testing.T) {
 }
 
 // TestTrustPillar_FeatureKey verifies the string key resolves to the
-// expected Feature constant. The key "trust_pillar" is the canonical
-// name used in feature negotiation (middleware, contract YAML, etc.).
+// expected Feature constant.
 func TestTrustPillar_FeatureKey(t *testing.T) {
 	f, ok := FeatureForKey("trust_pillar")
 	if !ok {
@@ -288,7 +276,6 @@ func TestTrustPillar_FeatureKey(t *testing.T) {
 	if f != FeatureTrustPillar {
 		t.Errorf("FeatureForKey(\"trust_pillar\") = %v, want FeatureTrustPillar", f)
 	}
-	// Unknown key returns false.
 	if _, ok := FeatureForKey("nonexistent_pillar"); ok {
 		t.Error("FeatureForKey(\"nonexistent_pillar\") should return ok=false")
 	}

@@ -20,9 +20,9 @@ func TestCreateCheckoutSessionWithMockClient(t *testing.T) {
 	client := NewStripeClient()
 	ctx := context.Background()
 
-	session, err := client.CreateCheckoutSession(ctx, "starter", "starter@test.com", "https://example.com/success", "https://example.com/cancel")
+	session, err := client.CreateCheckoutSession(ctx, "developer", "developer@test.com", "https://example.com/success", "https://example.com/cancel")
 	if err != nil {
-		t.Errorf("CreateCheckoutSession() starter error = %v", err)
+		t.Errorf("CreateCheckoutSession() developer error = %v", err)
 	}
 	if session == nil {
 		t.Fatal("CreateCheckoutSession() returned nil session")
@@ -177,7 +177,7 @@ func TestCreateCheckoutSessionRealMode(t *testing.T) {
 		mockMode:  false,
 	}
 
-	session, err := client.CreateCheckoutSession(context.Background(), "starter", "test@test.com", "https://success", "https://cancel")
+	session, err := client.CreateCheckoutSession(context.Background(), "developer", "test@test.com", "https://success", "https://cancel")
 	if err == nil {
 		t.Error("CreateCheckoutSession() real mode should return error")
 	}
@@ -321,7 +321,7 @@ func TestTierProductsAndPrices(t *testing.T) {
 		t.Fatalf("LoadBillingConfig() failed: %v", err)
 	}
 
-	expectedTiers := []string{"starter", "developer", "professional", "enterprise"}
+	expectedTiers := []string{"developer", "developer", "professional", "enterprise"}
 
 	for _, tier := range expectedTiers {
 		if _, exists := TierProducts[tier]; !exists {
@@ -329,8 +329,8 @@ func TestTierProductsAndPrices(t *testing.T) {
 		}
 	}
 
-	if TierPrices["starter"] != 2900 {
-		t.Errorf("TierPrices[starter] = %d, want 2900", TierPrices["starter"])
+	if TierPrices["developer"] != 2900 {
+		t.Errorf("TierPrices[starter] = %d, want 2900", TierPrices["developer"])
 	}
 	if TierPrices["developer"] != 7900 {
 		t.Errorf("TierPrices[developer] = %d, want 7900", TierPrices["developer"])
@@ -464,7 +464,7 @@ func TestNewStripeClientMultipleTimes(t *testing.T) {
 func TestMockCreateCheckoutSessionAllTiers(t *testing.T) {
 	client := NewStripeClient()
 
-	tiers := []string{"starter", "developer", "professional", "enterprise"}
+	tiers := []string{"developer", "developer", "professional", "enterprise"}
 
 	for _, tier := range tiers {
 		t.Run(tier, func(t *testing.T) {

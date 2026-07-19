@@ -82,9 +82,8 @@ func TestTierMeetsRequirement(t *testing.T) {
 		tier   tierpkg.Tier
 		want   bool
 	}{
-		// HIPAA at Dev: should meet at Dev, Pro, Ent; fail at Community, Starter
+		// HIPAA at Dev: should meet at Dev, Pro, Ent; fail at Community
 		{license.ModuleHIPAA, tierpkg.TierCommunity, false},
-		{license.ModuleHIPAA, tierpkg.TierStarter, false},
 		{license.ModuleHIPAA, tierpkg.TierDeveloper, true},
 		{license.ModuleHIPAA, tierpkg.TierProfessional, true},
 		{license.ModuleHIPAA, tierpkg.TierEnterprise, true},
@@ -119,11 +118,11 @@ func TestIsFrameworkEnforced_OwnedAtCorrectTier(t *testing.T) {
 }
 
 func TestIsFrameworkEnforced_TierTooLow(t *testing.T) {
-	// HIPAA requires Dev+. Starter tier does NOT meet it.
-	result := makeResult(tierpkg.TierStarter, []string{license.ModuleHIPAA}, true)
+	// HIPAA requires Developer+. Community tier does NOT meet it.
+	result := makeResult(tierpkg.TierCommunity, []string{license.ModuleHIPAA}, true)
 
 	if IsFrameworkEnforced(license.ModuleHIPAA, result) {
-		t.Error("HIPAA at Starter (tier too low) should NOT be enforced")
+		t.Error("HIPAA at Community (tier too low) should NOT be enforced")
 	}
 }
 
@@ -180,7 +179,7 @@ func TestIsFrameworkEnforced_AllSixModules_MatrixDriven(t *testing.T) {
 		license.ModuleISO42001, license.ModuleFedRAMP, license.ModuleFIPS,
 	}
 	tiers := []tierpkg.Tier{
-		tierpkg.TierCommunity, tierpkg.TierStarter, tierpkg.TierDeveloper,
+		tierpkg.TierCommunity, tierpkg.TierDeveloper, tierpkg.TierDeveloper,
 		tierpkg.TierProfessional, tierpkg.TierEnterprise,
 	}
 
@@ -263,7 +262,7 @@ func TestEvaluateGating_ReasonCodes(t *testing.T) {
 		{
 			name:         "tier_too_low",
 			framework:    license.ModuleHIPAA,
-			result:       makeResult(tierpkg.TierStarter, []string{license.ModuleHIPAA}, true),
+			result:       makeResult(tierpkg.TierCommunity, []string{license.ModuleHIPAA}, true),
 			wantEnforced: false,
 			wantReason:   ReasonTierTooLow,
 		},
@@ -296,12 +295,12 @@ func TestEvaluateGating_ReasonCodes(t *testing.T) {
 }
 
 func TestEvaluateGating_IncludesUpgradeHints(t *testing.T) {
-	// HIPAA not enforced at Starter -> upgrade hints should mention
+	// HIPAA not enforced at Community -> upgrade hints should mention
 	// the module name and the required tier.
-	result := makeResult(tierpkg.TierStarter, nil, true)
+	result := makeResult(tierpkg.TierDeveloper, nil, true)
 	d := EvaluateGating(license.ModuleHIPAA, result)
 	if d.Enforced {
-		t.Fatal("expected HIPAA to NOT be enforced at Starter")
+		t.Fatal("expected HIPAA to NOT be enforced at Community")
 	}
 	if !strings.Contains(d.MissingUpgradeTo, "HIPAA") {
 		t.Errorf("MissingUpgradeTo should mention HIPAA, got %q", d.MissingUpgradeTo)

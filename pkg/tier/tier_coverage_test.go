@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Package tier provides additional test coverage for the tier package,
 // targeting the uncovered switch-case branches and default paths.
+//
+// v3.5.0: Starter tier removed. All tests updated to 4 tiers
+// (Community, Developer, Professional, Enterprise).
 package tier
 
 import "testing"
@@ -13,7 +16,6 @@ func TestStringAllTiers(t *testing.T) {
 		want string
 	}{
 		{TierCommunity, "community"},
-		{TierStarter, "starter"}, // v3.1.1: added
 		{TierDeveloper, "developer"},
 		{TierProfessional, "professional"},
 		{TierEnterprise, "enterprise"},
@@ -34,7 +36,6 @@ func TestDisplayNameAllTiers(t *testing.T) {
 		want string
 	}{
 		{TierCommunity, "Community"},
-		{TierStarter, "Starter"}, // v3.1.1: added
 		{TierDeveloper, "Developer"},
 		{TierProfessional, "Professional"},
 		{TierEnterprise, "Enterprise"},
@@ -54,12 +55,11 @@ func TestMaxUsersAllTiers(t *testing.T) {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, 3},
-		{TierStarter, 10},       // v3.1.1: added
-		{TierDeveloper, 25},     // v3.1.1: 10 → 25 (drift fix)
-		{TierProfessional, 100}, // v3.1.1: 50 → 100 (drift fix)
+		{TierCommunity, 5},       // v3.5.0: 3 → 5
+		{TierDeveloper, 25},
+		{TierProfessional, 100},
 		{TierEnterprise, -1},
-		{Tier(99), 3},
+		{Tier(99), 5},
 	}
 	for _, tt := range tests {
 		got := tt.tier.MaxUsers()
@@ -75,12 +75,11 @@ func TestMaxAgentsAllTiers(t *testing.T) {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, 2},
-		{TierStarter, 5},        // v3.1.1: added
-		{TierDeveloper, 25},     // v3.1.1: 5 → 25 (Q4 generosity)
-		{TierProfessional, 100}, // v3.1.1: 25 → 100 (drift fix)
+		{TierCommunity, 5},       // v3.5.0: 2 → 5
+		{TierDeveloper, 25},
+		{TierProfessional, 100},
 		{TierEnterprise, -1},
-		{Tier(99), 2},
+		{Tier(99), 5},
 	}
 	for _, tt := range tests {
 		got := tt.tier.MaxAgents()
@@ -97,7 +96,6 @@ func TestSupportLevelAllTiers(t *testing.T) {
 		want string
 	}{
 		{TierCommunity, "community"},
-		{TierStarter, "email"}, // v3.1.1: added (same as Developer)
 		{TierDeveloper, "email"},
 		{TierProfessional, "priority"},
 		{TierEnterprise, "24x7"},
@@ -111,14 +109,13 @@ func TestSupportLevelAllTiers(t *testing.T) {
 	}
 }
 
-// TestMaxConcurrentMCPAllTiers verifies MaxConcurrentMCP() for all tiers including default.
+// TestMaxConcurrentMCPAllTiers verifies MaxConcurrentMCP() for all tiers.
 func TestMaxConcurrentMCPAllTiers(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
 		{TierCommunity, 5},
-		{TierStarter, 25}, // v3.1.1: added (Q3: matches Developer)
 		{TierDeveloper, 25},
 		{TierProfessional, 100},
 		{TierEnterprise, -1},
@@ -132,14 +129,13 @@ func TestMaxConcurrentMCPAllTiers(t *testing.T) {
 	}
 }
 
-// TestMaxMCPToolsPerSessionAllTiers verifies MaxMCPToolsPerSession() for all tiers including default.
+// TestMaxMCPToolsPerSessionAllTiers verifies MaxMCPToolsPerSession() for all tiers.
 func TestMaxMCPToolsPerSessionAllTiers(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
 		{TierCommunity, 20},
-		{TierStarter, 50}, // v3.1.1: added (inherits Developer value)
 		{TierDeveloper, 50},
 		{TierProfessional, -1},
 		{TierEnterprise, -1},
@@ -153,14 +149,13 @@ func TestMaxMCPToolsPerSessionAllTiers(t *testing.T) {
 	}
 }
 
-// TestMCPExecTimeoutSecondsAllTiers verifies MCPExecTimeoutSeconds() for all tiers including default.
+// TestMCPExecTimeoutSecondsAllTiers verifies MCPExecTimeoutSeconds() for all tiers.
 func TestMCPExecTimeoutSecondsAllTiers(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
 		{TierCommunity, 30},
-		{TierStarter, 60}, // v3.1.1: added (inherits Developer value)
 		{TierDeveloper, 60},
 		{TierProfessional, 300},
 		{TierEnterprise, -1},
@@ -174,14 +169,13 @@ func TestMCPExecTimeoutSecondsAllTiers(t *testing.T) {
 	}
 }
 
-// TestMaxMCPSandboxMemoryMBAllTiers verifies MaxMCPSandboxMemoryMB() for all tiers including default.
+// TestMaxMCPSandboxMemoryMBAllTiers verifies MaxMCPSandboxMemoryMB() for all tiers.
 func TestMaxMCPSandboxMemoryMBAllTiers(t *testing.T) {
 	tests := []struct {
 		tier Tier
 		want int
 	}{
 		{TierCommunity, 256},
-		{TierStarter, 512}, // v3.1.1: added (inherits Developer value)
 		{TierDeveloper, 512},
 		{TierProfessional, 2048},
 		{TierEnterprise, -1},
@@ -200,15 +194,19 @@ func TestMaxMCPSandboxMemoryMBAllTiers(t *testing.T) {
 func TestInvalidTierDefaultBranches(t *testing.T) {
 	invalid := Tier(99)
 
-	// Verify RateLimitProxy default fallback
-	if got := invalid.RateLimitProxy(); got != 120 {
-		t.Errorf("Invalid Tier RateLimitProxy() = %d, want 120", got)
+	// v3.5.0: Community defaults changed to -1 (soft-throttle) and 5 (users/agents)
+	if got := invalid.RateLimitProxy(); got != -1 {
+		t.Errorf("Invalid Tier RateLimitProxy() = %d, want -1 (soft-throttle default)", got)
 	}
-	// Verify RateLimitMCP default fallback
-	if got := invalid.RateLimitMCP(); got != 60 {
-		t.Errorf("Invalid Tier RateLimitMCP() = %d, want 60", got)
+	if got := invalid.RateLimitMCP(); got != -1 {
+		t.Errorf("Invalid Tier RateLimitMCP() = %d, want -1 (soft-throttle default)", got)
 	}
-	// Verify LogRetentionDays default fallback
+	if got := invalid.MaxUsers(); got != 5 {
+		t.Errorf("Invalid Tier MaxUsers() = %d, want 5", got)
+	}
+	if got := invalid.MaxAgents(); got != 5 {
+		t.Errorf("Invalid Tier MaxAgents() = %d, want 5", got)
+	}
 	if got := invalid.LogRetentionDays(); got != 7 {
 		t.Errorf("Invalid Tier LogRetentionDays() = %d, want 7", got)
 	}
@@ -258,7 +256,7 @@ func TestParseTierAliases(t *testing.T) {
 		{"  professional  ", TierProfessional, false}, // whitespace
 		{"dev", TierDeveloper, false},
 		{"ent", TierEnterprise, false},
-		{"", TierCommunity, true}, // empty string
+		{"", TierCommunity, true},     // empty string
 		{" unknown ", TierCommunity, true},
 	}
 	for _, tt := range tests {
@@ -279,7 +277,7 @@ func TestAllFeaturesCounts(t *testing.T) {
 		minFeatures int
 	}{
 		{TierCommunity, 30},
-		{TierDeveloper, 53}, // Community 30 + Developer 23
+		{TierDeveloper, 53},
 		{TierProfessional, 73},
 		{TierEnterprise, 91},
 	}
@@ -288,7 +286,6 @@ func TestAllFeaturesCounts(t *testing.T) {
 		if len(got) < tt.minFeatures {
 			t.Errorf("AllFeatures(%s) returned %d features, want at least %d", tt.tier, len(got), tt.minFeatures)
 		}
-		// Should never exceed total features
 		total := len(allFeatures())
 		if len(got) > total {
 			t.Errorf("AllFeatures(%s) returned %d features, more than total %d", tt.tier, len(got), total)

@@ -143,7 +143,7 @@ func TestGuardrailHandler_GH_NilConn(t *testing.T) {
 func TestGuardrailHandler_GH_RateLimitExceeded(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -166,7 +166,7 @@ func TestGuardrailHandler_GH_RateLimitExceeded(t *testing.T) {
 func TestGuardrailHandler_GH_SessionToolLimitReached(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -191,7 +191,7 @@ func TestGuardrailHandler_GH_SessionToolLimitReached(t *testing.T) {
 func TestGuardrailHandler_GH_MaxSessionsReached(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -214,7 +214,7 @@ func TestGuardrailHandler_GH_MaxSessionsReached(t *testing.T) {
 func TestGuardrailHandler_GH_Disabled(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      false,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	handler := g.GuardrailHandler(makeRealHandler())
@@ -267,7 +267,7 @@ func TestGuardrailHandler_GH_ToolCallNilConn(t *testing.T) {
 func TestGuardrailHandler_GH_HighRiskTool(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -300,7 +300,7 @@ func TestGuardrailHandler_GH_InitializeWithSession(t *testing.T) {
 func TestGuardrailHandler_GH_AltToolCallMethod(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -321,7 +321,7 @@ func TestGuardrailHandler_GH_AltToolCallMethod(t *testing.T) {
 func TestGuardrailHandler_GH_ToolAuthCheck(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -342,7 +342,7 @@ func TestGuardrailHandler_GH_ToolAuthCheck(t *testing.T) {
 func TestGuardrailHandler_GH_InvalidParams(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -363,7 +363,7 @@ func TestGuardrailHandler_GH_InvalidParams(t *testing.T) {
 func TestGuardrailHandler_GH_StdioValidatorNotEnabled(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -429,7 +429,7 @@ func TestGuardrailMiddleware_Close(t *testing.T) {
 func TestGuardrailStats_AfterBlockedRequest(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -465,7 +465,7 @@ func TestOnRateLimitCheck_Unlimited(t *testing.T) {
 func TestOnRateLimitCheck_BucketExhausted(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	client := "192.168.1.200"
@@ -482,7 +482,7 @@ func TestOnRateLimitCheck_BucketExhausted(t *testing.T) {
 func TestOnRateLimitCheck_WindowReset(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	client := "192.168.1.250"
@@ -503,7 +503,7 @@ func TestOnRateLimitCheck_WindowReset(t *testing.T) {
 func TestOnRateLimitCheck_DifferentClients(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	for i := 0; i < 10; i++ {
@@ -521,7 +521,7 @@ func TestOnRateLimitCheck_DifferentClients(t *testing.T) {
 func TestOnSessionCreate_MaxReached(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	for i := 0; i < 5; i++ {
@@ -571,7 +571,7 @@ func TestOnSessionCreate_EnterpriseFillsMap(t *testing.T) {
 func TestOnSessionDestroy_WithValidSession(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -594,7 +594,7 @@ func TestOnSessionDestroy_WithValidSession(t *testing.T) {
 func TestGuardrailConfig_AllMethodsDisabled(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      false,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	err := g.OnSessionCreate("s", "a", "c")
@@ -619,7 +619,7 @@ func TestGuardrailConfig_AllMethodsDisabled(t *testing.T) {
 func TestNewGuardrailMiddleware_ConfigDisabled(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      false,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	if g.config.Enabled {
@@ -640,7 +640,7 @@ func TestNewGuardrailMiddleware_ConfigDisabled(t *testing.T) {
 func TestOnMemoryUsage_HardEnforcement(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	sessionID := "memory-test-session"
@@ -704,7 +704,7 @@ func TestOnToolCallWithContext_UnlimitedTier(t *testing.T) {
 func TestOnToolCallWithContext_TimedTier(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	ctx := context.Background()
@@ -721,7 +721,7 @@ func TestOnToolCallWithContext_TimedTier(t *testing.T) {
 func TestOnToolCallWithContext_DisabledConfig(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      false,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	ctx, cancel := g.OnToolCallWithContext(context.Background())
@@ -741,7 +741,7 @@ func TestOnToolCallWithContext_DisabledConfig(t *testing.T) {
 func TestOnToolCall_UntrackedSession(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -758,7 +758,7 @@ func TestOnToolCall_UntrackedSession(t *testing.T) {
 func TestOnToolCallWithAuth_ExistingSession(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierCommunity,
+		PlatformTier:  tier.TierDeveloper,
 		LogViolations: true,
 	}, "test-server")
 
@@ -891,7 +891,7 @@ func TestGuardrailStats_TierComparison(t *testing.T) {
 func TestRateLimitCleanup_RemovesExpired(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity,
+		PlatformTier: tier.TierDeveloper,
 	}, "test-server")
 
 	for i := 0; i < 5; i++ {
