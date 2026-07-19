@@ -1,47 +1,42 @@
 // SPDX-License-Identifier: Apache-2.0
-// Package lenstest provides the Phase 4 test corpus and harness
-// for the AegisGate Lens detector.
+// Package lenstest provides test infrastructure for the AegisGate
+// Platform's Lens integration.
 //
-// ⚠️ v0.2.0 A15 DEPRECATION NOTICE (2026-07-19):
+// ⚠️ v0.2.0 A15 CLEANUP (2026-07-19):
 //
-// This package was designed for Lens v0.1.0 (plain-JS pivot), which
-// had a standalone Node.js entry point for the detector. Lens v0.2.0
-// runs as a Chrome MV3 service worker with a different architecture,
-// different pattern names, and no standalone detect.js script.
+// This package was redesigned following the Lens v0.2.0 release.
+// The previous contents (detector/ subprocess, goside/ cross-validation,
+// equivalence.go, and the full corpus/) were designed for Lens v0.1.0
+// which had a standalone Node.js detector. Lens v0.2.0 is a Chrome
+// MV3 extension with no standalone Node.js entry point.
 //
-// The corpus tests (pkg/lenstest/corpus/) are gated behind a
-// //go:build manual tag and will not run in normal CI until the
-// harness is rebuilt for v0.2.0. The detector/ package still compiles
-// but will fail at runtime (MODULE_NOT_FOUND) because /tmp/detect.js
-// no longer exists.
+// The correct integration contract is:
 //
-// The goside/ package (Go-side detector for cross-validation) is
-// still valid and passes, but its pattern names need updating to
-// match v0.2.0's 4 detection facets.
+//	Lens v0.2.0 ──(4 fields over HTTPS)──► pkg/lensbackend/ ──► pkg/ioc/
 //
-// The lensbackend/ package (HTTP telemetry backend) is NOT affected
-// by this deprecation — it already uses the v0.2.0 schema with
-// lens_event_version: 1.
+// The privacy boundary test (formerly corpus/privacy_test.go) has been
+// moved to pkg/lensbackend/privacy_boundary_test.go where it validates
+// the same 9-field schema contract that the Lens extension must obey.
+// This test is self-contained (no external dependencies) and runs in
+// normal CI.
 //
-// Plan: rebuild the test harness for v0.2.0's architecture, then
-// remove the //go:build manual tags.
+// What was deleted:
+//   - pkg/lenstest/detector/  — Node.js subprocess wrapper for /tmp/detect.js
+//   - pkg/lenstest/goside/    — Go-side cross-validation (redundant without JS)
+//   - pkg/lenstest/equivalence.go — Go↔JS pattern name mapping (no JS target)
+//   - pkg/lenstest/corpus/    — Full corpus (8 gated tests, gen files, data)
+//   - pkg/lenstest/types.go   — CanonicalEntry (unused after corpus removal)
+//   - pkg/lenstest/testdata/  — 290MB WildChat parquet file
+//   - tools/build-lens-extension/ — v0.1.0 build tool (Lens has its own)
 //
-// The harness achieves "10x industry standard" rigor by:
-//  1. Testing the canonical Go patterns directly (ground truth)
-//  2. Testing the JS-detector port (via subprocess to node)
-//  3. Cross-validating Go vs JS output (drift detection)
-//  4. Measuring TPR, FPR, severity accuracy, per-pattern recall
+// What remains:
+//   - pkg/lensbackend/          — Production HTTP backend (12/12 tests pass)
+//   - pkg/lensbackend/privacy_boundary_test.go — Privacy invariants test
+//   - pkg/ioc/                  — Shared IOC store
+//   - cmd/lensbackend/          — Standalone pen-test binary
+//   - tools/port-detections/    — Platform→Lens code generator
+//   - tools/test-extension/     — Headless Chromium harness (separate module)
 //
-// Layout:
-//
-//	pkg/lenstest/
-//	  corpus/         - labeled test data (attacks, normal usage, per-pattern)
-//	  detector/       - detector wrapper for Go (calls JS via subprocess)
-//	  adversarial/    - obfuscation, banner-XSS, prototype-pollution tests
-//	  privacy/        - network-capture privacy boundary tests
-//	  crossprovider/  - cross-provider consistency tests
-//	  doc.go          - this file
-//
-// Plain Go, stdlib only (no testing frameworks beyond stdlib testing).
-// Deterministic via seeded RNG.
+// Design principle: Lens tests Lens. Platform tests Platform. The contract
+// between them is the 4-field schema, validated by TestPrivacyBoundary_NoLeak.
 package lenstest

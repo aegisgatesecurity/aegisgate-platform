@@ -1,4 +1,4 @@
-.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise lens-build lens-test lens-harness-test lens-testlab-test lens-e2e lens-clean help
+.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise lens-build lens-test lens-harness-test lens-testlab-test lens-e2e lens-privacy-test lens-backend-test lens-clean help
 
 # =========================================================================
 # AegisGate Security Platform — Makefile
@@ -112,25 +112,15 @@ TESTLAB_DIR := testlab
 # Targets
 # =========================================================================
 
-lens-build: ## Build the AegisGate Lens extension (uses ./tools/build-lens-extension/)
-	@echo "==> Building AegisGate Lens extension"
-	@if [ ! -d "$(LENS_SRC_DIR)" ]; then \
-		echo "ERROR: Lens source not found at $(LENS_SRC_DIR)"; \
-		echo "       Override with: make lens-build LENS_SRC_DIR=/path/to/lens/src"; \
-		exit 1; \
-	fi
-	@mkdir -p $(LENS_DIST_DIR)
-	@go run ./tools/build-lens-extension/ \
-		--src $(LENS_SRC_DIR) \
-		--dist $(LENS_DIST_DIR) \
-		--version $(LENS_VERSION) \
-		--commit $(LENS_COMMIT)
-	@echo "==> Lens extension built to $(LENS_DIST_DIR)"
-	@echo "    INVENTORY:"
-	@cat $(LENS_DIST_DIR)/INVENTORY.txt 2>/dev/null | sed 's/^/      /'
+lens-build: ## DEPRECATED: Lens v0.2.0 has its own build process. Use the Lens repo's make target instead.
+	@echo "==> DEPRECATED: Lens v0.2.0 has its own build process."
+	@echo "    The Platform's tools/build-lens-extension/ was designed for v0.1.0"
+	@echo "    and has been removed. Build Lens from its own repository instead."
+	@echo "    See: pkg/lenstest/doc.go for details."
+	@exit 1
 
-lens-harness-test: ## Run the test harness unit tests
-	@echo "==> Running test harness unit tests"
+lens-harness-test: ## Run the Lens test harness unit tests (headless Chromium)
+	@echo "==> Running Lens test harness unit tests"
 	@cd ./tools/test-extension && go test -race -count=1 ./...
 	@echo "==> All test harness unit tests passed"
 
@@ -164,7 +154,7 @@ lens-testlab-test: ## Run the lensbackend testlab integration tests (requires lo
 # testlab is independent -- we run it via lens-testlab-test.
 # We don't fail the whole lens-test if testlab fails (since
 # testlab is local-only); we just print a warning.
-lens-test: lens-build lens-harness-test ## Run the public Lens tests (build + harness)
+lens-test: lens-harness-test lens-privacy-test ## Run the Lens integration tests (harness + privacy boundary)
 
 lens-e2e: lens-test ## End-to-end: build + harness + (if testlab) integration test
 	@echo ""
@@ -198,6 +188,16 @@ lens-e2e: lens-test ## End-to-end: build + harness + (if testlab) integration te
 		echo "  One or more Lens tests FAILED." ; \
 	fi
 	@echo ""
+
+lens-privacy-test: ## Run the Lens privacy boundary test (9-field schema contract)
+	@echo "==> Running Lens privacy boundary test"
+	@go test -count=1 -v ./pkg/lensbackend/ -run TestPrivacyBoundary_NoLeak
+	@echo "==> Privacy boundary test passed"
+
+lens-backend-test: ## Run all Lens backend tests (validation, server, privacy)
+	@echo "==> Running all Lens backend tests"
+	@go test -count=1 -v ./pkg/lensbackend/...
+	@echo "==> All Lens backend tests passed"
 
 lens-clean: ## Remove the Lens build artifacts
 	@rm -rf $(LENS_DIST_DIR)
