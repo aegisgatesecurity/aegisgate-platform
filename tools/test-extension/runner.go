@@ -76,11 +76,28 @@ func runOneTest(ctx context.Context, cdp *devtoolsClient, cfg *Config, c TestCas
 		(() => {
 			const el = document.querySelector(%q);
 			if (!el) return false;
-			el.value = %q;
-			el.dispatchEvent(new Event('input', { bubbles: true }));
+			// Handle both <textarea>/<input> (use .value) and
+			// contenteditable <div> (use .innerText). The original
+			// test ext hardcoded .value which silently no-op'd on
+			// contenteditable elements (claude, gemini, duck.ai,
+			// grok.com) — causing 13/18 false failures on those
+			// providers. See REAL-VERIFICATION-2026-07-03.md.
+			var isContentEditable = (el.contentEditable === 'true' ||
+			                          el.isContentEditable === true);
+			if (isContentEditable) {
+				// Set innerText (preserves newlines) and dispatch
+				// input + change events so the Lens's listener fires.
+				el.innerText = %q;
+				el.dispatchEvent(new Event('input', { bubbles: true }));
+				el.dispatchEvent(new Event('change', { bubbles: true }));
+			} else {
+				el.value = %q;
+				el.dispatchEvent(new Event('input', { bubbles: true }));
+				el.dispatchEvent(new Event('change', { bubbles: true }));
+			}
 			return true;
 		})()
-	`, promptSelector(cfg.Provider), c.Input)
+	`, promptSelector(cfg.Provider), c.Input, c.Input)
 	setResult, err := cdp.evaluate(ctx, setExpr)
 	if err != nil {
 		return TestResult{
@@ -256,14 +273,16 @@ func strPtr(s *string) string {
 // prefixed with #, and attribute selectors are unchanged).
 func promptSelector(provider string) string {
 	switch provider {
-	case "chatgpt":
+	case "chatgpt", "chat-openai":
 		return "#prompt-textarea" // id selector
-	case "claude":
-		return "div[contenteditable='true']"
-	case "gemini":
+	case "claude", "gemini", "duck", "grok":
 		return "div[contenteditable='true']"
 	case "copilot":
 		return "#userInput" // id selector
+	case "perplexity", "duckduckgo":
+		return "textarea[id*=\"user-input\"]" // attribute selector
+	case "x":
+		return "#prompt-textarea" // x.com uses ChatGPT-style prompt
 	}
 	return "#prompt-textarea" // default
 }
