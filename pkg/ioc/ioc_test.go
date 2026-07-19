@@ -250,7 +250,7 @@ func TestFingerprint_StableAcrossGoVersions(t *testing.T) {
 	// Hard-coded expected fingerprints for a few known inputs.
 	// If this test ever fails after a Go upgrade, the canonical
 	// JSON encoding has changed and we need to investigate.
-	// These values were captured on Go 1.26.4.
+	// These values were captured on Go 1.26.5.
 	cases := []struct {
 		d    Detection
 		want string

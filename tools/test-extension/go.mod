@@ -1,6 +1,6 @@
 module github.com/aegisgatesecurity/aegisgate-platform/tools/test-extension
 
-go 1.26.4
+go 1.26.5
 
 // Only one third-party dependency: gorilla/websocket, used
 // for Chrome DevTools Protocol communication. The Platform's

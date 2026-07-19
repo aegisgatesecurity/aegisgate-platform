@@ -43,7 +43,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: "1.26.4"
+  GO_VERSION: "1.26.5"
   # The Lens repo. Must be public (or this workflow's token
   # must have access to it). If the repo is renamed or
   # moved, update this constant.
