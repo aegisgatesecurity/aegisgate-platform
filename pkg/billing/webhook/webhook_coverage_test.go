@@ -227,7 +227,6 @@ func TestInferTierFromAmount_Developer(t *testing.T) {
 	}
 }
 
-
 func TestInferTierFromAmount_Default(t *testing.T) {
 	srv := &Server{}
 	for _, amt := range []int64{0, 100, 2000, 2899} {

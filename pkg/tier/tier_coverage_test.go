@@ -55,7 +55,7 @@ func TestMaxUsersAllTiers(t *testing.T) {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, 5},       // v3.5.0: 3 → 5
+		{TierCommunity, 5}, // v3.5.0: 3 → 5
 		{TierDeveloper, 25},
 		{TierProfessional, 100},
 		{TierEnterprise, -1},
@@ -75,7 +75,7 @@ func TestMaxAgentsAllTiers(t *testing.T) {
 		tier Tier
 		want int
 	}{
-		{TierCommunity, 5},       // v3.5.0: 2 → 5
+		{TierCommunity, 5}, // v3.5.0: 2 → 5
 		{TierDeveloper, 25},
 		{TierProfessional, 100},
 		{TierEnterprise, -1},
@@ -256,7 +256,7 @@ func TestParseTierAliases(t *testing.T) {
 		{"  professional  ", TierProfessional, false}, // whitespace
 		{"dev", TierDeveloper, false},
 		{"ent", TierEnterprise, false},
-		{"", TierCommunity, true},     // empty string
+		{"", TierCommunity, true}, // empty string
 		{" unknown ", TierCommunity, true},
 	}
 	for _, tt := range tests {

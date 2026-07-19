@@ -340,7 +340,7 @@ const (
 	FeatureRequestCache     Feature = "request_caching"
 	FeatureRequestDedup     Feature = "request_dedup"
 	FeatureMTLS             Feature = "mtls"
-	FeatureRuntimeHarden   Feature = "runtime_hardening"
+	FeatureRuntimeHarden    Feature = "runtime_hardening"
 	FeatureCostAnomaly      Feature = "ml_cost_anomaly"
 	FeatureUsageAnomaly     Feature = "ml_usage_anomaly"
 	FeatureNISTView         Feature = "compliance_nist_view" // Enhanced NIST view
@@ -401,7 +401,7 @@ const (
 	FeatureMongoDB      Feature = "storage_mongo"
 	FeatureWhitelabel   Feature = "whitelabel"
 	FeatureCustomDomain Feature = "custom_domain"
-	FeatureVMSandbox   Feature = "mcp_vm_sandbox" // VM-level sandboxing
+	FeatureVMSandbox    Feature = "mcp_vm_sandbox" // VM-level sandboxing
 	// v3.2.0 Phase 4: Trust Framework (5th pillar). The Trust pillar is the
 	// 5th architectural pillar of the platform (alongside HTTP Proxy, MCP,
 	// A2A, and Compliance). It provides cryptographic agent identity,

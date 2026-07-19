@@ -111,11 +111,11 @@ func TestLoadBillingConfig_ValidJSON(t *testing.T) {
 
 	config := billingConfig{
 		TierPrices: map[string]int64{
-						"developer":    7900,
+			"developer":    7900,
 			"professional": 49900,
 		},
 		TierProducts: map[string]string{
-			"developer":      "price_developer",
+			"developer":    "price_developer",
 			"professional": "price_professional",
 			"enterprise":   "price_enterprise",
 		},
@@ -155,11 +155,11 @@ func TestLoadBillingConfig_EnvVarOverride(t *testing.T) {
 
 	config := billingConfig{
 		TierPrices: map[string]int64{
-						"developer":    7900,
+			"developer":    7900,
 			"professional": 49900,
 		},
 		TierProducts: map[string]string{
-			"developer":    "price_1",
+			"developer":  "price_1",
 			"enterprise": "price_4",
 		},
 	}

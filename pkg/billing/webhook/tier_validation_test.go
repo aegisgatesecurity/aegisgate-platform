@@ -106,7 +106,7 @@ func TestHandleCheckoutCompleted_NormalizesAliases(t *testing.T) {
 	}{
 		{"pro", "professional"},
 		{"free", "community"},
-		{"PRO", "professional"},    // case-insensitive
+		{"PRO", "professional"},        // case-insensitive
 		{"  Developer  ", "developer"}, // whitespace-trimmed
 	}
 	for _, c := range cases {
