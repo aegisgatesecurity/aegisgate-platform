@@ -6,7 +6,7 @@
 
 ![Version](https://img.shields.io/badge/Version-v3.3.0--beta.2-blue?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.26.4-00ADD8?logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
 ![Test Coverage](https://img.shields.io/badge/Coverage-97.8%25-green?logo=codecov)
 ![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)
@@ -562,7 +562,7 @@ Includes HPA autoscaling, NetworkPolicy, ServiceMonitor, rolling updates.
 
 ### Build from Source
 
-Requires Go 1.26.4 or later. The binary is **not** distributed in the repo (untracked in `.gitignore` — build it from the platform source):
+Requires Go 1.26.5 or later. The binary is **not** distributed in the repo (untracked in `.gitignore` — build it from the platform source):
 
 ```bash
 git clone https://github.com/aegisgatesecurity/aegisgate-platform.git
@@ -787,7 +787,7 @@ AegisGate ships in **5 tiers**: Community (free), Starter, Developer, Profession
 | **v3.3.0-beta.2** | ✅ **Current (Beta)** | **EU AI Act Module** (82 controls, 8 categories, Professional+ tier), **integrity hotfix from beta.1** (5 commits actually merged this time). Beta: first paying customer is v3.4.0+. |
 | **v3.3.0-beta.1** | ⚠️ Superseded | Original beta tagged 2026-06-08; release-integrity audit the same day found that EU AI Act work had not been merged to `main`. Tag preserved at SHA `64d0ab5` for historical record; do not use. |
 | **v3.2.0** | ✅ Supported | **Compliance Modules** (HIPAA/PCI/SOC 2/ISO 42001/FedRAMP/FIPS add-on pricing, instant Stripe webhook activation), **Compliance Scan Engine** (`/api/v1/compliance/scan` + `/api/v1/compliance/report`), **Trust Framework — 5th pillar** (per-session Ed25519 attestations, `/api/v1/trust/score`, Professional+ tier), **Pro tier repriced** $249→$499/mo, 5,484 tests |
-| **v3.1.1** | ✅ Supported | **Tier rate limit drift fix** (Starter modeled, Dev/Pro corrected), Go 1.26.4 security bump, 100% test coverage on `pkg/tier` |
+| **v3.1.1** | ✅ Supported | **Tier rate limit drift fix** (Starter modeled, Dev/Pro corrected), Go 1.26.5 security bump, 100% test coverage on `pkg/tier` |
 | **v3.1.0** | ⚠️ **DEPRECATED** | MITRE ATLAS 66 techniques, RESPONSE scanning, 97.8% coverage. End-of-life: **2026-09-30**. Security backports only through EOL. |
 | **v3.0.0** | ✅ Supported | AI Response Scanning (4th pillar), 24,806 RPS peak |
 | **v2.0.x** | ⚠️ **DEPRECATED** | End-of-life: **2026-12-31**. No security backports. Upgrade to v3.x required. |

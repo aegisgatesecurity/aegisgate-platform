@@ -16,9 +16,9 @@
 #   - Only ca-certificates is added in the production stage (minimal attack surface).
 # =========================================================================
 
-# Builder stage: Go 1.26.4 on Alpine, pinned by digest for reproducibility.
-# Update digest when bumping the Go version. Digest source: docker pull golang:1.26.4-alpine
-FROM golang:1.26.4-alpine@sha256:7a3e50096189ad57c9f9f865e7e4aa8585ed1585248513dc5cda498e2f41812c AS builder
+# Builder stage: Go 1.26.5 on Alpine, pinned by digest for reproducibility.
+# Update digest when bumping the Go version. Digest source: docker pull golang:1.26.5-alpine
+FROM golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS builder
 RUN apk add --no-cache git ca-certificates
 WORKDIR /build
 
@@ -37,8 +37,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /aegisgate-platform ./cmd/aegisgate-platform
 
 # Production stage: minimal Alpine, pinned by digest. Update digest when bumping Alpine.
-# Digest source: docker pull alpine:latest (as of 2026-06-08: alpine 3.23)
-FROM alpine@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4
+# Digest source: docker pull alpine:latest (as of 2026-07-19: alpine 3.23)
+FROM alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 RUN apk add --no-cache ca-certificates wget && \
     apk upgrade --no-cache libssl3 libcrypto3 && \
     adduser -D -g '' appuser

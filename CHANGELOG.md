@@ -237,7 +237,7 @@ All docs are marked with a uniform "self-drafted, not legal advice" header and a
 
 A 4-item hardening pass was applied ahead of v3.3.0-beta.1 to address the trivy misconfig findings from the self-attestation:
 
-1. **Dockerfile base images pinned by SHA256 digest.** Both `golang:1.26.4-alpine` (builder) and `alpine` (production) are now pinned to specific digests for reproducible builds. The `alpine:latest` tag (which trivy flagged as HIGH severity) is removed.
+1. **Dockerfile base images pinned by SHA256 digest.** Both `golang:1.26.5-alpine` (builder) and `alpine` (production) are now pinned to specific digests for reproducible builds. The `alpine:latest` tag (which trivy flagged as HIGH severity) is removed.
 2. **`seccompProfile.type: RuntimeDefault` added** to both pod-level and container-level `securityContext` in:
    - `deploy/k8s/manifests/03-deployment.yaml` (raw manifest)
    - `deploy/helm/aegisgate-platform/values.yaml` (Helm chart)
@@ -325,7 +325,7 @@ GET /api/v1/trust/attestations/latest?agent=ID    -> most recent (verified) atte
 
 ### Tooling
 
-- Go 1.26.3 → 1.26.4 (security fix for `crypto/x509` and `net/textproto` stdlib vulnerabilities). All GPG-signed commits.
+- Go 1.26.3 → 1.26.5 (security fix for `crypto/x509` and `net/textproto` stdlib vulnerabilities). All GPG-signed commits.
 - `aegisgate-platform` binary is no longer tracked in git. Build from source: `go build -o aegisgate-platform ./cmd/aegisgate-platform/`. (Phase 7)
 - GPG signing configured for all commits. All v3.2.0 commits show `verified: true, reason: valid` on github.com.
 

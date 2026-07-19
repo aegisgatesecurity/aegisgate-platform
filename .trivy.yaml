@@ -1,10 +1,11 @@
 # Trivy Configuration
 # https://aquasecurity.github.io/trivy/latest/docs/configuration/
+# Updated for Trivy 0.71+ (replaced deprecated scan.security-checks with scan.scanners)
 
 scan:
-  security-checks:
+  scanners:
     - vuln
-    - config
+    - misconfig
     - secret
 
 severity:
@@ -23,8 +24,8 @@ skip-dirs:
   - docs/
   - "*.md"
 
-# Scan IaC files
-iac:
+# IaC scanning configuration
+misconfig:
   include:
     - Dockerfile
     - docker-compose.yml
