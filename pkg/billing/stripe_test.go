@@ -247,20 +247,15 @@ func TestConfigureProducts(t *testing.T) {
 	if TierProducts["professional"] != "price_pro_456" {
 		t.Errorf("TierProducts[professional]=%q, want price_pro_456", TierProducts["professional"])
 	}
-	// starter/enterprise unchanged
-	if TierProducts["starter"] != "" {
-		t.Errorf("TierProducts[starter]=%q, want empty", TierProducts["starter"])
-	}
 }
 
 func TestTierToUpper(t *testing.T) {
 	tests := []struct {
 		input, want string
 	}{
-		{"starter", "STARTER"},
 		{"developer", "DEVELOPER"},
 		{"professional", "PROFESSIONAL"},
-		{"enterprise", ""},
+		{"enterprise", "ENTERPRISE"},
 		{"unknown", ""},
 	}
 	for _, tc := range tests {

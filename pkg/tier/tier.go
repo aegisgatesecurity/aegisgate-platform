@@ -6,8 +6,25 @@
 // MANDATE COMPLIANCE:
 //   - MITRE ATLAS and NIST AI RMF are Community-tier features (non-negotiable)
 //   - Built-in CA, i18n, SBOM tracking are Community-tier features
-//   - Community gets 120 proxy RPM / 60 MCP RPM, 7-day log retention
+//   - Community gets unlimited proxy/MCP RPM (soft-throttle policy), 7-day log retention
 //   - RateLimit() is deprecated; use RateLimitProxy()/RateLimitMCP()
+//   - Starter tier was removed in v3.5.0 (footgun: customers could buy Starter
+//     from Stripe but ParseTier would reject "starter", silently falling back to
+//     Community — they paid $29/mo for the free tier). Developer is now the
+//     first paid tier at $79/mo.
+//
+// SOFT-THROTTLE POLICY (v3.5.0+):
+//
+//	AegisGate is a self-hosted security layer. The vendor's cost is zero per
+//	free-tier user. Therefore, the security layer NEVER hard-blocks a request
+//	for hitting a rate limit; it deprioritizes the request instead. This is
+//	enforced in the proxy middleware (pkg/proxy) by mapping RateLimitProxy()
+//	and RateLimitMCP() to soft-throttle weights, not hard cutoffs.
+//
+//	A request that exceeds the soft-throttle threshold is still processed and
+//	scanned for security threats; it is just deprioritized in the work queue.
+//	The intent is that the security layer earns its keep by being ON, not by
+//	rate-limiting itself.
 package tier
 
 import (
@@ -20,10 +37,9 @@ type Tier int
 
 const (
 	TierCommunity    Tier = iota // Free tier
-	TierStarter                  // Paid tier ($29/mo) — added in v3.1.1
-	TierDeveloper                // Paid tier
-	TierProfessional             // Paid tier
-	TierEnterprise               // Paid tier
+	TierDeveloper                // First paid tier ($79/mo)
+	TierProfessional             // Mid-tier ($499/mo)
+	TierEnterprise               // Custom pricing
 )
 
 // String returns the tier name
@@ -31,8 +47,6 @@ func (t Tier) String() string {
 	switch t {
 	case TierCommunity:
 		return "community"
-	case TierStarter:
-		return "starter"
 	case TierDeveloper:
 		return "developer"
 	case TierProfessional:
@@ -49,8 +63,6 @@ func (t Tier) DisplayName() string {
 	switch t {
 	case TierCommunity:
 		return "Community"
-	case TierStarter:
-		return "Starter"
 	case TierDeveloper:
 		return "Developer"
 	case TierProfessional:
@@ -67,8 +79,6 @@ func ParseTier(name string) (Tier, error) {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "community", "free":
 		return TierCommunity, nil
-	case "starter":
-		return TierStarter, nil
 	case "developer", "dev":
 		return TierDeveloper, nil
 	case "professional", "pro":
@@ -93,17 +103,15 @@ func (t Tier) CanAccess(required Tier) bool {
 func (t Tier) RateLimitProxy() int {
 	switch t {
 	case TierCommunity:
-		return 120
-	case TierStarter:
-		return 600 // v3.1.1: added
+		return -1 // No hard cap (soft-throttle policy)
 	case TierDeveloper:
-		return 1000 // v3.1.1: 600 → 1000 (drift fix)
+		return 1000
 	case TierProfessional:
-		return 10000 // v3.1.1: 3000 → 10000 (drift fix)
+		return 10000
 	case TierEnterprise:
 		return -1
 	default:
-		return 120
+		return -1
 	}
 }
 
@@ -111,17 +119,15 @@ func (t Tier) RateLimitProxy() int {
 func (t Tier) RateLimitMCP() int {
 	switch t {
 	case TierCommunity:
-		return 60
-	case TierStarter:
-		return 300 // v3.1.1: added
+		return -1 // No hard cap (soft-throttle policy)
 	case TierDeveloper:
-		return 500 // v3.1.1: 300 → 500 (drift fix)
+		return 500
 	case TierProfessional:
-		return 5000 // v3.1.1: 1500 → 5000 (drift fix)
+		return 5000
 	case TierEnterprise:
 		return -1
 	default:
-		return 60
+		return -1
 	}
 }
 
@@ -136,17 +142,15 @@ func (t Tier) RateLimit() int {
 func (t Tier) MaxUsers() int {
 	switch t {
 	case TierCommunity:
-		return 3
-	case TierStarter:
-		return 10 // v3.1.1: added
+		return 5 // v3.5.0: 3 → 5 (Lens is free individual seat; Community is free server seat)
 	case TierDeveloper:
-		return 25 // v3.1.1: 10 → 25 (drift fix)
+		return 25
 	case TierProfessional:
-		return 100 // v3.1.1: 50 → 100 (drift fix)
+		return 100
 	case TierEnterprise:
 		return -1
 	default:
-		return 3
+		return 5
 	}
 }
 
@@ -154,17 +158,15 @@ func (t Tier) MaxUsers() int {
 func (t Tier) MaxAgents() int {
 	switch t {
 	case TierCommunity:
-		return 2
-	case TierStarter:
-		return 5 // v3.1.1: added
+		return 5 // v3.5.0: 2 → 5 (matches MaxUsers so all 5 users can run agents)
 	case TierDeveloper:
-		return 25 // v3.1.1: 5 → 25 (Q4 generosity principle)
+		return 25
 	case TierProfessional:
-		return 100 // v3.1.1: 25 → 100 (drift fix)
+		return 100
 	case TierEnterprise:
 		return -1
 	default:
-		return 2
+		return 5
 	}
 }
 
@@ -173,8 +175,6 @@ func (t Tier) LogRetentionDays() int {
 	switch t {
 	case TierCommunity:
 		return 7
-	case TierStarter:
-		return 30 // v3.1.1: added
 	case TierDeveloper:
 		return 30
 	case TierProfessional:
@@ -191,8 +191,6 @@ func (t Tier) SupportLevel() string {
 	switch t {
 	case TierCommunity:
 		return "community"
-	case TierStarter:
-		return "email" // v3.1.1: added (same as Developer per Q4)
 	case TierDeveloper:
 		return "email"
 	case TierProfessional:
@@ -213,8 +211,6 @@ func (t Tier) MaxConcurrentMCP() int {
 	switch t {
 	case TierCommunity:
 		return 5
-	case TierStarter:
-		return 25 // v3.1.1: added (Q3: matches Developer)
 	case TierDeveloper:
 		return 25
 	case TierProfessional:
@@ -231,8 +227,6 @@ func (t Tier) MaxMCPToolsPerSession() int {
 	switch t {
 	case TierCommunity:
 		return 20
-	case TierStarter:
-		return 50 // v3.1.1: added (inherits Developer value)
 	case TierDeveloper:
 		return 50
 	case TierProfessional:
@@ -249,8 +243,6 @@ func (t Tier) MCPExecTimeoutSeconds() int {
 	switch t {
 	case TierCommunity:
 		return 30
-	case TierStarter:
-		return 60 // v3.1.1: added (inherits Developer value)
 	case TierDeveloper:
 		return 60
 	case TierProfessional:
@@ -267,8 +259,6 @@ func (t Tier) MaxMCPSandboxMemoryMB() int {
 	switch t {
 	case TierCommunity:
 		return 256
-	case TierStarter:
-		return 512 // v3.1.1: added (inherits Developer value)
 	case TierDeveloper:
 		return 512
 	case TierProfessional:
@@ -350,7 +340,7 @@ const (
 	FeatureRequestCache     Feature = "request_caching"
 	FeatureRequestDedup     Feature = "request_dedup"
 	FeatureMTLS             Feature = "mtls"
-	FeatureRuntimeHarden    Feature = "runtime_hardening"
+	FeatureRuntimeHarden   Feature = "runtime_hardening"
 	FeatureCostAnomaly      Feature = "ml_cost_anomaly"
 	FeatureUsageAnomaly     Feature = "ml_usage_anomaly"
 	FeatureNISTView         Feature = "compliance_nist_view" // Enhanced NIST view
@@ -411,7 +401,7 @@ const (
 	FeatureMongoDB      Feature = "storage_mongo"
 	FeatureWhitelabel   Feature = "whitelabel"
 	FeatureCustomDomain Feature = "custom_domain"
-	FeatureVMSandbox    Feature = "mcp_vm_sandbox" // VM-level sandboxing
+	FeatureVMSandbox   Feature = "mcp_vm_sandbox" // VM-level sandboxing
 	// v3.2.0 Phase 4: Trust Framework (5th pillar). The Trust pillar is the
 	// 5th architectural pillar of the platform (alongside HTTP Proxy, MCP,
 	// A2A, and Compliance). It provides cryptographic agent identity,

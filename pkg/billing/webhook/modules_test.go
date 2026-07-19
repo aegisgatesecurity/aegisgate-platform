@@ -36,7 +36,6 @@ func TestModuleFromLookupKey(t *testing.T) {
 		{"module_fips", "fips"},
 		// Non-module keys.
 		{"professional", ""},
-		{"starter_monthly", ""},
 		{"", ""},
 		{"module_", ""},
 		// Edge: prefix only.

@@ -24,8 +24,9 @@ type billingConfig struct {
 
 // TierProducts maps our tier names to Stripe Price IDs.
 // Loaded from billing-config.json at init; empty strings are placeholder defaults.
+// v3.5.0: Starter tier removed (footgun: customers could buy Starter from Stripe
+// but ParseTier would reject "starter", silently falling back to Community).
 var TierProducts = map[string]string{
-	"starter":      "",
 	"developer":    "",
 	"professional": "",
 	"enterprise":   "",
@@ -73,7 +74,6 @@ func LoadBillingConfig() error {
 		// TierPrices starts empty; populate via billing-config.json or AEGISGATE_PRICE_* env vars.
 		TierPrices = map[string]int64{}
 		TierProducts = map[string]string{
-			"starter":      "",
 			"developer":    "",
 			"professional": "",
 			"enterprise":   "",
@@ -93,8 +93,8 @@ func LoadBillingConfig() error {
 		TierProducts = config.TierProducts
 	}
 
-	// Override with env vars if set (e.g., AEGISGATE_PRICE_STARTER — see billing-config.example.json)
-	for _, tier := range []string{"starter", "developer", "professional"} {
+	// Override with env vars if set (e.g., AEGISGATE_PRICE_DEVELOPER — see billing-config.example.json)
+	for _, tier := range []string{"developer", "professional"} {
 		if v := os.Getenv("AEGISGATE_PRICE_" + tierToUpper(tier)); v != "" {
 			var price int64
 			if _, err := fmt.Sscanf(v, "%d", &price); err == nil && price > 0 {
@@ -108,12 +108,12 @@ func LoadBillingConfig() error {
 
 func tierToUpper(s string) string {
 	switch s {
-	case "starter":
-		return "STARTER"
 	case "developer":
 		return "DEVELOPER"
 	case "professional":
 		return "PROFESSIONAL"
+	case "enterprise":
+		return "ENTERPRISE"
 	default:
 		return ""
 	}

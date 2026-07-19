@@ -144,9 +144,9 @@ func TestScanner_Scan_ProfessionalWithAllModules(t *testing.T) {
 	}
 }
 
-func TestScanner_Scan_StarterCannotEnforceHIPAA(t *testing.T) {
+func TestScanner_Scan_CommunityCannotEnforceHIPAA(t *testing.T) {
 	s := NewScanner(nil, nil)
-	lic := buildValidationResult(t, "starter", []string{"hipaa"})
+	lic := buildValidationResult(t, "community", []string{"hipaa"})
 	rpt, err := s.Scan(context.Background(), lic)
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
@@ -162,7 +162,7 @@ func TestScanner_Scan_StarterCannotEnforceHIPAA(t *testing.T) {
 		t.Fatal("HIPAA not in frameworks")
 	}
 	if hipaa.Enforced {
-		t.Error("HIPAA should NOT be enforced for starter (tier too low)")
+		t.Error("HIPAA should NOT be enforced for community (tier too low)")
 	}
 	if hipaa.ReasonNotEnforced != "tier_too_low" {
 		t.Errorf("ReasonNotEnforced = %q, want tier_too_low", hipaa.ReasonNotEnforced)

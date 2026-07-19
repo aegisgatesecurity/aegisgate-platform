@@ -337,29 +337,21 @@ func TestVerifySignatureNoSecret(t *testing.T) {
 func TestServerInferTierFromAmount(t *testing.T) {
 	server := NewWebhookServer("8080")
 
-	// Thresholds: professional >= 24900, developer >= 7900, starter >= 2900
+	// Thresholds: professional >= 49900, developer >= 7900, Community is free
 
-	// Professional tier (>= 24900)
-	professionalAmounts := []int64{29000, 249000, 24900, 50000}
+	// Professional tier (>= 49900)
+	professionalAmounts := []int64{49900, 499000, 49900, 50000}
 	for _, amt := range professionalAmounts {
 		if got := server.inferTierFromAmount(amt); got != "professional" {
 			t.Errorf("inferTierFromAmount(%d) = %s, want professional", amt, got)
 		}
 	}
 
-	// Developer tier (>= 7900, < 24900)
+	// Developer tier (>= 7900, < 49900)
 	developerAmounts := []int64{7900, 15000, 10000, 24899}
 	for _, amt := range developerAmounts {
 		if got := server.inferTierFromAmount(amt); got != "developer" {
 			t.Errorf("inferTierFromAmount(%d) = %s, want developer", amt, got)
-		}
-	}
-
-	// Starter tier (>= 2900, < 7900)
-	starterAmounts := []int64{2900, 5000, 7899}
-	for _, amt := range starterAmounts {
-		if got := server.inferTierFromAmount(amt); got != "starter" {
-			t.Errorf("inferTierFromAmount(%d) = %s, want starter", amt, got)
 		}
 	}
 
@@ -549,8 +541,8 @@ func TestToSAcceptanceLoggedOnPaidCheckout(t *testing.T) {
 		Customer:      "cus_test_tos",
 		PaymentStatus: "paid",
 		Status:        "complete",
-		AmountTotal:   2900, // starter monthly
-		Metadata:      map[string]string{"tier": "starter"},
+		AmountTotal:   7900, // developer monthly
+		Metadata:      map[string]string{"tier": "developer"},
 	}
 
 	data, _ := json.Marshal(session)
@@ -609,7 +601,7 @@ func TestToSAcceptanceNotLoggedForUnpaidCheckout(t *testing.T) {
 		ID:            "cs_test_tos_unpaid",
 		CustomerEmail: "unpaid@example.com",
 		PaymentStatus: "unpaid",
-		AmountTotal:   2900,
+		AmountTotal:   7900,
 	}
 
 	data, _ := json.Marshal(session)

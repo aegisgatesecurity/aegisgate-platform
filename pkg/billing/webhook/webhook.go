@@ -268,16 +268,16 @@ func (h *Handler) handleInvoicePaymentFailed(ctx context.Context, event *StripeE
 }
 
 // inferTierFromAmount infers tier from payment amount (cents)
+// v3.5.0: Starter tier removed. Amounts < 7900 now default to "developer"
+// (Community is free; there is no paid tier below Developer).
 func (h *Handler) inferTierFromAmount(amount int64) string {
 	switch {
-	case amount >= 24900:
+	case amount >= 49900: // Professional: $499/mo or $4,990/yr
 		return "professional"
-	case amount >= 7900:
+	case amount >= 7900: // Developer: $79/mo or $790/yr
 		return "developer"
-	case amount >= 2900:
-		return "starter"
 	default:
-		return "developer" // default fallback
+		return "developer" // default fallback (Community is free, not paid)
 	}
 }
 
