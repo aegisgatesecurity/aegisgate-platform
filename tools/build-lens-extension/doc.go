@@ -3,6 +3,21 @@
 // AegisGate Lens - Build Tool (v0.1.0+ Lens Phase 1 plain-JS)
 // =========================================================================
 //
+// ⚠️ v0.2.0 A15 DEPRECATION NOTICE (2026-07-19):
+//
+// This build tool was designed for Lens v0.1.0 (plain-JS pivot, 15
+// source files, manual zip). Lens v0.2.0 has a different source
+// structure (4 detection facets, 151 patterns, MV3 service worker)
+// and its own build process. The lint rule `no-prompt-in-log` has
+// been updated with an allowlist for classification labels (e.g.
+// "email-like content" is a detector classification, not leaked
+// prompt text).
+//
+// This tool needs a full rebuild to match Lens v0.2.0's source
+// layout. Until then, it compiles but its test suite is not
+// expected to pass against v0.2.0 source.
+// =========================================================================
+//
 // Package main implements the build tool for the AegisGate Lens
 // browser extension. The build tool is a single Go program that:
 //

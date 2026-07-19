@@ -147,6 +147,22 @@ func lintFile(path string) ([]LintViolation, error) {
 		stripped := stripLineComment(line)
 		for _, rule := range lintRules {
 			if loc := rule.re.FindStringIndex(stripped); loc != nil {
+				// v0.2.0 A15: check allowlist before reporting.
+				// If the stripped line contains any allowlisted
+				// substring, the match is a classification label,
+				// not leaked prompt text, and should be exempted.
+				allowed := false
+				if len(rule.allowlist) > 0 {
+					for _, ex := range rule.allowlist {
+						if strings.Contains(stripped, ex) {
+							allowed = true
+							break
+						}
+					}
+				}
+				if allowed {
+					continue
+				}
 				violations = append(violations, LintViolation{
 					File:    path,
 					Line:    lineNum,
@@ -165,8 +181,9 @@ func lintFile(path string) ([]LintViolation, error) {
 
 // lintRule is a single lint check.
 type lintRule struct {
-	name string
-	re   *regexp.Regexp
+	name      string
+	re        *regexp.Regexp
+	allowlist []string // substrings that exempt a match (v0.2.0 A15)
 }
 
 // lintRules is the set of all lint rules. Each regex is matched
@@ -203,7 +220,20 @@ var lintRules = []lintRule{
 		// on string literals that mention "URL" or "input" in
 		// a non-data context, but those should be rare and
 		// would be code-smells anyway).
+		//
+		// v0.2.0 A15 exemption: classification labels like "email-like content"
+		// or "content-type header" are NOT user data leaking into logs. The
+		// allowlist below permits known safe compound words where "content"
+		// appears as a classification term, not as leaked prompt text.
 		re: regexp.MustCompile(`(?i)(console|log)\.\w+\s*\(\s*["'` + "`" + `][^"'` + "`" + `]*(prompt|content|input|textarea|url|host)[^"'` + "`" + `]*["'` + "`" + `]`),
+		// allowlist exemptions: log lines containing these substrings
+		// are permitted even if they match the forbidden-word pattern,
+		// because they are detector classification labels, not prompt text.
+		allowlist: []string{
+			"-like content",  // e.g. "email-like content, using single-shot ensemble"
+			"content-type",   // e.g. "content-type header"
+			"Content-Security-Policy", // e.g. CSP header name
+		},
 	},
 	{
 		name: "no-console-log",
