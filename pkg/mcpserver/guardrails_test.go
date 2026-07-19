@@ -83,7 +83,7 @@ func TestSessionCreate_Allowed(t *testing.T) {
 }
 
 func TestSessionCreate_MaxReached(t *testing.T) {
-	cfg := DefaultGuardrailConfig(tier.TierDeveloper) // max 25
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // max 5 (v3.5.0: Starter removed)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
 	// Fill up to max
@@ -112,7 +112,7 @@ func TestSessionCreate_Unlimited(t *testing.T) {
 }
 
 func TestSessionCreate_Destroy_Reuse(t *testing.T) {
-	cfg := DefaultGuardrailConfig(tier.TierDeveloper) // max 25
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // max 5 (v3.5.0: Starter removed)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
 	// Fill to max
@@ -338,7 +338,7 @@ func TestGuardrailHandler_Initialize(t *testing.T) {
 }
 
 func TestGuardrailHandler_MaxSessionsBlock(t *testing.T) {
-	cfg := DefaultGuardrailConfig(tier.TierDeveloper) // max 25
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // max 5 (v3.5.0: Starter removed)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
 	innerHandler := mcp.NewRequestHandler(nil, nil, nil)
@@ -412,7 +412,7 @@ func TestStats_ReflectsState(t *testing.T) {
 }
 
 func TestStats_BlockedRequests(t *testing.T) {
-	cfg := DefaultGuardrailConfig(tier.TierDeveloper) // max 25
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // max 5 (v3.5.0: Starter removed)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
 	// Fill to max
@@ -576,7 +576,7 @@ func TestRateLimit_StatsRPM(t *testing.T) {
 		t    tier.Tier
 		rpm  int
 	}{
-		{"Community", tier.TierCommunity, 60},
+		{"Community", tier.TierCommunity, 0},  // v3.5.0: -1 (soft-throttle) displays as 0
 		{"Developer", tier.TierDeveloper, 500},        // v3.1.1: 300 → 500
 		{"Professional", tier.TierProfessional, 5000}, // v3.1.1: 1500 → 5000
 		{"Enterprise", tier.TierEnterprise, 0},        // 0 = unlimited (shown as 0 in stats)
@@ -626,7 +626,7 @@ func TestRateLimitCleanup(t *testing.T) {
 }
 
 func TestExpireRateLimitBuckets(t *testing.T) {
-	cfg := DefaultGuardrailConfig(tier.TierCommunity)
+	cfg := DefaultGuardrailConfig(tier.TierDeveloper) // v3.5.0: Community has soft-throttle (-1), use Developer (500 RPM)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust the limit
@@ -683,7 +683,7 @@ func TestGuardrailHandler_RateLimited(t *testing.T) {
 		wrapped(conn, req)
 	}
 
-	// 61st request should be rate-limited
+	// 501st request should be rate-limited
 	req := &mcp.JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      99,
@@ -911,13 +911,13 @@ func TestOnSessionDestroy(t *testing.T) {
 
 // TestGuardrailHandler_ErrorPaths tests error scenarios in GuardrailHandler
 func TestGuardrailHandler_ErrorPaths(t *testing.T) {
-	cfg := DefaultGuardrailConfig(tier.TierDeveloper) // max 25 sessions
+	cfg := DefaultGuardrailConfig(tier.TierCommunity) // max 5 (v3.5.0: Starter removed)
 	g := NewGuardrailMiddleware(cfg, "test-server")
 
 	innerHandler := mcp.NewRequestHandler(nil, nil, nil)
 	wrapped := g.GuardrailHandler(innerHandler)
 
-	// Fill up sessions
+	// Fill up sessions (Community max = 5)
 	for i := 0; i < 5; i++ {
 		req := &mcp.JSONRPCRequest{
 			JSONRPC: "2.0",

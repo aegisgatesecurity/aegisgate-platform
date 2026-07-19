@@ -563,12 +563,12 @@ func TestOnMemoryUsage_SessionExists(t *testing.T) {
 func TestOnRateLimitCheck_IdenticalAddresses(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierCommunity, // 60 RPM
+		PlatformTier: tier.TierDeveloper, // v3.5.0: Community has soft-throttle, use Developer (500 RPM)
 	}, "test-server")
 
 	addr := "192.168.1.1:12345"
-	// Exhaust the 60 RPM limit
-	for i := 0; i < 60; i++ {
+	// Exhaust the 500 RPM limit
+	for i := 0; i < 500; i++ {
 		err := g.OnRateLimitCheck(addr)
 		if err != nil {
 			t.Fatalf("request %d should be allowed, got: %v", i, err)
@@ -577,7 +577,7 @@ func TestOnRateLimitCheck_IdenticalAddresses(t *testing.T) {
 
 	err := g.OnRateLimitCheck(addr)
 	if err == nil {
-		t.Error("expected rate limit error at 61")
+		t.Error("expected rate limit error at 501")
 	}
 }
 

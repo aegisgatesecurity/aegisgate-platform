@@ -191,7 +191,7 @@ func TestGuardrailHandler_GH_SessionToolLimitReached(t *testing.T) {
 func TestGuardrailHandler_GH_MaxSessionsReached(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierDeveloper,
+		PlatformTier:  tier.TierCommunity, // v3.5.0: max 5 (Starter removed)
 		LogViolations: true,
 	}, "test-server")
 
@@ -429,11 +429,11 @@ func TestGuardrailMiddleware_Close(t *testing.T) {
 func TestGuardrailStats_AfterBlockedRequest(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:       true,
-		PlatformTier:  tier.TierDeveloper,
+		PlatformTier:  tier.TierDeveloper, // v3.5.0: 500 RPM
 		LogViolations: true,
 	}, "test-server")
 
-	for i := 0; i < 301; i++ {
+	for i := 0; i < 501; i++ {
 		g.OnRateLimitCheck("192.168.1.50")
 	}
 
@@ -465,11 +465,11 @@ func TestOnRateLimitCheck_Unlimited(t *testing.T) {
 func TestOnRateLimitCheck_BucketExhausted(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierDeveloper,
+		PlatformTier: tier.TierDeveloper, // v3.5.0: 500 RPM
 	}, "test-server")
 
 	client := "192.168.1.200"
-	for i := 0; i < 300; i++ {
+	for i := 0; i < 500; i++ {
 		g.OnRateLimitCheck(client)
 	}
 
@@ -521,7 +521,7 @@ func TestOnRateLimitCheck_DifferentClients(t *testing.T) {
 func TestOnSessionCreate_MaxReached(t *testing.T) {
 	g := NewGuardrailMiddleware(GuardrailConfig{
 		Enabled:      true,
-		PlatformTier: tier.TierDeveloper,
+		PlatformTier: tier.TierCommunity, // v3.5.0: max 5 (Starter removed)
 	}, "test-server")
 
 	for i := 0; i < 5; i++ {
