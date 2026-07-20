@@ -56,6 +56,9 @@ type Config struct {
 
 	// Persistence configuration (audit storage, retention, pruning)
 	Persistence persistence.Config `yaml:"persistence"`
+
+	// SIEM integration configuration
+	SIEM SIEMConfig `yaml:"siem"`
 }
 
 // PlatformConfig holds platform-specific settings not in either upstream
@@ -125,6 +128,102 @@ type LoggingConfig struct {
 	Format string `yaml:"format"` // json or text
 }
 
+// SIEMConfig holds SIEM integration settings. The SIEM dispatcher
+// polls the audit ring buffer and forwards events to configured
+// platforms (Splunk, Elasticsearch, QRadar, etc.).
+type SIEMConfig struct {
+	// Enabled controls whether the SIEM dispatcher runs.
+	Enabled bool `yaml:"enabled"`
+
+	// Platforms is the list of configured SIEM platform outputs.
+	// Each platform has its own endpoint, auth, format, and retry settings.
+	Platforms []SIEMPlatformConfig `yaml:"platforms"`
+
+	// PollInterval is how often the dispatcher polls the audit ring
+	// buffer for new events. Default: 5s.
+	PollInterval time.Duration `yaml:"poll_interval"`
+
+	// BatchSize is the maximum number of event summaries per poll
+	// cycle. Default: 100.
+	BatchSize int `yaml:"batch_size"`
+
+	// Source is the "source" field set on every siem.Event.
+	// Default: "aegisgate".
+	Source string `yaml:"source"`
+
+	// BufferMaxSize is the internal SIEM manager buffer size.
+	// Default: 10000.
+	BufferMaxSize int `yaml:"buffer_max_size"`
+}
+
+// SIEMPlatformConfig holds one SIEM platform output configuration.
+type SIEMPlatformConfig struct {
+	// Platform type: splunk, elasticsearch, qradar, sentinel,
+	// sumologic, logrhythm, cloudwatch, securityhub, arcsight,
+	// syslog, custom.
+	Platform string `yaml:"platform"`
+
+	// Enabled controls whether this platform output is active.
+	Enabled bool `yaml:"enabled"`
+
+	// Format: cef, leef, json, syslog.
+	Format string `yaml:"format"`
+
+	// Endpoint URL for HTTP-based platforms.
+	Endpoint string `yaml:"endpoint"`
+
+	// Auth configuration.
+	Auth SIEMAuthConfig `yaml:"auth"`
+
+	// TLS configuration.
+	TLS SIEMTLSConfig `yaml:"tls"`
+
+	// Platform-specific settings.
+	Settings map[string]interface{} `yaml:"settings"`
+
+	// Retry configuration.
+	Retry SIEMRetryConfig `yaml:"retry"`
+
+	// Batch configuration.
+	Batch SIEMBatchConfig `yaml:"batch"`
+}
+
+// SIEMAuthConfig holds authentication settings.
+type SIEMAuthConfig struct {
+	Type         string `yaml:"type"`           // api_key, oauth2, basic, certificate
+	APIKey       string `yaml:"api_key"`        // env: AEGISGATE_SIEM_API_KEY
+	APIKeyHeader string `yaml:"api_key_header"` // default: Authorization
+	Username     string `yaml:"username"`
+	Password     string `yaml:"password"`
+	TokenURL     string `yaml:"token_url"`     // OAuth2
+	ClientID     string `yaml:"client_id"`     // env: AEGISGATE_SIEM_OAUTH_CLIENT_ID
+	ClientSecret string `yaml:"client_secret"` // env: AEGISGATE_SIEM_OAUTH_CLIENT_SECRET
+}
+
+// SIEMTLSConfig holds TLS settings for SIEM connections.
+type SIEMTLSConfig struct {
+	Enabled            bool   `yaml:"enabled"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
+	CAFile             string `yaml:"ca_file"`
+	ServerName         string `yaml:"server_name"`
+}
+
+// SIEMRetryConfig holds retry settings.
+type SIEMRetryConfig struct {
+	Enabled           bool    `yaml:"enabled"`
+	MaxAttempts       int     `yaml:"max_attempts"`       // default: 3
+	InitialBackoff    string  `yaml:"initial_backoff"`    // e.g. "1s"
+	MaxBackoff        string  `yaml:"max_backoff"`        // e.g. "30s"
+	BackoffMultiplier float64 `yaml:"backoff_multiplier"` // default: 2.0
+}
+
+// SIEMBatchConfig holds batching settings.
+type SIEMBatchConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	MaxSize int    `yaml:"max_size"` // default: 100
+	MaxWait string `yaml:"max_wait"` // e.g. "5s"
+}
+
 // DefaultConfig returns a fully-populated default configuration
 func DefaultConfig() *Config {
 	return &Config{
@@ -188,6 +287,13 @@ func DefaultConfig() *Config {
 			CapsFile:   "configs/a2a_caps.yaml",
 		},
 		Persistence: persistence.DefaultConfig(),
+		SIEM: SIEMConfig{
+			Enabled:       false,
+			PollInterval:  5 * time.Second,
+			BatchSize:     100,
+			Source:        "aegisgate",
+			BufferMaxSize: 10000,
+		},
 	}
 }
 
@@ -304,6 +410,14 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("AEGISGATE_A2A_CAPS_FILE"); v != "" {
 		c.A2A.CapsFile = v
+	}
+
+	// SIEM overrides
+	if v := os.Getenv("AEGISGATE_SIEM_ENABLED"); v != "" {
+		c.SIEM.Enabled = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_SIEM_SOURCE"); v != "" {
+		c.SIEM.Source = v
 	}
 
 	// Persistence overrides
