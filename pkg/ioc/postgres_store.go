@@ -499,3 +499,15 @@ func (s *PostgresStore) migrate(ctx context.Context) error {
 
 	return nil
 }
+
+// Pool returns the underlying pgxpool.Pool for shared use by other
+// PostgreSQL-backed components (e.g., the audit storage backend).
+// Callers MUST NOT close the pool; the PostgresStore owns its lifecycle.
+func (s *PostgresStore) Pool() *pgxpool.Pool {
+	return s.pool
+}
+
+// DSN returns the database connection string (with password redacted).
+func (s *PostgresStore) DSN() string {
+	return s.cfg.URL
+}
