@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Lens - Test Harness (v3.5.0+ Lens Phase 2)
+// AegisGate Platform - Lens Test Harness (standalone Go module)
 // =========================================================================
 //
 // Package main implements the end-to-end test harness for the
@@ -18,30 +18,31 @@
 //
 // The build/run flow:
 //
-//  1. Spawn headless Chromium with --remote-debugging-port=9222
+//  1. Build the Lens extension from the Lens repo
+//     (github.com/aegisgatesecurity/aegisgate-lens) using its
+//     own build pipeline (tools/ci/build-bundle.py + manifest.json).
+//  2. Provide the dist/ directory containing the built extension.
+//  3. Spawn headless Chromium with --remote-debugging-port=9222
 //     --disable-gpu --no-sandbox.
-//  2. GET http://localhost:9222/json/version to get the
+//  4. GET http://localhost:9222/json/version to get the
 //     WebSocket URL.
-//  3. Open a WebSocket to that URL using gorilla/websocket.
-//  4. Send CDP commands (Page.navigate, Runtime.evaluate,
+//  5. Open a WebSocket to that URL using gorilla/websocket.
+//  6. Send CDP commands (Page.navigate, Runtime.evaluate,
 //     Page.loadEventFired) using a JSON-RPC frame format.
-//  5. Load the extension's content script into a mock AI
+//  7. Load the extension's content script into a mock AI
 //     provider page (testdata/<provider>.html).
-//  6. Run the test cases (regex detection tests) and assert
+//  8. Run the test cases (regex detection tests) and assert
 //     the expected outputs.
-//  7. Write a JSON report and exit 0 on success, 1 on failure.
+//  9. Write a JSON report and exit 0 on success, 1 on failure.
 //
 // Usage:
 //
-//	# Build the extension first:
-//	go run ./tools/build-lens-extension/ \
-//	  --src <lens-repo>/src --dist /tmp/lens-dist \
-//	  --version 0.1.0 --commit <sha>
+//	# Build the extension from the Lens repo first:
+//	cd <lens-repo> && python3 tools/ci/build-bundle.py
 //
-//	# Run the tests:
+//	# Run the test harness:
 //	go run ./tools/test-extension/ \
-//	  --dist /tmp/lens-dist \
-//	  --tests <lens-repo>/test \
+//	  --dist <lens-repo>/test/headless-smoke/dist \
 //	  --provider chatgpt
 //
 // Output:
@@ -68,10 +69,11 @@
 //	not shipped to users. A separate go.mod in tools/test-extension/
 //	scopes the new dep to this tool only.
 //
-//	The Platform's prior art: tools/build-lens-extension/ is a
-//	Go program with no third-party deps. It does NOT need a
-//	separate go.mod (no deps). tools/test-extension/ DOES
-//	need a separate go.mod (one dep: gorilla/websocket).
+// Note: The v0.1.0 build tool (tools/build-lens-extension/) was
+// removed in A15 (commit a683f94). Lens v0.2.0+ builds itself
+// using its own pipeline. This test harness remains for
+// ad-hoc integration testing of Lens extensions against the
+// Platform's CDP test infrastructure.
 //
 // v3.5.0+ Lens Phase 2.
 // =========================================================================
