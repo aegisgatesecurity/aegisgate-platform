@@ -184,6 +184,21 @@ jobs:
             # integration tests will be added in D1 Phase 1D (testlab).
             # Exempted until integration tests are added.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
+            # pkg/rbac: the PostgresRBACStore (postgres_store.go, ~690 LOC)
+            # requires a running PostgreSQL instance and can only be tested
+            # via integration tests (build-tagged //go:build integration).
+            # The in-memory Manager, types, middleware, and closed-state
+            # error paths are fully tested. PostgreSQL integration tests
+            # will be added in D1 Phase 1D (testlab). Exempted until
+            # integration tests are added.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
+            # pkg/license: the PostgresLicenseCache (postgres_cache.go,
+            # ~210 LOC) requires a running PostgreSQL instance. The
+            # in-memory Manager, validation, ECDSA signing, and
+            # closed-state error paths are fully tested. PostgreSQL
+            # integration tests will be added in D1 Phase 1D (testlab).
+            # Exempted until integration tests are added.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
           )
           FAIL=0
           echo "## Per-Package Coverage Report" >> $GITHUB_STEP_SUMMARY
