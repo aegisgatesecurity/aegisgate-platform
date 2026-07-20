@@ -71,8 +71,10 @@ func TestEventValidate(t *testing.T) {
 		// Day 11 pen-test: LensEventVersion is now required (was missing
 		// from the Go struct until cross-repo wire-protocol drift was
 		// caught by Attack 04). Test fixture must include it.
+		// v0.2: Facet is now required.
 		LensEventVersion: 1,
 		DomainHash:       "eb3a78617eafc7aa",
+		Facet:            "pii",
 		Category:         "pii_email",
 		Severity:         "high",
 		UserAction:       "send_anyway",
@@ -87,7 +89,7 @@ func TestEventValidate(t *testing.T) {
 
 	bad := []Event{
 		// DomainHash too short.
-		{LensEventVersion: 1, Category: "pii_email", Severity: "high", UserAction: "send_anyway",
+		{LensEventVersion: 1, Facet: "pii", DomainHash: "eb3a78617eafc7a", Category: "pii_email", Severity: "high", UserAction: "send_anyway",
 			Timestamp: time.Now().Unix(), ModelVersion: "0.1.0+x", LensVersion: "0.1.0", Confidence: 1.0},
 		// LensEventVersion missing (legacy v0 event).
 		{Category: "pii_email", Severity: "high", UserAction: "send_anyway",
@@ -96,18 +98,27 @@ func TestEventValidate(t *testing.T) {
 		replaceField(good, "LensEventVersion", 2),
 		// Invalid category.
 		replaceField(good, "Category", "unknown_cat"),
+		// Invalid facet.
+		replaceField(good, "Facet", "invalid_facet"),
+		// Category/facet mismatch.
+		replaceField(good, "Facet", "secrets"), // category is pii_email, not a secrets category
 		// Invalid severity.
 		replaceField(good, "Severity", "extreme"),
 		// Invalid user_action.
 		replaceField(good, "UserAction", "delete"),
 		// Timestamp too old.
 		replaceField(good, "Timestamp", time.Now().Add(-48*time.Hour).Unix()),
-		// ModelVersion missing +.
-		replaceField(good, "ModelVersion", "0.1.0"),
+		// ModelVersion empty (v0.2 relaxed: no longer requires "+").
+		// Still tested: ModelVersion must be non-empty.
+		replaceField(good, "ModelVersion", ""),
 		// LensVersion empty.
 		replaceField(good, "LensVersion", ""),
 		// Confidence out of range.
 		replaceField(good, "Confidence", 1.5),
+		// MLScore out of range.
+		replaceField(good, "MLScore", 2.0),
+		// MLThreshold out of range.
+		replaceField(good, "MLThreshold", -0.5),
 	}
 	for i, b := range bad {
 		if err := b.Validate(); err == nil {
@@ -123,6 +134,8 @@ func replaceField(e Event, field, value any) Event {
 	switch field {
 	case "LensEventVersion":
 		out.LensEventVersion = value.(int)
+	case "Facet":
+		out.Facet = value.(string)
 	case "Category":
 		out.Category = value.(string)
 	case "Severity":
@@ -137,6 +150,10 @@ func replaceField(e Event, field, value any) Event {
 		out.LensVersion = value.(string)
 	case "Confidence":
 		out.Confidence = value.(float64)
+	case "MLScore":
+		out.MLScore = value.(float64)
+	case "MLThreshold":
+		out.MLThreshold = value.(float64)
 	}
 	return out
 }

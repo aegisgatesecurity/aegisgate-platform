@@ -1,37 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Lens Backend - Event Validation
+// AegisGate Lens Backend - Event Validation (v0.2 Schema)
 // =========================================================================
 //
-// validation.go defines the Event struct that the Lens extension
-// sends to the backend, the Category / Severity / UserAction
-// enums, and the Validate method that enforces the §1.1 schema
-// from plans/AEGISGATE-LENS-PRIVACY-POLICY-DRAFT.md.
+// Validates incoming telemetry events from the AegisGate Lens extension.
+// The v0.2 schema expands from 6 to 157 categories across 6 facets,
+// matching the Lens v0.2.0 extension's full detection vocabulary.
 //
-// The schema is locked. Any change to the field set, the field
-// names, the field types, or the enum values is a breaking change
-// to the Lens protocol and requires a major version bump of the
-// backend (and a coordinated update of the Lens extension).
+// Privacy guarantee: the event NEVER contains the prompt, URL,
+// page content, or user ID. Only the domain_hash (SHA-256 prefix)
+// identifies the AI provider.
 //
-// The 9 fields the backend accepts (and only these 9):
-//
-//   1.  domain_hash      string  16 hex chars (SHA-256 prefix)
-//   2.  category         string  one of the Category constants
-//   3.  severity         string  one of the Severity constants
-//   4.  user_action      string  one of the UserAction constants
-//   5.  timestamp        int64   unix seconds, must be within ±24h
-//   6.  model_version    string  Lens version + classifier version
-//                                (e.g., "0.1.0+regex-v1")
-//   7.  lens_version     string  Lens version (e.g., "0.1.0")
-//   8.  confidence       float   0.0..1.0
-//   9.  id               string  optional client-side UUID for
-//                                client-side dedup; not stored
-//
-// Any other field in the JSON body is rejected. This is enforced
-// by RejectUnknownFields in handlers.go when the request is
-// decoded.
-//
-// v3.5.0+ Lens Phase 2.
 // =========================================================================
 
 package lensbackend
@@ -44,43 +23,330 @@ import (
 	"time"
 )
 
+// Facet is the detection facet that produced an event.
+type Facet string
+
+const (
+	FacetPII             Facet = "pii"
+	FacetSecrets         Facet = "secrets"
+	FacetXSS             Facet = "xss"
+	FacetCompliance      Facet = "compliance"
+	FacetToxicity        Facet = "toxicity"
+	FacetPromptInjection Facet = "prompt_injection"
+)
+
+var AllFacets = []Facet{FacetPII, FacetSecrets, FacetXSS, FacetCompliance, FacetToxicity, FacetPromptInjection}
+
 // Category is the sensitive-data category that the Lens detected.
-// See plans/AEGISGATE-LENS-ARCHITECTURE-v1.md §3.2 (the 7 categories
-// of regex patterns). The constants below are the wire format: any
-// new category requires a backend code change AND an extension code
-// change AND a privacy policy disclosure.
 type Category string
 
 const (
-	// CategoryPIIEmail: email address detected in prompt.
-	CategoryPIIEmail Category = "pii_email"
-	// CategoryPIIPhone: phone number detected in prompt.
-	CategoryPIIPhone Category = "pii_phone"
-	// CategoryPIISSN: US Social Security Number detected in prompt.
-	CategoryPIISSN Category = "pii_ssn"
-	// CategoryPIICreditCard: credit card number (Luhn-valid) detected in prompt.
-	CategoryPIICreditCard Category = "pii_credit_card"
-	// CategorySecretAPIKey: API key or token (AWS, GitHub, Stripe, etc.) detected.
-	CategorySecretAPIKey Category = "secret_api_key"
-	// CategorySourceCode: code that looks like a private key, signing key, or
-	// similar high-value source artifact.
+	// PII categories (58)
+	CategoryPIIEmail                 Category = "pii_email"
+	CategoryPIIPhone                 Category = "pii_phone"
+	CategoryPIISSN                   Category = "pii_ssn"
+	CategoryPIICreditCard            Category = "pii_credit_card"
+	CategoryPIIPhoneIntlLoose        Category = "pii_phone_intl_loose"
+	CategoryPIIAddress               Category = "pii_address"
+	CategoryPIIDOB                   Category = "pii_dob"
+	CategoryPIIDriverLicense         Category = "pii_driver_license"
+	CategoryPIIPassport              Category = "pii_passport"
+	CategoryPIIBip39Seed             Category = "pii_bip39_seed"
+	CategoryPIITaxID                 Category = "pii_tax_id"
+	CategoryPIIBankAccount           Category = "pii_bank_account"
+	CategoryPIIIPAddress             Category = "pii_ip_address"
+	CategoryPIIMRN                   Category = "pii_mrn"
+	CategoryPIIICD10Code             Category = "pii_icd10_code"
+	CategoryPIINPI                   Category = "pii_npi"
+	CategoryPIISSNLast4              Category = "pii_ssn_last4"
+	CategoryPIINHSUK                 Category = "pii_nhs_uk"
+	CategoryPIITFNAU                 Category = "pii_tfn_au"
+	CategoryPIIAadhaarIN             Category = "pii_aadhaar_in"
+	CategoryPIICPFBR                 Category = "pii_cpf_br"
+	CategoryPIISINCA                 Category = "pii_sin_ca"
+	CategoryPIIDriverLicenseIntl     Category = "pii_driver_license_international"
+	CategoryPIIIBAN                  Category = "pii_iban"
+	CategoryPIIVisa                  Category = "pii_visa"
+	CategoryPIIPassportAU            Category = "pii_passport_au"
+	CategoryPIIPassportCA            Category = "pii_passport_ca"
+	CategoryPIIPassportDE            Category = "pii_passport_de"
+	CategoryPIIPassportEU            Category = "pii_passport_eu"
+	CategoryPIIPassportFR            Category = "pii_passport_fr"
+	CategoryPIIPassportUK            Category = "pii_passport_uk"
+	CategoryPIIResidenceCA           Category = "pii_residence_ca"
+	CategoryPIIResidenceUK           Category = "pii_residence_uk"
+	CategoryPIIResidenceUS           Category = "pii_residence_us"
+	CategoryPIIDigitalPaypal         Category = "pii_digital_paypal"
+	CategoryPIIDigitalStripe         Category = "pii_digital_stripe"
+	CategoryPIIDigitalVenmo          Category = "pii_digital_venmo"
+	CategoryPIIDigitalCashapp        Category = "pii_digital_cashapp"
+	CategoryPIINidDE                 Category = "pii_nid_de"
+	CategoryPIINidES                 Category = "pii_nid_es"
+	CategoryPIINidFR                 Category = "pii_nid_fr"
+	CategoryPIINidIT                 Category = "pii_nid_it"
+	CategoryPIINidJP                 Category = "pii_nid_jp"
+	CategoryPIICryptoBTC             Category = "pii_crypto_btc"
+	CategoryPIICryptoETH             Category = "pii_crypto_eth"
+	CategoryPIICryptoBNB             Category = "pii_crypto_bnb"
+	CategoryPIICryptoLTC             Category = "pii_crypto_ltc"
+	CategoryPIICryptoSOL             Category = "pii_crypto_sol"
+	CategoryPIILetterOnlyID          Category = "pii_letter_only_id"
+	CategoryPIIIDGenericAlphanumeric Category = "pii_id_generic_alphanumeric"
+	CategoryPIIIDMultisegment        Category = "pii_id_multisegment"
+	CategoryPIIPassportGeneric       Category = "pii_passport_generic"
+	CategoryPIIStreetIntl            Category = "pii_street_intl"
+	CategoryPIISSNRU                 Category = "pii_ssn_ru"
+	CategoryPIISSNFR                 Category = "pii_ssn_fr"
+	CategoryPIITaxIDCH               Category = "pii_tax_id_ch"
+	CategoryPIICreditCardLoose       Category = "pii_credit_card_loose"
+	CategoryPIIEmailIntl             Category = "pii_email_intl"
+
+	// Secrets categories (45)
+	CategorySecretAPIKey             Category = "secret_api_key"
+	CategorySecretAWSKey             Category = "secret_aws_key"
+	CategorySecretGitHubToken        Category = "secret_github_token"
+	CategorySecretGCPKey             Category = "secret_gcp_key"
+	CategorySecretAzureKey           Category = "secret_azure_key"
+	CategorySecretPrivateKeyPEM      Category = "secret_private_key_pem"
+	CategorySecretOAuthToken         Category = "secret_oauth_token"
+	CategorySecretJWT                Category = "secret_jwt"
+	CategorySecretAPIKeyGeneric      Category = "secret_api_key_generic"
+	CategorySecretDBConnectionString Category = "secret_db_connection_string"
+	CategorySecretSlackToken         Category = "secret_slack_token"
+	CategorySecretStripeKey          Category = "secret_stripe_key"
+	CategorySecretTwilioKey          Category = "secret_twilio_key"
+	CategorySecretSendgridKey        Category = "secret_sendgrid_key"
+	CategorySecretMailgunKey         Category = "secret_mailgun_key"
+	CategorySecretOpenAIKey          Category = "secret_openai_key"
+	CategorySecretAnthropicKey       Category = "secret_anthropic_key"
+	CategorySecretHerokuKey          Category = "secret_heroku_key"
+	CategorySecretAzureDevOps        Category = "secret_azure_devops"
+	CategorySecretGiteaToken         Category = "secret_gitea_token"
+	CategorySecretHerokuTokenLegacy  Category = "secret_heroku_token_legacy"
+	CategorySecretSlackLegacy        Category = "secret_slack_legacy"
+	CategorySecretAWSAccountID       Category = "secret_aws_account_id"
+	CategorySecretGitHubActionsToken Category = "secret_github_actions_token"
+	CategorySecretGitHubFinegrained  Category = "secret_github_finegrained"
+	CategorySecretGitLabToken        Category = "secret_gitlab_token"
+	CategorySecretGitLabPAT          Category = "secret_gitlab_pat"
+	CategorySecretLinodeToken        Category = "secret_linode_token"
+	CategorySecretDigitalOceanToken  Category = "secret_digitalocean_token"
+	CategorySecretRackspaceToken     Category = "secret_rackspace_token"
+	CategorySecretSalesforceToken    Category = "secret_salesforce_token"
+	CategorySecretShopifyToken       Category = "secret_shopify_token"
+	CategorySecretTravisToken        Category = "secret_travis_token"
+	CategorySecretJenkinsToken       Category = "secret_jenkins_token"
+	CategorySecretCircleCIToken      Category = "secret_circleci_token"
+	CategorySecretBitbucketToken     Category = "secret_bitbucket_token"
+	CategorySecretWordPressToken     Category = "secret_wordpress_token"
+	CategorySecretNPMToken           Category = "secret_npm_token"
+	CategorySecretPyPIToken          Category = "secret_pypi_token"
+	CategorySecretInternalAPIKey     Category = "secret_internal_api_key"
+	CategorySecretSupabase           Category = "secret_supabase"
+	CategorySecretDBURLWithPassword  Category = "secret_db_url_with_password"
+	CategorySecretCursorKey          Category = "secret_cursor_key"
+	CategorySecretVercelKey          Category = "secret_vercel_key"
+	CategorySecretGroqKey            Category = "secret_groq_key"
+	CategorySecretReplicateKey       Category = "secret_replicate_key"
+
+	// XSS categories (11)
+	CategoryXSSJavaScriptDataURL Category = "xss_javascript_data_url"
+	CategoryXSSScriptTag         Category = "xss_script_tag"
+	CategoryXSSEventHandler      Category = "xss_event_handler"
+	CategoryXSSMutationXSS       Category = "xss_mutation_xss"
+	CategoryXSSPolyglot          Category = "xss_polyglot"
+	CategoryXSSSVGNamespaceAbuse Category = "xss_svg_namespace_abuse"
+	CategoryXSSSVGUseExternal    Category = "xss_svg_use_external"
+	CategoryXSSJavaScriptURL     Category = "xss_javascript_url"
+	CategoryXSSDataURL           Category = "xss_data_url"
+	CategoryXSSSVGScript         Category = "xss_svg_script"
+	CategoryXSSDOMClobbering     Category = "xss_dom_clobbering"
+
+	// Compliance categories (31)
+	CategoryOWASPLLM01            Category = "owasp_llm01_prompt_injection"
+	CategoryOWASPLLM02            Category = "owasp_llm02_insecure_output"
+	CategoryOWASPLLM04            Category = "owasp_llm04_model_dos"
+	CategoryOWASPLLM05            Category = "owasp_llm05_supply_chain"
+	CategoryOWASPLLM06            Category = "owasp_llm06_sensitive_info_disclosure_system_prompt"
+	CategoryOWASPLLM08            Category = "owasp_llm08_excessive_agency"
+	CategoryOWASPLLM09            Category = "owasp_llm09_overreliance"
+	CategoryOWASPLLM10            Category = "owasp_llm10_model_theft"
+	CategoryMITREATLASTA0001      Category = "mitre_atlas_ta0001_reconnaissance"
+	CategoryATLASPoison           Category = "atlas_poison"
+	CategoryATLASExfiltration     Category = "atlas_exfiltration"
+	CategoryATLASJailbreak        Category = "atlas_jailbreak"
+	CategoryEUAIActHighRisk       Category = "eu_ai_act_high_risk"
+	CategoryEUAIActTransparency   Category = "eu_ai_act_transparency"
+	CategoryEUAIActHumanOversight Category = "eu_ai_act_human_oversight"
+	CategoryEUAIActRobustness     Category = "eu_ai_act_robustness"
+	CategoryANPPersonalData       Category = "anp_personal_data"
+	CategoryANPSpecialCategory    Category = "anp_special_category"
+	CategoryCUConsumerRights      Category = "cu_consumer_rights"
+	CategoryCUMinorProtection     Category = "cu_minor_protection"
+	CategoryCCPAReference         Category = "ccpa_reference"
+	CategoryISO27001Reference     Category = "iso_27001_reference"
+	CategoryLGPDReference         Category = "lgpd_reference"
+	CategoryNISTCSFReference      Category = "nist_csf_reference"
+	CategoryPIPEDAReference       Category = "pipeda_reference"
+	CategoryPOPIAReference        Category = "popia_reference"
+	CategoryOWASPLLM10Unbounded   Category = "owasp_llm10_unbounded_consumption"
+	CategoryMITREATLASTA0002      Category = "mitre_atlas_ta0002_resource_development"
+	CategoryEUAIActArticle10      Category = "eu_ai_act_article_10_data_governance"
+	CategoryMITREATLASTA0009      Category = "mitre_atlas_ta0009_collection"
+	CategoryEUAIActArticle52      Category = "eu_ai_act_article_52_generative_ai"
+
+	// Toxicity categories (7)
+	CategoryToxicityHate     Category = "toxicity_hate"
+	CategoryToxicityInsult   Category = "toxicity_insult"
+	CategoryToxicityObscene  Category = "toxicity_obscene"
+	CategoryToxicityThreat   Category = "toxicity_threat"
+	CategoryToxicitySexual   Category = "toxicity_sexual"
+	CategoryToxicitySelfHarm Category = "toxicity_self_harm"
+	CategoryToxicityViolence Category = "toxicity_violence"
+
+	// Prompt Injection categories (4)
+	CategoryPIDirectOverride    Category = "pi_direct_override"
+	CategoryPIIndirectInjection Category = "pi_indirect_injection"
+	CategoryPIJailbreak         Category = "pi_jailbreak"
+	CategoryPIRolePlayAttack    Category = "pi_role_play_attack"
+
+	// Legacy: kept for backward compatibility with v0.1 events.
+	// v0.2 maps this to secret_private_key_pem.
 	CategorySourceCode Category = "source_code"
 )
 
-// AllCategories is the closed set of valid categories. Used for
-// validation in Validate().
+// AllCategories is the closed set of valid categories (157 total).
 var AllCategories = []Category{
-	CategoryPIIEmail,
-	CategoryPIIPhone,
-	CategoryPIISSN,
-	CategoryPIICreditCard,
-	CategorySecretAPIKey,
+	// PII (58)
+	CategoryPIIEmail, CategoryPIIPhone, CategoryPIISSN, CategoryPIICreditCard,
+	CategoryPIIPhoneIntlLoose, CategoryPIIAddress, CategoryPIIDOB, CategoryPIIDriverLicense,
+	CategoryPIIPassport, CategoryPIIBip39Seed, CategoryPIITaxID, CategoryPIIBankAccount,
+	CategoryPIIIPAddress, CategoryPIIMRN, CategoryPIIICD10Code, CategoryPIINPI,
+	CategoryPIISSNLast4, CategoryPIINHSUK, CategoryPIITFNAU, CategoryPIIAadhaarIN,
+	CategoryPIICPFBR, CategoryPIISINCA, CategoryPIIDriverLicenseIntl, CategoryPIIIBAN,
+	CategoryPIIVisa, CategoryPIIPassportAU, CategoryPIIPassportCA, CategoryPIIPassportDE,
+	CategoryPIIPassportEU, CategoryPIIPassportFR, CategoryPIIPassportUK, CategoryPIIResidenceCA,
+	CategoryPIIResidenceUK, CategoryPIIResidenceUS, CategoryPIIDigitalPaypal, CategoryPIIDigitalStripe,
+	CategoryPIIDigitalVenmo, CategoryPIIDigitalCashapp, CategoryPIINidDE, CategoryPIINidES,
+	CategoryPIINidFR, CategoryPIINidIT, CategoryPIINidJP, CategoryPIICryptoBTC,
+	CategoryPIICryptoETH, CategoryPIICryptoBNB, CategoryPIICryptoLTC, CategoryPIICryptoSOL,
+	CategoryPIILetterOnlyID, CategoryPIIIDGenericAlphanumeric, CategoryPIIIDMultisegment,
+	CategoryPIIPassportGeneric, CategoryPIIStreetIntl, CategoryPIISSNRU, CategoryPIISSNFR,
+	CategoryPIITaxIDCH, CategoryPIICreditCardLoose, CategoryPIIEmailIntl,
+	// Secrets (46 including source_code)
+	CategorySecretAPIKey, CategorySecretAWSKey, CategorySecretGitHubToken, CategorySecretGCPKey,
+	CategorySecretAzureKey, CategorySecretPrivateKeyPEM, CategorySecretOAuthToken, CategorySecretJWT,
+	CategorySecretAPIKeyGeneric, CategorySecretDBConnectionString, CategorySecretSlackToken, CategorySecretStripeKey,
+	CategorySecretTwilioKey, CategorySecretSendgridKey, CategorySecretMailgunKey, CategorySecretOpenAIKey,
+	CategorySecretAnthropicKey, CategorySecretHerokuKey, CategorySecretAzureDevOps, CategorySecretGiteaToken,
+	CategorySecretHerokuTokenLegacy, CategorySecretSlackLegacy, CategorySecretAWSAccountID, CategorySecretGitHubActionsToken,
+	CategorySecretGitHubFinegrained, CategorySecretGitLabToken, CategorySecretGitLabPAT, CategorySecretLinodeToken,
+	CategorySecretDigitalOceanToken, CategorySecretRackspaceToken, CategorySecretSalesforceToken, CategorySecretShopifyToken,
+	CategorySecretTravisToken, CategorySecretJenkinsToken, CategorySecretCircleCIToken, CategorySecretBitbucketToken,
+	CategorySecretWordPressToken, CategorySecretNPMToken, CategorySecretPyPIToken, CategorySecretInternalAPIKey,
+	CategorySecretSupabase, CategorySecretDBURLWithPassword, CategorySecretCursorKey, CategorySecretVercelKey,
+	CategorySecretGroqKey, CategorySecretReplicateKey,
+	// XSS (11)
+	CategoryXSSJavaScriptDataURL, CategoryXSSScriptTag, CategoryXSSEventHandler, CategoryXSSMutationXSS,
+	CategoryXSSPolyglot, CategoryXSSSVGNamespaceAbuse, CategoryXSSSVGUseExternal, CategoryXSSJavaScriptURL,
+	CategoryXSSDataURL, CategoryXSSSVGScript, CategoryXSSDOMClobbering,
+	// Compliance (31)
+	CategoryOWASPLLM01, CategoryOWASPLLM02, CategoryOWASPLLM04, CategoryOWASPLLM05,
+	CategoryOWASPLLM06, CategoryOWASPLLM08, CategoryOWASPLLM09, CategoryOWASPLLM10,
+	CategoryMITREATLASTA0001, CategoryATLASPoison, CategoryATLASExfiltration, CategoryATLASJailbreak,
+	CategoryEUAIActHighRisk, CategoryEUAIActTransparency, CategoryEUAIActHumanOversight, CategoryEUAIActRobustness,
+	CategoryANPPersonalData, CategoryANPSpecialCategory, CategoryCUConsumerRights, CategoryCUMinorProtection,
+	CategoryCCPAReference, CategoryISO27001Reference, CategoryLGPDReference, CategoryNISTCSFReference,
+	CategoryPIPEDAReference, CategoryPOPIAReference, CategoryOWASPLLM10Unbounded, CategoryMITREATLASTA0002,
+	CategoryEUAIActArticle10, CategoryMITREATLASTA0009, CategoryEUAIActArticle52,
+	// Toxicity (7)
+	CategoryToxicityHate, CategoryToxicityInsult, CategoryToxicityObscene, CategoryToxicityThreat,
+	CategoryToxicitySexual, CategoryToxicitySelfHarm, CategoryToxicityViolence,
+	// Prompt Injection (4)
+	CategoryPIDirectOverride, CategoryPIIndirectInjection, CategoryPIJailbreak, CategoryPIRolePlayAttack,
+	// Backward compatibility
 	CategorySourceCode,
 }
 
-// Severity is the severity of the detection. Reuses the same
-// vocabulary as pkg/ioc.Severity and pkg/logging.Severity so that
-// downstream IOCs are compatible.
+// FacetCategories maps each Facet to its valid categories.
+var FacetCategories = map[Facet][]Category{
+	FacetPII: {
+		CategoryPIIEmail, CategoryPIIPhone, CategoryPIISSN, CategoryPIICreditCard,
+		CategoryPIIPhoneIntlLoose, CategoryPIIAddress, CategoryPIIDOB, CategoryPIIDriverLicense,
+		CategoryPIIPassport, CategoryPIIBip39Seed, CategoryPIITaxID, CategoryPIIBankAccount,
+		CategoryPIIIPAddress, CategoryPIIMRN, CategoryPIIICD10Code, CategoryPIINPI,
+		CategoryPIISSNLast4, CategoryPIINHSUK, CategoryPIITFNAU, CategoryPIIAadhaarIN,
+		CategoryPIICPFBR, CategoryPIISINCA, CategoryPIIDriverLicenseIntl, CategoryPIIIBAN,
+		CategoryPIIVisa, CategoryPIIPassportAU, CategoryPIIPassportCA, CategoryPIIPassportDE,
+		CategoryPIIPassportEU, CategoryPIIPassportFR, CategoryPIIPassportUK, CategoryPIIResidenceCA,
+		CategoryPIIResidenceUK, CategoryPIIResidenceUS, CategoryPIIDigitalPaypal, CategoryPIIDigitalStripe,
+		CategoryPIIDigitalVenmo, CategoryPIIDigitalCashapp, CategoryPIINidDE, CategoryPIINidES,
+		CategoryPIINidFR, CategoryPIINidIT, CategoryPIINidJP, CategoryPIICryptoBTC,
+		CategoryPIICryptoETH, CategoryPIICryptoBNB, CategoryPIICryptoLTC, CategoryPIICryptoSOL,
+		CategoryPIILetterOnlyID, CategoryPIIIDGenericAlphanumeric, CategoryPIIIDMultisegment,
+		CategoryPIIPassportGeneric, CategoryPIIStreetIntl, CategoryPIISSNRU, CategoryPIISSNFR,
+		CategoryPIITaxIDCH, CategoryPIICreditCardLoose, CategoryPIIEmailIntl,
+	},
+	FacetSecrets: {
+		CategorySecretAPIKey, CategorySecretAWSKey, CategorySecretGitHubToken, CategorySecretGCPKey,
+		CategorySecretAzureKey, CategorySecretPrivateKeyPEM, CategorySecretOAuthToken, CategorySecretJWT,
+		CategorySecretAPIKeyGeneric, CategorySecretDBConnectionString, CategorySecretSlackToken, CategorySecretStripeKey,
+		CategorySecretTwilioKey, CategorySecretSendgridKey, CategorySecretMailgunKey, CategorySecretOpenAIKey,
+		CategorySecretAnthropicKey, CategorySecretHerokuKey, CategorySecretAzureDevOps, CategorySecretGiteaToken,
+		CategorySecretHerokuTokenLegacy, CategorySecretSlackLegacy, CategorySecretAWSAccountID, CategorySecretGitHubActionsToken,
+		CategorySecretGitHubFinegrained, CategorySecretGitLabToken, CategorySecretGitLabPAT, CategorySecretLinodeToken,
+		CategorySecretDigitalOceanToken, CategorySecretRackspaceToken, CategorySecretSalesforceToken, CategorySecretShopifyToken,
+		CategorySecretTravisToken, CategorySecretJenkinsToken, CategorySecretCircleCIToken, CategorySecretBitbucketToken,
+		CategorySecretWordPressToken, CategorySecretNPMToken, CategorySecretPyPIToken, CategorySecretInternalAPIKey,
+		CategorySecretSupabase, CategorySecretDBURLWithPassword, CategorySecretCursorKey, CategorySecretVercelKey,
+		CategorySecretGroqKey, CategorySecretReplicateKey,
+	},
+	FacetXSS: {
+		CategoryXSSJavaScriptDataURL, CategoryXSSScriptTag, CategoryXSSEventHandler, CategoryXSSMutationXSS,
+		CategoryXSSPolyglot, CategoryXSSSVGNamespaceAbuse, CategoryXSSSVGUseExternal, CategoryXSSJavaScriptURL,
+		CategoryXSSDataURL, CategoryXSSSVGScript, CategoryXSSDOMClobbering,
+	},
+	FacetCompliance: {
+		CategoryOWASPLLM01, CategoryOWASPLLM02, CategoryOWASPLLM04, CategoryOWASPLLM05,
+		CategoryOWASPLLM06, CategoryOWASPLLM08, CategoryOWASPLLM09, CategoryOWASPLLM10,
+		CategoryMITREATLASTA0001, CategoryATLASPoison, CategoryATLASExfiltration, CategoryATLASJailbreak,
+		CategoryEUAIActHighRisk, CategoryEUAIActTransparency, CategoryEUAIActHumanOversight, CategoryEUAIActRobustness,
+		CategoryANPPersonalData, CategoryANPSpecialCategory, CategoryCUConsumerRights, CategoryCUMinorProtection,
+		CategoryCCPAReference, CategoryISO27001Reference, CategoryLGPDReference, CategoryNISTCSFReference,
+		CategoryPIPEDAReference, CategoryPOPIAReference, CategoryOWASPLLM10Unbounded, CategoryMITREATLASTA0002,
+		CategoryEUAIActArticle10, CategoryMITREATLASTA0009, CategoryEUAIActArticle52,
+	},
+	FacetToxicity: {
+		CategoryToxicityHate, CategoryToxicityInsult, CategoryToxicityObscene, CategoryToxicityThreat,
+		CategoryToxicitySexual, CategoryToxicitySelfHarm, CategoryToxicityViolence,
+	},
+	FacetPromptInjection: {
+		CategoryPIDirectOverride, CategoryPIIndirectInjection, CategoryPIJailbreak, CategoryPIRolePlayAttack,
+	},
+}
+
+// categoryFacetIndex maps category strings to their facet for O(1) lookup.
+var categoryFacetIndex map[string]Facet
+
+func init() {
+	categoryFacetIndex = make(map[string]Facet, len(AllCategories))
+	for facet, cats := range FacetCategories {
+		for _, cat := range cats {
+			categoryFacetIndex[string(cat)] = facet
+		}
+	}
+	categoryFacetIndex[string(CategorySourceCode)] = FacetSecrets
+}
+
+// FacetFromCategory returns the Facet for a given category string.
+func FacetFromCategory(category string) Facet {
+	if f, ok := categoryFacetIndex[category]; ok {
+		return f
+	}
+	return ""
+}
+
+// Severity is the severity of the detection.
 type Severity string
 
 const (
@@ -91,150 +357,69 @@ const (
 	SeverityCritical Severity = "critical"
 )
 
-// UserAction is what the user did in response to the Lens's warning.
+// AllSeverities is the closed set of valid severities.
+var AllSeverities = []Severity{SeverityInfo, SeverityLow, SeverityMedium, SeverityHigh, SeverityCritical}
+
+// UserAction is what the user did in response to a Lens warning.
 type UserAction string
 
 const (
-	// UserActionSendAnyway: user dismissed the warning and sent the
-	// prompt anyway. This is the most operationally interesting
-	// event — it means the user knowingly shared sensitive data.
-	UserActionSendAnyway UserAction = "send_anyway"
-	// UserActionEdit: user edited the prompt to remove the sensitive
-	// data before sending.
-	UserActionEdit UserAction = "edit"
-	// UserActionCancel: user cancelled the prompt entirely.
-	UserActionCancel UserAction = "cancel"
-	// UserActionDismiss: user dismissed the warning but did not
-	// send the prompt during the session we observed (the prompt
-	// might have been sent later without the Lens running, or
-	// the session ended).
-	UserActionDismiss UserAction = "dismiss"
+	UserActionSendAnyway           UserAction = "send_anyway"
+	UserActionRedact               UserAction = "redact"
+	UserActionCancel               UserAction = "cancel"
+	UserActionDismissFalsePositive UserAction = "dismiss_false_positive"
 )
 
 // AllUserActions is the closed set of valid user actions.
-var AllUserActions = []UserAction{
-	UserActionSendAnyway,
-	UserActionEdit,
-	UserActionCancel,
-	UserActionDismiss,
-}
+var AllUserActions = []UserAction{UserActionSendAnyway, UserActionRedact, UserActionCancel, UserActionDismissFalsePositive}
 
-// Event is the §1.1 schema. The struct tags are the wire format.
-// The Validate method enforces all field-level constraints. The
-// backend's JSON decoder uses RejectUnknownFields so any extra
-// fields in the request body are rejected.
+// Event is a single telemetry event from a Lens extension.
 type Event struct {
-	// LensEventVersion is the schema version of this event. The
-	// extension emits 1 (see plans/AEGISGATE-LENS-DAY-2-SCHEMA-V1.md
-	// in the lens-repo-bootstrap repo). The backend accepts ONLY
-	// version 1 today; events with no version or other versions
-	// are rejected. Added 2026-06-22 after Day 11 pen-test revealed
-	// a cross-repo drift: the extension had been emitting versioned
-	// events since Day 2 but the Go struct didn't know about the
-	// field, so every event was rejected with "unknown field
-	// lens_event_version" thanks to DisallowUnknownFields.
-	LensEventVersion int `json:"lens_event_version"`
-
-	// DomainHash is the 16-hex-character SHA-256 prefix of the
-	// AI provider's hostname. Computed locally by the extension.
-	// The backend re-computes the SHA-256 of the TLS SNI in the
-	// inbound request and rejects any event whose DomainHash
-	// does not match. See domain_hash.go.
-	DomainHash string `json:"domain_hash"`
-
-	// Category is the sensitive-data category that was detected.
-	Category string `json:"category"`
-
-	// Severity is the severity of the detection.
-	Severity string `json:"severity"`
-
-	// UserAction is what the user did in response to the warning.
-	UserAction string `json:"user_action"`
-
-	// Timestamp is the unix-second timestamp of the detection,
-	// stamped by the extension at detection time (not by the
-	// backend at receive time). Must be within ±24 hours of
-	// the backend's wall clock; otherwise rejected.
-	Timestamp int64 `json:"timestamp"`
-
-	// ModelVersion identifies the classifier that made the
-	// detection. Format: "<lens_version>+<classifier>-<rev>".
-	// Example: "0.1.0+regex-v1".
-	ModelVersion string `json:"model_version"`
-
-	// LensVersion is the version of the Lens extension that
-	// produced the event. Format: semver.
-	LensVersion string `json:"lens_version"`
-
-	// Confidence is the classifier's confidence in the detection,
-	// 0.0..1.0. Currently always 1.0 for the regex detector
-	// (regex matches are deterministic); the field exists for
-	// forward compatibility with v0.2's ML classifier.
-	Confidence float64 `json:"confidence"`
-
-	// ID is an optional client-side UUID for client-side dedup.
-	// The backend does NOT store this — it exists so the
-	// extension can suppress duplicate events from the same
-	// detection (e.g., the same prompt being edited and re-sent).
-	// The backend accepts and ignores it.
-	ID string `json:"id,omitempty"`
+	LensEventVersion int                `json:"lens_event_version"`
+	DomainHash       string             `json:"domain_hash"`
+	Facet            string             `json:"facet"`
+	Category         string             `json:"category"`
+	Severity         string             `json:"severity"`
+	UserAction       string             `json:"user_action"`
+	Timestamp        int64              `json:"timestamp"`
+	ModelVersion     string             `json:"model_version"`
+	LensVersion      string             `json:"lens_version"`
+	Confidence       float64            `json:"confidence"`
+	PatternID        string             `json:"pattern_id,omitempty"`
+	MLScore          float64            `json:"ml_score,omitempty"`
+	MLThreshold      float64            `json:"ml_threshold,omitempty"`
+	FacetResults     map[string]float64 `json:"facet_results,omitempty"`
+	ID               string             `json:"id,omitempty"`
 }
 
-// ErrInvalidEvent is returned by Validate for any field-level
-// validation failure. The error message is safe to log and to
-// return to the client (it contains no PII, just a description
-// of which field failed).
+// ErrInvalidEvent is returned by Validate for validation failures.
 var ErrInvalidEvent = errors.New("invalid event")
 
-// Validate enforces the §1.1 schema. It is called by the handler
-// immediately after JSON decoding.
-//
-// The validation is intentionally strict: any field that does not
-// match its constraint causes the entire event to be rejected with
-// HTTP 400. This is a privacy feature, not just a correctness
-// feature: if the extension ever sends a field we don't expect
-// (e.g., a future bug sends a URL or a content hash), we reject
-// it rather than silently accepting and potentially storing it.
-//
-// The list of checks:
-//
-//  1. domain_hash is exactly 16 lowercase hex characters
-//  2. category is in AllCategories
-//  3. severity is in {info, low, medium, high, critical}
-//  4. user_action is in AllUserActions
-//  5. timestamp is within ±24 hours of backend wall clock
-//  6. model_version is non-empty and contains a "+"
-//  7. lens_version is non-empty
-//  8. confidence is in [0.0, 1.0]
+// Validate enforces the v0.2 schema.
 func (e *Event) Validate() error {
-	// Schema versioning: only accept events with version == 1.
-	// Events with no version (legacy v0) are rejected. Future versions
-	// (v2+) are rejected until the schema is bumped. See
-	// plans/AEGISGATE-LENS-DAY-2-SCHEMA-V1.md.
 	if e.LensEventVersion != 1 {
-		return fmt.Errorf("%w: lens_event_version must be 1, got %d",
-			ErrInvalidEvent, e.LensEventVersion)
+		return fmt.Errorf("%w: lens_event_version must be 1, got %d", ErrInvalidEvent, e.LensEventVersion)
 	}
-
 	if len(e.DomainHash) != 16 {
 		return fmt.Errorf("%w: domain_hash must be 16 hex chars, got %d", ErrInvalidEvent, len(e.DomainHash))
 	}
 	for _, c := range e.DomainHash {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
-			return fmt.Errorf("%w: domain_hash must be lowercase hex", ErrInvalidEvent)
+		if !isLowerHex(c) {
+			return fmt.Errorf("%w: domain_hash must be lowercase hex, got %q", ErrInvalidEvent, e.DomainHash)
 		}
 	}
-
-	if !isValidCategory(e.Category) {
-		return fmt.Errorf("%w: category %q not in %v", ErrInvalidEvent, e.Category, AllCategories)
+	if !isValidFacet(e.Facet) {
+		return fmt.Errorf("%w: facet %q not in %v", ErrInvalidEvent, e.Facet, AllFacets)
+	}
+	if !isValidCategoryForFacet(e.Facet, e.Category) {
+		return fmt.Errorf("%w: category %q not valid for facet %q", ErrInvalidEvent, e.Category, e.Facet)
 	}
 	if !isValidSeverity(e.Severity) {
-		return fmt.Errorf("%w: severity %q not in {info, low, medium, high, critical}", ErrInvalidEvent, e.Severity)
+		return fmt.Errorf("%w: severity %q not in %v", ErrInvalidEvent, e.Severity, AllSeverities)
 	}
 	if !isValidUserAction(e.UserAction) {
 		return fmt.Errorf("%w: user_action %q not in %v", ErrInvalidEvent, e.UserAction, AllUserActions)
 	}
-
 	now := time.Now().Unix()
 	if e.Timestamp <= 0 {
 		return fmt.Errorf("%w: timestamp must be positive", ErrInvalidEvent)
@@ -243,12 +428,8 @@ func (e *Event) Validate() error {
 	if delta < -24*3600 || delta > 24*3600 {
 		return fmt.Errorf("%w: timestamp must be within ±24h of server clock", ErrInvalidEvent)
 	}
-
 	if e.ModelVersion == "" {
 		return fmt.Errorf("%w: model_version must be non-empty", ErrInvalidEvent)
-	}
-	if !containsPlus(e.ModelVersion) {
-		return fmt.Errorf("%w: model_version must contain '+' (e.g., '0.1.0+regex-v1')", ErrInvalidEvent)
 	}
 	if e.LensVersion == "" {
 		return fmt.Errorf("%w: lens_version must be non-empty", ErrInvalidEvent)
@@ -256,10 +437,41 @@ func (e *Event) Validate() error {
 	if e.Confidence < 0.0 || e.Confidence > 1.0 {
 		return fmt.Errorf("%w: confidence must be in [0.0, 1.0], got %f", ErrInvalidEvent, e.Confidence)
 	}
+	if e.MLScore < 0.0 || e.MLScore > 1.0 {
+		return fmt.Errorf("%w: ml_score must be in [0.0, 1.0], got %f", ErrInvalidEvent, e.MLScore)
+	}
+	if e.MLThreshold < 0.0 || e.MLThreshold > 1.0 {
+		return fmt.Errorf("%w: ml_threshold must be in [0.0, 1.0], got %f", ErrInvalidEvent, e.MLThreshold)
+	}
 	return nil
 }
 
-// isValidCategory returns true if c is one of the AllCategories.
+func isValidFacet(f string) bool {
+	for _, v := range AllFacets {
+		if string(v) == f {
+			return true
+		}
+	}
+	return false
+}
+
+func isValidCategoryForFacet(facet, category string) bool {
+	f := Facet(facet)
+	cats, ok := FacetCategories[f]
+	if !ok {
+		return false
+	}
+	for _, c := range cats {
+		if string(c) == category {
+			return true
+		}
+	}
+	if f == FacetSecrets && category == string(CategorySourceCode) {
+		return true
+	}
+	return false
+}
+
 func isValidCategory(c string) bool {
 	for _, v := range AllCategories {
 		if string(v) == c {
@@ -269,7 +481,6 @@ func isValidCategory(c string) bool {
 	return false
 }
 
-// isValidSeverity returns true if s is one of the Severity constants.
 func isValidSeverity(s string) bool {
 	switch Severity(s) {
 	case SeverityInfo, SeverityLow, SeverityMedium, SeverityHigh, SeverityCritical:
@@ -278,7 +489,6 @@ func isValidSeverity(s string) bool {
 	return false
 }
 
-// isValidUserAction returns true if u is one of the AllUserActions.
 func isValidUserAction(u string) bool {
 	for _, v := range AllUserActions {
 		if string(v) == u {
@@ -288,20 +498,21 @@ func isValidUserAction(u string) bool {
 	return false
 }
 
-// containsPlus returns true if s contains a '+' character.
-// Hand-rolled to avoid importing strings just for one character.
+func isLowerHex(c rune) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
+}
+
 func containsPlus(s string) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] == '+' {
+	for _, c := range s {
+		if c == '+' {
 			return true
 		}
 	}
 	return false
 }
 
-// decodeEvent decodes a JSON body into an Event, rejecting any
-// unknown fields. This is the first line of defense against the
-// extension ever sending a field we don't know about.
+// decodeEvent parses a JSON event body into an Event struct.
+// Disallows unknown fields as a privacy measure.
 func decodeEvent(body []byte) (Event, error) {
 	var e Event
 	dec := json.NewDecoder(bytes.NewReader(body))

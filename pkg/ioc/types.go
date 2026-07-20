@@ -103,6 +103,20 @@ const (
 	// of the detection event (which hashes the pattern, not the
 	// value) is shared.
 	IOCTypePIIDetected IOCType = "pii_detected"
+
+	// IOCTypeXSSDetected indicates an XSS detection in AI-generated output.
+	// Produced by the Lens v0.2 XSS facet.
+	IOCTypeXSSDetected IOCType = "xss_detected"
+
+	// IOCTypeComplianceViolation indicates a compliance framework violation
+	// (OWASP LLM, MITRE ATLAS, EU AI Act, ANP, CCPA, etc.).
+	// Produced by the Lens v0.2 compliance facet.
+	IOCTypeComplianceViolation IOCType = "compliance_violation"
+
+	// IOCTypeToxicityDetected indicates toxic content detection
+	// (hate, insult, obscenity, threat, sexual, self-harm, violence).
+	// Produced by the Lens v0.2 toxicity facet.
+	IOCTypeToxicityDetected IOCType = "toxicity_detected"
 )
 
 // Severity is the severity of an IOC. We re-use the same string
@@ -277,7 +291,8 @@ func (i *IOC) Valid() bool {
 	}
 	switch i.Type {
 	case IOCTypeProxyResponse, IOCTypeAnomalyScore, IOCTypePromptInjection,
-		IOCTypeSecretLeak, IOCTypePIIDetected:
+		IOCTypeSecretLeak, IOCTypePIIDetected, IOCTypeXSSDetected,
+		IOCTypeComplianceViolation, IOCTypeToxicityDetected:
 	default:
 		return false
 	}
