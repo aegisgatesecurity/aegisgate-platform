@@ -37,6 +37,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 	"sync"
@@ -152,6 +153,10 @@ type Manager struct {
 	cache        map[string]*cachedResult
 	cacheMu      sync.RWMutex
 	cacheEnabled bool
+
+	// PostgreSQL backend (nil for in-memory mode)
+	pgCache     *PostgresLicenseCache
+	usePostgres bool
 }
 
 type cachedResult struct {
@@ -202,6 +207,30 @@ func NewManagerWithKey(pubKeyPEM string) (*Manager, error) {
 	}, nil
 }
 
+// NewWithPostgres creates a Manager that uses PostgreSQL for license validation
+// caching. If pgCache is nil, falls back to in-memory caching (same as NewManager).
+// This is for Professional/Enterprise tiers with FeaturePostgreSQL enabled.
+func NewWithPostgres(pgCache *PostgresLicenseCache) (*Manager, error) {
+	m, err := NewManager()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create base manager: %w", err)
+	}
+	if pgCache == nil {
+		// No PostgreSQL available; use in-memory cache
+		return m, nil
+	}
+	m.pgCache = pgCache
+	m.usePostgres = true
+	return m, nil
+}
+
+// UsesPostgres returns whether PostgreSQL caching is active.
+func (m *Manager) UsesPostgres() bool {
+	m.cacheMu.RLock()
+	defer m.cacheMu.RUnlock()
+	return m.usePostgres
+}
+
 // DisableCache disables validation caching (useful for testing)
 func (m *Manager) DisableCache() {
 	m.cacheEnabled = false
@@ -209,7 +238,34 @@ func (m *Manager) DisableCache() {
 
 // Validate validates a license key and returns the result
 func (m *Manager) Validate(licenseKey string) ValidationResult {
-	// Check cache first
+	// PostgreSQL path: check PostgreSQL cache first, then validate and store
+	if m.usePostgres && m.pgCache != nil {
+		ctx := context.Background()
+		// Check PostgreSQL cache
+		cached := m.pgCache.Get(ctx, licenseKey)
+		if cached != nil {
+			return *cached
+		}
+
+		// Validate and store in PostgreSQL cache
+		result := m.validateInternal(licenseKey)
+		if err := m.pgCache.Set(ctx, licenseKey, &result, CacheDuration); err != nil {
+			// Log but don't fail — fall back to in-memory cache
+			log.Printf("Warning: PostgreSQL license cache set failed: %v", err)
+			// Store in in-memory cache as fallback
+			if m.cacheEnabled {
+				m.cacheMu.Lock()
+				m.cache[licenseKey] = &cachedResult{
+					result:    result,
+					expiresAt: time.Now().Add(CacheDuration),
+				}
+				m.cacheMu.Unlock()
+			}
+		}
+		return result
+	}
+
+	// In-memory path: check local cache first
 	if m.cacheEnabled {
 		m.cacheMu.RLock()
 		if cached, ok := m.cache[licenseKey]; ok && time.Now().Before(cached.expiresAt) {
@@ -221,7 +277,7 @@ func (m *Manager) Validate(licenseKey string) ValidationResult {
 
 	result := m.validateInternal(licenseKey)
 
-	// Cache the result
+	// Cache the result in memory
 	if m.cacheEnabled {
 		m.cacheMu.Lock()
 		m.cache[licenseKey] = &cachedResult{
@@ -528,4 +584,21 @@ func (m *Manager) GetCachedEntries() int {
 	m.cacheMu.RLock()
 	defer m.cacheMu.RUnlock()
 	return len(m.cache)
+}
+
+// PruneExpiredCache prunes expired license cache entries from PostgreSQL.
+// Called by the persistence Manager's background goroutine.
+// Returns 0 and nil if not using PostgreSQL.
+func (m *Manager) PruneExpiredCache(ctx context.Context) (int, error) {
+	if !m.usePostgres || m.pgCache == nil {
+		return 0, nil
+	}
+	return m.pgCache.PruneExpired(ctx)
+}
+
+// Close cleans up the Manager and closes the PostgreSQL cache if present.
+func (m *Manager) Close() {
+	if m.pgCache != nil {
+		m.pgCache.Close()
+	}
 }
