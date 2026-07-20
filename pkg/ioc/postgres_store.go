@@ -443,15 +443,15 @@ func (s *PostgresStore) Query(ctx context.Context, filter IOCQuery, tenantCtx ..
 	query := `SELECT fingerprint, type, severity, category, pattern, source_provider,
 			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
 		FROM ioc_fingerprints WHERE 1=1`
-	
+
 	if !isAdmin && tenantID != "" {
 		// Tenant-scoped query: filter by tenant_id
 		query += " AND tenant_id = $1"
 	}
-	
+
 	args := []interface{}{}
 	argIdx := 1
-	
+
 	// If we added tenant filter, increment argIdx
 	if !isAdmin && tenantID != "" {
 		argIdx = 2
