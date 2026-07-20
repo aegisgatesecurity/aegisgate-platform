@@ -45,6 +45,13 @@ type PostgresRBACStore struct {
 	closed bool
 }
 
+// RBACTenantContext holds the tenant context for RBAC operations.
+// When TenantID is empty, operations are tenant-agnostic (admin mode).
+type RBACTenantContext struct {
+	TenantID string
+	IsAdmin  bool // If true, can access all tenants' data
+}
+
 // NewPostgresRBACStore creates a PostgreSQL-backed RBAC store.
 // If pgStore is nil, returns nil (caller should fall back to in-memory).
 func NewPostgresRBACStore(pgStore *ioc.PostgresStore, cfg *Config) (*PostgresRBACStore, error) {
@@ -67,12 +74,18 @@ func NewPostgresRBACStore(pgStore *ioc.PostgresStore, cfg *Config) (*PostgresRBA
 // ============================================================================
 
 // RegisterAgent inserts or updates an agent in PostgreSQL.
-func (s *PostgresRBACStore) RegisterAgent(ctx context.Context, agent *Agent) error {
+func (s *PostgresRBACStore) RegisterAgent(ctx context.Context, agent *Agent, tenantCtx ...RBACTenantContext) error {
 	if s.closed {
 		return fmt.Errorf("postgres RBAC store is closed")
 	}
 	if agent == nil {
 		return fmt.Errorf("agent is nil")
+	}
+
+	// Extract tenant context (optional)
+	tenantID := ""
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
 	}
 
 	toolsJSON, err := json.Marshal(agent.Tools)
@@ -99,8 +112,8 @@ func (s *PostgresRBACStore) RegisterAgent(ctx context.Context, agent *Agent) err
 	}
 
 	const sql = `
-		INSERT INTO rbac_agents (id, name, description, role, tools, tags, metadata, enabled, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO rbac_agents (id, name, description, role, tools, tags, metadata, enabled, tenant_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (id) DO UPDATE SET
 			name = EXCLUDED.name,
 			description = EXCLUDED.description,
@@ -109,11 +122,12 @@ func (s *PostgresRBACStore) RegisterAgent(ctx context.Context, agent *Agent) err
 			tags = EXCLUDED.tags,
 			metadata = EXCLUDED.metadata,
 			enabled = EXCLUDED.enabled,
+			tenant_id = EXCLUDED.tenant_id,
 			updated_at = EXCLUDED.updated_at`
 
 	_, err = s.pool.Exec(ctx, sql,
 		agent.ID, agent.Name, agent.Description, string(agent.Role),
-		toolsJSON, tagsJSON, metadataJSON, agent.Enabled,
+		toolsJSON, tagsJSON, metadataJSON, agent.Enabled, tenantID,
 		createdAt, updatedAt,
 	)
 	if err != nil {
@@ -124,17 +138,33 @@ func (s *PostgresRBACStore) RegisterAgent(ctx context.Context, agent *Agent) err
 }
 
 // GetAgent retrieves an agent by ID from PostgreSQL.
-// Returns nil, nil if the agent is not found.
-func (s *PostgresRBACStore) GetAgent(ctx context.Context, agentID string) (*Agent, error) {
+// If tenantCtx is provided and IsAdmin is false, verifies tenant ownership.
+func (s *PostgresRBACStore) GetAgent(ctx context.Context, agentID string, tenantCtx ...RBACTenantContext) (*Agent, error) {
 	if s.closed {
 		return nil, fmt.Errorf("postgres RBAC store is closed")
 	}
 
-	const sql = `
-		SELECT id, name, description, role, tools, tags, metadata, enabled, created_at, updated_at
-		FROM rbac_agents WHERE id = $1`
+	// Extract tenant context
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
 
-	agent, err := scanAgent(s.pool.QueryRow(ctx, sql, agentID))
+	query := `
+		SELECT id, name, description, role, tools, tags, metadata, enabled, tenant_id, created_at, updated_at
+		FROM rbac_agents WHERE id = $1`
+	args := []interface{}{agentID}
+	argIdx := 2
+
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += fmt.Sprintf(" AND tenant_id = $%d", argIdx)
+		args = append(args, tenantID)
+	}
+
+	agent, err := scanAgent(s.pool.QueryRow(ctx, query, args...))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -226,16 +256,34 @@ func (s *PostgresRBACStore) UnregisterAgent(ctx context.Context, agentID string)
 }
 
 // ListAgents returns all registered agents.
-func (s *PostgresRBACStore) ListAgents(ctx context.Context) ([]*Agent, error) {
+// If tenantCtx is provided and IsAdmin is false, returns only tenant's agents.
+func (s *PostgresRBACStore) ListAgents(ctx context.Context, tenantCtx ...RBACTenantContext) ([]*Agent, error) {
 	if s.closed {
 		return nil, fmt.Errorf("postgres RBAC store is closed")
 	}
 
-	const sql = `
-		SELECT id, name, description, role, tools, tags, metadata, enabled, created_at, updated_at
-		FROM rbac_agents ORDER BY created_at ASC`
+	// Extract tenant context
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
 
-	rows, err := s.pool.Query(ctx, sql)
+	query := `
+		SELECT id, name, description, role, tools, tags, metadata, enabled, tenant_id, created_at, updated_at
+		FROM rbac_agents`
+	args := []interface{}{}
+
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += " WHERE tenant_id = $1"
+		args = append(args, tenantID)
+	}
+
+	query += " ORDER BY created_at ASC"
+
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("postgres list agents: %w", err)
 	}
@@ -257,7 +305,7 @@ func (s *PostgresRBACStore) ListAgents(ctx context.Context) ([]*Agent, error) {
 // ============================================================================
 
 // CreateAgentSession inserts a new agent session.
-func (s *PostgresRBACStore) CreateAgentSession(ctx context.Context, session *AgentSession) error {
+func (s *PostgresRBACStore) CreateAgentSession(ctx context.Context, session *AgentSession, tenantCtx ...RBACTenantContext) error {
 	if s.closed {
 		return fmt.Errorf("postgres RBAC store is closed")
 	}
@@ -265,15 +313,21 @@ func (s *PostgresRBACStore) CreateAgentSession(ctx context.Context, session *Age
 		return fmt.Errorf("session is nil")
 	}
 
+	// Extract tenant context
+	tenantID := ""
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+	}
+
 	tagsJSON, _ := json.Marshal(session.Tags)
 
 	const sql = `
-		INSERT INTO rbac_agent_sessions (id, agent_id, ip_address, context_hash, tags, active, created_at, expires_at, last_activity)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+		INSERT INTO rbac_agent_sessions (id, agent_id, ip_address, context_hash, tags, active, tenant_id, created_at, expires_at, last_activity)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
 	_, err := s.pool.Exec(ctx, sql,
 		session.ID, session.AgentID, session.IPAddress, session.ContextHash,
-		tagsJSON, session.Active, session.CreatedAt, session.ExpiresAt,
+		tagsJSON, session.Active, tenantID, session.CreatedAt, session.ExpiresAt,
 		time.Unix(0, session.lastActivity.Load()),
 	)
 	if err != nil {
@@ -283,18 +337,35 @@ func (s *PostgresRBACStore) CreateAgentSession(ctx context.Context, session *Age
 }
 
 // GetAgentSession retrieves an agent session by ID.
+// If tenantCtx is provided and IsAdmin is false, verifies tenant ownership.
 // Returns nil, nil if the session is not found or expired.
-func (s *PostgresRBACStore) GetAgentSession(ctx context.Context, sessionID string) (*AgentSession, error) {
+func (s *PostgresRBACStore) GetAgentSession(ctx context.Context, sessionID string, tenantCtx ...RBACTenantContext) (*AgentSession, error) {
 	if s.closed {
 		return nil, fmt.Errorf("postgres RBAC store is closed")
 	}
 
-	const sql = `
-		SELECT id, agent_id, ip_address, context_hash, tags, active, created_at, expires_at, last_activity
+	// Extract tenant context
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	query := `
+		SELECT id, agent_id, ip_address, context_hash, tags, active, tenant_id, created_at, expires_at, last_activity
 		FROM rbac_agent_sessions
 		WHERE id = $1 AND active = TRUE AND expires_at > NOW()`
+	args := []interface{}{sessionID}
+	argIdx := 2
 
-	session, err := scanAgentSession(s.pool.QueryRow(ctx, sql, sessionID))
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += fmt.Sprintf(" AND tenant_id = $%d", argIdx)
+		args = append(args, tenantID)
+	}
+
+	session, err := scanAgentSession(s.pool.QueryRow(ctx, query, args...))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -415,25 +486,42 @@ func (s *PostgresRBACStore) CreateUserSession(ctx context.Context, session *User
 }
 
 // GetUserSession retrieves a user session by ID.
+// If tenantCtx is provided and IsAdmin is false, verifies tenant ownership.
 // Returns nil, nil if the session is not found or expired.
-func (s *PostgresRBACStore) GetUserSession(ctx context.Context, sessionID string) (*UserSession, error) {
+func (s *PostgresRBACStore) GetUserSession(ctx context.Context, sessionID string, tenantCtx ...RBACTenantContext) (*UserSession, error) {
 	if s.closed {
 		return nil, fmt.Errorf("postgres RBAC store is closed")
 	}
 
-	const sql = `
-		SELECT id, user_id, role, permissions, ip_address, tags, active, created_at, expires_at, last_activity
+	// Extract tenant context
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	query := `
+		SELECT id, user_id, role, permissions, ip_address, tags, active, tenant_id, created_at, expires_at, last_activity
 		FROM rbac_user_sessions
 		WHERE id = $1 AND active = TRUE AND expires_at > NOW()`
+	args := []interface{}{sessionID}
+	argIdx := 2
 
-	row := s.pool.QueryRow(ctx, sql, sessionID)
-	var id, userID, role, ipAddress string
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += fmt.Sprintf(" AND tenant_id = $%d", argIdx)
+		args = append(args, tenantID)
+	}
+
+	row := s.pool.QueryRow(ctx, query, args...)
+	var id, userID, role, ipAddress, tenantIDResult string
 	var permsJSON, tagsJSON []byte
 	var active bool
 	var createdAt, expiresAt time.Time
 	var lastActivity time.Time
 
-	err := row.Scan(&id, &userID, &role, &permsJSON, &ipAddress, &tagsJSON, &active, &createdAt, &expiresAt, &lastActivity)
+	err := row.Scan(&id, &userID, &role, &permsJSON, &ipAddress, &tagsJSON, &active, &tenantIDResult, &createdAt, &expiresAt, &lastActivity)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -457,6 +545,7 @@ func (s *PostgresRBACStore) GetUserSession(ctx context.Context, sessionID string
 		CreatedAt: createdAt,
 		ExpiresAt: expiresAt,
 		IPAddress: ipAddress,
+		TenantID:  tenantIDResult,
 		Tags:      tags,
 		User: &User{
 			ID:          userID,
@@ -568,7 +657,7 @@ func scanAgent(row pgx.Row) (*Agent, error) {
 	err := row.Scan(
 		&a.ID, &a.Name, &a.Description, &role,
 		&toolsJSON, &tagsJSON, &metadataJSON,
-		&a.Enabled, &a.CreatedAt, &a.UpdatedAt,
+		&a.Enabled, &a.TenantID, &a.CreatedAt, &a.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -601,7 +690,7 @@ func scanAgentFromRows(rows pgx.Rows) (*Agent, error) {
 	err := rows.Scan(
 		&a.ID, &a.Name, &a.Description, &role,
 		&toolsJSON, &tagsJSON, &metadataJSON,
-		&a.Enabled, &a.CreatedAt, &a.UpdatedAt,
+		&a.Enabled, &a.TenantID, &a.CreatedAt, &a.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -633,7 +722,7 @@ func scanAgentSession(row pgx.Row) (*AgentSession, error) {
 
 	err := row.Scan(
 		&s.ID, &s.AgentID, &s.IPAddress, &s.ContextHash,
-		&tagsJSON, &s.Active, &s.CreatedAt, &s.ExpiresAt, &lastActivity,
+		&tagsJSON, &s.Active, &s.TenantID, &s.CreatedAt, &s.ExpiresAt, &lastActivity,
 	)
 	if err != nil {
 		return nil, err
@@ -658,7 +747,7 @@ func scanAgentSessionFromRows(rows pgx.Rows) (*AgentSession, error) {
 
 	err := rows.Scan(
 		&s.ID, &s.AgentID, &s.IPAddress, &s.ContextHash,
-		&tagsJSON, &s.Active, &s.CreatedAt, &s.ExpiresAt, &lastActivity,
+		&tagsJSON, &s.Active, &s.TenantID, &s.CreatedAt, &s.ExpiresAt, &lastActivity,
 	)
 	if err != nil {
 		return nil, err

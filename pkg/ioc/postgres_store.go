@@ -91,6 +91,13 @@ type PostgresStore struct {
 	cfg  DatabaseConfig
 }
 
+// TenantContext holds the tenant context for multi-tenant operations.
+// When TenantID is empty, operations are tenant-agnostic (admin mode).
+type TenantContext struct {
+	TenantID string
+	IsAdmin  bool // If true, can access all tenants' data
+}
+
 // NewPostgresStore creates a new PostgresStore, connects to the database,
 // runs any pending migrations, and prepares hot-path statements.
 func NewPostgresStore(ctx context.Context, cfg DatabaseConfig) (*PostgresStore, error) {
@@ -140,7 +147,7 @@ func NewPostgresStore(ctx context.Context, cfg DatabaseConfig) (*PostgresStore, 
 }
 
 // Observe records a new observation of an IOC using INSERT ... ON CONFLICT (upsert).
-func (s *PostgresStore) Observe(ctx context.Context, ioc IOC) (*IOC, error) {
+func (s *PostgresStore) Observe(ctx context.Context, ioc IOC, tenantCtx ...TenantContext) (*IOC, error) {
 	if !ioc.Valid() {
 		return nil, fmt.Errorf("invalid IOC")
 	}
@@ -155,12 +162,18 @@ func (s *PostgresStore) Observe(ctx context.Context, ioc IOC) (*IOC, error) {
 		lastSeen = now
 	}
 
+	// Extract tenant context (optional, defaults to empty string for backward compatibility)
+	tenantID := ""
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+	}
+
 	var result IOC
 	err := s.pool.QueryRow(ctx,
 		`INSERT INTO ioc_fingerprints (
 			fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		ON CONFLICT (fingerprint) DO UPDATE SET
 			count = ioc_fingerprints.count + 1,
 			last_seen = GREATEST(ioc_fingerprints.last_seen, EXCLUDED.last_seen),
@@ -177,7 +190,7 @@ func (s *PostgresStore) Observe(ctx context.Context, ioc IOC) (*IOC, error) {
 			affects_lens, affects_gateway, source, count, first_seen, last_seen`,
 		ioc.Fingerprint, string(ioc.Type), string(ioc.Severity), ioc.Category,
 		ioc.Pattern, ioc.SourceProvider, ioc.AffectsLens, ioc.AffectsGateway,
-		ioc.Source, 1, firstSeen, lastSeen,
+		ioc.Source, 1, firstSeen, lastSeen, tenantID,
 	).Scan(
 		&result.Fingerprint, &result.Type, &result.Severity, &result.Category,
 		&result.Pattern, &result.SourceProvider, &result.AffectsLens,
@@ -191,9 +204,15 @@ func (s *PostgresStore) Observe(ctx context.Context, ioc IOC) (*IOC, error) {
 }
 
 // ObserveBatch records multiple IOCs in a single batch using pgx.Batch.
-func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC) error {
+func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC, tenantCtx ...TenantContext) error {
 	if len(iocs) == 0 {
 		return nil
+	}
+
+	// Extract tenant context (optional, defaults to empty string)
+	tenantID := ""
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
 	}
 
 	batch := &pgx.Batch{}
@@ -201,8 +220,8 @@ func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC) error {
 
 	const upsertSQL = `INSERT INTO ioc_fingerprints (
 		fingerprint, type, severity, category, pattern, source_provider,
-		affects_lens, affects_gateway, source, count, first_seen, last_seen
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	ON CONFLICT (fingerprint) DO UPDATE SET
 		count = ioc_fingerprints.count + 1,
 		last_seen = GREATEST(ioc_fingerprints.last_seen, EXCLUDED.last_seen),
@@ -233,7 +252,7 @@ func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC) error {
 		batch.Queue(upsertSQL,
 			ioc.Fingerprint, string(ioc.Type), string(ioc.Severity), ioc.Category,
 			ioc.Pattern, ioc.SourceProvider, ioc.AffectsLens, ioc.AffectsGateway,
-			ioc.Source, 1, firstSeen, lastSeen,
+			ioc.Source, 1, firstSeen, lastSeen, tenantID,
 		)
 	}
 
@@ -249,18 +268,34 @@ func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC) error {
 }
 
 // Get returns the IOC with the given fingerprint, or nil if not found.
-func (s *PostgresStore) Get(ctx context.Context, fingerprint string) (*IOC, error) {
+// If tenantCtx is provided and IsAdmin is false, verifies tenant ownership.
+func (s *PostgresStore) Get(ctx context.Context, fingerprint string, tenantCtx ...TenantContext) (*IOC, error) {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	query := `SELECT fingerprint, type, severity, category, pattern, source_provider,
+			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
+		FROM ioc_fingerprints WHERE fingerprint = $1`
+	args := []interface{}{fingerprint}
+	argIdx := 2
+
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += fmt.Sprintf(" AND tenant_id = $%d", argIdx)
+		args = append(args, tenantID)
+	}
+
 	var ioc IOC
-	err := s.pool.QueryRow(ctx,
-		`SELECT fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen
-		FROM ioc_fingerprints WHERE fingerprint = $1`,
-		fingerprint,
-	).Scan(
+	err := s.pool.QueryRow(ctx, query, args...).Scan(
 		&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
 		&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
 		&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-		&ioc.FirstSeen, &ioc.LastSeen,
+		&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -272,9 +307,27 @@ func (s *PostgresStore) Get(ctx context.Context, fingerprint string) (*IOC, erro
 }
 
 // Size returns the number of IOCs in the store.
-func (s *PostgresStore) Size(ctx context.Context) (int, error) {
+// If tenantCtx is provided and IsAdmin is false, returns only tenant's IOC count.
+func (s *PostgresStore) Size(ctx context.Context, tenantCtx ...TenantContext) (int, error) {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	query := `SELECT COUNT(*) FROM ioc_fingerprints`
+	args := []interface{}{}
+
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += " WHERE tenant_id = $1"
+		args = append(args, tenantID)
+	}
+
 	var count int
-	err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM ioc_fingerprints`).Scan(&count)
+	err := s.pool.QueryRow(ctx, query, args...).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count iocs: %w", err)
 	}
@@ -282,12 +335,30 @@ func (s *PostgresStore) Size(ctx context.Context) (int, error) {
 }
 
 // Snapshot returns all IOCs sorted by LastSeen descending.
-func (s *PostgresStore) Snapshot(ctx context.Context) ([]IOC, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen
-		FROM ioc_fingerprints ORDER BY last_seen DESC`,
-	)
+// If tenantCtx is provided and IsAdmin is false, returns only tenant's IOCs.
+func (s *PostgresStore) Snapshot(ctx context.Context, tenantCtx ...TenantContext) ([]IOC, error) {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	query := `SELECT fingerprint, type, severity, category, pattern, source_provider,
+			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
+		FROM ioc_fingerprints`
+	args := []interface{}{}
+
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += " WHERE tenant_id = $1"
+		args = append(args, tenantID)
+	}
+
+	query += " ORDER BY last_seen DESC"
+
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("snapshot iocs: %w", err)
 	}
@@ -300,7 +371,7 @@ func (s *PostgresStore) Snapshot(ctx context.Context) ([]IOC, error) {
 			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
 			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
 			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-			&ioc.FirstSeen, &ioc.LastSeen,
+			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
 		); err != nil {
 			return nil, fmt.Errorf("scan ioc: %w", err)
 		}
@@ -310,13 +381,32 @@ func (s *PostgresStore) Snapshot(ctx context.Context) ([]IOC, error) {
 }
 
 // SnapshotSince returns IOCs with LastSeen >= since, sorted by LastSeen descending.
-func (s *PostgresStore) SnapshotSince(ctx context.Context, since time.Time) ([]IOC, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen
-		FROM ioc_fingerprints WHERE last_seen >= $1 ORDER BY last_seen DESC`,
-		since,
-	)
+// If tenantCtx is provided and IsAdmin is false, returns only tenant's IOCs.
+func (s *PostgresStore) SnapshotSince(ctx context.Context, since time.Time, tenantCtx ...TenantContext) ([]IOC, error) {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	query := `SELECT fingerprint, type, severity, category, pattern, source_provider,
+			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
+		FROM ioc_fingerprints WHERE last_seen >= $1`
+	args := []interface{}{since}
+	argIdx := 2
+
+	// Add tenant filter unless admin mode
+	if !isAdmin && tenantID != "" {
+		query += fmt.Sprintf(" AND tenant_id = $%d", argIdx)
+		args = append(args, tenantID)
+		argIdx++
+	}
+
+	query += " ORDER BY last_seen DESC"
+
+	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("snapshot since: %w", err)
 	}
@@ -329,7 +419,7 @@ func (s *PostgresStore) SnapshotSince(ctx context.Context, since time.Time) ([]I
 			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
 			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
 			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-			&ioc.FirstSeen, &ioc.LastSeen,
+			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
 		); err != nil {
 			return nil, fmt.Errorf("scan ioc: %w", err)
 		}
@@ -339,12 +429,34 @@ func (s *PostgresStore) SnapshotSince(ctx context.Context, since time.Time) ([]I
 }
 
 // Query returns IOCs matching the given filter criteria using indexed lookups.
-func (s *PostgresStore) Query(ctx context.Context, filter IOCQuery) ([]IOC, error) {
+// If tenantCtx is provided and IsAdmin is false, results are filtered by tenant_id.
+func (s *PostgresStore) Query(ctx context.Context, filter IOCQuery, tenantCtx ...TenantContext) ([]IOC, error) {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
+	// Build query with tenant filter (unless admin mode)
 	query := `SELECT fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen
+			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
 		FROM ioc_fingerprints WHERE 1=1`
+	
+	if !isAdmin && tenantID != "" {
+		// Tenant-scoped query: filter by tenant_id
+		query += " AND tenant_id = $1"
+	}
+	
 	args := []interface{}{}
 	argIdx := 1
+	
+	// If we added tenant filter, increment argIdx
+	if !isAdmin && tenantID != "" {
+		argIdx = 2
+		args = append(args, tenantID)
+	}
 
 	if filter.Type != "" {
 		query += fmt.Sprintf(" AND type = $%d", argIdx)
@@ -410,7 +522,7 @@ func (s *PostgresStore) Query(ctx context.Context, filter IOCQuery) ([]IOC, erro
 			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
 			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
 			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-			&ioc.FirstSeen, &ioc.LastSeen,
+			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
 		); err != nil {
 			return nil, fmt.Errorf("scan ioc: %w", err)
 		}

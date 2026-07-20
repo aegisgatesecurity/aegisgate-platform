@@ -97,6 +97,27 @@ Every feature has a self-review documenting the issues found and fixed. **Cumula
 - **Testlab Integration** — Docker Compose PostgreSQL service with health checks, automated integration test runner (`testlab/run-integration-tests.sh`), and CI-compatible DATABASE_URL configuration.
 - **All 3 storage backends** are dual-mode: PostgreSQL when available, in-memory fallback otherwise. Zero external dependencies at runtime.
 
+### Multi-Tenant Isolation (D11)
+
+- **Migration 004** (`pkg/ioc/migrations/004_multi_tenant.sql`) — adds `tenant_id` to 6 tables (IOC, RBAC, License), composite primary key for license_cache, 7 tenant-scoped indexes
+- **Tenant Context Pattern** — `TenantContext`, `RBACTenantContext`, `LicenseTenantContext`, `AuditTenantContext` structs with `TenantID` and `IsAdmin` fields
+- **IOC Isolation** — tenant filtering in `Query()`, `Snapshot()`, `Get()`, `Observe()`; admin users can see cross-tenant data
+- **RBAC Isolation** — tenant-scoped agent registration, session management, and lookups
+- **License Isolation** — tenant-scoped license cache keys (`tenant_id`, `license_key` composite)
+- **Audit Isolation** — `AuditFilter.TenantID` provides tenant-scoped audit queries
+- **Backward Compatible** — empty `tenant_id` for legacy/pre-multi-tenant data; all tenant context parameters are optional variadic
+- **23 Tests Passing** — comprehensive tenant isolation test suite (7 IOC + 7 RBAC + 9 License tests)
+
+### ACP Protocol Module (D14) — First-Class Protocol Guard
+
+- **5-Protocol Coverage Complete** — HTTP, MCP, A2A, **ACP**, RESPONSE (+ Trust Framework = 6 pillars total)
+- **Core Module** (`pkg/acp/`, 4346 LOC, 90.2% coverage, 184 tests) — message types, response scanner (PII/secret detection), HMAC-SHA256 integrity, fail-closed capability enforcer, token-bucket rate limiting, input validation with method blocking, HTTP middleware with XSS protection, 8 Prometheus metrics
+- **PlatformConfig Integration** — `ACPConfig` struct in `pkg/platformconfig/config.go` (parity with A2AConfig), `acp:` section in `configs/aegisgate-platform.yaml`
+- **Main Binary Flag-Gating** — `cmd/aegisgate-platform/main.go` gates ACP middleware on `cfg.ACP.Enabled` (parallel to A2A pattern)
+- **Env Var Overrides** — `AEGISGATE_ACP_ENABLED`, `AEGISGATE_ACP_CONFIG_FILE`
+- **Threat Model** — `plans/THREAT-MODEL.md` Section 2.5 with 12 STRIDE threats (CVSS 8.2–9.0), 7 mitigation mappings, component inventory entry
+- **5 New PlatformConfig Tests** — defaults, env overrides (true/false), config file override, YAML loading
+
 ### Lens Telemetry Bridge (Phase 3)
 
 - **FP-Report Bridge** (`pkg/lensbackend/fp_report.go`) — accepts Lens v0.2.0's 4-field telemetry format (hashed_domain, category, severity, action) and bridges to full v0.2 Event schema with validated defaults.

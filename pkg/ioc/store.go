@@ -140,7 +140,7 @@ func NewStore(cfg StoreConfig) (*Store, error) {
 // Returns the (possibly updated) IOC that is now in the store.
 // The returned pointer is the same object stored; callers must
 // not mutate it after Observe returns.
-func (s *Store) Observe(ioc IOC) (*IOC, error) {
+func (s *Store) Observe(ioc IOC, tenantCtx ...TenantContext) (*IOC, error) {
 	if !ioc.Valid() {
 		return nil, errors.New("invalid IOC")
 	}
@@ -208,10 +208,23 @@ func (s *Store) Size() int {
 // Snapshot returns a copy of every IOC in the store, in
 // LastSeen-descending order (most recent first). The returned
 // slice is safe to iterate without holding the store lock.
-func (s *Store) Snapshot() []IOC {
+// If tenantCtx is provided and IsAdmin is false, returns only tenant's IOCs.
+func (s *Store) Snapshot(tenantCtx ...TenantContext) []IOC {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
 	s.mu.RLock()
 	out := make([]IOC, 0, len(s.byFP))
 	for _, ioc := range s.byFP {
+		// Tenant filter
+		if !isAdmin && tenantID != "" && ioc.TenantID != "" && ioc.TenantID != tenantID {
+			continue
+		}
 		out = append(out, *ioc)
 	}
 	s.mu.RUnlock()
@@ -224,10 +237,23 @@ func (s *Store) Snapshot() []IOC {
 // SnapshotSince returns a copy of every IOC with LastSeen >=
 // since, in LastSeen-descending order. This is the delta query
 // used by the gossip sync protocol.
-func (s *Store) SnapshotSince(since time.Time) []IOC {
+// If tenantCtx is provided and IsAdmin is false, returns only tenant's IOCs.
+func (s *Store) SnapshotSince(since time.Time, tenantCtx ...TenantContext) []IOC {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
 	s.mu.RLock()
 	out := make([]IOC, 0, len(s.byFP))
 	for _, ioc := range s.byFP {
+		// Tenant filter
+		if !isAdmin && tenantID != "" && ioc.TenantID != "" && ioc.TenantID != tenantID {
+			continue
+		}
 		if ioc.LastSeen.Before(since) {
 			continue
 		}
@@ -244,7 +270,16 @@ func (s *Store) SnapshotSince(since time.Time) []IOC {
 // index for fast SourceProvider lookups, falling back to a full
 // scan only when SourceProvider is not specified. This is the
 // performance-critical path for the /api/v1/lens/check endpoint.
-func (s *Store) Query(filter IOCQuery) []IOC {
+// If tenantCtx is provided and IsAdmin is false, filters by tenant_id.
+func (s *Store) Query(filter IOCQuery, tenantCtx ...TenantContext) []IOC {
+	// Extract tenant context (optional)
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -260,6 +295,10 @@ func (s *Store) Query(filter IOCQuery) []IOC {
 			if !ok {
 				continue // stale index entry (evicted)
 			}
+			// Tenant filter
+			if !isAdmin && tenantID != "" && ioc.TenantID != "" && ioc.TenantID != tenantID {
+				continue
+			}
 			if !matchQuery(ioc, filter) {
 				continue
 			}
@@ -272,6 +311,10 @@ func (s *Store) Query(filter IOCQuery) []IOC {
 	// a SourceProvider filter (e.g., admin dashboard).
 	out := make([]IOC, 0, len(s.byFP))
 	for _, ioc := range s.byFP {
+		// Tenant filter
+		if !isAdmin && tenantID != "" && ioc.TenantID != "" && ioc.TenantID != tenantID {
+			continue
+		}
 		if matchQuery(ioc, filter) {
 			out = append(out, *ioc)
 		}

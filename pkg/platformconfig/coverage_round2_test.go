@@ -379,3 +379,74 @@ func TestIsStandaloneMode_Connected(t *testing.T) {
 		t.Error("IsStandaloneMode(false) = true, want false for mode=connected")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// D14: ACP config defaults and env overrides
+// ---------------------------------------------------------------------------
+
+func TestDefaultConfig_ACPDefaults(t *testing.T) {
+	cfg := DefaultConfig()
+	if cfg.ACP.Enabled {
+		t.Error("ACP.Enabled should default to false (opt-in)")
+	}
+	if cfg.ACP.ConfigFile != "configs/acp.yaml" {
+		t.Errorf("ACP.ConfigFile = %q, want %q", cfg.ACP.ConfigFile, "configs/acp.yaml")
+	}
+}
+
+func TestApplyEnvOverrides_ACPEnabledTrue(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_ACP_ENABLED": ""})
+
+	os.Setenv("AEGISGATE_ACP_ENABLED", "true")
+	cfg := DefaultConfig()
+	cfg.applyEnvOverrides()
+	if !cfg.ACP.Enabled {
+		t.Error("ACP.Enabled should be true after AEGISGATE_ACP_ENABLED=true")
+	}
+}
+
+func TestApplyEnvOverrides_ACPEnabledFalse(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_ACP_ENABLED": ""})
+
+	os.Setenv("AEGISGATE_ACP_ENABLED", "false")
+	cfg := DefaultConfig()
+	cfg.ACP.Enabled = true // start from enabled
+	cfg.applyEnvOverrides()
+	if cfg.ACP.Enabled {
+		t.Error("ACP.Enabled should be false after AEGISGATE_ACP_ENABLED=false")
+	}
+}
+
+func TestApplyEnvOverrides_ACPConfigFile(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_ACP_CONFIG_FILE": ""})
+
+	os.Setenv("AEGISGATE_ACP_CONFIG_FILE", "/etc/acp/custom.yaml")
+	cfg := DefaultConfig()
+	cfg.applyEnvOverrides()
+	if cfg.ACP.ConfigFile != "/etc/acp/custom.yaml" {
+		t.Errorf("ACP.ConfigFile = %q, want /etc/acp/custom.yaml", cfg.ACP.ConfigFile)
+	}
+}
+
+func TestLoadFromFile_ACPSection(t *testing.T) {
+	yaml := `
+acp:
+  enabled: true
+  config_file: /custom/path/acp.yaml
+`
+	tmpDir := t.TempDir()
+	cfgFile := filepath.Join(tmpDir, "acp-platform.yaml")
+	if err := os.WriteFile(cfgFile, []byte(yaml), 0644); err != nil {
+		t.Fatalf("write yaml: %v", err)
+	}
+	cfg, err := LoadFromFile(cfgFile)
+	if err != nil {
+		t.Fatalf("LoadFromFile: %v", err)
+	}
+	if !cfg.ACP.Enabled {
+		t.Error("ACP.Enabled should be true after loading YAML")
+	}
+	if cfg.ACP.ConfigFile != "/custom/path/acp.yaml" {
+		t.Errorf("ACP.ConfigFile = %q, want /custom/path/acp.yaml", cfg.ACP.ConfigFile)
+	}
+}

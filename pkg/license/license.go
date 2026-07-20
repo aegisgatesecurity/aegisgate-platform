@@ -56,6 +56,8 @@ const (
 	CtxKeyLicenseKey contextKey = "aegisgate_license_key"
 	// CtxKeyTier is the context key for the resolved tier
 	CtxKeyTier contextKey = "aegisgate_license_tier"
+	// CtxKeyTenantContext is the context key for tenant isolation
+	CtxKeyTenantContext contextKey = "aegisgate_tenant_context"
 )
 
 const (
@@ -237,19 +239,19 @@ func (m *Manager) DisableCache() {
 }
 
 // Validate validates a license key and returns the result
-func (m *Manager) Validate(licenseKey string) ValidationResult {
+func (m *Manager) Validate(licenseKey string, tenantCtx ...LicenseTenantContext) ValidationResult {
 	// PostgreSQL path: check PostgreSQL cache first, then validate and store
 	if m.usePostgres && m.pgCache != nil {
 		ctx := context.Background()
 		// Check PostgreSQL cache
-		cached := m.pgCache.Get(ctx, licenseKey)
+		cached := m.pgCache.Get(ctx, licenseKey, tenantCtx...)
 		if cached != nil {
 			return *cached
 		}
 
 		// Validate and store in PostgreSQL cache
 		result := m.validateInternal(licenseKey)
-		if err := m.pgCache.Set(ctx, licenseKey, &result, CacheDuration); err != nil {
+		if err := m.pgCache.Set(ctx, licenseKey, &result, CacheDuration, tenantCtx...); err != nil {
 			// Log but don't fail — fall back to in-memory cache
 			log.Printf("Warning: PostgreSQL license cache set failed: %v", err)
 			// Store in in-memory cache as fallback
@@ -519,7 +521,8 @@ func (m *Manager) GetLicenseKey() string {
 // to the Manager's stored license key.
 func (m *Manager) GetTierForContext(ctx context.Context) string {
 	key := m.keyFromContext(ctx)
-	result := m.Validate(key)
+	tenantCtx := TenantContextFromContext(ctx)
+	result := m.Validate(key, tenantCtx)
 	return result.Tier.String()
 }
 
@@ -532,7 +535,8 @@ func (m *Manager) GetTierForContext(ctx context.Context) string {
 // then validates that the current license tier meets or exceeds it.
 func (m *Manager) IsFeatureLicensedForContext(ctx context.Context, featureKey string) bool {
 	key := m.keyFromContext(ctx)
-	result := m.Validate(key)
+	tenantCtx := TenantContextFromContext(ctx)
+	result := m.Validate(key, tenantCtx)
 
 	if !result.Valid {
 		// Only community features available without valid license
@@ -570,6 +574,20 @@ func ContextWithManager(ctx context.Context, m *Manager) context.Context {
 // ContextWithLicenseKey returns a new context with the license key set.
 func ContextWithLicenseKey(ctx context.Context, key string) context.Context {
 	return context.WithValue(ctx, CtxKeyLicenseKey, key)
+}
+
+// TenantContextFromContext retrieves the LicenseTenantContext from context.
+// Returns a default context with empty TenantID if not present.
+func TenantContextFromContext(ctx context.Context) LicenseTenantContext {
+	if tc, ok := ctx.Value(CtxKeyTenantContext).(LicenseTenantContext); ok {
+		return tc
+	}
+	return LicenseTenantContext{}
+}
+
+// ContextWithTenantContext returns a new context with the tenant context set.
+func ContextWithTenantContext(ctx context.Context, tc LicenseTenantContext) context.Context {
+	return context.WithValue(ctx, CtxKeyTenantContext, tc)
 }
 
 // ClearCache clears the validation cache

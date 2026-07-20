@@ -269,6 +269,13 @@ type IOC struct {
 	// Lens-only (e.g., a browser-only sensitive-data detection
 	// that has no meaning at the proxy layer).
 	AffectsGateway bool `json:"affectsGateway,omitempty"`
+
+	// TenantID identifies which tenant this IOC belongs to.
+	// Empty string represents legacy/pre-multi-tenant data or
+	// tenant-agnostic IOCs. In multi-tenant deployments, this
+	// is the primary isolation boundary: tenant A cannot see
+	// tenant B's IOCs. Admin users can see all tenants' IOCs.
+	TenantID string `json:"tenantId,omitempty"`
 }
 
 // Valid reports whether the IOC has the minimum required fields

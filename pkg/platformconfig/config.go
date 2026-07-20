@@ -54,6 +54,9 @@ type Config struct {
 	// A2A (Agent-to-Agent) guardrails configuration
 	A2A A2AConfig `yaml:"a2a"`
 
+	// ACP (Agent Communication Protocol) guardrails configuration
+	ACP ACPConfig `yaml:"acp"`
+
 	// Persistence configuration (audit storage, retention, pruning)
 	Persistence persistence.Config `yaml:"persistence"`
 
@@ -108,6 +111,15 @@ type A2AConfig struct {
 	Enabled    bool   `yaml:"enabled"`
 	ConfigFile string `yaml:"config_file"` // path to a2a.yaml
 	CapsFile   string `yaml:"caps_file"`   // path to a2a_caps.yaml
+}
+
+// ACPConfig holds ACP (Agent Communication Protocol) guardrails configuration.
+// ACP is a protocol for code editors and coding agents; this config drives
+// the HMAC integrity, rate limiting, capability enforcement, and response
+// scanning middleware mounted at /acp/ by the platform binary.
+type ACPConfig struct {
+	Enabled    bool   `yaml:"enabled"`
+	ConfigFile string `yaml:"config_file"` // path to acp.yaml (HMAC secret, blocked methods, etc.)
 }
 
 // SecurityConfig holds security middleware settings
@@ -286,6 +298,10 @@ func DefaultConfig() *Config {
 			ConfigFile: "configs/a2a.yaml",
 			CapsFile:   "configs/a2a_caps.yaml",
 		},
+		ACP: ACPConfig{
+			Enabled:    false,
+			ConfigFile: "configs/acp.yaml",
+		},
 		Persistence: persistence.DefaultConfig(),
 		SIEM: SIEMConfig{
 			Enabled:       false,
@@ -410,6 +426,14 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("AEGISGATE_A2A_CAPS_FILE"); v != "" {
 		c.A2A.CapsFile = v
+	}
+
+	// ACP overrides
+	if v := os.Getenv("AEGISGATE_ACP_ENABLED"); v != "" {
+		c.ACP.Enabled = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_ACP_CONFIG_FILE"); v != "" {
+		c.ACP.ConfigFile = v
 	}
 
 	// SIEM overrides

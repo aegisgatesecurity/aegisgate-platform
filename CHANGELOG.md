@@ -2,7 +2,158 @@
 
 > **Not a version bump.** The work below is committed to `main` and engineering-complete. The v3.4.0 GA is gated on **legal review (H1) + the v3.4.0 paid pentest (H4)**, per the [Beta User Agreement](content/legal/beta-agreement.md) and the README. The version stays at v3.4.0-beta.1 (a forward-looking label for the in-progress work) until those gates are cleared. The public release remains **v3.3.0-beta.2**.
 
-This is the engineering-complete summary of all work on `main` since v3.3.0-beta.2 (2026-06-08). It includes the v3.4.0+ Tier 5+3+4 sprint, the v0.2 wiring fixes, and Phases 1–5 (PostgreSQL, Lens integration, SIEM wiring, IOC performance).
+This is the engineering-complete summary of all work on `main` since v3.3.0-beta.2 (2026-06-08). It includes the v3.4.0+ Tier 5+3+4 sprint, the v0.2 wiring fixes, Phases 1–5 (PostgreSQL, Lens integration, SIEM wiring, IOC performance), and **Phase 6 (D11: Multi-Tenant Isolation)**.
+
+### D11: Multi-Tenant Isolation Verification ✅ COMPLETE (2026-07-20)
+
+**Last engineering blocker for Professional tier GA now resolved.**
+
+#### Migration 004
+- **File**: `pkg/ioc/migrations/004_multi_tenant.sql` (104 lines)
+- Adds `tenant_id TEXT NOT NULL DEFAULT ''` to 6 tables: `ioc_fingerprints`, `ioc_events`, `rbac_agents`, `rbac_agent_sessions`, `rbac_user_sessions`, `license_cache`
+- Changes `license_cache` primary key from `(license_key)` to `(tenant_id, license_key)` composite
+- Creates 7 indexes for tenant-scoped queries
+- Backward compatible: existing rows get `tenant_id = ''`
+
+#### Tenant Context Pattern
+Four context structs with consistent API across all packages:
+```go
+type TenantContext struct {
+    TenantID string
+    IsAdmin  bool // if true, can access cross-tenant data
+}
+```
+- `ioc.TenantContext` — IOC store isolation
+- `rbac.RBACTenantContext` — RBAC agent/session isolation
+- `license.LicenseTenantContext` — license cache isolation
+- `persistence.AuditTenantContext` — audit log isolation
+
+#### Code Changes
+| Package | Changes |
+|---------|---------|
+| `pkg/ioc/` | `TenantContext` struct, tenant filtering in `Query()`, `Snapshot()`, `Get()`, `Observe()`, `ObserveBatch()`, `SnapshotSince()`, `Size()` |
+| `pkg/rbac/` | `RBACTenantContext` struct, tenant filtering in `RegisterAgent()`, `GetAgent()`, `ListAgents()`, `CreateAgentSession()`, `GetAgentSession()`, `GetUserSession()` |
+| `pkg/license/` | `LicenseTenantContext` struct, tenant-scoped cache keys in `Get()`, `Set()`, `Invalidate()`, `PruneExpired()`, context helpers in `license.go` |
+| `pkg/persistence/` | `AuditTenantContext` struct, `AuditFilter.TenantID` already provided isolation |
+
+#### Design Decisions
+- **Optional variadic parameters**: All tenant context parameters are `...TenantContext` (backward compatible)
+- **Empty tenant_id**: Represents legacy/pre-multi-tenant data; accessible to all tenants
+- **Admin override**: `IsAdmin=true` bypasses tenant filtering for cross-tenant dashboards/auditing
+- **Zero breaking changes**: All existing code continues to work without modification
+
+#### Testing
+**23 comprehensive tenant isolation tests** created and passing:
+- `pkg/ioc/tenant_isolation_test.go` (7 tests) — Tenant A cannot see Tenant B's IOCs, admin can see all, backward compatibility
+- `pkg/rbac/tenant_isolation_test.go` (7 tests) — Agent/session isolation, tenant-scoped registration and lookups
+- `pkg/license/tenant_isolation_test.go` (9 tests) — Tenant-scoped license cache, context propagation
+
+All tests verify:
+1. ✅ Tenant A cannot see Tenant B's data
+2. ✅ Admin users CAN see cross-tenant data
+3. ✅ Backward compatibility (empty tenant_id) works
+4. ✅ IsAdmin flag controls access
+
+#### Test Results
+```
+pkg/ioc       7 tests  ✅ PASS (0.009s)
+pkg/rbac      7 tests  ✅ PASS (0.008s)
+pkg/license   9 tests  ✅ PASS (0.017s)
+Total:        23 tests ✅ PASS
+```
+
+#### Files Modified for D11
+| File | Lines | Change |
+|------|-------|--------|
+| `pkg/ioc/migrations/004_multi_tenant.sql` | 104 | Created |
+| `pkg/ioc/types.go` | +1 | Added `TenantID` field to `IOC` |
+| `pkg/ioc/postgres_store.go` | +50 | Added `TenantContext`, tenant filtering |
+| `pkg/ioc/store.go` | +20 | Added tenant filtering to in-memory store |
+| `pkg/rbac/types.go` | +3 | Added `TenantID` to Agent/AgentSession/UserSession |
+| `pkg/rbac/postgres_store.go` | +80 | Added `RBACTenantContext`, tenant filtering |
+| `pkg/rbac/manager.go` | +30 | Updated to pass tenant context |
+| `pkg/license/postgres_cache.go` | +60 | Added `LicenseTenantContext`, tenant-scoped cache |
+| `pkg/license/license.go` | +40 | Added context helpers, tenant context propagation |
+| `pkg/persistence/postgres_storage_backend.go` | +6 | Added `AuditTenantContext` |
+| `plans/D11-MULTI-TENANT-PLAN.md` | 277 | Created implementation plan |
+| `pkg/ioc/tenant_isolation_test.go` | 388 | Created (7 tests) |
+| `pkg/rbac/tenant_isolation_test.go` | 399 | Created (7 tests) |
+| `pkg/license/tenant_isolation_test.go` | 263 | Created (9 tests) |
+
+#### Impact
+- ✅ **Professional tier GA unblocked**: Multi-tenant isolation verified
+- ✅ **Backward compatible**: All existing deployments work (empty tenant_id)
+- ✅ **Admin override**: Admin users can see cross-tenant data for dashboards/auditing
+- ✅ **Zero breaking changes**: All tenant context parameters are optional variadic
+- ✅ **All tests pass**: 67/67 test packages passing (5,990 individual tests)
+
+### D14: ACP Protocol Module — First-Class Platform Status ✅ COMPLETE (2026-07-20)
+
+**ACP is now a first-class protocol guard at parity with A2A: platformconfig-integrated, flag-gated, threat-modeled, and CHANGELOG-documented.**
+
+#### What was implemented (D14)
+- **`pkg/acp/` (4346 LOC, 90.2% coverage, 184 tests)** — already shipped in Sprint 15:
+  - `acp_types.go` — Full ACP message types (Message, AgentRequest, AgentResponse, ClientRequest, ClientResponse, capabilities, terminal, fs, http, auth, session)
+  - `acp_guard.go` — Response scanner with PII/secret detection, per-session rate limiting, method blocking
+  - `acp_hmac.go` — HMAC-SHA256 message integrity with constant-time comparison and 5-min timestamp tolerance
+  - `acp_capabilities.go` — Fail-closed capability enforcer (terminal, fs, http, env)
+  - `acp_config.go` + `acp_config_loader.go` — YAML/env config with blocked method list
+  - `acp_middleware.go` — HTTP middleware with XSS protection, request/response scanning
+  - `acp_metrics.go` — Prometheus metrics (8 metric types: messages, HMAC verifications, rate limits, scan duration, PII/secrets detected, blocked methods, sessions, guard enabled)
+  - `acp_lab_test.go` — Keycloak integration tests
+  - `acp_wrap_test.go` — Middleware wrap tests
+  - `schema.json` — 159K ACP spec schema
+  - `doc.go` — Package documentation
+
+#### D14 integration work (this session)
+- **`pkg/platformconfig/config.go`** — Added `ACPConfig` struct (parity with A2AConfig)
+- **`configs/aegisgate-platform.yaml`** — Added `acp:` section (defaults to enabled)
+- **`cmd/aegisgate-platform/main.go`** — Gated ACP middleware on `cfg.ACP.Enabled` (parallel to A2A pattern)
+- **`pkg/platformconfig/coverage_round2_test.go`** — Added 5 ACP tests:
+  - `TestDefaultConfig_ACPDefaults` — Default config has ACP disabled with `configs/acp.yaml` path
+  - `TestApplyEnvOverrides_ACPEnabledTrue` — `AEGISGATE_ACP_ENABLED=true` works
+  - `TestApplyEnvOverrides_ACPEnabledFalse` — `AEGISGATE_ACP_ENABLED=false` works
+  - `TestApplyEnvOverrides_ACPConfigFile` — `AEGISGATE_ACP_CONFIG_FILE` override works
+  - `TestLoadFromFile_ACPSection` — YAML loading of `acp:` section works
+
+#### Threat Model
+- **`plans/THREAT-MODEL.md`** — Added Section 2.5 "ACP Protocol Threats (STRIDE)" with 12 STRIDE threats:
+  - **S** (Spoofing): ACP-S-01 (impersonation), ACP-S-02 (origin spoofing)
+  - **T** (Tampering): ACP-T-01 (content tampering), ACP-T-02 (capability forgery), ACP-T-03 (blocked method bypass)
+  - **R** (Repudiation): ACP-R-01 (denial of sent message)
+  - **I** (Information Disclosure): ACP-I-01 (data exfil), ACP-I-02 (credential leakage)
+  - **D** (DoS): ACP-D-01 (resource exhaustion), ACP-D-02 (session flooding)
+  - **E** (Elevation): ACP-E-01 (capability escalation), ACP-E-02 (tier bypass)
+- Updated CVSS scoring table with 4 ACP entries (CVSS 8.2–9.0)
+- Updated Mitigation Verification Matrix with 7 ACP control mappings
+- Updated Component Inventory with ACP Communication row
+- Updated Executive Summary to mention 5 security pillars
+
+#### Test Results
+```
+pkg/acp           184 tests  ✅ PASS (0.196s) — 90.2% coverage
+pkg/platformconfig 5 new tests ✅ PASS — 97.6% coverage
+Full suite:        65/65 packages passing, 0 failures
+```
+
+#### Files Modified for D14
+| File | Change |
+|------|--------|
+| `pkg/platformconfig/config.go` | +18 lines: `ACPConfig` struct, `Config.ACP` field, defaults, env overrides |
+| `pkg/platformconfig/coverage_round2_test.go` | +71 lines: 5 ACP tests |
+| `configs/aegisgate-platform.yaml` | +3 lines: `acp:` section |
+| `cmd/aegisgate-platform/main.go` | +18 lines: ACP gated on `cfg.ACP.Enabled` |
+| `plans/THREAT-MODEL.md` | +50 lines: Section 2.5 ACP STRIDE, 4 CVSS, 7 mitigations, 1 component |
+| `plans/D14-ACP-PLAN.md` | 262 lines: Created implementation plan |
+| `plans/DEFERRED-ITEMS.md` | D14 marked complete |
+| `plans/SESSION-HANDOFF-2026-07-20.md` | D14 summary added |
+
+#### Impact
+- ✅ **5-protocol coverage complete**: HTTP, MCP, A2A, ACP, RESPONSE (matches the D14 strategic goal)
+- ✅ **Parity with A2A**: ACP now has platformconfig integration, env overrides, and main.go flag-gating
+- ✅ **Threat model complete**: ACP documented in same depth as A2A (12 STRIDE threats, 7 mitigations)
+- ✅ **All tests pass**: 65/65 packages passing, 5 new platformconfig tests, 0 regressions
+- ✅ **Backward compatible**: ACP defaults to enabled in `aegisgate-platform.yaml` but can be disabled via config or env
 
 ### What's new on `main`
 

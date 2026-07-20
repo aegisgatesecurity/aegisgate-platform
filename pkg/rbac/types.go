@@ -266,6 +266,7 @@ type Agent struct {
 	Enabled     bool                   `json:"enabled"`
 	CreatedAt   time.Time              `json:"created_at"`
 	UpdatedAt   time.Time              `json:"updated_at"`
+	TenantID    string                 `json:"tenantId,omitempty"`
 }
 
 // HasToolPermission checks if the agent has a specific tool permission
@@ -354,6 +355,7 @@ type UserSession struct {
 	Tags         map[string]string `json:"tags,omitempty"`
 	Active       bool              `json:"active"`
 	IPAddress    string            `json:"ip_address,omitempty"`
+	TenantID     string            `json:"tenantId,omitempty"`
 }
 
 // LastActivityTime returns the last activity time
@@ -401,6 +403,7 @@ type AgentSession struct {
 	Active      bool              `json:"active"`
 	IPAddress   string            `json:"ip_address,omitempty"`
 	ContextHash string            `json:"context_hash,omitempty"`
+	TenantID    string            `json:"tenantId,omitempty"`
 
 	mu           sync.RWMutex `json:"-"`
 	ExpiresAt    time.Time    `json:"expires_at"`

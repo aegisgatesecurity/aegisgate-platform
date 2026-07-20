@@ -995,40 +995,52 @@ func main() {
 		// ============================================================
 		// Component 5: ACP (Agent Communication Protocol) Guard
 		// ============================================================
-		var acpMiddleware *acp.Middleware
-		_ = acp.NewACPResponseScanner // Reserved for future use
+		// Gated on cfg.ACP.Enabled (D14: parity with A2A / lens / siem)
+		if cfg != nil && cfg.ACP.Enabled {
+			var acpMiddleware *acp.Middleware
+			_ = acp.NewACPResponseScanner // Reserved for future use
 
-		// Load ACP configuration from file or environment
-		acpConfigPath := "configs/acp.yaml"
-		var acpCfg *acp.ACPGuardConfig
-
-		if _, err := os.Stat(acpConfigPath); err == nil {
-			loader := acp.NewConfigLoader()
-			acpCfg, err = loader.LoadConfig(acpConfigPath)
-			if err != nil {
-				log.Printf("Warning: ACP config load failed (%v) - using defaults", err)
-				acpCfg = acp.DefaultACPGuardConfig()
+			// Load ACP configuration from file or environment
+			acpConfigPath := cfg.ACP.ConfigFile
+			if acpConfigPath == "" {
+				acpConfigPath = "configs/acp.yaml"
 			}
+			var acpCfg *acp.ACPGuardConfig
+
+			if _, err := os.Stat(acpConfigPath); err == nil {
+				loader := acp.NewConfigLoader()
+				acpCfg, err = loader.LoadConfig(acpConfigPath)
+				if err != nil {
+					log.Printf("Warning: ACP config load failed (%v) - using defaults", err)
+					acpCfg = acp.DefaultACPGuardConfig()
+				}
+			} else {
+				acpCfg = acp.LoadConfigFromEnv()
+				log.Printf("ACP: No config file found, using env-based config")
+			}
+
+			// Create ACP scanner and middleware
+			acp.SetGuardEnabled(acpCfg.EnableHMAC || acpCfg.EnableRateLimiting)
+			acpMiddleware = acp.NewMiddlewareWithConfig(acpCfg)
+
+			// Register ACP endpoints
+			proxyMux.Handle("/acp/", acpMiddleware.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				//nolint:errcheck - ACP endpoint write errors are logged but non-fatal
+				if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
+					log.Printf("Warning: Failed to write ACP response: %v", err)
+				}
+			})))
+
+			log.Printf("ACP: Guardrails active (hmac=%v, rate_limit=%v/min, burst=%d)",
+				acpCfg.EnableHMAC, acpCfg.RateLimitPerMinute, acpCfg.RateLimitBurst)
 		} else {
-			acpCfg = acp.LoadConfigFromEnv()
-			log.Printf("ACP: No config file found, using env-based config")
+			proxyMux.HandleFunc("/acp/", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				writeJSON(w, map[string]string{"status": "disabled", "reason": "acp not configured"})
+			})
+			log.Printf("ACP: Guardrails not enabled (set acp.enabled=true in config or AEGISGATE_ACP_ENABLED=true)")
 		}
-
-		// Create ACP scanner and middleware
-		acp.SetGuardEnabled(acpCfg.EnableHMAC || acpCfg.EnableRateLimiting)
-		acpMiddleware = acp.NewMiddlewareWithConfig(acpCfg)
-
-		// Register ACP endpoints
-		proxyMux.Handle("/acp/", acpMiddleware.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			//nolint:errcheck - ACP endpoint write errors are logged but non-fatal
-			if _, err := w.Write([]byte("{\"status\":\"acp-ok\",\"version\":\"" + version + "\"}")); err != nil {
-				log.Printf("Warning: Failed to write ACP response: %v", err)
-			}
-		})))
-
-		log.Printf("ACP: Guardrails active (hmac=%v, rate_limit=%v/min, burst=%d)",
-			acpCfg.EnableHMAC, acpCfg.RateLimitPerMinute, acpCfg.RateLimitBurst)
 
 		log.Printf("Warning: Failed to create platform bridge: %v - continuing without bridge", bridgeErr)
 		log.Println("Continuing without bridge - LLM calls won't be routed through AegisGate")
