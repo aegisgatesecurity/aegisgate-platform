@@ -78,18 +78,18 @@ func DefaultConfig() Config {
 // PostgreSQL for audit storage (Professional/Enterprise tiers). Otherwise
 // it falls back to file-based storage (Community/Developer tiers).
 type Manager struct {
-	cfg             Config
-	platformTier    tier.Tier
-	storage         opsec.StorageBackend // file or postgres backend
-	fileStorage     *opsec.FileStorageBackend
-	pgStorage       *postgresStorageBackend
-	pgStore         *ioc.PostgresStore // nil for file-based persistence
-	auditLog        *opsec.ComplianceAuditLog
-	cancel          context.CancelFunc
-	done            chan struct{}
-	mu              sync.RWMutex
-	started         bool
-	usePostgres     bool
+	cfg          Config
+	platformTier tier.Tier
+	storage      opsec.StorageBackend // file or postgres backend
+	fileStorage  *opsec.FileStorageBackend
+	pgStorage    *postgresStorageBackend
+	pgStore      *ioc.PostgresStore // nil for file-based persistence
+	auditLog     *opsec.ComplianceAuditLog
+	cancel       context.CancelFunc
+	done         chan struct{}
+	mu           sync.RWMutex
+	started      bool
+	usePostgres  bool
 }
 
 // New creates a new persistence Manager with file-based storage.
