@@ -43,6 +43,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
@@ -111,7 +112,10 @@ var (
 	iocPeers          = flag.String("ioc-peers", "", "Comma-separated peer base URLs for IOC gossip (e.g. https://aegis-b.example.com:8443,https://aegis-c.example.com:8443). Env: AEGISGATE_IOC_PEERS")
 	iocStoreDir       = flag.String("ioc-store-dir", "", "Directory for IOC store persistence (default: <DataDir>/ioc)")
 	iocGossipInterval = flag.Duration("ioc-gossip-interval", 5*time.Minute, "Interval between peer IOC fetches in RunReceiver. Env: AEGISGATE_IOC_GOSSIP_INTERVAL (Go duration: 30s, 5m, 1h)")
-	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS")
+	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS)")
+	lensEnabled       = flag.Bool("lens-enabled", false, "Enable the Lens telemetry backend on the proxy port (AEGISGATE_LENS_ENABLED)")
+	lensBearerToken   = flag.String("lens-bearer-token", "", "Bearer token for Lens telemetry endpoints (AEGISGATE_LENS_BEARER_TOKEN)")
+	lensIOCStoreDir   = flag.String("lens-ioc-store-dir", "", "Directory for Lens IOC store persistence (default: <DataDir>/lens)")
 )
 
 // iocWiringPtr is the package-level pointer to the IOC wiring
@@ -501,6 +505,59 @@ func main() {
 	}
 
 	// ============================================================
+	// Component 0a-2: Lens Telemetry Backend (Phase 3)
+	// ============================================================
+	// Mounts the Lens telemetry endpoints on the proxy mux so
+	// self-hosted Platform users can receive telemetry from Lens
+	// extensions without running a separate binary. The Lens backend
+	// reuses the same IOC store as the Federated IOC Library.
+	//
+	// Feature gate: Professional+ tier (same as PostgreSQL).
+	// Env vars: AEGISGATE_LENS_ENABLED, AEGISGATE_LENS_BEARER_TOKEN,
+	//   AEGISGATE_LENS_IOC_STORE_DIR
+	// Flags: --lens-enabled, --lens-bearer-token, --lens-ioc-store-dir
+
+	var lensServer *lensbackend.Server
+	lensEnabledFlag := *lensEnabled
+	if !lensEnabledFlag {
+		if v := os.Getenv("AEGISGATE_LENS_ENABLED"); v == "true" || v == "1" || v == "yes" {
+			lensEnabledFlag = true
+		}
+	}
+	if lensEnabledFlag && tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
+		lensBearer := *lensBearerToken
+		if lensBearer == "" {
+			lensBearer = os.Getenv("AEGISGATE_LENS_BEARER_TOKEN")
+		}
+		lensStorePath := *lensIOCStoreDir
+		if lensStorePath == "" {
+			lensStorePath = os.Getenv("AEGISGATE_LENS_IOC_STORE_DIR")
+		}
+		if lensStorePath == "" {
+			lensStorePath = filepath.Join(cfg.Persistence.DataDir, "lens")
+		}
+		lensCfg := &lensbackend.Config{
+			Port:            *proxyPort, // share the proxy port
+			BearerToken:     lensBearer,
+			IOCStorePath:    lensStorePath,
+			RateLimitPerMin: 10000,
+		}
+		if lensBearer == "" {
+			log.Printf("⚠️  Lens backend enabled but AEGISGATE_LENS_BEARER_TOKEN is empty — only /healthz will be reachable")
+		}
+		var lensErr error
+		lensServer, lensErr = lensbackend.NewServer(lensCfg, "aegisgate-platform")
+		if lensErr != nil {
+			log.Printf("⚠️  Lens backend init failed: %v (continuing without Lens telemetry)", lensErr)
+			lensServer = nil
+		} else {
+			log.Printf("Lens backend: enabled (ioc_store=%s, rate_limit=%d/min)", lensStorePath, lensCfg.RateLimitPerMin)
+		}
+	} else if lensEnabledFlag {
+		log.Printf("⚠️  Lens backend requires Professional+ tier (current: %s); Lens telemetry disabled", platformTier)
+	}
+
+	// ============================================================
 	// Component 0b: Certificate Initialization (first-run TLS setup)
 	// ============================================================
 	// Generates self-signed CA + server certificates on first startup.
@@ -575,6 +632,24 @@ func main() {
 	if iocWiringPtr != nil {
 		proxyMux.Handle("/api/v1/ioc/", iocWiringPtr.Sync.Handler())
 		log.Printf("Federated IOC: handler mounted at /api/v1/ioc/")
+	}
+
+	// Lens telemetry endpoints (Phase 3): mount on the proxy
+	// mux so Lens extensions can POST telemetry and FP reports to
+	// the same port as the proxy. Self-hosted Platform users point
+	// their Lens extension at https://<platform>:8443/api/v1/lens/*
+	//
+	// The Lens server provides its own auth middleware (bearer token).
+	// Routes:
+	//   POST /api/v1/lens/telemetry
+	//   POST /api/v1/lens/fp-report
+	//   GET  /api/v1/lens/check?domain=<hostname>
+	//   GET  /api/v1/lens/stats
+	//   GET  /api/v1/lens/healthz
+	if lensServer != nil {
+		lensMux := lensServer.Mux()
+		proxyMux.Handle("/api/v1/lens/", lensMux)
+		log.Printf("Lens backend: handler mounted at /api/v1/lens/")
 	}
 
 	// IOC admin API (v3.5.0+ Track 6 Task 5): mount on the
