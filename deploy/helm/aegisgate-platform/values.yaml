@@ -204,6 +204,47 @@ crossProtocolEvidence:
 # for rotation-guard refusals of retired-key manifests.
 verifiableCompliance:
   enabled: true
+
+# -- Lens Telemetry Backend (v3.5.0+ Phase 3)
+# Accepts anonymized threat telemetry from the AegisGate Lens browser
+# extension. When enabled, the Lens FP-report bridge endpoint is
+# mounted at /api/v1/lens/fp-report on the proxy mux.
+# Professional+ tier required.
+lens:
+  enabled: false
+  # bearerToken: ""  # AEGISGATE_LENS_BEARER_TOKEN — required for all endpoints except /healthz
+  # iocStoreDir: ""  # AEGISGATE_LENS_IOC_STORE_DIR — empty = in-memory
+
+# -- SIEM Dispatcher (v3.5.0+ Phase 4 / D15)
+# Forwards audit events from the ring buffer to external SIEM platforms.
+# Professional+ tier required.
+siem:
+  enabled: false
+  source: "aegisgate"
+  pollInterval: 5s
+  batchSize: 100
+  bufferMaxSize: 10000
+  platforms: []
+  # Example platform configuration:
+  # platforms:
+  #   - platform: splunk
+  #     enabled: true
+  #     format: cef
+  #     endpoint: "https://splunk.example.com:8088/services/collector"
+  #     auth:
+  #       type: api_key
+  #       api_key: ""  # AEGISGATE_SIEM_API_KEY
+  #     retry:
+  #       enabled: true
+  #       max_attempts: 3
+  #       initial_backoff: "1s"
+  #       max_backoff: "30s"
+  #       backoff_multiplier: 2.0
+  #     batch:
+  #       enabled: true
+  #       max_size: 100
+  #       max_wait: "5s"
+
 # -- Extra CLI arguments passed to the binary
 extraArgs: []
   # - "--log-level=debug"

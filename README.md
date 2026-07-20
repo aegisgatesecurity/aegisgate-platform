@@ -4,15 +4,15 @@
 
 # 🛡️ AegisGate Security Platform™ — Secure Every AI Interaction
 
-![Version](https://img.shields.io/badge/Version-v3.3.0--beta.2-blue?label=Version&logo=semver)
+![Version](https://img.shields.io/badge/Version-v3.4.0--beta.1-blue?label=Version&logo=semver)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
 [![Security](https://img.shields.io/badge/Security-0_CVEs-brightgreen?logo=shield)](SECURITY.md)
 ![Test Coverage](https://img.shields.io/badge/Coverage-97.8%25-green?logo=codecov)
-![Tests](https://img.shields.io/badge/Tests-5_484_passing-brightgreen?logo=checkmarx)
+![Tests](https://img.shields.io/badge/Tests-5_990_passing-brightgreen?logo=checkmarx)
 [![Docker](https://img.shields.io/badge/Docker-13.3MB-2496ED?logo=docker)](Dockerfile)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
-[![🛡️ Lens](https://img.shields.io/badge/Lens-v0.3.0--rc1-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
+[![🛡️ Lens](https://img.shields.io/badge/Lens-v0.2.0-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
 
 > **The only AI security platform with native HTTP API, MCP, A2A, ACP, and RESPONSE protection — plus the Trust Framework (6th pillar).** Six pillars. One gateway. Zero external dependencies.
 
@@ -41,7 +41,7 @@
 
 > **Not a version bump.** The work below is committed to `main` and engineering-complete. The v3.4.0 GA is gated on **legal review (H1) + the v3.4.0 paid pentest (H4)**, per the [Beta User Agreement](content/legal/beta-agreement.md) and the [CHANGELOG](CHANGELOG.md#unreleased---2026-06-18---v340-engineering-complete--awaiting-v34-ga). The version stays at v3.4.0-beta.1 (a forward-looking label for the in-progress work) until those gates are cleared.
 
-The `main` branch now includes the **envelope primitive** (a tamper-evident cryptographic primitive shared by 9 features), the **5 Tier 5 features** (AR-EaaS, AIBOM, Agent Intent Signing, Prompt Cache Poisoning Detection, CVE-for-AI Feed), the **2 Tier 3 features** (PDF generator + SOC incident-timeline view), the **2 Tier 4 features** (CISO Posture Digest + reporting pipeline), and the **3 v0.2 wiring fixes** (CISO Digest data sources, PDF branding, CVE portal). The platform and the website at [aegisgatesecurity.io](https://aegisgatesecurity.io) are now in sync.
+The `main` branch now includes the **envelope primitive** (a tamper-evident cryptographic primitive shared by 9 features), the **5 Tier 5 features** (AR-EaaS, AIBOM, Agent Intent Signing, Prompt Cache Poisoning Detection, CVE-for-AI Feed), the **2 Tier 3 features** (PDF generator + SOC incident-timeline view), the **2 Tier 4 features** (CISO Posture Digest + reporting pipeline), the **3 v0.2 wiring fixes** (CISO Digest data sources, PDF branding, CVE portal), the **PostgreSQL persistence backend** (D1), the **Lens telemetry bridge** (Phase 3), the **SIEM dispatcher wiring** (Phase 4/D15), and the **IOC query performance optimization** (Phase 5). The platform and the website at [aegisgatesecurity.io](https://aegisgatesecurity.io) are now in sync.
 
 ### 6 pillars (was 5)
 
@@ -88,6 +88,36 @@ Every feature has a self-review documenting the issues found and fixed. **Cumula
 - **CISO Digest data sources** — the digest's IOCsBlocked + AnomaliesDetected fields now have real breakdowns (was a no-op source in v0.1). The Source interface + 4 adapters (PostureSource, IOCSource, AuditLogSource, AuditSource) are wired into the production CLI (in-memory stores) and HTTP endpoint (real platform stores via a new `WireDigestDeps` struct).
 - **PDF branding** — the PDF generator now supports a branded header (left-aligned "AegisGate Posture Digest" wordmark + right-aligned "<period> | <digest-id>" subtitle + thin separator) and an enhanced footer (Generated timestamp + ID + URL + Page N).
 - **CVE-for-AI portal** — the static portal at [aegisgatesecurity.io/cve/](https://aegisgatesecurity.io/cve/) is live with one illustrative CVE entry, the feed format docs, the verify-an-entry instructions, the security.txt at [/.well-known/security.txt](https://aegisgatesecurity.io/.well-known/security.txt), and a placeholder [feed.json](https://aegisgatesecurity.io/feed.json) (the production feed goes live with v3.4.0 GA).
+
+### PostgreSQL Persistence Backend (D1)
+
+- **IOC Store** (`pkg/ioc/`, PostgreSQL-backed) — persistent IOC storage with Snapshot, Query (indexed by SourceProvider), and domain hash verification. Migrations 001 (IOC fingerprints) and 002 (IOC metadata) auto-applied on startup.
+- **Audit Log** (`pkg/persistence/`, PostgreSQL-backed) — persistent audit log storage replacing in-memory ring buffer for Professional+ tier. Migration 003 (audit entries) auto-applied.
+- **RBAC + License** (`pkg/rbac/` + `pkg/license/`) — PostgreSQL-backed RBAC store and license cache for Professional+ tier, with in-memory fallback for Community tier.
+- **Testlab Integration** — Docker Compose PostgreSQL service with health checks, automated integration test runner (`testlab/run-integration-tests.sh`), and CI-compatible DATABASE_URL configuration.
+- **All 3 storage backends** are dual-mode: PostgreSQL when available, in-memory fallback otherwise. Zero external dependencies at runtime.
+
+### Lens Telemetry Bridge (Phase 3)
+
+- **FP-Report Bridge** (`pkg/lensbackend/fp_report.go`) — accepts Lens v0.2.0's 4-field telemetry format (hashed_domain, category, severity, action) and bridges to full v0.2 Event schema with validated defaults.
+- **CORS Middleware** (`pkg/lensbackend/server.go`) — preflight support for browser extension cross-origin requests. All 5 endpoints wrapped.
+- **Main Binary Wiring** (`cmd/aegisgate-platform/main.go`) — Lens backend mounted at `/api/v1/lens/*` on proxy mux, feature-gated to Professional+ tier. CLI flags `--lens-enabled`, `--lens-bearer-token`, `--lens-ioc-store-dir` and env vars `AEGISGATE_LENS_ENABLED`, `AEGISGATE_LENS_BEARER_TOKEN`, `AEGISGATE_LENS_IOC_STORE_DIR`.
+- **Lens Extension Config** (`aegisgate-lens/src/popup/`) — "Connect to Platform" UI in popup with healthz connectivity test and runtime host permission grant (MV3 `optional_host_permissions`).
+- **End-to-End Integration Test** (`pkg/lensbackend/fp_report_test.go`) — 14 unit tests + 1 end-to-end test: POST 3 FP reports → flush IOC writer → GET /check → `known_threat` verdict.
+
+### SIEM Dispatcher Wiring (Phase 4 / D15)
+
+- **SIEM Config** (`pkg/platformconfig/config.go`) — 6 YAML-able structs (SIEMConfig, SIEMPlatformConfig, SIEMAuthConfig, SIEMTLSConfig, SIEMRetryConfig, SIEMBatchConfig) with defaults and env var overrides. Supports 11 platforms: Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, CloudWatch, SecurityHub, ArcSight, Syslog, Custom.
+- **Main Binary Wiring** (`cmd/aegisgate-platform/main.go`) — SIEM dispatcher created from platform config, started in goroutine, deferred stop. Feature-gated to Professional+ tier.
+- **Health Check** — SIEM status (enabled, healthy, platforms, events_forwarded, events_dropped) added to `/health` endpoint.
+- **Dashboard API** — `GET /api/v1/siem/status` (auth-required) shows dispatcher stats and platform config list.
+
+### IOC Query Performance (Phase 5)
+
+- **Indexed Query** (`pkg/ioc/store.go`) — `bySP` index (`map[string][]string`) maintained in `Observe()` for O(k) SourceProvider lookups. New `Query(IOCQuery)` method with fast-path indexed lookup and slow-path full scan.
+- **25× latency improvement** for `/api/v1/lens/check` — 9.2ms → 365μs (10K IOC benchmark).
+- **10× memory reduction** — 1.76MB/call → 180KB/call for SourceProvider queries.
+- **4× allocation reduction** — 4 allocs/call → 1 alloc/call.
 
 ---
 
@@ -528,7 +558,7 @@ flowchart TB
 | **Error Rate** | < 0.1% | **0.00%** | ✅ |
 | **Binary Size** | < 50MB | **19.1 MB** | ✅ |
 | **Code Coverage** | 95%+ | **97.8%** | ✅ |
-| **Tests Passing** | — | **5,484** | ✅ |
+| **Tests Passing** | — | **5,990** | ✅ |
 | **CVEs** | 0 | **0** | ✅ |
 
 *Full methodology in [PERFORMANCE.md](PERFORMANCE.md). k6 load testing, 60+ second scenarios, real attack vectors.*
@@ -840,7 +870,7 @@ AegisGate is a privacy-first security platform with a two-product line:
   (this repo's sibling) — Free, privacy-first browser extension that
   protects users across 6 AI providers (ChatGPT, Claude, Gemini,
   Copilot, duck.ai, Perplexity) with 6-facet detection (PII, secrets,
-  XSS, prompt-injection, toxicity, compliance). 233/233 tests, zero
+  XSS, prompt-injection, toxicity, compliance). 734/734 tests, zero
   external dependencies, 8K-context ModernBERT model, Ed25519-signed
   bundles, SLSA L2 provenance. [Product page](https://aegisgatesecurity.io/lens/) ·
   [Lens vs Platform comparison](https://aegisgatesecurity.io/lens/compare/) ·
@@ -849,9 +879,10 @@ AegisGate is a privacy-first security platform with a two-product line:
 The Lens is the consumer-facing layer. AegisGate Platform (this repo)
 is the server-side gateway: HTTP API, MCP, A2A, ACP, RESPONSE, plus
 the Trust Framework (6th pillar). The two products share the detection
-corpus and the MITRE ATLAS mapping. A Lens-detected threat can be
-promoted to a Platform-wide policy rule automatically (T2.2.2,
-roadmap).
+corpus and the MITRE ATLAS mapping. Lens v0.2.0 now feeds anonymized
+threat telemetry (hashed domain + category + severity + action) to the
+Platform's IOC Store via the FP-Report Bridge, enabling real-time
+threat intelligence aggregation at scale.
 
 ## 🙏 Acknowledgments
 
