@@ -1,8 +1,8 @@
-## [Unreleased] - 2026-06-18 - v3.4.0+ Engineering-Complete (Awaiting v3.4.0 GA)
+## [Unreleased] - 2026-07-20 - v3.4.0+ Engineering-Complete (Awaiting v3.4.0 GA)
 
 > **Not a version bump.** The work below is committed to `main` and engineering-complete. The v3.4.0 GA is gated on **legal review (H1) + the v3.4.0 paid pentest (H4)**, per the [Beta User Agreement](content/legal/beta-agreement.md) and the README. The version stays at v3.4.0-beta.1 (a forward-looking label for the in-progress work) until those gates are cleared. The public release remains **v3.3.0-beta.2**.
 
-This is the engineering-complete summary of the v3.4.0+ Tier 5+3+4 sprint on `main`. It's the full record of what shipped to `main` between v3.3.0-beta.2 (2026-06-08) and now (2026-06-18).
+This is the engineering-complete summary of all work on `main` since v3.3.0-beta.2 (2026-06-08). It includes the v3.4.0+ Tier 5+3+4 sprint, the v0.2 wiring fixes, and Phases 1–5 (PostgreSQL, Lens integration, SIEM wiring, IOC performance).
 
 ### What's new on `main`
 
@@ -59,11 +59,44 @@ Every feature has a self-review documenting the issues found and fixed. **Cumula
 - **PDF branding** (`9b0ca8f feat(pdf): v0.2 branding — header + enhanced footer (TODO-501 v0.2)`) — added 5 new fields to `RenderRequest` (`Header`, `HeaderSubtitle`, `FooterURL`, `FooterIncludeID`, new `FontHeader` constant). The digest renderer now uses the new fields. **2 new tests**; coverage 95.4% → 95.5%.
 - **CI fixes** (`f75b2e0 fix(ci): gofmt + exempt pkg/reporting from per-package coverage`) — 3 gofmt issues fixed; `pkg/reporting` added to `EXEMPTED_PACKAGES` in `.github/workflows/ci.yml` (the happy path of `ExportPDF` requires running the upstream reporter's scheduler, which is a process-level test; the error paths and `ExportPDFAdHoc` are tested).
 
+#### Phase 1: PostgreSQL Persistence Backend (D1)
+
+- **IOC Store** (`pkg/ioc/`, PostgreSQL-backed) — persistent IOC storage with Snapshot, Query (indexed by SourceProvider), and domain hash verification. Migrations 001–002 auto-applied on startup.
+- **Audit Log** (`pkg/persistence/`, PostgreSQL-backed) — persistent audit log storage replacing in-memory ring buffer for Professional+ tier. Migration 003 auto-applied.
+- **RBAC + License** (`pkg/rbac/` + `pkg/license/`) — PostgreSQL-backed RBAC store and license cache for Professional+ tier, with in-memory fallback for Community tier.
+- **Testlab Integration** — Docker Compose PostgreSQL service with health checks, automated integration test runner, CI-compatible `DATABASE_URL`.
+
+#### Phase 2: Lens-Platform Schema Alignment
+
+- **157 categories** across 6 facets (PII, Secrets, XSS, Prompt Injection, Toxicity, Compliance) — expanded from the original 6 to match Lens v0.2.0's full detection schema.
+- **8 IOC types** — aligned with Lens v0.2.0's detection output (PII leak, secret exposure, XSS, prompt injection, toxic output, compliance violation, hallucination, model integrity erosion).
+- **Category-facet-index** — `categoryFacetIndex` maps every category to its parent facet for validation and grouping.
+
+#### Phase 3: Lens Telemetry Bridge
+
+- **FP-Report Bridge** (`pkg/lensbackend/fp_report.go`, 234 LOC) — accepts Lens v0.2.0's 4-field format (hashed_domain, category, severity, action), validates input, and bridges to full Event schema with defaults. 14 unit tests + 1 end-to-end test (414 LOC).
+- **CORS Middleware** (`pkg/lensbackend/server.go`) — preflight support for browser extension cross-origin requests. All 5 endpoints wrapped.
+- **Main Binary Wiring** (`cmd/aegisgate-platform/main.go`) — Lens backend mounted at `/api/v1/lens/*` on proxy mux. Feature-gated to Professional+ tier. CLI flags and env vars for configuration.
+- **Lens Extension** (`aegisgate-lens/src/`) — "Connect to Platform" UI in popup with healthz connectivity test and MV3 `optional_host_permissions`. `SET_BACKEND_URL` message propagates URL to service worker with automatic queue drain.
+
+#### Phase 4: SIEM Dispatcher Wiring (D15)
+
+- **SIEM Config** (`pkg/platformconfig/config.go`) — 6 YAML-able structs with defaults and env var overrides. Supports 11 platforms: Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, CloudWatch, SecurityHub, ArcSight, Syslog, Custom.
+- **Main Binary Wiring** — SIEM dispatcher polls `evidence.EventSource`, translates to `siem.Event`, forwards to `siem.Manager`. Feature-gated to Professional+ tier.
+- **Health Check** — SIEM status added to `/health` endpoint (enabled, healthy, platforms, events_forwarded, events_dropped).
+- **Dashboard API** — `GET /api/v1/siem/status` (auth-required) shows dispatcher stats and platform config.
+
+#### Phase 5: IOC Query Performance
+
+- **Indexed Query** (`pkg/ioc/store.go`) — `bySP` index maintained in `Observe()` for O(k) SourceProvider lookups. New `Query(IOCQuery)` method with fast-path indexed lookup and slow-path full scan.
+- **25× latency improvement** for `/api/v1/lens/check` — 9.2ms → 365μs (10K IOC benchmark).
+- **10× memory reduction** — 1.76MB/call → 180KB/call for SourceProvider queries.
+
 #### Engineering hygiene
 
 - **Zero new external dependencies** added across the 9-feature Tier 5+3+4 sprint. `go.mod` has the same 8 direct deps it had at the start of the v3.3.0-beta.2 release (jwt, uuid, prometheus, oauth2, yaml, stretchr/testify, plus 2 indirect).
-- **460+ tests passing under -race** across 44 platform packages.
-- **Project-wide coverage 91%+** with all 60+ measured packages ≥80% (CI floor).
+- **5,990 tests passing under -race** across 67 platform packages (was 5,484).
+- **Project-wide coverage 91%+** with all 67 measured packages ≥80% (CI floor).
 - **24 design patterns** documented in the 7 review files, applied consistently across all 9 features.
 - **The platform and website are now in sync with the remote.** The CVE-for-AI portal is live at [aegisgatesecurity.io/cve/](https://aegisgatesecurity.io/cve/); the security.txt is live at [aegisgatesecurity.io/.well-known/security.txt](https://aegisgatesecurity.io/.well-known/security.txt).
 
@@ -99,6 +132,16 @@ e1c4a69 TODO-303: Agent Intent Signing (A2A intent binding) v0.1
 332f0e2 TODO-302: AIBOM — AI Bill of Materials (CycloneDX 1.6 extension) v0.1
 ee2ba00 fix(evaluator): apply TODO-301 review fixes (C1-C3, M1-M2, m1-m7)
 13ab18e TODO-301: AR-EaaS — Adversarial Robustness Evals-as-a-Service (v0.1)
+fe59f2e Phase 5: /check endpoint performance — indexed Query with 25× speedup
+c883e25 Phase 4 (D15): SIEM config wiring — platformconfig, main.go, health check, status endpoint
+9c6e218 Phase 3B: End-to-end integration test — FP-report → IOC → /check verdict
+98e9db5 Phase 3A: Lens telemetry routing — FP-report bridge + CORS + main binary wiring
+2ab964d Phase 2A/2B/2C: Lens-Platform schema alignment — 157 categories, 6 facets, 8 IOC types
+3a48737 D1 Phase 1D: testlab PostgreSQL integration tests + docker-compose DATABASE_URL
+755704b D1 Phase 1C (main.go wiring): connect PostgresStore to RBAC, license, and persistence
+58e1638 D1 Phase 1C (wiring): dual-backend RBAC Manager + license cache with PostgreSQL dispatch
+7ce1b0e CI: exempt pkg/rbac and pkg/license from coverage floor (PostgreSQL-backed code requires live DB)
+099ea6b D1 Phase 1C: PostgreSQL session/license state — RBAC store, license cache, migration 003
 ```
 
 ## [3.3.0-beta.2] - 2026-06-08 - EU AI Act Module Integration Fix 🩹

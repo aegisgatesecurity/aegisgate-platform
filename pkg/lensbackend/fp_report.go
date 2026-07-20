@@ -48,6 +48,17 @@ import (
 	"time"
 )
 
+// FPReportBridgeModelVersion is the model version stamp for FP reports
+// bridged from Lens v0.2.x format to the full Event schema.
+const FPReportBridgeModelVersion = "0.2.0-bridge"
+
+// FPReportBridgeLensVersion is the lens version stamp for FP reports
+// bridged from Lens v0.2.x format to the full Event schema.
+const FPReportBridgeLensVersion = "0.2.0-bridge"
+
+// FPReportDefaultConfidence is the default confidence score for FP reports.
+const FPReportDefaultConfidence = 0.8
+
 // FPReport is the simplified 4-field format the Lens extension sends
 // for false-positive reports. This is the v0.2.x Cloudflare Worker
 // contract.
@@ -161,9 +172,9 @@ func (h *Handlers) HandleFPReport(w http.ResponseWriter, r *http.Request) {
 		Severity:         mappedSeverity,
 		UserAction:       mappedAction,
 		Timestamp:        time.Now().Unix(),
-		ModelVersion:     "0.2.0-bridge",
-		LensVersion:      "0.2.0-bridge",
-		Confidence:       0.8,
+		ModelVersion:     FPReportBridgeModelVersion,
+		LensVersion:      FPReportBridgeLensVersion,
+		Confidence:       FPReportDefaultConfidence,
 	}
 
 	// Server-side domain_hash recomputation (same as HandleTelemetry).

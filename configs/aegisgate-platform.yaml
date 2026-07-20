@@ -21,3 +21,22 @@ logging:
   format: json
 redis:
   url: "redis://localhost:6379"
+
+# Lens telemetry backend (Professional+ tier)
+# Accepts anonymized threat telemetry from AegisGate Lens browser extension.
+# Enable with --lens-enabled or AEGISGATE_LENS_ENABLED=true.
+lens:
+  enabled: false
+  bearer_token: ""        # AEGISGATE_LENS_BEARER_TOKEN
+  ioc_store_dir: ""      # AEGISGATE_LENS_IOC_STORE_DIR (empty = in-memory)
+
+# SIEM dispatcher (Professional+ tier)
+# Forwards audit events to external SIEM platforms.
+# Enable with --siem-enabled or AEGISGATE_SIEM_ENABLED=true.
+siem:
+  enabled: false
+  source: "aegisgate"     # AEGISGATE_SIEM_SOURCE
+  poll_interval: 5s
+  batch_size: 100
+  buffer_max_size: 10000
+  platforms: []           # Add SIEM platform configs (see pkg/platformconfig/config.go)
