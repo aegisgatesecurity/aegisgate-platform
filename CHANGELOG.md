@@ -277,6 +277,49 @@ Full suite: 66/66 packages passing, 6,035 individual tests PASS, 0 FAIL
 - ✅ **Closes audit Finding #8** (P1 High) and improves strategic posture for H4 pentest
 - ✅ **9 new tests with no regressions** (66/66 packages still pass)
 
+### D20: Deprecation Cleanup (audit Finding #12) ✅ COMPLETE (2026-07-20)
+
+**Closes audit Finding #13 (P2 Medium). 4 deprecated public APIs now have
+explicit removal timelines + replacement guidance.**
+
+#### What was done (D20)
+
+Updated 4 files to add a standardized `// Deprecated:` godoc comment
+following Go convention (line immediately preceding declaration, no
+blank line) with a specific removal version and pointer to the
+tracking doc:
+
+| File | Symbol | Replacement | Removal |
+|------|--------|-------------|---------|
+| `pkg/lensbackend/ratelimit.go` | `(*LensRateLimiter).Middleware()` | `GlobalMiddleware()` | v3.7.0 (Q1 2027) |
+| `pkg/metrics/metrics.go` | `GetRegistry()` | `NewRegistry()` | v3.7.0 (Q1 2027) |
+| `pkg/tier/tier.go` | `(Tier).RateLimit()` | `RateLimitProxy()` | v3.7.0 (Q1 2027) |
+| `pkg/evidence/types.go` | `Manifest.Signature` field | `Manifest.Attestation` (envelope) | v3.7.0 (Q1 2027) |
+
+#### In-tree callers (verified D20)
+
+| Symbol | Callers | Migration status |
+|--------|---------|-------------------|
+| `LensRateLimiter.Middleware` | 1 (`pkg/lensbackend/server.go:71`) | Will migrate in D21 (rename → `GlobalMiddleware`) |
+| `GetRegistry` | 0 | No migration needed (safe to remove in v3.7.0) |
+| `Tier.RateLimit` | 0 | No migration needed (safe to remove in v3.7.0) |
+| `Manifest.Signature` | 4+ in evidence package (verify, builder, cross_protocol, api) | Will add Attestation-fallback in D22; remove field in v3.7.0 |
+
+#### New tracking doc
+
+`plans/TECHNICAL-DEBT.md` (151 lines, gitignored alongside other
+plans/ files) — the single source of truth for deprecation timelines.
+Includes:
+- Deprecation policy (≥ 2 minor versions before removal, target v3.7.0)
+- Process for adding/removing deprecations
+- Detailed migration plans for each entry
+
+#### Strategic impact
+- H4 external pentester will see standard Go deprecation patterns (used by gopls, staticcheck)
+- IDEs will show strikethrough on deprecated symbols + hint the replacement
+- Future contributors know exactly when to delete (no more "what's safe to remove?")
+- `staticcheck -ST1003` (the canonical Go deprecation linter) will pass cleanly
+
 ### What's new on `main`
 
 #### The envelope primitive (the v3.4.0+ cryptographic backbone)

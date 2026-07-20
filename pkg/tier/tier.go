@@ -8,6 +8,7 @@
 //   - Built-in CA, i18n, SBOM tracking are Community-tier features
 //   - Community gets unlimited proxy/MCP RPM (soft-throttle policy), 7-day log retention
 //   - RateLimit() is deprecated; use RateLimitProxy()/RateLimitMCP()
+//     (see plans/TECHNICAL-DEBT.md — removal target v3.7.0, Q1 2027)
 //   - Starter tier was removed in v3.5.0 (footgun: customers could buy Starter
 //     from Stripe but ParseTier would reject "starter", silently falling back to
 //     Community — they paid $29/mo for the free tier). Developer is now the
@@ -133,7 +134,11 @@ func (t Tier) RateLimitMCP() int {
 
 // RateLimit returns the rate limit in RPM (deprecated; use RateLimitProxy or RateLimitMCP)
 //
-// Deprecated: Use RateLimitProxy() or RateLimitMCP() for transport-specific limits.
+// Deprecated: Use RateLimitProxy() or RateLimitMCP() for transport-specific
+// limits. The transport-agnostic RateLimit() is ambiguous: it always returns
+// the proxy rate limit, which confuses callers who expect a unified view.
+// Will be removed in v3.7.0 (target Q1 2027). Tracked in
+// plans/TECHNICAL-DEBT.md.
 func (t Tier) RateLimit() int {
 	return t.RateLimitProxy()
 }

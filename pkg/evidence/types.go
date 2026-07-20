@@ -83,7 +83,10 @@ type Manifest struct {
 	//
 	// Deprecated: use Manifest.Attestation (envelope) for v3.5.0+
 	// verification. The Signature field is mirrored from the envelope
-	// for backward compatibility and will be removed in v3.7.0.
+	// for backward compatibility and will be removed in v3.7.0
+	// (target Q1 2027). Tracked in plans/TECHNICAL-DEBT.md. After
+	// removal, Manifest.Signature will be replaced entirely by
+	// Manifest.Attestation (the envelope wraps the signature).
 	Signature Signature `json:"signature"`
 }
 

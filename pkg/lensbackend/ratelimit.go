@@ -143,7 +143,8 @@ func (l *LensRateLimiter) GlobalMiddleware(next http.Handler) http.Handler {
 // Deprecated: prefer GlobalMiddleware. The per-installation check
 // cannot live in a generic middleware because it requires the
 // decoded event body, which the middleware cannot see without
-// duplicating the JSON decode.
+// duplicating the JSON decode. Will be removed in v3.7.0
+// (target Q1 2027). Tracked in plans/TECHNICAL-DEBT.md.
 func (l *LensRateLimiter) Middleware(next http.Handler) http.Handler {
 	return l.GlobalMiddleware(next)
 }
