@@ -16,6 +16,9 @@ a2a:
   enabled: true
   config_file: "configs/a2a.yaml"
   caps_file: "configs/a2a_caps.yaml"
+acp:
+  enabled: true
+  config_file: "configs/acp.yaml"
 logging:
   level: info
   format: json

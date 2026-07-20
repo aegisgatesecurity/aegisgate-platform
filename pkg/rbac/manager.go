@@ -147,14 +147,24 @@ func (m *Manager) Close() {
 // AGENT MANAGEMENT
 // ============================================================================
 
-// RegisterAgent registers a new agent with the specified role
 // RegisterAgent registers a new agent with the specified role.
 // If PostgreSQL is active, the agent is persisted to the database.
-func (m *Manager) RegisterAgent(agent *Agent) error {
+func (m *Manager) RegisterAgent(agent *Agent, tenantCtx ...RBACTenantContext) error {
+	// Extract tenant context
+	tenantID := ""
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+	}
+
+	// Set tenant ID on agent if not already set
+	if tenantID != "" && agent.TenantID == "" {
+		agent.TenantID = tenantID
+	}
+
 	// PostgreSQL path: persist to database, then cache in-memory
 	if m.usePostgres {
 		ctx := context.Background()
-		if err := m.pgStore.RegisterAgent(ctx, agent); err != nil {
+		if err := m.pgStore.RegisterAgent(ctx, agent, tenantCtx...); err != nil {
 			return fmt.Errorf("postgres register agent: %w", err)
 		}
 		// Also cache in-memory for fast reads
@@ -205,19 +215,27 @@ func (m *Manager) RegisterAgent(agent *Agent) error {
 		"agent_id", truncateID(agent.ID),
 		"name", agent.Name,
 		"role", agent.Role,
+		"tenant_id", tenantID,
 	)
 
 	return nil
 }
 
-// GetAgent retrieves an agent by ID
 // GetAgent retrieves an agent by ID.
 // If PostgreSQL is active, reads from the database (with in-memory cache fallback).
-func (m *Manager) GetAgent(agentID string) (*Agent, error) {
+func (m *Manager) GetAgent(agentID string, tenantCtx ...RBACTenantContext) (*Agent, error) {
+	// Extract tenant context
+	var tenantID string
+	isAdmin := false
+	if len(tenantCtx) > 0 {
+		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
+	}
+
 	// PostgreSQL path: read from database
 	if m.usePostgres {
 		ctx := context.Background()
-		agent, err := m.pgStore.GetAgent(ctx, agentID)
+		agent, err := m.pgStore.GetAgent(ctx, agentID, tenantCtx...)
 		if err != nil {
 			return nil, fmt.Errorf("postgres get agent: %w", err)
 		}
@@ -233,6 +251,11 @@ func (m *Manager) GetAgent(agentID string) (*Agent, error) {
 	agent, exists := m.agents[agentID]
 	if !exists {
 		return nil, fmt.Errorf("agent not found: %s", agentID)
+	}
+
+	// In-memory tenant filter
+	if !isAdmin && tenantID != "" && agent.TenantID != "" && agent.TenantID != tenantID {
+		return nil, fmt.Errorf("agent not found or access denied: %s", agentID)
 	}
 
 	return agent, nil

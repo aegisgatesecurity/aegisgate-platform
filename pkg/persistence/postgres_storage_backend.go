@@ -43,6 +43,12 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 )
 
+// AuditTenantContext provides tenant isolation for audit log operations.
+type AuditTenantContext struct {
+	TenantID string
+	IsAdmin  bool // if true, can access cross-tenant audit logs
+}
+
 // postgresStorageBackend implements opsec.StorageBackend using PostgreSQL.
 type postgresStorageBackend struct {
 	pool   *pgxpool.Pool
