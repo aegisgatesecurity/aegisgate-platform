@@ -118,6 +118,24 @@ Every feature has a self-review documenting the issues found and fixed. **Cumula
 - **Threat Model** — `plans/THREAT-MODEL.md` Section 2.5 with 12 STRIDE threats (CVSS 8.2–9.0), 7 mitigation mappings, component inventory entry
 - **5 New PlatformConfig Tests** — defaults, env overrides (true/false), config file override, YAML loading
 
+### Trust Framework (D16) — First-Class 6th Pillar
+
+- **6-Pillar Coverage Complete** — HTTP, MCP, A2A, ACP, RESPONSE, **Trust Framework**
+- **8 Pre-Built Packages** (~8,500 LOC, 85-91% coverage, 548 tests)
+  - `pkg/trust/` (1,038 LOC, 88.9%) — Manager, session, hooks, HTTP API
+  - `pkg/trust/identity/` (674 LOC, 90.9%) — ECDSA P-256 agent identity + registry
+  - `pkg/trust/contract/` (853 LOC, 88.8%) — Capability contracts + enforcement
+  - `pkg/trust/score/` (973 LOC, 88.8%) — Trust score engine + baseline + anomaly
+  - `pkg/trust/attestation/` (570 LOC, 89.3%) — Legacy Ed25519 trust attestations
+  - `pkg/trust/dashboard/` (276 LOC, 87.8%) — Real-time agent map
+  - `pkg/attestation/` (986 LOC, 85.4%) — **Envelope primitive** (frozen 2026-06-15, ECDSA P-256)
+  - `pkg/digest/` (1,505 LOC, 81.8%) — CISO Posture Digest (PDF + signed envelope)
+- **PlatformConfig Integration** — `TrustConfig` struct in `pkg/platformconfig/config.go` (parity with A2AConfig/ACPConfig), `trust:` section in `configs/aegisgate-platform.yaml`
+- **Main Binary Flag-Gating** — `cmd/aegisgate-platform/main.go` Component 6 wires Trust HTTP API at `/api/v1/trust/*` gated on `cfg.Trust.Enabled` (parallel to A2A/ACP pattern). Optional `cfg.Trust.RequireLicense=true` wraps in `license.RequireTier(tier.TierProfessional)` per locked decision Q3.
+- **Env Var Overrides** — `AEGISGATE_TRUST_ENABLED`, `AEGISGATE_TRUST_CONFIG_FILE`, `AEGISGATE_TRUST_REQUIRE_LICENSE`
+- **Threat Model** — `plans/THREAT-MODEL.md` Section 2.6 with 10 STRIDE threats (CVSS 8.5–9.0), 7 mitigation mappings, component inventory row, executive summary updated to 6 pillars
+- **6 New PlatformConfig Tests** — defaults, env overrides (enabled/config_file/require_license), YAML loading
+
 ### Lens Telemetry Bridge (Phase 3)
 
 - **FP-Report Bridge** (`pkg/lensbackend/fp_report.go`) — accepts Lens v0.2.0's 4-field telemetry format (hashed_domain, category, severity, action) and bridges to full v0.2 Event schema with validated defaults.

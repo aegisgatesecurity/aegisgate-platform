@@ -450,3 +450,93 @@ acp:
 		t.Errorf("ACP.ConfigFile = %q, want /custom/path/acp.yaml", cfg.ACP.ConfigFile)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Trust Framework config defaults and env overrides
+// ---------------------------------------------------------------------------
+
+func TestDefaultConfig_TrustDefaults(t *testing.T) {
+	cfg := DefaultConfig()
+	if cfg.Trust.Enabled {
+		t.Error("Trust.Enabled should default to false (opt-in)")
+	}
+	if cfg.Trust.ConfigFile != "configs/trust.yaml" {
+		t.Errorf("Trust.ConfigFile = %q, want %q", cfg.Trust.ConfigFile, "configs/trust.yaml")
+	}
+	if !cfg.Trust.RequireLicense {
+		t.Error("Trust.RequireLicense should default to true (Professional+ tier per locked decision Q3)")
+	}
+}
+
+func TestApplyEnvOverrides_TrustEnabledTrue(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_TRUST_ENABLED": ""})
+
+	os.Setenv("AEGISGATE_TRUST_ENABLED", "true")
+	cfg := DefaultConfig()
+	cfg.applyEnvOverrides()
+	if !cfg.Trust.Enabled {
+		t.Error("Trust.Enabled should be true after AEGISGATE_TRUST_ENABLED=true")
+	}
+}
+
+func TestApplyEnvOverrides_TrustEnabledFalse(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_TRUST_ENABLED": ""})
+
+	os.Setenv("AEGISGATE_TRUST_ENABLED", "false")
+	cfg := DefaultConfig()
+	cfg.Trust.Enabled = true // start from enabled
+	cfg.applyEnvOverrides()
+	if cfg.Trust.Enabled {
+		t.Error("Trust.Enabled should be false after AEGISGATE_TRUST_ENABLED=false")
+	}
+}
+
+func TestApplyEnvOverrides_TrustConfigFile(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_TRUST_CONFIG_FILE": ""})
+
+	os.Setenv("AEGISGATE_TRUST_CONFIG_FILE", "/etc/trust/custom.yaml")
+	cfg := DefaultConfig()
+	cfg.applyEnvOverrides()
+	if cfg.Trust.ConfigFile != "/etc/trust/custom.yaml" {
+		t.Errorf("Trust.ConfigFile = %q, want /etc/trust/custom.yaml", cfg.Trust.ConfigFile)
+	}
+}
+
+func TestApplyEnvOverrides_TrustRequireLicense(t *testing.T) {
+	withCleanEnv(t, map[string]string{"AEGISGATE_TRUST_REQUIRE_LICENSE": ""})
+
+	os.Setenv("AEGISGATE_TRUST_REQUIRE_LICENSE", "false")
+	cfg := DefaultConfig()
+	cfg.Trust.RequireLicense = true
+	cfg.applyEnvOverrides()
+	if cfg.Trust.RequireLicense {
+		t.Error("Trust.RequireLicense should be false after AEGISGATE_TRUST_REQUIRE_LICENSE=false")
+	}
+}
+
+func TestLoadFromFile_TrustSection(t *testing.T) {
+	yaml := `
+trust:
+  enabled: true
+  config_file: /custom/path/trust.yaml
+  require_license: false
+`
+	tmpDir := t.TempDir()
+	cfgFile := filepath.Join(tmpDir, "trust-platform.yaml")
+	if err := os.WriteFile(cfgFile, []byte(yaml), 0644); err != nil {
+		t.Fatalf("write yaml: %v", err)
+	}
+	cfg, err := LoadFromFile(cfgFile)
+	if err != nil {
+		t.Fatalf("LoadFromFile: %v", err)
+	}
+	if !cfg.Trust.Enabled {
+		t.Error("Trust.Enabled should be true after loading YAML")
+	}
+	if cfg.Trust.ConfigFile != "/custom/path/trust.yaml" {
+		t.Errorf("Trust.ConfigFile = %q, want /custom/path/trust.yaml", cfg.Trust.ConfigFile)
+	}
+	if cfg.Trust.RequireLicense {
+		t.Error("Trust.RequireLicense should be false after loading YAML")
+	}
+}

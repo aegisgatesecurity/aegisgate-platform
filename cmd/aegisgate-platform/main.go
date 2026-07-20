@@ -57,6 +57,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sla"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/trust"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 	"github.com/aegisgatesecurity/aegisgate/pkg/siem"
@@ -1040,6 +1041,36 @@ func main() {
 				writeJSON(w, map[string]string{"status": "disabled", "reason": "acp not configured"})
 			})
 			log.Printf("ACP: Guardrails not enabled (set acp.enabled=true in config or AEGISGATE_ACP_ENABLED=true)")
+		}
+
+		// ============================================================
+		// Component 6: Trust Framework (6th pillar) HTTP API
+		// ============================================================
+		// Gated on cfg.Trust.Enabled (Trust audit: parity with A2A/ACP)
+		// The Trust Framework provides per-agent identity, capability
+		// contracts, real-time trust scoring, anomaly detection, and
+		// signed attestations. HTTP API at /api/v1/trust/*.
+		// License gate: when cfg.Trust.RequireLicense=true, the
+		// manager is wrapped in a tier check (Professional+ per Q3).
+		if cfg != nil && cfg.Trust.Enabled {
+			trustMgr := trust.NewManager(nil, nil)
+			trustAPI := trust.NewAPI(trustMgr, &trust.APIConfig{
+				AttestationCap: 1000,
+			})
+			if cfg.Trust.RequireLicense && licenseMgr != nil {
+				// Wrap trustAPI in a tier-gated HandlerFunc via adapter
+				gate := license.NewLicenseMiddleware(licenseMgr).RequireTier(tier.TierProfessional)
+				proxyMux.HandleFunc("/api/v1/trust/", gate(trustAPI.ServeHTTP))
+			} else {
+				proxyMux.Handle("/api/v1/trust/", trustAPI)
+			}
+			log.Printf("Trust Framework: 6th pillar active (manager wired, HTTP API mounted at /api/v1/trust/*, license_gate=%v)", cfg.Trust.RequireLicense)
+		} else {
+			proxyMux.HandleFunc("/api/v1/trust/", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				writeJSON(w, map[string]string{"status": "disabled", "reason": "trust framework not configured"})
+			})
+			log.Printf("Trust Framework: 6th pillar not enabled (set trust.enabled=true in config or AEGISGATE_TRUST_ENABLED=true)")
 		}
 
 		log.Printf("Warning: Failed to create platform bridge: %v - continuing without bridge", bridgeErr)
