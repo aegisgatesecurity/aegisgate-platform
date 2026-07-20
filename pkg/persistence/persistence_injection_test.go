@@ -76,8 +76,8 @@ func TestNew_FileStorageBackendNil_Injected(t *testing.T) {
 	defer m.Close()
 
 	// With nil storage, AuditLog should still be created but storage is nil
-	if m.storage != nil {
-		t.Error("storage should be nil when injected constructor returns nil")
+	if m.fileStorage != nil {
+		t.Error("fileStorage should be nil when injected constructor returns nil")
 	}
 	if m.auditLog == nil {
 		t.Error("auditLog should NOT be nil even when storage is nil (newComplianceAuditLog handles nil)")

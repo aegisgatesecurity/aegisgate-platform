@@ -30,6 +30,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
@@ -70,20 +71,28 @@ func DefaultConfig() Config {
 }
 
 // Manager orchestrates persistent audit storage for the platform.
-// It owns the FileStorageBackend, ComplianceAuditLog, and a background
-// pruning goroutine that runs on a configurable interval.
+// It owns the storage backend (FileStorageBackend or PostgresStorageBackend),
+// the ComplianceAuditLog, and a background pruning goroutine.
+//
+// When a PostgresStore is provided via NewWithPostgres, the Manager uses
+// PostgreSQL for audit storage (Professional/Enterprise tiers). Otherwise
+// it falls back to file-based storage (Community/Developer tiers).
 type Manager struct {
-	cfg          Config
-	platformTier tier.Tier
-	storage      *opsec.FileStorageBackend
-	auditLog     *opsec.ComplianceAuditLog
-	cancel       context.CancelFunc
-	done         chan struct{}
-	mu           sync.RWMutex
-	started      bool
+	cfg             Config
+	platformTier    tier.Tier
+	storage         opsec.StorageBackend // file or postgres backend
+	fileStorage     *opsec.FileStorageBackend
+	pgStorage       *postgresStorageBackend
+	pgStore         *ioc.PostgresStore // nil for file-based persistence
+	auditLog        *opsec.ComplianceAuditLog
+	cancel          context.CancelFunc
+	done            chan struct{}
+	mu              sync.RWMutex
+	started         bool
+	usePostgres     bool
 }
 
-// New creates a new persistence Manager.
+// New creates a new persistence Manager with file-based storage.
 // The tier determines retention period and compliance mappings.
 func New(platformTier tier.Tier, cfg Config) (*Manager, error) {
 	if !cfg.Enabled {
@@ -120,8 +129,61 @@ func New(platformTier tier.Tier, cfg Config) (*Manager, error) {
 		cfg:          cfg,
 		platformTier: platformTier,
 		storage:      storage,
+		fileStorage:  storage,
 		auditLog:     auditLog,
 		done:         make(chan struct{}),
+	}, nil
+}
+
+// NewWithPostgres creates a persistence Manager that uses PostgreSQL for both
+// IOC storage and audit log storage. The PostgresStore must already be
+// initialized (with migrations applied). This is for Professional/Enterprise
+// tiers that have FeaturePostgreSQL enabled.
+//
+// If the PostgresStore is nil, falls back to file-based storage (same as New).
+func NewWithPostgres(platformTier tier.Tier, cfg Config, pgStore *ioc.PostgresStore) (*Manager, error) {
+	if pgStore == nil {
+		// No PostgreSQL available; fall back to file storage
+		return New(platformTier, cfg)
+	}
+
+	if !cfg.Enabled {
+		return &Manager{
+			cfg:          cfg,
+			platformTier: platformTier,
+			started:      false,
+		}, nil
+	}
+
+	// Create PostgreSQL-backed audit storage
+	pgBackend, err := newPostgresStorageBackend(pgStore)
+	if err != nil {
+		log.Printf("Warning: PostgreSQL audit backend failed (%v), falling back to file storage", err)
+
+		// Fall back to file storage
+		return New(platformTier, cfg)
+	}
+
+	// Map tier retention days → opsec RetentionPeriod
+	retention := retentionFromTier(platformTier)
+
+	// Create the compliance audit log (wires storage + retention + hash chain)
+	auditLog := opsec.NewComplianceAuditLog(retention, pgBackend, "")
+
+	// Wire audit events to Prometheus metrics
+	auditLog.SetCallback(func(_ *opsec.AuditEntry) {
+		metrics.RecordAuditEvent()
+	})
+
+	return &Manager{
+		cfg:          cfg,
+		platformTier: platformTier,
+		storage:      pgBackend,
+		pgStorage:    pgBackend,
+		pgStore:      pgStore,
+		auditLog:     auditLog,
+		done:         make(chan struct{}),
+		usePostgres:  true,
 	}, nil
 }
 
@@ -141,8 +203,12 @@ func (m *Manager) Start() error {
 
 	go m.pruneLoop(ctx)
 
-	log.Printf("Persistence started: audit_dir=%s, retention=%d days, prune_interval=%s",
-		m.cfg.AuditDir, m.platformTier.LogRetentionDays(), m.cfg.PruneInterval)
+	backend := "file"
+	if m.usePostgres {
+		backend = "postgresql"
+	}
+	log.Printf("Persistence started: backend=%s, audit_dir=%s, retention=%d days, prune_interval=%s",
+		backend, m.cfg.AuditDir, m.platformTier.LogRetentionDays(), m.cfg.PruneInterval)
 
 	return nil
 }
@@ -168,7 +234,13 @@ func (m *Manager) Close() error {
 	}
 
 	// Run one final prune before closing
-	if m.storage != nil {
+	if m.usePostgres && m.pgStorage != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if pruned, err := m.pgStorage.PruneExpired(ctx, m.platformTier.LogRetentionDays()); err == nil && pruned > 0 {
+			log.Printf("Final prune: removed %d expired entries", pruned)
+		}
+	} else if m.storage != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if pruned, err := pruneAuditLog(m.auditLog, ctx); err == nil && pruned > 0 {
@@ -177,8 +249,16 @@ func (m *Manager) Close() error {
 	}
 
 	// Close the storage backend
-	if m.storage != nil {
-		if err := closeStorage(m.storage); err != nil {
+	if m.usePostgres {
+		// PostgreSQL backend: close the audit backend, then close the shared pool
+		if m.pgStorage != nil {
+			m.pgStorage.Close()
+		}
+		if m.pgStore != nil {
+			m.pgStore.Close()
+		}
+	} else if m.fileStorage != nil {
+		if err := closeStorage(m.fileStorage); err != nil {
 			return fmt.Errorf("failed to close storage backend: %w", err)
 		}
 	}
@@ -197,11 +277,19 @@ func (m *Manager) AuditLog() *opsec.ComplianceAuditLog {
 }
 
 // Storage returns the FileStorageBackend for direct queries.
-// Returns nil if persistence is disabled.
+// Returns nil if persistence is disabled or using PostgreSQL.
 func (m *Manager) Storage() *opsec.FileStorageBackend {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return m.storage
+	return m.fileStorage
+}
+
+// PostgresStore returns the underlying PostgresStore for IOC queries.
+// Returns nil if using file-based persistence.
+func (m *Manager) PostgresStore() *ioc.PostgresStore {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.pgStore
 }
 
 // IsEnabled returns whether persistence is active
@@ -209,6 +297,13 @@ func (m *Manager) IsEnabled() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.cfg.Enabled
+}
+
+// UsesPostgres returns whether PostgreSQL storage is active.
+func (m *Manager) UsesPostgres() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.usePostgres
 }
 
 // Stats returns operational statistics about the persistence layer
@@ -221,6 +316,14 @@ func (m *Manager) Stats() map[string]interface{} {
 		"audit_dir":      m.cfg.AuditDir,
 		"retention_days": m.platformTier.LogRetentionDays(),
 		"started":        m.started,
+		"backend":        "file",
+	}
+
+	if m.usePostgres {
+		stats["backend"] = "postgresql"
+		if m.pgStore != nil {
+			stats["pg_dsn"] = m.pgStore.DSN()
+		}
 	}
 
 	if m.auditLog != nil {
@@ -280,6 +383,19 @@ func (m *Manager) pruneLoop(ctx context.Context) {
 // doPrune executes a single pruning pass
 func (m *Manager) doPrune(ctx context.Context) {
 	if m.auditLog == nil || m.storage == nil {
+		return
+	}
+
+	if m.usePostgres && m.pgStorage != nil {
+		pruned, err := m.pgStorage.PruneExpired(ctx, m.platformTier.LogRetentionDays())
+		if err != nil {
+			log.Printf("PostgreSQL audit prune error: %v", err)
+			return
+		}
+		if pruned > 0 {
+			log.Printf("PostgreSQL audit prune: removed %d entries older than %d days",
+				pruned, m.platformTier.LogRetentionDays())
+		}
 		return
 	}
 
