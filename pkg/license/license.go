@@ -596,6 +596,15 @@ func (m *Manager) PruneExpiredCache(ctx context.Context) (int, error) {
 	return m.pgCache.PruneExpired(ctx)
 }
 
+// SetPostgresCache sets the PostgreSQL cache backend for license validation.
+// This is called during startup when PostgreSQL is available. Thread-safe.
+func (m *Manager) SetPostgresCache(pgCache *PostgresLicenseCache) {
+	m.cacheMu.Lock()
+	defer m.cacheMu.Unlock()
+	m.pgCache = pgCache
+	m.usePostgres = true
+}
+
 // Close cleans up the Manager and closes the PostgreSQL cache if present.
 func (m *Manager) Close() {
 	if m.pgCache != nil {

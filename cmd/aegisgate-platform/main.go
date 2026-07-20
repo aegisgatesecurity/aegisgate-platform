@@ -49,6 +49,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/security"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sla"
@@ -291,6 +292,86 @@ func main() {
 
 	log.Printf("Persistence: audit_dir=%s, retention=%d days",
 		persistenceCfg.AuditDir, platformTier.LogRetentionDays())
+
+	// ============================================================
+	// Component 0b: PostgreSQL Storage Backend (D1 Phase 1A/1B/1C)
+	// ============================================================
+	// If AEGISGATE_DATABASE_URL is set and the tier supports
+	// FeaturePostgreSQL (Professional/Enterprise), create a shared
+	// PostgresStore that backs IOC, audit, RBAC, and license data.
+	// If the tier doesn't support PostgreSQL or the URL is missing,
+	// fall back to in-memory/file-backed storage (current behavior).
+
+	var pgStore *ioc.PostgresStore
+	var rbacMgr *rbac.Manager
+	var rbacPgStore *rbac.PostgresRBACStore
+
+	databaseURL := os.Getenv("AEGISGATE_DATABASE_URL")
+	if databaseURL != "" && tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
+		pgCfg := ioc.DefaultDatabaseConfig()
+		pgCfg.URL = databaseURL
+
+		var pgErr error
+		pgStore, pgErr = ioc.NewPostgresStore(ctx, pgCfg)
+		if pgErr != nil {
+			log.Printf("⚠️  PostgreSQL init failed: %v — falling back to in-memory storage", pgErr)
+			pgStore = nil
+		} else {
+			log.Printf("PostgreSQL: connected to %s (pool: %d-%d conns)",
+				truncateDBURL(databaseURL), pgCfg.MinConns, pgCfg.MaxConns)
+
+			// Wire PostgreSQL into persistence (audit storage)
+			persistenceMgr, err = persistence.NewWithPostgres(platformTier, persistenceCfg, pgStore)
+			if err := persistenceMgr.Start(); err != nil {
+				log.Fatalf("Failed to start PostgreSQL-backed persistence: %v", err)
+			}
+
+			// Wire PostgreSQL into RBAC (agent/session storage)
+			var rbacErr error
+			rbacPgStore, rbacErr = rbac.NewPostgresRBACStore(pgStore, nil)
+			if rbacErr != nil {
+				log.Printf("⚠️  PostgreSQL RBAC init failed: %v — falling back to in-memory RBAC", rbacErr)
+				rbacPgStore = nil
+			}
+		}
+	} else {
+		if databaseURL != "" {
+			log.Printf("⚠️  AEGISGATE_DATABASE_URL set but tier %s does not support PostgreSQL — using in-memory storage", platformTier.String())
+		}
+	}
+
+	// Initialize RBAC manager (PostgreSQL-backed or in-memory)
+	if rbacPgStore != nil {
+		var rbacErr error
+		rbacMgr, rbacErr = rbac.NewWithPostgres(nil, rbacPgStore)
+		if rbacErr != nil {
+			log.Fatalf("Failed to initialize RBAC manager with PostgreSQL: %v", rbacErr)
+		}
+		log.Printf("RBAC: PostgreSQL-backed (session persistence enabled)")
+	} else {
+		var rbacErr error
+		rbacMgr, rbacErr = rbac.NewManager(nil)
+		if rbacErr != nil {
+			log.Fatalf("Failed to initialize RBAC manager: %v", rbacErr)
+		}
+		log.Printf("RBAC: in-memory (sessions lost on restart)")
+	}
+	defer rbacMgr.Close()
+	defer licenseMgr.Close()
+	if pgStore != nil {
+		defer pgStore.Close()
+	}
+
+	// Wire PostgreSQL into license cache (if available)
+	if pgStore != nil {
+		licensePgCache, licensePgErr := license.NewPostgresLicenseCache(pgStore)
+		if licensePgErr != nil {
+			log.Printf("⚠️  PostgreSQL license cache init failed: %v — using in-memory cache", licensePgErr)
+		} else {
+			licenseMgr.SetPostgresCache(licensePgCache)
+			log.Printf("License: PostgreSQL-backed cache (shared across instances)")
+		}
+	}
 
 	// ============================================================
 	// Component 0a: Federated IOC Library (v3.5.0+ Track 6)
@@ -1782,4 +1863,20 @@ func sanitizeForLog(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// truncateDBURL masks the password in a PostgreSQL connection URL for logging.
+// postgres://user:secret@host:5432/db → postgres://user:***@host:5432/db
+func truncateDBURL(dbURL string) string {
+	u, err := url.Parse(dbURL)
+	if err != nil {
+		return "***"
+	}
+	if u.User != nil {
+		_, hasPassword := u.User.Password()
+		if hasPassword {
+			u.User = url.UserPassword(u.User.Username(), "***")
+		}
+	}
+	return u.String()
 }
