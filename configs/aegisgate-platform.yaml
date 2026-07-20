@@ -19,6 +19,10 @@ a2a:
 acp:
   enabled: true
   config_file: "configs/acp.yaml"
+trust:
+  enabled: true
+  config_file: "configs/trust.yaml"
+  require_license: true  # Professional+ tier per locked decision Q3
 logging:
   level: info
   format: json

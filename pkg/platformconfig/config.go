@@ -57,6 +57,12 @@ type Config struct {
 	// ACP (Agent Communication Protocol) guardrails configuration
 	ACP ACPConfig `yaml:"acp"`
 
+	// Trust Framework (6th pillar) configuration
+	// Provides per-agent cryptographic identity, capability contracts,
+	// real-time trust scoring, anomaly detection, signed attestations,
+	// and a customer-facing HTTP API at /api/v1/trust/*.
+	Trust TrustConfig `yaml:"trust"`
+
 	// Persistence configuration (audit storage, retention, pruning)
 	Persistence persistence.Config `yaml:"persistence"`
 
@@ -120,6 +126,24 @@ type A2AConfig struct {
 type ACPConfig struct {
 	Enabled    bool   `yaml:"enabled"`
 	ConfigFile string `yaml:"config_file"` // path to acp.yaml (HMAC secret, blocked methods, etc.)
+}
+
+// TrustConfig holds Trust Framework (6th pillar) configuration.
+// The Trust Framework provides per-agent cryptographic identity
+// (pkg/trust/identity), capability contracts (pkg/trust/contract),
+// real-time trust scoring (pkg/trust/score), anomaly detection,
+// signed attestations (pkg/trust/attestation), and a customer-facing
+// HTTP API at /api/v1/trust/* (pkg/trust/api.go). The dashboard is
+// served by pkg/trust/dashboard/. The envelope primitive that wraps
+// trust attestations is pkg/attestation/ (frozen 2026-06-15).
+//
+// Tier gate: Professional+ per locked decision Q3 (see plans/sprint-16/).
+// Set RequireLicense=false to expose the API on Community/Developer tiers
+// (useful for self-hosted testing).
+type TrustConfig struct {
+	Enabled        bool   `yaml:"enabled"`
+	ConfigFile     string `yaml:"config_file"`     // path to trust.yaml
+	RequireLicense bool   `yaml:"require_license"` // gate behind license middleware (Professional+)
 }
 
 // SecurityConfig holds security middleware settings
@@ -302,6 +326,11 @@ func DefaultConfig() *Config {
 			Enabled:    false,
 			ConfigFile: "configs/acp.yaml",
 		},
+		Trust: TrustConfig{
+			Enabled:        false,
+			ConfigFile:     "configs/trust.yaml",
+			RequireLicense: true, // Professional+ tier per locked decision Q3
+		},
 		Persistence: persistence.DefaultConfig(),
 		SIEM: SIEMConfig{
 			Enabled:       false,
@@ -434,6 +463,17 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("AEGISGATE_ACP_CONFIG_FILE"); v != "" {
 		c.ACP.ConfigFile = v
+	}
+
+	// Trust Framework overrides
+	if v := os.Getenv("AEGISGATE_TRUST_ENABLED"); v != "" {
+		c.Trust.Enabled = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_TRUST_CONFIG_FILE"); v != "" {
+		c.Trust.ConfigFile = v
+	}
+	if v := os.Getenv("AEGISGATE_TRUST_REQUIRE_LICENSE"); v != "" {
+		c.Trust.RequireLicense = strings.ToLower(v) == "true"
 	}
 
 	// SIEM overrides
