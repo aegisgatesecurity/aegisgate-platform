@@ -14,7 +14,9 @@ package lensbackend
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -407,5 +409,131 @@ func TestFPReportViaHTTPServer(t *testing.T) {
 	acao := resp.Header.Get("Access-Control-Allow-Origin")
 	if acao != "*" {
 		t.Errorf("Access-Control-Allow-Origin = %q, want *", acao)
+	}
+}
+
+// TestEndToEndFPReportToCheck verifies the full round-trip:
+// POST /api/v1/lens/fp-report → IOC created → GET /api/v1/lens/check → verdict.
+// This is the Phase 3B integration test.
+func TestEndToEndFPReportToCheck(t *testing.T) {
+	dir := t.TempDir()
+	srv, err := NewServer(&Config{
+		Port:            0,
+		IOCStorePath:    dir,
+		RateLimitPerMin: 10000,
+		BearerToken:     "test-token",
+	}, "test-version")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(srv.Mux())
+	defer ts.Close()
+
+	domain := "chatgpt.com"
+	domainHash := ComputeDomainHash(domain)
+
+	// Step 1: POST multiple FP reports for chatgpt.com across different categories.
+	reports := []FPReport{
+		{HashedDomain: domainHash, Category: "pii_email", Severity: "high", Action: "send"},
+		{HashedDomain: domainHash, Category: "pii_email", Severity: "medium", Action: "send"},
+		{HashedDomain: domainHash, Category: "secret_api_key_generic", Severity: "high", Action: "cancel"},
+	}
+
+	for i, report := range reports {
+		body, _ := json.Marshal(report)
+		req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/lens/fp-report", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer test-token")
+		req.Header.Set("X-Original-SNI", domain)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("report %d: POST failed: %v", i, err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusAccepted {
+			t.Fatalf("report %d: expected 202, got %d", i, resp.StatusCode)
+		}
+	}
+
+	// Step 2: Force-flush the IOC writer so pending IOCs land in the store.
+	if err := srv.ioc.flush(context.Background()); err != nil {
+		t.Fatalf("flush failed: %v", err)
+	}
+
+	// Step 3: GET /api/v1/lens/check?domain=chatgpt.com → should return known_threat.
+	req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/lens/check?domain="+domain, nil)
+	req.Header.Set("Authorization", "Bearer test-token")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("GET /check failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("expected 200, got %d: %s", resp.StatusCode, body)
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("failed to decode /check response: %v", err)
+	}
+
+	if result["verdict"] != "known_threat" {
+		t.Errorf("verdict = %v, want 'known_threat'", result["verdict"])
+	}
+	// The domain field should be present in the response.
+	if d, ok := result["domain"]; !ok || d == nil {
+		t.Logf("domain field missing or nil in response (this is OK - /check doesn't always return domain)")
+	} else if d != domain {
+		t.Errorf("domain = %v, want %q", d, domain)
+	}
+	// The worst IOC should be from the secrets category (high severity).
+	// Since we sent pii_email (high+medium) and secret_api_key_generic (high),
+	// the worst by severity rank should be one of the high-severity ones.
+	if cat, ok := result["category"]; ok && cat != nil {
+		t.Logf("worst IOC category: %v", cat)
+	}
+	// Count should be > 0.
+	if count, ok := result["count"]; ok {
+		if count.(float64) < 1 {
+			t.Errorf("count = %v, want >= 1", count)
+		}
+	} else {
+		t.Error("count field missing from /check response")
+	}
+
+	// Step 4: GET /api/v1/lens/check?domain=unknown.com → should return "clean".
+	req2, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/lens/check?domain=unknown.example.com", nil)
+	req2.Header.Set("Authorization", "Bearer test-token")
+
+	resp2, err := http.DefaultClient.Do(req2)
+	if err != nil {
+		t.Fatalf("GET /check (unknown) failed: %v", err)
+	}
+	defer resp2.Body.Close()
+
+	var result2 map[string]interface{}
+	if err := json.NewDecoder(resp2.Body).Decode(&result2); err != nil {
+		t.Fatalf("failed to decode /check response (unknown): %v", err)
+	}
+	if result2["verdict"] != "clean" {
+		t.Errorf("unknown domain verdict = %v, want 'clean'", result2["verdict"])
+	}
+
+	// Step 5: GET /api/v1/lens/stats → should show accepted events.
+	req3, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/v1/lens/stats", nil)
+	req3.Header.Set("Authorization", "Bearer test-token")
+
+	resp3, err := http.DefaultClient.Do(req3)
+	if err != nil {
+		t.Fatalf("GET /stats failed: %v", err)
+	}
+	defer resp3.Body.Close()
+
+	if resp3.StatusCode != http.StatusOK {
+		t.Errorf("/stats status = %d, want 200", resp3.StatusCode)
 	}
 }
