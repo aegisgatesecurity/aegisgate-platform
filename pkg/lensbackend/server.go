@@ -161,17 +161,18 @@ func (s *Server) Mux() *http.ServeMux {
 	// /healthz is the only unauthenticated endpoint. It's
 	// used by load balancers and the testlab's docker-compose
 	// healthcheck.
-	mux.HandleFunc("/api/v1/lens/healthz", h.HandleHealthz)
+	mux.Handle("/api/v1/lens/healthz", corsMiddleware(http.HandlerFunc(h.HandleHealthz)))
 
-	// The other three endpoints are auth + rate-limit gated.
-	// We chain: rate limit -> auth -> handler. The order
-	// matters: rate limit first to shed load cheaply, then
-	// auth, then the handler.
+	// The other endpoints are auth + rate-limit gated.
+	// We chain: CORS -> rate limit -> auth -> handler. The order
+	// matters: CORS first (for preflight OPTIONS), then rate
+	// limit to shed load cheaply, then auth, then the handler.
 	auth := s.hmgr.Middleware
 	gated := func(path string, handler http.HandlerFunc) {
-		mux.Handle(path, s.rate.Middleware(auth(handler)))
+		mux.Handle(path, corsMiddleware(s.rate.Middleware(auth(handler))))
 	}
 	gated("/api/v1/lens/telemetry", h.HandleTelemetry)
+	gated("/api/v1/lens/fp-report", h.HandleFPReport)
 	gated("/api/v1/lens/check", h.HandleCheck)
 	gated("/api/v1/lens/stats", h.HandleStats)
 
@@ -292,4 +293,36 @@ func (s *Server) LocalAddr() net.Addr {
 	}
 	// Parse the address; for ":9090" this returns ":9090".
 	return &net.TCPAddr{IP: net.ParseIP("0.0.0.0"), Port: s.cfg.Port}
+}
+
+// corsMiddleware adds CORS headers to all responses. The Lens
+// extension sends cross-origin requests from browser extension
+// contexts. Without CORS headers, the preflight OPTIONS requests
+// from the extension popup or service worker would be rejected.
+//
+// In production, the Access-Control-Allow-Origin is set to the
+// configured PublicURL (or "*" if not configured). The Lens
+// extension's fetch() calls use chrome.runtime credentials
+// internally, so the CORS origin is just for the browser's
+// benefit during the preflight check.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Max-Age", "86400") // 24h cache
+
+		// Handle preflight OPTIONS requests.
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
