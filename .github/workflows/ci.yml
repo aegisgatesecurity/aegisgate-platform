@@ -167,37 +167,38 @@ jobs:
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/reporting"
             # pkg (root): contains only doc.go, no statements to cover.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg"
-            # pkg/ioc: at 77.8% coverage (below 80% floor). The PostgresStore
+            # pkg/ioc: at 74.5% coverage (below 80% floor). The PostgresStore
             # (pkg/ioc/postgres_store.go, ~400 LOC) requires a running PostgreSQL
             # instance and can only be tested via integration tests (build-tagged
-            # //go:build integration). The StoreAdapter, StoreInterface, and
-            # in-memory Store are fully tested. PostgresStore integration tests
-            # will be added in D1 Phase 1D (testlab). Exempted until
-            # integration tests are added.
+            # //go:build integration) or testlab's postgres_integration_test.go.
+            # The StoreAdapter, StoreInterface, in-memory Store, and D11
+            # tenant_isolation_test.go are fully tested. Exempted because
+            # live-DB tests cannot run in the default CI flow.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
             # pkg/persistence: at 43.3% coverage (below 80% floor). The
             # PostgresStorageBackend (postgres_storage_backend.go, ~450 LOC)
             # requires a running PostgreSQL instance and can only be tested via
-            # integration tests (build-tagged //go:build integration). The
-            # file-backed storage, Manager lifecycle, NewWithPostgres fallback,
-            # and closed-state error paths are fully tested. PostgreSQL
-            # integration tests will be added in D1 Phase 1D (testlab).
-            # Exempted until integration tests are added.
+            # integration tests (build-tagged //go:build integration) or
+            # testlab/postgres_integration_test.go. The file-backed storage,
+            # Manager lifecycle, NewWithPostgres fallback, closed-state error
+            # paths, and D11 AuditTenantContext are fully tested. Exempted
+            # because live-DB tests cannot run in the default CI flow.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
-            # pkg/rbac: the PostgresRBACStore (postgres_store.go, ~690 LOC)
-            # requires a running PostgreSQL instance and can only be tested
-            # via integration tests (build-tagged //go:build integration).
-            # The in-memory Manager, types, middleware, and closed-state
-            # error paths are fully tested. PostgreSQL integration tests
-            # will be added in D1 Phase 1D (testlab). Exempted until
-            # integration tests are added.
+            # pkg/rbac: at 52.7% coverage (below 80% floor). The
+            # PostgresRBACStore (postgres_store.go, ~690 LOC) requires a
+            # running PostgreSQL instance and can only be tested via
+            # integration tests (build-tagged //go:build integration) or
+            # testlab/postgres_integration_test.go. The in-memory Manager,
+            # types, middleware, closed-state error paths, and D11
+            # RBACTenantContext (tenant_isolation_test.go) are fully tested.
+            # Exempted because live-DB tests cannot run in the default CI flow.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
-            # pkg/license: the PostgresLicenseCache (postgres_cache.go,
-            # ~210 LOC) requires a running PostgreSQL instance. The
-            # in-memory Manager, validation, ECDSA signing, and
-            # closed-state error paths are fully tested. PostgreSQL
-            # integration tests will be added in D1 Phase 1D (testlab).
-            # Exempted until integration tests are added.
+            # pkg/license: at 65.8% coverage (below 80% floor). The
+            # PostgresLicenseCache (postgres_cache.go, ~210 LOC) requires a
+            # running PostgreSQL instance. The in-memory Manager, validation,
+            # ECDSA signing, closed-state error paths, and D11
+            # LicenseTenantContext (tenant_isolation_test.go) are fully tested.
+            # Exempted because live-DB tests cannot run in the default CI flow.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
           )
           FAIL=0
