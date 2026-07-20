@@ -491,11 +491,13 @@ Six compliance modules are available as add-ons to any paid tier. Prices are loc
 |--------|-------|---------------|-------------|
 | **HIPAA** | $99/mo | Developer+ | HIPAA-compliant logging, PHI detection, BAA support |
 | **PCI-DSS** | $99/mo | Developer+ | Payment card data detection, PCI-scoped audit logs |
-| **SOC 2** | $149/mo | Developer+ | SOC 2 Type II control mapping, evidence collection |
-| **ISO 42001** | $79/mo | Professional+ | ISO/IEC 42001 AI management system controls |
-| **FedRAMP** | $499/mo | Professional+ | FedRAMP Moderate/High control mapping, continuous monitoring |
-| **FIPS 140-2/140-3** | $299/mo | Professional+ | FIPS-validated cryptography enforcement, HSM integration |
-| **🇪🇺 EU AI Act** | Included | Professional+ | 82 controls across 8 categories (no separate charge) |
+| **SOC 2** | $149/mo | Developer+ | SOC 2 Type II control mapping, evidence collection — **framework stub (control definitions Q4 2026)** |
+| **ISO 42001** | $79/mo | Professional+ | ISO/IEC 42001 AI management system controls — **framework stub (control definitions Q4 2026)** |
+| **FedRAMP** | $499/mo | Professional+ | FedRAMP Moderate/High control mapping, continuous monitoring — **coming Q4 2026** |
+| **FIPS 140-2/140-3** | $299/mo | Professional+ | FIPS-validated cryptography enforcement, HSM integration — **coming Q4 2026** |
+| **🇪🇺 EU AI Act** | Included | Professional+ | 82 controls across 8 categories (no separate charge) — **fully implemented in v3.3.0** |
+
+> **Honest disclosure (2026-07-20 audit, Finding #3):** The platform is **self-hostable** today, so you can mount the modules into your own compliance workflow. However, the **automated control scanner** is only fully implemented for HIPAA, PCI-DSS, and EU AI Act. SOC 2 and ISO 42001 are framework stubs (the `pkg/compliance/premium/soc2/` and `pkg/compliance/enterprise/iso42001/` packages exist with `Check()` methods but **0 registered controls**). FedRAMP and FIPS 140-2/140-3 are not yet implemented (no `pkg/compliance/fedramp/` or `fips/` package). **Stripe checkout will succeed for any module**, but you will not receive automated control scanning for SOC 2, ISO 42001, FedRAMP, or FIPS 140 until Q4 2026. Until then, please contact `sales@` before purchasing these modules so we can route you to the right workaround.
 
 > **Note**: The EU AI Act module is the **only compliance module included with the Professional+ tier** at no extra cost. The other 6 modules are add-ons. In beta, the 6 paid modules are hidden on the website pending counsel review; contact `sales@` for early access.
 

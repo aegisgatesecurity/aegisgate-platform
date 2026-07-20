@@ -135,6 +135,41 @@ var iocWiringPtr *iocWiring
 // is mounted on the dashboard mux, not the proxy mux.
 var iocAdminAPIPtr *iocAdminAPI
 
+// subcommandHelp is the Usage footer that lists the 11 CLI subcommands.
+// Without this, "aegisgate --help" only shows top-level flags and users
+// have no way to discover the subcommands (audit Finding #9, P1).
+const subcommandHelp = `
+
+CLI Subcommands (run "aegisgate <subcommand> --help" for details):
+
+  a2a intent <sign|verify>     Agent intent signing (v3.4.0+ TODO-303)
+  aibom <generate|verify>      AI Bill of Materials (v3.4.0+ TODO-302)
+  attestation <sign|verify>    Attestation envelope operations (frozen 2026-06-15)
+  cve <publish|verify>         CVE-for-AI Entry Publisher (v3.4.0+ TODO-305)
+  digest <generate|verify>     CISO Posture Digest (v3.4.0+ TODO-601)
+  evaluator <run>              AR-EaaS evaluator (v3.4.0+ TODO-301)
+  evidence <build|verify|list> Compliance evidence packages (v3.3.0+)
+  posture <check|report>       Platform posture check (v3.3.0 Phase 6.5)
+  prompt-cache <audit>         Prompt cache poisoning audit (v3.4.0+ TODO-304)
+  report <generate>            Compliance reports (v3.4.0+ TODO-602)
+  soc <timeline|list>          SOC incident timeline (v3.4.0+ TODO-502)
+
+  Run "aegisgate <subcommand> help" for verb-level help.
+`
+
+// init() overrides Go's default flag.Usage to include the subcommand list.
+// D17 (audit Finding #9, P1): without this, users can't discover the 11
+// CLI subcommands from --help.
+func init() {
+	originalUsage := flag.Usage
+	flag.Usage = func() {
+		// Print the standard flag usage (top-level flags).
+		originalUsage()
+		// Append the subcommand list.
+		fmt.Fprint(flag.CommandLine.Output(), subcommandHelp)
+	}
+}
+
 func main() {
 	flag.Parse()
 

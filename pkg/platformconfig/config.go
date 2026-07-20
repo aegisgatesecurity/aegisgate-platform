@@ -15,6 +15,7 @@ package platformconfig
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -342,7 +343,8 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadFromFile loads configuration from a YAML file, applying defaults for missing fields
+// LoadFromFile loads configuration from a YAML file, applying defaults for missing fields.
+// On D17 (P0 fix): wraps yaml in a legacy-key translation layer. See translateLegacyConfigKeys.
 func LoadFromFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path) // #nosec G304 -- Config path comes from CLI flag or hardcoded default, not user input
 	if err != nil {
@@ -355,15 +357,162 @@ func LoadFromFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
+	// Translate legacy yaml keys (server.*, scanner.*, bridge.*, redis.*, lens.*)
+	// to canonical Config struct keys. Without this, ~70% of the user-facing
+	// aegisgate-platform.yaml was silently dropped on load (see audit
+	// plans/FULL-CODEBASE-AUDIT-2026-07-20.md, Finding #1).
+	translated, warnings := translateLegacyConfigKeys(data)
+
 	cfg := DefaultConfig()
-	if err := yaml.Unmarshal(data, cfg); err != nil {
+	if err := yaml.Unmarshal(translated, cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	// Log deprecation warnings so users know to update their yaml.
+	for _, w := range warnings {
+		log.Printf("config: %s", w)
 	}
 
 	// Apply environment variable overrides
 	cfg.applyEnvOverrides()
 
 	return cfg, nil
+}
+
+// translateLegacyConfigKeys rewrites aegisgate-platform.yaml's legacy/wrong
+// field names to canonical Go struct yaml tags. The audit found the user-facing
+// config file used keys like `server.*`, `scanner.*`, `bridge.*`, `redis.*`,
+// `lens.*` that don't match any Go struct field, so ~70% of the file was
+// silently dropped on load. This translator makes both old and new keys work.
+//
+// Returns the translated yaml bytes and a list of deprecation warnings
+// (to be logged by the caller).
+func translateLegacyConfigKeys(data []byte) ([]byte, []string) {
+	var raw map[string]interface{}
+	if err := yaml.Unmarshal(data, &raw); err != nil {
+		// Not a valid yaml map; pass through and let the caller error.
+		return data, nil
+	}
+	if raw == nil {
+		return data, nil
+	}
+
+	var warnings []string
+	translated := make(map[string]interface{})
+
+	// Copy all top-level keys as-is, then apply translations.
+	for k, v := range raw {
+		translated[k] = v
+	}
+
+	// server.* — was the main config block in the v3.3.0-beta.2 era.
+	// Translate to proxy.* + dashboard.* to match the Go struct.
+	if server, ok := raw["server"].(map[string]interface{}); ok {
+		// server.host + server.proxy_port → proxy.bind_address
+		host, hasHost := server["host"].(string)
+		port, hasPort := server["proxy_port"]
+		if hasHost || hasPort {
+			hostStr := "0.0.0.0"
+			if hasHost {
+				hostStr = host
+			}
+			portStr := "8080"
+			if p, ok := port.(int); ok {
+				portStr = strconv.Itoa(p)
+			} else if p, ok := port.(float64); ok { // yaml numbers are float64
+				portStr = strconv.Itoa(int(p))
+			}
+			bind := hostStr + ":" + portStr
+			translated["proxy"] = mergeIntoMap(asMap(translated["proxy"]), "bind_address", bind)
+			warnings = append(warnings, "config: 'server.host' and 'server.proxy_port' are deprecated; use 'proxy.bind_address' (e.g. \""+bind+"\")")
+		}
+		// server.mcp_port — not in Go struct (MCP port is CLI flag/env var only)
+		if _, hasMCP := server["mcp_port"]; hasMCP {
+			warnings = append(warnings, "config: 'server.mcp_port' is deprecated; use the --mcp-port CLI flag or AEGIS_PORT env var (MCP port is not yaml-configurable)")
+		}
+		// server.dashboard_port → dashboard.port
+		if dp, hasDP := server["dashboard_port"]; hasDP {
+			var portVal int
+			if p, ok := dp.(int); ok {
+				portVal = p
+			} else if p, ok := dp.(float64); ok {
+				portVal = int(p)
+			}
+			if portVal > 0 {
+				translated["dashboard"] = mergeIntoMap(asMap(translated["dashboard"]), "port", portVal)
+				warnings = append(warnings, "config: 'server.dashboard_port' is deprecated; use 'dashboard.port'")
+			}
+		}
+		delete(translated, "server")
+	}
+
+	// tier (top-level) — deprecated since D0; tier is now license-derived
+	if _, hasTier := raw["tier"]; hasTier {
+		warnings = append(warnings, "config: top-level 'tier' is deprecated and ignored; tier is now license-derived (set AEGISGATE_LICENSE_KEY or use --license)")
+		delete(translated, "tier")
+	}
+
+	// scanner.* — not in Go struct (scanner is CLI flag only)
+	if _, hasScanner := raw["scanner"]; hasScanner {
+		warnings = append(warnings, "config: 'scanner' section is deprecated and ignored; use the --scanner-address CLI flag or AEGIS_SCANNER_ADDRESS env var")
+		delete(translated, "scanner")
+	}
+
+	// bridge.* — not in Go struct (bridge is CLI flag only)
+	if _, hasBridge := raw["bridge"]; hasBridge {
+		warnings = append(warnings, "config: 'bridge' section is deprecated and ignored; use the --bridge-url CLI flag or AEGISGATE_BRIDGE_URL env var")
+		delete(translated, "bridge")
+	}
+
+	// redis.* — not in Go struct and not used by main.go
+	if _, hasRedis := raw["redis"]; hasRedis {
+		warnings = append(warnings, "config: 'redis' section is deprecated and ignored; the platform does not currently use Redis")
+		delete(translated, "redis")
+	}
+
+	// lens.* — translate to top-level proxyMux flag or env-var note
+	if lens, ok := raw["lens"].(map[string]interface{}); ok {
+		// lens.enabled, lens.bearer_token, lens.ioc_store_dir all map to
+		// CLI flags / env vars (not in the Go config struct). We note
+		// them and remove.
+		if en, hasEn := lens["enabled"]; hasEn {
+			warnings = append(warnings, fmt.Sprintf("config: 'lens.enabled' (%v) is deprecated; use the --lens-enabled CLI flag or AEGISGATE_LENS_ENABLED env var", en))
+		}
+		if bt, hasBT := lens["bearer_token"]; hasBT && bt != "" {
+			warnings = append(warnings, "config: 'lens.bearer_token' is deprecated; use the --lens-bearer-token CLI flag or AEGISGATE_LENS_BEARER_TOKEN env var")
+		}
+		if sd, hasSD := lens["ioc_store_dir"]; hasSD && sd != "" {
+			warnings = append(warnings, "config: 'lens.ioc_store_dir' is deprecated; use the --lens-ioc-store-dir CLI flag or AEGISGATE_LENS_IOC_STORE_DIR env var")
+		}
+		delete(translated, "lens")
+	}
+
+	out, err := yaml.Marshal(translated)
+	if err != nil {
+		return data, warnings // best-effort: return original
+	}
+	return out, warnings
+}
+
+// asMap returns v as a map[string]interface{} if it is one, else nil.
+func asMap(v interface{}) map[string]interface{} {
+	if m, ok := v.(map[string]interface{}); ok {
+		return m
+	}
+	return map[string]interface{}{}
+}
+
+// mergeIntoMap returns a copy of base with key=k set to value=v.
+func mergeIntoMap(base map[string]interface{}, k string, v interface{}) map[string]interface{} {
+	if base == nil {
+		base = map[string]interface{}{}
+	}
+	out := make(map[string]interface{}, len(base)+1)
+	for kk, vv := range base {
+		out[kk] = vv
+	}
+	out[k] = v
+	return out
 }
 
 // Load is the primary entry point — tries the file, falls back to defaults
