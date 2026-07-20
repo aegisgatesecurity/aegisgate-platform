@@ -24,7 +24,10 @@ import (
 // MANAGER
 // ============================================================================
 
-// Manager handles RBAC operations for agents and users
+// Manager handles RBAC operations for agents and users.
+// When a PostgresRBACStore is provided via NewWithPostgres, agent registrations
+// and sessions are persisted to PostgreSQL for multi-instance deployment.
+// Otherwise, the Manager falls back to in-memory maps (Community/Developer tiers).
 type Manager struct {
 	config         *Config
 	agents         map[string]*Agent
@@ -38,6 +41,10 @@ type Manager struct {
 	cleanupMu      sync.Mutex
 	logger         *slog.Logger
 	stopCleanup    chan struct{}
+
+	// PostgreSQL backend (nil for in-memory mode)
+	pgStore     *PostgresRBACStore
+	usePostgres bool
 }
 
 // NewManager creates a new RBAC manager
@@ -70,6 +77,48 @@ func NewManager(config *Config) (*Manager, error) {
 	return m, nil
 }
 
+// NewWithPostgres creates a Manager that persists agent registrations and
+// sessions to PostgreSQL. If pgStore is nil, falls back to in-memory mode
+// (same as NewManager). This is for Professional/Enterprise tiers with
+// FeaturePostgreSQL enabled.
+func NewWithPostgres(config *Config, pgStore *PostgresRBACStore) (*Manager, error) {
+	if pgStore == nil {
+		// No PostgreSQL available; fall back to in-memory
+		return NewManager(config)
+	}
+
+	if config == nil {
+		config = DefaultConfig()
+	}
+
+	m, err := NewManager(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create base manager: %w", err)
+	}
+
+	m.pgStore = pgStore
+	m.usePostgres = true
+
+	m.logger.Info("RBAC manager initialized with PostgreSQL backend")
+
+	return m, nil
+}
+
+// UsesPostgres returns whether PostgreSQL storage is active.
+func (m *Manager) UsesPostgres() bool {
+	m.agentMu.RLock()
+	defer m.agentMu.RUnlock()
+	return m.usePostgres
+}
+
+// PostgresStore returns the underlying PostgresRBACStore.
+// Returns nil if using in-memory storage.
+func (m *Manager) PostgresStore() *PostgresRBACStore {
+	m.agentMu.RLock()
+	defer m.agentMu.RUnlock()
+	return m.pgStore
+}
+
 // Close shuts down the RBAC manager
 func (m *Manager) Close() {
 	close(m.stopCleanup)
@@ -85,6 +134,12 @@ func (m *Manager) Close() {
 	m.userSessionMu.Lock()
 	m.userSessions = make(map[string]*UserSession)
 	m.userSessionMu.Unlock()
+
+	// Close PostgreSQL backend if present
+	if m.pgStore != nil {
+		m.pgStore.Close()
+	}
+
 	m.logger.Info("RBAC manager shut down")
 }
 
@@ -93,7 +148,22 @@ func (m *Manager) Close() {
 // ============================================================================
 
 // RegisterAgent registers a new agent with the specified role
+// RegisterAgent registers a new agent with the specified role.
+// If PostgreSQL is active, the agent is persisted to the database.
 func (m *Manager) RegisterAgent(agent *Agent) error {
+	// PostgreSQL path: persist to database, then cache in-memory
+	if m.usePostgres {
+		ctx := context.Background()
+		if err := m.pgStore.RegisterAgent(ctx, agent); err != nil {
+			return fmt.Errorf("postgres register agent: %w", err)
+		}
+		// Also cache in-memory for fast reads
+		m.agentMu.Lock()
+		m.agents[agent.ID] = agent
+		m.agentMu.Unlock()
+		return nil
+	}
+
 	m.agentMu.Lock()
 	defer m.agentMu.Unlock()
 
@@ -141,7 +211,22 @@ func (m *Manager) RegisterAgent(agent *Agent) error {
 }
 
 // GetAgent retrieves an agent by ID
+// GetAgent retrieves an agent by ID.
+// If PostgreSQL is active, reads from the database (with in-memory cache fallback).
 func (m *Manager) GetAgent(agentID string) (*Agent, error) {
+	// PostgreSQL path: read from database
+	if m.usePostgres {
+		ctx := context.Background()
+		agent, err := m.pgStore.GetAgent(ctx, agentID)
+		if err != nil {
+			return nil, fmt.Errorf("postgres get agent: %w", err)
+		}
+		if agent == nil {
+			return nil, fmt.Errorf("agent not found: %s", agentID)
+		}
+		return agent, nil
+	}
+
 	m.agentMu.RLock()
 	defer m.agentMu.RUnlock()
 
@@ -204,7 +289,32 @@ func (m *Manager) UpdateAgent(agentID string, updates *AgentUpdates) error {
 }
 
 // UnregisterAgent removes an agent
+// UnregisterAgent removes an agent.
+// If PostgreSQL is active, deletes from database and invalidates its sessions.
 func (m *Manager) UnregisterAgent(agentID string) error {
+	// PostgreSQL path: delete from database (cascades to sessions)
+	if m.usePostgres {
+		ctx := context.Background()
+		if err := m.pgStore.UnregisterAgent(ctx, agentID); err != nil {
+			return fmt.Errorf("postgres unregister agent: %w", err)
+		}
+		// Also remove from in-memory cache
+		m.agentMu.Lock()
+		delete(m.agents, agentID)
+		m.agentMu.Unlock()
+		// Invalidate in-memory sessions
+		m.agentSessionMu.Lock()
+		for sessionID, session := range m.agentSessions {
+			if session.AgentID == agentID {
+				session.Active = false
+				delete(m.agentSessions, sessionID)
+			}
+		}
+		m.agentSessionMu.Unlock()
+		m.logger.Info("agent unregistered (postgres)", "agent_id", truncateID(agentID))
+		return nil
+	}
+
 	m.agentMu.Lock()
 	defer m.agentMu.Unlock()
 
@@ -248,17 +358,28 @@ func (m *Manager) ListAgents() []*Agent {
 // ============================================================================
 
 // CreateSession creates a new session for an agent
+// CreateSession creates a new session for an agent.
+// If PostgreSQL is active, the session is persisted to the database.
 func (m *Manager) CreateSession(ctx context.Context, agentID string, opts ...SessionOption) (*AgentSession, error) {
-	m.agentSessionMu.Lock()
-	defer m.agentSessionMu.Unlock()
-
-	// Get agent
-	m.agentMu.RLock()
-	agent, exists := m.agents[agentID]
-	m.agentMu.RUnlock()
-
-	if !exists {
-		return nil, fmt.Errorf("agent not found: %s", agentID)
+	// Get agent (from PostgreSQL or in-memory)
+	var agent *Agent
+	var err error
+	if m.usePostgres {
+		agent, err = m.pgStore.GetAgent(ctx, agentID)
+		if err != nil {
+			return nil, fmt.Errorf("postgres get agent for session: %w", err)
+		}
+		if agent == nil {
+			return nil, fmt.Errorf("agent not found: %s", agentID)
+		}
+	} else {
+		m.agentMu.RLock()
+		var exists bool
+		agent, exists = m.agents[agentID]
+		m.agentMu.RUnlock()
+		if !exists {
+			return nil, fmt.Errorf("agent not found: %s", agentID)
+		}
 	}
 
 	if !agent.Enabled {
@@ -266,11 +387,21 @@ func (m *Manager) CreateSession(ctx context.Context, agentID string, opts ...Ses
 	}
 
 	// Count existing sessions for this agent
-	sessionCount := 0
-	for _, s := range m.agentSessions {
-		if s.AgentID == agentID && s.Active {
-			sessionCount++
+	var sessionCount int
+	if m.usePostgres {
+		count, err := m.pgStore.CountActiveSessions(ctx, agentID)
+		if err != nil {
+			return nil, fmt.Errorf("postgres count sessions: %w", err)
 		}
+		sessionCount = count
+	} else {
+		m.agentSessionMu.RLock()
+		for _, s := range m.agentSessions {
+			if s.AgentID == agentID && s.Active {
+				sessionCount++
+			}
+		}
+		m.agentSessionMu.RUnlock()
 	}
 
 	if sessionCount >= m.config.MaxSessionsPerAgent {
@@ -300,19 +431,55 @@ func (m *Manager) CreateSession(ctx context.Context, agentID string, opts ...Ses
 		opt(session)
 	}
 
-	m.agentSessions[sessionID] = session
+	// PostgreSQL path: persist session
+	if m.usePostgres {
+		if err := m.pgStore.CreateAgentSession(ctx, session); err != nil {
+			return nil, fmt.Errorf("postgres create session: %w", err)
+		}
+	} else {
+		m.agentSessionMu.Lock()
+		m.agentSessions[sessionID] = session
+		m.agentSessionMu.Unlock()
+	}
 
 	m.logger.Info("session created",
 		"session_id", truncateID(sessionID),
 		"agent_id", truncateID(agentID),
 		"role", agent.Role,
+		"postgres", m.usePostgres,
 	)
 
 	return session, nil
 }
 
 // GetSession retrieves a session by ID
+// GetSession retrieves a session by ID.
+// If PostgreSQL is active, reads from the database.
 func (m *Manager) GetSession(sessionID string) (*AgentSession, error) {
+	// PostgreSQL path: read from database
+	if m.usePostgres {
+		ctx := context.Background()
+		session, err := m.pgStore.GetAgentSession(ctx, sessionID)
+		if err != nil {
+			return nil, fmt.Errorf("postgres get session: %w", err)
+		}
+		if session == nil {
+			return nil, fmt.Errorf("session not found: %s", sessionID)
+		}
+		// Populate the Agent reference from PostgreSQL
+		agent, err := m.pgStore.GetAgent(ctx, session.AgentID)
+		if err != nil {
+			return nil, fmt.Errorf("postgres get agent for session: %w", err)
+		}
+		if agent != nil {
+			session.Agent = agent
+		}
+		if !session.IsValid() {
+			return nil, errors.New("session expired or invalid")
+		}
+		return session, nil
+	}
+
 	m.agentSessionMu.RLock()
 	defer m.agentSessionMu.RUnlock()
 
@@ -367,7 +534,23 @@ func (m *Manager) RefreshSession(sessionID string) error {
 }
 
 // InvalidateSession marks a session as inactive
+// InvalidateSession marks a session as inactive.
+// If PostgreSQL is active, invalidates in the database.
 func (m *Manager) InvalidateSession(sessionID string) error {
+	// PostgreSQL path
+	if m.usePostgres {
+		ctx := context.Background()
+		if err := m.pgStore.InvalidateAgentSession(ctx, sessionID); err != nil {
+			return fmt.Errorf("postgres invalidate session: %w", err)
+		}
+		// Also remove from in-memory cache
+		m.agentSessionMu.Lock()
+		delete(m.agentSessions, sessionID)
+		m.agentSessionMu.Unlock()
+		m.logger.Info("session invalidated (postgres)", "session_id", truncateID(sessionID))
+		return nil
+	}
+
 	m.agentSessionMu.Lock()
 	defer m.agentSessionMu.Unlock()
 
@@ -385,8 +568,29 @@ func (m *Manager) InvalidateSession(sessionID string) error {
 	return nil
 }
 
-// InvalidateAgentSessions invalidates all sessions for an agent
+// InvalidateAgentSessions invalidates all sessions for an agent.
+// If PostgreSQL is active, invalidates in the database.
 func (m *Manager) InvalidateAgentSessions(agentID string) error {
+	// PostgreSQL path
+	if m.usePostgres {
+		ctx := context.Background()
+		count, err := m.pgStore.InvalidateAgentSessions(ctx, agentID)
+		if err != nil {
+			return fmt.Errorf("postgres invalidate agent sessions: %w", err)
+		}
+		// Also remove from in-memory cache
+		m.agentSessionMu.Lock()
+		for sessionID, session := range m.agentSessions {
+			if session.AgentID == agentID && session.Active {
+				session.Active = false
+				delete(m.agentSessions, sessionID)
+			}
+		}
+		m.agentSessionMu.Unlock()
+		m.logger.Info("agent sessions invalidated (postgres)", "agent_id", truncateID(agentID), "count", count)
+		return nil
+	}
+
 	m.agentSessionMu.Lock()
 	defer m.agentSessionMu.Unlock()
 
@@ -535,6 +739,20 @@ func (m *Manager) cleanup() {
 	m.cleanupMu.Lock()
 	defer m.cleanupMu.Unlock()
 
+	// PostgreSQL path: prune expired sessions in the database
+	if m.usePostgres && m.pgStore != nil {
+		ctx := context.Background()
+		count, err := m.pgStore.PruneExpiredSessions(ctx)
+		if err != nil {
+			m.logger.Error("postgres session prune error", "error", err)
+		} else if count > 0 {
+			m.logger.Debug("postgres session cleanup completed", "expired_sessions", count)
+		}
+		// Also prune license cache if available
+		// (license cache pruning is handled by the persistence Manager)
+		return
+	}
+
 	m.agentSessionMu.Lock()
 	now := time.Now()
 	expiredCount := 0
@@ -549,6 +767,16 @@ func (m *Manager) cleanup() {
 	if expiredCount > 0 {
 		m.logger.Debug("cleanup completed", "expired_sessions", expiredCount)
 	}
+}
+
+// PruneExpiredSessions prunes expired sessions from PostgreSQL.
+// Called by the persistence Manager's background goroutine.
+// Returns 0 and nil if not using PostgreSQL.
+func (m *Manager) PruneExpiredSessions(ctx context.Context) (int, error) {
+	if !m.usePostgres || m.pgStore == nil {
+		return 0, nil
+	}
+	return m.pgStore.PruneExpiredSessions(ctx)
 }
 
 // ============================================================================
