@@ -253,7 +253,10 @@ func MetricsEndpoint() string {
 }
 
 // GetRegistry returns a new isolated Prometheus registry.
+//
 // Deprecated: Use NewRegistry() instead for better naming clarity.
+// Will be removed in v3.7.0 (target Q1 2027). Tracked in
+// plans/TECHNICAL-DEBT.md.
 func GetRegistry() *prometheus.Registry {
 	return prometheus.NewRegistry()
 }
