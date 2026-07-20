@@ -11,7 +11,10 @@ package platformconfig
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ---------------------------------------------------------------------------
@@ -538,5 +541,196 @@ trust:
 	}
 	if cfg.Trust.RequireLicense {
 		t.Error("Trust.RequireLicense should be false after loading YAML")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// D17: legacy key translation (audit Finding #1, P0).
+// The user-facing aegisgate-platform.yaml used server.* / scanner.* /
+// bridge.* / redis.* / lens.* keys that don't match any Go struct field.
+// These tests lock in the translation behavior.
+// ---------------------------------------------------------------------------
+
+func TestTranslateLegacyConfigKeys_ServerHostPortToProxy(t *testing.T) {
+	input := []byte("server:\n  host: \"1.2.3.4\"\n  proxy_port: 9999\n")
+	out, warns := translateLegacyConfigKeys(input)
+	if len(warns) == 0 {
+		t.Error("expected deprecation warning for server.host/proxy_port")
+	}
+	var got map[string]interface{}
+	if err := yaml.Unmarshal(out, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	proxy, ok := got["proxy"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected proxy map, got: %+v", got)
+	}
+	if proxy["bind_address"] != "1.2.3.4:9999" {
+		t.Errorf("proxy.bind_address = %v, want 1.2.3.4:9999", proxy["bind_address"])
+	}
+	if _, has := got["server"]; has {
+		t.Error("server should be removed from translated output")
+	}
+}
+
+func TestTranslateLegacyConfigKeys_DashboardPort(t *testing.T) {
+	input := []byte("server:\n  dashboard_port: 9000\n")
+	out, warns := translateLegacyConfigKeys(input)
+	if len(warns) == 0 {
+		t.Error("expected deprecation warning for server.dashboard_port")
+	}
+	var got map[string]interface{}
+	_ = yaml.Unmarshal(out, &got)
+	dash, ok := got["dashboard"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected dashboard map, got: %+v", got)
+	}
+	// yaml round-trip converts to float64; tolerate either.
+	gotPort := -1
+	switch v := dash["port"].(type) {
+	case int:
+		gotPort = v
+	case float64:
+		gotPort = int(v)
+	}
+	if gotPort != 9000 {
+		t.Errorf("dashboard.port = %v (type %T), want 9000", dash["port"], dash["port"])
+	}
+}
+
+func TestTranslateLegacyConfigKeys_TopLevelTierRemoved(t *testing.T) {
+	input := []byte("tier: community\nlogging:\n  level: debug\n")
+	out, warns := translateLegacyConfigKeys(input)
+	found := false
+	for _, w := range warns {
+		if strings.Contains(w, "tier") {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected deprecation warning for top-level tier")
+	}
+	var got map[string]interface{}
+	_ = yaml.Unmarshal(out, &got)
+	if _, has := got["tier"]; has {
+		t.Error("tier should be removed from translated output")
+	}
+	logging, _ := got["logging"].(map[string]interface{})
+	if logging["level"] != "debug" {
+		t.Errorf("logging.level = %v, want debug", logging["level"])
+	}
+}
+
+func TestTranslateLegacyConfigKeys_DroppedSections(t *testing.T) {
+	input := []byte(`
+scanner:
+  address: localhost:9999
+bridge:
+  enabled: true
+redis:
+  url: redis://localhost:6379
+lens:
+  enabled: true
+  bearer_token: "secret"
+  ioc_store_dir: /tmp/lens
+siem:
+  enabled: true
+`)
+	out, warns := translateLegacyConfigKeys(input)
+	if len(warns) < 4 {
+		t.Errorf("expected at least 4 deprecation warnings, got %d: %v", len(warns), warns)
+	}
+	var got map[string]interface{}
+	_ = yaml.Unmarshal(out, &got)
+	for _, dropped := range []string{"scanner", "bridge", "redis", "lens"} {
+		if _, has := got[dropped]; has {
+			t.Errorf("%s should be removed from translated output", dropped)
+		}
+	}
+	// siem should be preserved
+	siem, ok := got["siem"].(map[string]interface{})
+	if !ok || siem["enabled"] != true {
+		t.Errorf("siem should be preserved, got: %+v", got["siem"])
+	}
+}
+
+func TestTranslateLegacyConfigKeys_ValidYamlUnchanged(t *testing.T) {
+	// A yaml that already uses canonical keys should pass through cleanly
+	// with no warnings.
+	input := []byte(`
+proxy:
+  bind_address: "0.0.0.0:8080"
+dashboard:
+  port: 8443
+logging:
+  level: info
+`)
+	out, warns := translateLegacyConfigKeys(input)
+	if len(warns) != 0 {
+		t.Errorf("expected no warnings for canonical yaml, got %d: %v", len(warns), warns)
+	}
+	var got map[string]interface{}
+	_ = yaml.Unmarshal(out, &got)
+	if proxy, _ := got["proxy"].(map[string]interface{}); proxy["bind_address"] != "0.0.0.0:8080" {
+		t.Errorf("proxy.bind_address lost in translation: %v", proxy)
+	}
+}
+
+func TestTranslateLegacyConfigKeys_InvalidYamlPassthrough(t *testing.T) {
+	// Malformed yaml should pass through (the caller's yaml.Unmarshal will
+	// produce a clearer error).
+	input := []byte("this: is: not: valid: yaml: ::")
+	out, warns := translateLegacyConfigKeys(input)
+	if len(warns) != 0 {
+		t.Errorf("invalid yaml should produce no warnings, got %v", warns)
+	}
+	if string(out) != string(input) {
+		t.Error("invalid yaml should be passed through unchanged")
+	}
+}
+
+func TestTranslateLegacyConfigKeys_EmptyYaml(t *testing.T) {
+	out, warns := translateLegacyConfigKeys([]byte(""))
+	if len(warns) != 0 {
+		t.Errorf("empty yaml should produce no warnings, got %v", warns)
+	}
+	if len(out) != 0 {
+		t.Errorf("empty yaml should remain empty, got %q", out)
+	}
+}
+
+func TestLoadFromFile_DefaultAegisgatePlatformYaml(t *testing.T) {
+	// The actual default config file (aegisgate-platform.yaml) must load
+	// without error and must apply server.proxy_port to Proxy.BindAddress
+	// via the translation layer.
+	tmpDir := t.TempDir()
+	cfgFile := filepath.Join(tmpDir, "aegisgate-platform.yaml")
+	yaml := `server:
+  host: "0.0.0.0"
+  proxy_port: 8080
+  mcp_port: 8081
+  dashboard_port: 8443
+tier: community
+scanner:
+  address: "localhost:8081"
+bridge:
+  enabled: true
+lens:
+  enabled: false
+siem:
+  enabled: false
+`
+	if err := os.WriteFile(cfgFile, []byte(yaml), 0644); err != nil {
+		t.Fatalf("write yaml: %v", err)
+	}
+	cfg, err := LoadFromFile(cfgFile)
+	if err != nil {
+		t.Fatalf("LoadFromFile: %v", err)
+	}
+	if cfg.Proxy.BindAddress != "0.0.0.0:8080" {
+		t.Errorf("Proxy.BindAddress = %q, want 0.0.0.0:8080 (legacy server.host+proxy_port should translate)", cfg.Proxy.BindAddress)
+	}
+	if cfg.Dashboard.Port != 8443 {
+		t.Errorf("Dashboard.Port = %d, want 8443 (legacy server.dashboard_port should translate)", cfg.Dashboard.Port)
 	}
 }

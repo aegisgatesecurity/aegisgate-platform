@@ -12,7 +12,10 @@ metadata:
   namespace: aegisgate
   labels:
     app.kubernetes.io/name: aegisgate-platform
-    app.kubernetes.io/version: "1.3.2"
+    # Updated 2026-07-20 (audit Finding #2): align with current release.
+    # Previously "1.3.2" — would have deployed v1.3.4 image, not the actual
+    # current v3.4.0-beta.1. See plans/FULL-CODEBASE-AUDIT-2026-07-20.md.
+    app.kubernetes.io/version: "3.4.0-beta.1"
 spec:
   replicas: 1
   selector:
@@ -27,7 +30,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: aegisgate-platform
-        app.kubernetes.io/version: "1.3.2"
+        # Updated 2026-07-20 (audit Finding #2): align with current release.
+        app.kubernetes.io/version: "3.4.0-beta.1"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8443"
@@ -47,19 +51,27 @@ spec:
           type: RuntimeDefault
       containers:
         - name: aegisgate-platform
-          image: ghcr.io/aegisgatesecurity/aegisgate-platform:1.3.4
+          # Updated 2026-07-20 (audit Finding #2): align with current release.
+          # Previously :1.3.4 — that's a v1.3.x image, not v3.4.0-beta.1.
+          image: ghcr.io/aegisgatesecurity/aegisgate-platform:3.4.0-beta.1
           imagePullPolicy: IfNotPresent
           args:
             - "--proxy-port=8080"
             - "--mcp-port=8081"
             - "--dashboard-port=8443"
             - "--embedded-mcp"
-            - "--tier=community"
+            # Removed 2026-07-20 (audit Finding #2): --tier=community was
+            # deprecated in D0 (Sprint 7). Tier is now derived from the
+            # license key, set via AEGISGATE_LICENSE_KEY env or --license flag.
+            # Without a license key, the platform runs in Community tier
+            # automatically.
           env:
             - name: AEGISGATE_DATA_DIR
               value: /data
-            - name: TIER
-              value: "community"
+            # Removed 2026-07-20 (audit Finding #2): TIER=community is the
+            # same deprecated path. Tier is license-derived; setting TIER
+            # does not change behavior since D0.
+            # To unlock Professional+ features, set AEGISGATE_LICENSE_KEY.
           ports:
             - name: proxy
               containerPort: 8080
