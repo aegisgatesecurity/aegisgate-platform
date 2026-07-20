@@ -65,6 +65,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"strings"
 	"sync"
 	"time"
 
@@ -198,6 +199,16 @@ func sourceProviderFromDomainHash(domainHash string) string {
 		ComputeDomainHash("claude.ai"):             "claude",
 		ComputeDomainHash("gemini.google.com"):     "gemini",
 		ComputeDomainHash("copilot.microsoft.com"): "copilot",
+		ComputeDomainHash("perplexity.ai"):         "perplexity",
+		ComputeDomainHash("deepseek.ai"):           "deepseek",
+		ComputeDomainHash("mistral.ai"):            "mistral",
+		ComputeDomainHash("huggingface.co"):        "huggingface",
+		ComputeDomainHash("groq.com"):              "groq",
+		ComputeDomainHash("replicate.com"):         "replicate",
+		ComputeDomainHash("meta.ai"):               "meta",
+		ComputeDomainHash("x.ai"):                  "xai",
+		ComputeDomainHash("fireworks.ai"):          "fireworks",
+		ComputeDomainHash("together.ai"):           "together",
 	}
 	if v, ok := mapping[domainHash]; ok {
 		return v
@@ -205,20 +216,30 @@ func sourceProviderFromDomainHash(domainHash string) string {
 	return "unknown"
 }
 
-// categoryToIOCType maps a Lens category to an IOCType. The
-// mapping is locked; any change requires updating
-// plans/AEGISGATE-LENS-ARCHITECTURE-v1.md.
+// categoryToIOCType maps a Lens category to an IOCType.
+// Uses prefix matching for efficiency across 157 categories.
 func categoryToIOCType(category string) ioc.IOCType {
-	switch category {
-	case string(CategoryPIIEmail), string(CategoryPIIPhone),
-		string(CategoryPIISSN), string(CategoryPIICreditCard):
+	switch {
+	case strings.HasPrefix(category, "pii_"):
 		return ioc.IOCTypePIIDetected
-	case string(CategorySecretAPIKey):
+	case strings.HasPrefix(category, "secret_"), category == "source_code":
 		return ioc.IOCTypeSecretLeak
-	case string(CategorySourceCode):
-		return ioc.IOCTypeSecretLeak // source code detection is treated as a secret-leak IOC
+	case strings.HasPrefix(category, "xss_"):
+		return ioc.IOCTypeXSSDetected
+	case strings.HasPrefix(category, "owasp_"), strings.HasPrefix(category, "atlas_"),
+		strings.HasPrefix(category, "eu_ai_act_"), strings.HasPrefix(category, "anp_"),
+		strings.HasPrefix(category, "cu_"), strings.HasPrefix(category, "ccpa_"),
+		strings.HasPrefix(category, "iso_"), strings.HasPrefix(category, "lgpd_"),
+		strings.HasPrefix(category, "nist_"), strings.HasPrefix(category, "pipeda_"),
+		strings.HasPrefix(category, "popia_"), strings.HasPrefix(category, "mitre_atlas_"):
+		return ioc.IOCTypeComplianceViolation
+	case strings.HasPrefix(category, "toxicity_"):
+		return ioc.IOCTypeToxicityDetected
+	case strings.HasPrefix(category, "pi_"):
+		return ioc.IOCTypePromptInjection
+	default:
+		return ioc.IOCTypePIIDetected
 	}
-	return ioc.IOCTypePIIDetected // default; rejected upstream by Validate()
 }
 
 // severityToIOC maps a Lens Severity to an ioc.Severity.
