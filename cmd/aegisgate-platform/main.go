@@ -1448,6 +1448,27 @@ func main() {
 		log.Printf("[DIGEST] CISO Digest HTTP API enabled at /api/v1/digest/{generate,verify} (generate is Professional+)")
 	}
 
+	// Posture Check HTTP endpoints (D19, P1 #8).
+	// Closes the last gap in the v3.4.0+ HTTP feature set.
+	// posture_subcommand.go already had a `handlePostureAPI`
+	// stub marked `//nolint:unused // reserved for v0.2`; this
+	// is the v0.2 refactor that wires it. The HTTP routes are
+	// /api/v1/posture (JSON), /api/v1/posture/verbose (verbose
+	// JSON, same shape), /api/v1/posture/text (plain text).
+	// All 3 require auth. Posture is read-only.
+	wirePostureHandlers(dashMux, authMiddleware, licenseMgr, *mode)
+	log.Printf("[POSTURE] Posture Check HTTP API enabled at /api/v1/posture/{,verbose,text} (matches `aegisgate status` output)")
+
+	// Attestation Envelope HTTP endpoints (D19, P1 #8).
+	// Wires pkg/attestation as the auditor-facing HTTP API
+	// counterpart of the CLI `aegisgate attestation verify`
+	// subcommand. /api/v1/attestation/verify uses the embedded
+	// public key (offline, auditor-on-a-plane scenario);
+	// /api/v1/attestation/verify-online fetches the public key
+	// from /.well-known/. Both require auth.
+	wireAttestationHandlers(dashMux, authMiddleware)
+	log.Printf("[ATTESTATION] Attestation HTTP API enabled at /api/v1/attestation/{verify,verify-online}")
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

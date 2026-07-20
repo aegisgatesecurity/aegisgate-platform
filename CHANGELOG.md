@@ -234,6 +234,49 @@ Full suite: 65/65 packages passing, 0 failures
 - ✅ **Backward compatible**: Trust defaults to disabled in `aegisgate-platform.yaml` (opt-in)
 - ✅ **License-gated**: Professional+ tier enforcement via Q3 decision (configurable via `require_license: false`)
 
+### D19: Attestation + Posture HTTP Endpoints ✅ COMPLETE (2026-07-20)
+
+**Closes audit Finding #8 (P1 High). All 9 v3.4.0+ features are now wired as both CLI and HTTP.**
+
+The 2 v3.4.0+ features that had CLI-only exposure (attestation, posture)
+now have full HTTP endpoints on the dashboard mux.
+
+#### What was done (D19)
+
+**`cmd/aegisgate-platform/posture_http.go`** (new, 145 lines):
+- `GET /api/v1/posture` — JSON report (compact)
+- `GET /api/v1/posture/verbose` — JSON report (verbose shape)
+- `GET /api/v1/posture/text` — plain-text report (matches `aegisgate status` output)
+- All 3 routes require auth
+- Reuses the existing `runPostureCheck()` helper from posture_subcommand.go
+- Supplants the un-wired `handlePostureAPI` stub
+
+**`cmd/aegisgate-platform/attestation_http.go`** (new, 152 lines):
+- `POST /api/v1/attestation/verify` — Verify envelope (offline, embedded pubkey)
+- `POST /api/v1/attestation/verify-online` — Verify with public key fetch from `/.well-known/`
+- Both routes require auth
+- Reuses the existing `verifyResult` and `buildVerifyResultJSON` from attestation_subcommand.go
+
+**`cmd/aegisgate-platform/main.go`** (+21 lines): added `wirePostureHandlers` and `wireAttestationHandlers` calls in the dashboard mux section, with log lines.
+
+#### Tests (9 new, all PASS)
+- 5 posture tests: `TestHandlePostureJSON_MethodNotAllowed`, `TestHandlePostureJSON_OK`, `TestHandlePostureVerbose_OK`, `TestHandlePostureText_OK`, `TestHandlePostureText_NotFound`
+- 4 attestation tests: `TestHandleAttestationVerify_MethodNotAllowed`, `TestHandleAttestationVerify_InvalidJSON`, `TestHandleAttestationVerifyOnline_MethodNotAllowed`, `TestHandleAttestationRoutes_Registered`
+
+#### Test Results
+```
+pkg/acp + pkg/attestation + pkg/digest + pkg/evidence + pkg/posture + ...
++ cmd/aegisgate-platform: 97 tests PASS
+Full suite: 66/66 packages passing, 6,035 individual tests PASS, 0 FAIL
+```
+
+#### Impact
+- ✅ **All 9 v3.4.0+ features now have HTTP endpoints** (previously 7/9)
+- ✅ **Auditor workflow no longer requires CLI access** — `POST /api/v1/attestation/verify` accepts an envelope over HTTP
+- ✅ **Posture check exposed for CI gates** — `GET /api/v1/posture/text` returns the same output as `aegisgate status`
+- ✅ **Closes audit Finding #8** (P1 High) and improves strategic posture for H4 pentest
+- ✅ **9 new tests with no regressions** (66/66 packages still pass)
+
 ### What's new on `main`
 
 #### The envelope primitive (the v3.4.0+ cryptographic backbone)

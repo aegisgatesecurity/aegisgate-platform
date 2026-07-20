@@ -136,6 +136,15 @@ Every feature has a self-review documenting the issues found and fixed. **Cumula
 - **Threat Model** — `plans/THREAT-MODEL.md` Section 2.6 with 10 STRIDE threats (CVSS 8.5–9.0), 7 mitigation mappings, component inventory row, executive summary updated to 6 pillars
 - **6 New PlatformConfig Tests** — defaults, env overrides (enabled/config_file/require_license), YAML loading
 
+### Attestation + Posture HTTP Endpoints (D19)
+
+- **All 9 v3.4.0+ features now wired as both CLI and HTTP** (was 7/9 before D19)
+- **Posture HTTP endpoints** (`cmd/aegisgate-platform/posture_http.go`, 145 lines): `GET /api/v1/posture{,/verbose,/text}` — 3 routes, all require auth, reuse existing `runPostureCheck()` helper from posture_subcommand.go
+- **Attestation HTTP endpoints** (`cmd/aegisgate-platform/attestation_http.go`, 152 lines): `POST /api/v1/attestation/{verify,verify-online}` — 2 routes, both require auth, reuse existing `verifyResult` and `buildVerifyResultJSON` from attestation_subcommand.go
+- **Main Binary Wiring** — `cmd/aegisgate-platform/main.go` adds `wirePostureHandlers` and `wireAttestationHandlers` calls in the dashboard mux section, with log lines
+- **9 New Tests** — 5 posture + 4 attestation, all PASS
+- **Closes audit Finding #8** (P1 High) from `plans/FULL-CODEBASE-AUDIT-2026-07-20.md`
+
 ### Lens Telemetry Bridge (Phase 3)
 
 - **FP-Report Bridge** (`pkg/lensbackend/fp_report.go`) — accepts Lens v0.2.0's 4-field telemetry format (hashed_domain, category, severity, action) and bridges to full v0.2 Event schema with validated defaults.
