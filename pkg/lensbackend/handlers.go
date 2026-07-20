@@ -163,16 +163,16 @@ func (h *Handlers) HandleCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	hash := ComputeDomainHash(domain)
-	// The check returns the worst IOC for this domain across
-	// all categories. The store is keyed by IOC fingerprint,
-	// so we scan the store and pick the worst.
+	provider := sourceProviderFromDomainHash(hash)
+	// Use the indexed Query method for O(1) source_provider
+	// lookup instead of a full Snapshot() scan.
+	results := h.server.ioc.store.Query(ioc.IOCQuery{
+		SourceProvider: provider,
+	})
 	var worst *ioc.IOC
-	for _, candidate := range h.server.ioc.store.Snapshot() {
-		i := candidate
-		if i.SourceProvider == sourceProviderFromDomainHash(hash) {
-			if worst == nil || iocSeverityRank(i.Severity) > iocSeverityRank(worst.Severity) {
-				worst = &i
-			}
+	for i := range results {
+		if worst == nil || iocSeverityRank(results[i].Severity) > iocSeverityRank(worst.Severity) {
+			worst = &results[i]
 		}
 	}
 	if worst == nil {

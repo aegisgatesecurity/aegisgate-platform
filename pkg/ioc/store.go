@@ -93,9 +93,10 @@ type Store struct {
 	cfg StoreConfig
 
 	mu     sync.RWMutex
-	byFP   map[string]*IOC // fingerprint -> IOC
-	order  []string        // insertion-order list of fingerprints; for stable iteration
-	dirty  bool            // true if the in-memory state has unflushed changes
+	byFP   map[string]*IOC     // fingerprint -> IOC
+	bySP   map[string][]string // source_provider -> []fingerprint (index for /check)
+	order  []string            // insertion-order list of fingerprints; for stable iteration
+	dirty  bool                // true if the in-memory state has unflushed changes
 	closed bool
 }
 
@@ -114,6 +115,7 @@ func NewStore(cfg StoreConfig) (*Store, error) {
 	s := &Store{
 		cfg:   cfg,
 		byFP:  make(map[string]*IOC),
+		bySP:  make(map[string][]string),
 		order: []string{},
 	}
 	if cfg.DiskPath != "" {
@@ -181,11 +183,14 @@ func (s *Store) Observe(ioc IOC) (*IOC, error) {
 	stored := ioc
 	s.byFP[ioc.Fingerprint] = &stored
 	s.order = append(s.order, ioc.Fingerprint)
+	// Index by source provider for fast /check lookups.
+	if ioc.SourceProvider != "" {
+		s.bySP[ioc.SourceProvider] = append(s.bySP[ioc.SourceProvider], ioc.Fingerprint)
+	}
 	s.dirty = true
 	return &stored, nil
 }
 
-// Get returns the IOC with the given fingerprint, or nil if not
 // in the store.
 func (s *Store) Get(fingerprint string) *IOC {
 	s.mu.RLock()
@@ -233,6 +238,70 @@ func (s *Store) SnapshotSince(since time.Time) []IOC {
 		return out[i].LastSeen.After(out[j].LastSeen)
 	})
 	return out
+}
+
+// Query returns IOCs matching the given filter. Uses the bySP
+// index for fast SourceProvider lookups, falling back to a full
+// scan only when SourceProvider is not specified. This is the
+// performance-critical path for the /api/v1/lens/check endpoint.
+func (s *Store) Query(filter IOCQuery) []IOC {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Fast path: if SourceProvider is specified, use the index.
+	if filter.SourceProvider != "" {
+		fps, ok := s.bySP[filter.SourceProvider]
+		if !ok {
+			return nil
+		}
+		out := make([]IOC, 0, len(fps))
+		for _, fp := range fps {
+			ioc, ok := s.byFP[fp]
+			if !ok {
+				continue // stale index entry (evicted)
+			}
+			if !matchQuery(ioc, filter) {
+				continue
+			}
+			out = append(out, *ioc)
+		}
+		return out
+	}
+
+	// Slow path: full scan. Used only for ad-hoc queries without
+	// a SourceProvider filter (e.g., admin dashboard).
+	out := make([]IOC, 0, len(s.byFP))
+	for _, ioc := range s.byFP {
+		if matchQuery(ioc, filter) {
+			out = append(out, *ioc)
+		}
+	}
+	return out
+}
+
+// matchQuery checks if an IOC matches the given query filter.
+func matchQuery(ioc *IOC, filter IOCQuery) bool {
+	if filter.Type != "" && ioc.Type != filter.Type {
+		return false
+	}
+	if filter.Category != "" && ioc.Category != filter.Category {
+		return false
+	}
+	if filter.SourceProvider != "" && ioc.SourceProvider != filter.SourceProvider {
+		return false
+	}
+	if filter.SeverityMin != "" {
+		if severityRank(ioc.Severity) < severityRank(filter.SeverityMin) {
+			return false
+		}
+	}
+	if filter.AffectsLens != nil && ioc.AffectsLens != *filter.AffectsLens {
+		return false
+	}
+	if filter.AffectsGateway != nil && ioc.AffectsGateway != *filter.AffectsGateway {
+		return false
+	}
+	return true
 }
 
 // evictOldest removes the IOC with the oldest LastSeen. Called
