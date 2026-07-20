@@ -38,6 +38,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/acp"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/audit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
@@ -58,6 +59,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
+	"github.com/aegisgatesecurity/aegisgate/pkg/siem"
 )
 
 var (
@@ -114,6 +116,7 @@ var (
 	iocGossipInterval = flag.Duration("ioc-gossip-interval", 5*time.Minute, "Interval between peer IOC fetches in RunReceiver. Env: AEGISGATE_IOC_GOSSIP_INTERVAL (Go duration: 30s, 5m, 1h)")
 	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS)")
 	lensEnabled       = flag.Bool("lens-enabled", false, "Enable the Lens telemetry backend on the proxy port (AEGISGATE_LENS_ENABLED)")
+	siemEnabled       = flag.Bool("siem-enabled", false, "Enable the SIEM dispatcher to forward audit events to external SIEM platforms (AEGISGATE_SIEM_ENABLED)")
 	lensBearerToken   = flag.String("lens-bearer-token", "", "Bearer token for Lens telemetry endpoints (AEGISGATE_LENS_BEARER_TOKEN)")
 	lensIOCStoreDir   = flag.String("lens-ioc-store-dir", "", "Directory for Lens IOC store persistence (default: <DataDir>/lens)")
 )
@@ -558,6 +561,116 @@ func main() {
 	}
 
 	// ============================================================
+	// Component 0a-3: SIEM Dispatcher (Phase 4, D15)
+	// ============================================================
+	// Bridges the platform's audit event stream to external SIEM
+	// platforms (Splunk, Elasticsearch, QRadar, Sentinel, etc.).
+	// The dispatcher polls the audit ring buffer and forwards
+	// aggregated event summaries to the configured SIEM manager.
+	//
+	// Feature gate: Professional+ tier (same as PostgreSQL).
+	// Config: cfg.SIEM (in platformconfig.yaml)
+	siemEnabledFlag := *siemEnabled
+	if !siemEnabledFlag {
+		if v := os.Getenv("AEGISGATE_SIEM_ENABLED"); v == "true" || v == "1" || v == "yes" {
+			siemEnabledFlag = true
+		}
+	}
+	if cfg.SIEM.Enabled {
+		siemEnabledFlag = true
+	}
+	var siemMgr *siem.Manager
+	var siemDisp *audit.SIEMDispatcher
+	var siemPlatformCount int
+	if siemEnabledFlag && tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
+		// Convert platformconfig.SIEMConfig to siem.Config
+		siemCfg := siem.Config{
+			Global: siem.GlobalConfig{
+				AppName:     cfg.SIEM.Source,
+				Environment: cfg.Platform.Mode,
+			},
+			Buffer: siem.BufferConfig{
+				MaxSize: cfg.SIEM.BufferMaxSize,
+			},
+		}
+		// Convert each platform config
+		for _, p := range cfg.SIEM.Platforms {
+			if !p.Enabled {
+				continue
+			}
+			pc := siem.PlatformConfig{
+				Platform: siem.Platform(p.Platform),
+				Enabled:  true,
+				Format:   siem.Format(p.Format),
+				Endpoint: p.Endpoint,
+				Settings: p.Settings,
+			}
+			pc.Auth.Type = p.Auth.Type
+			pc.Auth.APIKey = p.Auth.APIKey
+			pc.Auth.APIKeyHeader = p.Auth.APIKeyHeader
+			pc.Auth.Username = p.Auth.Username
+			pc.Auth.Password = p.Auth.Password
+			pc.Auth.TokenURL = p.Auth.TokenURL
+			pc.Auth.ClientID = p.Auth.ClientID
+			pc.Auth.ClientSecret = p.Auth.ClientSecret
+			pc.TLS.Enabled = p.TLS.Enabled
+			pc.TLS.InsecureSkipVerify = p.TLS.InsecureSkipVerify
+			pc.TLS.CAFile = p.TLS.CAFile
+			pc.TLS.ServerName = p.TLS.ServerName
+			pc.Retry.Enabled = p.Retry.Enabled
+			pc.Retry.MaxAttempts = p.Retry.MaxAttempts
+			if p.Retry.InitialBackoff != "" {
+				if d, err := time.ParseDuration(p.Retry.InitialBackoff); err == nil {
+					pc.Retry.InitialBackoff = d
+				}
+			}
+			if p.Retry.MaxBackoff != "" {
+				if d, err := time.ParseDuration(p.Retry.MaxBackoff); err == nil {
+					pc.Retry.MaxBackoff = d
+				}
+			}
+			pc.Retry.BackoffMultiplier = p.Retry.BackoffMultiplier
+			pc.Batch.Enabled = p.Batch.Enabled
+			pc.Batch.MaxSize = p.Batch.MaxSize
+			if p.Batch.MaxWait != "" {
+				if d, err := time.ParseDuration(p.Batch.MaxWait); err == nil {
+					pc.Batch.MaxWait = d
+				}
+			}
+			siemCfg.Platforms = append(siemCfg.Platforms, pc)
+		}
+
+		var siemErr error
+		siemMgr, siemErr = siem.NewManager(siemCfg)
+		if siemErr != nil {
+			log.Printf("⚠️  SIEM manager init failed: %v (continuing without SIEM)", siemErr)
+		} else {
+			siemMgr.Start()
+			siemDisp, siemErr = audit.NewSIEMDispatcher(audit.SIEMDispatcherConfig{
+				Manager:      siemMgr,
+				EventSource:  auditRing,
+				PollInterval: cfg.SIEM.PollInterval,
+				BatchSize:    cfg.SIEM.BatchSize,
+				Source:       cfg.SIEM.Source,
+			})
+			if siemErr != nil {
+				log.Printf("⚠️  SIEM dispatcher init failed: %v (continuing without SIEM)", siemErr)
+				siemMgr.Stop()
+				siemMgr = nil
+			} else {
+				go siemDisp.Run(ctx)
+				log.Printf("SIEM dispatcher: enabled (platforms=%d, poll=%s, source=%s)",
+					len(siemCfg.Platforms), cfg.SIEM.PollInterval, cfg.SIEM.Source)
+				siemPlatformCount = len(siemCfg.Platforms)
+				defer siemDisp.Stop()
+				defer siemMgr.Stop()
+			}
+		}
+	} else if siemEnabledFlag {
+		log.Printf("⚠️  SIEM requires Professional+ tier (current: %s); SIEM disabled", platformTier)
+	}
+
+	// ============================================================
 	// Component 0b: Certificate Initialization (first-run TLS setup)
 	// ============================================================
 	// Generates self-signed CA + server certificates on first startup.
@@ -780,6 +893,28 @@ func main() {
 			allHealthy = false
 		}
 
+		// Check 5: SIEM dispatcher
+		siemHealthy := false
+		siemPlatforms := 0
+		siemStats := audit.DispatcherStats{}
+		if siemDisp != nil {
+			siemStats = siemDisp.Stats()
+			siemHealthy = true
+		}
+		if siemMgr != nil {
+			siemPlatforms = siemPlatformCount
+		}
+		checks["siem"] = map[string]interface{}{
+			"enabled":          siemEnabledFlag,
+			"healthy":          siemHealthy,
+			"platforms":        siemPlatforms,
+			"events_forwarded": siemStats.EventsForwarded,
+			"events_dropped":   siemStats.EventsDropped,
+		}
+		if siemEnabledFlag && !siemHealthy {
+			allHealthy = false
+		}
+
 		status := "healthy"
 		code := http.StatusOK
 		if !allHealthy {
@@ -789,12 +924,13 @@ func main() {
 
 		// Build JSON response manually for deterministic field order
 		w.WriteHeader(code)
-		fmt.Fprintf(w, `{"status":"%s","tier":"%s","version":"%s","checks":{"proxy":{"enabled":%v,"healthy":%v},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v}}}`,
+		fmt.Fprintf(w, `{"status":"%s","tier":"%s","version":"%s","checks":{"proxy":{"enabled":%v,"healthy":%v},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"siem":{"enabled":%v,"healthy":%v,"platforms":%d,"events_forwarded":%d,"events_dropped":%d}}}`,
 			status, platformTier.String(), version,
 			proxyEnabled, proxyEnabled,
 			persistenceMgr.IsEnabled(), persistStarted, persistStarted,
 			licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
-			certHealthy, certHealthy)
+			certHealthy, certHealthy,
+			siemEnabledFlag, siemHealthy, siemPlatforms, siemStats.EventsForwarded, siemStats.EventsDropped)
 	})
 
 	proxyMux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
@@ -1573,6 +1709,47 @@ func main() {
 		}
 		data, _ := json.Marshal(stats)
 		writeBytes(w, data)
+	}))
+
+	// SIEM status endpoint — shows dispatcher stats and platform config.
+	// Requires authentication (dashboard mux, not proxy mux).
+	dashMux.HandleFunc("/api/v1/siem/status", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		siemStatus := map[string]interface{}{
+			"enabled": siemEnabledFlag,
+		}
+		if siemDisp != nil {
+			stats := siemDisp.Stats()
+			siemStatus["healthy"] = true
+			siemStatus["dispatcher"] = map[string]interface{}{
+				"events_polled":    stats.EventsPolled,
+				"events_forwarded": stats.EventsForwarded,
+				"events_dropped":   stats.EventsDropped,
+				"errors":           stats.Errors,
+				"last_poll_time":   stats.LastPollTime.Format(time.RFC3339),
+			}
+		} else {
+			siemStatus["healthy"] = false
+			siemStatus["dispatcher"] = nil
+		}
+		if siemMgr != nil {
+			siemStatus["platforms"] = siemPlatformCount
+			platformList := make([]map[string]interface{}, 0, len(cfg.SIEM.Platforms))
+			for _, p := range cfg.SIEM.Platforms {
+				platformList = append(platformList, map[string]interface{}{
+					"platform": string(p.Platform),
+					"enabled":  p.Enabled,
+					"format":   string(p.Format),
+					"endpoint": p.Endpoint,
+				})
+			}
+			siemStatus["platform_list"] = platformList
+		} else {
+			siemStatus["platforms"] = 0
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"siem": siemStatus,
+		})
 	}))
 
 	// Policy info endpoint — returns policy settings
