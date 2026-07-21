@@ -39,7 +39,11 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("config must be located within configs directory: %s", absPath)
 	}
 
-	// #nosec G304 – reading a config file whose path is validated above
+	// #nosec G304 -- path is validated to be inside configs/ directory above;
+	// the parent validator (LoadConfig callers) controls which paths are passed.
+	// G304 is a known false positive on config-load paths that are
+	// pre-validated; the nosec annotation here documents the validation
+	// chain rather than disabling the rule.
 	data, err := os.ReadFile(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading a2a config: %w", err)

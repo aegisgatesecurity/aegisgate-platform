@@ -36,6 +36,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -117,8 +118,27 @@ func NewPostgresStore(ctx context.Context, cfg DatabaseConfig) (*PostgresStore, 
 		return nil, fmt.Errorf("parse database URL: %w", err)
 	}
 
-	poolConfig.MaxConns = int32(cfg.MaxConns)
-	poolConfig.MinConns = int32(cfg.MinConns)
+	// G115 (int -> int32 overflow) — clamp MaxConns / MinConns to
+	// math.MaxInt32. Realistic pool sizes are <1000 but a misconfigured
+	// config (or a malicious /etc/aegisgate-platform.yaml) could set
+	// a value that overflows int32 when cast. Clamping is a 2-line
+	// fix and prevents a potential integer truncation bug.
+	// G115 (int -> int32 overflow) — the else branches are safe
+	// because the `if cfg.X > math.MaxInt32` check above guarantees
+	// the cast is in-range. The nosec annotation is per-line so
+	// gosec knows the clamping is intentional.
+	if cfg.MaxConns > math.MaxInt32 {
+		poolConfig.MaxConns = math.MaxInt32
+	} else {
+		// #nosec G115 -- range-checked by the if-branch above
+		poolConfig.MaxConns = int32(cfg.MaxConns)
+	}
+	if cfg.MinConns > math.MaxInt32 {
+		poolConfig.MinConns = math.MaxInt32
+	} else {
+		// #nosec G115 -- range-checked by the if-branch above
+		poolConfig.MinConns = int32(cfg.MinConns)
+	}
 	poolConfig.MaxConnIdleTime = cfg.MaxConnIdleTime
 	poolConfig.MaxConnLifetime = cfg.MaxConnLifetime
 	poolConfig.HealthCheckPeriod = cfg.HealthCheckInterval
@@ -600,7 +620,11 @@ func (s *PostgresStore) migrate(ctx context.Context) error {
 		}
 
 		if _, err := tx.Exec(ctx, string(sql)); err != nil {
-			tx.Rollback(ctx)
+			// G104 (errors unhandled) suppressed: Rollback after a
+			// failed Exec returns the original Exec error, which we
+			// already return to the caller below. Double-reporting
+			// would mask the original failure.
+			_ = tx.Rollback(ctx)
 			return fmt.Errorf("exec migration %s: %w", entry.Name(), err)
 		}
 

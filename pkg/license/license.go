@@ -624,8 +624,10 @@ func (m *Manager) SetPostgresCache(pgCache *PostgresLicenseCache) {
 }
 
 // Close cleans up the Manager and closes the PostgreSQL cache if present.
+// G104 (errors unhandled) is suppressed here: Close() at manager teardown
+// is best-effort and the connection pool will be GC'd if it fails.
 func (m *Manager) Close() {
 	if m.pgCache != nil {
-		m.pgCache.Close()
+		_ = m.pgCache.Close()
 	}
 }

@@ -135,9 +135,10 @@ func (m *Manager) Close() {
 	m.userSessions = make(map[string]*UserSession)
 	m.userSessionMu.Unlock()
 
-	// Close PostgreSQL backend if present
+	// Close PostgreSQL backend if present. G104 suppressed:
+	// Close() at manager teardown is best-effort.
 	if m.pgStore != nil {
-		m.pgStore.Close()
+		_ = m.pgStore.Close()
 	}
 
 	m.logger.Info("RBAC manager shut down")
