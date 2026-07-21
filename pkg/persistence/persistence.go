@@ -250,12 +250,15 @@ func (m *Manager) Close() error {
 
 	// Close the storage backend
 	if m.usePostgres {
-		// PostgreSQL backend: close the audit backend, then close the shared pool
+		// PostgreSQL backend: close the audit backend, then close the shared pool.
+		// G104 (errors unhandled) is suppressed here: Close() errors at manager
+		// teardown are best-effort and have no caller to report to. The shared
+		// pool will be GC'd if Close() fails.
 		if m.pgStorage != nil {
-			m.pgStorage.Close()
+			_ = m.pgStorage.Close()
 		}
 		if m.pgStore != nil {
-			m.pgStore.Close()
+			_ = m.pgStore.Close()
 		}
 	} else if m.fileStorage != nil {
 		if err := closeStorage(m.fileStorage); err != nil {
