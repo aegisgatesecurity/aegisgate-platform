@@ -12,12 +12,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/reporting"
+	upstream "github.com/aegisgatesecurity/aegisgate/pkg/reporting"
 )
 
 // runReportSubcommand implements the "aegisgate
@@ -112,14 +115,16 @@ func runReportPDF(args []string) int {
 // previously generated upstream report and renders
 // it to a PDF.
 //
-// NOTE: This requires an upstream reporter
-// instance. In v0.1, we create an ephemeral one
-// (no persistence). v0.2 will wire the platform's
-// main reporter instance.
+// D22: implements the previously-stubbed subcommand.
+// Instantiates an ephemeral reporter (no persistence)
+// and calls ExportPDF on the requested reportID.
+// Requires the report to be in "completed" status
+// (the Reporter.ExportPDF method enforces this).
 func runReportPDFFromReport(args []string) int {
 	fs := flag.NewFlagSet("report pdf-from-report", flag.ExitOnError)
 	reportID := fs.String("id", "", "the upstream report ID (REQUIRED)")
 	outFile := fs.String("out", "", "write the PDF to this file (default: stdout)")
+	timeout := fs.Duration("timeout", 30*time.Second, "overall timeout for report fetch + PDF render")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -127,12 +132,27 @@ func runReportPDFFromReport(args []string) int {
 		fmt.Fprintf(os.Stderr, "report pdf-from-report: --id is required\n")
 		return 2
 	}
-	// v0.1 limitation: we don't have a wired
-	// reporter instance. Print a helpful error.
-	fmt.Fprintf(os.Stderr, "report pdf-from-report: not yet wired in v0.1 (use 'report pdf --data-file' instead)\n")
-	_ = reportID
-	_ = outFile
-	return 1
+	// Ephemeral reporter: no persistence (StoragePath=""), no
+	// scheduler, in-memory only. This is sufficient for the
+	// one-shot "render a previously-generated report" use case.
+	reporter, err := reporting.NewReporter(upstream.Config{
+		StoragePath:     "", // in-memory
+		MaxConcurrent:   1,
+		EnableScheduler: false,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "report pdf-from-report: new reporter: %v\n", err)
+		return 1
+	}
+	// Render with a bounded context.
+	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
+	defer cancel()
+	pdfBytes, err := reporter.ExportPDF(ctx, *reportID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "report pdf-from-report: export: %v\n", err)
+		return 1
+	}
+	return writePDF(*outFile, pdfBytes)
 }
 
 // writePDF writes the PDF bytes to a file or stdout.

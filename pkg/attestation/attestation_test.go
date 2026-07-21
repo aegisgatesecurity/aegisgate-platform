@@ -12,8 +12,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -578,4 +582,151 @@ func TestVerifyError_HasHelpfulMessage(t *testing.T) {
 	if !strings.Contains(err.Error(), "signature") {
 		t.Errorf("error message should mention signature: %v", err)
 	}
+}
+
+// --------------------------------------------------------------------
+// D22: fetchPublicKey tests
+// --------------------------------------------------------------------
+
+// TestFetchPublicKey_InvalidInstanceID_RejectsPathTraversal ensures
+// fetchPublicKey rejects path-traversal and shell-metacharacter
+// attempts in the instance-id. This is the SSRF protection.
+func TestFetchPublicKey_InvalidInstanceID_RejectsPathTraversal(t *testing.T) {
+	cases := []struct {
+		name       string
+		instanceID string
+	}{
+		{"empty", ""},
+		{"path-traversal", "../etc/passwd"},
+		{"double-dot", "..aegisgate.io"},
+		{"slash", "aegisgate.io/foo"},
+		{"backslash", "aegisgate.io\\foo"},
+		{"question-mark", "aegisgate.io?foo"},
+		{"hash", "aegisgate.io#foo"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := fetchPublicKey(context.Background(), c.instanceID, "key-1")
+			if err == nil {
+				t.Errorf("expected error for instance-id %q", c.instanceID)
+			}
+		})
+	}
+}
+
+// TestFetchPublicKey_HTTPServer_WithRealKey spins up an httptest
+// server serving a valid PEM-encoded P-256 public key, then calls
+// fetchPublicKey to verify the full HTTP→PEM→ecdsa.PublicKey flow.
+func TestFetchPublicKey_HTTPServer_WithRealKey(t *testing.T) {
+	// Generate a real P-256 key to serve.
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	pubKey, _ := priv.Public().(*ecdsa.PublicKey)
+	pemBytes, err := evidencePublicKeyPEM(pubKey)
+	if err != nil {
+		t.Fatalf("encode PEM: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/.well-known/aegisgate-evidence-pubkey.pem" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/x-pem-file")
+		_, _ = w.Write(pemBytes)
+	}))
+	defer server.Close()
+
+	// Extract the host:port from the server URL.
+	// httptest URLs are like "http://127.0.0.1:12345"
+	instanceID := strings.TrimPrefix(server.URL, "http://")
+	// fetchPublicKey detects localhost and uses http://
+	pub, err := fetchPublicKey(context.Background(), instanceID, "key-1")
+	if err != nil {
+		t.Fatalf("fetchPublicKey: %v", err)
+	}
+	if pub.X.Cmp(pubKey.X) != 0 || pub.Y.Cmp(pubKey.Y) != 0 {
+		t.Errorf("fetched key does not match served key")
+	}
+}
+
+// TestFetchPublicKey_HTTPServer_BadPEM verifies the error path
+// when the server returns garbage instead of a valid PEM block.
+func TestFetchPublicKey_HTTPServer_BadPEM(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/x-pem-file")
+		_, _ = w.Write([]byte("not a pem block"))
+	}))
+	defer server.Close()
+	instanceID := strings.TrimPrefix(server.URL, "http://")
+	_, err := fetchPublicKey(context.Background(), instanceID, "key-1")
+	if err == nil {
+		t.Fatal("expected error for bad PEM")
+	}
+	if !strings.Contains(err.Error(), "no PEM block") {
+		t.Errorf("error should mention PEM, got: %v", err)
+	}
+}
+
+// TestFetchPublicKey_HTTPServer_404 verifies the error path when
+// the server returns 404 (e.g., the .well-known endpoint isn't
+// wired on a different instance).
+func TestFetchPublicKey_HTTPServer_404(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+	instanceID := strings.TrimPrefix(server.URL, "http://")
+	_, err := fetchPublicKey(context.Background(), instanceID, "key-1")
+	if err == nil {
+		t.Fatal("expected error for 404")
+	}
+	if !strings.Contains(err.Error(), "HTTP 404") {
+		t.Errorf("error should mention HTTP 404, got: %v", err)
+	}
+}
+
+// TestFetchPublicKey_ContextCanceled verifies the request is
+// canceled when the caller's context is done.
+func TestFetchPublicKey_ContextCanceled(t *testing.T) {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	pubKey, _ := priv.Public().(*ecdsa.PublicKey)
+	pemBytes, _ := evidencePublicKeyPEM(pubKey)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Sleep to force the client to wait and then be canceled.
+		time.Sleep(200 * time.Millisecond)
+		_, _ = w.Write(pemBytes)
+	}))
+	defer server.Close()
+	instanceID := strings.TrimPrefix(server.URL, "http://")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel before the call
+	_, err = fetchPublicKey(ctx, instanceID, "key-1")
+	if err == nil {
+		t.Fatal("expected error from canceled context")
+	}
+}
+
+// evidencePublicKeyPEM is a small helper that produces a standard
+// PEM "PUBLIC KEY" block from an *ecdsa.PublicKey. Same format as
+// pkg/evidence.PublicKeyPEM but local to this test (avoids
+// importing pkg/evidence in the unit test, which would create a
+// circular dependency risk if pkg/attestation ever imports
+// pkg/evidence in production code).
+func evidencePublicKeyPEM(pub *ecdsa.PublicKey) ([]byte, error) {
+	der, err := x509.MarshalPKIXPublicKey(pub)
+	if err != nil {
+		return nil, err
+	}
+	block := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: der,
+	}
+	return pem.EncodeToMemory(block), nil
 }
