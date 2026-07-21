@@ -242,6 +242,21 @@ jobs:
             echo "✅ All packages meet 80% per-package floor (with documented exemptions)"
           fi
 
+      - name: Check package doc.go files (every package must have one)
+        run: |
+          # Verifies that every package under pkg/ has a valid doc.go
+          # file with the SPDX-License-Identifier header. This is the
+          # "26/45 packages lack doc.go" guard from
+          # plans/PLATFORM-DEEP-DIVE-ASSESSMENT-2026-07-21.md.
+          echo "## Package doc.go Check" >> $GITHUB_STEP_SUMMARY
+          chmod +x ./scripts/check-doc-go.sh
+          if ./scripts/check-doc-go.sh 2>&1 | tee doc-go-results.txt; then
+            echo "✅ All packages have valid doc.go files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ doc.go check failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -252,6 +267,7 @@ jobs:
             coverage.html
             coverage.txt
             coverage.out
+            doc-go-results.txt
 
   govulncheck:
     name: govulncheck

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Package anomaly provides statistical anomaly detection for AegisGate security platform.
 //
 // This package implements lightweight, Go-native anomaly detection methods to enhance

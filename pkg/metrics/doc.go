@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /*
 Package metrics provides production-grade Prometheus observability for the
 AegisGate Security Platform with built-in cardinality protection.
