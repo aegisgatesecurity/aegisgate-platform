@@ -110,9 +110,9 @@ var (
 	// Professional tier or above, default off).
 	// Both are also settable via AEGISGATE_IOC_SHARE and
 	// AEGISGATE_IOC_RECEIVE env vars; the flag wins.
-	iocShare          = flag.Bool("ioc-share", false, "Opt in to serving IOC manifests to peers (AEGISGATE_IOC_SHARE)")
-	iocReceive        = flag.Bool("ioc-receive", false, "Opt in to fetching IOC manifests from peers; requires Professional+ tier (AEGISGATE_IOC_RECEIVE)")
-	iocPeers          = flag.String("ioc-peers", "", "Comma-separated peer base URLs for IOC gossip (e.g. https://aegis-b.example.com:8443,https://aegis-c.example.com:8443). Env: AEGISGATE_IOC_PEERS")
+	iocShare   = flag.Bool("ioc-share", false, "Opt in to serving IOC manifests to peers (AEGISGATE_IOC_SHARE)")
+	iocReceive = flag.Bool("ioc-receive", false, "Opt in to fetching IOC manifests from peers; requires Professional+ tier (AEGISGATE_IOC_RECEIVE)")
+	iocPeers   = flag.String("ioc-peers", "", "Comma-separated peer base URLs for IOC gossip (e.g. https://aegis-b.example.com:8443,https://aegis-c.example.com:8443). Env: AEGISGATE_IOC_PEERS")
 	// iocStoreDir removed in D25 (D25 staticcheck cleanup) - was unused flag.
 	// The IOC store path is configured via the IOC subsystem; no top-level
 	// --ioc-store-dir flag is needed. Re-add if a future subscriber mode
@@ -990,18 +990,31 @@ func main() {
 		proxyServer.ServeHTTP(w, r)
 	})
 
-	// Wrap the proxy handler chain with the audit recorder middleware
+	// F-DOS-1 (D25 pentest): wrap with http.MaxBytesHandler to cap
+	// request body size at 10MB. A 10MB+ POST took 205s on the
+	// unhardened server; with the cap, the request is rejected
+	// at 10MB before the body finishes uploading. 10MB is
+	// larger than any legitimate request the platform
+	// processes (the largest expected body is a compliance
+	// manifest at ~1MB).
+	//
 	// (Track 6 Task 1) so every proxy request/response is captured in
 	// the global ring buffer for compliance evidence packages.
-	proxyHandler := proxyRecorderMiddleware(
+	var innerHandler http.Handler = proxyRecorderMiddleware(
 		security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)))
+	proxyHandler := http.MaxBytesHandler(innerHandler, int64(10<<20))
 
+	// F-DOS-1 (D25 pentest): Add ReadHeaderTimeout to prevent
+	// Slowloris-style header-read attacks. The 10MB+ body
+	// DoS is mitigated by the existing ReadTimeout (60s)
+	// combined with the MaxBytesHandler below.
 	proxyHTTPServer := &http.Server{
-		Addr:         fmt.Sprintf("0.0.0.0:%d", *proxyPort),
-		Handler:      proxyHandler,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:              fmt.Sprintf("0.0.0.0:%d", *proxyPort),
+		Handler:           proxyHandler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	// Start proxy server with proper synchronization
