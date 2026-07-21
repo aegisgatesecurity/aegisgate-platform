@@ -372,12 +372,6 @@ func runCVEList(args []string) int {
 // cveHumanSummary returns a multi-line human-readable
 // summary of a signed CVE entry envelope.
 func cveHumanSummary(env interface{}) string {
-	type summary struct {
-		Type    string
-		Subject string
-		Issuer  string
-		KeyID   string
-	}
 	js, _ := json.Marshal(env)
 	var m map[string]interface{}
 	_ = json.Unmarshal(js, &m)
