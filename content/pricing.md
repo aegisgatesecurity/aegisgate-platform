@@ -70,9 +70,9 @@ instantly via the Stripe webhook (Q1: instant via webhook).
 | PCI-DSS           | $99/mo     | Developer+       | Payment card data detection, PCI-scoped audit logs — **fully implemented** |
 | SOC 2             | $149/mo    | Developer+       | SOC 2 Type II Trust Service Criteria, 5 automated controls (CC6.1, CC6.2, CC6.3, CC6.6, CC6.7) + 3 manual — **implemented in v3.4.0+ (Path B partial)** |
 | ISO 42001         | $79/mo     | Professional+    | ISO/IEC 42001 AI Management System, 5 automated controls (5.2, 6.1, 7.5, 8.2, 9.1) + 3 manual — **implemented in v3.4.0+ (Path B partial)** |
+| FIPS 140-2/140-3  | $299/mo    | Professional+    | FIPS 140 cryptographic module compliance, 8 automated controls (mode enabled, approved ciphers, TLS 1.2+, approved hashes, key sizes, self-test, audit logging) + 2 manual (CMVP, HSM) — **implemented in v3.4.0+ (Path B partial). Note: AegisGate is FIPS-compliant (uses FIPS-approved algorithms) but the Go runtime is not CMVP-validated; federal agencies need a CMVP-validated execution environment.** |
 | FedRAMP           | $499/mo    | Professional+    | FedRAMP Moderate/High control mapping, continuous monitoring — **Q4 2026 (Path B remaining)** |
-| FIPS 140-2/140-3  | $299/mo    | Professional+    | FIPS-validated cryptography, HSM integration — **Q4 2026 (Path B remaining)** |
-| **EU AI Act** 🆕  | **$99/mo** | **Professional+** | **Required for high-risk AI systems in EU; 82 controls across 8 categories — fully implemented in v3.3.0** |
+| **EU AI Act** 🆕  | **$99/mo** | **Professional+** | **Required for high-risk AI systems in EU; 82 controls across 8 categories — 9 automated, 73 manual. See [docs/compliance/eu-ai-act.md](../docs/compliance/eu-ai-act.md) and [plans/EU-AI-ACT-COVERAGE-AUDIT-2026-07-21.md](../plans/EU-AI-ACT-COVERAGE-AUDIT-2026-07-21.md) for the manual controls analysis.** |
 
 ### 🆕 EU AI Act Compliance Module (v3.3.0)
 
@@ -129,6 +129,17 @@ provisions apply from August 2026, high-risk system classifications
   [1-pager](../docs/federated-ioc-library-1pager.md) for the value
   proposition and the 4 design principles (hash-based, opt-in/opt-out
   serverless, self-verifying, privacy-first).
+- **FIPS 140-2/140-3** (Professional+ tier, $299/mo add-on): cryptographic
+  module compliance. 8 of 10 controls are automated (FIPS mode enabled,
+  approved ciphers, TLS 1.2+, approved hashes, key sizes, self-test,
+  audit logging). 2 are manual (CMVP validation, HSM integration).
+  See `pkg/compliance/fips/` for the implementation. **Important**:
+  AegisGate is FIPS-compliant (uses FIPS-approved algorithms via Go stdlib)
+  but the Go runtime itself is not a CMVP-validated module. Customers
+  who require CMVP-validated crypto (federal agencies, defense) must
+  integrate a CMVP-validated module (e.g., via PKCS#11). The FIPS
+  module is the right architectural foundation for that integration;
+  the integration itself is the customer's responsibility.
 
 ---
 
