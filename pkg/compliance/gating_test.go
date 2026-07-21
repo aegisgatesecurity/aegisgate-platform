@@ -411,8 +411,8 @@ func TestIsImplementationReady(t *testing.T) {
 		{license.ModuleSOC2, true},     // pkg/compliance/soc2/ exists (v3.4.0+)
 		{license.ModuleISO42001, true}, // pkg/compliance/iso42001/ exists (v3.4.0+)
 		{license.ModuleEUAIAct, true},  // pkg/compliance/eu-ai-act/ exists
+		{license.ModuleFIPS, true},     // pkg/compliance/fips/ exists (v3.4.0+)
 		{license.ModuleFedRAMP, false}, // no implementation yet (Path B remaining)
-		{license.ModuleFIPS, false},    // no implementation yet (Path B remaining)
 		{license.ModuleTrust, false},   // reserved
 		{"unknown", false},
 		{"", false},
@@ -457,6 +457,16 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 	}
 	if IsImplementationReady(license.ModuleFedRAMP) {
 		t.Error("FedRAMP should NOT have implementation (pkg/compliance/fedramp missing - Path B remaining)")
+	}
+
+	// FIPS 140 (v3.4.0+): has implementation. Owned at Pro tier,
+	// IsFrameworkEnforced=true AND IsImplementationReady=true.
+	fipsOwned := makeResult(tierpkg.TierProfessional, []string{license.ModuleFIPS}, true)
+	if !IsFrameworkEnforced(license.ModuleFIPS, fipsOwned) {
+		t.Error("FIPS 140 owned at Pro should be enforced (gating is about ownership)")
+	}
+	if !IsImplementationReady(license.ModuleFIPS) {
+		t.Error("FIPS 140 should have implementation (pkg/compliance/fips/ exists since v3.4.0+)")
 	}
 }
 
