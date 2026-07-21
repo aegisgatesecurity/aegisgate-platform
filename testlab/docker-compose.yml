@@ -89,6 +89,7 @@ services:
       SERVER_TLS_ENABLED: "false"
       LOG_LEVEL: info
       MCP_ENABLED: "true"
+      EMBEDDED_MCP: "true"
       MCP_PORT: 8081
       # Federated IOC library (v3.5.0+ Track 6):
       # SHARE=true so the instance serves its IOC manifest on
