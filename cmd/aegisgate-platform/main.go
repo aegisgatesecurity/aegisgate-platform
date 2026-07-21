@@ -1578,7 +1578,17 @@ func main() {
 		}
 	})
 
-	dashMux.HandleFunc("/api/v1/scan", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+	// D28 (scanner perf): cap r.Body read size at the HTTP layer for
+	// /api/v1/scan. The body itself is not used by this handler (the
+	// scanner creates an empty ScanRequest), but the HTTP server still
+	// reads up to Content-Length, which on a 5MB body can take 100s+
+	// through the embedded MCP server's transport layer. A
+	// per-endpoint MaxBytesHandler on the dashboard mux limits this
+	// without changing the proxy-wide 10MB cap (F-DOS-1) or the
+	// scanner's 64KB regex cap (D28 fix in pkg/response/guard.go).
+	const scanMaxBody = 1 << 20 // 1MB
+	dashMux.Handle("/api/v1/scan", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, scanMaxBody)
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return

@@ -88,6 +88,12 @@ type ResponseScanResult struct {
 	// DetectedSecrets contains descriptions of detected secrets
 	DetectedSecrets []string
 
+	// Truncated is true if the response was truncated by the scanner
+	// (D28 scanner perf fix - cap input to first 64KB before regex
+	// work). When true, the scanner did not examine the full body;
+	// downstream consumers can re-scan the full body if needed.
+	Truncated bool
+
 	// Tokens is the token count of the response
 	Tokens int
 
