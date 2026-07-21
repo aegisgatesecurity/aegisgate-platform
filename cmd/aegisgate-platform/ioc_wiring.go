@@ -82,8 +82,6 @@ const iocStoreFile = "store.json"
 // NOT auto-discover peers (that would be a privacy and a security
 // problem; a future iteration may add DNS-SD for instances on
 // the same trusted network).
-var iocMinSharePeersDefault = []string{}
-
 // wireIOC constructs the IOC subsystem. Returns:
 //
 //   - iocWiring with the Store, Producer, Sync, and Enabled flag

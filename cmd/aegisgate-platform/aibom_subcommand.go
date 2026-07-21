@@ -228,13 +228,6 @@ func runAIBOMVerify(args []string) int {
 // summary of a signed AIBOM envelope. Used by the CLI
 // verb for pretty output.
 func aibomHumanSummary(env interface{}) string {
-	type summary struct {
-		Type         string
-		Subject      string
-		Issuer       string
-		KeyID        string
-		SerialNumber string
-	}
 	// Use reflection-free JSON roundtrip: marshal the
 	// envelope to a map, extract the fields we need.
 	js, _ := json.Marshal(env)

@@ -268,12 +268,6 @@ func runPromptCacheVerify(args []string) int {
 // readable summary of a signed prompt-cache attestation
 // envelope.
 func promptCacheHumanSummary(env interface{}) string {
-	type summary struct {
-		Type    string
-		Subject string
-		Issuer  string
-		KeyID   string
-	}
 	js, _ := json.Marshal(env)
 	var m map[string]interface{}
 	_ = json.Unmarshal(js, &m)

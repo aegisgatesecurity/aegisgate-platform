@@ -230,12 +230,6 @@ func runA2AIntentVerify(args []string) int {
 // a2aIntentHumanSummary returns a multi-line human-
 // readable summary of a signed A2A intent envelope.
 func a2aIntentHumanSummary(env interface{}) string {
-	type summary struct {
-		Type    string
-		Subject string
-		Issuer  string
-		KeyID   string
-	}
 	js, _ := json.Marshal(env)
 	var m map[string]interface{}
 	_ = json.Unmarshal(js, &m)
