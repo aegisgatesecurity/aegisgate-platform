@@ -83,7 +83,7 @@ var moduleRequirements = map[string]ModuleRequirement{
 		DisplayName:       "FIPS 140-2/140-3",
 		RequiredTier:      tierpkg.TierProfessional,
 		MinPriceCents:     29900, // $299/mo
-		HasImplementation: false, // no pkg/compliance/fips yet
+		HasImplementation: true,  // pkg/compliance/fips/ implemented in v3.4.0+ (Path B partial)
 	},
 	// v3.3.0 Phase 1: EU AI Act (Regulation 2024/1689). 7th compliance framework.
 	license.ModuleEUAIAct: {
