@@ -406,13 +406,14 @@ func TestIsImplementationReady(t *testing.T) {
 		framework string
 		want      bool
 	}{
-		{license.ModuleHIPAA, true}, // pkg/compliance/hipaa exists
-		{license.ModulePCI, true},   // pkg/compliance/pci exists
-		{license.ModuleSOC2, false}, // no sub-package yet
-		{license.ModuleISO42001, false},
-		{license.ModuleFedRAMP, false},
-		{license.ModuleFIPS, false},
-		{license.ModuleTrust, false}, // reserved
+		{license.ModuleHIPAA, true},    // pkg/compliance/hipaa exists
+		{license.ModulePCI, true},      // pkg/compliance/pci exists
+		{license.ModuleSOC2, true},     // pkg/compliance/soc2/ exists (v3.4.0+)
+		{license.ModuleISO42001, true}, // pkg/compliance/iso42001/ exists (v3.4.0+)
+		{license.ModuleEUAIAct, true},  // pkg/compliance/eu-ai-act/ exists
+		{license.ModuleFedRAMP, false}, // no implementation yet (Path B remaining)
+		{license.ModuleFIPS, false},    // no implementation yet (Path B remaining)
+		{license.ModuleTrust, false},   // reserved
 		{"unknown", false},
 		{"", false},
 	}
@@ -436,15 +437,26 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 		t.Error("HIPAA should have implementation")
 	}
 
-	// SOC 2: no implementation yet. If owned, IsFrameworkEnforced=true
-	// (ownership, not implementation, is the gate) BUT
-	// IsImplementationReady=false. This is the orthogonal-axis case.
+	// SOC 2 (v3.4.0+): has implementation. If owned at Pro tier,
+	// IsFrameworkEnforced=true AND IsImplementationReady=true. This is
+	// the "fully shipped" case.
 	soc2Owned := makeResult(tierpkg.TierProfessional, []string{license.ModuleSOC2}, true)
 	if !IsFrameworkEnforced(license.ModuleSOC2, soc2Owned) {
 		t.Error("SOC 2 owned at Pro should be enforced (gating is about ownership)")
 	}
-	if IsImplementationReady(license.ModuleSOC2) {
-		t.Error("SOC 2 should NOT have implementation (pkg/compliance/soc2 missing)")
+	if !IsImplementationReady(license.ModuleSOC2) {
+		t.Error("SOC 2 should have implementation (pkg/compliance/soc2/ exists since v3.4.0+)")
+	}
+
+	// FedRAMP: no implementation yet. If owned, IsFrameworkEnforced=true
+	// (ownership, not implementation, is the gate) BUT
+	// IsImplementationReady=false. This is the orthogonal-axis case.
+	fedrampOwned := makeResult(tierpkg.TierProfessional, []string{license.ModuleFedRAMP}, true)
+	if !IsFrameworkEnforced(license.ModuleFedRAMP, fedrampOwned) {
+		t.Error("FedRAMP owned at Pro should be enforced (gating is about ownership)")
+	}
+	if IsImplementationReady(license.ModuleFedRAMP) {
+		t.Error("FedRAMP should NOT have implementation (pkg/compliance/fedramp missing - Path B remaining)")
 	}
 }
 

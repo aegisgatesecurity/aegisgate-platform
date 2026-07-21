@@ -68,10 +68,10 @@ instantly via the Stripe webhook (Q1: instant via webhook).
 |-------------------|-----------:|------------------|-------------|
 | HIPAA             | $99/mo     | Developer+       | HIPAA-compliant logging, PHI detection, BAA support — **fully implemented** |
 | PCI-DSS           | $99/mo     | Developer+       | Payment card data detection, PCI-scoped audit logs — **fully implemented** |
-| SOC 2             | $149/mo    | Developer+       | SOC 2 Type II control mapping, evidence collection — **framework stub (control definitions Q4 2026)** |
-| ISO 42001         | $79/mo     | Professional+    | ISO/IEC 42001 AI management system controls — **framework stub (control definitions Q4 2026)** |
-| FedRAMP           | $499/mo    | Professional+    | FedRAMP Moderate/High control mapping, continuous monitoring — **coming Q4 2026 (no code yet)** |
-| FIPS 140-2/140-3  | $299/mo    | Professional+    | FIPS-validated cryptography, HSM integration — **coming Q4 2026 (no code yet)** |
+| SOC 2             | $149/mo    | Developer+       | SOC 2 Type II Trust Service Criteria, 5 automated controls (CC6.1, CC6.2, CC6.3, CC6.6, CC6.7) + 3 manual — **implemented in v3.4.0+ (Path B partial)** |
+| ISO 42001         | $79/mo     | Professional+    | ISO/IEC 42001 AI Management System, 5 automated controls (5.2, 6.1, 7.5, 8.2, 9.1) + 3 manual — **implemented in v3.4.0+ (Path B partial)** |
+| FedRAMP           | $499/mo    | Professional+    | FedRAMP Moderate/High control mapping, continuous monitoring — **Q4 2026 (Path B remaining)** |
+| FIPS 140-2/140-3  | $299/mo    | Professional+    | FIPS-validated cryptography, HSM integration — **Q4 2026 (Path B remaining)** |
 | **EU AI Act** 🆕  | **$99/mo** | **Professional+** | **Required for high-risk AI systems in EU; 82 controls across 8 categories — fully implemented in v3.3.0** |
 
 ### 🆕 EU AI Act Compliance Module (v3.3.0)
@@ -106,12 +106,15 @@ provisions apply from August 2026, high-risk system classifications
   (per founder mandate — never paywalled).
 - **Module** + **tier** in your subscription: scanned reports include
   all enabled frameworks. A Pro + EU AI Act customer sees HIPAA, PCI,
-  EU AI Act, MITRE ATLAS, NIST AI RMF, OWASP in every scan. **SOC 2,
-  ISO 42001, FedRAMP, and FIPS 140 modules register in your license
-  but currently return 0 automated control findings** (see the table
-  above for the implementation roadmap). If your compliance auditor
-  asks for SOC 2 or ISO 42001 evidence in 2026, you currently need
-  to export raw platform audit logs and frame them manually.
+  EU AI Act, MITRE ATLAS, NIST AI RMF, OWASP in every scan. **SOC 2
+  and ISO 42001 modules are implemented in v3.4.0+ with 5 automated
+  controls each (8 total controls per framework: 5 automated + 3
+  manual review items). FedRAMP and FIPS 140 modules are Q4 2026 (Path
+  B remaining) — they register in your license but currently return 0
+  automated control findings.** If your compliance auditor asks for
+  SOC 2 or ISO 42001 evidence in 2026, the platform generates the
+  evidence package from the automated controls + the Trust Framework's
+  signed attestations.
 - **Trust Framework** (Professional+ tier, included): per-agent
   cryptographic identity (ECDSA P-256), capability contracts with
   fail-closed enforcement, real-time trust scoring, and signed

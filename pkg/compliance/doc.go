@@ -13,11 +13,11 @@
 //   - NIST AI RMF     (pkg/compliance/enterprise/nist/)  — full
 //   - HIPAA           (pkg/compliance/hipaa/)            — full (premium/)
 //   - PCI-DSS         (pkg/compliance/pci/)              — full (premium/)
+//   - SOC 2           (pkg/compliance/soc2/)             — full (v3.4.0+ Path B partial: 5 of 8 controls automated)
+//   - ISO 42001       (pkg/compliance/iso42001/)         — full (v3.4.0+ Path B partial: 5 of 8 controls automated)
 //   - EU AI Act       (pkg/compliance/eu-ai-act/)        — full (9 of 82 controls automated)
-//   - SOC 2           (pkg/compliance/soc2_framework.go) — stub (0 controls)
-//   - ISO 42001       (pkg/compliance/enterprise/iso42001/) — stub (0 controls)
-//   - FedRAMP         (no code yet, Path B)
-//   - FIPS 140        (no code yet, Path B)
+//   - FedRAMP         (no code yet, Path B remaining)
+//   - FIPS 140        (no code yet, Path B remaining)
 //
 // Framework gating uses HasImplementation: true/false in
 // pkg/compliance/gating.go (the single source of truth for what
