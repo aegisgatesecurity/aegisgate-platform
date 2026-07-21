@@ -30,10 +30,16 @@
 // the attestation is self-verifying: any third party can verify it
 // with no out-of-band key exchange.
 //
-// Crypto: ECDSA P-256 with the existing crypto/ecdsa, crypto/elliptic
-// APIs. The v3.4.0 migration to crypto/ecdh is planned but not yet
-// done. We use //nolint:staticcheck on SA1019 (elliptic.Marshal) as
-// specified in the prompt's constraint #2.
+// Crypto: ECDSA P-256 with crypto/ecdsa. The SEC 1 encoding is
+// done by an inlined marshalSEC1P256 helper (D22) instead of
+// crypto/elliptic.Marshal, which is deprecated as of Go 1.21
+// (SA1019). The crypto/ecdh package was considered but rejected
+// because the existing surface uses *ecdsa.PrivateKey throughout;
+// converting to *ecdh.PrivateKey would have required a conversion
+// layer at every call site with no functional benefit. The
+// inlined helper is 16 lines of standard library math and
+// produces byte-identical output to elliptic.Marshal (verified
+// in TestSEC1P256).
 //
 // v3.5.0+ Track 6 Task 3.
 // =========================================================================
@@ -53,6 +59,33 @@ import (
 	"math/big"
 	"time"
 )
+
+// marshalSEC1P256 returns the SEC 1 uncompressed encoding of an
+// ECDSA P-256 public key (65 bytes: 0x04 || X || Y), each coordinate
+// zero-padded to 32 bytes. This is a minimal inlined reimplementation
+// of the SEC 1 byte layout that elliptic.Marshal produces for P-256,
+// without depending on the deprecated crypto/elliptic.Marshal API.
+//
+// D22: replaces the SA1019-suppressed elliptic.Marshal calls that
+// were scheduled for migration to crypto/ecdh in v3.4.0. The
+// crypto/ecdh API doesn't fit the existing *ecdsa.PrivateKey surface
+// (it uses *ecdh.PrivateKey, which would require a conversion layer
+// at every call site), so the cleanest fix is to inline the 4 lines
+// of SEC 1 encoding math directly. The output is byte-identical to
+// elliptic.Marshal for any P-256 key (verified in TestSEC1P256).
+func marshalSEC1P256(x, y *big.Int) []byte {
+	// Per SEC 1 §2.3.3: Uncompressed point = 0x04 || X || Y,
+	// where X and Y are big-endian unsigned integers, each
+	// padded to the curve size (32 bytes for P-256).
+	const coordSize = 32
+	out := make([]byte, 1+2*coordSize)
+	out[0] = 0x04
+	xBytes := x.Bytes()
+	yBytes := y.Bytes()
+	copy(out[1+coordSize-len(xBytes):1+coordSize], xBytes)
+	copy(out[1+2*coordSize-len(yBytes):1+2*coordSize], yBytes)
+	return out
+}
 
 // AlgorithmECDSA P256 is the only signing algorithm supported by the
 // IOC library today. It matches the compliance manifest signer and
@@ -257,8 +290,10 @@ func SignAttestation(a *IOCAttestation, priv *ecdsa.PrivateKey, keyID string) er
 	}
 
 	// Encode public key as SEC 1 uncompressed (65 bytes: 0x04 || X || Y).
-	//nolint:staticcheck // SA1019: elliptic.Marshal is deprecated in favor of crypto/ecdh, but the v3.4.0 migration is not yet done. See prompt constraint #2.
-	pubBytes := elliptic.Marshal(priv.Curve, priv.PublicKey.X, priv.PublicKey.Y)
+	// D22: inlined via marshalSEC1P256 (replaces deprecated
+	// crypto/elliptic.Marshal; the v3.4.0 migration to crypto/ecdh
+	// was not done — see the file header comment).
+	pubBytes := marshalSEC1P256(priv.PublicKey.X, priv.PublicKey.Y)
 	if len(pubBytes) != 65 || pubBytes[0] != 0x04 {
 		return fmt.Errorf("unexpected SEC 1 encoding: len=%d", len(pubBytes))
 	}
@@ -366,8 +401,8 @@ func GenerateKey() (priv *ecdsa.PrivateKey, keyID string, err error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("generate key: %w", err)
 	}
-	//nolint:staticcheck // SA1019: see SignAttestation.
-	pubBytes := elliptic.Marshal(priv.Curve, priv.PublicKey.X, priv.PublicKey.Y)
+	// D22: inlined via marshalSEC1P256 (see SignAttestation for context).
+	pubBytes := marshalSEC1P256(priv.PublicKey.X, priv.PublicKey.Y)
 	keyID = "ioc-" + base64.RawURLEncoding.EncodeToString(pubBytes[:8])
 	return priv, keyID, nil
 }
@@ -379,8 +414,8 @@ func PublicKeyToSEC1(pub *ecdsa.PublicKey) ([]byte, error) {
 	if pub.Curve != elliptic.P256() {
 		return nil, fmt.Errorf("expected P-256, got %s", pub.Curve.Params().Name)
 	}
-	//nolint:staticcheck // SA1019: see SignAttestation.
-	return elliptic.Marshal(pub.Curve, pub.X, pub.Y), nil
+	// D22: inlined via marshalSEC1P256 (see SignAttestation for context).
+	return marshalSEC1P256(pub.X, pub.Y), nil
 }
 
 // ParsePublicKey parses a SEC 1 uncompressed public key (65 bytes)

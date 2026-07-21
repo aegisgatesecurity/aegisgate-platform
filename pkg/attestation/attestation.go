@@ -18,9 +18,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -469,19 +473,94 @@ func generateUUID() string {
 	return b.BundleID
 }
 
-// fetchPublicKey fetches the public key for the given
-// instance-id and key-id from the /.well-known/aegisgate-
-// attestation-pubkeys.json endpoint.
+// fetchPublicKey fetches the evidence-signing public key from the
+// canonical well-known URL of the issuing AegisGate instance.
 //
-// In v3.5.0-alpha-1, this is a placeholder; the endpoint
-// will be implemented in a follow-up sprint (the c3
-// .well-known/aegisgate-evidence-pubkey.pem endpoint is
-// the model).
+// The Issuer field of an envelope is "<instance-id>:<key-id>". We
+// interpret <instance-id> as the host (or host:port) of the
+// instance and fetch
+//
+//	GET https://<instance-id>/.well-known/aegisgate-evidence-pubkey.pem
+//
+// The endpoint serves a standard PEM "PUBLIC KEY" block (PKIX format).
+// We parse it with x509.ParsePKIXPublicKey and verify the algorithm
+// is ECDSA P-256 (the only algorithm supported in v3.5.0+).
+//
+// This implements the c3 verifiable compliance workflow: an auditor
+// can verify an attestation by fetching the issuer's public key
+// from the canonical well-known URL, with no out-of-band key exchange.
+//
+// D22: replaces the v0.1 stub that always returned an error.
+// 5-second HTTP timeout, context-aware. Errors are wrapped
+// so callers can use errors.As to inspect the failure mode.
 func fetchPublicKey(ctx context.Context, instanceID, keyID string) (*ecdsa.PublicKey, error) {
-	// Placeholder: in v3.5.0-alpha-1, we don't have the
-	// well-known endpoint yet. Return an error so callers
-	// know to fall back to VerifyWithKey.
-	return nil, fmt.Errorf("attestation: VerifyOnline: well-known endpoint not yet implemented (v3.5.0-alpha-1 uses VerifyWithKey)")
+	// Sanitize instanceID. parseIssuer already validated that
+	// it's ASCII, but we also reject path-traversal characters
+	// and ".." segments to prevent SSRF.
+	if instanceID == "" || strings.ContainsAny(instanceID, "/\\?#") || strings.Contains(instanceID, "..") {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: invalid instance-id %q", instanceID)
+	}
+	// Build the well-known URL. Use HTTPS by default; fall back to
+	// HTTP if the instance is on localhost / 127.0.0.1 (development).
+	scheme := "https"
+	if strings.HasPrefix(instanceID, "localhost") || strings.HasPrefix(instanceID, "127.0.0.1") || strings.HasPrefix(instanceID, "::1") {
+		scheme = "http"
+	}
+	url := scheme + "://" + instanceID + "/.well-known/aegisgate-evidence-pubkey.pem"
+
+	// HTTP GET with a 5-second timeout. The context is checked
+	// first so callers can cancel earlier.
+	httpClient := &http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: build request: %w", err)
+	}
+	req.Header.Set("Accept", "application/x-pem-file")
+	req.Header.Set("User-Agent", "aegisgate-attestation-verify/3.5.0")
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: GET %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: GET %s: HTTP %d", url, resp.StatusCode)
+	}
+
+	// Read up to 1 MiB of PEM (public keys are ~400 bytes;
+	// 1 MiB is generous against accidental big responses).
+	const maxPEMSize = 1 << 20
+	body := make([]byte, maxPEMSize)
+	n, err := io.ReadFull(resp.Body, body)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: read body: %w", err)
+	}
+	body = body[:n]
+
+	// Parse the PEM block. The well-known endpoint serves the
+	// same PKIX format as pkg/evidence/pubkey.go.
+	block, _ := pem.Decode(body)
+	if block == nil {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: no PEM block found in response from %s", url)
+	}
+	if block.Type != "PUBLIC KEY" {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: unexpected PEM block type %q (want %q)", block.Type, "PUBLIC KEY")
+	}
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: parse PKIX public key: %w", err)
+	}
+	ecPub, ok := pub.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: not an ECDSA public key (got %T)", pub)
+	}
+	if ecPub.Curve != nil && ecPub.Curve.Params().Name != "P-256" {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: not a P-256 key (got %s)", ecPub.Curve.Params().Name)
+	}
+	// keyID is currently informational; the envelope's Signature.KeyID
+	// is the authoritative identifier. We don't fail on mismatch
+	// because key rotation is allowed mid-flight.
+	_ = keyID
+	return ecPub, nil
 }
 
 // _ is a compile-time reference to keep the errors import.
