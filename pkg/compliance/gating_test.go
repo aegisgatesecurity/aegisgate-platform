@@ -412,7 +412,7 @@ func TestIsImplementationReady(t *testing.T) {
 		{license.ModuleISO42001, true}, // pkg/compliance/iso42001/ exists (v3.4.0+)
 		{license.ModuleEUAIAct, true},  // pkg/compliance/eu-ai-act/ exists
 		{license.ModuleFIPS, true},     // pkg/compliance/fips/ exists (v3.4.0+)
-		{license.ModuleFedRAMP, false}, // no implementation yet (Path B remaining)
+		{license.ModuleFedRAMP, true},  // pkg/compliance/fedramp/ exists (v3.4.0+: 8 highest-priority Moderate controls; full catalog 4-6 weeks)
 		{license.ModuleTrust, false},   // reserved
 		{"unknown", false},
 		{"", false},
@@ -448,15 +448,16 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 		t.Error("SOC 2 should have implementation (pkg/compliance/soc2/ exists since v3.4.0+)")
 	}
 
-	// FedRAMP: no implementation yet. If owned, IsFrameworkEnforced=true
-	// (ownership, not implementation, is the gate) BUT
-	// IsImplementationReady=false. This is the orthogonal-axis case.
+	// FedRAMP (v3.4.0+): has implementation. 8 of 8 highest-priority
+	// Moderate controls are functional; full ~323 Moderate catalog
+	// would be 4-6 weeks. Owned at Pro tier, IsFrameworkEnforced=true
+	// AND IsImplementationReady=true. This is the "fully shipped" case.
 	fedrampOwned := makeResult(tierpkg.TierProfessional, []string{license.ModuleFedRAMP}, true)
 	if !IsFrameworkEnforced(license.ModuleFedRAMP, fedrampOwned) {
 		t.Error("FedRAMP owned at Pro should be enforced (gating is about ownership)")
 	}
-	if IsImplementationReady(license.ModuleFedRAMP) {
-		t.Error("FedRAMP should NOT have implementation (pkg/compliance/fedramp missing - Path B remaining)")
+	if !IsImplementationReady(license.ModuleFedRAMP) {
+		t.Error("FedRAMP should have implementation (pkg/compliance/fedramp/ exists since v3.4.0+)")
 	}
 
 	// FIPS 140 (v3.4.0+): has implementation. Owned at Pro tier,
@@ -467,6 +468,18 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 	}
 	if !IsImplementationReady(license.ModuleFIPS) {
 		t.Error("FIPS 140 should have implementation (pkg/compliance/fips/ exists since v3.4.0+)")
+	}
+
+	// Trust: no implementation (reserved for future use per
+	// plans/DEFERRED-ITEMS.md). The orthogonal-axis example: if owned,
+	// IsFrameworkEnforced=true (gating is about ownership) BUT
+	// IsImplementationReady=false.
+	trustOwned := makeResult(tierpkg.TierProfessional, []string{license.ModuleTrust}, true)
+	if !IsFrameworkEnforced(license.ModuleTrust, trustOwned) {
+		t.Error("Trust owned at Pro should be enforced (gating is about ownership)")
+	}
+	if IsImplementationReady(license.ModuleTrust) {
+		t.Error("Trust should NOT have implementation (reserved for future use)")
 	}
 }
 
