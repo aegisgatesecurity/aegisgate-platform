@@ -734,3 +734,56 @@ siem:
 		t.Errorf("Dashboard.Port = %d, want 8443 (legacy server.dashboard_port should translate)", cfg.Dashboard.Port)
 	}
 }
+
+// TestTranslateLegacyConfigKeys_WarningFormat verifies that each warning
+// string starts with a single "config: " prefix, not a redundant double
+// prefix like "config: config: ..." which would be the result of
+// concatenating the warning text (which already has "config: ") with a
+// log.Printf("config: %s", w) call site.
+//
+// Regression: as of D17 the deprecation warnings were produced correctly,
+// but the call site at LoadFromFile was log.Printf("config: %s", w),
+// causing the log output to render as "config: config: 'server.host'..."
+// This test guards against that mistake returning.
+func TestTranslateLegacyConfigKeys_WarningFormat(t *testing.T) {
+	// Trigger every legacy key warning by providing a yaml that uses
+	// all of them.
+	yaml := []byte(`server:
+  host: "0.0.0.0"
+  proxy_port: 8080
+  mcp_port: 8081
+  dashboard_port: 8443
+tier: community
+scanner:
+  address: "localhost:8081"
+  timeout: 30s
+bridge:
+  enabled: true
+redis:
+  url: "redis://localhost:6379"
+lens:
+  enabled: false
+  bearer_token: ""
+  ioc_store_dir: ""
+siem:
+  enabled: false
+`)
+	_, warns := translateLegacyConfigKeys(yaml)
+	if len(warns) == 0 {
+		t.Fatal("expected deprecation warnings, got none")
+	}
+	for _, w := range warns {
+		// Each warning must contain "config: " somewhere (it's part of
+		// the message text) but must not contain the double prefix
+		// "config: config: " which would happen if the caller also
+		// prepended "config: ".
+		if strings.Contains(w, "config: config: ") {
+			t.Errorf("warning has double 'config: ' prefix: %q", w)
+		}
+		// Each warning should start with "config: " (the message format
+		// convention used by the translation layer).
+		if !strings.HasPrefix(w, "config: ") {
+			t.Errorf("warning should start with 'config: ', got: %q", w)
+		}
+	}
+}

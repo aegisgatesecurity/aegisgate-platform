@@ -1,49 +1,239 @@
-# AegisGate Security Platform Configuration
-server:
-  host: "0.0.0.0"
-  proxy_port: 8080
-  mcp_port: 8081
-  dashboard_port: 8443
-tier: community
-scanner:
-  address: "localhost:8081"
-  timeout: 30s
-bridge:
+# =========================================================================
+# AegisGate Security Platform — Canonical Configuration
+# =========================================================================
+# This file uses the CANONICAL field names (v3.4.0+). All keys here
+# match the Go struct yaml tags in pkg/platformconfig/config.go and are
+# loaded without translation.
+#
+# DEPRECATION NOTE (D17, fixed in audit Finding #1):
+#   Earlier versions of this file used legacy keys (server.*, scanner.*,
+#   bridge.*, redis.*, lens.*, top-level tier) that did not match any
+#   Go struct field. Those keys are now translated automatically with
+#   a deprecation warning on startup. See the "Legacy keys (deprecated)"
+#   section at the bottom of this file for the deprecated key list and
+#   their canonical replacements. The legacy keys will be removed in
+#   v3.7.0 (target Q1 2027). See plans/TECHNICAL-DEBT.md for the
+#   deprecation timeline.
+#
+# HIERARCHY:
+#   1. CLI flags (highest priority) — e.g. --proxy-port=8080
+#   2. Environment variables — e.g. AEGISGATE_BIND_ADDRESS=0.0.0.0:8080
+#   3. This file (lowest priority)
+#
+# See pkg/platformconfig/config.go for the full schema and the
+# applyEnvOverrides function for the env-var name for each field.
+# =========================================================================
+
+# Platform-level settings (rarely changed)
+platform:
+  mode: "standalone"           # "standalone" = embedded MCP server, "connected" = external scanner
+  shutdown_timeout: 30s
+
+# Proxy (AegisGate) — the AI API security gateway
+# This is where all LLM traffic flows through for scanning.
+proxy:
+  bind_address: "0.0.0.0:8080"  # listen address (host:port)
+  upstream: "https://api.openai.com"  # default LLM provider to proxy to
+  rate_limit_proxy: 120          # requests/min on the proxy
+  rate_limit_mcp: 60             # tool calls/min on MCP
+  log_level: "info"              # debug | info | warn | error
+
+# Dashboard (admin UI + /api/v1/* API surface)
+dashboard:
   enabled: true
-  aegisgate_url: "http://localhost:8080"
-  timeout: 30s
+  bind_addr: "0.0.0.0"
+  port: 8443
+  ui_dir: "ui/frontend"          # path to the embedded React UI
+
+# Agent (AegisGuard) — MCP server for AI agent security
+agent:
+  server:
+    host: "0.0.0.0"
+    port: 8081
+    read_timeout: "30s"
+    write_timeout: "30s"
+    idle_timeout: "5m"
+  logging:
+    level: "info"
+    format: "json"
+  policies:
+    default_allow:
+      - "file_read"
+      - "web_search"
+      - "code_search"
+      - "http_get"
+    high_risk:
+      - "shell_command"
+      - "code_execute"
+      - "database_write"
+      - "file_delete"
+    require_approval:
+      - "file_write"
+      - "network_call"
+      - "database_query"
+  audit:
+    enabled: true
+    format: "json"
+    events:
+      - "session_start"
+      - "session_end"
+      - "tool_call"
+      - "tool_denied"
+      - "policy_denial"
+      - "risk_alert"
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+    burst: 20
+
+# TLS — auto-generated self-signed certs on first startup (Community tier)
+tls:
+  enabled: false
+  cert_dir: "/data/certs"        # where certs are stored (also default for AEGISGATE_DATA_DIR/certs)
+  auto_generate: true            # auto-generate self-signed cert + CA on first run
+  min_version: "1.2"             # "1.2" or "1.3"
+  # cert_file: "/data/certs/server.crt"  # override auto_generate
+  # key_file: "/data/certs/server.key"
+  mutual_tls:
+    enabled: false
+    mode: "optional"             # "optional" or "required"
+    # client_ca_file: "/data/certs/client-ca.crt"
+  fips:
+    enabled: false               # FIPS 140-2/140-3 mode (Professional+ with FIPS module)
+    level: "140-2"               # "140-2" or "140-3"
+
+# Security middleware settings
+security:
+  enable_security_headers: true  # CSP, X-Frame-Options, X-Content-Type-Options, etc.
+  enable_csrf: false             # API-first; enable for browser-only deployments
+  enable_xss: true               # XSS protection
+  enable_panic_recovery: true    # recover from panics and return 500 (don't crash)
+  enable_audit_middleware: true  # log all requests to the audit pipeline
+  allowed_origins: []            # CORS allowed origins (empty = no CORS)
+  allowed_methods:               # CORS allowed methods
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+    - "HEAD"
+    - "OPTIONS"
+  allowed_headers:               # CORS allowed headers
+    - "Content-Type"
+    - "Authorization"
+    - "X-API-Key"
+    - "X-CSRF-Token"
+
+# Logging
+logging:
+  level: "info"                  # debug | info | warn | error
+  format: "json"                 # json or text
+
+# Persistence — audit storage (file or PostgreSQL)
+persistence:
+  enabled: true
+  data_dir: "/data"              # root data dir (audit, certs, logs all live under here)
+  audit_dir: "/data/audit"       # file-backed audit log location (Community tier)
+  prune_interval: "24h"          # how often to prune old audit entries
+  max_file_size: 52428800        # 50 MB per audit log file
+
+# A2A (Agent-to-Agent) guardrails — gates communication between AI agents
 a2a:
   enabled: true
-  config_file: "configs/a2a.yaml"
-  caps_file: "configs/a2a_caps.yaml"
+  config_file: "configs/a2a.yaml"     # HMAC secret, rate limits, etc.
+  caps_file: "configs/a2a_caps.yaml"  # agent capability contracts
+
+# ACP (Agent Communication Protocol) guardrails — for code editors + coding agents
 acp:
   enabled: true
-  config_file: "configs/acp.yaml"
+  config_file: "configs/acp.yaml"     # HMAC secret, blocked methods, etc.
+
+# Trust Framework (6th pillar) — per-agent cryptographic identity + trust scores
+# Provides: per-agent identity (pkg/trust/identity), capability contracts
+# (pkg/trust/contract), real-time trust scoring (pkg/trust/score), anomaly
+# detection, signed attestations (pkg/trust/attestation), and the
+# customer-facing HTTP API at /api/v1/trust/* (pkg/trust/api.go).
+# The envelope primitive that wraps trust attestations is pkg/attestation/
+# (frozen 2026-06-15). Tier gate: Professional+ per locked decision Q3.
 trust:
   enabled: true
   config_file: "configs/trust.yaml"
-  require_license: true  # Professional+ tier per locked decision Q3
-logging:
-  level: info
-  format: json
-redis:
-  url: "redis://localhost:6379"
+  require_license: true          # gate behind license middleware (Professional+)
 
-# Lens telemetry backend (Professional+ tier)
-# Accepts anonymized threat telemetry from AegisGate Lens browser extension.
-# Enable with --lens-enabled or AEGISGATE_LENS_ENABLED=true.
-lens:
-  enabled: false
-  bearer_token: ""        # AEGISGATE_LENS_BEARER_TOKEN
-  ioc_store_dir: ""      # AEGISGATE_LENS_IOC_STORE_DIR (empty = in-memory)
-
-# SIEM dispatcher (Professional+ tier)
-# Forwards audit events to external SIEM platforms.
-# Enable with --siem-enabled or AEGISGATE_SIEM_ENABLED=true.
+# SIEM dispatcher (Professional+ tier) — forwards audit events to external SIEM
+# Supports: splunk, elasticsearch, qradar, sentinel, sumologic, logrhythm,
+# cloudwatch, securityhub, arcsight, syslog, custom. Each platform needs its
+# own auth/endpoint/format config. See pkg/platformconfig/config.go for the
+# full schema.
 siem:
   enabled: false
-  source: "aegisgate"     # AEGISGATE_SIEM_SOURCE
+  source: "aegisgate"            # AEGISGATE_SIEM_SOURCE
   poll_interval: 5s
   batch_size: 100
   buffer_max_size: 10000
-  platforms: []           # Add SIEM platform configs (see pkg/platformconfig/config.go)
+  platforms: []                  # Add SIEM platform configs (see SIEMPlatformConfig in pkg/platformconfig/config.go)
+
+
+# =========================================================================
+# Legacy keys (deprecated) — kept here as commented examples
+# =========================================================================
+# The platform still accepts these keys with a deprecation warning on
+# startup, so existing deployments continue to work. They will be removed
+# in v3.7.0. To migrate, replace each legacy key with its canonical
+# equivalent below.
+#
+# LEGACY                          →  CANONICAL REPLACEMENT
+# ------                          →  ---------------------
+# server.host + server.proxy_port →  proxy.bind_address (e.g. "0.0.0.0:8080")
+# server.mcp_port                 →  --mcp-port CLI flag or AEGIS_PORT env var
+#                                   (MCP port is not yaml-configurable; it's
+#                                    a per-deployment value, not a config-file value)
+# server.dashboard_port           →  dashboard.port
+# top-level tier                  →  set AEGISGATE_LICENSE_KEY env var or
+#                                   use --license CLI flag (tier is now
+#                                   license-derived, removed in D0)
+# scanner.address                 →  --scanner-address CLI flag or
+#                                   AEGIS_SCANNER_ADDRESS env var
+# scanner.timeout                 →  no replacement (scanner timeout is
+#                                   derived from proxy Timeout)
+# bridge.enabled                  →  --bridge-url CLI flag or
+#                                   AEGISGATE_BRIDGE_URL env var
+# bridge.aegisgate_url            →  --bridge-url CLI flag or
+#                                   AEGISGATE_BRIDGE_URL env var
+# bridge.timeout                  →  no replacement (bridge timeout is
+#                                   derived from proxy Timeout)
+# redis.url                       →  removed; the platform does not use
+#                                   Redis (PostgreSQL + in-memory are the
+#                                   storage backends, see persistence.*)
+# lens.enabled                    →  --lens-enabled CLI flag or
+#                                   AEGISGATE_LENS_ENABLED env var
+# lens.bearer_token               →  --lens-bearer-token CLI flag or
+#                                   AEGISGATE_LENS_BEARER_TOKEN env var
+# lens.ioc_store_dir              →  --lens-ioc-store-dir CLI flag or
+#                                   AEGISGATE_LENS_IOC_STORE_DIR env var
+#
+# EXAMPLE OF A LEGACY CONFIG (do not use in new deployments):
+#
+# server:
+#   host: "0.0.0.0"
+#   proxy_port: 8080
+#   mcp_port: 8081
+#   dashboard_port: 8443
+# tier: community
+# scanner:
+#   address: "localhost:8081"
+#   timeout: 30s
+# bridge:
+#   enabled: true
+#   aegisgate_url: "http://localhost:8080"
+#   timeout: 30s
+# redis:
+#   url: "redis://localhost:6379"
+# lens:
+#   enabled: false
+#   bearer_token: ""
+#   ioc_store_dir: ""
+#
+# To migrate, replace each legacy key with its canonical equivalent from
+# the table above. The platform will emit one deprecation warning per
+# legacy key on startup until you remove them.

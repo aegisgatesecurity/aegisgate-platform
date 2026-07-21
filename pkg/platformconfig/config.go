@@ -369,8 +369,9 @@ func LoadFromFile(path string) (*Config, error) {
 	}
 
 	// Log deprecation warnings so users know to update their yaml.
+	// Each warning already starts with "config: " so we don't add a prefix.
 	for _, w := range warnings {
-		log.Printf("config: %s", w)
+		log.Print(w)
 	}
 
 	// Apply environment variable overrides
