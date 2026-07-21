@@ -62,14 +62,14 @@ var moduleRequirements = map[string]ModuleRequirement{
 		DisplayName:       "SOC 2",
 		RequiredTier:      tierpkg.TierDeveloper,
 		MinPriceCents:     14900, // $149/mo
-		HasImplementation: false, // no pkg/compliance/soc2 yet
+		HasImplementation: true,  // pkg/compliance/soc2/ implemented in v3.4.0+ (Path B partial)
 	},
 	license.ModuleISO42001: {
 		Module:            license.ModuleISO42001,
 		DisplayName:       "ISO 42001",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900,  // $79/mo
-		HasImplementation: false, // no pkg/compliance/iso yet
+		MinPriceCents:     7900, // $79/mo
+		HasImplementation: true, // pkg/compliance/iso42001/ implemented in v3.4.0+ (Path B partial)
 	},
 	license.ModuleFedRAMP: {
 		Module:            license.ModuleFedRAMP,
