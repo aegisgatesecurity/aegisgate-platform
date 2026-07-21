@@ -320,6 +320,53 @@ Includes:
 - Future contributors know exactly when to delete (no more "what's safe to remove?")
 - `staticcheck -ST1003` (the canonical Go deprecation linter) will pass cleanly
 
+### D21: TODO/FIXME Triage (audit Finding #11) ✅ COMPLETE (2026-07-20)
+
+**Closes audit Finding #11 (P2 Medium). The "216 TODO/FIXME" was a
+raw count, not a work backlog. The real backlog is 13 known gaps.**
+
+#### What was done (D21)
+
+Triage of all 273 `TODO/FIXME/XXX` matches in pkg/ + cmd/ (audit
+said 216 but the real count includes the cmd/ tree and is 273):
+
+| Category | Count | Action |
+|----------|-------|--------|
+| `TODO-XXX` historical provenance | 254 | Leave as-is (architectural context, not work) |
+| `XXX` SSN-redaction patterns | 10 | Leave as-is (PII masking, not warning markers) |
+| Real open-work TODOs | 3 | Migrated to TECHNICAL-DEBT.md "Known Gaps" |
+| **Total** | **267** | All accounted for |
+
+The 254 `TODO-XXX` references are NOT open work — they're
+references to v3.4.0+ sprint decision IDs (TODO-301 through TODO-602).
+E.g., `// TODO-303 m1 fix: ...` is a comment describing a past fix,
+not a forward-looking task. Removing them would erase valuable
+architectural context.
+
+The 10 `XXX` matches are SSN-redaction patterns like `XXX-XX-1234`
+in `pkg/response/pii_scanner*.go` — not warning markers.
+
+The 3 real open-work TODOs are:
+- `pkg/logging/framework_refs.go:78,336` — Tier 1.6 framework mapping
+  library walk (Sprint 19+, well-known plan)
+- `pkg/reporting/doc_test.go:213` — intentional no-op test (doc marker)
+
+#### Updated `plans/TECHNICAL-DEBT.md` (gitignored)
+
+Added 2 new sections:
+- **"Known Gaps"** — 13 documented open-work items with file refs,
+  context, and sprint plans (Tier 1.6, Reserved modules, SSO
+  AcrValues, v0.2 scopes, VerifyOnline "well-known" endpoint, etc.)
+- **"TODO/FIXME Triage"** — classification table + TODO convention
+  for future contributors (TODO-XXX = provenance, TODO(Sprint-XX) =
+  real work, TODO(GitHub-#) = tracked issue)
+
+#### Strategic impact
+- The "216 open tasks" misconception is corrected
+- The real backlog (13 known gaps) is now visible
+- Future contributors have a clear convention to avoid the
+  ambiguity that caused the original 216 count
+
 ### What's new on `main`
 
 #### The envelope primitive (the v3.4.0+ cryptographic backbone)
