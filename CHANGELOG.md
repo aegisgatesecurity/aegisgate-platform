@@ -430,6 +430,49 @@ go test ./pkg/... ./cmd/...: 66/66 packages, 6,047 tests PASS, 0 FAIL
 - ✅ TECHNICAL-DEBT.md "Known Gaps" section: 13 → 10 items
   (3 real stubs fixed)
 
+### D23: Quick Cleanup — gen/ orphan + bin/ audit (P3 #13, #14) ✅ COMPLETE (2026-07-20)
+
+**Closes audit Findings #13 and #14 (both P3 Low). 45-min cleanup pass.**
+
+#### What was done (D23)
+
+**P3 #13: `gen/main_sso_integration.py` deleted**
+- The audit's claim of "orphaned" was verified: `grep -rln
+  main_sso_integration --include="*.go" .` returned 0 matches
+  across the entire working tree.
+- The file (5,413 bytes, last modified 2026-04-25) was a
+  bootstrap script for the SSO integration that was completed
+  in v2.0.0 (commits `ee5d208` and `f282dce`); it's been
+  orphaned for 2+ months.
+- `git rm` removes it from the working tree (the file was
+  tracked, not untracked). Git history preserves it.
+- Also added `gen/` to `.gitignore` (defensive — prevents
+  future generated files from being accidentally tracked)
+
+**P3 #14: `bin/` confirmed properly gitignored**
+- All 3 binaries verified gitignored: `git check-ignore -v
+  bin/*` reports `.gitignore:2:bin/` for all 3 files
+- `aegisgate-platform` (19 MB), `aegisgate-platform-static`
+  (13 MB), `lensbackend` (10 MB) are all 2+ months old
+- No action needed beyond the verification + the existing
+  `.gitignore` comment
+
+#### Test Results
+```
+go test ./pkg/... ./cmd/...: 66/66 packages, 6,047 tests PASS, 0 FAIL
+go vet ./...: clean
+go build ./cmd/aegisgate-platform: clean
+gofmt -l .: clean
+```
+
+#### Strategic impact
+- ✅ P3 #13 (gen/ Python orphan) — RESOLVED
+- ✅ P3 #14 (bin/ binaries gitignore) — VERIFIED (no action needed)
+- ✅ 5,413 bytes + 1 empty directory removed from working tree
+- ✅ `.gitignore` now defensively blocks future `gen/` files
+- ✅ 18 of 20 audit items now closed (only P2 #10 low-coverage
+  and Path B compliance modules remain as substantial work)
+
 ### What's new on `main`
 
 #### The envelope primitive (the v3.4.0+ cryptographic backbone)
