@@ -4,9 +4,12 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
-| v1.3.x  | ✅ Yes    | Active support |
-| v1.2.x  | ⚠️ Limited | Critical only |
-| < v1.2  | ❌ No      | Please upgrade |
+| v3.4.x  | ✅ Yes    | Active support |
+| v3.3.x  | ✅ Yes    | Active support |
+| v3.2.x  | ✅ Yes    | Active support |
+| v3.1.x  | ⚠️ Limited | Critical only |
+| v3.0.x  | ⚠️ Limited | Critical only |
+| < v3.0  | ❌ No      | Please upgrade |
 
 ## Security Features
 
@@ -37,9 +40,9 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
 | ✅ | **90.8% Test Coverage** (v1.3.6) |
 
-## Threat Model (v3.0)
+## Threat Model (v3.4.0+)
 
-Comprehensive threat analysis for all four security pillars:
+Comprehensive threat analysis for all six security pillars:
 
 ### Threat Categories Covered
 
@@ -49,6 +52,13 @@ Comprehensive threat analysis for all four security pillars:
 | **MCP Protocol** | 10 STRIDE threats | Session spoofing (CVSS 9.5) |
 | **A2A Agent** | 10 STRIDE threats | Agent impersonation (CVSS 9.1) |
 | **AI Response** | 11 STRIDE threats | PII disclosure (CVSS 9.1) |
+| **ACP (Agent Communication Protocol)** | 12 STRIDE threats | HMAC bypass (CVSS 9.0) |
+| **Trust Framework** | 10 STRIDE threats | Identity spoofing (CVSS 9.0) |
+
+> **Total: 63 STRIDE threats documented** (see `plans/THREAT-MODEL.md` for
+> the full analysis with CVSS scoring and mitigation mappings). The Trust
+> Framework was promoted to first-class 6th pillar in v3.2.0+ and expanded
+> in v3.4.0+ with the envelope primitive.
 
 ### CVSS Score Distribution
 
