@@ -4,8 +4,33 @@
 > site at `docs/website/index.html` mirrors this content; when this file
 > changes, the static site is regenerated.
 >
-> Last updated: 2026-06-06 (v3.3.0 — EU AI Act module)
+> Last updated: 2026-07-21 (v3.4.0+ — Trust Framework explainers + composite case study links)
 > Founder-locked pricing decisions: see `plans/aegisgate-pricing-decisions-locked-2026-06-04`.
+
+---
+
+## 📚 Customer 1-pagers (linked from each tier/module below)
+
+These 1-pagers explain the technical depth behind each tier and module
+for sales engineers, security architects, and procurement teams. They
+follow the established `docs/compliance/eu-ai-act.md` pattern
+(self-attested disclaimer, what's covered, what's out of scope,
+linkage to other modules, versioning).
+
+| 1-pager | What it explains | Use case |
+|---------|------------------|----------|
+| [Trust Framework 1-pager](../docs/trust-framework.md) | The 6th pillar (per-agent identity, capability contracts, real-time trust scoring, signed attestations) | Sales engineer answering "how does AegisGate help with my SOC 2 / HIPAA / EU AI Act?" |
+| [Federated IOC Library 1-pager](../docs/federated-ioc-library-1pager.md) | "1 customer's threat = all AegisGate customers protected" — the network effect | Sales engineer answering "what does 'federated' mean and why should I care?" |
+| [EU AI Act 1-pager](../docs/compliance/eu-ai-act.md) | The 7th compliance framework (82 controls, 9 automated) | EU enterprise procurement (hard requirement) |
+| [Lens → Platform Upsell 1-pager](../docs/lens-to-platform-upsell.md) | The 4-stage conversion funnel (individual → team → POC → production) | Growth/marketing and Lens users evaluating Platform |
+| [Composite case study: Series-B SaaS + SOC 2](https://github.com/aegisgatesecurity/aegisgate-site/blob/main/content/blog/case-study-series-b-saas-soc2-with-trust-framework.md) | How a 200-person Series-B SaaS passed SOC 2 Type II in 90 days using AegisGate | Sales engineer and prospect evaluating the AegisGate value proposition |
+
+The composite case study is **representative**, not a real customer.
+It is built from anonymized patterns across multiple AegisGate
+customers. We publish composite case studies to illustrate the value
+of AegisGate for a customer segment without disclosing customer
+information. See the case study document for our full
+[customer reference policy](../docs/lens-to-platform-upsell.md#customer-reference-policy).
 
 ---
 
@@ -26,7 +51,7 @@
 | Community   | **Free**    | Free         | All open-source users            |
 | Starter     | $29/mo      | $290/yr      | Solo devs, small projects        |
 | Developer   | $79/mo      | $790/yr      | Small teams, production use      |
-| **Professional** | **$499/mo** | **$4,990/yr** | EU enterprise, regulated industries |
+| **Professional** | **$499/mo** | **$4,990/yr** | EU enterprise, regulated industries, SOC 2 / EU AI Act evidence |
 | Enterprise  | $2,000/mo   | $24,000/yr   | Series-B+ SaaS, air-gapped, HSM  |
 
 > Pricing locked 2026-06-04 (v3.2.0 release). Existing customers keep
@@ -87,6 +112,20 @@ provisions apply from August 2026, high-risk system classifications
   above for the implementation roadmap). If your compliance auditor
   asks for SOC 2 or ISO 42001 evidence in 2026, you currently need
   to export raw platform audit logs and frame them manually.
+- **Trust Framework** (Professional+ tier, included): per-agent
+  cryptographic identity (ECDSA P-256), capability contracts with
+  fail-closed enforcement, real-time trust scoring, and signed
+  attestations. The Trust Framework is the **primary evidence source**
+  for SOC 2, HIPAA, and EU AI Act audits — see the
+  [composite case study](https://github.com/aegisgatesecurity/aegisgate-site/blob/main/content/blog/case-study-series-b-saas-soc2-with-trust-framework.md)
+  for a 90-day SOC 2 Type II example. Full 1-pager at
+  [docs/trust-framework.md](../docs/trust-framework.md).
+- **Federated IOC library** (Professional+ tier, included): opt-in
+  sharing of detected threats across AegisGate instances. "1 customer's
+  threat = all AegisGate customers protected." See the
+  [1-pager](../docs/federated-ioc-library-1pager.md) for the value
+  proposition and the 4 design principles (hash-based, opt-in/opt-out
+  serverless, self-verifying, privacy-first).
 
 ---
 
