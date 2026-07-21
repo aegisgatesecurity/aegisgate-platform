@@ -177,7 +177,7 @@ func (s *Server) handleConnection(nc net.Conn) {
 
 // handleMCPProtocol handles the MCP JSON-RPC protocol
 func (s *Server) handleMCPProtocol(conn *Connection) {
-	decoder := json.NewDecoder(conn.Conn)
+	decoder := json.NewDecoder(io.LimitReader(conn.Conn, 1<<20))
 	encoder := json.NewEncoder(conn.Conn)
 
 	for {
