@@ -245,8 +245,13 @@ func (g *Gateway) proxyThroughAegisGate(ctx context.Context, req *LLMRequest) (*
 			continue
 		}
 
-		// Read response body
-		body, err := io.ReadAll(resp.Body)
+		// D29 (F-SCANNER-1 followup): cap body read at 1MB to prevent
+		// the LLM transport layer from buffering huge bodies. The full
+		// body is rarely needed for streaming; downstream consumers
+		// (e.g. /api/v1/scan) just need the body metadata + scan result.
+		// io.LimitReader is the standard library way to cap reads.
+		const bridgeMaxBody = 1 << 20
+		body, err := io.ReadAll(io.LimitReader(resp.Body, bridgeMaxBody))
 		resp.Body.Close()
 		if err != nil {
 			lastErr = fmt.Errorf("failed to read response: %w", err)

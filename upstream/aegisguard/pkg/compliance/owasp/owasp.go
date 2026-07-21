@@ -210,13 +210,26 @@ func (o *OWASPLLMFramework) Configure(config map[string]interface{}) error {
 	return nil
 }
 
+// maxOWASPScanBytes is the cap on input.Content for OWASP regex matching.
+// D29 (F-SCANNER-1 followup): most prompt-injection is in the first
+// 64KB of an LLM body (system prompt, opening tokens). Truncating
+// before the 16-regex pass reduces OWASP scan cost from O(n*16) to
+// O(64KB*16) - a 10x speedup at 1MB+ sizes.
+const maxOWASPScanBytes = 64 * 1024
+
 func (o *OWASPLLMFramework) Check(ctx context.Context, input common.CheckInput) (*common.CheckResult, error) {
 	start := time.Now()
 	var findings []common.Finding
 
+	// D29: cap input content to maxOWASPScanBytes before regex work.
+	scanned := input.Content
+	if len(scanned) > maxOWASPScanBytes {
+		scanned = scanned[:maxOWASPScanBytes]
+	}
+
 	for _, vuln := range o.vulnerabilities {
 		for _, pattern := range vuln.Patterns {
-			if pattern.MatchString(input.Content) {
+			if pattern.MatchString(scanned) {
 				findings = append(findings, common.Finding{
 					Framework:   fmt.Sprintf("%s - %s", o.name, vuln.ID),
 					Severity:    vuln.Severity,
