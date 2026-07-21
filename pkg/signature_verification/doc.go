@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Package signature_verification provides comprehensive digital signature verification.
 //
 // This package implements a signature verification system that supports:
