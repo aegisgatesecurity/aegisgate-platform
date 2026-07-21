@@ -1,5 +1,7 @@
 # Build outputs
 bin/
+# Generated code (was: gen/main_sso_integration.py, deleted D23)
+gen/
 dist/
 build/
 *.exe
