@@ -8,7 +8,6 @@
 
 package promptcache
 
-
 // VerifyResultJSON is the flat, JSON-friendly shape of
 // VerifyResult. The CLI and HTTP use this for --json
 // output; humans prefer one line per field over a nested

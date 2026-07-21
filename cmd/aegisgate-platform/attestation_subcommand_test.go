@@ -8,6 +8,7 @@
 // exit codes).
 
 package main
+
 //lint:file-ignore SA1019 U1000 -- D25 cleanup: elliptic deprecations + unused, deferred to Path B (Sprint 19+). See plans/TECHNICAL-DEBT.md.
 
 import (

@@ -8,6 +8,7 @@
 // v3.4.0+.
 
 package evidence
+
 //lint:file-ignore SA1019 U1000 -- D25 cleanup: elliptic deprecations + unused, deferred to Path B. See plans/TECHNICAL-DEBT.md.
 
 import (

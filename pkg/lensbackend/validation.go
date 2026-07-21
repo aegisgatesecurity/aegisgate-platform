@@ -528,7 +528,6 @@ func isLowerHex(c rune) bool {
 	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
 }
 
-
 // decodeEvent parses a JSON event body into an Event struct.
 // Disallows unknown fields as a privacy measure.
 func decodeEvent(body []byte) (Event, error) {
