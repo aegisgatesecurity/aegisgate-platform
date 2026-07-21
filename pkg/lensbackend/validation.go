@@ -528,14 +528,6 @@ func isLowerHex(c rune) bool {
 	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
 }
 
-func containsPlus(s string) bool {
-	for _, c := range s {
-		if c == '+' {
-			return true
-		}
-	}
-	return false
-}
 
 // decodeEvent parses a JSON event body into an Event struct.
 // Disallows unknown fields as a privacy measure.

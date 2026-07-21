@@ -8,7 +8,6 @@
 
 package promptcache
 
-import "encoding/json"
 
 // VerifyResultJSON is the flat, JSON-friendly shape of
 // VerifyResult. The CLI and HTTP use this for --json
@@ -73,6 +72,3 @@ func (v *VerifyResult) ToJSON() VerifyResultJSON {
 // jsonMarshalImpl is a thin wrapper around json.Marshal.
 // Kept in this file (not in the test file) to keep the
 // test file's import list minimal.
-func jsonMarshalImpl(v interface{}) ([]byte, error) {
-	return json.Marshal(v)
-}
