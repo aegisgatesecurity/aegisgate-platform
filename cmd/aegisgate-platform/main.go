@@ -113,7 +113,10 @@ var (
 	iocShare          = flag.Bool("ioc-share", false, "Opt in to serving IOC manifests to peers (AEGISGATE_IOC_SHARE)")
 	iocReceive        = flag.Bool("ioc-receive", false, "Opt in to fetching IOC manifests from peers; requires Professional+ tier (AEGISGATE_IOC_RECEIVE)")
 	iocPeers          = flag.String("ioc-peers", "", "Comma-separated peer base URLs for IOC gossip (e.g. https://aegis-b.example.com:8443,https://aegis-c.example.com:8443). Env: AEGISGATE_IOC_PEERS")
-	iocStoreDir       = flag.String("ioc-store-dir", "", "Directory for IOC store persistence (default: <DataDir>/ioc)")
+	// iocStoreDir removed in D25 (D25 staticcheck cleanup) - was unused flag.
+	// The IOC store path is configured via the IOC subsystem; no top-level
+	// --ioc-store-dir flag is needed. Re-add if a future subscriber mode
+	// needs explicit path control.
 	iocGossipInterval = flag.Duration("ioc-gossip-interval", 5*time.Minute, "Interval between peer IOC fetches in RunReceiver. Env: AEGISGATE_IOC_GOSSIP_INTERVAL (Go duration: 30s, 5m, 1h)")
 	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS)")
 	lensEnabled       = flag.Bool("lens-enabled", false, "Enable the Lens telemetry backend on the proxy port (AEGISGATE_LENS_ENABLED)")
