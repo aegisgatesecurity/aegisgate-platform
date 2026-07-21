@@ -484,31 +484,34 @@ func (m *EUAIModule) registerControls() {
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art14-002",
+		Automated:   true,
+		CheckFunc:   m.checkOversightMeasuresEffective,
 		Name:        "Oversight Measures Effective",
 		Description: "EU AI Act 14(2): Oversight Measures Effective",
 		Category:    "Human Oversight",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
 		References:  []string{"EU AI Act Article 14(2)"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art14-003",
+		Automated:   true,
+		CheckFunc:   m.checkHumanReviewersCanIntervene,
 		Name:        "Human Reviewers Can Intervene",
 		Description: "EU AI Act 14(3): Human Reviewers Can Intervene",
 		Category:    "Human Oversight",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
 		References:  []string{"EU AI Act Article 14(3)"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art14-004",
+		Automated:   true,
+		CheckFunc:   m.checkKillSwitchAbortCapability,
 		Name:        "Kill Switch / Abort Capability",
 		Description: "EU AI Act 14(4): Kill Switch / Abort Capability",
 		Category:    "Human Oversight",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
 		References:  []string{"EU AI Act Article 14(4)"},
 	})
 
@@ -767,21 +770,23 @@ func (m *EUAIModule) registerControls() {
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-AI-002",
+		Automated:   true,
+		CheckFunc:   m.checkTrainingDataSanitization,
 		Name:        "Training Data Sanitization",
 		Description: "EU AI Act AegisGate extension: Training Data Sanitization",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-AI-003",
+		Automated:   true,
+		CheckFunc:   m.checkAIOutputFiltering,
 		Name:        "AI System Output Filtering",
 		Description: "EU AI Act AegisGate extension: AI System Output Filtering",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
@@ -797,31 +802,34 @@ func (m *EUAIModule) registerControls() {
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-AI-005",
+		Automated:   true,
+		CheckFunc:   m.checkHallucinationDetection,
 		Name:        "AI Model Hallucination Detection",
 		Description: "EU AI Act AegisGate extension: AI Model Hallucination Detection",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-AI-006",
+		Automated:   true,
+		CheckFunc:   m.checkAgentCapabilityAttestation,
 		Name:        "AI Agent Capability Attestation",
 		Description: "EU AI Act AegisGate extension: AI Agent Capability Attestation",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-AI-007",
+		Automated:   true,
+		CheckFunc:   m.checkModelVersioningLineage,
 		Name:        "AI Model Versioning and Lineage",
 		Description: "EU AI Act AegisGate extension: AI Model Versioning and Lineage",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 

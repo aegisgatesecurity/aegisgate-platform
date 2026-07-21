@@ -19,7 +19,7 @@ func TestNewEUAIModule(t *testing.T) {
 	m := NewEUAIModule()
 	require.NotNil(t, m)
 	assert.Equal(t, "eu_ai_act", m.Framework())
-	assert.Equal(t, "1.0", m.Version())
+	assert.Equal(t, "1.1", m.Version())
 }
 
 func TestEUAIModuleControls(t *testing.T) {
@@ -150,7 +150,7 @@ func TestGenerateAssessment(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, assessment)
 	assert.Equal(t, "eu_ai_act", assessment.Framework)
-	assert.Equal(t, "1.0", assessment.Version)
+	assert.Equal(t, "1.1", assessment.Version)
 	assert.Greater(t, assessment.Summary.Total, 0)
 }
 
