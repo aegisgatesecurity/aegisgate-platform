@@ -23,7 +23,7 @@ func TestNewHIPAAModule(t *testing.T) {
 		m := NewHIPAAModule()
 		require.NotNil(t, m)
 		assert.Equal(t, "hipaa", m.Framework())
-		assert.Equal(t, "2.0", m.Version())
+		assert.Equal(t, "2.1", m.Version())
 	})
 
 	t.Run("InitializesPHIPatterns", func(t *testing.T) {
@@ -267,6 +267,87 @@ func TestDependencies(t *testing.T) {
 	m := NewHIPAAModule()
 	deps := m.Dependencies()
 	assert.Contains(t, deps, "scanner")
+}
+
+// TestNewHIPAAv3xTier1Controls verifies the v3.x Tier 1 control set
+// is 15 controls total: 4 AS + 2 PS + 6 TS + 2 AI + 1 TS-006 (encryption addressable) = 15.
+func TestNewHIPAAv3xTier1Controls(t *testing.T) {
+	m := NewHIPAAModule()
+	controls := m.Controls()
+	if len(controls) != 15 {
+		t.Errorf("len(Controls()) = %d, want 15 (v3.x Tier 1: 4 AS + 2 PS + 6 TS + 2 AI + 1 TS-006 = 15 in-scope)", len(controls))
+	}
+	expectedIDs := map[string]bool{
+		"HIPAA-AS-001": false, "HIPAA-AS-002": false, "HIPAA-AS-003": false, "HIPAA-AS-004": false, "HIPAA-AS-005": false,
+		"HIPAA-PS-001": false, "HIPAA-PS-002": false,
+		"HIPAA-TS-001": false, "HIPAA-TS-002": false, "HIPAA-TS-003": false, "HIPAA-TS-004": false, "HIPAA-TS-005": false, "HIPAA-TS-006": false,
+		"HIPAA-AI-001": false, "HIPAA-AI-002": false,
+	}
+	for _, c := range controls {
+		if _, ok := expectedIDs[c.ID]; ok {
+			expectedIDs[c.ID] = true
+		}
+	}
+	for id, found := range expectedIDs {
+		if !found {
+			t.Errorf("Expected control %s not registered", id)
+		}
+	}
+}
+
+// TestLogInMonitoringCheck verifies § 164.308(a)(1)(ii)(D) — the v3.x Tier 1
+// addition that was missing from the original module.
+func TestLogInMonitoringCheck(t *testing.T) {
+	m := NewHIPAAModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("audit_log login_tracking anomaly_detection alerting")
+		result, err := m.checkLogInMonitoring(context.Background(), input)
+		require.NoError(t, err)
+		assert.Equal(t, compliance.StatusCompliant, result.Status)
+	})
+
+	t.Run("PartialConfig", func(t *testing.T) {
+		input := []byte("audit_log login_tracking")
+		result, err := m.checkLogInMonitoring(context.Background(), input)
+		require.NoError(t, err)
+		assert.Equal(t, compliance.StatusPartial, result.Status)
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("nothing_here")
+		result, err := m.checkLogInMonitoring(context.Background(), input)
+		require.NoError(t, err)
+		assert.Equal(t, compliance.StatusNonCompliant, result.Status)
+	})
+}
+
+// TestEncryptionAddressableCheck verifies § 164.312(a)(2)(ii) and
+// § 164.312(e)(2)(ii) — the v3.x Tier 1 addition that was missing
+// from the original module.
+func TestEncryptionAddressableCheck(t *testing.T) {
+	m := NewHIPAAModule()
+
+	t.Run("CompliantEncryption", func(t *testing.T) {
+		input := []byte("encryption_at_rest aes_256 tls fips approved_algorithm key_management")
+		result, err := m.checkEncryptionAddressable(context.Background(), input)
+		require.NoError(t, err)
+		assert.Equal(t, compliance.StatusCompliant, result.Status)
+	})
+
+	t.Run("PartialEncryption", func(t *testing.T) {
+		input := []byte("aes_256 enabled")
+		result, err := m.checkEncryptionAddressable(context.Background(), input)
+		require.NoError(t, err)
+		assert.Equal(t, compliance.StatusPartial, result.Status)
+	})
+
+	t.Run("NonCompliantEncryption", func(t *testing.T) {
+		input := []byte("nothing_here")
+		result, err := m.checkEncryptionAddressable(context.Background(), input)
+		require.NoError(t, err)
+		assert.Equal(t, compliance.StatusNonCompliant, result.Status)
+	})
 }
 
 func TestCheckControl(t *testing.T) {
