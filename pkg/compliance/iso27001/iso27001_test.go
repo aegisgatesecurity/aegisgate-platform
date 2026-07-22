@@ -6,9 +6,9 @@ package iso27001
 
 import (
 	"context"
+	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 	"strings"
 	"testing"
-	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 )
 
 func TestNewISO27001Module(t *testing.T) {

@@ -993,9 +993,21 @@ func (m *PCIModule) checkNetworkSegmentation(ctx context.Context, input []byte) 
 
 	present := 0
 	missing := []string{}
-	if hasSegmentation { present++ } else { missing = append(missing, "network_segmentation") }
-	if hasACL { present++ } else { missing = append(missing, "ACL/firewall_rules") }
-	if hasNSP { present++ } else { missing = append(missing, "network_segmentation_policy") }
+	if hasSegmentation {
+		present++
+	} else {
+		missing = append(missing, "network_segmentation")
+	}
+	if hasACL {
+		present++
+	} else {
+		missing = append(missing, "ACL/firewall_rules")
+	}
+	if hasNSP {
+		present++
+	} else {
+		missing = append(missing, "network_segmentation_policy")
+	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
@@ -1084,9 +1096,21 @@ func (m *PCIModule) checkVendorDefaultsManagement(ctx context.Context, input []b
 
 	present := 0
 	missing := []string{}
-	if hasDefaultsPolicy { present++ } else { missing = append(missing, "vendor_defaults_policy") }
-	if hasInventory { present++ } else { missing = append(missing, "asset_inventory") }
-	if hasReviewProcess { present++ } else { missing = append(missing, "default_review") }
+	if hasDefaultsPolicy {
+		present++
+	} else {
+		missing = append(missing, "vendor_defaults_policy")
+	}
+	if hasInventory {
+		present++
+	} else {
+		missing = append(missing, "asset_inventory")
+	}
+	if hasReviewProcess {
+		present++
+	} else {
+		missing = append(missing, "default_review")
+	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
@@ -1120,9 +1144,21 @@ func (m *PCIModule) checkConfigurationChangeDetection(ctx context.Context, input
 
 	present := 0
 	missing := []string{}
-	if hasInventory { present++ } else { missing = append(missing, "asset_inventory") }
-	if hasChangeDetection { present++ } else { missing = append(missing, "change_detection") }
-	if hasMonitoring { present++ } else { missing = append(missing, "config_monitoring") }
+	if hasInventory {
+		present++
+	} else {
+		missing = append(missing, "asset_inventory")
+	}
+	if hasChangeDetection {
+		present++
+	} else {
+		missing = append(missing, "change_detection")
+	}
+	if hasMonitoring {
+		present++
+	} else {
+		missing = append(missing, "config_monitoring")
+	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
@@ -1156,9 +1192,21 @@ func (m *PCIModule) checkPANTruncation(ctx context.Context, input []byte) (*comp
 
 	present := 0
 	missing := []string{}
-	if hasTruncation { present++ } else { missing = append(missing, "pan_truncation") }
-	if hasHashing { present++ } else { missing = append(missing, "one_way_hash") }
-	if hasTokenization { present++ } else { missing = append(missing, "tokenization") }
+	if hasTruncation {
+		present++
+	} else {
+		missing = append(missing, "pan_truncation")
+	}
+	if hasHashing {
+		present++
+	} else {
+		missing = append(missing, "one_way_hash")
+	}
+	if hasTokenization {
+		present++
+	} else {
+		missing = append(missing, "tokenization")
+	}
 
 	if present >= 1 {
 		return &compliance.ControlCheckResult{
@@ -1192,9 +1240,21 @@ func (m *PCIModule) checkEncryptionAtRest(ctx context.Context, input []byte) (*c
 
 	present := 0
 	missing := []string{}
-	if hasEncryptionAtRest { present++ } else { missing = append(missing, "encryption_at_rest") }
-	if hasStrongAlgo { present++ } else { missing = append(missing, "strong_algorithm (AES-256 or FIPS-approved)") }
-	if hasKeyMgmt { present++ } else { missing = append(missing, "key_management") }
+	if hasEncryptionAtRest {
+		present++
+	} else {
+		missing = append(missing, "encryption_at_rest")
+	}
+	if hasStrongAlgo {
+		present++
+	} else {
+		missing = append(missing, "strong_algorithm (AES-256 or FIPS-approved)")
+	}
+	if hasKeyMgmt {
+		present++
+	} else {
+		missing = append(missing, "key_management")
+	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
@@ -1229,10 +1289,26 @@ func (m *PCIModule) checkKeyManagement(ctx context.Context, input []byte) (*comp
 
 	present := 0
 	missing := []string{}
-	if hasRotation { present++ } else { missing = append(missing, "key_rotation") }
-	if hasHSM { present++ } else { missing = append(missing, "HSM/KMS") }
-	if hasAccessControl { present++ } else { missing = append(missing, "key_access_control") }
-	if hasAudit { present++ } else { missing = append(missing, "key_audit") }
+	if hasRotation {
+		present++
+	} else {
+		missing = append(missing, "key_rotation")
+	}
+	if hasHSM {
+		present++
+	} else {
+		missing = append(missing, "HSM/KMS")
+	}
+	if hasAccessControl {
+		present++
+	} else {
+		missing = append(missing, "key_access_control")
+	}
+	if hasAudit {
+		present++
+	} else {
+		missing = append(missing, "key_audit")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1267,10 +1343,26 @@ func (m *PCIModule) checkVulnerabilityRemediation(ctx context.Context, input []b
 
 	present := 0
 	missing := []string{}
-	if hasSLA { present++ } else { missing = append(missing, "vulnerability_SLA") }
-	if hasCritical { present++ } else { missing = append(missing, "critical_30day_remediation") }
-	if hasHigh { present++ } else { missing = append(missing, "high_60day_remediation") }
-	if hasTracking { present++ } else { missing = append(missing, "vulnerability_tracking") }
+	if hasSLA {
+		present++
+	} else {
+		missing = append(missing, "vulnerability_SLA")
+	}
+	if hasCritical {
+		present++
+	} else {
+		missing = append(missing, "critical_30day_remediation")
+	}
+	if hasHigh {
+		present++
+	} else {
+		missing = append(missing, "high_60day_remediation")
+	}
+	if hasTracking {
+		present++
+	} else {
+		missing = append(missing, "vulnerability_tracking")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1305,10 +1397,26 @@ func (m *PCIModule) checkVulnerabilityScanSchedule(ctx context.Context, input []
 
 	present := 0
 	missing := []string{}
-	if hasQuarterly { present++ } else { missing = append(missing, "quarterly_scan") }
-	if hasSignificantChange { present++ } else { missing = append(missing, "post_change_scan") }
-	if hasContinuous { present++ } else { missing = append(missing, "continuous_scan") }
-	if hasReports { present++ } else { missing = append(missing, "scan_reports") }
+	if hasQuarterly {
+		present++
+	} else {
+		missing = append(missing, "quarterly_scan")
+	}
+	if hasSignificantChange {
+		present++
+	} else {
+		missing = append(missing, "post_change_scan")
+	}
+	if hasContinuous {
+		present++
+	} else {
+		missing = append(missing, "continuous_scan")
+	}
+	if hasReports {
+		present++
+	} else {
+		missing = append(missing, "scan_reports")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1343,10 +1451,26 @@ func (m *PCIModule) checkWebAppVulnTesting(ctx context.Context, input []byte) (*
 
 	present := 0
 	missing := []string{}
-	if hasSAST { present++ } else { missing = append(missing, "SAST") }
-	if hasDAST { present++ } else { missing = append(missing, "DAST") }
-	if hasOWASPCoverage { present++ } else { missing = append(missing, "OWASP_Top_10") }
-	if hasXSS { present++ } else { missing = append(missing, "XSS/SQLi coverage") }
+	if hasSAST {
+		present++
+	} else {
+		missing = append(missing, "SAST")
+	}
+	if hasDAST {
+		present++
+	} else {
+		missing = append(missing, "DAST")
+	}
+	if hasOWASPCoverage {
+		present++
+	} else {
+		missing = append(missing, "OWASP_Top_10")
+	}
+	if hasXSS {
+		present++
+	} else {
+		missing = append(missing, "XSS/SQLi coverage")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1381,10 +1505,26 @@ func (m *PCIModule) checkSecureCodingGuidelines(ctx context.Context, input []byt
 
 	present := 0
 	missing := []string{}
-	if hasGuidelines { present++ } else { missing = append(missing, "secure_coding_guidelines") }
-	if hasReviewProcess { present++ } else { missing = append(missing, "code_review") }
-	if hasTraining { present++ } else { missing = append(missing, "developer_training") }
-	if hasSASTEnforced { present++ } else { missing = append(missing, "SAST_enforced") }
+	if hasGuidelines {
+		present++
+	} else {
+		missing = append(missing, "secure_coding_guidelines")
+	}
+	if hasReviewProcess {
+		present++
+	} else {
+		missing = append(missing, "code_review")
+	}
+	if hasTraining {
+		present++
+	} else {
+		missing = append(missing, "developer_training")
+	}
+	if hasSASTEnforced {
+		present++
+	} else {
+		missing = append(missing, "SAST_enforced")
+	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
@@ -1419,10 +1559,26 @@ func (m *PCIModule) checkRBACEnforcement(ctx context.Context, input []byte) (*co
 
 	present := 0
 	missing := []string{}
-	if hasRBAC { present++ } else { missing = append(missing, "RBAC") }
-	if hasNeedToKnow { present++ } else { missing = append(missing, "need_to_know") }
-	if hasRoleReview { present++ } else { missing = append(missing, "role_review") }
-	if hasJustInTime { present++ } else { missing = append(missing, "just_in_time") }
+	if hasRBAC {
+		present++
+	} else {
+		missing = append(missing, "RBAC")
+	}
+	if hasNeedToKnow {
+		present++
+	} else {
+		missing = append(missing, "need_to_know")
+	}
+	if hasRoleReview {
+		present++
+	} else {
+		missing = append(missing, "role_review")
+	}
+	if hasJustInTime {
+		present++
+	} else {
+		missing = append(missing, "just_in_time")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1457,10 +1613,26 @@ func (m *PCIModule) checkDefaultDenyPolicy(ctx context.Context, input []byte) (*
 
 	present := 0
 	missing := []string{}
-	if hasDefaultDeny { present++ } else { missing = append(missing, "default_deny") }
-	if hasExplicitAllow { present++ } else { missing = append(missing, "explicit_allow") }
-	if hasFirewallRules { present++ } else { missing = append(missing, "firewall_rules") }
-	if hasReviewProcess { present++ } else { missing = append(missing, "rule_review") }
+	if hasDefaultDeny {
+		present++
+	} else {
+		missing = append(missing, "default_deny")
+	}
+	if hasExplicitAllow {
+		present++
+	} else {
+		missing = append(missing, "explicit_allow")
+	}
+	if hasFirewallRules {
+		present++
+	} else {
+		missing = append(missing, "firewall_rules")
+	}
+	if hasReviewProcess {
+		present++
+	} else {
+		missing = append(missing, "rule_review")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1495,10 +1667,26 @@ func (m *PCIModule) checkSessionManagement(ctx context.Context, input []byte) (*
 
 	present := 0
 	missing := []string{}
-	if hasSessionTimeout { present++ } else { missing = append(missing, "session_timeout") }
-	if hasTimeout15min { present++ } else { missing = append(missing, "15_minute_timeout") }
-	if hasReauth { present++ } else { missing = append(missing, "reauth") }
-	if hasConcurrentSessions { present++ } else { missing = append(missing, "concurrent_sessions") }
+	if hasSessionTimeout {
+		present++
+	} else {
+		missing = append(missing, "session_timeout")
+	}
+	if hasTimeout15min {
+		present++
+	} else {
+		missing = append(missing, "15_minute_timeout")
+	}
+	if hasReauth {
+		present++
+	} else {
+		missing = append(missing, "reauth")
+	}
+	if hasConcurrentSessions {
+		present++
+	} else {
+		missing = append(missing, "concurrent_sessions")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1533,10 +1721,26 @@ func (m *PCIModule) checkPasswordPolicy(ctx context.Context, input []byte) (*com
 
 	present := 0
 	missing := []string{}
-	if hasMinLength { present++ } else { missing = append(missing, "min_password_length (>=12)") }
-	if hasComplexity { present++ } else { missing = append(missing, "password_complexity") }
-	if hasHistory { present++ } else { missing = append(missing, "password_history") }
-	if hasExpiry { present++ } else { missing = append(missing, "password_expiry (90day)") }
+	if hasMinLength {
+		present++
+	} else {
+		missing = append(missing, "min_password_length (>=12)")
+	}
+	if hasComplexity {
+		present++
+	} else {
+		missing = append(missing, "password_complexity")
+	}
+	if hasHistory {
+		present++
+	} else {
+		missing = append(missing, "password_history")
+	}
+	if hasExpiry {
+		present++
+	} else {
+		missing = append(missing, "password_expiry (90day)")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1571,10 +1775,26 @@ func (m *PCIModule) checkAccountLockout(ctx context.Context, input []byte) (*com
 
 	present := 0
 	missing := []string{}
-	if hasLockout { present++ } else { missing = append(missing, "account_lockout") }
-	if hasThreshold { present++ } else { missing = append(missing, "lockout_threshold (6 attempts)") }
-	if hasDuration { present++ } else { missing = append(missing, "lockout_duration (30 min)") }
-	if hasAudit { present++ } else { missing = append(missing, "lockout_audit") }
+	if hasLockout {
+		present++
+	} else {
+		missing = append(missing, "account_lockout")
+	}
+	if hasThreshold {
+		present++
+	} else {
+		missing = append(missing, "lockout_threshold (6 attempts)")
+	}
+	if hasDuration {
+		present++
+	} else {
+		missing = append(missing, "lockout_duration (30 min)")
+	}
+	if hasAudit {
+		present++
+	} else {
+		missing = append(missing, "lockout_audit")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1609,10 +1829,26 @@ func (m *PCIModule) checkPhysicalAccessLogRetention(ctx context.Context, input [
 
 	present := 0
 	missing := []string{}
-	if hasRetention { present++ } else { missing = append(missing, "audit_log_retention (>=90day)") }
-	if hasImmediateAccess { present++ } else { missing = append(missing, "30_day_immediate_access") }
-	if hasArchive { present++ } else { missing = append(missing, "audit_log_archive") }
-	if hasReview { present++ } else { missing = append(missing, "physical_log_review") }
+	if hasRetention {
+		present++
+	} else {
+		missing = append(missing, "audit_log_retention (>=90day)")
+	}
+	if hasImmediateAccess {
+		present++
+	} else {
+		missing = append(missing, "30_day_immediate_access")
+	}
+	if hasArchive {
+		present++
+	} else {
+		missing = append(missing, "audit_log_archive")
+	}
+	if hasReview {
+		present++
+	} else {
+		missing = append(missing, "physical_log_review")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1647,10 +1883,26 @@ func (m *PCIModule) checkLogFileIntegrity(ctx context.Context, input []byte) (*c
 
 	present := 0
 	missing := []string{}
-	if hasHashChain { present++ } else { missing = append(missing, "log_integrity (hash-chain)") }
-	if hasSignedLogs { present++ } else { missing = append(missing, "signed_logs") }
-	if hasFileIntegrity { present++ } else { missing = append(missing, "file_integrity (FIM)") }
-	if hasRestrictedAccess { present++ } else { missing = append(missing, "log_access_restricted") }
+	if hasHashChain {
+		present++
+	} else {
+		missing = append(missing, "log_integrity (hash-chain)")
+	}
+	if hasSignedLogs {
+		present++
+	} else {
+		missing = append(missing, "signed_logs")
+	}
+	if hasFileIntegrity {
+		present++
+	} else {
+		missing = append(missing, "file_integrity (FIM)")
+	}
+	if hasRestrictedAccess {
+		present++
+	} else {
+		missing = append(missing, "log_access_restricted")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1685,10 +1937,26 @@ func (m *PCIModule) checkDailyLogReview(ctx context.Context, input []byte) (*com
 
 	present := 0
 	missing := []string{}
-	if hasAnomaly { present++ } else { missing = append(missing, "anomaly_detection") }
-	if hasAlerting { present++ } else { missing = append(missing, "alerting") }
-	if hasSIEM { present++ } else { missing = append(missing, "SIEM") }
-	if hasAutomatedReview { present++ } else { missing = append(missing, "automated_log_review") }
+	if hasAnomaly {
+		present++
+	} else {
+		missing = append(missing, "anomaly_detection")
+	}
+	if hasAlerting {
+		present++
+	} else {
+		missing = append(missing, "alerting")
+	}
+	if hasSIEM {
+		present++
+	} else {
+		missing = append(missing, "SIEM")
+	}
+	if hasAutomatedReview {
+		present++
+	} else {
+		missing = append(missing, "automated_log_review")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1723,10 +1991,26 @@ func (m *PCIModule) checkLogRetentionYear(ctx context.Context, input []byte) (*c
 
 	present := 0
 	missing := []string{}
-	if hasOneYear { present++ } else { missing = append(missing, "1_year_retention") }
-	if hasThreeMonthImmediate { present++ } else { missing = append(missing, "3_month_immediate") }
-	if hasArchive { present++ } else { missing = append(missing, "archive") }
-	if hasRestore { present++ } else { missing = append(missing, "log_restore") }
+	if hasOneYear {
+		present++
+	} else {
+		missing = append(missing, "1_year_retention")
+	}
+	if hasThreeMonthImmediate {
+		present++
+	} else {
+		missing = append(missing, "3_month_immediate")
+	}
+	if hasArchive {
+		present++
+	} else {
+		missing = append(missing, "archive")
+	}
+	if hasRestore {
+		present++
+	} else {
+		missing = append(missing, "log_restore")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1761,10 +2045,26 @@ func (m *PCIModule) checkIDSIPS(ctx context.Context, input []byte) (*compliance.
 
 	present := 0
 	missing := []string{}
-	if hasIDS { present++ } else { missing = append(missing, "IDS") }
-	if hasIPS { present++ } else { missing = append(missing, "IPS") }
-	if hasAnomaly { present++ } else { missing = append(missing, "anomaly_detection") }
-	if hasAlerting { present++ } else { missing = append(missing, "alerting") }
+	if hasIDS {
+		present++
+	} else {
+		missing = append(missing, "IDS")
+	}
+	if hasIPS {
+		present++
+	} else {
+		missing = append(missing, "IPS")
+	}
+	if hasAnomaly {
+		present++
+	} else {
+		missing = append(missing, "anomaly_detection")
+	}
+	if hasAlerting {
+		present++
+	} else {
+		missing = append(missing, "alerting")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1799,10 +2099,26 @@ func (m *PCIModule) checkFileIntegrityMonitoring(ctx context.Context, input []by
 
 	present := 0
 	missing := []string{}
-	if hasFIM { present++ } else { missing = append(missing, "FIM") }
-	if hasAttestation { present++ } else { missing = append(missing, "signed_attestation") }
-	if hasChangeDetection { present++ } else { missing = append(missing, "change_detection") }
-	if hasAlerting { present++ } else { missing = append(missing, "alerting") }
+	if hasFIM {
+		present++
+	} else {
+		missing = append(missing, "FIM")
+	}
+	if hasAttestation {
+		present++
+	} else {
+		missing = append(missing, "signed_attestation")
+	}
+	if hasChangeDetection {
+		present++
+	} else {
+		missing = append(missing, "change_detection")
+	}
+	if hasAlerting {
+		present++
+	} else {
+		missing = append(missing, "alerting")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1837,10 +2153,26 @@ func (m *PCIModule) checkASVScans(ctx context.Context, input []byte) (*complianc
 
 	present := 0
 	missing := []string{}
-	if hasASV || hasGovulncheck { present++ } else { missing = append(missing, "ASV-compatible scanner (govulncheck, Trivy)") }
-	if hasTrivy { present++ } else { missing = append(missing, "Trivy container scan") }
-	if hasExternal { present++ } else { missing = append(missing, "external_scan") }
-	if hasGovulncheck { present++ } else { missing = append(missing, "govulncheck") }
+	if hasASV || hasGovulncheck {
+		present++
+	} else {
+		missing = append(missing, "ASV-compatible scanner (govulncheck, Trivy)")
+	}
+	if hasTrivy {
+		present++
+	} else {
+		missing = append(missing, "Trivy container scan")
+	}
+	if hasExternal {
+		present++
+	} else {
+		missing = append(missing, "external_scan")
+	}
+	if hasGovulncheck {
+		present++
+	} else {
+		missing = append(missing, "govulncheck")
+	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
@@ -1875,10 +2207,26 @@ func (m *PCIModule) checkRiskAssessment(ctx context.Context, input []byte) (*com
 
 	present := 0
 	missing := []string{}
-	if hasRiskAssessment { present++ } else { missing = append(missing, "risk_assessment") }
-	if hasThreatModel { present++ } else { missing = append(missing, "threat_model") }
-	if hasRiskRegister { present++ } else { missing = append(missing, "risk_register") }
-	if hasAnnualReview { present++ } else { missing = append(missing, "annual_review") }
+	if hasRiskAssessment {
+		present++
+	} else {
+		missing = append(missing, "risk_assessment")
+	}
+	if hasThreatModel {
+		present++
+	} else {
+		missing = append(missing, "threat_model")
+	}
+	if hasRiskRegister {
+		present++
+	} else {
+		missing = append(missing, "risk_register")
+	}
+	if hasAnnualReview {
+		present++
+	} else {
+		missing = append(missing, "annual_review")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1913,10 +2261,26 @@ func (m *PCIModule) checkIncidentResponse(ctx context.Context, input []byte) (*c
 
 	present := 0
 	missing := []string{}
-	if hasIRPlan { present++ } else { missing = append(missing, "IR_plan") }
-	if hasRoles { present++ } else { missing = append(missing, "IR_roles") }
-	if hasTested { present++ } else { missing = append(missing, "IR_tested") }
-	if hasLegal { present++ } else { missing = append(missing, "legal_notification") }
+	if hasIRPlan {
+		present++
+	} else {
+		missing = append(missing, "IR_plan")
+	}
+	if hasRoles {
+		present++
+	} else {
+		missing = append(missing, "IR_roles")
+	}
+	if hasTested {
+		present++
+	} else {
+		missing = append(missing, "IR_tested")
+	}
+	if hasLegal {
+		present++
+	} else {
+		missing = append(missing, "legal_notification")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
@@ -1951,10 +2315,26 @@ func (m *PCIModule) checkServiceProviderManagement(ctx context.Context, input []
 
 	present := 0
 	missing := []string{}
-	if hasVendorInventory { present++ } else { missing = append(missing, "vendor_inventory") }
-	if hasDPA { present++ } else { missing = append(missing, "DPA") }
-	if hasVendorAssessment { present++ } else { missing = append(missing, "vendor_assessment") }
-	if hasMonitorService { present++ } else { missing = append(missing, "vendor_monitoring") }
+	if hasVendorInventory {
+		present++
+	} else {
+		missing = append(missing, "vendor_inventory")
+	}
+	if hasDPA {
+		present++
+	} else {
+		missing = append(missing, "DPA")
+	}
+	if hasVendorAssessment {
+		present++
+	} else {
+		missing = append(missing, "vendor_assessment")
+	}
+	if hasMonitorService {
+		present++
+	} else {
+		missing = append(missing, "vendor_monitoring")
+	}
 
 	if present >= 3 {
 		return &compliance.ControlCheckResult{
