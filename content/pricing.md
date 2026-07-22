@@ -4,7 +4,7 @@
 > site at `docs/website/index.html` mirrors this content; when this file
 > changes, the static site is regenerated.
 >
-> Last updated: 2026-07-21 (v3.4.0+ — Trust Framework explainers + composite case study links)
+> Last updated: 2026-07-22 (v3.5.0 — FedRAMP Path C: 60 controls, full cross-framework traceability)
 > Founder-locked pricing decisions: see `plans/aegisgate-pricing-decisions-locked-2026-06-04`.
 
 ---
@@ -68,10 +68,10 @@ instantly via the Stripe webhook (Q1: instant via webhook).
 |-------------------|-----------:|------------------|-------------|
 | HIPAA             | $99/mo     | Developer+       | HIPAA-compliant logging, PHI detection, BAA support — **fully implemented** |
 | PCI-DSS           | $99/mo     | Developer+       | Payment card data detection, PCI-scoped audit logs — **fully implemented** |
-| SOC 2             | $149/mo    | Developer+       | SOC 2 Type II Trust Service Criteria, 5 automated controls (CC6.1, CC6.2, CC6.3, CC6.6, CC6.7) + 3 manual — **implemented in v3.4.0+ (Path B partial)** |
-| ISO 42001         | $79/mo     | Professional+    | ISO/IEC 42001 AI Management System, 5 automated controls (5.2, 6.1, 7.5, 8.2, 9.1) + 3 manual — **implemented in v3.4.0+ (Path B partial)** |
-| FIPS 140-2/140-3  | $299/mo    | Professional+    | FIPS 140 cryptographic module compliance, 8 automated controls (mode enabled, approved ciphers, TLS 1.2+, approved hashes, key sizes, self-test, audit logging) + 2 manual (CMVP, HSM) — **implemented in v3.4.0+ (Path B partial). Note: AegisGate is FIPS-compliant (uses FIPS-approved algorithms) but the Go runtime is not CMVP-validated; federal agencies need a CMVP-validated execution environment.** |
-| FedRAMP           | $499/mo    | Professional+    | FedRAMP Moderate baseline, 6 of 8 highest-priority controls automated (AC-2, AC-17, AU-2, AU-9, IA-2, SC-8) + 2 evidence-mapped (CM-2, SI-4) — **implemented in v3.4.0+ (8 highest-priority controls for AI/ML systems; the full ~323 Moderate catalog would be 4-6 weeks of work and is out of scope for v3.4.0+. AegisGate generates the technical evidence (audit log, IOC store, trust framework attestations) that a customer uses in their FedRAMP A&A package; the 3PAO assessment and ATO issuance is the customer's responsibility).** |
+| SOC 2             | $149/mo    | Developer+       | SOC 2 Type II Trust Service Criteria, 5 automated controls (CC6.1, CC6.2, CC6.3, CC6.6, CC6.7) + 10 evidence-mapped — **fully implemented** |
+| ISO 42001         | $79/mo     | Professional+    | ISO/IEC 42001 AI Management System, 5 automated controls (5.2, 6.1, 7.5, 8.2, 9.1) + 7 evidence-mapped — **fully implemented** |
+| FIPS 140-2/140-3  | $299/mo    | Professional+    | FIPS 140 cryptographic module compliance, 8 automated controls (mode enabled, approved ciphers, TLS 1.2+, approved hashes, key sizes, self-test, audit logging) + 2 manual (CMVP, HSM) — **fully implemented. Note: AegisGate is FIPS-compliant (uses FIPS-approved algorithms) but the Go runtime is not CMVP-validated; federal agencies need a CMVP-validated execution environment.** |
+| FedRAMP           | $499/mo    | Professional+    | FedRAMP Moderate (NIST 800-53 Rev. 5) — **60 in-scope controls across 11 families (AC, AU, IA, SC, CM, SI, IR, RA, CA, SA, SR). 38 automated (AegisGate scanner checks) + 22 evidence-mapped (AegisGate generates the technical evidence for the customer's A&A package). Full cross-framework traceability: every FedRAMP control maps to SOC 2, ISO 27001, HIPAA, PCI, NIST CSF, CIS, OWASP, and 8 other frameworks.** AegisGate is NOT a FedRAMP-accredited 3PAO; the 3PAO assessment and ATO issuance is the customer's responsibility. |
 | **EU AI Act** 🆕  | **$99/mo** | **Professional+** | **Required for high-risk AI systems in EU; 82 controls across 8 categories — 9 automated, 73 manual. See [docs/compliance/eu-ai-act.md](../docs/compliance/eu-ai-act.md) and [plans/EU-AI-ACT-COVERAGE-AUDIT-2026-07-21.md](../plans/EU-AI-ACT-COVERAGE-AUDIT-2026-07-21.md) for the manual controls analysis.** |
 
 ### 🆕 EU AI Act Compliance Module (v3.3.0)
@@ -106,15 +106,14 @@ provisions apply from August 2026, high-risk system classifications
   (per founder mandate — never paywalled).
 - **Module** + **tier** in your subscription: scanned reports include
   all enabled frameworks. A Pro + EU AI Act customer sees HIPAA, PCI,
-  EU AI Act, MITRE ATLAS, NIST AI RMF, OWASP in every scan. **SOC 2
-  and ISO 42001 modules are implemented in v3.4.0+ with 5 automated
-  controls each (8 total controls per framework: 5 automated + 3
-  manual review items). FedRAMP and FIPS 140 modules are Q4 2026 (Path
-  B remaining) — they register in your license but currently return 0
-  automated control findings.** If your compliance auditor asks for
-  SOC 2 or ISO 42001 evidence in 2026, the platform generates the
-  evidence package from the automated controls + the Trust Framework's
-  signed attestations.
+  EU AI Act, MITRE ATLAS, NIST AI RMF, OWASP in every scan. SOC 2
+  has 5 automated + 10 evidence-mapped controls. ISO 42001 has 5
+  automated + 7 evidence-mapped. FedRAMP has 60 in-scope controls
+  (38 automated + 22 evidence-mapped) across 11 NIST 800-53 families
+  with full cross-framework traceability to 15 frameworks. FIPS 140
+  has 8 automated + 2 manual. If your compliance auditor asks for
+  evidence, the platform generates the package from automated controls
+  + the Trust Framework's signed attestations.
 - **Trust Framework** (Professional+ tier, included): per-agent
   cryptographic identity (ECDSA P-256), capability contracts with
   fail-closed enforcement, real-time trust scoring, and signed
@@ -129,23 +128,17 @@ provisions apply from August 2026, high-risk system classifications
   [1-pager](../docs/federated-ioc-library-1pager.md) for the value
   proposition and the 4 design principles (hash-based, opt-in/opt-out
   serverless, self-verifying, privacy-first).
-- **FedRAMP** (Professional+ tier, $499/mo add-on): 8 of the highest-
-  priority FedRAMP Moderate controls (AC-2 Account Management, AC-17
-  Remote Access, AU-2 Audit Events, AU-9 Audit Information Protection,
-  CM-2 Baseline Configuration, IA-2 Identification/Authentication,
-  SC-8 Transmission Protection, SI-4 System Monitoring). 6 are
-  automated (AegisGate scanner checks), 2 are evidence-mapped
-  (AegisGate generates the audit log / IOC / configuration evidence
-  the customer attaches to their FedRAMP A&A package). See
-  `pkg/compliance/fedramp/` for the implementation. **Important**:
-  AegisGate is NOT a FedRAMP-accredited 3PAO. The platform generates
-  the technical evidence; the 3PAO assessment and ATO (Authority to
-  Operate) issuance is the customer's responsibility, just as the
-  HIPAA audit and Notified Body certification are the customer's
-  responsibility for HIPAA and EU AI Act respectively. The 8 controls
-  in v3.4.0+ are the highest-priority subset for AI/ML systems; the
-  full ~323-control FedRAMP Moderate catalog would be 4-6 weeks of
-  additional work and is out of scope for v3.4.0+.
+- **FedRAMP** (Professional+ tier, $499/mo add-on): 60 in-scope
+  FedRAMP Moderate controls (NIST 800-53 Rev. 5) across 11 families
+  (AC, AU, IA, SC, CM, SI, IR, RA, CA, SA, SR). 38 are automated
+  (AegisGate scanner checks), 22 are evidence-mapped (AegisGate
+  generates the technical evidence for the customer's A&A package).
+  Every control maps to SOC 2, ISO 27001, HIPAA, PCI, NIST CSF, CIS,
+  OWASP, and 8 other frameworks via the cross-framework traceability
+  engine. See `pkg/compliance/fedramp/` for the implementation.
+  **Important**: AegisGate is NOT a FedRAMP-accredited 3PAO. The
+  platform generates the technical evidence; the 3PAO assessment
+  and ATO issuance is the customer's responsibility.
 - **FIPS 140-2/140-3** (Professional+ tier, $299/mo add-on): cryptographic
   module compliance. 8 of 10 controls are automated (FIPS mode enabled,
   approved ciphers, TLS 1.2+, approved hashes, key sizes, self-test,

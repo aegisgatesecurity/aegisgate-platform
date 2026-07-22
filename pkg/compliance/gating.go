@@ -62,14 +62,14 @@ var moduleRequirements = map[string]ModuleRequirement{
 		DisplayName:       "SOC 2",
 		RequiredTier:      tierpkg.TierDeveloper,
 		MinPriceCents:     14900, // $149/mo
-		HasImplementation: true,  // pkg/compliance/soc2/ implemented in v3.4.0+ (Path B partial)
+		HasImplementation: true, // pkg/compliance/soc2/ implemented (5 automated + 10 evidence-mapped)
 	},
 	license.ModuleISO42001: {
 		Module:            license.ModuleISO42001,
 		DisplayName:       "ISO 42001",
 		RequiredTier:      tierpkg.TierProfessional,
 		MinPriceCents:     7900, // $79/mo
-		HasImplementation: true, // pkg/compliance/iso42001/ implemented in v3.4.0+ (Path B partial)
+		HasImplementation: true, // pkg/compliance/iso42001/ implemented (5 automated + 7 evidence-mapped)
 	},
 	license.ModuleFedRAMP: {
 		Module:            license.ModuleFedRAMP,
@@ -83,7 +83,7 @@ var moduleRequirements = map[string]ModuleRequirement{
 		DisplayName:       "FIPS 140-2/140-3",
 		RequiredTier:      tierpkg.TierProfessional,
 		MinPriceCents:     29900, // $299/mo
-		HasImplementation: true,  // pkg/compliance/fips/ implemented in v3.4.0+ (Path B partial)
+		HasImplementation: true,  // pkg/compliance/fips/ implemented (8 automated + 2 manual)
 	},
 	// v3.3.0 Phase 1: EU AI Act (Regulation 2024/1689). 7th compliance framework.
 	license.ModuleEUAIAct: {
