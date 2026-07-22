@@ -437,7 +437,7 @@ func calculateRiskScore(severity string) float32 {
 }
 
 func AvailableMappings() []string {
-	return []string{"NIST AI RMF <-> MITRE ATLAS", "OWASP AI Top 10 <-> MITRE ATLAS"}
+	return []string{"NIST AI RMF <-> MITRE ATLAS", "OWASP AI Top 10 <-> MITRE ATLAS", "FedRAMP <-> MITRE ATLAS"}
 }
 
 func GetMapping(name string) *FrameworkMapping {
@@ -446,6 +446,8 @@ func GetMapping(name string) *FrameworkMapping {
 		return NewFrameworkMapping()
 	case "OWASP AI Top 10 <-> MITRE ATLAS":
 		return NewOWASPMapping()
+	case "FedRAMP <-> MITRE ATLAS":
+		return NewFedRAMPMapping()
 	default:
 		return nil
 	}
@@ -544,6 +546,202 @@ func (m *FrameworkMapping) AddOWASPMapping(controlID string, techniques []string
 }
 
 // NewNIST1500Mapping creates a new NIST 1500 <-> Multi-Framework mapping
+// NewFedRAMPMapping creates a bidirectional mapping between FedRAMP Moderate
+// (NIST 800-53 Rev. 5) controls and MITRE ATLAS adversarial AI techniques.
+// This is the technique-level traceability web that complements the
+// control-level mapping in pkg/compliance/mapping/mapping.go.
+//
+// When a FedRAMP AC-2 alarm fires, the operator sees not just the SOC 2
+// and ISO 27001 equivalents (from mapping.go), but also which adversarial
+// AI techniques this control detects or mitigates (from this mapping).
+func NewFedRAMPMapping() *FrameworkMapping {
+	mapping := &FrameworkMapping{
+		Name:               "FedRAMP Moderate <-> MITRE ATLAS Mapping",
+		Description:        "Bidirectional mapping between FedRAMP Moderate (NIST 800-53 Rev. 5) controls and MITRE ATLAS adversarial AI techniques",
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+		ControlToTechnique: make(map[string][]string),
+		TechniqueToControl: make(map[string][]string),
+		Mappings:           []MappingRelationship{},
+	}
+	mapping.buildFedRAMPMappings()
+	return mapping
+}
+
+// buildFedRAMPMappings maps each FedRAMP control family to its relevant
+// ATLAS techniques, OWASP LLM controls, and NIST AI RMF categories.
+func (m *FrameworkMapping) buildFedRAMPMappings() {
+	// === AC: Access Control ===
+	m.AddFedRAMPMapping("FedRAMP-AC-2", "Account Management",
+		[]string{"T1535", "T1556", "T1110"}, "mitigates", 0.9,
+		"RBAC with MFA prevents unauthorized account access, credential theft, and brute force")
+	m.AddFedRAMPMapping("FedRAMP-AC-3", "Access Enforcement",
+		[]string{"T1548", "T1078"}, "mitigates", 0.9,
+		"Access enforcement prevents privilege escalation and abuse of elevation")
+	m.AddFedRAMPMapping("FedRAMP-AC-6", "Least Privilege",
+		[]string{"T1548", "T1078", "T1621"}, "mitigates", 0.85,
+		"Least privilege limits lateral movement and privilege escalation")
+	m.AddFedRAMPMapping("FedRAMP-AC-17", "Remote Access",
+		[]string{"T1078", "T1133", "T1090"}, "mitigates", 0.85,
+		"Remote access controls prevent unauthorized remote sessions and C2 channels")
+	m.AddFedRAMPMapping("FedRAMP-AC-24", "Access Control Policy Support",
+		[]string{"T1078", "T1548"}, "supports", 0.75,
+		"Policy-driven access control supports detection of policy violations")
+
+	// === AU: Audit and Accountability ===
+	m.AddFedRAMPMapping("FedRAMP-AU-2", "Audit Events",
+		[]string{"T1070", "T1070.002", "T1562"}, "mitigates", 0.95,
+		"Comprehensive audit logging detects log tampering, deletion, and defense impairment")
+	m.AddFedRAMPMapping("FedRAMP-AU-3", "Content of Audit Records",
+		[]string{"T1070", "T1070.004"}, "mitigates", 0.9,
+		"Rich audit records enable forensic analysis of indicator removal")
+	m.AddFedRAMPMapping("FedRAMP-AU-6", "Audit Review and Analysis",
+		[]string{"T1070", "T1562.001"}, "detects", 0.85,
+		"Audit review detects anomalous patterns indicating compromise")
+	m.AddFedRAMPMapping("FedRAMP-AU-9", "Protection of Audit Information",
+		[]string{"T1070", "T1070.002"}, "mitigates", 0.95,
+		"Tamper-evident audit logging prevents post-hoc log modification")
+	m.AddFedRAMPMapping("FedRAMP-AU-10", "Audit Record Retention",
+		[]string{"T1070.002", "T1562"}, "mitigates", 0.85,
+		"Long-term retention enables historical forensic analysis")
+	m.AddFedRAMPMapping("FedRAMP-AU-12", "Audit Generation",
+		[]string{"T1070", "T1562"}, "mitigates", 0.9,
+		"Automated audit generation ensures no gaps in security event records")
+	m.AddFedRAMPMapping("FedRAMP-AU-16", "Cross-Organization Audit Logging",
+		[]string{"T1070", "T1590"}, "mitigates", 0.85,
+		"Cross-org audit logging enables detection of distributed attack patterns")
+
+	// === IA: Identification and Authentication ===
+	m.AddFedRAMPMapping("FedRAMP-IA-2", "Identification and Authentication",
+		[]string{"T1078", "T1110", "T1535"}, "mitigates", 0.95,
+		"MFA and strong authentication prevents credential reuse, brute force, and unsecured credentials")
+	m.AddFedRAMPMapping("FedRAMP-IA-5", "Authenticator Management",
+		[]string{"T1535", "T1552", "T1078"}, "mitigates", 0.9,
+		"Authenticator lifecycle management prevents credential leakage and token theft")
+	m.AddFedRAMPMapping("FedRAMP-IA-7", "Cryptographic Module Authentication",
+		[]string{"T1557", "T1573"}, "mitigates", 0.85,
+		"FIPS-validated crypto modules prevent AiTM and encryption downgrade attacks")
+
+	// === SC: System and Communications Protection ===
+	m.AddFedRAMPMapping("FedRAMP-SC-8", "Transmission Confidentiality and Integrity",
+		[]string{"T1557", "T1573", "T1041"}, "mitigates", 0.95,
+		"TLS 1.2+ with FIPS ciphers prevents AiTM interception and data exfiltration")
+	m.AddFedRAMPMapping("FedRAMP-SC-7", "Boundary Protection",
+		[]string{"T1136", "T1190", "T1090"}, "mitigates", 0.85,
+		"Network boundary protection limits C2 channels and external exploitation")
+	m.AddFedRAMPMapping("FedRAMP-SC-12", "Cryptographic Key Management",
+		[]string{"T1552", "T1573"}, "mitigates", 0.85,
+		"Key management prevents credential extraction and crypto downgrade")
+	m.AddFedRAMPMapping("FedRAMP-SC-28", "Protection of Information at Rest",
+		[]string{"T1486", "T1552"}, "mitigates", 0.9,
+		"Encryption at rest prevents data exfiltration and credential harvesting from storage")
+
+	// === CM: Configuration Management ===
+	m.AddFedRAMPMapping("FedRAMP-CM-2", "Baseline Configuration",
+		[]string{"T1529", "T1070.004"}, "mitigates", 0.85,
+		"Baseline configs detect unauthorized system changes and config drift")
+	m.AddFedRAMPMapping("FedRAMP-CM-6", "Configuration Settings",
+		[]string{"T1070.004", "T1529"}, "mitigates", 0.85,
+		"Hardened configuration settings reduce attack surface")
+
+	// === SI: System and Information Integrity ===
+	m.AddFedRAMPMapping("FedRAMP-SI-2", "Flaw Remediation",
+		[]string{"T1190", "T1648", "T1611"}, "mitigates", 0.9,
+		"Timely patching prevents exploitation of known vulnerabilities")
+	m.AddFedRAMPMapping("FedRAMP-SI-3", "Malicious Code Protection",
+		[]string{"T1059", "T1566", "T1648"}, "mitigates", 0.85,
+		"Anti-malware detects command interpreters, phishing payloads, and serverless exploits")
+	m.AddFedRAMPMapping("FedRAMP-SI-4", "System Monitoring",
+		[]string{"T1562", "T1070", "T1590", "T1595"}, "detects", 0.9,
+		"Continuous monitoring detects defense evasion, log tampering, and reconnaissance")
+	m.AddFedRAMPMapping("FedRAMP-SI-7", "Software and Information Integrity",
+		[]string{"T1190", "T1552"}, "mitigates", 0.85,
+		"Integrity monitoring detects unauthorized software changes and credential files")
+
+	// === IR: Incident Response ===
+	m.AddFedRAMPMapping("FedRAMP-IR-4", "Incident Handling",
+		[]string{"T1070", "T1562.001"}, "detects", 0.85,
+		"Automated incident response detects and responds to security events")
+	m.AddFedRAMPMapping("FedRAMP-IR-6", "Incident Reporting",
+		[]string{"T1070", "T1562"}, "supports", 0.8,
+		"Structured incident reporting supports regulatory notification requirements")
+
+	// === RA: Risk Assessment ===
+	m.AddFedRAMPMapping("FedRAMP-RA-5", "Vulnerability Monitoring and Scanning",
+		[]string{"T1190", "T1595", "T1648"}, "detects", 0.9,
+		"Continuous vulnerability scanning detects exploitable attack surface")
+	m.AddFedRAMPMapping("FedRAMP-RA-3", "Risk Assessment",
+		[]string{"T1590", "T1592"}, "supports", 0.8,
+		"Risk assessment identifies reconnaissance threats to cloud-hosted AI systems")
+
+	// === CA: Security Assessment ===
+	m.AddFedRAMPMapping("FedRAMP-CA-7", "Continuous Monitoring",
+		[]string{"T1595", "T1562", "T1070"}, "detects", 0.85,
+		"Continuous monitoring detects active scanning, defense impairment, and log tampering")
+	m.AddFedRAMPMapping("FedRAMP-CA-8", "Penetration Testing",
+		[]string{"T1595.001", "T1190"}, "detects", 0.85,
+		"Regular penetration testing validates defense against active scanning and public-facing exploits")
+
+	// === SA: System and Services Acquisition ===
+	m.AddFedRAMPMapping("FedRAMP-SA-22", "Unsupported System Components",
+		[]string{"T1190", "T1648", "T1611"}, "mitigates", 0.85,
+		"Removing unsupported components eliminates known-vulnerable attack surface")
+	m.AddFedRAMPMapping("FedRAMP-SA-11", "Developer Security Testing",
+		[]string{"T1190", "T1059", "T1648"}, "mitigates", 0.85,
+		"Developer security testing catches vulnerabilities before deployment")
+
+	// === SR: Supply Chain Risk Management ===
+	m.AddFedRAMPMapping("FedRAMP-SR-3", "Supply Chain Controls and Processes",
+		[]string{"T0043", "T0044", "T1590"}, "mitigates", 0.8,
+		"Supply chain controls prevent compromised AI model provenance and data")
+	m.AddFedRAMPMapping("FedRAMP-SR-4", "Provenance",
+		[]string{"T0043", "T1590"}, "mitigates", 0.85,
+		"Software provenance tracking prevents supply chain compromise")
+	m.AddFedRAMPMapping("FedRAMP-SR-12", "Supply Chain Software and Firmware Integrity Verification",
+		[]string{"T0043", "T1552"}, "mitigates", 0.85,
+		"Integrity verification prevents compromised supply chain components")
+}
+
+// AddFedRAMPMapping adds a FedRAMP control mapping to the framework mapping.
+func (m *FrameworkMapping) AddFedRAMPMapping(controlID, title string, techniques []string, relationship string, confidence float32, description string) {
+	mapping := MappingRelationship{
+		SourceControl:   controlID,
+		SourceFramework: "FedRAMP Moderate",
+		TargetControls:  techniques,
+		TargetFramework: "MITRE ATLAS",
+		Relationship:    relationship,
+		Confidence:      confidence,
+		Description:     description,
+	}
+	m.Mappings = append(m.Mappings, mapping)
+	m.ControlToTechnique[controlID] = techniques
+	for _, technique := range techniques {
+		m.TechniqueToControl[technique] = append(m.TechniqueToControl[technique], controlID)
+	}
+}
+
+// GetFedRAMPMappingsForControl returns all ATLAS technique mappings for a FedRAMP control.
+func GetFedRAMPMappingsForControl(controlID string) []MappingRelationship {
+	mapping := NewFedRAMPMapping()
+	var results []MappingRelationship
+	for _, m := range mapping.Mappings {
+		if m.SourceControl == controlID {
+			results = append(results, m)
+		}
+	}
+	return results
+}
+
+// GetFedRAMPControlsForTechnique returns all FedRAMP controls that address an ATLAS technique.
+func GetFedRAMPControlsForTechnique(techniqueID string) []string {
+	mapping := NewFedRAMPMapping()
+	controls, ok := mapping.TechniqueToControl[techniqueID]
+	if !ok {
+		return nil
+	}
+	return controls
+}
+
 func NewNIST1500Mapping() *FrameworkMapping {
 	mapping := &FrameworkMapping{
 		Name:               "NIST 1500 <-> Multi-Framework Mapping",
