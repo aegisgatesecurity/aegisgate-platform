@@ -1495,6 +1495,13 @@ func main() {
 	wireAuditSearchHandlers(dashMux, authMiddleware, auditRing, licenseMgr)
 	log.Printf("[AUDIT] Audit Log Search HTTP API enabled at /api/v1/audit/{search,events/:id,users/:user/timeline,stats} (+ /audit/ alias)")
 
+	// Trust Portal HTTP endpoints (v3.x close-out, Work Item 12).
+	// Customer-facing, public, no-auth trust page at /trust
+	// showing live compliance posture. The page is served by
+	// the platform itself; the JSON endpoints are cached for
+	// 60s (see plans/TRUST-PORTAL-DESIGN.md).
+	wireTrustPortalHandlers(dashMux)
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
