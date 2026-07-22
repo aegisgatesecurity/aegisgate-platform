@@ -26,6 +26,9 @@
 // Query API:
 //   - MapByControlID(aegisgateID)   -> external framework control IDs
 //   - MapByFramework(framework, extID) -> AegisGate control IDs
+//   - CrossReference(framework, controlID) -> equivalent controls in ALL frameworks
+//   - CrossReferenceAll() -> full N×N traceability matrix
+//   - GetRelatedControls(framework, controlID) -> all AegisGate + framework controls
 //   - GenerateReport(framework, config) -> the framework-specific report
 //
 // The GRC user flow is:
@@ -588,4 +591,132 @@ func (c CoverageReport) FormatReport() string {
 		fmt.Fprintf(&b, "- **%s** (%s): %d framework controls\n", p.ID, ctrl.Name, p.Count)
 	}
 	return b.String()
+}
+
+// =========================================================================
+// Cross-Framework Traceability API
+// =========================================================================
+//
+// The functions below provide the "full web of traceability" — when a
+// FedRAMP control fires, the operator instantly sees every equivalent
+// control across all 15 frameworks. This is the detection-to-compliance
+// fan-out: one alarm → all relevant frameworks.
+//
+// CrossReference("fedramp", "FedRAMP-AC-2") returns:
+//   SOC 2 CC6.1, ISO 27001 A.9.2.1, HIPAA §164.312(a), PCI 7.1,
+//   NIST CSF PR.AC-4, CIS 5, OWASP Web A01, etc.
+//
+// The hub-and-spoke model makes this O(Frameworks × Controls) instead
+// of O(N²) manual pairwise mappings.
+
+// CrossReferenceResult is a single equivalent control in another framework.
+type CrossReferenceResult struct {
+	SourceFramework  string // e.g., "fedramp"
+	SourceControlID  string // e.g., "FedRAMP-AC-2"
+	SourceTitle      string // e.g., "Account Management"
+	AegisGateControl string // e.g., "AG-AUTH-RBAC-MFA"
+	TargetFramework  string // e.g., "soc2"
+	TargetControlID  string // e.g., "CC6.1"
+	TargetTitle      string // e.g., "Logical and Physical Access Controls"
+}
+
+// CrossReference finds all equivalent controls across ALL frameworks for
+// a given framework control. When FedRAMP AC-2 fires, this returns every
+// SOC 2, ISO 27001, HIPAA, PCI, NIST CSF, CIS, OWASP, etc. control that
+// addresses the same underlying security concern.
+func CrossReference(framework, controlID string) []CrossReferenceResult {
+	// Step 1: Find which AegisGate controls map to this framework control.
+	agControls := MapByFramework(framework, controlID)
+	if len(agControls) == 0 {
+		return nil
+	}
+	var results []CrossReferenceResult
+	for _, agID := range agControls {
+		// Step 2: For each AegisGate control, get ALL external controls.
+		ctrl, exists := Mapping[agID]
+		if !exists {
+			continue
+		}
+		// Find the source control's title
+		sourceTitle := ""
+		for _, ext := range ctrl.ExternalControls {
+			if ext.Framework == framework && ext.ControlID == controlID {
+				sourceTitle = ext.Title
+				break
+			}
+		}
+		// Step 3: Fan out to all other frameworks
+		for _, ext := range ctrl.ExternalControls {
+			// Skip same-framework controls (we already know about those)
+			if ext.Framework == framework {
+				continue
+			}
+			results = append(results, CrossReferenceResult{
+				SourceFramework:  framework,
+				SourceControlID:  controlID,
+				SourceTitle:      sourceTitle,
+				AegisGateControl: agID,
+				TargetFramework:  ext.Framework,
+				TargetControlID:  ext.ControlID,
+				TargetTitle:      ext.Title,
+			})
+		}
+	}
+	return results
+}
+
+// FullTraceabilityMatrix returns the complete N×N cross-reference:
+// every framework control mapped to every equivalent control in every
+// other framework. This is the "full web" — the definitive
+// traceability graph for GRC evidence packages.
+//
+// The result is keyed by "framework:controlID" → []CrossReferenceResult.
+func FullTraceabilityMatrix() map[string][]CrossReferenceResult {
+	matrix := make(map[string][]CrossReferenceResult)
+	for fw := range FrameworkName {
+		for _, ctrl := range Mapping {
+			for _, ext := range ctrl.ExternalControls {
+				if ext.Framework != fw {
+					continue
+				}
+				key := fw + ":" + ext.ControlID
+				refs := CrossReference(fw, ext.ControlID)
+				if len(refs) > 0 {
+					matrix[key] = refs
+				}
+			}
+		}
+	}
+	return matrix
+}
+
+// RelatedControlGroup bundles an AegisGate control with all its
+// framework equivalents — the full picture for a detection event.
+type RelatedControlGroup struct {
+	AegisGateControl  string
+	AegisGateName     string
+	FrameworkControls []ExternalControlRef
+}
+
+// GetRelatedControls returns the full control group for a given framework
+// control: the AegisGate internal control + all equivalent framework
+// controls. This is what surfaces when a detection alarm fires.
+func GetRelatedControls(framework, controlID string) []RelatedControlGroup {
+	agControls := MapByFramework(framework, controlID)
+	if len(agControls) == 0 {
+		return nil
+	}
+	var groups []RelatedControlGroup
+	for _, agID := range agControls {
+		ctrl, exists := Mapping[agID]
+		if !exists {
+			continue
+		}
+		groups = append(groups, RelatedControlGroup{
+			AegisGateControl:  agID,
+			AegisGateName:     ctrl.Name,
+			FrameworkControls: ctrl.ExternalControls,
+		})
+	}
+	return groups
 }
