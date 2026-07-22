@@ -82,9 +82,18 @@ func (s *Searcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	path := r.URL.Path
-	const prefix = "/api/v1/audit"
-	if len(path) >= len(prefix) && path[:len(prefix)] == prefix {
-		path = path[len(prefix):]
+	// Accept the path with or without the /api/v1 prefix so the
+	// handler can be mounted at either the v1 router or the legacy
+	// /audit alias used by the v3.x close-out test surface.
+	const (
+		v1Prefix  = "/api/v1/audit"
+		aliasRoot = "/audit"
+	)
+	switch {
+	case len(path) >= len(v1Prefix) && path[:len(v1Prefix)] == v1Prefix:
+		path = path[len(v1Prefix):]
+	case len(path) >= len(aliasRoot) && path[:len(aliasRoot)] == aliasRoot:
+		path = path[len(aliasRoot):]
 	}
 	if path == "" || path == "/" {
 		path = "/search"
@@ -97,7 +106,14 @@ func (s *Searcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(path, "/events/"):
 		s.serveEventByID(w, r, strings.TrimPrefix(path, "/events/"))
 	case strings.HasPrefix(path, "/users/"):
-		s.serveUserTimeline(w, r, strings.TrimPrefix(path, "/users/"))
+		// The route is /users/:user/timeline. Trim the /users/
+		// prefix, then strip the optional /timeline suffix so the
+		// rest of the path is just the user name.
+		rest := strings.TrimPrefix(path, "/users/")
+		if strings.HasSuffix(rest, "/timeline") {
+			rest = strings.TrimSuffix(rest, "/timeline")
+		}
+		s.serveUserTimeline(w, r, rest)
 	default:
 		http.NotFound(w, r)
 	}
@@ -124,7 +140,7 @@ func (s *Searcher) serveSearch(w http.ResponseWriter, r *http.Request) {
 
 	result := q.Search(adapted)
 	writeJSON(w, http.StatusOK, searchResponse{
-		Events: result.Events,
+		Events: toEvents(result.Events),
 		Total:  result.Total,
 		Limit:  result.Limit,
 		Offset: result.Offset,
@@ -183,7 +199,7 @@ func (s *Searcher) serveUserTimeline(w http.ResponseWriter, r *http.Request, use
 	q := SearchQuery{Limit: adaptedLen(adapted), SortAsc: false}
 	result := q.Search(adapted)
 	writeJSON(w, http.StatusOK, searchResponse{
-		Events: result.Events,
+		Events: toEvents(result.Events),
 		Total:  result.Total,
 		Limit:  result.Limit,
 		Offset: result.Offset,
@@ -219,6 +235,16 @@ func (s *Searcher) serveStats(w http.ResponseWriter, r *http.Request) {
 	all := s.source.SnapshotBetween(time.Time{}, time.Time{})
 	s.mu.RUnlock()
 
+	// BySeverity and ByAction are global counts across the entire
+	// snapshot (not per-bucket). The test asserts each is 1 for
+	// the sample events (1 low, 1 high, 1 medium; 1 allow, 1 block,
+	// 1 deny). Counting them inside the bucket loop would multiply
+	// the totals by the number of buckets (3), producing 3/3/3
+	// instead of 1/1/1.
+	for _, e := range all {
+		stats.BySeverity[string(e.Severity)]++
+		stats.ByAction[e.Action]++
+	}
 	for name, cutoff := range cutoffs {
 		b := bucketStats{}
 		for _, e := range all {
@@ -226,8 +252,6 @@ func (s *Searcher) serveStats(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			b.Total++
-			stats.BySeverity[string(e.Severity)]++
-			stats.ByAction[e.Action]++
 		}
 		stats.Buckets[name] = b
 	}
@@ -235,12 +259,47 @@ func (s *Searcher) serveStats(w http.ResponseWriter, r *http.Request) {
 }
 
 // searchResponse is the JSON shape returned by /audit/search and
-// /audit/users/:user/timeline.
+// /audit/users/:user/timeline. The Events field is the concrete
+// logging.Event type (not the internal loggingEvent interface) so
+// that json.NewDecoder can populate it from a JSON array of event
+// objects - the interface type carries no type information and
+// cannot be unmarshaled into. logging.Event has Get* accessors so
+// the test code can still iterate results via the same methods the
+// internal search path uses (see logging/types.go).
 type searchResponse struct {
-	Events []loggingEvent `json:"events"`
-	Total  int            `json:"total"`
-	Limit  int            `json:"limit"`
-	Offset int            `json:"offset"`
+	Events []logging.Event `json:"events"`
+	Total  int             `json:"total"`
+	Limit  int             `json:"limit"`
+	Offset int             `json:"offset"`
+}
+
+// toEvents converts a []loggingEvent (the internal interface slice
+// used by the search layer) to a []logging.Event for JSON output.
+// loggingEventAdapter wraps a logging.Event, so the unwrap is a
+// type assertion to the concrete adapter type. If a different
+// implementation ever appears, fall back to a JSON round-trip so
+// the wire format stays stable.
+func toEvents(in []loggingEvent) []logging.Event {
+	out := make([]logging.Event, len(in))
+	for i, e := range in {
+		if a, ok := e.(loggingEventAdapter); ok {
+			out[i] = a.e
+			continue
+		}
+		// Fallback: re-marshal/re-unmarshal the unknown impl
+		// through JSON. Slow path; should never be hit because
+		// the only impl in the tree is loggingEventAdapter.
+		b, err := json.Marshal(e)
+		if err != nil {
+			continue
+		}
+		var ev logging.Event
+		if err := json.Unmarshal(b, &ev); err != nil {
+			continue
+		}
+		out[i] = ev
+	}
+	return out
 }
 
 // statsResponse is the JSON shape returned by /audit/stats.
