@@ -110,9 +110,7 @@ func (s *Searcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// prefix, then strip the optional /timeline suffix so the
 		// rest of the path is just the user name.
 		rest := strings.TrimPrefix(path, "/users/")
-		if strings.HasSuffix(rest, "/timeline") {
-			rest = strings.TrimSuffix(rest, "/timeline")
-		}
+		rest = strings.TrimSuffix(rest, "/timeline")
 		s.serveUserTimeline(w, r, rest)
 	default:
 		http.NotFound(w, r)

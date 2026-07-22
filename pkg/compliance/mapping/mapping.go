@@ -381,8 +381,8 @@ func GenerateCoverageReport() CoverageReport {
 func (c CoverageReport) FormatReport() string {
 	var b strings.Builder
 	b.WriteString("# AegisGate Cross-Framework Coverage Report\n\n")
-	b.WriteString(fmt.Sprintf("**%d AegisGate controls** mapping to **%d external framework controls** across **%d frameworks**\n\n",
-		c.TotalAegisGateControls, c.TotalFrameworkMappings, len(c.FrameworksCovered)))
+	fmt.Fprintf(&b, "**%d AegisGate controls** mapping to **%d external framework controls** across **%d frameworks**\n\n",
+		c.TotalAegisGateControls, c.TotalFrameworkMappings, len(c.FrameworksCovered))
 	b.WriteString("## Framework Coverage\n\n")
 	// Sort frameworks by display name for deterministic output (so the
 	// test can reliably check for specific framework names).
@@ -394,7 +394,7 @@ func (c CoverageReport) FormatReport() string {
 	for _, fw := range sortedFrameworks {
 		count := c.FrameworkControlCount[fw]
 		name := FrameworkName[fw]
-		b.WriteString(fmt.Sprintf("- **%s** (%s): %d controls covered\n", name, fw, count))
+		fmt.Fprintf(&b, "- **%s** (%s): %d controls covered\n", name, fw, count)
 	}
 	b.WriteString("\n## AegisGate Control Coverage (top 10 by framework breadth)\n\n")
 	type kv struct {
@@ -419,7 +419,7 @@ func (c CoverageReport) FormatReport() string {
 			break
 		}
 		ctrl := Mapping[p.ID]
-		b.WriteString(fmt.Sprintf("- **%s** (%s): %d framework controls\n", p.ID, ctrl.Name, p.Count))
+		fmt.Fprintf(&b, "- **%s** (%s): %d framework controls\n", p.ID, ctrl.Name, p.Count)
 	}
 	return b.String()
 }
