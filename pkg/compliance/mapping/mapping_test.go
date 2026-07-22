@@ -173,3 +173,55 @@ func TestCoverageReport_FrameworkCount(t *testing.T) {
 		}
 	}
 }
+
+// TestMapping_AllFrameworkKeysAreRegistered is a regression test for a
+// bug uncovered by the v3.x close-out cross-framework matrix audit
+// (2026-07-22). Three ISO 42001 control references in the AG-TRUST
+// control used the typo key "iso42001" (no underscore) instead of the
+// canonical "iso_42001" registered in FrameworkName. The result: 3
+// framework mappings were silently dropped from every compliance
+// report, the ISO 42001 coverage was underreported by 3, and an
+// orphan framework with no human-readable name appeared in the
+// coverage header.
+//
+// This test fails if any AegisGate control references a framework
+// key that is not in FrameworkName. It catches the same class of
+// typo in the future (e.g., a new AegisGate control that references
+// "owaspllm" instead of "owasp_llm").
+func TestMapping_AllFrameworkKeysAreRegistered(t *testing.T) {
+	knownFrameworks := make(map[string]bool, len(FrameworkName))
+	for fw := range FrameworkName {
+		knownFrameworks[fw] = true
+	}
+	for agID, ctrl := range Mapping {
+		for _, ext := range ctrl.ExternalControls {
+			if !knownFrameworks[ext.Framework] {
+				t.Errorf("AegisGate control %s references unregistered framework key %q (control ID %s, title %q). Add it to FrameworkName, or fix the typo.",
+					agID, ext.Framework, ext.ControlID, ext.Title)
+			}
+		}
+	}
+}
+
+// TestMapping_AGTrust_HasFullISO42001Coverage is the targeted
+// regression test for the specific bug: AG-TRUST-AGENT-ATTESTATION
+// should have at least 3 ISO 42001 control references (the 3 that
+// were previously typo'd). This complements the generic
+// TestMapping_AllFrameworkKeysAreRegistered by asserting a specific
+// coverage floor.
+func TestMapping_AGTrust_HasFullISO42001Coverage(t *testing.T) {
+	ext, err := MapByControlID("AG-TRUST-AGENT-ATTESTATION")
+	if err != nil {
+		t.Fatalf("MapByControlID: %v", err)
+	}
+	iso42001Count := 0
+	for _, e := range ext {
+		if e.Framework == "iso_42001" {
+			iso42001Count++
+		}
+	}
+	if iso42001Count < 3 {
+		t.Errorf("AG-TRUST-AGENT-ATTESTATION has %d ISO 42001 mappings, want at least 3 (the fix for the 2026-07-22 typo)",
+			iso42001Count)
+	}
+}

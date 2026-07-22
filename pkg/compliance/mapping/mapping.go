@@ -218,9 +218,9 @@ var Mapping = map[string]AegisGateControl{
 		Description: "Every AI agent has cryptographic identity, signed capability contracts, and signed behavioral attestations",
 		Category:    "Trust Framework",
 		ExternalControls: []ExternalControlRef{
-			{Framework: "iso42001", ControlID: "6.1.2", Title: "AI risk identification and analysis"},
-			{Framework: "iso42001", ControlID: "A.6.2.5", Title: "AI system lifecycle requirements"},
-			{Framework: "iso42001", ControlID: "5.2", Title: "AI policy"},
+			{Framework: "iso_42001", ControlID: "6.1.2", Title: "AI risk identification and analysis"},
+			{Framework: "iso_42001", ControlID: "A.6.2.5", Title: "AI system lifecycle requirements"},
+			{Framework: "iso_42001", ControlID: "5.2", Title: "AI policy"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art9-001", Title: "Risk Management System"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-AI-006", Title: "AI Agent Capability Attestation"},
 			{Framework: "nist_ai_rmf", ControlID: "GOVERN 2.2", Title: "Roles, responsibilities, and lines of communication related to AI risks are documented and clear"},
