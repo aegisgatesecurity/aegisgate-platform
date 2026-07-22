@@ -286,7 +286,8 @@ func MapByControlID(aegisgateID string) ([]ExternalControlRef, error) {
 }
 
 // MapByFramework returns all AegisGate control IDs that satisfy the
-// given external framework control.
+// given external framework control. Results are sorted alphabetically
+// for determinism.
 func MapByFramework(framework, extControlID string) []string {
 	results := []string{}
 	for agID, ctrl := range Mapping {
@@ -404,8 +405,14 @@ func (c CoverageReport) FormatReport() string {
 	for id, count := range c.AegisGateCoverage {
 		pairs = append(pairs, kv{id, count})
 	}
+	// Sort by count desc, with ID asc as tie-breaker for full
+	// determinism (Go map iteration is random; without the
+	// tie-breaker, ties produce different outputs on different runs)
 	sort.Slice(pairs, func(i, j int) bool {
-		return pairs[i].Count > pairs[j].Count
+		if pairs[i].Count != pairs[j].Count {
+			return pairs[i].Count > pairs[j].Count
+		}
+		return pairs[i].ID < pairs[j].ID
 	})
 	for i, p := range pairs {
 		if i >= 10 {
