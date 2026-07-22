@@ -15,13 +15,17 @@ func TestMapByControlID(t *testing.T) {
 		wantCount   int
 		wantErr     bool
 	}{
-		{"RBAC+MFA maps to many frameworks", "AG-AUTH-RBAC-MFA", 20, false},
-		{"Audit log maps to many frameworks", "AG-AUDIT-LOG-HASH-CHAIN", 14, false},
-		{"TLS+FIPS maps to many frameworks", "AG-CRYPTO-TLS-FIPS", 16, false},
-		{"Vuln scanning maps to many frameworks", "AG-VULN-CI-SCANNING", 9, false},
-		{"Detection scanner maps to many frameworks", "AG-DETECT-SCANNER", 16, false},
-		{"Trust framework maps to many frameworks", "AG-TRUST-AGENT-ATTESTATION", 8, false},
-		{"Output filter maps to many frameworks", "AG-OUTPUT-PII-SECRET-FILTER", 12, false},
+		{"RBAC+MFA maps to many frameworks", "AG-AUTH-RBAC-MFA", 25, false},
+		{"Audit log maps to many frameworks", "AG-AUDIT-LOG-HASH-CHAIN", 17, false},
+		{"TLS+FIPS maps to many frameworks", "AG-CRYPTO-TLS-FIPS", 20, false},
+		{"Vuln scanning maps to many frameworks", "AG-VULN-CI-SCANNING", 17, false},
+		{"Detection scanner maps to many frameworks", "AG-DETECT-SCANNER", 20, false},
+		{"Trust framework maps to many frameworks", "AG-TRUST-AGENT-ATTESTATION", 15, false},
+		{"Output filter maps to many frameworks", "AG-OUTPUT-PII-SECRET-FILTER", 14, false},
+		{"Config baseline maps to many frameworks", "AG-CM-BASELINE-CONFIG", 10, false},
+		{"Continuous monitoring maps to many frameworks", "AG-CA-CONTINUOUS-MONITORING", 10, false},
+		{"Incident response maps to many frameworks", "AG-IR-INCIDENT-RESPONSE", 10, false},
+		{"Boundary protection maps to many frameworks", "AG-SC-BOUNDARY-PROTECTION", 10, false},
 		{"Unknown control ID", "AG-FAKE-1234", 0, true},
 	}
 
@@ -83,8 +87,8 @@ func TestListFrameworks(t *testing.T) {
 
 func TestListControls(t *testing.T) {
 	controls := ListControls()
-	if len(controls) < 7 {
-		t.Errorf("ListControls() returned %d controls, want at least 7", len(controls))
+	if len(controls) < 11 {
+		t.Errorf("ListControls() returned %d controls, want at least 11", len(controls))
 	}
 }
 
@@ -107,11 +111,11 @@ func TestCoverageMatrix(t *testing.T) {
 
 func TestGenerateCoverageReport(t *testing.T) {
 	report := GenerateCoverageReport()
-	if report.TotalAegisGateControls < 7 {
-		t.Errorf("TotalAegisGateControls = %d, want at least 7", report.TotalAegisGateControls)
+	if report.TotalAegisGateControls < 11 {
+		t.Errorf("TotalAegisGateControls = %d, want at least 11", report.TotalAegisGateControls)
 	}
-	if report.TotalFrameworkMappings < 50 {
-		t.Errorf("TotalFrameworkMappings = %d, want at least 50", report.TotalFrameworkMappings)
+	if report.TotalFrameworkMappings < 100 {
+		t.Errorf("TotalFrameworkMappings = %d, want at least 100", report.TotalFrameworkMappings)
 	}
 	if len(report.FrameworksCovered) < 10 {
 		t.Errorf("FrameworksCovered = %d, want at least 10", len(report.FrameworksCovered))
@@ -223,5 +227,118 @@ func TestMapping_AGTrust_HasFullISO42001Coverage(t *testing.T) {
 	if iso42001Count < 3 {
 		t.Errorf("AG-TRUST-AGENT-ATTESTATION has %d ISO 42001 mappings, want at least 3 (the fix for the 2026-07-22 typo)",
 			iso42001Count)
+	}
+}
+
+// TestMapping_FedRAMPCoverage verifies that all 60 FedRAMP Path C controls
+// are mapped in the cross-framework mapping table. This is the Day 4
+// wiring deliverable: every FedRAMP control in the module must appear
+// in at least one AegisGate control's ExternalControls list.
+func TestMapping_FedRAMPCoverage(t *testing.T) {
+	// All 60 FedRAMP Moderate controls from the Path C implementation
+	// (pkg/compliance/fedramp/)
+	allFedRAMPControls := []string{
+		"FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-6", "FedRAMP-AC-14", "FedRAMP-AC-17", "FedRAMP-AC-24",
+		"FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-6", "FedRAMP-AU-9", "FedRAMP-AU-10", "FedRAMP-AU-12", "FedRAMP-AU-16",
+		"FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-5", "FedRAMP-IA-6", "FedRAMP-IA-7", "FedRAMP-IA-8",
+		"FedRAMP-SC-4", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13", "FedRAMP-SC-23", "FedRAMP-SC-28",
+		"FedRAMP-CM-2", "FedRAMP-CM-3", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-8",
+		"FedRAMP-SI-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-7", "FedRAMP-SI-8", "FedRAMP-SI-10",
+		"FedRAMP-IR-4", "FedRAMP-IR-5", "FedRAMP-IR-6", "FedRAMP-IR-7", "FedRAMP-IR-8",
+		"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11", "FedRAMP-SA-22",
+		"FedRAMP-SR-3", "FedRAMP-SR-4", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12",
+		"FedRAMP-RA-3", "FedRAMP-RA-5", "FedRAMP-RA-6", "FedRAMP-RA-7",
+		"FedRAMP-CA-2", "FedRAMP-CA-7", "FedRAMP-CA-8", "FedRAMP-CA-9",
+	}
+
+	// Build a set of all FedRAMP controls in the mapping table
+	mappedFedRAMP := make(map[string]bool)
+	for _, ctrl := range Mapping {
+		for _, ext := range ctrl.ExternalControls {
+			if ext.Framework == "fedramp" {
+				mappedFedRAMP[ext.ControlID] = true
+			}
+		}
+	}
+
+	// Every control in the module must be in the mapping
+	unmapped := []string{}
+	for _, c := range allFedRAMPControls {
+		if !mappedFedRAMP[c] {
+			unmapped = append(unmapped, c)
+		}
+	}
+	if len(unmapped) > 0 {
+		t.Errorf("The following %d FedRAMP controls are NOT in the cross-framework mapping: %v",
+			len(unmapped), unmapped)
+	}
+
+	// The mapping must cover all 60 controls
+	if len(mappedFedRAMP) < 60 {
+		t.Errorf("Cross-framework mapping has %d FedRAMP controls, want at least 60", len(mappedFedRAMP))
+	}
+}
+
+// TestMapping_FedRAMPEveryControlMappedToAegisGate verifies that each
+// FedRAMP control in the mapping maps back to at least one AegisGate
+// control via the reverse lookup (MapByFramework).
+func TestMapping_FedRAMPEveryControlMappedToAegisGate(t *testing.T) {
+	allFedRAMPControls := []string{
+		"FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-6", "FedRAMP-AC-14", "FedRAMP-AC-17", "FedRAMP-AC-24",
+		"FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-6", "FedRAMP-AU-9", "FedRAMP-AU-10", "FedRAMP-AU-12", "FedRAMP-AU-16",
+		"FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-5", "FedRAMP-IA-6", "FedRAMP-IA-7", "FedRAMP-IA-8",
+		"FedRAMP-SC-4", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13", "FedRAMP-SC-23", "FedRAMP-SC-28",
+		"FedRAMP-CM-2", "FedRAMP-CM-3", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-8",
+		"FedRAMP-SI-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-7", "FedRAMP-SI-8", "FedRAMP-SI-10",
+		"FedRAMP-IR-4", "FedRAMP-IR-5", "FedRAMP-IR-6", "FedRAMP-IR-7", "FedRAMP-IR-8",
+		"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11", "FedRAMP-SA-22",
+		"FedRAMP-SR-3", "FedRAMP-SR-4", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12",
+		"FedRAMP-RA-3", "FedRAMP-RA-5", "FedRAMP-RA-6", "FedRAMP-RA-7",
+		"FedRAMP-CA-2", "FedRAMP-CA-7", "FedRAMP-CA-8", "FedRAMP-CA-9",
+	}
+
+	unmapped := []string{}
+	for _, fedrampID := range allFedRAMPControls {
+		agControls := MapByFramework("fedramp", fedrampID)
+		if len(agControls) == 0 {
+			unmapped = append(unmapped, fedrampID)
+		}
+	}
+	if len(unmapped) > 0 {
+		t.Errorf("The following %d FedRAMP controls have NO AegisGate reverse mapping: %v",
+			len(unmapped), unmapped)
+	}
+}
+
+// TestMapping_NewAegisGateControlsExist verifies the 4 new AegisGate
+// controls added for the Path C FedRAMP mapping are present.
+func TestMapping_NewAegisGateControlsExist(t *testing.T) {
+	newControls := []string{
+		"AG-CM-BASELINE-CONFIG",
+		"AG-CA-CONTINUOUS-MONITORING",
+		"AG-IR-INCIDENT-RESPONSE",
+		"AG-SC-BOUNDARY-PROTECTION",
+	}
+	for _, id := range newControls {
+		ctrl, exists := Mapping[id]
+		if !exists {
+			t.Errorf("AegisGate control %s not found in Mapping", id)
+			continue
+		}
+		if len(ctrl.ExternalControls) < 5 {
+			t.Errorf("AegisGate control %s has only %d external controls, want at least 5",
+				id, len(ctrl.ExternalControls))
+		}
+		// Each new control must map to at least 1 FedRAMP control
+		hasFedRAMP := false
+		for _, ext := range ctrl.ExternalControls {
+			if ext.Framework == "fedramp" {
+				hasFedRAMP = true
+				break
+			}
+		}
+		if !hasFedRAMP {
+			t.Errorf("AegisGate control %s has no FedRAMP mappings", id)
+		}
 	}
 }
