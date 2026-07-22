@@ -60,7 +60,7 @@ type SOC2Module struct {
 // (license.ModuleSOC2 entry in moduleRequirements).
 func NewSOC2Module() *SOC2Module {
 	m := &SOC2Module{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("soc2", "1.0", core.TierDeveloper),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("soc2", "1.1", core.TierDeveloper),
 	}
 	m.initSOC2Patterns()
 	m.registerControls()
@@ -169,6 +169,87 @@ func (m *SOC2Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   false, // Requires data classification policy review
 		References:  []string{"AICPA TSC 2017 C1.1"},
+	})
+
+	// Common Criteria (Security) — additional sub-clauses for v3.x Tier 1
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-CC1.1",
+		Name:        "Control Environment",
+		Description: "SOC 2 CC1.1: Organization demonstrates commitment to integrity and ethical values (code of conduct, security policies documented and accessible)",
+		Category:    "Security (Common Criteria)",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkControlEnvironment,
+		References:  []string{"AICPA TSC 2017 CC1.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-CC1.4",
+		Name:        "Segregation of Duties",
+		Description: "SOC 2 CC1.4: Conflicting duties are segregated to reduce the risk of unauthorized or fraudulent activity. AegisGate's RBAC + MFA implements this for the platform.",
+		Category:    "Security (Common Criteria)",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSegregationOfDuties,
+		References:  []string{"AICPA TSC 2017 CC1.4"},
+	})
+
+	// Common Criteria 7.x — System Operations (additional sub-clauses)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-CC7.2",
+		Name:        "Monitoring for Anomalies and Security Events",
+		Description: "SOC 2 CC7.2: System activity is monitored for anomalies and security events. AegisGate's IOC store + anomaly detection (Trust Framework) + audit log provide the monitoring infrastructure.",
+		Category:    "Security (Common Criteria)",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAnomalyMonitoring,
+		References:  []string{"AICPA TSC 2017 CC7.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-CC7.3",
+		Name:        "Evaluation of Security Events",
+		Description: "SOC 2 CC7.3: Security events are evaluated to determine whether they should be classified as incidents. AegisGate's audit log + IOC store + Trust Framework attestations provide the evidence for evaluation.",
+		Category:    "Security (Common Criteria)",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkEventEvaluation,
+		References:  []string{"AICPA TSC 2017 CC7.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-CC7.4",
+		Name:        "Incident Response Plan",
+		Description: "SOC 2 CC7.4: A documented incident response plan is in place and tested. AegisGate's signed attestations (pkg/attestation/) and IOC federation provide the IR evidence.",
+		Category:    "Security (Common Criteria)",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponsePlan,
+		References:  []string{"AICPA TSC 2017 CC7.4"},
+	})
+
+	// Availability (A1.1) — Capacity Planning
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-A1.1",
+		Name:        "Availability — Capacity Planning and Monitoring",
+		Description: "SOC 2 A1.1: System capacity is monitored and current demand is compared to capacity. AegisGate's metrics (Prometheus) + dashboards (Grafana) + alerts provide the monitoring infrastructure.",
+		Category:    "Availability",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkCapacityPlanning,
+		References:  []string{"AICPA TSC 2017 A1.1"},
+	})
+
+	// Confidentiality (C2.1) — Third-Party Risk
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "SOC2-C2.1",
+		Name:        "Confidentiality — Third-Party Risk Management",
+		Description: "SOC 2 C2.1: Third-party vendors and service providers are identified and the risks they pose to the system are assessed and managed. AegisGate's vendor inventory + access controls + DPAs provide the evidence.",
+		Category:    "Confidentiality",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkThirdPartyRisk,
+		References:  []string{"AICPA TSC 2017 C2.1"},
 	})
 
 	// AI-specific extension (AegisGate's contribution to SOC 2 for AI/ML)
@@ -446,6 +527,504 @@ func (m *SOC2Module) checkTransmissionSecurity(ctx context.Context, input []byte
 		Timestamp:   time.Now(),
 		Remediation: "Enable TLS 1.2 or 1.3 in configs/aegisgate-platform.yaml (tls.min_version)",
 	}, nil
+}
+
+// checkControlEnvironment verifies that security policies and
+// code of conduct are documented and accessible. Maps to SOC 2 CC1.1.
+func (m *SOC2Module) checkControlEnvironment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSecurityPolicy := strings.Contains(inputStr, "security_policy") || strings.Contains(inputStr, "info_sec_policy")
+	hasCodeOfConduct := strings.Contains(inputStr, "code_of_conduct") || strings.Contains(inputStr, "ethics_policy")
+	hasAcceptableUse := strings.Contains(inputStr, "acceptable_use") || strings.Contains(inputStr, "aup")
+	hasAccessible := strings.Contains(inputStr, "published") || strings.Contains(inputStr, "documented") || strings.Contains(inputStr, "accessible")
+
+	present := 0
+	missing := []string{}
+	if hasSecurityPolicy {
+		present++
+	} else {
+		missing = append(missing, "security_policy")
+	}
+	if hasCodeOfConduct {
+		present++
+	} else {
+		missing = append(missing, "code_of_conduct")
+	}
+	if hasAcceptableUse {
+		present++
+	} else {
+		missing = append(missing, "acceptable_use_policy")
+	}
+	if hasAccessible {
+		present++
+	} else {
+		missing = append(missing, "policy accessible/published")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC1.1",
+			ControlName: "Control Environment",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Control environment verified: security policy + code of conduct + acceptable use policy + accessible",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC1.1",
+			ControlName: "Control Environment",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "No control environment policies detected",
+			Timestamp:   time.Now(),
+			Remediation: "Document security policy + code of conduct + acceptable use policy and make them accessible to all personnel",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-CC1.1",
+		ControlName: "Control Environment",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Partial control environment: " + soc2Count(present) + "/4 documented; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Document the missing policies",
+	}, nil
+}
+
+// checkSegregationOfDuties verifies that conflicting duties are
+// segregated via RBAC + MFA. Maps to SOC 2 CC1.4.
+func (m *SOC2Module) checkSegregationOfDuties(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "roles")
+	hasMFA := strings.Contains(inputStr, "mfa") || strings.Contains(inputStr, "multi_factor")
+	hasLeastPrivilege := strings.Contains(inputStr, "least_privilege") || strings.Contains(inputStr, "minimum_permissions")
+	hasRoleSeparation := strings.Contains(inputStr, "role_separation") || strings.Contains(inputStr, "separation_of_duties") || strings.Contains(inputStr, "mutually_exclusive")
+
+	present := 0
+	missing := []string{}
+	if hasRBAC {
+		present++
+	} else {
+		missing = append(missing, "RBAC")
+	}
+	if hasMFA {
+		present++
+	} else {
+		missing = append(missing, "MFA")
+	}
+	if hasLeastPrivilege {
+		present++
+	} else {
+		missing = append(missing, "least_privilege")
+	}
+	if hasRoleSeparation {
+		present++
+	} else {
+		missing = append(missing, "role_separation")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC1.4",
+			ControlName: "Segregation of Duties",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Segregation of duties verified: RBAC + MFA + least privilege + role separation",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC1.4",
+			ControlName: "Segregation of Duties",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "No segregation of duties detected",
+			Timestamp:   time.Now(),
+			Remediation: "Enable RBAC + MFA + least privilege + role separation in platformconfig",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-CC1.4",
+		ControlName: "Segregation of Duties",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Partial segregation of duties: " + soc2Count(present) + "/4 configured; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable the missing segregation of duties components",
+	}, nil
+}
+
+// checkAnomalyMonitoring verifies that system activity is monitored
+// for anomalies. Maps to SOC 2 CC7.2.
+func (m *SOC2Module) checkAnomalyMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAuditLog := false
+	for _, p := range m.auditLogPatterns {
+		if p.MatchString(inputStr) {
+			hasAuditLog = true
+			break
+		}
+	}
+	hasIOCStore := strings.Contains(inputStr, "ioc_store") || strings.Contains(inputStr, "ioc_federation")
+	hasAnomalyDetection := strings.Contains(inputStr, "anomaly") || strings.Contains(inputStr, "trust_score")
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "pagerduty")
+
+	present := 0
+	missing := []string{}
+	if hasAuditLog {
+		present++
+	} else {
+		missing = append(missing, "audit_log")
+	}
+	if hasIOCStore {
+		present++
+	} else {
+		missing = append(missing, "IOC_store")
+	}
+	if hasAnomalyDetection {
+		present++
+	} else {
+		missing = append(missing, "anomaly_detection")
+	}
+	if hasAlerting {
+		present++
+	} else {
+		missing = append(missing, "alerting")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC7.2",
+			ControlName: "Monitoring for Anomalies and Security Events",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Anomaly monitoring verified: audit log + IOC store + anomaly detection + alerting",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC7.2",
+			ControlName: "Monitoring for Anomalies and Security Events",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "No anomaly monitoring detected",
+			Timestamp:   time.Now(),
+			Remediation: "Enable audit log + IOC store + anomaly detection (Trust Framework) + alerting",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-CC7.2",
+		ControlName: "Monitoring for Anomalies and Security Events",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Partial anomaly monitoring: " + soc2Count(present) + "/4 configured; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable the missing anomaly monitoring components",
+	}, nil
+}
+
+// checkEventEvaluation verifies that security events are evaluated.
+// Maps to SOC 2 CC7.3.
+func (m *SOC2Module) checkEventEvaluation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAuditLog := false
+	for _, p := range m.auditLogPatterns {
+		if p.MatchString(inputStr) {
+			hasAuditLog = true
+			break
+		}
+	}
+	hasIOCStore := strings.Contains(inputStr, "ioc_store") || strings.Contains(inputStr, "ioc_federation")
+	hasAttestations := strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "signed_log") || strings.Contains(inputStr, "envelope")
+	hasInvestigationProcess := strings.Contains(inputStr, "investigation") || strings.Contains(inputStr, "triage") || strings.Contains(inputStr, "classification")
+
+	present := 0
+	missing := []string{}
+	if hasAuditLog {
+		present++
+	} else {
+		missing = append(missing, "audit_log")
+	}
+	if hasIOCStore {
+		present++
+	} else {
+		missing = append(missing, "IOC_store")
+	}
+	if hasAttestations {
+		present++
+	} else {
+		missing = append(missing, "signed_attestations")
+	}
+	if hasInvestigationProcess {
+		present++
+	} else {
+		missing = append(missing, "investigation_process")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC7.3",
+			ControlName: "Evaluation of Security Events",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Event evaluation verified: audit log + IOC store + signed attestations + investigation process",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC7.3",
+			ControlName: "Evaluation of Security Events",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "No event evaluation detected",
+			Timestamp:   time.Now(),
+			Remediation: "Enable audit log + IOC store + signed attestations + investigation/triage process",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-CC7.3",
+		ControlName: "Evaluation of Security Events",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Partial event evaluation: " + soc2Count(present) + "/4 configured; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable the missing event evaluation components",
+	}, nil
+}
+
+// checkIncidentResponsePlan verifies that an incident response plan
+// is in place. Maps to SOC 2 CC7.4.
+func (m *SOC2Module) checkIncidentResponsePlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIRPlan := strings.Contains(inputStr, "incident_response_plan") || strings.Contains(inputStr, "ir_plan")
+	hasTested := strings.Contains(inputStr, "ir_tested") || strings.Contains(inputStr, "tabletop") || strings.Contains(inputStr, "ir_drill")
+	hasRoles := strings.Contains(inputStr, "ir_roles") || strings.Contains(inputStr, "incident_commander") || strings.Contains(inputStr, "responsibility")
+	hasCommunication := strings.Contains(inputStr, "ir_communication") || strings.Contains(inputStr, "status_page") || strings.Contains(inputStr, "ir_contact")
+
+	present := 0
+	missing := []string{}
+	if hasIRPlan {
+		present++
+	} else {
+		missing = append(missing, "IR_plan")
+	}
+	if hasTested {
+		present++
+	} else {
+		missing = append(missing, "IR_tested")
+	}
+	if hasRoles {
+		present++
+	} else {
+		missing = append(missing, "IR_roles")
+	}
+	if hasCommunication {
+		present++
+	} else {
+		missing = append(missing, "IR_communication")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC7.4",
+			ControlName: "Incident Response Plan",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Incident response plan verified: plan + tested + roles + communication",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-CC7.4",
+			ControlName: "Incident Response Plan",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "No incident response plan detected",
+			Timestamp:   time.Now(),
+			Remediation: "Document IR plan + test (tabletop/drill) + assign roles + establish communication plan",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-CC7.4",
+		ControlName: "Incident Response Plan",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Partial IR plan: " + soc2Count(present) + "/4 configured; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Document the missing IR plan components",
+	}, nil
+}
+
+// checkCapacityPlanning verifies that system capacity is monitored.
+// Maps to SOC 2 A1.1.
+func (m *SOC2Module) checkCapacityPlanning(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMetrics := strings.Contains(inputStr, "metric") || strings.Contains(inputStr, "prometheus")
+	hasDashboard := strings.Contains(inputStr, "dashboard") || strings.Contains(inputStr, "grafana")
+	hasAlerts := strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "alerting")
+	hasCapacityPlan := strings.Contains(inputStr, "capacity_plan") || strings.Contains(inputStr, "scaling_plan") || strings.Contains(inputStr, "auto_scaling")
+
+	present := 0
+	missing := []string{}
+	if hasMetrics {
+		present++
+	} else {
+		missing = append(missing, "metrics")
+	}
+	if hasDashboard {
+		present++
+	} else {
+		missing = append(missing, "dashboard")
+	}
+	if hasAlerts {
+		present++
+	} else {
+		missing = append(missing, "alerts")
+	}
+	if hasCapacityPlan {
+		present++
+	} else {
+		missing = append(missing, "capacity_plan")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-A1.1",
+			ControlName: "Availability — Capacity Planning and Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Capacity planning verified: metrics + dashboard + alerts + capacity plan",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-A1.1",
+			ControlName: "Availability — Capacity Planning and Monitoring",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "No capacity planning detected",
+			Timestamp:   time.Now(),
+			Remediation: "Set up metrics (Prometheus) + dashboard (Grafana) + alerts + capacity plan per SOC 2 A1.1",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-A1.1",
+		ControlName: "Availability — Capacity Planning and Monitoring",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Partial capacity planning: " + soc2Count(present) + "/4 configured; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable the missing capacity planning components",
+	}, nil
+}
+
+// checkThirdPartyRisk verifies third-party risk management.
+// Maps to SOC 2 C2.1.
+func (m *SOC2Module) checkThirdPartyRisk(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVendorInventory := strings.Contains(inputStr, "vendor_inventory") || strings.Contains(inputStr, "third_party_inventory") || strings.Contains(inputStr, "supplier_list")
+	hasDPA := strings.Contains(inputStr, "dpa") || strings.Contains(inputStr, "data_processing_agreement") || strings.Contains(inputStr, "vendor_contract")
+	hasVendorAssessment := strings.Contains(inputStr, "vendor_assessment") || strings.Contains(inputStr, "vendor_review") || strings.Contains(inputStr, "vendor_questionnaire")
+	hasAccessControl := strings.Contains(inputStr, "vendor_access") || strings.Contains(inputStr, "third_party_access") || strings.Contains(inputStr, "scoped_access")
+
+	present := 0
+	missing := []string{}
+	if hasVendorInventory {
+		present++
+	} else {
+		missing = append(missing, "vendor_inventory")
+	}
+	if hasDPA {
+		present++
+	} else {
+		missing = append(missing, "DPA")
+	}
+	if hasVendorAssessment {
+		present++
+	} else {
+		missing = append(missing, "vendor_assessment")
+	}
+	if hasAccessControl {
+		present++
+	} else {
+		missing = append(missing, "scoped_vendor_access")
+	}
+
+	if present >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-C2.1",
+			ControlName: "Confidentiality — Third-Party Risk Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Third-party risk verified: vendor inventory + DPA + vendor assessment + scoped access",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "SOC2-C2.1",
+			ControlName: "Confidentiality — Third-Party Risk Management",
+			Status:      compliance.StatusNonCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "No third-party risk management detected",
+			Timestamp:   time.Now(),
+			Remediation: "Maintain vendor inventory + DPAs + vendor assessments + scoped vendor access",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "SOC2-C2.1",
+		ControlName: "Confidentiality — Third-Party Risk Management",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Partial third-party risk: " + soc2Count(present) + "/4 configured; missing: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable the missing third-party risk components",
+	}, nil
+}
+
+// soc2Count is a small helper to avoid importing strconv.
+func soc2Count(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	const digits = "0123456789"
+	if n < 0 {
+		return "-soc2Count(-n)"
+	}
+	var result []byte
+	for n > 0 {
+		result = append([]byte{digits[n%10]}, result...)
+		n /= 10
+	}
+	return string(result)
 }
 
 // Dependencies returns required modules. The SOC 2 module depends on

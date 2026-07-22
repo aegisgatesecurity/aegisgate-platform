@@ -24,14 +24,14 @@ func TestNewSOC2Module(t *testing.T) {
 	if m.Framework() != "soc2" {
 		t.Errorf("Framework() = %q, want soc2", m.Framework())
 	}
-	if m.Version() != "1.0" {
-		t.Errorf("Version() = %q, want 1.0", m.Version())
+	if m.Version() != "1.1" {
+		t.Errorf("Version() = %q, want 1.1", m.Version())
 	}
 
 	// Verify all 8 controls are registered
 	controls := m.Controls()
-	if len(controls) != 8 {
-		t.Errorf("len(Controls()) = %d, want 8", len(controls))
+	if len(controls) != 15 {
+		t.Errorf("len(Controls()) = %d, want 15 (v3.x Tier 1: 5 CC6 + 2 CC1/CC7 + 1 PI + 1 C + 1 A1 + 1 C2 + 1 AI = 15 in-scope; Privacy is correctly out-of-scope)", len(controls))
 	}
 
 	// Verify the 5 automated control IDs are present
@@ -381,5 +381,212 @@ func TestSOC2Module_Dependencies(t *testing.T) {
 	}
 	if !strings.Contains(strings.Join(deps, ","), "persistence") {
 		t.Error("Dependencies() should include 'persistence'")
+	}
+}
+
+// TestNewSOC2v3xTier1Controls verifies the v3.x Tier 1 control set
+// is 15 controls total: 5 CC6 + 2 CC1/CC7 + 1 PI + 1 C + 1 A1 + 1 C2 + 1 AI = 15 in-scope.
+func TestNewSOC2v3xTier1Controls(t *testing.T) {
+	m := NewSOC2Module()
+	controls := m.Controls()
+	if len(controls) != 15 {
+		t.Errorf("len(Controls()) = %d, want 15 (v3.x Tier 1: 5 CC6 + 2 CC1/CC7 + 1 PI + 1 C + 1 A1 + 1 C2 + 1 AI = 15 in-scope; Privacy is correctly out-of-scope)", len(controls))
+	}
+	expectedNewIDs := map[string]bool{
+		"SOC2-CC1.1": false, "SOC2-CC1.4": false,
+		"SOC2-CC7.2": false, "SOC2-CC7.3": false, "SOC2-CC7.4": false,
+		"SOC2-A1.1": false, "SOC2-C2.1": false,
+	}
+	for _, c := range controls {
+		if _, ok := expectedNewIDs[c.ID]; ok {
+			expectedNewIDs[c.ID] = true
+		}
+	}
+	for id, found := range expectedNewIDs {
+		if !found {
+			t.Errorf("Expected new control %s not registered", id)
+		}
+	}
+}
+
+// TestCheckControlEnvironment verifies § CC1.1 — v3.x Tier 1 addition.
+func TestCheckControlEnvironment(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `security_policy code_of_conduct acceptable_use_policy published`, "compliant"},
+		{"partial", `security_policy`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkControlEnvironment(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkControlEnvironment: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// TestCheckSegregationOfDuties verifies § CC1.4 — v3.x Tier 1 addition.
+func TestCheckSegregationOfDuties(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `rbac mfa least_privilege role_separation`, "compliant"},
+		{"partial", `rbac mfa`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkSegregationOfDuties(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkSegregationOfDuties: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// TestCheckAnomalyMonitoring verifies § CC7.2 — v3.x Tier 1 addition.
+func TestCheckAnomalyMonitoring(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `audit_log ioc_store anomaly_detection alerting`, "compliant"},
+		{"partial", `audit_log ioc_store`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkAnomalyMonitoring(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkAnomalyMonitoring: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// TestCheckEventEvaluation verifies § CC7.3 — v3.x Tier 1 addition.
+func TestCheckEventEvaluation(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `audit_log ioc_store signed_attestations investigation triage classification`, "compliant"},
+		{"partial", `audit_log ioc_store`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkEventEvaluation(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkEventEvaluation: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// TestCheckIncidentResponsePlan verifies § CC7.4 — v3.x Tier 1 addition.
+func TestCheckIncidentResponsePlan(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `incident_response_plan ir_plan ir_tested tabletop ir_roles incident_commander ir_communication status_page`, "compliant"},
+		{"partial", `ir_plan ir_tested`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkIncidentResponsePlan(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkIncidentResponsePlan: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// TestCheckCapacityPlanning verifies § A1.1 — v3.x Tier 1 addition.
+func TestCheckCapacityPlanning(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `metric prometheus dashboard grafana alert alerting capacity_plan auto_scaling`, "compliant"},
+		{"partial", `metric prometheus`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkCapacityPlanning(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkCapacityPlanning: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// TestCheckThirdPartyRisk verifies § C2.1 — v3.x Tier 1 addition.
+func TestCheckThirdPartyRisk(t *testing.T) {
+	m := NewSOC2Module()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", `vendor_inventory supplier_list dpa data_processing_agreement vendor_assessment vendor_review vendor_questionnaire vendor_access third_party_access scoped_access`, "compliant"},
+		{"partial", `vendor_inventory dpa`, "partial"},
+		{"non-compliant", `nothing_here`, "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkThirdPartyRisk(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkThirdPartyRisk: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %s, want %s (msg: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
