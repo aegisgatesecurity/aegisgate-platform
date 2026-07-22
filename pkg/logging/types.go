@@ -65,6 +65,23 @@ type Event struct {
 	FrameworkRefs map[string][]string `json:"frameworkRefs,omitempty"`
 }
 
+// Get* accessors expose Event fields through a small interface.
+// The audit package's loggingEvent interface (pkg/audit/search.go)
+// declares these methods so the search layer can be written
+// against a minimal contract; with the methods below, logging.Event
+// itself satisfies the interface, so the handler can decode JSON
+// directly into []logging.Event without going through the
+// loggingEventAdapter at the wire-format boundary. The adapter
+// in pkg/audit/handler.go is still used on the in-process search
+// path, where the search layer operates on []loggingEvent.
+func (e Event) GetID() string       { return e.ID }
+func (e Event) GetTime() time.Time  { return e.Time }
+func (e Event) GetType() string     { return e.Type }
+func (e Event) GetAction() string   { return e.Action }
+func (e Event) GetSeverity() string { return string(e.Severity) }
+func (e Event) GetUser() string     { return e.User }
+func (e Event) GetMessage() string  { return e.Message }
+
 // SyslogFormatter formats events as RFC 5424 syslog messages.
 // It provides methods to convert AegisGate Events into structured
 // RFC 5424 compliant syslog format.
