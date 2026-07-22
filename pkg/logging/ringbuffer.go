@@ -110,7 +110,17 @@ func (r *RingBuffer) snapshotInWindow(start, end time.Time) []Event {
 		if e.Time.IsZero() {
 			continue // events without a time cannot be windowed
 		}
-		if e.Time.Before(start) || e.Time.After(end) {
+		// Zero bounds mean "no bound" - the audit log search
+		// feature (pkg/audit/handler.go) calls SnapshotBetween
+		// with zero time.Time to mean "all events" (e.g., for
+		// the /users/:user/timeline and /stats endpoints that
+		// don't take a from/to filter). Without this guard,
+		// the zero time (Jan 1, year 1) would filter out
+		// every event as "after the upper bound".
+		if !start.IsZero() && e.Time.Before(start) {
+			continue
+		}
+		if !end.IsZero() && e.Time.After(end) {
 			continue
 		}
 		out = append(out, e)
