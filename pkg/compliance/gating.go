@@ -76,7 +76,7 @@ var moduleRequirements = map[string]ModuleRequirement{
 		DisplayName:       "FedRAMP",
 		RequiredTier:      tierpkg.TierProfessional,
 		MinPriceCents:     49900, // $499/mo
-		HasImplementation: true,  // pkg/compliance/fedramp/ implemented in v3.4.0+ (Path B: 8 highest-priority controls, full ~323 Moderate catalog would be 4-6 weeks)
+		HasImplementation: true,  // pkg/compliance/fedramp/ implemented in v3.4.0+ (Path C: 60 in-scope controls across 11 NIST 800-53 families, 38 automated + 22 evidence-mapped)
 	},
 	license.ModuleFIPS: {
 		Module:            license.ModuleFIPS,
