@@ -104,9 +104,16 @@ func GenerateReport(enabledFrameworks []string) ComplianceReport {
 
 		for _, extID := range controlIDs {
 			agIDs := extControls[extID]
+			// Sort the AegisGateControls list for determinism
+			// (MapByFramework already sorts, but the matrix
+			// construction iterates a Go map; sort here for
+			// consistency with MapByFramework)
+			sortedAGIDs := make([]string, len(agIDs))
+			copy(sortedAGIDs, agIDs)
+			sort.Strings(sortedAGIDs)
 			title := ""
-			if len(agIDs) > 0 {
-				if ctrl, ok := Mapping[agIDs[0]]; ok {
+			if len(sortedAGIDs) > 0 {
+				if ctrl, ok := Mapping[sortedAGIDs[0]]; ok {
 					for _, ext := range ctrl.ExternalControls {
 						if ext.Framework == fw && ext.ControlID == extID {
 							title = ext.Title
@@ -118,7 +125,7 @@ func GenerateReport(enabledFrameworks []string) ComplianceReport {
 			fwReport.ControlResults = append(fwReport.ControlResults, ControlResult{
 				ControlID:         extID,
 				Title:             title,
-				AegisGateControls: agIDs,
+				AegisGateControls: sortedAGIDs,
 				Status:            "covered",
 			})
 		}
@@ -216,6 +223,9 @@ func buildCrossFrameworkMatrix(coverage CoverageReport) string {
 		}
 		rows = append(rows, row{agID, ctrl.Name, len(ctrl.ExternalControls), fw})
 	}
+	// Sort by control ID for determinism FIRST, then by count desc
+	// (sort.Slice is not stable, so we need to make the sort fully
+	// deterministic by including ID in the less-than check)
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].count != rows[j].count {
 			return rows[i].count > rows[j].count
