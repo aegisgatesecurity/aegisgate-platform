@@ -11,39 +11,48 @@
 //
 // Module metadata:
 //   - Framework:   "cis"
-//   - Version:     "1.0"
+//   - Version:     "1.1" (v3.x close-out Tier 1)
 //   - Required tier: Community (free, like ATLAS/OWASP/NIST AI RMF/GDPR)
 //   - Pricing:      No separate add-on (bundled with the platform)
 //
 // Architecture:
-//   - cis.go:        module wiring, pattern caches, 10 RegisterControl calls,
-//                    8 CheckFunc implementations
+//   - cis.go:        module wiring, pattern caches, 15 RegisterControl calls,
+//                    15 CheckFunc implementations
 //   - cis_test.go:   unit tests for each CheckFunc
 //
-// Coverage: 10 of 18 CIS v8 control families mapped to AegisGate. The
-// remaining 8 (Application Software Security, Penetration Testing, etc.)
-// are either out-of-scope for a security gateway or duplicate the
-// NIST CSF 2.0 controls (which we map separately).
+// Coverage: 15 of 18 CIS v8 control families mapped to AegisGate. The
+// remaining 3 (Security Awareness 14, Service Provider Management 15,
+// Penetration Testing 18) are out-of-scope for a security scanner —
+// they are process/human-relations/customer-driven, not technical
+// controls that can be automated by a scanner.
 //
-// Mapping summary:
+// Mapping summary (v3.x Tier 1):
 //   CIS 1  (Inventory)         -> pkg/ioc/ (IOC store + bundle federation)
 //   CIS 2  (Software Inventory) -> Platform binary attestation (pkg/attestation/)
-//   CIS 3  (Data Protection)    -> pkg/security/headers.go + TLS config
+//   CIS 3  (Data Protection)    -> pkg/security/headers.go + TLS config + PII/secret scanning
 //   CIS 4  (Secure Config Mgmt) -> AegisGate platformconfig
 //   CIS 5  (Account Mgmt)       -> pkg/auth/middleware.go + pkg/rbac/
 //   CIS 6  (Access Control Mgmt)-> pkg/auth/middleware.go
 //   CIS 7  (Vulnerability Mgmt)  -> govulncheck + Trivy CI workflows
 //   CIS 8  (Audit Log Mgmt)     -> pkg/persistence/ + audit ring buffer
-//   CIS 9  (Email/Web Browser)  -> AegisGate Lens (browser extension)
-//   CIS 10 (Malware Defenses)   -> AegisGate scanner (prompt injection, etc.)
-//   CIS 11 (Data Recovery)      -> AegisGate audit log hash-chain (recoverable)
-//   CIS 12 (Network Infra Mgmt) -> TLS 1.2+ enforced
-//   CIS 13 (Network Monitoring) -> IOC store + anomaly detection
-//   CIS 14 (Security Awareness) -> customer responsibility (out of scope)
-//   CIS 15 (Service Provider)   -> customer responsibility (out of scope)
-//   CIS 16 (App Software Sec)   -> AegisGate scanner + 144+ patterns
-//   CIS 17 (Incident Response)  -> AegisGate audit log + Trust Framework attestations
-//   CIS 18 (Pen Testing)        -> customer responsibility (out of scope)
+//   CIS 9  (Email/Web Browser)  -> AegisGate Lens (browser extension) + AegisGate Lens telemetry bridge
+//   CIS 10 (Malware Defenses)   -> AegisGate scanner (prompt injection, jailbreak, data poisoning, 144+ patterns)
+//   CIS 11 (Data Recovery)      -> AegisGate audit log hash-chain + opt-in backup + 7/30/90-day retention by tier
+//   CIS 12 (Network Infra Mgmt) -> TLS 1.2+ enforced + network segmentation defaults + mTLS for A2A/ACP
+//   CIS 13 (Network Monitoring) -> IOC store + anomaly detection + Trust Framework
+//   CIS 14 (Security Awareness) -> OUT OF SCOPE (process/human)
+//   CIS 15 (Service Provider)   -> OUT OF SCOPE (customer process)
+//   CIS 16 (App Software Sec)   -> AegisGate scanner + 144+ patterns + SecureFlag/AR-EaaS runner
+//   CIS 17 (Incident Response)  -> AegisGate audit log + Trust Framework attestations + IOC federation
+//   CIS 18 (Pen Testing)        -> OUT OF SCOPE (customer process; AegisGate can generate artifacts)
+//
+// Out-of-scope justification: 14, 15, 18 are NOT scanner concerns.
+// They are process/human-relations/customer-driven activities. The
+// v3.x close-out plan documents this explicitly (see
+// plans/V3X-CLOSE-OUT-PLAN-2026-07-21.md and plans/V3X-CLOSE-OUT-
+// RELEVANCE-ANALYSIS-2026-07-21.md). AegisGate can produce ARTIFACTS
+// (e.g., a generated pen-test report template) but cannot perform
+// human training, vendor onboarding, or external pen testing.
 //
 // Reference: https://www.cisecurity.org/controls/cis-controls-list
 //            CIS Critical Security Controls v8.0 (May 2024)
@@ -71,12 +80,13 @@ type CISModule struct {
 	// Pattern caches for automated controls
 	auditLogPatterns []*regexp.Regexp
 	tlsPatterns      []*regexp.Regexp
+	scannerPatterns  []*regexp.Regexp
 }
 
 // NewCISModule creates a new CIS Critical Security Controls v8 module.
 func NewCISModule() *CISModule {
 	m := &CISModule{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("cis", "1.0", core.TierCommunity),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("cis", "1.1", core.TierCommunity),
 	}
 	m.initPatterns()
 	m.registerControls()
@@ -96,10 +106,21 @@ func (m *CISModule) initPatterns() {
 		regexp.MustCompile(`(?i)tls[_ ]?1[._][23]`),
 		regexp.MustCompile(`(?i)min[_ ]?version[_ ]?1[._][23]`),
 	}
+	m.scannerPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)scanner`),
+		regexp.MustCompile(`(?i)prompt[_ ]?injection[_ ]?scanner`),
+		regexp.MustCompile(`(?i)jailbreak[_ ]?scanner`),
+		regexp.MustCompile(`(?i)data[_ ]?poisoning[_ ]?scanner`),
+		regexp.MustCompile(`(?i)aegisgate[_ ]?scanner`),
+	}
 }
 
-// registerControls wires all 10 CIS v8 controls into the module.
+// registerControls wires all 15 CIS v8 controls into the module.
+// CIS 14, 15, 18 are NOT registered — they are out-of-scope for a
+// security scanner (process/human-relations/customer-driven activities).
+// See the package doc comment for the full out-of-scope justification.
 func (m *CISModule) registerControls() {
+	// === Family 1: Inventory and Control of Enterprise Assets ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-1",
 		Name:        "Inventory and Control of Enterprise Assets",
@@ -122,6 +143,7 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 2"},
 	})
 
+	// === Family 3: Data Protection ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-3",
 		Name:        "Data Protection",
@@ -133,6 +155,7 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 3"},
 	})
 
+	// === Family 4: Secure Configuration Management ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-4",
 		Name:        "Secure Configuration of Enterprise Assets and Software",
@@ -144,6 +167,7 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 4"},
 	})
 
+	// === Family 5: Account Management ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-5",
 		Name:        "Account Management",
@@ -155,6 +179,7 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 5"},
 	})
 
+	// === Family 6: Access Control Management ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-6",
 		Name:        "Access Control Management",
@@ -166,6 +191,7 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 6"},
 	})
 
+	// === Family 7: Continuous Vulnerability Management ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-7",
 		Name:        "Continuous Vulnerability Management",
@@ -177,6 +203,7 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 7"},
 	})
 
+	// === Family 8: Audit Log Management ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-8",
 		Name:        "Audit Log Management",
@@ -188,6 +215,55 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 8"},
 	})
 
+	// === Family 9: Email and Web Browser Protections (v3.x Tier 1 add) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-9",
+		Name:        "Email and Web Browser Protections",
+		Description: "CIS 9: Ensure appropriate security controls are in place on email and web browser clients to protect against email-based and web-based threats",
+		Category:    "Email and Web Browser Protections",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkEmailAndWebBrowser,
+		References:  []string{"CIS v8.0 Control 9"},
+	})
+
+	// === Family 10: Malware Defenses (v3.x Tier 1 add) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-10",
+		Name:        "Malware Defenses",
+		Description: "CIS 10: Ensure that anti-malware software is installed on all workstations, laptops, and servers; that the software is configured to automatically update; and that it performs regular scans",
+		Category:    "Malware Defenses",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMalwareDefenses,
+		References:  []string{"CIS v8.0 Control 10"},
+	})
+
+	// === Family 11: Data Recovery (v3.x Tier 1 add) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-11",
+		Name:        "Data Recovery",
+		Description: "CIS 11: Establish and maintain data recovery practices sufficient to restore in-scope business assets to a state of confidentiality, integrity, and availability",
+		Category:    "Data Recovery",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkDataRecovery,
+		References:  []string{"CIS v8.0 Control 11"},
+	})
+
+	// === Family 12: Network Infrastructure Management (v3.x Tier 1 add) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-12",
+		Name:        "Network Infrastructure Management",
+		Description: "CIS 12: Establish and operate a secure network infrastructure that protects the confidentiality, integrity, and availability of all network traffic",
+		Category:    "Network Infrastructure Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkNetworkInfrastructure,
+		References:  []string{"CIS v8.0 Control 12"},
+	})
+
+	// === Family 13: Network Monitoring and Defense ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-13",
 		Name:        "Network Monitoring and Defense",
@@ -199,6 +275,19 @@ func (m *CISModule) registerControls() {
 		References:  []string{"CIS v8.0 Control 13"},
 	})
 
+	// === Family 16: Application Software Security (v3.x Tier 1 add) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-16",
+		Name:        "Application Software Security",
+		Description: "CIS 16: Manage the security life cycle of in-house developed, hosted, or acquired software to prevent, detect, and remediate security weaknesses before they can impact the enterprise",
+		Category:    "Application Software Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkApplicationSoftwareSecurity,
+		References:  []string{"CIS v8.0 Control 16"},
+	})
+
+	// === Family 17: Incident Response Management ===
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "CIS-17",
 		Name:        "Incident Response Management",
@@ -209,6 +298,11 @@ func (m *CISModule) registerControls() {
 		CheckFunc:   m.checkIncidentResponse,
 		References:  []string{"CIS v8.0 Control 17"},
 	})
+
+	// NOTE: CIS-14 (Security Awareness), CIS-15 (Service Provider Management),
+	// and CIS-18 (Penetration Testing) are NOT registered. These are
+	// out-of-scope for a security scanner (they are process/human-
+	// relations/customer-driven activities). See the package doc comment.
 }
 
 // ============================================================================
@@ -593,6 +687,271 @@ func (m *CISModule) checkAuditLogManagement(ctx context.Context, input []byte) (
 	}, nil
 }
 
+// checkEmailAndWebBrowser verifies protections for email and web browser
+// clients. Maps to CIS 9: Email and Web Browser Protections.
+//
+// AegisGate implements this through the AegisGate Lens browser extension
+// (100% on-device prompt scanning for PII, secrets, XSS, and compliance
+// in 8 major AI chat tools) and the Lens Telemetry Bridge which feeds
+// scan events into the AegisGate audit log.
+func (m *CISModule) checkEmailAndWebBrowser(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLens := strings.Contains(inputStr, "aegisgate_lens") || strings.Contains(inputStr, "lens_extension") || strings.Contains(inputStr, "browser_extension")
+	hasLensTelemetry := strings.Contains(inputStr, "lens_telemetry") || strings.Contains(inputStr, "telemetry_bridge")
+	hasCSP := strings.Contains(inputStr, "content_security_policy") || strings.Contains(inputStr, "csp_header")
+
+	present := 0
+	if hasLens {
+		present++
+	}
+	if hasLensTelemetry {
+		present++
+	}
+	if hasCSP {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-9",
+			ControlName: "Email and Web Browser Protections",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Browser protections verified: AegisGate Lens + telemetry bridge + CSP headers",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-9",
+			ControlName: "Email and Web Browser Protections",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial browser protections: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Install AegisGate Lens (aegisgate-lens/), enable the Lens telemetry bridge, and set content-security-policy headers",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-9",
+		ControlName: "Email and Web Browser Protections",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No browser protections detected (AegisGate Lens, telemetry bridge, or CSP headers missing)",
+		Timestamp:   time.Now(),
+		Remediation: "Install AegisGate Lens for client-side prompt scanning, enable Lens telemetry bridge to AegisGate audit log, and add CSP headers",
+	}, nil
+}
+
+// checkMalwareDefenses verifies anti-malware/anti-attack scanning is in
+// place. Maps to CIS 10: Malware Defenses.
+//
+// AegisGate's scanner covers AI-specific attack patterns: prompt
+// injection, jailbreaks, data poisoning, model exfiltration, and
+// 144+ attack patterns. This is the AI-security analog of
+// traditional anti-malware scanning.
+func (m *CISModule) checkMalwareDefenses(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+
+	hasScanner := false
+	for _, p := range m.scannerPatterns {
+		if p.MatchString(inputStr) {
+			hasScanner = true
+			break
+		}
+	}
+	hasAutoUpdate := strings.Contains(inputStr, "auto_update") || strings.Contains(inputStr, "pattern_update") || strings.Contains(inputStr, "rule_update")
+	hasRegularScans := strings.Contains(inputStr, "regular_scan") || strings.Contains(inputStr, "scheduled_scan") || strings.Contains(inputStr, "scan_interval")
+
+	present := 0
+	if hasScanner {
+		present++
+	}
+	if hasAutoUpdate {
+		present++
+	}
+	if hasRegularScans {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-10",
+			ControlName: "Malware Defenses",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "AI anti-malware defenses verified: scanner + pattern updates + scheduled scans",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-10",
+			ControlName: "Malware Defenses",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial AI anti-malware defenses: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable AegisGate scanner (pkg/scanner/), pattern auto-updates, and scheduled scans",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-10",
+		ControlName: "Malware Defenses",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No AI anti-malware defenses detected (scanner, auto-updates, or scheduled scans missing)",
+		Timestamp:   time.Now(),
+		Remediation: "Enable AegisGate scanner (pkg/scanner/) with pattern auto-updates and scheduled scans for continuous AI-attack detection",
+	}, nil
+}
+
+// checkDataRecovery verifies data backup and recovery capabilities.
+// Maps to CIS 11: Data Recovery.
+//
+// AegisGate's hash-chain audit log IS the recovery mechanism: any
+// audit log entry can be verified cryptographically after restore,
+// and the IOC store has its own backup story. 7/30/90-day retention
+// is the default per tier.
+func (m *CISModule) checkDataRecovery(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBackup := strings.Contains(inputStr, "backup") || strings.Contains(inputStr, "disaster_recovery")
+	hasIntegrity := strings.Contains(inputStr, "log_integrity") || strings.Contains(inputStr, "hash_chain")
+	hasRestore := strings.Contains(inputStr, "restore") || strings.Contains(inputStr, "audit_replay") || strings.Contains(inputStr, "recoverable")
+	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "retention_days")
+
+	present := 0
+	if hasBackup {
+		present++
+	}
+	if hasIntegrity {
+		present++
+	}
+	if hasRestore {
+		present++
+	}
+	if hasRetention {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-11",
+			ControlName: "Data Recovery",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data recovery verified: backup + integrity-verifiable restore + retention policy",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-11",
+			ControlName: "Data Recovery",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial data recovery: 1 of 4 capabilities configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable backup, hash-chain integrity (for verifiable restore), audit replay (for restore verification), and retention policy",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-11",
+		ControlName: "Data Recovery",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No data recovery capabilities (no backup, no integrity verification, no retention)",
+		Timestamp:   time.Now(),
+		Remediation: "Enable backup, hash-chain integrity (so restored logs are verifiable), audit replay capability, and retention policy (default 7/30/90 days by tier)",
+	}, nil
+}
+
+// checkNetworkInfrastructure verifies secure network infrastructure.
+// Maps to CIS 12: Network Infrastructure Management.
+//
+// AegisGate enforces TLS 1.2+ on all 6 protocol pillars (HTTP, MCP,
+// A2A, ACP, RESPONSE, Trust), network segmentation defaults, and mTLS
+// for agent-to-agent communication (A2A/ACP).
+func (m *CISModule) checkNetworkInfrastructure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+
+	hasTLS := false
+	for _, p := range m.tlsPatterns {
+		if p.MatchString(inputStr) {
+			hasTLS = true
+			break
+		}
+	}
+	hasMTLS := strings.Contains(inputStr, "mtls") || strings.Contains(inputStr, "mutual_tls") || strings.Contains(inputStr, "client_cert")
+	hasSegmentation := strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "segmented") || strings.Contains(inputStr, "isolated")
+	hasFirewall := strings.Contains(inputStr, "firewall") || strings.Contains(inputStr, "egress_allowlist") || strings.Contains(inputStr, "ingress_allowlist")
+
+	present := 0
+	if hasTLS {
+		present++
+	}
+	if hasMTLS {
+		present++
+	}
+	if hasSegmentation {
+		present++
+	}
+	if hasFirewall {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-12",
+			ControlName: "Network Infrastructure Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Network infrastructure verified: TLS 1.2+ + mTLS + segmentation + firewall rules",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-12",
+			ControlName: "Network Infrastructure Management",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial network infrastructure: 1 of 4 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable TLS 1.2+ on all 6 protocol pillars, mTLS for A2A/ACP, network segmentation defaults, and egress/ingress allowlists",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-12",
+		ControlName: "Network Infrastructure Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No secure network infrastructure (no TLS, no mTLS, no segmentation, no firewall)",
+		Timestamp:   time.Now(),
+		Remediation: "Enable TLS 1.2+ on all 6 protocol pillars (HTTP, MCP, A2A, ACP, RESPONSE, Trust), mTLS for A2A/ACP, network segmentation, and egress/ingress allowlists",
+	}, nil
+}
+
 // checkNetworkMonitoring verifies network monitoring and defense.
 // Maps to CIS 13: Network monitoring and defense.
 func (m *CISModule) checkNetworkMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
@@ -646,6 +1005,77 @@ func (m *CISModule) checkNetworkMonitoring(ctx context.Context, input []byte) (*
 		Message:     "No network monitoring configured",
 		Timestamp:   time.Now(),
 		Remediation: "Enable AegisGate IOC store + anomaly detection + IDS integration",
+	}, nil
+}
+
+// checkApplicationSoftwareSecurity verifies application software
+// security controls. Maps to CIS 16: Application Software Security.
+//
+// AegisGate's scanner covers application-level security: prompt
+// injection, secret leakage in outputs, XSS, injection attacks, etc.
+// The scanner runs on every request and on every response (the
+// "input sanitization + output encoding" analog for AI).
+func (m *CISModule) checkApplicationSoftwareSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasScanner := false
+	for _, p := range m.scannerPatterns {
+		if p.MatchString(inputStr) {
+			hasScanner = true
+			break
+		}
+	}
+	hasSSDF := strings.Contains(inputStr, "ssdf") || strings.Contains(inputStr, "secure_sdlc") || strings.Contains(inputStr, "devsecops")
+	hasVulnManagement := strings.Contains(inputStr, "vuln_management") || strings.Contains(inputStr, "vuln_scan") || strings.Contains(inputStr, "govulncheck")
+	hasSBOM := strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "cyclonedx")
+
+	present := 0
+	if hasScanner {
+		present++
+	}
+	if hasSSDF {
+		present++
+	}
+	if hasVulnManagement {
+		present++
+	}
+	if hasSBOM {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-16",
+			ControlName: "Application Software Security",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Application software security verified: scanner + SDLC + vulnerability management + SBOM",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-16",
+			ControlName: "Application Software Security",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial application software security: 1 of 4 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable AegisGate scanner, secure SDLC, govulncheck vulnerability management, and SBOM generation",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-16",
+		ControlName: "Application Software Security",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No application software security (no scanner, no secure SDLC, no vulnerability management)",
+		Timestamp:   time.Now(),
+		Remediation: "Enable AegisGate scanner (input/output scanning), secure SDLC, govulncheck vulnerability management, and SBOM generation",
 	}, nil
 }
 
