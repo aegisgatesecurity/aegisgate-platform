@@ -29,8 +29,8 @@
 package audit
 
 import (
-	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -141,9 +141,7 @@ func ParseSearchQuery(params map[string][]string) SearchQuery {
 		q.EventType = strings.ToLower(strings.TrimSpace(v))
 	}
 	if v, ok := firstValue(params, "limit"); ok && v != "" {
-		var lim int
-		fmt.Sscanf(v, "%d", &lim)
-		if lim > 0 {
+		if lim, err := strconv.Atoi(v); err == nil && lim > 0 {
 			q.Limit = lim
 		}
 	}
@@ -151,9 +149,7 @@ func ParseSearchQuery(params map[string][]string) SearchQuery {
 		q.Limit = maxLimit
 	}
 	if v, ok := firstValue(params, "offset"); ok && v != "" {
-		var off int
-		fmt.Sscanf(v, "%d", &off)
-		if off > 0 {
+		if off, err := strconv.Atoi(v); err == nil && off > 0 {
 			q.Offset = off
 		}
 	}

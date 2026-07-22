@@ -1222,14 +1222,14 @@ func TestGuardrailSessionLimit(t *testing.T) {
 
 	// Fill up to max
 	for i := 0; i < maxSessions; i++ {
-		err := gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent")
+		err := gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent", "test-client")
 		if err != nil {
 			t.Fatalf("Session %d creation failed: %v", i, err)
 		}
 	}
 
 	// One more should fail
-	err := gm.OnSessionCreate("sess-overflow", "agent")
+	err := gm.OnSessionCreate("sess-overflow", "agent", "test-client")
 	if err == nil {
 		t.Error("Expected error when exceeding max sessions, got nil")
 	}
@@ -1254,7 +1254,7 @@ func TestGuardrailToolLimit(t *testing.T) {
 	maxTools := tier.TierCommunity.MaxMCPToolsPerSession() // 20
 
 	// Create a session
-	err := gm.OnSessionCreate("sess-tools", "agent")
+	err := gm.OnSessionCreate("sess-tools", "agent", "test-client")
 	if err != nil {
 		t.Fatalf("Session creation failed: %v", err)
 	}
@@ -1324,7 +1324,7 @@ func TestGuardrailMemoryLimit(t *testing.T) {
 	gm := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 	defer gm.Close()
 
-	err := gm.OnSessionCreate("sess-mem", "agent")
+	err := gm.OnSessionCreate("sess-mem", "agent", "test-client")
 	if err != nil {
 		t.Fatalf("Session creation failed: %v", err)
 	}
@@ -1358,7 +1358,7 @@ func TestGuardrailHandler(t *testing.T) {
 	// Fill sessions to max
 	maxSessions := tier.TierCommunity.MaxConcurrentMCP()
 	for i := 0; i < maxSessions; i++ {
-		_ = gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent")
+		_ = gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent", "test-client")
 	}
 
 	// An initialize request should now be blocked by guardrails
@@ -1444,7 +1444,7 @@ func TestGuardrailStats(t *testing.T) {
 	}
 
 	// Create sessions, make tool calls, then check stats
-	_ = gm.OnSessionCreate("sess-stats", "agent")
+	_ = gm.OnSessionCreate("sess-stats", "agent", "test-client")
 	_ = gm.OnToolCall("sess-stats", "tool-a")
 	_ = gm.OnToolCall("sess-stats", "tool-b")
 
@@ -1474,7 +1474,7 @@ func TestGuardrailTierEscalation(t *testing.T) {
 
 		// Create community's max sessions — should all succeed on Developer
 		for i := 0; i < communityMax; i++ {
-			err := gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent")
+			err := gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent", "test-client")
 			if err != nil {
 				t.Fatalf("Session %d should succeed on Developer tier: %v", i, err)
 			}
@@ -1499,7 +1499,7 @@ func TestGuardrailTierEscalation(t *testing.T) {
 			t.Errorf("Developer tools/session (%d) should exceed Community (%d)", developerTools, communityTools)
 		}
 
-		_ = gm.OnSessionCreate("sess-dev", "agent")
+		_ = gm.OnSessionCreate("sess-dev", "agent", "test-client")
 
 		// Call community's max tools — should all succeed on Developer
 		for i := 0; i < communityTools; i++ {
@@ -1522,14 +1522,14 @@ func TestGuardrailSessionDestroy(t *testing.T) {
 
 	// Fill up to max
 	for i := 0; i < maxSessions; i++ {
-		err := gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent")
+		err := gm.OnSessionCreate(fmt.Sprintf("sess-%d", i), "agent", "test-client")
 		if err != nil {
 			t.Fatalf("Session %d creation failed: %v", i, err)
 		}
 	}
 
 	// Overflow should fail
-	err := gm.OnSessionCreate("sess-overflow-1", "agent")
+	err := gm.OnSessionCreate("sess-overflow-1", "agent", "test-client")
 	if err == nil {
 		t.Error("Expected overflow error before destroy")
 	}
@@ -1544,7 +1544,7 @@ func TestGuardrailSessionDestroy(t *testing.T) {
 	}
 
 	// Now a new session should succeed
-	err = gm.OnSessionCreate("sess-new", "agent")
+	err = gm.OnSessionCreate("sess-new", "agent", "test-client")
 	if err != nil {
 		t.Errorf("New session should succeed after destroy: %v", err)
 	}
@@ -1753,7 +1753,7 @@ func TestGuardrailsWithToolRegistry(t *testing.T) {
 	}
 
 	// Create a session in guardrails
-	err := gm.OnSessionCreate("sess-cross-1", "agent-1")
+	err := gm.OnSessionCreate("sess-cross-1", "agent-1", "test-client")
 	if err != nil {
 		t.Fatalf("OnSessionCreate failed: %v", err)
 	}
@@ -1831,14 +1831,14 @@ func TestPersistenceWithGuardrails(t *testing.T) {
 	// Trigger a violation by exceeding session limit
 	for i := 0; i < 5; i++ {
 		sessID := fmt.Sprintf("sess-pg-%d", i)
-		err := gm.OnSessionCreate(sessID, fmt.Sprintf("agent-%d", i))
+		err := gm.OnSessionCreate(sessID, fmt.Sprintf("agent-%d", i), "test-client")
 		if err != nil {
 			t.Fatalf("OnSessionCreate %s failed: %v", sessID, err)
 		}
 	}
 
 	// 6th session should fail
-	err = gm.OnSessionCreate("sess-pg-overflow", "agent-overflow")
+	err = gm.OnSessionCreate("sess-pg-overflow", "agent-overflow", "test-client")
 	if err == nil {
 		t.Error("Expected session limit violation, got nil error")
 	}
@@ -2016,14 +2016,14 @@ func TestFullPlatformStack(t *testing.T) {
 	// Now overflow sessions to test guardrails blocking
 	// sess-stack-1 already exists from initialize, add 4 more to hit limit of 5
 	for i := 2; i <= 5; i++ {
-		err := gm.OnSessionCreate(fmt.Sprintf("sess-stack-%d", i), fmt.Sprintf("agent-%d", i))
+		err := gm.OnSessionCreate(fmt.Sprintf("sess-stack-%d", i), fmt.Sprintf("agent-%d", i), "test-client")
 		if err != nil {
 			t.Fatalf("OnSessionCreate sess-stack-%d should succeed: %v", i, err)
 		}
 	}
 
 	// 6th session should exceed Community limit (5)
-	err := gm.OnSessionCreate("sess-stack-overflow", "agent-overflow")
+	err := gm.OnSessionCreate("sess-stack-overflow", "agent-overflow", "test-client")
 	if err == nil {
 		t.Error("Expected session overflow error, got nil")
 	}

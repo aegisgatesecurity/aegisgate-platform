@@ -239,7 +239,7 @@ func buildCrossFrameworkMatrix(coverage CoverageReport) string {
 			}
 			return " "
 		}
-		b.WriteString(fmt.Sprintf("| %s (%s) | %d |", r.agID, r.name, r.count))
+		fmt.Fprintf(&b, "| %s (%s) | %d |", r.agID, r.name, r.count)
 		for _, fw := range majorFrameworks {
 			if _, ok := FrameworkName[fw]; ok {
 				b.WriteString(" " + mark(fw) + " |")
@@ -265,8 +265,8 @@ func (c ComplianceReport) FormatMarkdown() string {
 
 	for _, fr := range c.FrameworkReports {
 		b.WriteString("## " + fr.FrameworkName + " (" + fr.Framework + ")\n\n")
-		b.WriteString(fmt.Sprintf("**Coverage:** %d of %d controls covered (%.1f%%)\n\n",
-			fr.CoveredControls, fr.TotalControls, fr.CoveragePct))
+		fmt.Fprintf(&b, "**Coverage:** %d of %d controls covered (%.1f%%)\n\n",
+			fr.CoveredControls, fr.TotalControls, fr.CoveragePct)
 		if len(fr.ControlResults) == 0 {
 			b.WriteString("_No AegisGate controls mapped to this framework._\n\n")
 			continue
@@ -278,7 +278,7 @@ func (c ComplianceReport) FormatMarkdown() string {
 			if agList == "" {
 				agList = "_(none - manual)_"
 			}
-			b.WriteString(fmt.Sprintf("| %s | %s | %s | %s |\n", cr.ControlID, cr.Title, agList, cr.Status))
+			fmt.Fprintf(&b, "| %s | %s | %s | %s |\n", cr.ControlID, cr.Title, agList, cr.Status)
 		}
 		b.WriteString("\n")
 	}

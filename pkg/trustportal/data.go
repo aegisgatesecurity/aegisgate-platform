@@ -18,6 +18,7 @@
 package trustportal
 
 import (
+	"sort"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
@@ -192,6 +193,18 @@ func BuildFrameworksSnapshot() FrameworksSnapshot {
 		}
 		snap.Frameworks = append(snap.Frameworks, info)
 	}
+	// Sort alphabetically by DisplayName for deterministic output.
+	// The marketing audience expects frameworks in a predictable
+	// alphabetical order, not the tier-grouped order that
+	// AllModuleRequirements returns. Ties (same DisplayName) are
+	// broken by Key for full determinism (Go's sort.Slice is not
+	// stable, and we want the same order on every run).
+	sort.Slice(snap.Frameworks, func(i, j int) bool {
+		if snap.Frameworks[i].DisplayName != snap.Frameworks[j].DisplayName {
+			return snap.Frameworks[i].DisplayName < snap.Frameworks[j].DisplayName
+		}
+		return snap.Frameworks[i].Key < snap.Frameworks[j].Key
+	})
 	snap.TotalCount = len(snap.Frameworks)
 	return snap
 }
