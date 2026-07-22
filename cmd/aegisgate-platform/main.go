@@ -1485,6 +1485,16 @@ func main() {
 	wireAttestationHandlers(dashMux, authMiddleware)
 	log.Printf("[ATTESTATION] Attestation HTTP API enabled at /api/v1/attestation/{verify,verify-online}")
 
+	// Audit Log Search HTTP endpoints (v3.x close-out, Work Item 11,
+	// commit 4 of 4). Wires pkg/audit's Searcher (built in
+	// commits 1-3 of this feature) as the HTTP API for
+	// /api/v1/audit/{search,events/:id,users/:user/timeline,stats}
+	// and the /audit/ alias. The event source is the in-process
+	// audit ring buffer (the same one the SIEM dispatcher reads
+	// from). All routes are auth-gated. Read-only.
+	wireAuditSearchHandlers(dashMux, authMiddleware, auditRing, licenseMgr)
+	log.Printf("[AUDIT] Audit Log Search HTTP API enabled at /api/v1/audit/{search,events/:id,users/:user/timeline,stats} (+ /audit/ alias)")
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
