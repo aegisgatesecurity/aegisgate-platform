@@ -120,6 +120,38 @@ var TechniqueMappings = []TechniqueMapping{
 	// ================================================================
 	{TechniqueID: "T1557", TechniqueName: "Adversary-in-the-Middle", Framework: "atlas", AegisGateControl: "AG-CRYPTO-TLS-FIPS", Relationship: "mitigates", Confidence: 0.95, Description: "TLS 1.2+ with FIPS-approved ciphers prevents AiTM attacks"},
 	{TechniqueID: "T1573", TechniqueName: "Encrypted Channel", Framework: "atlas", AegisGateControl: "AG-CRYPTO-TLS-FIPS", Relationship: "mitigates", Confidence: 0.9, Description: "FIPS-approved crypto enforces strong encryption"},
+
+	// ================================================================
+	// AG-CM-BASELINE-CONFIG: Configuration and change management techniques
+	// ================================================================
+	{TechniqueID: "T1070.004", TechniqueName: "File Deletion (Configuration Tampering)", Framework: "atlas", AegisGateControl: "AG-CM-BASELINE-CONFIG", Relationship: "mitigates", Confidence: 0.9, Description: "Baseline configuration management detects unauthorized configuration changes"},
+	{TechniqueID: "T1529", TechniqueName: "System Shutdown/Reboot (Config Drift)", Framework: "atlas", AegisGateControl: "AG-CM-BASELINE-CONFIG", Relationship: "detects", Confidence: 0.85, Description: "Configuration change control detects unauthorized system changes"},
+	{TechniqueID: "GOVERN 1.1", TechniqueName: "AI policies and procedures", Framework: "nist_ai_rmf", AegisGateControl: "AG-CM-BASELINE-CONFIG", Relationship: "supports", Confidence: 0.85, Description: "Configuration baselines support AI system governance policies"},
+	{TechniqueID: "OWASPDev-05", TechniqueName: "Security Misconfiguration", Framework: "owasp_llm", AegisGateControl: "AG-CM-BASELINE-CONFIG", Relationship: "mitigates", Confidence: 0.85, Description: "Baseline configuration prevents security misconfigurations"},
+
+	// ================================================================
+	// AG-CA-CONTINUOUS-MONITORING: Assessment and monitoring techniques
+	// ================================================================
+	{TechniqueID: "T1595", TechniqueName: "Active Scanning", Framework: "atlas", AegisGateControl: "AG-CA-CONTINUOUS-MONITORING", Relationship: "mitigates", Confidence: 0.9, Description: "Continuous monitoring detects active scanning reconnaissance"},
+	{TechniqueID: "T1595.001", TechniqueName: "Scanning IP Blocks", Framework: "atlas", AegisGateControl: "AG-CA-CONTINUOUS-MONITORING", Relationship: "detects", Confidence: 0.85, Description: "Continuous monitoring detects IP block scanning patterns"},
+	{TechniqueID: "MEASURE 1.1", TechniqueName: "AI performance metrics identified", Framework: "nist_ai_rmf", AegisGateControl: "AG-CA-CONTINUOUS-MONITORING", Relationship: "supports", Confidence: 0.85, Description: "Continuous monitoring supports AI performance metrics measurement"},
+	{TechniqueID: "LLM05", TechniqueName: "Supply Chain Vulnerabilities", Framework: "owasp_llm", AegisGateControl: "AG-CA-CONTINUOUS-MONITORING", Relationship: "mitigates", Confidence: 0.8, Description: "Continuous vulnerability scanning detects supply chain threats"},
+
+	// ================================================================
+	// AG-IR-INCIDENT-RESPONSE: Incident response techniques
+	// ================================================================
+	{TechniqueID: "T1070.001", TechniqueName: "Log Tampering (Incident Evidence)", Framework: "atlas", AegisGateControl: "AG-IR-INCIDENT-RESPONSE", Relationship: "detects", Confidence: 0.9, Description: "Incident response detects and correlates log tampering events"},
+	{TechniqueID: "T1562.001", TechniqueName: "Impair Defenses: Disable Security Tools", Framework: "atlas", AegisGateControl: "AG-IR-INCIDENT-RESPONSE", Relationship: "detects", Confidence: 0.85, Description: "Incident response detects defense impairment and triggers automated playbooks"},
+	{TechniqueID: "GOVERN 2.3", TechniqueName: "AI risk management responsibilities", Framework: "nist_ai_rmf", AegisGateControl: "AG-IR-INCIDENT-RESPONSE", Relationship: "supports", Confidence: 0.85, Description: "Incident response automation supports AI risk management responsibilities"},
+	{TechniqueID: "OWASPDev-09", TechniqueName: "Security Logging and Monitoring Failures", Framework: "owasp_llm", AegisGateControl: "AG-IR-INCIDENT-RESPONSE", Relationship: "mitigates", Confidence: 0.85, Description: "Automated incident response mitigates logging and monitoring gaps"},
+
+	// ================================================================
+	// AG-SC-BOUNDARY-PROTECTION: Network and cryptographic boundary techniques
+	// ================================================================
+	{TechniqueID: "T1136", TechniqueName: "Create Account (Boundary Violation)", Framework: "atlas", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "Boundary protection prevents unauthorized account creation across network segments"},
+	{TechniqueID: "T1190", TechniqueName: "Exploit Public-Facing Application (Boundary)", Framework: "atlas", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "Boundary protection limits attack surface of public-facing applications"},
+	{TechniqueID: "PR.AC-5", TechniqueName: "Network Integrity Protected", Framework: "nist_ai_rmf", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "supports", Confidence: 0.9, Description: "Boundary protection implements network integrity controls"},
+	{TechniqueID: "OWASPDev-07", TechniqueName: "Identification and Authentication Failures", Framework: "owasp_llm", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "Session authenticity and key management prevent auth failures"},
 }
 
 // TechniquesForControl returns all technique mappings that target
