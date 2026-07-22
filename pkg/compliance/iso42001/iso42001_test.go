@@ -19,14 +19,14 @@ func TestNewISO42001Module(t *testing.T) {
 	if m.Framework() != "iso_42001" {
 		t.Errorf("Framework() = %q, want iso_42001", m.Framework())
 	}
-	if m.Version() != "1.0" {
-		t.Errorf("Version() = %q, want 1.0", m.Version())
+	if m.Version() != "1.1" {
+		t.Errorf("Version() = %q, want 1.1", m.Version())
 	}
 
 	// Verify all 8 controls are registered
 	controls := m.Controls()
-	if len(controls) != 8 {
-		t.Errorf("len(Controls()) = %d, want 8", len(controls))
+	if len(controls) != 12 {
+		t.Errorf("len(Controls()) = %d, want 12 (v3.x Tier 1: 4 AS + 1 PS + 4 OP + 1 PE + 2 AI = 12 in-scope)", len(controls))
 	}
 
 	// Verify the 5 automated control IDs are present
@@ -352,4 +352,200 @@ func TestISO42001Module_Dependencies(t *testing.T) {
 			t.Errorf("Dependencies() should include %q", expected)
 		}
 	}
+}
+
+// TestNewISO42001v3xTier1Controls verifies the v3.x Tier 1 control set
+// is 12 controls total: 4 admin + 1 leadership-policy + 1 planning +
+// 1 support + 3 operation + 2 performance-evaluation + 2 AI = 12.
+func TestNewISO42001v3xTier1Controls(t *testing.T) {
+	m := NewISO42001Module()
+	controls := m.Controls()
+	if len(controls) != 12 {
+		t.Errorf("len(Controls()) = %d, want 12 (v3.x Tier 1: 4 AS + 1 5.2 + 1 6.1 + 1 7.5 + 3 8.x + 2 9.x + 2 AI = 12 in-scope)", len(controls))
+	}
+	// Verify the 4 new control IDs are present
+	expectedNewIDs := map[string]bool{
+		"ISO42001-8.1": false,
+		"ISO42001-8.3": false,
+		"ISO42001-9.2": false,
+		"ISO42001-9.3": false,
+	}
+	for _, c := range controls {
+		if _, ok := expectedNewIDs[c.ID]; ok {
+			expectedNewIDs[c.ID] = true
+		}
+	}
+	for id, found := range expectedNewIDs {
+		if !found {
+			t.Errorf("Expected new control %s not registered", id)
+		}
+	}
+}
+
+// TestOperationalPlanningCheck verifies § 42001 8.1 — v3.x Tier 1 addition.
+func TestOperationalPlanningCheck(t *testing.T) {
+	m := NewISO42001Module()
+	ctx := context.Background()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("ai_policy documented published risk_register audit_log")
+		result, err := m.checkOperationalPlanning(ctx, input)
+		if err != nil {
+			t.Fatalf("checkOperationalPlanning: %v", err)
+		}
+		if result.ControlID != "ISO42001-8.1" {
+			t.Errorf("ControlID = %q, want ISO42001-8.1", result.ControlID)
+		}
+		if string(result.Status) != "compliant" {
+			t.Errorf("Status = %s, want compliant (msg: %q)", result.Status, result.Message)
+		}
+	})
+
+	t.Run("PartialConfig", func(t *testing.T) {
+		input := []byte("ai_policy")
+		result, err := m.checkOperationalPlanning(ctx, input)
+		if err != nil {
+			t.Fatalf("checkOperationalPlanning: %v", err)
+		}
+		if string(result.Status) != "partial" {
+			t.Errorf("Status = %s, want partial", result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("nothing_here")
+		result, err := m.checkOperationalPlanning(ctx, input)
+		if err != nil {
+			t.Fatalf("checkOperationalPlanning: %v", err)
+		}
+		if string(result.Status) != "non_compliant" {
+			t.Errorf("Status = %s, want non_compliant", result.Status)
+		}
+	})
+}
+
+// TestChangeManagementCheck verifies § 42001 8.3 — v3.x Tier 1 addition.
+func TestChangeManagementCheck(t *testing.T) {
+	m := NewISO42001Module()
+	ctx := context.Background()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("model_version attestation code_review rollback")
+		result, err := m.checkChangeManagement(ctx, input)
+		if err != nil {
+			t.Fatalf("checkChangeManagement: %v", err)
+		}
+		if result.ControlID != "ISO42001-8.3" {
+			t.Errorf("ControlID = %q, want ISO42001-8.3", result.ControlID)
+		}
+		if string(result.Status) != "compliant" {
+			t.Errorf("Status = %s, want compliant", result.Status)
+		}
+	})
+
+	t.Run("PartialConfig", func(t *testing.T) {
+		input := []byte("model_version attestation")
+		result, err := m.checkChangeManagement(ctx, input)
+		if err != nil {
+			t.Fatalf("checkChangeManagement: %v", err)
+		}
+		if string(result.Status) != "partial" {
+			t.Errorf("Status = %s, want partial", result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("nothing_here")
+		result, err := m.checkChangeManagement(ctx, input)
+		if err != nil {
+			t.Fatalf("checkChangeManagement: %v", err)
+		}
+		if string(result.Status) != "non_compliant" {
+			t.Errorf("Status = %s, want non_compliant", result.Status)
+		}
+	})
+}
+
+// TestInternalAuditCheck verifies § 42001 9.2 — v3.x Tier 1 addition.
+func TestInternalAuditCheck(t *testing.T) {
+	m := NewISO42001Module()
+	ctx := context.Background()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("audit_log audit_schedule audit_report")
+		result, err := m.checkInternalAudit(ctx, input)
+		if err != nil {
+			t.Fatalf("checkInternalAudit: %v", err)
+		}
+		if result.ControlID != "ISO42001-9.2" {
+			t.Errorf("ControlID = %q, want ISO42001-9.2", result.ControlID)
+		}
+		if string(result.Status) != "compliant" {
+			t.Errorf("Status = %s, want compliant", result.Status)
+		}
+	})
+
+	t.Run("PartialConfig", func(t *testing.T) {
+		input := []byte("audit_log")
+		result, err := m.checkInternalAudit(ctx, input)
+		if err != nil {
+			t.Fatalf("checkInternalAudit: %v", err)
+		}
+		if string(result.Status) != "partial" {
+			t.Errorf("Status = %s, want partial", result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("nothing_here")
+		result, err := m.checkInternalAudit(ctx, input)
+		if err != nil {
+			t.Fatalf("checkInternalAudit: %v", err)
+		}
+		if string(result.Status) != "non_compliant" {
+			t.Errorf("Status = %s, want non_compliant", result.Status)
+		}
+	})
+}
+
+// TestManagementReviewCheck verifies § 42001 9.3 — v3.x Tier 1 addition.
+func TestManagementReviewCheck(t *testing.T) {
+	m := NewISO42001Module()
+	ctx := context.Background()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("ciso_digest management_review review_minutes action_items")
+		result, err := m.checkManagementReview(ctx, input)
+		if err != nil {
+			t.Fatalf("checkManagementReview: %v", err)
+		}
+		if result.ControlID != "ISO42001-9.3" {
+			t.Errorf("ControlID = %q, want ISO42001-9.3", result.ControlID)
+		}
+		if string(result.Status) != "compliant" {
+			t.Errorf("Status = %s, want compliant", result.Status)
+		}
+	})
+
+	t.Run("PartialConfig", func(t *testing.T) {
+		input := []byte("ciso_digest")
+		result, err := m.checkManagementReview(ctx, input)
+		if err != nil {
+			t.Fatalf("checkManagementReview: %v", err)
+		}
+		if string(result.Status) != "partial" {
+			t.Errorf("Status = %s, want partial", result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("nothing_here")
+		result, err := m.checkManagementReview(ctx, input)
+		if err != nil {
+			t.Fatalf("checkManagementReview: %v", err)
+		}
+		if string(result.Status) != "non_compliant" {
+			t.Errorf("Status = %s, want non_compliant", result.Status)
+		}
+	})
 }
