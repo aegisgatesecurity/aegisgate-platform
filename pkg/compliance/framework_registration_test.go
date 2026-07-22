@@ -25,32 +25,40 @@ func TestRegisterBuiltinFrameworks_Idempotent(t *testing.T) {
 }
 
 func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
-	// The HIPAA module registers a known number of controls.
-	// Verify they're > 0 (sanity check that the registration
-	// actually worked).
+	// Verify all registered frameworks have > 0 controls.
 	RegisterBuiltinFrameworks()
-	hipaaCount := lookupControlCount("hipaa")
-	pciCount := lookupControlCount("pci")
-	if hipaaCount == 0 {
-		t.Error("HIPAA control count should be > 0 after RegisterBuiltinFrameworks")
+	frameworks := map[string]int{
+		"hipaa":     lookupControlCount("hipaa"),
+		"pci":       lookupControlCount("pci"),
+		"eu_ai_act": lookupControlCount("eu_ai_act"),
+		"fedramp":   lookupControlCount("fedramp"),
+		"soc2":      lookupControlCount("soc2"),
+		"iso27001":  lookupControlCount("iso27001"),
+		"iso42001":  lookupControlCount("iso42001"),
+		"fips_140":  lookupControlCount("fips_140"),
+		"nist_csf":  lookupControlCount("nist_csf"),
+		"cis":       lookupControlCount("cis"),
 	}
-	if pciCount == 0 {
-		t.Error("PCI control count should be > 0 after RegisterBuiltinFrameworks")
+	for fw, count := range frameworks {
+		t.Logf("%s registered controls: %d", fw, count)
+		if count == 0 {
+			t.Errorf("%s control count should be > 0 after RegisterBuiltinFrameworks", fw)
+		}
 	}
-	t.Logf("HIPAA registered controls: %d", hipaaCount)
-	t.Logf("PCI registered controls: %d", pciCount)
+	// FedRAMP Path C has exactly 60 controls.
+	if fedrampCount := frameworks["fedramp"]; fedrampCount != 60 {
+		t.Errorf("fedramp control count = %d, want 60 (Path C)", fedrampCount)
+	}
 }
 
 func TestLookupControlCount_UnknownFramework(t *testing.T) {
 	// Framework that has never been registered returns 0.
-	if got := lookupControlCount("soc2"); got != 0 {
-		t.Errorf("soc2 control count = %d, want 0 (not registered)", got)
-	}
-	if got := lookupControlCount("iso42001"); got != 0 {
-		t.Errorf("iso42001 control count = %d, want 0 (not registered)", got)
-	}
+	// (soc2, iso42001, fedramp, etc. are now registered.)
 	if got := lookupControlCount("made-up-framework"); got != 0 {
 		t.Errorf("made-up-framework control count = %d, want 0", got)
+	}
+	if got := lookupControlCount("totally-fake"); got != 0 {
+		t.Errorf("totally-fake control count = %d, want 0", got)
 	}
 }
 
