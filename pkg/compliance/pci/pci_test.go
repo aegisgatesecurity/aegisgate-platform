@@ -23,7 +23,7 @@ func TestNewPCIModule(t *testing.T) {
 		m := NewPCIModule()
 		require.NotNil(t, m)
 		assert.Equal(t, "pci-dss", m.Framework())
-		assert.Equal(t, "4.0", m.Version())
+		assert.Equal(t, "4.1", m.Version())
 	})
 
 	t.Run("InitializesCardPatterns", func(t *testing.T) {
