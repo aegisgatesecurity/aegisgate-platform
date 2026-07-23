@@ -45,9 +45,9 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 			t.Errorf("%s control count should be > 0 after RegisterBuiltinFrameworks", fw)
 		}
 	}
-	// FedRAMP Path C has exactly 60 controls.
-	if fedrampCount := frameworks["fedramp"]; fedrampCount != 60 {
-		t.Errorf("fedramp control count = %d, want 60 (Path C)", fedrampCount)
+	// FedRAMP Path C has exactly 88 controls (15 families, 49 automated + 39 evidence-mapped).
+	if fedrampCount := frameworks["fedramp"]; fedrampCount != 88 {
+		t.Errorf("fedramp control count = %d, want 88 (Path C)", fedrampCount)
 	}
 }
 

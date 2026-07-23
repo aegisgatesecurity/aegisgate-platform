@@ -34,10 +34,11 @@
 //   - ac.go:        Access Control family (AC-2, AC-3, AC-6, AC-14, AC-17, AC-24)
 //   - au.go:        Audit and Accountability family (AU-2, AU-3, AU-6, AU-9, AU-10, AU-12, AU-16)
 //   - ia.go:        Identification and Authentication family (IA-2, IA-3, IA-5, IA-6, IA-7, IA-8)
-//   - sc.go:        System and Communications Protection family (SC-4, SC-7, SC-8, SC-12, SC-13, SC-23, SC-28)
-//   - cm_si.go:     Configuration Management + System & Information Integrity (CM-2, CM-3, CM-5, CM-6, CM-8, SI-2, SI-3, SI-4, SI-7, SI-8, SI-10, SI-16)
+//   - sc.go:        System and Communications Protection family (SC-3, SC-4, SC-5, SC-7, SC-8, SC-12, SC-13, SC-15, SC-23, SC-28, SC-39, SC-44)
+//   - cm_si.go:     Configuration Management + System & Information Integrity (CM-2–CM-8, CM-10, CM-12, SI-1–SI-4, SI-7–SI-8, SI-10–SI-12, SI-14, SI-16)
 //   - ir_sa_sr.go:  Incident Response, System & Services Acquisition, Supply Chain Risk Management (IR-4–IR-8, SA-4–SA-22, SR-3–SR-12)
-//   - ra_ca.go:     Risk Assessment, Assessment & Authorization (RA-3–RA-7, CA-2, CA-7, CA-8, CA-9)
+//   - ra_ca.go:     Risk Assessment, Assessment & Authorization (RA-3–RA-7, RA-9, CA-1–CA-3, CA-5, CA-7–CA-9)
+//   - at_cp_mp_pe.go: Awareness & Training, Contingency Planning, Media Protection, Physical & Environmental (AT-1–AT-3, CP-1–CP-2, CP-9, MP-5–MP-6, PE-3, PE-20)
 //   - fedramp_test.go: unit tests
 //   - doc.go:        package documentation
 //
@@ -169,11 +170,23 @@ func (m *FedRAMPModule) registerControls() {
 	// SR: Supply Chain Risk Management (5 controls)
 	m.registerSRControls()
 
-	// RA: Risk Assessment (4 controls)
+	// RA: Risk Assessment (6 controls)
 	m.registerRAControls()
 
-	// CA: Assessment, Authorization, and Monitoring (4 controls)
+	// CA: Assessment, Authorization, and Monitoring (7 controls)
 	m.registerCAControls()
+
+	// AT: Awareness and Training (3 controls)
+	m.registerATControls()
+
+	// CP: Contingency Planning (3 controls)
+	m.registerCPControls()
+
+	// MP: Media Protection (2 controls)
+	m.registerMPControls()
+
+	// PE: Physical and Environmental Protection (2 controls)
+	m.registerPEControls()
 }
 
 // Dependencies returns required modules. FedRAMP depends on the

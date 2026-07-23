@@ -71,6 +71,29 @@ func (m *FedRAMPModule) registerRAControls() {
 		Automated:   false,
 		References:  []string{"NIST SP 800-53 Rev. 5 RA-7", "FedRAMP Moderate RA-07"},
 	})
+
+	// RA-4: Vulnerability Remediation (Path C — new)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-RA-4",
+		Name:        "Vulnerability Remediation",
+		Description: "FedRAMP RA-4: Vulnerabilities remediated within defined timeframes based on severity",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkVulnerabilityRemediation,
+		References:  []string{"NIST SP 800-53 Rev. 5 RA-4", "FedRAMP Moderate RA-04"},
+	})
+
+	// RA-9: Criticality Analysis (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-RA-9",
+		Name:        "Criticality Analysis",
+		Description: "FedRAMP RA-9: Organization conducts a criticality analysis for system components. AegisGate's trust framework scoring and component inventory provide the evidence for RA-9.",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"NIST SP 800-53 Rev. 5 RA-9", "FedRAMP Moderate RA-09"},
+	})
 }
 
 // registerCAControls wires the CA family controls into the module.
@@ -111,6 +134,39 @@ func (m *FedRAMPModule) registerCAControls() {
 		Severity:    compliance.SeverityLow,
 		Automated:   false,
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-9", "FedRAMP Moderate CA-09"},
+	})
+
+	// CA-1: Assessment and Authorization Policy (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CA-1",
+		Name:        "Assessment and Authorization Policy and Procedures",
+		Description: "FedRAMP CA-1: Organization develops, documents, and disseminates an assessment and authorization policy. AegisGate generates compliance scan evidence for the customer's CA-1 documentation.",
+		Category:    "Assessment, Authorization, and Monitoring",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"NIST SP 800-53 Rev. 5 CA-1", "FedRAMP Moderate CA-01"},
+	})
+
+	// CA-3: System Interconnections (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CA-3",
+		Name:        "System Interconnections",
+		Description: "FedRAMP CA-3: System interconnections authorized and documented. AegisGate's trust framework identity and capability contracts provide the interconnection evidence for CA-3.",
+		Category:    "Assessment, Authorization, and Monitoring",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"NIST SP 800-53 Rev. 5 CA-3", "FedRAMP Moderate CA-03"},
+	})
+
+	// CA-5: Plan of Action and Milestones (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CA-5",
+		Name:        "Plan of Action and Milestones",
+		Description: "FedRAMP CA-5: Plan of Action and Milestones (POA&M) for security weaknesses. AegisGate's compliance scan drift detection and CCM provide the evidence for tracking POA&M items.",
+		Category:    "Assessment, Authorization, and Monitoring",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"NIST SP 800-53 Rev. 5 CA-5", "FedRAMP Moderate CA-05"},
 	})
 }
 
@@ -281,5 +337,57 @@ func (m *FedRAMPModule) checkContinuousMonitoring(ctx context.Context, input []b
 		Message:     "No continuous monitoring mechanism detected",
 		Timestamp:   time.Now(),
 		Remediation: "Enable CCM (ccm.enabled=true) and compliance scanning (scanner.enabled=true) for FedRAMP CA-7",
+	}, nil
+}
+
+// checkVulnerabilityRemediation verifies vulnerability remediation SLAs. Maps to RA-4.
+func (m *FedRAMPModule) checkVulnerabilityRemediation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVulnScan := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "vuln") || strings.Contains(inputStr, "vulnerability")
+	hasSLA := strings.Contains(inputStr, "sla") || strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "sla_enabled")
+	hasTracking := strings.Contains(inputStr, "ioc") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "audit_log")
+
+	if hasVulnScan && hasSLA {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-RA-4",
+			ControlName: "Vulnerability Remediation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Vulnerability remediation verified (scanning + SLA tracking)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if hasVulnScan && hasTracking {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-RA-4",
+			ControlName: "Vulnerability Remediation",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Vulnerability scanning detected but SLA tracking not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable SLA tracking (sla.enabled=true) for vulnerability remediation timeframes",
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasVulnScan {
+		violations = append(violations, "vulnerability scanning not configured")
+	}
+	if !hasSLA && !hasTracking {
+		violations = append(violations, "remediation SLA tracking not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-RA-4",
+		ControlName: "Vulnerability Remediation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Vulnerability remediation gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable vulnerability scanning (scanner.enabled=true) and SLA tracking (sla.enabled=true)",
 	}, nil
 }
