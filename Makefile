@@ -24,6 +24,9 @@ test: ## Run all tests
 test-short: ## Run tests without verbose output
 	go test -race ./...
 
+test-postgres: ## Run PostgreSQL integration tests (requires Docker)
+	go test -v -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/... ./pkg/rbac/... ./pkg/license/... ./pkg/correlation/... ./pkg/attestation/...
+
 lint: ## Run linters
 	go vet ./...
 	gofmt -l . | grep -q . && echo "Files need formatting:" && gofmt -l . && exit 1 || true

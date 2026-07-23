@@ -335,7 +335,7 @@ func TestIntegration_PostgresAttestationStore_PruneExpired(t *testing.T) {
 
 	// Store a long-lived envelope.
 	longLivedEnv := integrationEnvelopeWithTTL(t, kr, TypeAIBOM,
-		uniqueSubject("aibom", "long-lived"), 24*time.Hour)
+		uniqueSubject("manifest", "long-lived"), 24*time.Hour)
 	require.NoError(t, store.Store(ctx, longLivedEnv))
 
 	// Prune with cutoff = now (should remove the expired envelope).
@@ -434,7 +434,7 @@ func TestIntegration_PostgresAttestationStore_FullWorkflow(t *testing.T) {
 	// Step 1: Store multiple envelopes of different types.
 	env1 := integrationEnvelope(t, kr, TypeEvidenceManifest, uniqueSubject("manifest", "wf-1"))
 	env2 := integrationEnvelope(t, kr, TypeEvaluatorRun, uniqueSubject("evaluation", "wf-2"))
-	env3 := integrationEnvelope(t, kr, TypeAIBOM, uniqueSubject("aibom", "wf-3"))
+	env3 := integrationEnvelope(t, kr, TypeAIBOM, uniqueSubject("manifest", "wf-3"))
 	env4 := integrationEnvelope(t, kr, TypeEvidenceManifest, uniqueSubject("manifest", "wf-4"))
 
 	require.NoError(t, store.Store(ctx, env1), "Store env1 should succeed")
