@@ -154,66 +154,26 @@ jobs:
             # ioc_admin_api_test.go and ioc_wiring_test.go). Exempted
             # for now; can be revisited in a future session.
             "github.com/aegisgatesecurity/aegisgate-platform/cmd/aegisgate-platform"
-            # pkg/reporting: a thin 122-LOC wrapper around the
-            # vendored upstream pkg/reporting. The wrapper adds
-            # PDF rendering (delegates to pkg/pdf) and a platform-
-            # side Reporter constructor. NewReporter (75%) and
-            # ExportPDF (55.6%) error paths are tested; ExportPDFAdHoc
-            # (100%) is the happy-path smoke test. The full happy
-            # path of ExportPDF (completed report -> PDF) requires
-            # running the upstream reporter's scheduler, which is
-            # a process-level test. Exempted; can be revisited if
-            # the upstream reporter gains a public injection API.
+            # pkg/reporting: 66.7% coverage. A thin 122-LOC wrapper around
+            # the vendored upstream pkg/reporting. ExportPDF happy path
+            # requires running the upstream reporter's scheduler (no public
+            # injection API). ExportPDFAdHoc and error paths are fully tested.
+            # Exempted; can be revisited if the upstream gains an injection API.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/reporting"
             # pkg (root): contains only doc.go, no statements to cover.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg"
-            # pkg/ioc: at 74.5% coverage (below 80% floor). The PostgresStore
-            # (pkg/ioc/postgres_store.go, ~400 LOC) requires a running PostgreSQL
-            # instance and can only be tested via integration tests (build-tagged
-            # //go:build integration) or testlab's postgres_integration_test.go.
-            # The StoreAdapter, StoreInterface, in-memory Store, and D11
-            # tenant_isolation_test.go are fully tested. Exempted because
-            # live-DB tests cannot run in the default CI flow.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
-            # pkg/persistence: at 43.3% coverage (below 80% floor). The
-            # PostgresStorageBackend (postgres_storage_backend.go, ~450 LOC)
-            # requires a running PostgreSQL instance and can only be tested via
-            # integration tests (build-tagged //go:build integration) or
-            # testlab/postgres_integration_test.go. The file-backed storage,
-            # Manager lifecycle, NewWithPostgres fallback, closed-state error
-            # paths, and D11 AuditTenantContext are fully tested. Exempted
-            # because live-DB tests cannot run in the default CI flow.
+            # pkg/persistence: 59.3% coverage. PostgresStorageBackend
+            # (~450 LOC) requires a running PostgreSQL instance. File-backed
+            # storage, Manager lifecycle, closed-state error paths, and
+            # panic-recovery tests are fully covered. The SQL-execution
+            # paths (Write, Read, Query, VerifyIntegrity, scanAuditEntry)
+            # can only be tested via integration tests (//go:build integration).
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
-            # pkg/rbac: at 52.7% coverage (below 80% floor). The
-            # PostgresRBACStore (postgres_store.go, ~690 LOC) requires a
-            # running PostgreSQL instance and can only be tested via
-            # integration tests (build-tagged //go:build integration) or
-            # testlab/postgres_integration_test.go. The in-memory Manager,
-            # types, middleware, closed-state error paths, and D11
-            # RBACTenantContext (tenant_isolation_test.go) are fully tested.
-            # Exempted because live-DB tests cannot run in the default CI flow.
+            # pkg/rbac: 60.7% coverage. PostgresRBACStore (~690 LOC) requires
+            # a running PostgreSQL instance. In-memory Manager, types, middleware,
+            # closed-state error paths, and panic-recovery tests are fully covered.
+            # SQL-execution paths can only be tested via integration tests.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
-            # pkg/license: at 65.8% coverage (below 80% floor). The
-            # PostgresLicenseCache (postgres_cache.go, ~210 LOC) requires a
-            # running PostgreSQL instance. The in-memory Manager, validation,
-            # ECDSA signing, closed-state error paths, and D11
-            # LicenseTenantContext (tenant_isolation_test.go) are fully tested.
-            # Exempted because live-DB tests cannot run in the default CI flow.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
-            # pkg/attestation: at 71.7% coverage (below 80% floor). The
-            # PostgresStore (postgres_store.go, ~250 LOC) requires a running
-            # PostgreSQL instance and is tested via integration tests (build-tagged
-            # //go:build integration). The in-memory MemoryStore, interface,
-            # and unit tests are fully covered. Exempted because live-DB tests
-            # cannot run in the default CI flow.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
-            # pkg/correlation: at 67.0% coverage (below 80% floor). The
-            # PostgresStore (postgres_store.go, ~350 LOC) requires a running
-            # PostgreSQL instance and is tested via integration tests (build-tagged
-            # //go:build integration). The in-memory store adapter, interface,
-            # and unit tests are fully covered. Exempted because live-DB tests
-            # cannot run in the default CI flow.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
           )
           FAIL=0
           echo "## Per-Package Coverage Report" >> $GITHUB_STEP_SUMMARY
