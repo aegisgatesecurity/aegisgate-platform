@@ -35,7 +35,7 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		"soc2":      lookupControlCount("soc2"),
 		"iso27001":  lookupControlCount("iso27001"),
 		"iso42001":  lookupControlCount("iso42001"),
-		"fips":  lookupControlCount("fips"),
+		"fips":      lookupControlCount("fips"),
 		"nist_csf":  lookupControlCount("nist_csf"),
 		"cis":       lookupControlCount("cis"),
 	}

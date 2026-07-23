@@ -478,7 +478,7 @@ func TestAggregateControlCrossRefs_TargetsContributeToFrameworks(t *testing.T) {
 				SourceControl:   "ACCESS-001",
 				Targets: map[string][]string{
 					"atlas": {"AML.T0010"},
-					"owasp":   {"LLM05"},
+					"owasp": {"LLM05"},
 				},
 			},
 		},

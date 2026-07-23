@@ -7,8 +7,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
 )
 
 // mockFramework implements common.Framework for testing

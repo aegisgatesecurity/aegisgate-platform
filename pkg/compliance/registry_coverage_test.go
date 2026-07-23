@@ -4,9 +4,9 @@
 package compliance
 
 import (
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"context"
 	"errors"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
