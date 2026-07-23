@@ -4,9 +4,9 @@
 // =========================================================================
 //
 // NIST SP 800-53 Rev. 5 — Remaining in-scope controls to reach 150 total.
-// These are additional evidence-mapped controls that AegisGate generates
-// evidence artifacts for, complementing the customer's policy/process
-// documentation.
+// 15 of 16 controls are now automated (promoted from evidence-mapped to
+// CheckFunc in additional_checkfuncs.go). Only MA-1 (Maintenance Policy
+// and Procedures) remains evidence-mapped as a genuinely manual control.
 //
 // =========================================================================
 
@@ -17,15 +17,17 @@ import (
 )
 
 // registerAdditionalStubs wires the remaining 16 controls to reach 150.
+// 15 are now automated; 1 (MA-1) is genuinely manual (policy/process).
 func (m *FedRAMPModule) registerAdditionalStubs() {
-	// --- AC: remaining Access Control stubs ---
+	// --- AC: remaining Access Control (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AC-21",
 		Name:        "Information Sharing",
 		Description: "FedRAMP AC-21: Information sharing with external organizations authorized and controlled. AegisGate's trust framework capability contracts and protocol boundaries enforce authorized information sharing for AC-21.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInformationSharing,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-21", "FedRAMP Moderate AC-21"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -34,7 +36,8 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP AC-22: Publicly accessible content authorized. AegisGate's trust portal provides authorized public content (compliance posture, system status) for AC-22.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPubliclyAccessibleContent,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-22", "FedRAMP Moderate AC-22"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -43,18 +46,20 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP AC-23: Data mining protection for information storage. AegisGate's rate limiting and PII detection prevent unauthorized data mining for AC-23.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataMiningProtection,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-23", "FedRAMP Moderate AC-23"},
 	})
 
-	// --- SC: remaining System and Communications Protection stubs ---
+	// --- SC: remaining System and Communications Protection (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-2",
 		Name:        "Access Control Policy for Mobile Code",
 		Description: "FedRAMP SC-2: Access control policy for mobile code. AegisGate's ACP protocol controls mobile/agent code execution boundaries for SC-2.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMobileCodePolicy,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-2", "FedRAMP Moderate SC-02"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -63,7 +68,8 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP SC-21: Architecture and provisioning for name/address resolution. AegisGate's TLS enforcement and network boundary controls provide DNS security evidence for SC-21.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDNSArchitecture,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-21", "FedRAMP Moderate SC-21"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -72,7 +78,8 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP SC-24: Fail-safe communication for system failure. AegisGate's fail-closed security architecture ensures safe failure mode for SC-24.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFailSafeCommunication,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-24", "FedRAMP Moderate SC-24"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -81,7 +88,8 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP SC-25: Thin node implementation for minimal functionality. AegisGate's single-binary, minimal-dependency architecture aligns with thin node principles for SC-25.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkThinNode,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-25", "FedRAMP Moderate SC-25"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -90,7 +98,8 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP SC-26: Confidentiality of stored information protected. AegisGate's data-at-rest encryption and key management protect stored information for SC-26.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConfidentialityStoredInfo,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-26", "FedRAMP Moderate SC-26"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -99,29 +108,32 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP SC-34: Non-modifiable executable programs. AegisGate's compiled Go binary and hash-chain audit log provide tamper evidence for SC-34.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkNonModifiableProgram,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-34", "FedRAMP Moderate SC-34"},
 	})
 
-	// --- IR: remaining Incident Response stubs ---
+	// --- IR: remaining Incident Response (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IR-9",
 		Name:        "Incident Response Assistance",
 		Description: "FedRAMP IR-9: Incident response assistance available. AegisGate's incident engine and playbook execution provide automated response assistance for IR-9.",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponseAssistance,
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-9", "FedRAMP Moderate IR-09"},
 	})
 
-	// --- AU: remaining Audit and Accountability stubs ---
+	// --- AU: remaining Audit and Accountability (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AU-13",
 		Name:        "Monitoring for Information Security",
 		Description: "FedRAMP AU-13: Monitoring for information security. AegisGate's CCM scheduler and IOC store provide continuous monitoring for AU-13.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMonitoringInfoSecurity,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-13", "FedRAMP Moderate AU-13"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -130,29 +142,31 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP AU-14: Session audit information available. AegisGate's hash-chain audit log captures all session events for AU-14.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSessionAudit,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-14", "FedRAMP Moderate AU-14"},
 	})
 
-	// --- CP: remaining Contingency Planning stubs ---
+	// --- CP: remaining Contingency Planning (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CP-10",
 		Name:        "System Recovery and Reconstitution",
 		Description: "FedRAMP CP-10: System recovery and reconstitution after disruption. AegisGate's single-binary architecture enables rapid deployment and recovery at any site for CP-10.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemRecovery,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-10", "FedRAMP Moderate CP-10"},
 	})
 
-	// --- MA: Maintenance (2 controls, new family) ---
+	// --- MA: Maintenance (MA-1 genuinely manual, MA-4 automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-MA-1",
 		Name:        "Maintenance Policy and Procedures",
 		Description: "FedRAMP MA-1: Organization develops, documents, and disseminates a system maintenance policy. AegisGate's SBOM/AIBOM and configuration audit evidence support MA-1 documentation.",
 		Category:    "Maintenance",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   false, // Genuinely manual — requires customer policy/process documentation
 		References:  []string{"NIST SP 800-53 Rev. 5 MA-1", "FedRAMP Moderate MA-01"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -161,18 +175,20 @@ func (m *FedRAMPModule) registerAdditionalStubs() {
 		Description: "FedRAMP MA-4: Maintenance tools approved and controlled. AegisGate's AIBOM and SBOM track all software components (maintenance tools) for MA-4.",
 		Category:    "Maintenance",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMaintenanceTools,
 		References:  []string{"NIST SP 800-53 Rev. 5 MA-4", "FedRAMP Moderate MA-04"},
 	})
 
-	// --- SA: remaining System and Services Acquisition stub ---
+	// --- SA: remaining System and Services Acquisition (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SA-10",
 		Name:        "Developer Configuration Management",
 		Description: "FedRAMP SA-10: Developer configuration management for system components. AegisGate's AIBOM, attestation envelopes, and hash-chain audit log provide configuration management evidence for SA-10.",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDeveloperConfigMgmt,
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-10", "FedRAMP Moderate SA-10"},
 	})
 }

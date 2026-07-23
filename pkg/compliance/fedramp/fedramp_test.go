@@ -63,11 +63,11 @@ func TestNewFedRAMPModule(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if automated != 49 {
-		t.Errorf("automated controls = %d, want 49", automated)
+	if automated != 75 {
+		t.Errorf("automated controls = %d, want 75", automated)
 	}
-	if evidenceMapped != 101 {
-		t.Errorf("evidence-mapped controls = %d, want 101", evidenceMapped)
+	if evidenceMapped != 75 {
+		t.Errorf("evidence-mapped controls = %d, want 75", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -1285,26 +1285,14 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		"FedRAMP-MP-5",
 		"FedRAMP-PE-3", "FedRAMP-PE-20",
 		// Manual stubs (customer responsibility)
-		"FedRAMP-AC-1", "FedRAMP-AC-4", "FedRAMP-AC-5", "FedRAMP-AC-7", "FedRAMP-AC-8",
-		"FedRAMP-AC-10", "FedRAMP-AC-11", "FedRAMP-AC-12", "FedRAMP-AC-20",
-		"FedRAMP-AU-1", "FedRAMP-AU-4", "FedRAMP-AU-5", "FedRAMP-AU-7", "FedRAMP-AU-11",
-		"FedRAMP-IA-1", "FedRAMP-IA-4", "FedRAMP-IA-9", "FedRAMP-IA-10", "FedRAMP-IA-11",
 		"FedRAMP-SC-1", "FedRAMP-SC-6", "FedRAMP-SC-22", "FedRAMP-SC-40",
 		"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3", "FedRAMP-IR-10",
 		"FedRAMP-SA-1", "FedRAMP-SA-8",
-		"FedRAMP-CM-1", "FedRAMP-CM-4", "FedRAMP-CM-9", "FedRAMP-CM-11",
 		"FedRAMP-RA-1",
 		"FedRAMP-CP-3", "FedRAMP-CP-4", "FedRAMP-CP-6", "FedRAMP-CP-7", "FedRAMP-CP-8",
 		"FedRAMP-PS-1", "FedRAMP-PS-2", "FedRAMP-PS-3",
 		"FedRAMP-PM-1", "FedRAMP-PM-14",
 		"FedRAMP-PL-1", "FedRAMP-PL-2",
-		"FedRAMP-AC-21", "FedRAMP-AC-22", "FedRAMP-AC-23",
-		"FedRAMP-SC-2", "FedRAMP-SC-21", "FedRAMP-SC-24", "FedRAMP-SC-25", "FedRAMP-SC-26", "FedRAMP-SC-34",
-		"FedRAMP-IR-9",
-		"FedRAMP-AU-13", "FedRAMP-AU-14",
-		"FedRAMP-CP-10",
-		"FedRAMP-MA-1", "FedRAMP-MA-4",
-		"FedRAMP-SA-10",
 	}
 
 	controlMap := map[string]compliance.ControlDefinition{}
