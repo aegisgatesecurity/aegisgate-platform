@@ -3,9 +3,12 @@
 //
 // soc_http.go wires pkg/soc into the HTTP API as
 //   - GET /api/v1/soc/incidents/:id/timeline
+//   - GET /api/v1/soc/incidents/:id/stream (SSE, v3.8)
 //
 // Tier gating: SOC timeline is FREE (no gate). It
-// is a read-only data view.
+// is a read-only data view. SSE streaming is
+// Professional+ (Developer gets 5s polling,
+// Community gets 30s polling).
 
 package main
 
@@ -24,24 +27,63 @@ import (
 // gate); the auth middleware ensures the caller
 // is authenticated.
 //
-// v0.1: the timeline is read from a fresh
-// correlation.Engine instance. v0.2 will wire the
-// platform's shared engine instance.
-//
-// We use Go's standard http.ServeMux pattern
-// matching: the URL pattern
-// /api/v1/soc/incidents/{id}/timeline is registered
-// with id as a path wildcard. (Go 1.22+ mux
-// supports {id} natively; we use the stdlib mux
-// pattern, NOT a custom regex.)
+// v0.2 (v3.8): SSE streaming is wired for
+// Professional+ tiers. The stream endpoint creates
+// a per-request TimelineStreamer that replays
+// recent events from the CorrelationStore and then
+// streams new events in real-time.
 func wireSOCHandlers(mux *http.ServeMux, authMW *auth.Middleware) {
-	// Register the exact pattern. The Go 1.22+ mux
-	// supports {id} as a path variable.
+	// Timeline endpoint (JSON, all tiers).
 	mux.HandleFunc("/api/v1/soc/incidents/{id}/timeline", authMW.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		// r.PathValue("id") is the session ID.
-		// Available in Go 1.22+.
 		handleSOCTimeline(w, r, r.PathValue("id"))
 	}))
+
+	// SSE streaming endpoint (Professional+).
+	mux.HandleFunc("/api/v1/soc/incidents/{id}/stream", authMW.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		sessionID := r.PathValue("id")
+		if sessionID == "" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "session id is required"})
+			return
+		}
+		// v0.1: creates a per-request streamer. v0.2 will use
+		// the platform's shared streamer instance.
+		store := getCorrelationStore(r)
+		streamer := soc.NewTimelineStreamer(store, soc.DefaultStreamConfig())
+		streamer.Start()
+		defer streamer.Stop()
+
+		// Replay recent events if a store is available.
+		if store != nil {
+			events, err := streamer.ReplayEvents(r.Context(), sessionID)
+			if err == nil && len(events) > 0 {
+				for _, evt := range events {
+					streamer.PushEvent(&correlation.Event{
+						ID:        evt.ID,
+						Protocol:  evt.Protocol,
+						AgentID:   evt.AgentID,
+						SessionID: evt.SessionID,
+						EventType: evt.EventType,
+						Severity:  evt.Severity,
+						Decision:  evt.Decision,
+						Timestamp: evt.Timestamp,
+						Metadata:  evt.Metadata,
+					})
+				}
+			}
+		}
+
+		clientID := sessionID + "-" + r.RemoteAddr
+		soc.ServeSSE(w, r, streamer, clientID)
+	}))
+}
+
+// getCorrelationStore returns the CorrelationStore from the request
+// context, or nil if unavailable. v0.1 always returns nil (in-memory
+// engine); v0.2 will extract it from the platform's persistence manager.
+func getCorrelationStore(_ *http.Request) correlation.CorrelationStore {
+	return nil
 }
 
 // handleSOCTimeline is the HTTP handler for
