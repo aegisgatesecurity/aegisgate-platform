@@ -65,7 +65,7 @@ jobs:
           CGO_ENABLED=0 go build \
             -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT:0:8} -X main.buildDate=${BUILD_DATE}" \
             -o dist/aegisgate-platform \
-            cmd/aegisgate-platform/main.go
+            ./cmd/aegisgate-platform/
 
       - name: Generate SHA256 checksum
         run: |
