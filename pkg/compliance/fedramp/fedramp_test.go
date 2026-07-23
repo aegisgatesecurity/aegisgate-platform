@@ -388,12 +388,28 @@ func TestCheckAuditReview(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkAuditReview(ctx, []byte(`{"audit_search": true, "anomaly_detection": true, "alert": true}`))
-	if err != nil {
-		t.Fatalf("checkAuditReview: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (audit_search + anomaly + alert)", input: `{"audit_search": true, "anomaly_detection": true, "alert": true}`, wantStatus: "compliant"},
+		{name: "compliant (audit_log + siem + review)", input: `{"audit_log": true, "siem": true, "review": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (no audit search)", input: `{"anomaly_detection": true, "alert": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (no anomaly detection)", input: `{"audit_search": true, "alert": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkAuditReview(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkAuditReview: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -401,12 +417,26 @@ func TestCheckAuditRecordGeneration(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkAuditRecordGeneration(ctx, []byte(`{"audit_log": true, "http": true, "mcp": true, "a2a": true, "hash_chain": true}`))
-	if err != nil {
-		t.Fatalf("checkAuditRecordGeneration: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (audit_log + all pillars)", input: `{"audit_log": true, "http": true, "mcp": true, "a2a": true, "hash_chain": true}`, wantStatus: "compliant"},
+		{name: "partial (audit_log only, no pillars)", input: `{"audit_log": true}`, wantStatus: "partial"},
+		{name: "non_compliant (no audit)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkAuditRecordGeneration(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkAuditRecordGeneration: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -416,12 +446,28 @@ func TestCheckDeviceAuth(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkDeviceAuth(ctx, []byte(`{"api_key": true, "mtls": true, "device_id": true}`))
-	if err != nil {
-		t.Fatalf("checkDeviceAuth: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (api_key + mtls + device_id)", input: `{"api_key": true, "mtls": true, "device_id": true}`, wantStatus: "compliant"},
+		{name: "compliant (mtls + device_auth)", input: `{"mutual_tls": true, "device_auth": true}`, wantStatus: "compliant"},
+		{name: "partial (api_key but no device_id)", input: `{"api_key": true}`, wantStatus: "partial"},
+		{name: "partial (mtls but no device_id)", input: `{"mtls": true}`, wantStatus: "partial"},
+		{name: "non_compliant (no auth)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkDeviceAuth(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkDeviceAuth: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -429,12 +475,27 @@ func TestCheckAuthenticatorMgmt(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkAuthenticatorMgmt(ctx, []byte(`{"password_policy": true, "key_rotation": true}`))
-	if err != nil {
-		t.Fatalf("checkAuthenticatorMgmt: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (password_policy + key_rotation)", input: `{"password_policy": true, "key_rotation": true}`, wantStatus: "compliant"},
+		{name: "compliant (password + expiry)", input: `{"password": true, "session_timeout": 1800}`, wantStatus: "compliant"},
+		{name: "non_compliant (password_policy only, no rotation/expiry)", input: `{"password_policy": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkAuthenticatorMgmt(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkAuthenticatorMgmt: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -442,12 +503,28 @@ func TestCheckAuthenticatorFeedback(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkAuthenticatorFeedback(ctx, []byte(`{"mask": true}`))
-	if err != nil {
-		t.Fatalf("checkAuthenticatorFeedback: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (mask)", input: `{"mask": true}`, wantStatus: "compliant"},
+		{name: "compliant (masked)", input: `{"masked": true}`, wantStatus: "compliant"},
+		{name: "compliant (no_echo)", input: `{"no_echo": true}`, wantStatus: "compliant"},
+		{name: "compliant (secure_input)", input: `{"secure_input": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (no masking)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkAuthenticatorFeedback(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkAuthenticatorFeedback: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -455,12 +532,27 @@ func TestCheckCryptoModuleAuth(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkCryptoModuleAuth(ctx, []byte(`{"fips_140": true, "tls": true}`))
-	if err != nil {
-		t.Fatalf("checkCryptoModuleAuth: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (fips + tls)", input: `{"fips_140": true, "tls": true}`, wantStatus: "compliant"},
+		{name: "compliant (fips_mode + key_management)", input: `{"fips_mode": true, "key_management": true}`, wantStatus: "compliant"},
+		{name: "partial (fips only, no tls/key_mgmt)", input: `{"fips_140": true}`, wantStatus: "partial"},
+		{name: "non_compliant (no fips)", input: `{"tls": true, "key_management": true}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkCryptoModuleAuth(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkCryptoModuleAuth: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -470,12 +562,27 @@ func TestCheckSharedResources(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkSharedResources(ctx, []byte(`{"multi_tenant": true, "data_segregation": true}`))
-	if err != nil {
-		t.Fatalf("checkSharedResources: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (multi_tenant + data_segregation)", input: `{"multi_tenant": true, "data_segregation": true}`, wantStatus: "compliant"},
+		{name: "compliant (tenant_isolation + rbac)", input: `{"tenant_isolation": true, "rbac": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (no isolation)", input: `{}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (isolation only, no segregation)", input: `{"multi_tenant": true}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkSharedResources(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkSharedResources: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -483,12 +590,28 @@ func TestCheckBoundaryProtection(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkBoundaryProtection(ctx, []byte(`{"proxy": true, "egress_filter": true}`))
-	if err != nil {
-		t.Fatalf("checkBoundaryProtection: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (proxy + egress_filter)", input: `{"proxy": true, "egress_filter": true}`, wantStatus: "compliant"},
+		{name: "compliant (firewall + egress)", input: `{"firewall": true, "egress_filter": true}`, wantStatus: "compliant"},
+		{name: "compliant (rate_limiting + egress)", input: `{"rate_limiting": true, "egress_filter": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (no egress filter)", input: `{"proxy": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkBoundaryProtection(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkBoundaryProtection: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -496,12 +619,28 @@ func TestCheckCryptoKeyEstablishment(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkCryptoKeyEstablishment(ctx, []byte(`{"key_management": true, "fips_mode": true}`))
-	if err != nil {
-		t.Fatalf("checkCryptoKeyEstablishment: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (key_management + fips)", input: `{"key_management": true, "fips_mode": true}`, wantStatus: "compliant"},
+		{name: "compliant (key_rotation + fips_140)", input: `{"key_rotation": true, "fips_140": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (key_mgmt only, no fips)", input: `{"key_management": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (fips only, no key_mgmt)", input: `{"fips_mode": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkCryptoKeyEstablishment(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkCryptoKeyEstablishment: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -509,12 +648,27 @@ func TestCheckCryptoProtection(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkCryptoProtection(ctx, []byte(`{"fips_140": true}`))
-	if err != nil {
-		t.Fatalf("checkCryptoProtection: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (fips_140)", input: `{"fips_140": true}`, wantStatus: "compliant"},
+		{name: "compliant (fips_mode)", input: `{"fips_mode": true}`, wantStatus: "compliant"},
+		{name: "partial (tls but no fips)", input: `{"tls": true}`, wantStatus: "partial"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkCryptoProtection(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkCryptoProtection: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -522,12 +676,28 @@ func TestCheckSessionProtection(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkSessionProtection(ctx, []byte(`{"session_timeout": 1800, "csrf_token": true}`))
-	if err != nil {
-		t.Fatalf("checkSessionProtection: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (session_timeout + csrf_token)", input: `{"session_timeout": 1800, "csrf_token": true}`, wantStatus: "compliant"},
+		{name: "compliant (idle_timeout + mfa)", input: `{"idle_timeout": "5m", "mfa": true}`, wantStatus: "compliant"},
+		{name: "compliant (timeout + session_token)", input: `{"timeout": 3600, "session_token": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (timeout only, no csrf/reauth)", input: `{"session_timeout": 1800}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkSessionProtection(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkSessionProtection: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -535,12 +705,27 @@ func TestCheckDataAtRest(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
 
-	result, err := m.checkDataAtRest(ctx, []byte(`{"encryption_at_rest": true, "key_management": true}`))
-	if err != nil {
-		t.Fatalf("checkDataAtRest: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (encryption_at_rest + key_management)", input: `{"encryption_at_rest": true, "key_management": true}`, wantStatus: "compliant"},
+		{name: "compliant (data_encrypted + key_store)", input: `{"data_encrypted": true, "key_store": true}`, wantStatus: "compliant"},
+		{name: "partial (encryption but no key_mgmt)", input: `{"encryption_at_rest": true}`, wantStatus: "partial"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkDataAtRest(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkDataAtRest: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -549,65 +734,142 @@ func TestCheckDataAtRest(t *testing.T) {
 func TestCheckChangeControl(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkChangeControl(ctx, []byte(`{"audit_log": true, "review": true}`))
-	if err != nil {
-		t.Fatalf("checkChangeControl: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (audit_log + review)", input: `{"audit_log": true, "review": true}`, wantStatus: "compliant"},
+		{name: "compliant (audit_trail + git)", input: `{"audit_trail": true, "git": true}`, wantStatus: "compliant"},
+		{name: "compliant (config_audit + approval)", input: `{"config_audit": true, "approval": true}`, wantStatus: "compliant"},
+		{name: "compliant (audit_log + version_control)", input: `{"audit_log": true, "version_control": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (audit_log only, no approval)", input: `{"audit_log": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (review only, no audit)", input: `{"review": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkChangeControl(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkChangeControl: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckComponentInventory(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkComponentInventory(ctx, []byte(`{"sbom": true, "dependencies": true, "version": "1.0"}`))
-	if err != nil {
-		t.Fatalf("checkComponentInventory: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (sbom + dependencies + version)", input: `{"sbom": true, "dependencies": true, "version": "1.0"}`, wantStatus: "compliant"},
+		{name: "compliant (aibom + inventory)", input: `{"aibom": true, "inventory": true}`, wantStatus: "compliant"},
+		{name: "compliant (cyclonedx + versioning)", input: `{"cyclonedx": true, "versioning": true}`, wantStatus: "compliant"},
+		{name: "partial (sbom only, no inventory)", input: `{"sbom": true}`, wantStatus: "partial"},
+		{name: "partial (sbom + version but no inventory)", input: `{"sbom": true, "version": "1.0"}`, wantStatus: "compliant"},
+		{name: "non_compliant (no sbom)", input: `{"dependencies": true, "version": "1.0"}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkComponentInventory(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkComponentInventory: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckFlawRemediation(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkFlawRemediation(ctx, []byte(`{"scanner": true, "patch": true}`))
-	if err != nil {
-		t.Fatalf("checkFlawRemediation: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (scanner + patch)", input: `{"scanner": true, "patch": true}`, wantStatus: "compliant"},
+		{name: "compliant (vulnerability + sbom)", input: `{"vulnerability": true, "sbom": true}`, wantStatus: "compliant"},
+		{name: "compliant (vuln + update)", input: `{"vuln": true, "update": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (scanner only, no patch)", input: `{"scanner": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (patch only, no scanner)", input: `{"patch": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkFlawRemediation(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkFlawRemediation: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckSoftwareIntegrity(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkSoftwareIntegrity(ctx, []byte(`{"hash_chain": true, "aibom": true}`))
-	if err != nil {
-		t.Fatalf("checkSoftwareIntegrity: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (hash_chain + aibom)", input: `{"hash_chain": true, "aibom": true}`, wantStatus: "compliant"},
+		{name: "compliant (integrity + attestation)", input: `{"integrity": true, "attestation": true}`, wantStatus: "compliant"},
+		{name: "compliant (log_integrity + sbom)", input: `{"log_integrity": true, "sbom": true}`, wantStatus: "compliant"},
+		{name: "partial (hash_chain only)", input: `{"hash_chain": true}`, wantStatus: "partial"},
+		{name: "non_compliant (no hash_chain)", input: `{"aibom": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkSoftwareIntegrity(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkSoftwareIntegrity: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckInputValidation(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkInputValidation(ctx, []byte(`{"input_validation": true, "prompt_injection": true}`))
-	if err != nil {
-		t.Fatalf("checkInputValidation: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (input_validation + prompt_injection)", input: `{"input_validation": true, "prompt_injection": true}`, wantStatus: "compliant"},
+		{name: "compliant (validation + xss)", input: `{"validation": true, "xss": true}`, wantStatus: "compliant"},
+		{name: "compliant (sanitiz + sql_injection)", input: `{"sanitiz": true, "sql_injection": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (input_validation only)", input: `{"input_validation": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (injection only, no validation)", input: `{"prompt_injection": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkInputValidation(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkInputValidation: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -616,26 +878,56 @@ func TestCheckInputValidation(t *testing.T) {
 func TestCheckIncidentHandling(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkIncidentHandling(ctx, []byte(`{"ioc": true, "incident_response": true}`))
-	if err != nil {
-		t.Fatalf("checkIncidentHandling: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (ioc + incident_response)", input: `{"ioc": true, "incident_response": true}`, wantStatus: "compliant"},
+		{name: "compliant (alert + response)", input: `{"alert": true, "response": true}`, wantStatus: "compliant"},
+		{name: "compliant (threat + siem + block)", input: `{"threat": true, "siem": true, "block": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (ioc only, no response)", input: `{"ioc": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (incident_response only, no detection)", input: `{"incident_response": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkIncidentHandling(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkIncidentHandling: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckIncidentMonitoring(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkIncidentMonitoring(ctx, []byte(`{"monitoring": true, "tracking": true}`))
-	if err != nil {
-		t.Fatalf("checkIncidentMonitoring: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (monitoring + tracking)", input: `{"monitoring": true, "tracking": true}`, wantStatus: "compliant"},
+		{name: "compliant (anomaly + ioc)", input: `{"anomaly": true, "ioc": true}`, wantStatus: "compliant"},
+		{name: "compliant (audit_log + incident_tracking)", input: `{"audit_log": true, "incident_tracking": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (monitoring only)", input: `{"monitoring": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (tracking only)", input: `{"tracking": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkIncidentMonitoring(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkIncidentMonitoring: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
@@ -644,40 +936,234 @@ func TestCheckIncidentMonitoring(t *testing.T) {
 func TestCheckRiskAssessment(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkRiskAssessment(ctx, []byte(`{"compliance": true, "threat": true}`))
-	if err != nil {
-		t.Fatalf("checkRiskAssessment: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (scan + threat)", input: `{"compliance": true, "threat": true}`, wantStatus: "compliant"},
+		{name: "compliant (scan + schedule)", input: `{"scan": true, "schedule": true}`, wantStatus: "compliant"},
+		{name: "compliant (compliance + ccm)", input: `{"compliance": true, "ccm": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (scan only, no threat/schedule)", input: `{"scan": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (threat only, no scan)", input: `{"threat": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkRiskAssessment(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkRiskAssessment: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckVulnerabilityScanning(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
-
-	result, err := m.checkVulnerabilityScanning(ctx, []byte(`{"scanner": true, "ccm": true}`))
-	if err != nil {
-		t.Fatalf("checkVulnerabilityScanning: %v", err)
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (scanner + ccm)", input: `{"scanner": true, "ccm": true}`, wantStatus: "compliant"},
+		{name: "compliant (vuln + schedule)", input: `{"vulnerability": true, "schedule": true}`, wantStatus: "compliant"},
+		{name: "partial (scanner only)", input: `{"scanner": true}`, wantStatus: "partial"},
+		{name: "non_compliant (ccm only, no scanner)", input: `{"ccm": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkVulnerabilityScanning(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkVulnerabilityScanning: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
 }
 
 func TestCheckContinuousMonitoring(t *testing.T) {
 	m := NewFedRAMPModule()
 	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (ccm + scan)", input: `{"ccm": true, "scan": true}`, wantStatus: "compliant"},
+		{name: "compliant (continuous + scanner)", input: `{"continuous": true, "scanner": true}`, wantStatus: "compliant"},
+		{name: "compliant (schedule + compliance)", input: `{"schedule": true, "compliance": true}`, wantStatus: "compliant"},
+		{name: "partial (ccm only)", input: `{"ccm": true}`, wantStatus: "partial"},
+		{name: "partial (scan only)", input: `{"scan": true}`, wantStatus: "partial"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkContinuousMonitoring(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkContinuousMonitoring: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
 
-	result, err := m.checkContinuousMonitoring(ctx, []byte(`{"ccm": true, "scan": true}`))
-	if err != nil {
-		t.Fatalf("checkContinuousMonitoring: %v", err)
+// --- Missing CheckFunc tests: CM-5, CM-6, RA-6 ---
+
+func TestCheckChangeAccessRestrictions(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (rbac + change_log)", input: `{"rbac": true, "change_log": true}`, wantStatus: "compliant"},
+		{name: "compliant (roles + audit_log)", input: `{"roles": ["admin"], "audit_log": true}`, wantStatus: "compliant"},
+		{name: "compliant (admin_only + config_audit)", input: `{"admin_only": true, "config_audit": true}`, wantStatus: "compliant"},
+		{name: "compliant (restricted + change_log)", input: `{"restricted": true, "change_log": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (rbac only, no change_log)", input: `{"rbac": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (change_log only, no rbac)", input: `{"change_log": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
 	}
-	if string(result.Status) != "compliant" {
-		t.Errorf("Expected compliant, got %q: %q", result.Status, result.Message)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkChangeAccessRestrictions(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkChangeAccessRestrictions: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
 	}
+}
+
+func TestCheckConfigSettings(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (security + secure_default)", input: `{"security": true, "secure_default": true}`, wantStatus: "compliant"},
+		{name: "compliant (security_config + hardened)", input: `{"security_config": true, "hardened": true}`, wantStatus: "compliant"},
+		{name: "compliant (tls + policy)", input: `{"tls": true, "policy": true}`, wantStatus: "compliant"},
+		{name: "compliant (security + enforcement)", input: `{"security": true, "enforcement": true}`, wantStatus: "compliant"},
+		{name: "compliant (security_config + config_enforcement)", input: `{"security_config": true, "config_enforcement": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (security only, no defaults)", input: `{"security": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (default_deny only, no security)", input: `{"default_deny": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkConfigSettings(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkConfigSettings: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+func TestCheckTechnicalSurveillance(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{name: "compliant (ioc + monitoring)", input: `{"ioc": true, "monitoring": true}`, wantStatus: "compliant"},
+		{name: "compliant (indicator + siem)", input: `{"indicator": true, "siem": true}`, wantStatus: "compliant"},
+		{name: "compliant (anomaly_detection + audit_log)", input: `{"anomaly_detection": true, "audit_log": true}`, wantStatus: "compliant"},
+		{name: "compliant (threat_intelligence + monitoring)", input: `{"threat_intelligence": true, "monitoring": true}`, wantStatus: "compliant"},
+		{name: "non_compliant (ioc only, no monitoring)", input: `{"ioc": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (monitoring only, no ioc/anomaly)", input: `{"monitoring": true}`, wantStatus: "non_compliant"},
+		{name: "non_compliant (empty)", input: `{}`, wantStatus: "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.checkTechnicalSurveillance(ctx, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("checkTechnicalSurveillance: %v", err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("Status = %q, want %q (message: %q)", result.Status, tt.wantStatus, result.Message)
+			}
+		})
+	}
+}
+
+// --- Edge case tests ---
+
+func TestCheckFuncs_EdgeCases(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+
+	// Test that all automated CheckFuncs handle empty input gracefully
+	automatedControls := m.Controls()
+	var checkFuncs []compliance.ControlDefinition
+	for _, c := range automatedControls {
+		if c.Automated && c.CheckFunc != nil {
+			checkFuncs = append(checkFuncs, c)
+		}
+	}
+
+	t.Run("empty_input", func(t *testing.T) {
+		for _, c := range checkFuncs {
+			result, err := c.CheckFunc(ctx, []byte{})
+			if err != nil {
+				t.Errorf("Control %s returned error on empty input: %v", c.ID, err)
+				continue
+			}
+			if string(result.Status) == "" {
+				t.Errorf("Control %s returned empty status on empty input", c.ID)
+			}
+			// Empty input should always be non_compliant
+			if string(result.Status) == "compliant" {
+				t.Errorf("Control %s returned compliant on empty input, expected non_compliant or partial", c.ID)
+			}
+		}
+	})
+
+	t.Run("whitespace_only", func(t *testing.T) {
+		for _, c := range checkFuncs {
+			result, err := c.CheckFunc(ctx, []byte("   \t\n  "))
+			if err != nil {
+				t.Errorf("Control %s returned error on whitespace input: %v", c.ID, err)
+				continue
+			}
+			if string(result.Status) == "" {
+				t.Errorf("Control %s returned empty status on whitespace input", c.ID)
+			}
+		}
+	})
+
+	t.Run("large_input", func(t *testing.T) {
+		largeInput := []byte(strings.Repeat(`{"rbac": true, "tls": true, "audit_log": true, "monitoring": true} `, 1000))
+		for _, c := range checkFuncs {
+			result, err := c.CheckFunc(ctx, largeInput)
+			if err != nil {
+				t.Errorf("Control %s returned error on large input: %v", c.ID, err)
+				continue
+			}
+			if string(result.Status) == "" {
+				t.Errorf("Control %s returned empty status on large input", c.ID)
+			}
+		}
+	})
 }
 
 // --- Integration: all automated checks on a fully compliant config ---
@@ -705,22 +1191,32 @@ func TestFedRAMPModule_AllAutomatedChecks(t *testing.T) {
 		"ccm": true, "scan": true, "compliance": true, "threat": true,
 		"input_validation": true, "prompt_injection": true,
 		"change_log": true, "config_audit": true, "secure_default": true,
-		"attestation": true, "trust": true, "git": true
+		"attestation": true, "trust": true, "git": true,
+		"safe_errors": true, "error_handling": true, "remediation": true, "sla_enabled": true,
+		"backup": true, "persistence": true, "backup_schedule": true, "schedule": true,
+		"isolation": true, "security_boundary": true, "sandbox": true,
+		"dos_protection": true, "rate_limiting": true, "throttling": true, "circuit_breaker": true,
+		"port_restrictions": true, "minimal_services": true,
+		"software_usage": true, "license_compliance": true, "information_location": true,
+		"data_classification": true, "retention_policy": true,
+		"non_disruptive": true, "safe_mode": true
 	}`
 
-	// All 31 automated controls should return compliant
+	// All 49 automated controls should return compliant
 	automatedIDs := []string{
 		"FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-6", "FedRAMP-AC-14", "FedRAMP-AC-17",
 		"FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-6", "FedRAMP-AU-9", "FedRAMP-AU-12",
 		"FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-5", "FedRAMP-IA-6", "FedRAMP-IA-7",
-		"FedRAMP-SC-4", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13",
-		"FedRAMP-SC-23", "FedRAMP-SC-28",
-		"FedRAMP-CM-3", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-8",
-		"FedRAMP-SI-2", "FedRAMP-SI-7", "FedRAMP-SI-10",
+		"FedRAMP-SC-3", "FedRAMP-SC-4", "FedRAMP-SC-5", "FedRAMP-SC-7", "FedRAMP-SC-8",
+		"FedRAMP-SC-12", "FedRAMP-SC-13", "FedRAMP-SC-23", "FedRAMP-SC-28", "FedRAMP-SC-39",
+		"FedRAMP-CM-3", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-7", "FedRAMP-CM-8",
+		"FedRAMP-CM-10", "FedRAMP-CM-12",
+		"FedRAMP-SI-2", "FedRAMP-SI-7", "FedRAMP-SI-10", "FedRAMP-SI-11", "FedRAMP-SI-14",
 		"FedRAMP-IR-4", "FedRAMP-IR-5", "FedRAMP-IR-6",
 		"FedRAMP-SA-22", "FedRAMP-SR-4",
-		"FedRAMP-RA-3", "FedRAMP-RA-5", "FedRAMP-RA-6",
+		"FedRAMP-RA-3", "FedRAMP-RA-4", "FedRAMP-RA-5", "FedRAMP-RA-6",
 		"FedRAMP-CA-7",
+		"FedRAMP-CP-9", "FedRAMP-MP-6",
 	}
 
 	controls := m.Controls()
