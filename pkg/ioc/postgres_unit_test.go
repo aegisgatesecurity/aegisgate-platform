@@ -55,11 +55,11 @@ func TestNewPostgresStore_UnreachableHost(t *testing.T) {
 
 	// Valid URL syntax but unreachable host — should fail at ping.
 	_, err := NewPostgresStore(ctx, DatabaseConfig{
-		URL:          "postgres://noexistenthostx.invalid:1/doesnotexist?sslmode=disable",
-		MaxConns:     1,
-		MinConns:     1,
-		MaxConnIdleTime:  1 * time.Second,
-		MaxConnLifetime:  1 * time.Second,
+		URL:                 "postgres://noexistenthostx.invalid:1/doesnotexist?sslmode=disable",
+		MaxConns:            1,
+		MinConns:            1,
+		MaxConnIdleTime:     1 * time.Second,
+		MaxConnLifetime:     1 * time.Second,
 		HealthCheckInterval: 1 * time.Second,
 	})
 	if err == nil {
@@ -80,11 +80,11 @@ func TestNewPostgresStore_DefaultsApplied(t *testing.T) {
 	// This will fail at pool creation, but we verify the defaults
 	// by checking the config structure.
 	cfg := DatabaseConfig{
-		URL:              "postgres://noexistenthostx.invalid:1/db?sslmode=disable",
-		MaxConns:        -1, // should become 25
-		MinConns:        -1, // should become 5
-		MaxConnIdleTime: 1 * time.Second,
-		MaxConnLifetime: 1 * time.Second,
+		URL:                 "postgres://noexistenthostx.invalid:1/db?sslmode=disable",
+		MaxConns:            -1, // should become 25
+		MinConns:            -1, // should become 5
+		MaxConnIdleTime:     1 * time.Second,
+		MaxConnLifetime:     1 * time.Second,
 		HealthCheckInterval: 1 * time.Second,
 	}
 
@@ -107,11 +107,11 @@ func TestNewPostgresStore_MaxConnsOverflow(t *testing.T) {
 	defer cancel()
 
 	cfg := DatabaseConfig{
-		URL:              "postgres://noexistenthostx.invalid:1/db?sslmode=disable",
-		MaxConns:        math.MaxInt32 + 1, // overflow int32
-		MinConns:        1,
-		MaxConnIdleTime: 1 * time.Second,
-		MaxConnLifetime: 1 * time.Second,
+		URL:                 "postgres://noexistenthostx.invalid:1/db?sslmode=disable",
+		MaxConns:            math.MaxInt32 + 1, // overflow int32
+		MinConns:            1,
+		MaxConnIdleTime:     1 * time.Second,
+		MaxConnLifetime:     1 * time.Second,
 		HealthCheckInterval: 1 * time.Second,
 	}
 
@@ -130,11 +130,11 @@ func TestNewPostgresStore_MinConnsOverflow(t *testing.T) {
 	defer cancel()
 
 	cfg := DatabaseConfig{
-		URL:              "postgres://noexistenthostx.invalid:1/db?sslmode=disable",
-		MaxConns:        1,
-		MinConns:        math.MaxInt32 + 1, // overflow int32
-		MaxConnIdleTime: 1 * time.Second,
-		MaxConnLifetime: 1 * time.Second,
+		URL:                 "postgres://noexistenthostx.invalid:1/db?sslmode=disable",
+		MaxConns:            1,
+		MinConns:            math.MaxInt32 + 1, // overflow int32
+		MaxConnIdleTime:     1 * time.Second,
+		MaxConnLifetime:     1 * time.Second,
 		HealthCheckInterval: 1 * time.Second,
 	}
 
