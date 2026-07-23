@@ -362,7 +362,7 @@ func main() {
 		var pgErr error
 		pgStore, pgErr = ioc.NewPostgresStore(ctx, pgCfg)
 		if pgErr != nil {
-			log.Printf("⚠️  PostgreSQL init failed: %v — falling back to in-memory storage", pgErr)
+			log.Printf("⚠️  PostgreSQL init failed: %v — falling back to in-memory storage", pgErr) //nosec G706 -- pgErr is internal error, not user input
 			pgStore = nil
 		} else {
 			log.Printf("PostgreSQL: connected to %s (pool: %d-%d conns)",
@@ -592,7 +592,7 @@ func main() {
 		var lensErr error
 		lensServer, lensErr = lensbackend.NewServer(lensCfg, "aegisgate-platform")
 		if lensErr != nil {
-			log.Printf("⚠️  Lens backend init failed: %v (continuing without Lens telemetry)", lensErr)
+			log.Printf("⚠️  Lens backend init failed: %v (continuing without Lens telemetry)", lensErr) //nosec G706 -- lensErr is internal error, not user input
 			lensServer = nil
 		} else {
 			log.Printf("Lens backend: enabled (ioc_store=%s, rate_limit=%d/min)", lensStorePath, lensCfg.RateLimitPerMin)
@@ -1891,9 +1891,11 @@ func main() {
 		} else {
 			siemStatus["platforms"] = 0
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"siem": siemStatus,
-		})
+		}); err != nil {
+			log.Printf("siem status encode: %v", err)
+		}
 	}))
 
 	// Policy info endpoint — returns policy settings
