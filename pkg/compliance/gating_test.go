@@ -333,13 +333,17 @@ func TestAllModuleRequirements_Order(t *testing.T) {
 		t.Errorf("dev modules should come before pro modules (lastDev=%d, firstPro=%d)", lastDevIdx, firstProIdx)
 	}
 
-	// Verify each module has a non-empty DisplayName and a positive price.
+	// Verify each module has a non-empty DisplayName and a valid price.
+	// Community tier modules can have MinPriceCents=0 (free/bundled).
 	for _, r := range all {
 		if r.DisplayName == "" {
 			t.Errorf("module %q has empty DisplayName", r.Module)
 		}
-		if r.MinPriceCents <= 0 {
-			t.Errorf("module %q has non-positive MinPriceCents %d", r.Module, r.MinPriceCents)
+		if r.MinPriceCents < 0 {
+			t.Errorf("module %q has negative MinPriceCents %d", r.Module, r.MinPriceCents)
+		}
+		if r.MinPriceCents <= 0 && r.RequiredTier > tierpkg.TierCommunity {
+			t.Errorf("module %q has non-positive MinPriceCents %d but is not Community tier", r.Module, r.MinPriceCents)
 		}
 	}
 }
@@ -485,7 +489,7 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 
 func TestModuleRequirementCount(t *testing.T) {
 	// 6 billable + 1 reserved (Trust) = 7.
-	if got := ModuleRequirementCount(); got != 8 {
-		t.Errorf("ModuleRequirementCount = %d, want 8 (6 v3.2.0 + EU AI Act v3.3.0 + Trust reserved)", got)
+	if got := ModuleRequirementCount(); got != 13 {
+		t.Errorf("ModuleRequirementCount = %d, want 13 (8 v3.5.0 + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA)", got)
 	}
 }

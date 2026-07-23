@@ -93,6 +93,51 @@ var moduleRequirements = map[string]ModuleRequirement{
 		MinPriceCents:     9900, // $99/mo (founder-locked 2026-06-06)
 		HasImplementation: true, // pkg/compliance/eu-ai-act exists (v3.3.0)
 	},
+	// CMMC Level 2 (v3.6.0 M3). Professional+ tier, $499/mo.
+	// CMMC L2 is required for DoD contractors handling CUI.
+	license.ModuleCMMCL2: {
+		Module:            license.ModuleCMMCL2,
+		DisplayName:       "CMMC Level 2",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     49900, // $499/mo
+		HasImplementation: true,  // pkg/compliance/cmmcl2/ (57 controls: 33 automated + 24 evidence-mapped)
+	},
+	// NIST SP 800-171 (v3.6.0 M3). Professional+ tier, $399/mo.
+	// Required for protecting CUI in nonfederal systems.
+	license.ModuleNIST800171: {
+		Module:            license.ModuleNIST800171,
+		DisplayName:       "NIST 800-171",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     39900, // $399/mo
+		HasImplementation: true,  // pkg/compliance/nist800171/ (50 controls: 25 automated + 25 evidence-mapped)
+	},
+	// HITRUST CSF v11.2 (v3.6.0 M3). Enterprise tier, $799/mo.
+	// Certifiable framework inheriting from HIPAA, NIST 800-53, ISO 27001.
+	license.ModuleHITRUST: {
+		Module:            license.ModuleHITRUST,
+		DisplayName:       "HITRUST CSF",
+		RequiredTier:      tierpkg.TierEnterprise,
+		MinPriceCents:     79900, // $799/mo
+		HasImplementation: true,  // pkg/compliance/hitrust/ (43 controls: 19 automated + 24 evidence-mapped)
+	},
+	// TISAX AL2 (v3.6.0 M3). Enterprise tier, $599/mo.
+	// European automotive industry information security assessment.
+	license.ModuleTISAX: {
+		Module:            license.ModuleTISAX,
+		DisplayName:       "TISAX AL2",
+		RequiredTier:      tierpkg.TierEnterprise,
+		MinPriceCents:     59900, // $599/mo
+		HasImplementation: true,  // pkg/compliance/tisax/ (35 controls: 16 automated + 19 evidence-mapped)
+	},
+	// CCPA/CPRA (v3.6.0 M3). Community tier, free.
+	// California Consumer Privacy Act — bundled with the platform.
+	license.ModuleCCPA: {
+		Module:            license.ModuleCCPA,
+		DisplayName:       "CCPA/CPRA",
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, no add-on cost
+		HasImplementation: true, // pkg/compliance/ccpa/ (12 controls: 8 automated + 4 evidence-mapped)
+	},
 	// ModuleTrust is reserved for the future Trust Framework module
 	// (Phase 4). Not yet billable; listing it here as a placeholder so
 	// future code that checks for "trust" doesn't get a confusing "module
@@ -117,8 +162,8 @@ func AllModuleRequirements() []ModuleRequirement {
 		byTier[r.RequiredTier] = append(byTier[r.RequiredTier], r)
 	}
 	out := []ModuleRequirement{}
-	// Emit in tier order: Dev, Pro.
-	for _, tier := range []tierpkg.Tier{tierpkg.TierDeveloper, tierpkg.TierProfessional} {
+	// Emit in tier order: Community, Dev, Pro, Enterprise.
+	for _, tier := range []tierpkg.Tier{tierpkg.TierCommunity, tierpkg.TierDeveloper, tierpkg.TierProfessional, tierpkg.TierEnterprise} {
 		items := byTier[tier]
 		// Simple insertion sort by DisplayName (7 items max, no need for sort.Slice).
 		for i := 1; i < len(items); i++ {

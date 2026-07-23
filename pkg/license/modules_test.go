@@ -193,7 +193,7 @@ func TestAllModules_Count(t *testing.T) {
 	// defined in license.go, but AllModules slice only contains the 7 billable ones (Trust is in IsValidModule
 	// only as a reserved future item, not in the billable list).
 	// This test pins the contract so accidental additions/removals are noticed.
-	if len(AllModules) != 7 {
-		t.Errorf("AllModules has %d items, want 7 (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS, EU AI Act)", len(AllModules))
+	if len(AllModules) != 12 {
+		t.Errorf("AllModules has %d items, want 12 (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS, EU AI Act, CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA)", len(AllModules))
 	}
 }

@@ -89,14 +89,19 @@ type LicensePayload struct {
 // "trust" is reserved for a future Trust Framework module (Phase 4) and is
 // not yet billable.
 const (
-	ModuleHIPAA    = "hipaa"
-	ModulePCI      = "pci"
-	ModuleSOC2     = "soc2"
-	ModuleISO42001 = "iso42001"
-	ModuleFedRAMP  = "fedramp"
-	ModuleFIPS     = "fips"
-	ModuleEUAIAct  = "eu_ai_act" // v3.3.0 Phase 1: Regulation 2024/1689
-	ModuleTrust    = "trust"     // reserved for future use
+	ModuleHIPAA      = "hipaa"
+	ModulePCI        = "pci"
+	ModuleSOC2       = "soc2"
+	ModuleISO42001   = "iso42001"
+	ModuleFedRAMP    = "fedramp"
+	ModuleFIPS       = "fips"
+	ModuleEUAIAct    = "eu_ai_act"  // v3.3.0 Phase 1: Regulation 2024/1689
+	ModuleCMMCL2     = "cmmcl2"     // v3.6.0 M3: CMMC Level 2
+	ModuleNIST800171 = "nist800171" // v3.6.0 M3: NIST SP 800-171
+	ModuleHITRUST    = "hitrust"    // v3.6.0 M3: HITRUST CSF
+	ModuleTISAX      = "tisax"      // v3.6.0 M3: TISAX AL2
+	ModuleCCPA       = "ccpa"       // v3.6.0 M3: CCPA/CPRA (Community tier)
+	ModuleTrust      = "trust"      // reserved for future use
 )
 
 // AllModules is the canonical list of billable module names, in display order.
@@ -108,7 +113,12 @@ var AllModules = []string{
 	ModuleISO42001,
 	ModuleFedRAMP,
 	ModuleFIPS,
-	ModuleEUAIAct, // v3.3.0 Phase 1
+	ModuleEUAIAct,
+	ModuleCMMCL2,
+	ModuleNIST800171,
+	ModuleHITRUST,
+	ModuleTISAX,
+	ModuleCCPA, // v3.6.0 M3: Community tier, not billable
 }
 
 // IsValidModule returns true if the given module name is a known billable module.

@@ -428,11 +428,11 @@ func TestBuildPostureSnapshot(t *testing.T) {
 // coverage floor requires this to be tested in pkg/, not cmd/.
 func TestBuildFrameworksSnapshot(t *testing.T) {
 	snap := BuildFrameworksSnapshot()
-	if snap.TotalCount != 8 {
-		t.Errorf("total_count = %d, want 8 (6 billable + EU AI Act + reserved Trust Framework)", snap.TotalCount)
+	if snap.TotalCount != 13 {
+		t.Errorf("total_count = %d, want 13 (6 original billable + EU AI Act + CMMC L2 + NIST 800-171 + HITRUST + TISAX + CCPA + reserved Trust)", snap.TotalCount)
 	}
-	if snap.Tier1Count != 7 {
-		t.Errorf("tier1_count = %d, want 7 (all except reserved Trust Framework)", snap.Tier1Count)
+	if snap.Tier1Count != 12 {
+		t.Errorf("tier1_count = %d, want 12 (all except reserved Trust Framework)", snap.Tier1Count)
 	}
 	// Verify the key translation: the iso42001 module (license
 	// package key) should appear in the snapshot with the
@@ -472,13 +472,18 @@ func TestBuildFrameworksSnapshot(t *testing.T) {
 	// BuildFrameworksSnapshot's sort.Slice; if the sort logic
 	// changes, this test fails and forces a deliberate update.
 	wantOrder := []string{
+		"CCPA/CPRA",
+		"CMMC Level 2",
 		"EU AI Act (Regulation 2024/1689)",
 		"FIPS 140-2/140-3",
 		"FedRAMP Moderate (NIST 800-53)",
 		"HIPAA Security Rule",
+		"HITRUST CSF v11.2",
 		"ISO/IEC 42001:2023",
+		"NIST SP 800-171 Rev. 2",
 		"PCI-DSS v4.0",
 		"SOC 2 Type II",
+		"TISAX AL2",
 		"Trust Framework (reserved)",
 	}
 	for i, want := range wantOrder {

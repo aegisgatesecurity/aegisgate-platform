@@ -1,0 +1,337 @@
+// SPDX-License-Identifier: Apache-2.0
+// =========================================================================
+// AegisGate Security Platform - CMMC L2 CA + CM Domains
+// =========================================================================
+//
+// CMMC Level 2 — Assessment and Authorization (CA) + Configuration Management (CM)
+// NIST SP 800-171 Rev. 2 §3.9 (CA) + §3.4 (CM) practices
+//
+// In-scope CA controls (3 of ~3 CA practices):
+//   CA.1.001  Security assessment                      (automated)
+//   CA.2.001  Plan of action                            (automated)
+//   CA.2.002  Continuous monitoring                      (automated)
+//
+// In-scope CM controls (5 of ~9 CM practices):
+//   CM.1.001  Baseline configuration                    (evidence-mapped)
+//   CM.2.001  Change control                            (automated)
+//   CM.2.002  Component inventory                        (automated)
+//   CM.2.003  Configuration restrictions                (evidence-mapped)
+//   CM.2.004  Secure configuration                      (evidence-mapped)
+//
+// =========================================================================
+
+package cmmcl2
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
+)
+
+// registerCAControls wires the CA domain controls into the module.
+func (m *CMMCL2Module) registerCAControls() {
+	// CA.1.001: Security assessment (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CA-01",
+		Name:        "Security Assessment",
+		Description: "CMMC L2 CA.1.001: Periodically assess security controls — compliance scanning and vulnerability assessment",
+		Category:    "Assessment and Authorization",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityAssessment,
+		References:  []string{"CMMC L2 CA.1.001", "NIST SP 800-171 §3.9.1"},
+	})
+
+	// CA.2.001: Plan of action (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CA-02",
+		Name:        "Plan Of Action",
+		Description: "CMMC L2 CA.2.001: Develop and implement a plan of action and milestones — remediation tracking",
+		Category:    "Assessment and Authorization",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkPlanOfAction,
+		References:  []string{"CMMC L2 CA.2.001", "NIST SP 800-171 §3.9.2"},
+	})
+
+	// CA.2.002: Continuous monitoring (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CA-03",
+		Name:        "Continuous Monitoring",
+		Description: "CMMC L2 CA.2.002: Monitor security controls on an ongoing basis — CCM scanning and drift detection",
+		Category:    "Assessment and Authorization",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkContinuousMonitoring,
+		References:  []string{"CMMC L2 CA.2.002", "NIST SP 800-171 §3.9.3"},
+	})
+}
+
+// registerCMControls wires the CM domain controls into the module.
+func (m *CMMCL2Module) registerCMControls() {
+	// CM.1.001: Baseline configuration (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-01",
+		Name:        "Baseline Configuration",
+		Description: "CMMC L2 CM.1.001: Establish and maintain baseline configurations. AegisGate generates the baseline configuration evidence for the customer's CMMC assessment.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 CM.1.001", "NIST SP 800-171 §3.4.1"},
+	})
+
+	// CM.2.001: Change control (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-02",
+		Name:        "Change Control",
+		Description: "CMMC L2 CM.2.001: Control changes to the system — change log, review, and approval",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkChangeControl,
+		References:  []string{"CMMC L2 CM.2.001", "NIST SP 800-171 §3.4.2"},
+	})
+
+	// CM.2.002: Component inventory (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-03",
+		Name:        "Component Inventory",
+		Description: "CMMC L2 CM.2.002: Track and maintain component inventory — SBOM and version tracking",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkComponentInventory,
+		References:  []string{"CMMC L2 CM.2.002", "NIST SP 800-171 §3.4.6"},
+	})
+
+	// CM.2.003: Configuration restrictions (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-04",
+		Name:        "Configuration Restrictions",
+		Description: "CMMC L2 CM.2.003: Define and enforce configuration restrictions. AegisGate generates the configuration restriction evidence for the customer's CMMC assessment.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 CM.2.003", "NIST SP 800-171 §3.4.7"},
+	})
+
+	// CM.2.004: Secure configuration (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-05",
+		Name:        "Secure Configuration",
+		Description: "CMMC L2 CM.2.004: Implement secure configuration settings. AegisGate generates the secure configuration evidence for the customer's CMMC assessment.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 CM.2.004", "NIST SP 800-171 §3.4.8"},
+	})
+}
+
+// --- CA CheckFuncs ---
+
+// checkSecurityAssessment verifies security controls are periodically
+// assessed. Maps to CMMC L2 CA.1.001.
+func (m *CMMCL2Module) checkSecurityAssessment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCompliance := strings.Contains(inputStr, "compliance") || strings.Contains(inputStr, "scanner")
+	hasVulnAssessment := strings.Contains(inputStr, "vulnerability") || strings.Contains(inputStr, "threat")
+	hasAuditLog := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "audit_enabled")
+
+	if hasCompliance && (hasVulnAssessment || hasAuditLog) {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CA-01",
+			ControlName: "Security Assessment",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Security assessment controls verified (compliance scanning + vulnerability assessment)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasCompliance {
+		violations = append(violations, "compliance scanning not configured")
+	}
+	if !hasVulnAssessment && !hasAuditLog {
+		violations = append(violations, "no vulnerability assessment or audit logging detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CA-01",
+		ControlName: "Security Assessment",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Security assessment gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable compliance scanning (compliance.enabled=true) and vulnerability assessment or audit logging",
+	}, nil
+}
+
+// checkPlanOfAction verifies remediation tracking is in place.
+// Maps to CMMC L2 CA.2.001.
+func (m *CMMCL2Module) checkPlanOfAction(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRemediation := strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "poam")
+	hasTracking := strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "milestones")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "review")
+
+	if hasRemediation && (hasTracking || hasAudit) {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CA-02",
+			ControlName: "Plan Of Action",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Plan of action tracking verified (remediation + tracking/audit)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasRemediation {
+		violations = append(violations, "remediation tracking not configured")
+	}
+	if !hasTracking && !hasAudit {
+		violations = append(violations, "no milestone tracking or audit review detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CA-02",
+		ControlName: "Plan Of Action",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Plan of action gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable remediation tracking (poam.enabled=true) and milestone/audit review",
+	}, nil
+}
+
+// checkContinuousMonitoring verifies ongoing security control monitoring.
+// Maps to CMMC L2 CA.2.002.
+func (m *CMMCL2Module) checkContinuousMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCCM := strings.Contains(inputStr, "ccm") || strings.Contains(inputStr, "continuous_monitoring")
+	hasScan := strings.Contains(inputStr, "scan") || strings.Contains(inputStr, "scanner")
+	hasMonitoring := strings.Contains(inputStr, "monitoring") || strings.Contains(inputStr, "drift")
+
+	if (hasCCM || hasMonitoring) && hasScan {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CA-03",
+			ControlName: "Continuous Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Continuous monitoring verified (CCM/monitoring + scanning)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasCCM && !hasMonitoring {
+		violations = append(violations, "continuous monitoring not configured")
+	}
+	if !hasScan {
+		violations = append(violations, "security scanning not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CA-03",
+		ControlName: "Continuous Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Continuous monitoring gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable continuous compliance monitoring (ccm.enabled=true) and security scanning",
+	}, nil
+}
+
+// --- CM CheckFuncs ---
+
+// checkChangeControl verifies change management controls are in place.
+// Maps to CMMC L2 CM.2.001.
+func (m *CMMCL2Module) checkChangeControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChangeLog := strings.Contains(inputStr, "change_log") || strings.Contains(inputStr, "audit_log")
+	hasReview := strings.Contains(inputStr, "review") || strings.Contains(inputStr, "approval")
+	hasVersion := strings.Contains(inputStr, "version") || strings.Contains(inputStr, "config_version")
+
+	if hasChangeLog && (hasReview || hasVersion) {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CM-02",
+			ControlName: "Change Control",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Change control verified (audit log + review/version tracking)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasChangeLog {
+		violations = append(violations, "change log not configured")
+	}
+	if !hasReview && !hasVersion {
+		violations = append(violations, "no change review or version tracking detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CM-02",
+		ControlName: "Change Control",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Change control gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable change logging (change_log=true) and configure review/approval workflows",
+	}, nil
+}
+
+// checkComponentInventory verifies SBOM and dependency tracking.
+// Maps to CMMC L2 CM.2.002.
+func (m *CMMCL2Module) checkComponentInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSBOM := strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "cyclonedx")
+	hasDeps := strings.Contains(inputStr, "dependencies") || strings.Contains(inputStr, "dependency")
+	hasVersion := strings.Contains(inputStr, "version")
+
+	if hasSBOM && hasDeps {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CM-03",
+			ControlName: "Component Inventory",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Component inventory verified (SBOM + dependency tracking)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasSBOM {
+		violations = append(violations, "SBOM not configured")
+	}
+	if !hasDeps {
+		violations = append(violations, "dependency tracking not configured")
+	}
+	if !hasVersion {
+		violations = append(violations, "version tracking not detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CM-03",
+		ControlName: "Component Inventory",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Component inventory gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable SBOM generation (sbom.enabled=true) and dependency tracking. Ensure all components have version metadata.",
+	}, nil
+}
