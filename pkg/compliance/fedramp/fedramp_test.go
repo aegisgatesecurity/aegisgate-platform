@@ -4,22 +4,25 @@
 // Path C: Full in-scope FedRAMP Moderate controls.
 // Test coverage target: 80%+ per pkg/compliance coverage floor.
 //
-// Total controls: 88 (49 automated + 39 evidence-mapped)
-//   AC: 6 (5 automated + 1 evidence-mapped)
-//   AU: 7 (5 automated + 2 evidence-mapped)
-//   IA: 6 (5 automated + 1 evidence-mapped)
-//   SC: 12 (10 automated + 2 evidence-mapped)
-//   CM: 8 (5 automated + 3 evidence-mapped)
+// Total controls: 134 (49 automated + 85 evidence-mapped)
+//   AC: 15 (5 automated + 10 evidence-mapped)
+//   AU: 12 (5 automated + 7 evidence-mapped)
+//   IA: 11 (5 automated + 6 evidence-mapped)
+//   SC: 16 (10 automated + 6 evidence-mapped)
+//   CM: 12 (5 automated + 7 evidence-mapped)
 //   SI: 11 (6 automated + 5 evidence-mapped)
-//   IR: 5 (3 automated + 2 evidence-mapped)
-//   SA: 5 (1 automated + 4 evidence-mapped)
+//   IR: 9 (3 automated + 6 evidence-mapped)
+//   SA: 7 (1 automated + 6 evidence-mapped)
 //   SR: 5 (1 automated + 4 evidence-mapped)
-//   RA: 6 (4 automated + 2 evidence-mapped)
+//   RA: 7 (4 automated + 3 evidence-mapped)
 //   CA: 7 (2 automated + 5 evidence-mapped)
 //   AT: 3 (0 automated + 3 evidence-mapped)
-//   CP: 3 (1 automated + 2 evidence-mapped)
+//   CP: 8 (1 automated + 7 evidence-mapped)
 //   MP: 2 (1 automated + 1 evidence-mapped)
 //   PE: 2 (0 automated + 2 evidence-mapped)
+//   PS: 3 (0 automated + 3 evidence-mapped)
+//   PM: 2 (0 automated + 2 evidence-mapped)
+//   PL: 2 (0 automated + 2 evidence-mapped)
 
 package fedramp
 
@@ -43,10 +46,10 @@ func TestNewFedRAMPModule(t *testing.T) {
 		t.Errorf("Version() = %q, want 2.0", m.Version())
 	}
 
-	// Verify all 88 controls are registered
+	// Verify all 134 controls are registered
 	controls := m.Controls()
-	if len(controls) != 88 {
-		t.Errorf("len(Controls()) = %d, want 88", len(controls))
+	if len(controls) != 134 {
+		t.Errorf("len(Controls()) = %d, want 134", len(controls))
 	}
 
 	// Count automated vs evidence-mapped
@@ -62,8 +65,8 @@ func TestNewFedRAMPModule(t *testing.T) {
 	if automated != 49 {
 		t.Errorf("automated controls = %d, want 49", automated)
 	}
-	if evidenceMapped != 39 {
-		t.Errorf("evidence-mapped controls = %d, want 39", evidenceMapped)
+	if evidenceMapped != 85 {
+		t.Errorf("evidence-mapped controls = %d, want 85", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -72,21 +75,23 @@ func TestNewFedRAMPModule(t *testing.T) {
 		familyCount[c.Category]++
 	}
 	expectedFamilies := map[string]int{
-		"Access Control":                            6,
-		"Audit and Accountability":                  7,
-		"Identification and Authentication":         6,
-		"System and Communications Protection":      12,
-		"Configuration Management":                  8,
+		"Access Control":                            15,
+		"Audit and Accountability":                  12,
+		"Identification and Authentication":         11,
+		"System and Communications Protection":      16,
+		"Configuration Management":                  12,
 		"System and Information Integrity":          11,
-		"Incident Response":                         5,
-		"System and Services Acquisition":           5,
+		"Incident Response":                         9,
+		"System and Services Acquisition":           7,
 		"Supply Chain Risk Management":              5,
-		"Risk Assessment":                           6,
+		"Risk Assessment":                           7,
 		"Assessment, Authorization, and Monitoring": 7,
 		"Awareness and Training":                    3,
-		"Contingency Planning":                      3,
+		"Contingency Planning":                      8,
 		"Media Protection":                          2,
-		"Physical and Environmental Protection":     2,
+		"Personnel Security":                        3,
+		"Program Management":                         2,
+		"Planning":                                   2,
 	}
 	for family, expected := range expectedFamilies {
 		if familyCount[family] != expected {
@@ -782,6 +787,20 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		"FedRAMP-CP-1", "FedRAMP-CP-2",
 		"FedRAMP-MP-5",
 		"FedRAMP-PE-3", "FedRAMP-PE-20",
+		// Manual stubs (customer responsibility)
+		"FedRAMP-AC-1", "FedRAMP-AC-4", "FedRAMP-AC-5", "FedRAMP-AC-7", "FedRAMP-AC-8",
+		"FedRAMP-AC-10", "FedRAMP-AC-11", "FedRAMP-AC-12", "FedRAMP-AC-20",
+		"FedRAMP-AU-1", "FedRAMP-AU-4", "FedRAMP-AU-5", "FedRAMP-AU-7", "FedRAMP-AU-11",
+		"FedRAMP-IA-1", "FedRAMP-IA-4", "FedRAMP-IA-9", "FedRAMP-IA-10", "FedRAMP-IA-11",
+		"FedRAMP-SC-1", "FedRAMP-SC-6", "FedRAMP-SC-22", "FedRAMP-SC-40",
+		"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3", "FedRAMP-IR-10",
+		"FedRAMP-SA-1", "FedRAMP-SA-8",
+		"FedRAMP-CM-1", "FedRAMP-CM-4", "FedRAMP-CM-9", "FedRAMP-CM-11",
+		"FedRAMP-RA-1",
+		"FedRAMP-CP-3", "FedRAMP-CP-4", "FedRAMP-CP-6", "FedRAMP-CP-7", "FedRAMP-CP-8",
+		"FedRAMP-PS-1", "FedRAMP-PS-2", "FedRAMP-PS-3",
+		"FedRAMP-PM-1", "FedRAMP-PM-14",
+		"FedRAMP-PL-1", "FedRAMP-PL-2",
 	}
 
 	controlMap := map[string]compliance.ControlDefinition{}
@@ -1081,9 +1100,9 @@ func TestCheckMediaSanitization(t *testing.T) {
 	}
 }
 
-// --- Test all 15 families are represented ---
+// --- Test all 18 families are represented ---
 
-func TestFedRAMPModule_AllFifteenFamilies(t *testing.T) {
+func TestFedRAMPModule_AllEighteenFamilies(t *testing.T) {
 	m := NewFedRAMPModule()
 	controls := m.Controls()
 
@@ -1103,6 +1122,9 @@ func TestFedRAMPModule_AllFifteenFamilies(t *testing.T) {
 		"Contingency Planning":                      0,
 		"Media Protection":                          0,
 		"Physical and Environmental Protection":     0,
+		"Personnel Security":                        0,
+		"Program Management":                         0,
+		"Planning":                                   0,
 	}
 
 	for _, c := range controls {

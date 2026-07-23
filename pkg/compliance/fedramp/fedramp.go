@@ -187,6 +187,9 @@ func (m *FedRAMPModule) registerControls() {
 
 	// PE: Physical and Environmental Protection (2 controls)
 	m.registerPEControls()
+
+	// Manual stubs: 62 evidence-mapped controls (customer responsibility)
+	m.registerManualStubs()
 }
 
 // Dependencies returns required modules. FedRAMP depends on the
