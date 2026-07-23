@@ -33,6 +33,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
@@ -89,6 +90,7 @@ type Manager struct {
 	auditLog           *opsec.ComplianceAuditLog
 	correlationStore   correlation.CorrelationStore   // nil for file-based persistence
 	attestationStore   attestation.AttestationStore   // nil for file-based persistence
+	incidentStore      incident.IncidentStore          // nil for file-based persistence
 	cancel             context.CancelFunc
 	done               chan struct{}
 	mu                 sync.RWMutex
@@ -188,6 +190,7 @@ func NewWithPostgres(platformTier tier.Tier, cfg Config, pgStore *ioc.PostgresSt
 		auditLog:        auditLog,
 		correlationStore: correlation.NewPostgresCorrelationStore(pgStore.Pool()),
 		attestationStore: attestation.NewPostgresAttestationStore(pgStore.Pool()),
+		incidentStore:    incident.NewInMemoryIncidentStore(), // v3.8: in-memory; PostgreSQL in v2.0
 		done:            make(chan struct{}),
 		usePostgres:     true,
 	}, nil
@@ -317,6 +320,15 @@ func (m *Manager) AttestationStore() attestation.AttestationStore {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.attestationStore
+}
+
+// IncidentStore returns the incident response store.
+// Returns nil if persistence is disabled or using file-based storage
+// (Community/Developer tiers use the in-memory incident store).
+func (m *Manager) IncidentStore() incident.IncidentStore {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.incidentStore
 }
 
 // IsEnabled returns whether persistence is active
