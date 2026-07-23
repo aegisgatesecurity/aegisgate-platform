@@ -50,10 +50,14 @@ CREATE INDEX IF NOT EXISTS idx_audit_entries_level ON audit_entries (level, time
 -- Index for source-based queries (e.g., "all events from the MCP server").
 CREATE INDEX IF NOT EXISTS idx_audit_entries_source ON audit_entries (source, timestamp DESC);
 
+-- Helper function for text search across message and data.
+-- (tsvector || operator is not allowed directly in CREATE INDEX expressions.)
+CREATE OR REPLACE FUNCTION audit_tsvector_search(message TEXT, data JSONB) RETURNS tsvector AS $$
+  SELECT setweight(to_tsvector('english', message), 'A') || setweight(to_tsvector('english', COALESCE(data::text, '')), 'B');
+$$ LANGUAGE SQL IMMUTABLE;
+
 -- Index for text search across message and data.
-CREATE INDEX IF NOT EXISTS idx_audit_entries_search ON audit_entries USING GIN (
-    to_tsvector('english', message) || to_tsvector('english', COALESCE(data::text, ''))
-);
+CREATE INDEX IF NOT EXISTS idx_audit_entries_search ON audit_entries USING GIN (audit_tsvector_search(message, data));
 
 -- Record this migration in the shared schema migrations table.
 INSERT INTO ioc_schema_migrations (version, description, applied_at)

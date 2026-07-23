@@ -578,6 +578,15 @@ func (s *PostgresStore) Close() error {
 
 // migrate runs all pending SQL migrations in order.
 func (s *PostgresStore) migrate(ctx context.Context) error {
+	// Ensure the schema migrations table exists before we query it.
+	if _, err := s.pool.Exec(ctx, `CREATE TABLE IF NOT EXISTS ioc_schema_migrations (
+		version INT PRIMARY KEY,
+		description TEXT NOT NULL,
+		applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+	)`); err != nil {
+		return fmt.Errorf("create schema migrations table: %w", err)
+	}
+
 	entries, err := migrationFS.ReadDir("migrations")
 	if err != nil {
 		return fmt.Errorf("read migrations: %w", err)

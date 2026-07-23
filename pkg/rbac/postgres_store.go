@@ -431,7 +431,7 @@ func (s *PostgresRBACStore) GetAgentSessions(ctx context.Context, agentID string
 	}
 
 	const sql = `
-		SELECT id, agent_id, ip_address, context_hash, tags, active, created_at, expires_at, last_activity
+		SELECT id, agent_id, ip_address, context_hash, tags, active, tenant_id, created_at, expires_at, last_activity
 		FROM rbac_agent_sessions
 		WHERE agent_id = $1 AND active = TRUE AND expires_at > NOW()
 		ORDER BY created_at DESC`

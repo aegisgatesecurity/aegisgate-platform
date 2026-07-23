@@ -64,6 +64,12 @@ func (s *PostgresAttestationStore) Store(ctx context.Context, envelope *Envelope
 		return fmt.Errorf("attestation: Store: marshal payload: %w", err)
 	}
 
+	// Convert zero ValidUntil to nil so PostgreSQL stores NULL instead of 0001-01-01.
+	var validUntil interface{}
+	if !envelope.ValidUntil.IsZero() {
+		validUntil = envelope.ValidUntil
+	}
+
 	_, err = s.pool.Exec(ctx,
 		`INSERT INTO attestation_envelopes (
 			id, type, subject, issuer, issued_at, valid_until,
@@ -76,7 +82,7 @@ func (s *PostgresAttestationStore) Store(ctx context.Context, envelope *Envelope
 		envelope.Subject,
 		envelope.Issuer,
 		envelope.IssuedAt,
-		envelope.ValidUntil,
+		validUntil,
 		payload,
 		envelope.Signature.Algorithm,
 		envelope.Signature.KeyID,
