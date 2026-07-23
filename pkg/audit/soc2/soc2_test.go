@@ -601,6 +601,218 @@ func TestReportToText(t *testing.T) {
 	}
 }
 
+// ============================================================================
+// EnrichWithAttestation tests
+// ============================================================================
+
+func TestEnrichWithAttestation_NilEnvelope(t *testing.T) {
+	config := EvidenceCollectorConfig{
+		Organization: "TestOrg",
+		Auditor:      "TestAuditor",
+	}
+	collector := NewEvidenceCollector(config, nil)
+	ctx := context.Background()
+	start := time.Now().Add(-90 * 24 * time.Hour)
+	end := time.Now()
+
+	evidence, err := collector.Collect(ctx, start, end)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+
+	// With nil envelope, evidence should be returned unchanged.
+	enriched, err := EnrichWithAttestation(ctx, evidence, nil)
+	if err != nil {
+		t.Fatalf("EnrichWithAttestation with nil envelope: %v", err)
+	}
+	if len(enriched) != len(evidence) {
+		t.Errorf("expected %d items, got %d", len(evidence), len(enriched))
+	}
+	// Statuses should remain unchanged (no upgrade without envelope)
+	for i, ce := range enriched {
+		if ce.Status != evidence[i].Status {
+			t.Errorf("item %d: status changed from %s to %s without envelope", i, evidence[i].Status, ce.Status)
+		}
+	}
+}
+
+func TestEnrichWithAttestation_WithContextCancellation(t *testing.T) {
+	config := EvidenceCollectorConfig{
+		Organization: "TestOrg",
+		Auditor:      "TestAuditor",
+	}
+	collector := NewEvidenceCollector(config, nil)
+	ctx := context.Background()
+	start := time.Now().Add(-90 * 24 * time.Hour)
+	end := time.Now()
+
+	evidence, err := collector.Collect(ctx, start, end)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+
+	// Cancel context before enrichment
+	ctxCancel, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err = EnrichWithAttestation(ctxCancel, evidence, "mock-envelope")
+	if err == nil {
+		t.Error("expected error on cancelled context")
+	}
+}
+
+func TestEnrichWithAttestation_WithEnvelope_NotMetUpgraded(t *testing.T) {
+	config := EvidenceCollectorConfig{
+		Organization: "TestOrg",
+		Auditor:      "TestAuditor",
+	}
+	collector := NewEvidenceCollector(config, nil)
+	ctx := context.Background()
+	start := time.Now().Add(-90 * 24 * time.Hour)
+	end := time.Now()
+
+	evidence, err := collector.Collect(ctx, start, end)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+
+	// All controls should have StatusNotMet since no scanner
+	for _, ce := range evidence {
+		if ce.Status != StatusNotMet {
+			t.Fatalf("expected StatusNotMet before enrichment, got %s", ce.Status)
+		}
+	}
+
+	enriched, err := EnrichWithAttestation(ctx, evidence, "mock-envelope")
+	if err != nil {
+		t.Fatalf("EnrichWithAttestation: %v", err)
+	}
+
+	// All not_met controls should be upgraded to partially_met
+	for _, ce := range enriched {
+		if ce.Status != StatusPartiallyMet {
+			t.Errorf("expected StatusPartiallyMet after enrichment, got %s for %s", ce.Status, ce.ControlID)
+		}
+		// Each control should have an attestation evidence source appended
+		hasAttestation := false
+		for _, src := range ce.Sources {
+			if src.Source == EvidenceSourceAttestation && src.ReferenceID == "envelope-verification" {
+				hasAttestation = true
+				break
+			}
+		}
+		if !hasAttestation {
+			t.Errorf("expected attestation source with reference 'envelope-verification' for %s", ce.ControlID)
+		}
+	}
+}
+
+func TestEnrichWithAttestation_WithEnvelope_PartiallyMetUpgraded(t *testing.T) {
+	scanner := &mockComplianceScanner{
+		enforced:    true,
+		score:       80.0,
+		total:       15,
+		enforcedCnt: 12,
+	}
+	config := EvidenceCollectorConfig{
+		Organization: "TestOrg",
+		Auditor:      "TestAuditor",
+	}
+	collector := NewEvidenceCollector(config, scanner)
+	ctx := context.Background()
+	start := time.Now().Add(-90 * 24 * time.Hour)
+	end := time.Now()
+
+	evidence, err := collector.Collect(ctx, start, end)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+
+	// With enforced scanner, all controls should have StatusMet
+	enriched, err := EnrichWithAttestation(ctx, evidence, "mock-envelope")
+	if err != nil {
+		t.Fatalf("EnrichWithAttestation: %v", err)
+	}
+
+	// StatusMet controls should remain met (upgrade from partially_met to met
+	// doesn't apply here since they're already met)
+	for _, ce := range enriched {
+		if ce.Status != StatusMet {
+			t.Errorf("expected StatusMet for %s after enrichment, got %s", ce.ControlID, ce.Status)
+		}
+	}
+}
+
+func TestEnrichWithAttestation_DoesNotMutateOriginal(t *testing.T) {
+	config := EvidenceCollectorConfig{
+		Organization: "TestOrg",
+		Auditor:      "TestAuditor",
+	}
+	collector := NewEvidenceCollector(config, nil)
+	ctx := context.Background()
+	start := time.Now().Add(-90 * 24 * time.Hour)
+	end := time.Now()
+
+	evidence, err := collector.Collect(ctx, start, end)
+	if err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+
+	// Record original statuses
+	originalStatuses := make([]ComplianceStatus, len(evidence))
+	for i, ce := range evidence {
+		originalStatuses[i] = ce.Status
+	}
+
+	// Enrich with attestation
+	_, err = EnrichWithAttestation(ctx, evidence, "mock-envelope")
+	if err != nil {
+		t.Fatalf("EnrichWithAttestation: %v", err)
+	}
+
+	// Verify original evidence is NOT mutated
+	for i, ce := range evidence {
+		if ce.Status != originalStatuses[i] {
+			t.Errorf("original evidence mutated at index %d: status changed from %s to %s", i, originalStatuses[i], ce.Status)
+		}
+	}
+}
+
+func TestEnrichWithAttestation_EmptyEvidence(t *testing.T) {
+	ctx := context.Background()
+
+	enriched, err := EnrichWithAttestation(ctx, []ControlEvidence{}, "mock-envelope")
+	if err != nil {
+		t.Fatalf("EnrichWithAttestation with empty evidence: %v", err)
+	}
+	if len(enriched) != 0 {
+		t.Errorf("expected 0 items, got %d", len(enriched))
+	}
+}
+
+func TestEnrichWithAttestation_StatusPartiallyMetUpgraded(t *testing.T) {
+	// Create evidence with partially_met status to verify upgrade to met
+	evidence := []ControlEvidence{
+		{
+			ControlID:   "TEST-1",
+			ControlName: "Test Control",
+			Category:    TSCSecurity,
+			Status:       StatusPartiallyMet,
+			Sources:      []EvidenceRef{},
+			LastAssessed: time.Now().UTC(),
+		},
+	}
+
+	ctx := context.Background()
+	enriched, err := EnrichWithAttestation(ctx, evidence, "mock-envelope")
+	if err != nil {
+		t.Fatalf("EnrichWithAttestation: %v", err)
+	}
+	if enriched[0].Status != StatusMet {
+		t.Errorf("expected StatusMet after upgrading from partially_met, got %s", enriched[0].Status)
+	}
+}
+
 func TestReportToJSON(t *testing.T) {
 	scanner := &mockComplianceScanner{enforced: true, score: 80.0, total: 15, enforcedCnt: 12}
 	config := EvidenceCollectorConfig{
