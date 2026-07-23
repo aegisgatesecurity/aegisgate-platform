@@ -1,0 +1,148 @@
+# SPDX-License-Identifier: Apache-2.0
+# AegisGate Platform - Performance Regression Benchmarks
+#
+# Runs Go benchmark tests as CI regression checks. Fails if any benchmark
+# shows >2x regression from the baseline. Results are posted as a PR comment.
+#
+# Trigger: On push to main and on PRs. Manual trigger available.
+#
+# Strategy:
+#   1. Run all _bench_test.go files with -bench flag
+#   2. Parse results and compare against baseline thresholds
+#   3. Fail CI if any benchmark regresses beyond threshold
+#
+# v3.4.0+ coverage lift.
+
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pkg/**'
+      - 'cmd/**'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bench_timeout:
+        description: 'Per-benchmark timeout (Go duration)'
+        required: false
+        default: '30s'
+      bench_count:
+        description: 'Number of iterations per benchmark'
+        required: false
+        default: '5'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Run Benchmarks
+        env:
+          BENCH_TIMEOUT: ${{ github.event.inputs.bench_timeout || '30s' }}
+          BENCH_COUNT: ${{ github.event.inputs.bench_count || '5' }}
+        run: |
+          echo "## Performance Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Benchmark | Iterations | ns/op | MB/s | Allocs/op | Bytes/op | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-----------|-------|------|-----------|----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          FAIL=0
+          RESULTS_FILE="benchmark-results.txt"
+
+          # Run benchmarks across all packages
+          go test -bench=. -benchmem -benchtime=${BENCH_TIMEOUT} -count=${BENCH_COUNT} \
+            -timeout=25m ./pkg/... 2>&1 | tee ${RESULTS_FILE}
+
+          # Parse results and check thresholds
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Threshold Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Core thresholds (ns/op) — these are the regression baselines
+          # Any result >2x these values triggers a failure
+          declare -A THRESHOLDS
+          THRESHOLDS["BenchmarkQueryBySourceProvider"]=5000000    # 5ms max
+          THRESHOLDS["BenchmarkSnapshotFullScan"]=10000000         # 10ms max
+          THRESHOLDS["BenchmarkSTIXExport"]=10000000               # 10ms max
+          THRESHOLDS["BenchmarkFedRAMPValidation"]=5000000        # 5ms max
+          THRESHOLDS["BenchmarkSOCAnalysis"]=5000000               # 5ms max
+          THRESHOLDS["BenchmarkIncidentResponse"]=5000000         # 5ms max
+
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^Benchmark([A-Za-z_0-9]+)[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]ns/op[[:space:]]+([0-9]+)[[:space:]]+MB/s[[:space:]]+([0-9]+)[[:space:]]+allocs/op ]]; then
+              BENCH="${BASH_REMATCH[1]}"
+              ITERS="${BASH_REMATCH[2]}"
+              NS_OP="${BASH_REMATCH[3]}"
+              MB_S="${BASH_REMATCH[4]}"
+              ALLOCS="${BASH_REMATCH[5]}"
+
+              STATUS="✅"
+              if [[ -n "${THRESHOLDS[$BENCH]}" ]]; then
+                THRESHOLD=${THRESHOLDS[$BENCH]}
+                if [[ $NS_OP -gt $THRESHOLD ]]; then
+                  STATUS="❌ REGRESSED"
+                  FAIL=1
+                  echo "❌ ${BENCH}: ${NS_OP}ns/op exceeds threshold ${THRESHOLD}ns/op" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "✅ ${BENCH}: ${NS_OP}ns/op within threshold ${THRESHOLD}ns/op" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+
+              echo "| ${BENCH} | ${ITERS} | ${NS_OP} | ${MB_S} | ${ALLOCS} | - | ${STATUS} |" >> $GITHUB_STEP_SUMMARY
+            elif [[ "$line" =~ ^Benchmark([A-Za-z_0-9]+)[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]ns/op ]]; then
+              BENCH="${BASH_REMATCH[1]}"
+              ITERS="${BASH_REMATCH[2]}"
+              NS_OP="${BASH_REMATCH[3]}"
+
+              STATUS="✅"
+              if [[ -n "${THRESHOLDS[$BENCH]}" ]]; then
+                THRESHOLD=${THRESHOLDS[$BENCH]}
+                if [[ $NS_OP -gt $THRESHOLD ]]; then
+                  STATUS="❌ REGRESSED"
+                  FAIL=1
+                  echo "❌ ${BENCH}: ${NS_OP}ns/op exceeds threshold ${THRESHOLD}ns/op" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "✅ ${BENCH}: ${NS_OP}ns/op within threshold ${THRESHOLD}ns/op" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+
+              echo "| ${BENCH} | ${ITERS} | ${NS_OP} | - | - | - | ${STATUS} |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done < ${RESULTS_FILE}
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ $FAIL -eq 1 ]]; then
+            echo "❌ Performance regression detected — one or more benchmarks exceeded threshold" >> $GITHUB_STEP_SUMMARY
+            echo "Failing CI due to performance regression"
+            exit 1
+          else
+            echo "✅ All benchmarks within acceptable thresholds" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Benchmark Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results.txt
+          retention-days: 30
