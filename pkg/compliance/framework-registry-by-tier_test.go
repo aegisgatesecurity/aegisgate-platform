@@ -5,8 +5,8 @@ package compliance
 import (
 	"testing"
 
-	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
 )
 
 // TestFrameworkRegistryByTier tests the GetByTier functions

@@ -11,7 +11,7 @@ import (
 func TestTier_String(t *testing.T) {
 	tests := []struct {
 		tierVal tier.Tier
-		want string
+		want    string
 	}{
 		{tier.TierCommunity, "community"},
 		{tier.TierEnterprise, "enterprise"},

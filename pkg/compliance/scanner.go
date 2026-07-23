@@ -444,16 +444,16 @@ func formatUpgradeHint(d GatingDecision) string {
 // regardless of paid tier or module ownership. These are part of
 // the Community tier mandate and the platform's open-source commitment.
 var freeFrameworks = []string{
-	"atlas",          // MITRE ATLAS — 24 technique patterns
-	"nist_ai_rmf",    // NIST AI RMF 1.0 — 20 controls
-	"owasp",          // OWASP LLM Top 10 — 10 risk categories
-	"cis",            // CIS Critical Security Controls v8 — 15 controls
-	"nist_csf",       // NIST CSF 2.0 — 6 core functions
-	"owasp_web",      // OWASP Top 10 Web Application Security — 10 categories
-	"csa_star",       // CSA STAR Level 1 — 16 CCM domains
-	"nist_ai_600_1",  // NIST AI 600-1 GenAI Profile — 12 categories
-	"ccpa",           // CCPA/CPRA — 12 controls
-	"gdpr",           // GDPR — 6 core requirements
+	"atlas",         // MITRE ATLAS — 24 technique patterns
+	"nist_ai_rmf",   // NIST AI RMF 1.0 — 20 controls
+	"owasp",         // OWASP LLM Top 10 — 10 risk categories
+	"cis",           // CIS Critical Security Controls v8 — 15 controls
+	"nist_csf",      // NIST CSF 2.0 — 6 core functions
+	"owasp_web",     // OWASP Top 10 Web Application Security — 10 categories
+	"csa_star",      // CSA STAR Level 1 — 16 CCM domains
+	"nist_ai_600_1", // NIST AI 600-1 GenAI Profile — 12 categories
+	"ccpa",          // CCPA/CPRA — 12 controls
+	"gdpr",          // GDPR — 6 core requirements
 }
 
 func displayNameForFree(framework string) string {
