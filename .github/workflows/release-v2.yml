@@ -266,11 +266,17 @@ jobs:
             "${IMAGE_REF}"
           echo "✅ SBOM attestation verified"
 
-      - name: Upload SBOM to Release
+      - name: Generate AIBOM
+        run: |
+          chmod +x ./scripts/generate-aibom.sh
+          ./scripts/generate-aibom.sh "${{ steps.version.outputs.VERSION }}" .
+
+      - name: Upload SBOM and AIBOM to Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.VERSION }}
           files: |
             sbom.spdx.json
+            aibom.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
