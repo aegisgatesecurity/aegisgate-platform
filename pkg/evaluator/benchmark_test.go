@@ -8,6 +8,7 @@ package evaluator
 
 import (
 	"context"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -557,6 +558,134 @@ func TestNewBenchmarkRunner_NilKeyRing(t *testing.T) {
 	_, err := NewBenchmarkRunner(scanner, nil)
 	if err == nil {
 		t.Error("expected error for nil keyRing, got nil")
+	}
+}
+
+// =====================================================================
+// SignBenchmarkResult tests
+// =====================================================================
+
+func TestSignBenchmarkResult(t *testing.T) {
+	scanner := &mockScanner{name: "TestSign"}
+	kr := mustKeyRing(t)
+	runner, err := NewBenchmarkRunner(scanner, kr)
+	if err != nil {
+		t.Fatalf("NewBenchmarkRunner: %v", err)
+	}
+
+	result, err := runner.RunBenchmark(context.Background(), WithRecordIDs([]string{
+		"SCRT-secret_aws_key-pos-001",
+		"SCRT-secret_aws_key-neg-002",
+	}))
+	if err != nil {
+		t.Fatalf("RunBenchmark: %v", err)
+	}
+
+	env, err := SignBenchmarkResult(result, kr)
+	if err != nil {
+		t.Fatalf("SignBenchmarkResult: %v", err)
+	}
+	if env == nil {
+		t.Fatal("SignBenchmarkResult returned nil envelope")
+	}
+	if env.Type != TypeBenchmarkRun {
+		t.Errorf("expected type %s, got %s", TypeBenchmarkRun, env.Type)
+	}
+	if env.Subject == "" {
+		t.Error("expected non-empty subject in envelope")
+	}
+	if env.Issuer == "" {
+		t.Error("expected non-empty issuer in envelope")
+	}
+	if len(env.Signature.Value) == 0 {
+		t.Error("expected non-empty signature in envelope")
+	}
+	if len(env.RawPayload) == 0 {
+		t.Error("expected non-empty payload in envelope")
+	}
+}
+
+func TestSignBenchmarkResult_NilKeyRing(t *testing.T) {
+	scanner := &mockScanner{name: "TestSign"}
+	kr := mustKeyRing(t)
+	runner, err := NewBenchmarkRunner(scanner, kr)
+	if err != nil {
+		t.Fatalf("NewBenchmarkRunner: %v", err)
+	}
+
+	result, err := runner.RunBenchmark(context.Background(), WithRecordIDs([]string{
+		"SCRT-secret_aws_key-pos-001",
+	}))
+	if err != nil {
+		t.Fatalf("RunBenchmark: %v", err)
+	}
+
+	_, err = SignBenchmarkResult(result, nil)
+	if err == nil {
+		t.Error("expected error for nil keyRing, got nil")
+	}
+}
+
+func TestSignBenchmarkResult_EnvelopeContainsResult(t *testing.T) {
+	scanner := &mockScanner{name: "TestSign"}
+	kr := mustKeyRing(t)
+	runner, err := NewBenchmarkRunner(scanner, kr)
+	if err != nil {
+		t.Fatalf("NewBenchmarkRunner: %v", err)
+	}
+
+	result, err := runner.RunBenchmark(context.Background(), WithRecordIDs([]string{
+		"SCRT-secret_aws_key-pos-001",
+		"SCRT-secret_aws_key-neg-002",
+	}))
+	if err != nil {
+		t.Fatalf("RunBenchmark: %v", err)
+	}
+
+	env, err := SignBenchmarkResult(result, kr)
+	if err != nil {
+		t.Fatalf("SignBenchmarkResult: %v", err)
+	}
+
+	// Verify the payload can be unmarshaled back into an SXCRunResult
+	var decoded SXCRunResult
+	if err := json.Unmarshal(env.RawPayload, &decoded); err != nil {
+		t.Fatalf("unmarshal payload: %v", err)
+	}
+	if decoded.RunID != result.RunID {
+		t.Errorf("RunID mismatch: envelope has %s, original has %s", decoded.RunID, result.RunID)
+	}
+	if decoded.ScannerName != result.ScannerName {
+		t.Errorf("ScannerName mismatch: envelope has %s, original has %s", decoded.ScannerName, result.ScannerName)
+	}
+	if decoded.TotalRecords != result.TotalRecords {
+		t.Errorf("TotalRecords mismatch: envelope has %d, original has %d", decoded.TotalRecords, result.TotalRecords)
+	}
+}
+
+func TestSignBenchmarkResult_SubjectContainsRunID(t *testing.T) {
+	scanner := &mockScanner{name: "TestSign"}
+	kr := mustKeyRing(t)
+	runner, err := NewBenchmarkRunner(scanner, kr)
+	if err != nil {
+		t.Fatalf("NewBenchmarkRunner: %v", err)
+	}
+
+	result, err := runner.RunBenchmark(context.Background(), WithRecordIDs([]string{
+		"SCRT-secret_aws_key-pos-001",
+	}))
+	if err != nil {
+		t.Fatalf("RunBenchmark: %v", err)
+	}
+
+	env, err := SignBenchmarkResult(result, kr)
+	if err != nil {
+		t.Fatalf("SignBenchmarkResult: %v", err)
+	}
+
+	// Subject should contain the run ID
+	if !strings.Contains(env.Subject, result.RunID) {
+		t.Errorf("subject %q should contain run ID %s", env.Subject, result.RunID)
 	}
 }
 

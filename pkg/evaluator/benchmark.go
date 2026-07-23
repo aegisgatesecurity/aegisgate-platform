@@ -39,6 +39,12 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 )
 
+// init registers the "benchmark" subject kind with the attestation package
+// so SignBenchmarkResult can create attestation envelopes.
+func init() {
+	_ = attestation.RegisterKind("benchmark")
+}
+
 // =====================================================================
 // Benchmark types
 // =====================================================================
@@ -625,6 +631,9 @@ const TypeBenchmarkRun attestation.Type = "benchmark.sxc.v1"
 // envelope. This produces a tamper-evident result that an auditor
 // can verify offline.
 func SignBenchmarkResult(result *SXCRunResult, keyRing *ioc.KeyRing) (*attestation.Envelope, error) {
+	if keyRing == nil {
+		return nil, fmt.Errorf("benchmark: sign: keyRing is required")
+	}
 	payloadBytes, err := json.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("benchmark: marshal result: %w", err)
