@@ -87,8 +87,8 @@ func TestListFrameworks(t *testing.T) {
 
 func TestListControls(t *testing.T) {
 	controls := ListControls()
-	if len(controls) < 11 {
-		t.Errorf("ListControls() returned %d controls, want at least 11", len(controls))
+	if len(controls) < 19 {
+		t.Errorf("ListControls() returned %d controls, want at least 19", len(controls))
 	}
 }
 
@@ -111,8 +111,8 @@ func TestCoverageMatrix(t *testing.T) {
 
 func TestGenerateCoverageReport(t *testing.T) {
 	report := GenerateCoverageReport()
-	if report.TotalAegisGateControls < 11 {
-		t.Errorf("TotalAegisGateControls = %d, want at least 11", report.TotalAegisGateControls)
+	if report.TotalAegisGateControls < 19 {
+		t.Errorf("TotalAegisGateControls = %d, want at least 19", report.TotalAegisGateControls)
 	}
 	if report.TotalFrameworkMappings < 100 {
 		t.Errorf("TotalFrameworkMappings = %d, want at least 100", report.TotalFrameworkMappings)

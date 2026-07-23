@@ -152,6 +152,85 @@ var TechniqueMappings = []TechniqueMapping{
 	{TechniqueID: "T1190", TechniqueName: "Exploit Public-Facing Application (Boundary)", Framework: "atlas", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "Boundary protection limits attack surface of public-facing applications"},
 	{TechniqueID: "PR.AC-5", TechniqueName: "Network Integrity Protected", Framework: "nist_ai_rmf", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "supports", Confidence: 0.9, Description: "Boundary protection implements network integrity controls"},
 	{TechniqueID: "OWASPDev-07", TechniqueName: "Identification and Authentication Failures", Framework: "owasp_llm", AegisGateControl: "AG-SC-BOUNDARY-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "Session authenticity and key management prevent auth failures"},
+
+	// ================================================================
+	// AG-DATA-PROTECTION-PRIVACY — Data Protection and Privacy Controls
+	// ================================================================
+	{TechniqueID: "T1189", TechniqueName: "Drive-by Compromise", Framework: "atlas", AegisGateControl: "AG-DATA-PROTECTION-PRIVACY", Relationship: "mitigates", Confidence: 0.8, Description: "Data masking and DLP prevent drive-by compromise data exfiltration"},
+	{TechniqueID: "T1567", TechniqueName: "Exfiltration Over Web Service", Framework: "atlas", AegisGateControl: "AG-DATA-PROTECTION-PRIVACY", Relationship: "mitigates", Confidence: 0.85, Description: "DLP prevents data exfiltration via web services"},
+	{TechniqueID: "ME1", TechniqueName: "Measuring: Performance Monitoring", Framework: "nist_ai_rmf", AegisGateControl: "AG-DATA-PROTECTION-PRIVACY", Relationship: "supports", Confidence: 0.8, Description: "Data protection monitoring supports AI RMF performance measurement"},
+	{TechniqueID: "LLM06", TechniqueName: "Sensitive Information Disclosure", Framework: "owasp_llm", AegisGateControl: "AG-DATA-PROTECTION-PRIVACY", Relationship: "mitigates", Confidence: 0.9, Description: "Data masking and PII filtering prevent sensitive information disclosure from LLMs"},
+
+	// ================================================================
+	// AG-SECURITY-AWARENESS — Security Awareness and Training
+	// ================================================================
+	{TechniqueID: "T1535", TechniqueName: "Unsecured Credentials", Framework: "atlas", AegisGateControl: "AG-SECURITY-AWARENESS", Relationship: "supports", Confidence: 0.7, Description: "Security awareness training reduces credential exposure risk"},
+	{TechniqueID: "T1566", TechniqueName: "Phishing", Framework: "atlas", AegisGateControl: "AG-SECURITY-AWARENESS", Relationship: "mitigates", Confidence: 0.85, Description: "Security awareness training is primary defense against phishing"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-SECURITY-AWARENESS", Relationship: "supports", Confidence: 0.75, Description: "Security awareness training supports organizational governance"},
+	{TechniqueID: "OWASPDev-06", TechniqueName: "Vulnerable and Outdated Components", Framework: "owasp_llm", AegisGateControl: "AG-SECURITY-AWARENESS", Relationship: "supports", Confidence: 0.7, Description: "Training helps teams identify and remediate vulnerable components"},
+
+	// ================================================================
+	// AG-ASSET-INVENTORY — Asset Management and Inventory Controls
+	// ================================================================
+	{TechniqueID: "T1590", TechniqueName: "Gather Victim Network Information", Framework: "atlas", AegisGateControl: "AG-ASSET-INVENTORY", Relationship: "mitigates", Confidence: 0.8, Description: "Asset inventory reduces reconnaissance attack surface"},
+	{TechniqueID: "T1595", TechniqueName: "Active Scanning", Framework: "atlas", AegisGateControl: "AG-ASSET-INVENTORY", Relationship: "detects", Confidence: 0.85, Description: "Asset inventory enables detection of unauthorized scanning"},
+	{TechniqueID: "ID.AM-1", TechniqueName: "Identify: Asset Management", Framework: "nist_ai_rmf", AegisGateControl: "AG-ASSET-INVENTORY", Relationship: "supports", Confidence: 0.9, Description: "Asset inventory is foundational to NIST CSF Identify function"},
+	{TechniqueID: "LLM05", TechniqueName: "Supply Chain Vulnerabilities", Framework: "owasp_llm", AegisGateControl: "AG-ASSET-INVENTORY", Relationship: "mitigates", Confidence: 0.8, Description: "Software inventory enables supply chain vulnerability detection"},
+
+	// ================================================================
+	// AG-SUPPLY-CHAIN-RISK — Third-Party and Supply Chain Risk Management
+	// ================================================================
+	{TechniqueID: "T0043", TechniqueName: "ML Supply Chain Compromise", Framework: "atlas", AegisGateControl: "AG-SUPPLY-CHAIN-RISK", Relationship: "mitigates", Confidence: 0.9, Description: "Supply chain risk management addresses ML model and data compromise"},
+	{TechniqueID: "T0044", TechniqueName: "AI Red Team Evasion", Framework: "atlas", AegisGateControl: "AG-SUPPLY-CHAIN-RISK", Relationship: "mitigates", Confidence: 0.85, Description: "Third-party risk assessment covers adversarial supply chain attacks"},
+	{TechniqueID: "GV3", TechniqueName: "Govern: Risk Management", Framework: "nist_ai_rmf", AegisGateControl: "AG-SUPPLY-CHAIN-RISK", Relationship: "supports", Confidence: 0.85, Description: "Supply chain risk supports AI governance risk management"},
+	{TechniqueID: "LLM05", TechniqueName: "Supply Chain Vulnerabilities", Framework: "owasp_llm", AegisGateControl: "AG-SUPPLY-CHAIN-RISK", Relationship: "mitigates", Confidence: 0.9, Description: "Supply chain risk management directly addresses LLM supply chain vulnerabilities"},
+
+	// ================================================================
+	// AG-BUSINESS-CONTINUITY — Business Continuity and Availability
+	// ================================================================
+	{TechniqueID: "T1486", TechniqueName: "Data Encrypted for Impact", Framework: "atlas", AegisGateControl: "AG-BUSINESS-CONTINUITY", Relationship: "mitigates", Confidence: 0.8, Description: "Backup and recovery procedures mitigate ransomware impact"},
+	{TechniqueID: "T1490", TechniqueName: "Inhibit System Recovery", Framework: "atlas", AegisGateControl: "AG-BUSINESS-CONTINUITY", Relationship: "mitigates", Confidence: 0.85, Description: "Business continuity planning addresses recovery inhibition"},
+	{TechniqueID: "PR.IP-4", TechniqueName: "Protect: Backups", Framework: "nist_ai_rmf", AegisGateControl: "AG-BUSINESS-CONTINUITY", Relationship: "supports", Confidence: 0.9, Description: "Business continuity planning supports NIST CSF backup requirements"},
+
+	// ================================================================
+	// AG-IDENTITY-LIFECYCLE — Identity and Access Lifecycle Management
+	// ================================================================
+	{TechniqueID: "T1078", TechniqueName: "Valid Accounts", Framework: "atlas", AegisGateControl: "AG-IDENTITY-LIFECYCLE", Relationship: "mitigates", Confidence: 0.9, Description: "Identity lifecycle management prevents valid account abuse"},
+	{TechniqueID: "T1556", TechniqueName: "Modify Authentication Process", Framework: "atlas", AegisGateControl: "AG-IDENTITY-LIFECYCLE", Relationship: "mitigates", Confidence: 0.85, Description: "Provisioning and deprovisioning prevents auth modification attacks"},
+	{TechniqueID: "PR.AC-1", TechniqueName: "Protect: Identity Management", Framework: "nist_ai_rmf", AegisGateControl: "AG-IDENTITY-LIFECYCLE", Relationship: "supports", Confidence: 0.9, Description: "Identity lifecycle management directly supports identity controls"},
+	{TechniqueID: "OWASPDev-01", TechniqueName: "Broken Access Control", Framework: "owasp_llm", AegisGateControl: "AG-IDENTITY-LIFECYCLE", Relationship: "mitigates", Confidence: 0.85, Description: "Identity lifecycle management prevents broken access control"},
+
+	// ================================================================
+	// AG-NETWORK-SECURITY — Network and Communication Security
+	// ================================================================
+	{TechniqueID: "T1136", TechniqueName: "Create Account", Framework: "atlas", AegisGateControl: "AG-NETWORK-SECURITY", Relationship: "detects", Confidence: 0.8, Description: "Network security controls detect unauthorized account creation"},
+	{TechniqueID: "T1090", TechniqueName: "Proxy: Multi-hop Proxy", Framework: "atlas", AegisGateControl: "AG-NETWORK-SECURITY", Relationship: "mitigates", Confidence: 0.85, Description: "Network segmentation and firewall management prevents proxy-based C2"},
+	{TechniqueID: "PR.AC-5", TechniqueName: "Protect: Network Integrity", Framework: "nist_ai_rmf", AegisGateControl: "AG-NETWORK-SECURITY", Relationship: "supports", Confidence: 0.9, Description: "Network security controls implement network integrity requirements"},
+	{TechniqueID: "OWASPDev-05", TechniqueName: "Security Misconfiguration", Framework: "owasp_llm", AegisGateControl: "AG-NETWORK-SECURITY", Relationship: "mitigates", Confidence: 0.85, Description: "Network security controls prevent misconfiguration-based attacks"},
+
+	// ================================================================
+	// AG-RISK-GOVERNANCE — Risk Assessment and Governance
+	// ================================================================
+	{TechniqueID: "T1590", TechniqueName: "Gather Victim Network Information", Framework: "atlas", AegisGateControl: "AG-RISK-GOVERNANCE", Relationship: "detects", Confidence: 0.8, Description: "Risk assessment identifies reconnaissance threats"},
+	{TechniqueID: "T1592", TechniqueName: "Gather Victim Host Information", Framework: "atlas", AegisGateControl: "AG-RISK-GOVERNANCE", Relationship: "detects", Confidence: 0.8, Description: "Risk governance processes address host-level reconnaissance"},
+	{TechniqueID: "GV4", TechniqueName: "Govern: Risk Management", Framework: "nist_ai_rmf", AegisGateControl: "AG-RISK-GOVERNANCE", Relationship: "supports", Confidence: 0.9, Description: "Risk governance directly supports AI RMF governance function"},
+	{TechniqueID: "OWASPDev-09", TechniqueName: "Security Logging and Monitoring Failures", Framework: "owasp_llm", AegisGateControl: "AG-RISK-GOVERNANCE", Relationship: "supports", Confidence: 0.8, Description: "Risk governance requires comprehensive logging and monitoring"},
+
+	// ================================================================
+	// AG-PHYSICAL-SECURITY — Physical and Environmental Security
+	// ================================================================
+	{TechniqueID: "T1366", TechniqueName: "Physical Access", Framework: "atlas", AegisGateControl: "AG-PHYSICAL-SECURITY", Relationship: "mitigates", Confidence: 0.75, Description: "Physical security controls prevent physical access attacks"},
+
+	// ================================================================
+	// AG-AI-SAFETY-QUALITY — AI Safety, Quality, and Transparency
+	// ================================================================
+	{TechniqueID: "T1484", TechniqueName: "Adversarial Examples", Framework: "atlas", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.9, Description: "AI safety controls detect and mitigate adversarial examples"},
+	{TechniqueID: "T1535", TechniqueName: "ML Model Stealing", Framework: "atlas", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.85, Description: "AI quality controls protect against model extraction and theft"},
+	{TechniqueID: "T1658", TechniqueName: "Jailbreak", Framework: "atlas", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.9, Description: "AI safety controls defend against jailbreak and prompt injection"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "supports", Confidence: 0.85, Description: "AI safety governance supports organizational risk management"},
+	{TechniqueID: "MP4", TechniqueName: "Map: Adversarial Profiling", Framework: "nist_ai_rmf", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "supports", Confidence: 0.9, Description: "AI safety measurement supports adversarial threat profiling"},
+	{TechniqueID: "LLM01", TechniqueName: "Prompt Injection", Framework: "owasp_llm", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.95, Description: "AI safety controls are primary defense against prompt injection"},
+	{TechniqueID: "LLM09", TechniqueName: "Overreliance", Framework: "owasp_llm", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.85, Description: "AI quality controls prevent overreliance on LLM outputs"},
 }
 
 // TechniquesForControl returns all technique mappings that target

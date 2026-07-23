@@ -75,6 +75,333 @@ type ExternalControlRef struct {
 // Keyed by AegisGate internal control ID.
 var Mapping = map[string]AegisGateControl{
 	// ================================================================
+	// Data Protection and Privacy family
+	// ================================================================
+	"AG-DATA-PROTECTION-PRIVACY": {
+		ID:          "AG-DATA-PROTECTION-PRIVACY",
+		Name:        "Data Protection and Privacy Controls",
+		Description: "Data classification, PII detection, data loss prevention, retention and disposal",
+		Category:    "Data Protection",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC6.5", Title: "Data Classification and Handling"},
+			{Framework: "iso27001", ControlID: "A.5.12", Title: "Classification of information"},
+			{Framework: "iso27001", ControlID: "A.5.13", Title: "Labelling of information"},
+			{Framework: "iso27001", ControlID: "A.5.14", Title: "Information transfer"},
+			{Framework: "iso27001", ControlID: "A.8.10", Title: "Storage media"},
+			{Framework: "iso27001", ControlID: "A.8.11", Title: "Data masking"},
+			{Framework: "iso27001", ControlID: "A.8.12", Title: "Data leakage prevention"},
+			{Framework: "hipaa", ControlID: "§164.312(a)(1)", Title: "Access Control"},
+			{Framework: "hipaa", ControlID: "§164.312(c)(1)", Title: "Integrity Controls"},
+			{Framework: "hipaa", ControlID: "§164.312(e)(1)", Title: "Transmission Security"},
+			{Framework: "pci", ControlID: "3.1", Title: "Data retention and disposal"},
+			{Framework: "pci", ControlID: "3.3", Title: "Sensitive authentication data protection"},
+			{Framework: "pci", ControlID: "3.5", Title: "Protection of cryptographic keys"},
+			{Framework: "pci", ControlID: "4.1", Title: "Strong cryptography for transmission"},
+			{Framework: "pci", ControlID: "PCI-AI-001", Title: "AI data protection requirements"},
+			{Framework: "nist_csf", ControlID: "PR.DS-1", Title: "Data-at-rest protection"},
+			{Framework: "nist_csf", ControlID: "PR.DS-2", Title: "Data-in-transit protection"},
+			{Framework: "nist_csf", ControlID: "PR.DS-5", Title: "Data integrity protection"},
+			{Framework: "cis", ControlID: "CIS-3", Title: "Data Protection"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SC-8", Title: "Transmission Confidentiality and Integrity"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SC-12", Title: "Cryptographic Key Management"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SC-28", Title: "Protection of Information at Rest"},
+			{Framework: "fips_140", ControlID: "FIPS-140-004", Title: "Approved hashes"},
+			{Framework: "fips_140", ControlID: "FIPS-140-005", Title: "Key sizes"},
+			{Framework: "iso_42001", ControlID: "ISO42001-6.1", Title: "AI risk assessment"},
+			{Framework: "owasp_web", ControlID: "OWASPWeb-A02", Title: "Cryptographic Failures"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art10-001", Title: "Data governance requirements"},
+			{Framework: "gdpr", ControlID: "GDPR-5", Title: "Data minimization"},
+		},
+	},
+
+	// ================================================================
+	// Security Awareness and Training family
+	// ================================================================
+	"AG-SECURITY-AWARENESS": {
+		ID:          "AG-SECURITY-AWARENESS",
+		Name:        "Security Awareness and Training Program",
+		Description: "Security awareness training, phishing simulation, role-based training tracking",
+		Category:    "Human Security",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC1.4", Title: "Demonstrates Commitment to Integrity"},
+			{Framework: "iso27001", ControlID: "A.6.3", Title: "Information security awareness, education and training"},
+			{Framework: "iso27001", ControlID: "A.5.7", Title: "Threat intelligence"},
+			{Framework: "hipaa", ControlID: "§164.308(a)(5)(i)", Title: "Security Awareness and Training"},
+			{Framework: "pci", ControlID: "12.2", Title: "Acceptable use policies for technologies"},
+			{Framework: "pci", ControlID: "12.4", Title: "Security awareness training"},
+			{Framework: "nist_csf", ControlID: "PR.AT-1", Title: "Understanding threats"},
+			{Framework: "nist_csf", ControlID: "PR.AT-2", Title: "Role-based training"},
+			{Framework: "cis", ControlID: "CIS-14", Title: "Security Awareness and Skills Training"},
+			{Framework: "fedramp", ControlID: "FedRAMP-AC-2", Title: "Account Management"},
+			{Framework: "fips_140", ControlID: "FIPS-140-001", Title: "FIPS mode enabled"},
+			{Framework: "iso_42001", ControlID: "ISO42001-7.5", Title: "AI system documentation"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art14-001", Title: "Human oversight measures"},
+			{Framework: "gdpr", ControlID: "GDPR-13", Title: "Information to data subjects"},
+		},
+	},
+
+	// ================================================================
+	// Asset Management and Inventory family
+	// ================================================================
+	"AG-ASSET-INVENTORY": {
+		ID:          "AG-ASSET-INVENTORY",
+		Name:        "Asset Management and Inventory Controls",
+		Description: "Asset inventory, classification, lifecycle management, and acceptable use",
+		Category:    "Asset Management",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC6.1", Title: "Logical and Physical Access Controls"},
+			{Framework: "iso27001", ControlID: "A.5.9", Title: "Inventory of information and other associated assets"},
+			{Framework: "iso27001", ControlID: "A.5.10", Title: "Acceptable use of information and other associated assets"},
+			{Framework: "iso27001", ControlID: "A.5.11", Title: "Return of assets"},
+			{Framework: "iso27001", ControlID: "A.8.9", Title: "Configuration management"},
+			{Framework: "iso27001", ControlID: "A.8.19", Title: "Installation of software on operational systems"},
+			{Framework: "hipaa", ControlID: "§164.310(d)(1)", Title: "Device and Media Controls"},
+			{Framework: "pci", ControlID: "2.4", Title: "Configuration management for system components"},
+			{Framework: "pci", ControlID: "12.5", Title: "Inventory of system components"},
+			{Framework: "nist_csf", ControlID: "ID.AM-1", Title: "Physical devices inventory"},
+			{Framework: "nist_csf", ControlID: "ID.AM-2", Title: "Software platforms inventory"},
+			{Framework: "cis", ControlID: "CIS-1", Title: "Enterprise Assets"},
+			{Framework: "cis", ControlID: "CIS-2", Title: "Data Protection"},
+			{Framework: "fedramp", ControlID: "FedRAMP-CM-2", Title: "Baseline Configuration"},
+			{Framework: "fedramp", ControlID: "FedRAMP-CM-8", Title: "System Component Inventory"},
+			{Framework: "iso_42001", ControlID: "ISO42001-8.1", Title: "AI operational planning"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art11-001", Title: "Technical documentation"},
+		},
+	},
+
+	// ================================================================
+	// Third-Party and Supply Chain Risk family
+	// ================================================================
+	"AG-SUPPLY-CHAIN-RISK": {
+		ID:          "AG-SUPPLY-CHAIN-RISK",
+		Name:        "Third-Party and Supply Chain Risk Management",
+		Description: "Vendor risk assessment, supply chain integrity, third-party monitoring",
+		Category:    "Supply Chain",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC9.2", Title: "Risk Assessment of Third-Party Providers"},
+			{Framework: "iso27001", ControlID: "A.5.19", Title: "Information security in supplier agreements"},
+			{Framework: "iso27001", ControlID: "A.5.20", Title: "Addressing information security within supplier agreements"},
+			{Framework: "iso27001", ControlID: "A.5.21", Title: "Managing information security in the ICT supply chain"},
+			{Framework: "iso27001", ControlID: "A.5.22", Title: "Monitoring, review and change management of supplier services"},
+			{Framework: "iso27001", ControlID: "A.5.23", Title: "Information security for use of cloud services"},
+			{Framework: "iso27001", ControlID: "A.5.24", Title: "Information security incident management by suppliers"},
+			{Framework: "hipaa", ControlID: "§164.308(b)(1)", Title: "Business Associate Contracts"},
+			{Framework: "pci", ControlID: "12.8", Title: "Third-party service provider management"},
+			{Framework: "pci", ControlID: "12.9", Title: "Third-party service provider agreements"},
+			{Framework: "nist_csf", ControlID: "ID.SC-1", Title: "Cybersecurity supply chain risk management"},
+			{Framework: "nist_csf", ControlID: "ID.SC-2", Title: "Third-party risk management"},
+			{Framework: "cis", ControlID: "CIS-15", Title: "Service Provider Management"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SA-9", Title: "System and Services Acquisition"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SR-3", Title: "Supply Chain Controls and Processes"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SR-4", Title: "Provenance"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SR-12", Title: "Software and Firmware Integrity Verification"},
+			{Framework: "iso_42001", ControlID: "ISO42001-8.3", Title: "AI system supply chain management"},
+			{Framework: "owasp_llm", ControlID: "LLM05", Title: "Supply Chain Vulnerabilities"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art9-001", Title: "Risk management system"},
+		},
+	},
+
+	// ================================================================
+	// Business Continuity and Availability family
+	// ================================================================
+	"AG-BUSINESS-CONTINUITY": {
+		ID:          "AG-BUSINESS-CONTINUITY",
+		Name:        "Business Continuity and Availability Controls",
+		Description: "Backup, disaster recovery, redundancy, and service availability management",
+		Category:    "Availability",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "A1.1", Title: "System Availability"},
+			{Framework: "soc2", ControlID: "A1.2", Title: "Backup and Recovery"},
+			{Framework: "soc2", ControlID: "A1.3", Title: "Environmental Controls"},
+			{Framework: "iso27001", ControlID: "A.5.29", Title: "Information security during disruption"},
+			{Framework: "iso27001", ControlID: "A.5.30", Title: "ICT readiness for business continuity"},
+			{Framework: "iso27001", ControlID: "A.8.14", Title: "Redundancy of information processing facilities"},
+			{Framework: "hipaa", ControlID: "§164.308(a)(7)", Title: "Contingency Plan"},
+			{Framework: "hipaa", ControlID: "§164.312(b)", Title: "Audit Controls"},
+			{Framework: "pci", ControlID: "12.10", Title: "Incident response plan"},
+			{Framework: "nist_csf", ControlID: "PR.IP-4", Title: "Backups and recovery"},
+			{Framework: "nist_csf", ControlID: "PR.IP-9", Title: "Response and recovery plans"},
+			{Framework: "cis", ControlID: "CIS-11", Title: "Data Recovery"},
+			{Framework: "fedramp", ControlID: "FedRAMP-AU-10", Title: "Audit Record Retention"},
+			{Framework: "fedramp", ControlID: "FedRAMP-IR-4", Title: "Incident Handling"},
+			{Framework: "fips_140", ControlID: "FIPS-140-002", Title: "Approved ciphers"},
+			{Framework: "iso_42001", ControlID: "ISO42001-9.2", Title: "AI system monitoring and measurement"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art15-001", Title: "Accuracy and robustness"},
+		},
+	},
+
+	// ================================================================
+	// Identity and Lifecycle Management family
+	// ================================================================
+	"AG-IDENTITY-LIFECYCLE": {
+		ID:          "AG-IDENTITY-LIFECYCLE",
+		Name:        "Identity and Access Lifecycle Management",
+		Description: "User provisioning, deprovisioning, session management, and periodic access review",
+		Category:    "Identity Management",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC6.2", Title: "User Provisioning and De-provisioning"},
+			{Framework: "soc2", ControlID: "CC6.3", Title: "Role-based Access Controls"},
+			{Framework: "iso27001", ControlID: "A.5.15", Title: "Access control"},
+			{Framework: "iso27001", ControlID: "A.5.16", Title: "Identity management"},
+			{Framework: "iso27001", ControlID: "A.5.17", Title: "Authentication information"},
+			{Framework: "iso27001", ControlID: "A.5.18", Title: "Access rights"},
+			{Framework: "iso27001", ControlID: "A.8.2", Title: "Privileged access rights"},
+			{Framework: "hipaa", ControlID: "§164.312(a)(2)(i)", Title: "Unique User Identification"},
+			{Framework: "hipaa", ControlID: "§164.312(a)(2)(ii)", Title: "Emergency Access"},
+			{Framework: "pci", ControlID: "7.1", Title: "Restrict access on need-to-know basis"},
+			{Framework: "pci", ControlID: "7.2", Title: "Role-based access control"},
+			{Framework: "pci", ControlID: "8.1", Title: "User identification"},
+			{Framework: "pci", ControlID: "8.2", Title: "Authentication"},
+			{Framework: "pci", ControlID: "8.3", Title: "MFA for access"},
+			{Framework: "pci", ControlID: "8.4", Title: "MFA for administrators"},
+			{Framework: "nist_csf", ControlID: "PR.AC-1", Title: "Identity management and access control"},
+			{Framework: "nist_csf", ControlID: "PR.AC-2", Title: "Access control"},
+			{Framework: "nist_csf", ControlID: "PR.AC-3", Title: "Least privilege"},
+			{Framework: "cis", ControlID: "CIS-5", Title: "Account Management"},
+			{Framework: "cis", ControlID: "CIS-16", Title: "Application Software Security"},
+			{Framework: "fedramp", ControlID: "FedRAMP-AC-2", Title: "Account Management"},
+			{Framework: "fedramp", ControlID: "FedRAMP-IA-2", Title: "Identification and Authentication"},
+			{Framework: "fedramp", ControlID: "FedRAMP-IA-5", Title: "Authenticator Management"},
+			{Framework: "fips_140", ControlID: "FIPS-140-001", Title: "FIPS mode enabled"},
+			{Framework: "iso_42001", ControlID: "ISO42001-5.2", Title: "AI policy"},
+			{Framework: "owasp_web", ControlID: "OWASPWeb-A01", Title: "Broken Access Control"},
+			{Framework: "owasp_web", ControlID: "OWASPWeb-A07", Title: "Identification and Authentication Failures"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art13-001", Title: "Transparency and provision of information"},
+			{Framework: "gdpr", ControlID: "GDPR-25", Title: "Data protection by design"},
+		},
+	},
+
+	// ================================================================
+	// Network and Communication Security family
+	// ================================================================
+	"AG-NETWORK-SECURITY": {
+		ID:          "AG-NETWORK-SECURITY",
+		Name:        "Network and Communication Security Controls",
+		Description: "Network segmentation, firewall management, traffic filtering, and secure protocols",
+		Category:    "Network Security",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC6.6", Title: "System Operations - Audit Logging"},
+			{Framework: "iso27001", ControlID: "A.8.20", Title: "Networks security"},
+			{Framework: "iso27001", ControlID: "A.8.21", Title: "Security of network services"},
+			{Framework: "iso27001", ControlID: "A.8.22", Title: "Segregation of networks"},
+			{Framework: "iso27001", ControlID: "A.8.23", Title: "Web filtering"},
+			{Framework: "hipaa", ControlID: "§164.312(e)(1)", Title: "Transmission Security"},
+			{Framework: "pci", ControlID: "1.1", Title: "Firewall and router configuration"},
+			{Framework: "pci", ControlID: "1.2", Title: "Network security controls"},
+			{Framework: "pci", ControlID: "1.3", Title: "Network segmentation"},
+			{Framework: "pci", ControlID: "1.4", Title: "Network connection controls"},
+			{Framework: "nist_csf", ControlID: "PR.AC-5", Title: "Network integrity"},
+			{Framework: "nist_csf", ControlID: "PR.PT-4", Title: "Communications security"},
+			{Framework: "cis", ControlID: "CIS-13", Title: "Network Monitoring and Defense"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SC-7", Title: "Boundary Protection"},
+			{Framework: "fedramp", ControlID: "FedRAMP-AC-17", Title: "Remote Access"},
+			{Framework: "iso_42001", ControlID: "ISO42001-8.2", Title: "AI risk implementation"},
+			{Framework: "owasp_web", ControlID: "OWASPWeb-A05", Title: "Security Misconfiguration"},
+		},
+	},
+
+	// ================================================================
+	// Risk Assessment and Governance family
+	// ================================================================
+	"AG-RISK-GOVERNANCE": {
+		ID:          "AG-RISK-GOVERNANCE",
+		Name:        "Risk Assessment and Governance Controls",
+		Description: "Risk assessment methodology, security governance, policy management, and compliance tracking",
+		Category:    "Governance",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "soc2", ControlID: "CC3.1", Title: "Risk Assessment"},
+			{Framework: "soc2", ControlID: "CC3.2", Title: "Risk Management"},
+			{Framework: "soc2", ControlID: "CC3.3", Title: "Internal Control"},
+			{Framework: "iso27001", ControlID: "A.5.1", Title: "Policies for information security"},
+			{Framework: "iso27001", ControlID: "A.5.2", Title: "Information security roles and responsibilities"},
+			{Framework: "iso27001", ControlID: "A.5.3", Title: "Segregation of duties"},
+			{Framework: "iso27001", ControlID: "A.5.4", Title: "Management responsibilities"},
+			{Framework: "iso27001", ControlID: "A.5.5", Title: "Contact with authorities"},
+			{Framework: "iso27001", ControlID: "A.5.8", Title: "Information security in project management"},
+			{Framework: "hipaa", ControlID: "§164.308(a)(1)", Title: "Security Management Process"},
+			{Framework: "hipaa", ControlID: "§164.308(a)(8)", Title: "Evaluation"},
+			{Framework: "pci", ControlID: "5.1", Title: "Vulnerability scanning"},
+			{Framework: "pci", ControlID: "5.2", Title: "Vulnerability management"},
+			{Framework: "pci", ControlID: "5.3", Title: "Risk assessment"},
+			{Framework: "pci", ControlID: "12.1", Title: "Information security policy"},
+			{Framework: "pci", ControlID: "12.3", Title: "Security policies and operational procedures"},
+			{Framework: "nist_csf", ControlID: "ID.RA-1", Title: "Asset vulnerability"},
+			{Framework: "nist_csf", ControlID: "ID.RA-2", Title: "Cyber threat intelligence"},
+			{Framework: "nist_csf", ControlID: "ID.RA-3", Title: "Vulnerability identification"},
+			{Framework: "nist_csf", ControlID: "GV1", Title: "Organizational Context"},
+			{Framework: "cis", ControlID: "CIS-7", Title: "Continuous Vulnerability Management"},
+			{Framework: "fedramp", ControlID: "FedRAMP-RA-3", Title: "Risk Assessment"},
+			{Framework: "fedramp", ControlID: "FedRAMP-RA-5", Title: "Vulnerability Monitoring and Scanning"},
+			{Framework: "fedramp", ControlID: "FedRAMP-CA-7", Title: "Continuous Monitoring"},
+			{Framework: "fips_140", ControlID: "FIPS-140-007", Title: "Audit logging"},
+			{Framework: "iso_42001", ControlID: "ISO42001-9.1", Title: "AI performance monitoring"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-AI-001", Title: "Prohibited AI practices detection"},
+			{Framework: "gdpr", ControlID: "GDPR-35", Title: "Data protection impact assessment"},
+		},
+	},
+
+	// ================================================================
+	// Physical and Environmental Security family
+	// ================================================================
+	"AG-PHYSICAL-SECURITY": {
+		ID:          "AG-PHYSICAL-SECURITY",
+		Name:        "Physical and Environmental Security Controls",
+		Description: "Physical access controls, environmental monitoring, secure disposal, and clear desk/screen",
+		Category:    "Physical Security",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "iso27001", ControlID: "A.7.1", Title: "Physical security perimeters"},
+			{Framework: "iso27001", ControlID: "A.7.2", Title: "Physical entry"},
+			{Framework: "iso27001", ControlID: "A.7.3", Title: "Securing offices, rooms and facilities"},
+			{Framework: "iso27001", ControlID: "A.7.4", Title: "Physical security monitoring"},
+			{Framework: "iso27001", ControlID: "A.7.5", Title: "Environmental controls"},
+			{Framework: "iso27001", ControlID: "A.7.7", Title: "Clear desk and clear screen"},
+			{Framework: "iso27001", ControlID: "A.7.8", Title: "Asset disposal"},
+			{Framework: "iso27001", ControlID: "A.8.13", Title: "Information backup"},
+			{Framework: "hipaa", ControlID: "§164.310(a)(1)", Title: "Facility Access Controls"},
+			{Framework: "hipaa", ControlID: "§164.310(b)", Title: "Workstation Use"},
+			{Framework: "hipaa", ControlID: "§164.310(c)", Title: "Workstation Security"},
+			{Framework: "pci", ControlID: "9.1", Title: "Physical access restrictions"},
+			{Framework: "pci", ControlID: "9.2", Title: "Physical media controls"},
+			{Framework: "nist_csf", ControlID: "PR.AC-2", Title: "Physical access control"},
+			{Framework: "fedramp", ControlID: "FedRAMP-AC-14", Title: "Permitted Actions Without Identification"},
+		},
+	},
+
+	// ================================================================
+	// AI-Specific Safety and Quality family
+	// ================================================================
+	"AG-AI-SAFETY-QUALITY": {
+		ID:          "AG-AI-SAFETY-QUALITY",
+		Name:        "AI Safety, Quality, and Transparency Controls",
+		Description: "AI model validation, bias detection, explainability, prompt injection defense, and AI output quality",
+		Category:    "AI Safety",
+		ExternalControls: []ExternalControlRef{
+			{Framework: "iso27001", ControlID: "A.5.36", Title: "Compliance with policies, rules and standards"},
+			{Framework: "iso27001", ControlID: "A.5.37", Title: "Documentation of information security"},
+			{Framework: "iso27001", ControlID: "A.5.38", Title: "Privacy protection"},
+			{Framework: "pci", ControlID: "PCI-AI-002", Title: "AI model security requirements"},
+			{Framework: "nist_csf", ControlID: "GV2", Title: "Risk Management Strategy"},
+			{Framework: "nist_csf", ControlID: "MP1", Title: "Mapping: System Context"},
+			{Framework: "nist_csf", ControlID: "ME1", Title: "Measuring: Performance Monitoring"},
+			{Framework: "cis", ControlID: "CIS-4", Title: "Secure Configuration"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SA-11", Title: "Developer Security Testing"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SA-22", Title: "Unsupported System Components"},
+			{Framework: "iso_42001", ControlID: "ISO42001-6.1", Title: "AI risk assessment"},
+			{Framework: "iso_42001", ControlID: "ISO42001-9.3", Title: "AI system audit"},
+			{Framework: "owasp_llm", ControlID: "LLM01", Title: "Prompt Injection"},
+			{Framework: "owasp_llm", ControlID: "LLM06", Title: "Sensitive Information Disclosure"},
+			{Framework: "owasp_llm", ControlID: "LLM07", Title: "Insecure Plugin Design"},
+			{Framework: "owasp_llm", ControlID: "LLM09", Title: "Overreliance"},
+			{Framework: "atlas", ControlID: "ATLAS-T1535", Title: "ML Model Stealing"},
+			{Framework: "atlas", ControlID: "ATLAS-T1484", Title: "Adversarial Examples"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-AI-002", Title: "Social scoring prohibition"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-AI-003", Title: "Real-time remote biometric identification"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art12-001", Title: "Record-keeping requirements"},
+			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art15-007", Title: "Cybersecurity requirements"},
+		},
+	},
+
+	// ================================================================
 	// Access Control family
 	// ================================================================
 	"AG-AUTH-RBAC-MFA": {
