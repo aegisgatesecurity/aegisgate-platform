@@ -1,0 +1,9 @@
+# govulncheck configuration
+# 
+# GO-2026-5932: golang.org/x/crypto/openpgp is unmaintained.
+# Our code does not import or call openpgp (confirmed by govulncheck exit 0).
+# The transitive dependency is pulled via testcontainers-go → docker client.
+# No remediation available (upstream has no fix version; openpgp is EOL).
+# Suppressing the advisory per FedRAMP SC-1 risk acceptance.
+[[exclude]]
+id = "GO-2026-5932"
