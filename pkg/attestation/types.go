@@ -102,6 +102,14 @@ var allTypes = map[Type]TypeSpec{
 		Owner:       "pkg/evaluator",
 		Description: "AR-EaaS evaluation result (TODO-301).",
 	},
+	"benchmark.sxc.v1": {
+		Domain:      "benchmark",
+		Name:        "sxc",
+		Version:     1,
+		SchemaURL:   "https://aegisgatesecurity.io/schemas/benchmark.sxc.v1.json",
+		Owner:       "pkg/evaluator",
+		Description: "SXC adversarial benchmark result (v3.8).",
+	},
 	TypeAIBOM: {
 		Domain:      "aibom",
 		Name:        "cyclonedx",
