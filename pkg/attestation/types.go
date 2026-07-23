@@ -110,6 +110,14 @@ var allTypes = map[Type]TypeSpec{
 		Owner:       "pkg/evaluator",
 		Description: "SXC adversarial benchmark result (v3.8).",
 	},
+	"audit.soc2.v1": {
+		Domain:      "audit",
+		Name:        "soc2",
+		Version:     1,
+		SchemaURL:   "https://aegisgatesecurity.io/schemas/audit.soc2.v1.json",
+		Owner:       "pkg/audit/soc2",
+		Description: "SOC 2 audit automation result (v3.8).",
+	},
 	TypeAIBOM: {
 		Domain:      "aibom",
 		Name:        "cyclonedx",
@@ -173,7 +181,8 @@ var knownKinds = map[string]bool{
 	"evaluation": true,
 	"cve":        true,
 	"intent":     true,
-	"digest":     true, // TODO-601: CISO Posture Digest
+	"digest":     true,
+	"audit":      true, // TODO-601: CISO Posture Digest
 }
 
 // ValidateType returns an error if t is not in the registry.

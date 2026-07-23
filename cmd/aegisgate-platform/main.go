@@ -150,6 +150,7 @@ CLI Subcommands (run "aegisgate <subcommand> --help" for details):
   attestation <sign|verify>    Attestation envelope operations (frozen 2026-06-15)
   cve <publish|verify>         CVE-for-AI Entry Publisher (v3.4.0+ TODO-305)
   digest <generate|verify>     CISO Posture Digest (v3.4.0+ TODO-601)
+  audit-soc2 <generate|evidence|workpapers|policies>  SOC 2 Audit Automation (v3.8)
   benchmark <run|list-records>   Adversarial Benchmark Suite (v3.8)
   evaluator <run>              AR-EaaS evaluator (v3.4.0+ TODO-301)
   evidence <build|verify|list> Compliance evidence packages (v3.3.0+)
