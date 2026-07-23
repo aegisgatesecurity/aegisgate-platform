@@ -190,6 +190,9 @@ func (m *FedRAMPModule) registerControls() {
 
 	// Manual stubs: 62 evidence-mapped controls (customer responsibility)
 	m.registerManualStubs()
+
+	// Additional stubs: 16 controls to reach 150 total
+	m.registerAdditionalStubs()
 }
 
 // Dependencies returns required modules. FedRAMP depends on the
