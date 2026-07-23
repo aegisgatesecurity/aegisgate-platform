@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
 )
 
 // ============================================================================
@@ -171,7 +172,57 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		}
 	}
 
-	// 3. Check token limits if enabled
+	// 3. Scan for XSS vectors if enabled
+	if rg.config.EnableXSSDetection {
+		xssMatches := detectors.DetectXSS(response)
+		for _, match := range xssMatches {
+			result.DetectedXSS = append(result.DetectedXSS, match.Category)
+			severity := 4 // high by default for XSS
+			if match.Severity == detectors.SeverityCritical {
+				severity = 5
+			} else if match.Severity == detectors.SeverityMedium {
+				severity = 3
+			} else if match.Severity == detectors.SeverityLow {
+				severity = 2
+			}
+			result.Threats = append(result.Threats, Threat{
+				Type:       "xss",
+				Severity:   severity,
+				Message:    "XSS vector detected: " + match.Category,
+				Location:   "response_body",
+				Pattern:    match.Category,
+				MatchStart: match.Index,
+				MatchEnd:   match.End,
+			})
+		}
+	}
+
+	// 4. Scan for compliance violations if enabled
+	if rg.config.EnableComplianceDetection {
+		complianceMatches := detectors.DetectCompliance(response)
+		for _, match := range complianceMatches {
+			result.DetectedCompliance = append(result.DetectedCompliance, match.Category)
+			severity := 4 // high by default
+			if match.Severity == detectors.SeverityCritical {
+				severity = 5
+			} else if match.Severity == detectors.SeverityMedium {
+				severity = 3
+			} else if match.Severity == detectors.SeverityLow {
+				severity = 2
+			}
+			result.Threats = append(result.Threats, Threat{
+				Type:       "compliance",
+				Severity:   severity,
+				Message:    "Compliance violation: " + match.Category,
+				Location:   "response_body",
+				Pattern:    match.Category,
+				MatchStart: match.Index,
+				MatchEnd:   match.End,
+			})
+		}
+	}
+
+	// 5. Check token limits if enabled
 	if rg.tokenLimiter != nil && scanCtx != nil {
 		clientID := "default"
 		if scanCtx != nil {
@@ -196,7 +247,7 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		result.Tokens = rg.tokenLimiter.CountTokens(response)
 	}
 
-	// 4. Check toxicity if enabled
+	// 6. Check toxicity if enabled
 	if rg.config.EnableToxicityFilter && rg.toxicityFilter != nil {
 		toxicityResult := rg.toxicityFilter.Scan(response)
 		if toxicityResult.Filtered {
@@ -211,7 +262,7 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		}
 	}
 
-	// 5. Check hallucination if enabled
+	// 7. Check hallucination if enabled
 	if rg.config.EnableHallucination && rg.hallucinationDetector != nil {
 		hallResult := rg.hallucinationDetector.Scan(response)
 		if hallResult.Flagged {
@@ -246,7 +297,7 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 	// packages. Only record when something was detected (PII, secrets,
 	// threats) or when the response was blocked - a clean scan would
 	// otherwise pollute the ring with N normal events per minute.
-	if len(result.Threats) > 0 || !result.Allowed || len(result.DetectedPII) > 0 || len(result.DetectedSecrets) > 0 {
+	if len(result.Threats) > 0 || !result.Allowed || len(result.DetectedPII) > 0 || len(result.DetectedSecrets) > 0 || len(result.DetectedXSS) > 0 || len(result.DetectedCompliance) > 0 {
 		eventSev := logging.SeverityInfo
 		threatSummary := ""
 		if len(result.Threats) > 0 {
@@ -270,8 +321,8 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 		logging.Record(logging.Event{
 			Type:     "response_scan",
 			Severity: eventSev,
-			Message: fmt.Sprintf("threats=%d pii=%d secrets=%d allowed=%t summary=%s",
-				len(result.Threats), len(result.DetectedPII), len(result.DetectedSecrets), result.Allowed, threatSummary),
+			Message: fmt.Sprintf("threats=%d pii=%d secrets=%d xss=%d compliance=%d allowed=%t summary=%s",
+				len(result.Threats), len(result.DetectedPII), len(result.DetectedSecrets), len(result.DetectedXSS), len(result.DetectedCompliance), result.Allowed, threatSummary),
 		})
 	}
 
