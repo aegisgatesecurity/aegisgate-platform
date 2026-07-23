@@ -35,18 +35,18 @@ import (
 func testIOC(suffix string) ioc.IOC {
 	now := time.Now().UTC()
 	return ioc.IOC{
-		Fingerprint:     fmt.Sprintf("%064x", suffix),
-		Type:            ioc.IOCTypePromptInjection,
-		Severity:        ioc.SeverityHigh,
-		FirstSeen:       now,
-		LastSeen:        now,
-		Count:           1,
-		Source:          "proxy",
-		Category:        "prompt_injection",
-		Pattern:         "jailbreak_v3",
-		SourceProvider:  "chatgpt",
-		AffectsLens:     true,
-		AffectsGateway:  true,
+		Fingerprint:    fmt.Sprintf("%064x", suffix),
+		Type:           ioc.IOCTypePromptInjection,
+		Severity:       ioc.SeverityHigh,
+		FirstSeen:      now,
+		LastSeen:       now,
+		Count:          1,
+		Source:         "proxy",
+		Category:       "prompt_injection",
+		Pattern:        "jailbreak_v3",
+		SourceProvider: "chatgpt",
+		AffectsLens:    true,
+		AffectsGateway: true,
 	}
 }
 
@@ -54,18 +54,18 @@ func testIOC(suffix string) ioc.IOC {
 func testIOCWithType(suffix string, iocType ioc.IOCType, sev ioc.Severity) ioc.IOC {
 	now := time.Now().UTC()
 	return ioc.IOC{
-		Fingerprint:     fmt.Sprintf("%064x", suffix),
-		Type:            iocType,
-		Severity:        sev,
-		FirstSeen:       now,
-		LastSeen:        now,
-		Count:           1,
-		Source:          "scanner",
-		Category:        "secret_api_key",
-		Pattern:         "aws_access_key_v1",
-		SourceProvider:  "claude",
-		AffectsLens:     true,
-		AffectsGateway:  false,
+		Fingerprint:    fmt.Sprintf("%064x", suffix),
+		Type:           iocType,
+		Severity:       sev,
+		FirstSeen:      now,
+		LastSeen:       now,
+		Count:          1,
+		Source:         "scanner",
+		Category:       "secret_api_key",
+		Pattern:        "aws_access_key_v1",
+		SourceProvider: "claude",
+		AffectsLens:    true,
+		AffectsGateway: false,
 	}
 }
 
@@ -338,15 +338,15 @@ func TestPostgresStore_SnapshotSince(t *testing.T) {
 	// Insert an IOC with a known timestamp in the past.
 	past := time.Now().UTC().Add(-2 * time.Hour)
 	oldIOC := ioc.IOC{
-		Fingerprint:     fmt.Sprintf("%064x", "since-old"),
-		Type:            ioc.IOCTypeProxyResponse,
-		Severity:        ioc.SeverityLow,
-		FirstSeen:       past,
-		LastSeen:        past,
-		Count:           1,
-		Source:          "proxy",
-		AffectsLens:     true,
-		AffectsGateway:  true,
+		Fingerprint:    fmt.Sprintf("%064x", "since-old"),
+		Type:           ioc.IOCTypeProxyResponse,
+		Severity:       ioc.SeverityLow,
+		FirstSeen:      past,
+		LastSeen:       past,
+		Count:          1,
+		Source:         "proxy",
+		AffectsLens:    true,
+		AffectsGateway: true,
 	}
 	_, err := store.Observe(ctx, oldIOC, ioc.TenantContext{TenantID: tenantID})
 	if err != nil {
@@ -531,18 +531,18 @@ func TestPostgresStore_Prune(t *testing.T) {
 	// Insert an "old" IOC with LastSeen 30 days ago.
 	oldTime := time.Now().UTC().Add(-30 * 24 * time.Hour)
 	oldIOC := ioc.IOC{
-		Fingerprint:     fmt.Sprintf("%064x", "prune-old"),
-		Type:            ioc.IOCTypeSecretLeak,
-		Severity:        ioc.SeverityHigh,
-		FirstSeen:       oldTime,
-		LastSeen:        oldTime,
-		Count:           5,
-		Source:          "scanner",
-		Category:        "secret_api_key",
-		Pattern:         "aws_access_key_v1",
-		SourceProvider:  "chatgpt",
-		AffectsLens:     true,
-		AffectsGateway:  true,
+		Fingerprint:    fmt.Sprintf("%064x", "prune-old"),
+		Type:           ioc.IOCTypeSecretLeak,
+		Severity:       ioc.SeverityHigh,
+		FirstSeen:      oldTime,
+		LastSeen:       oldTime,
+		Count:          5,
+		Source:         "scanner",
+		Category:       "secret_api_key",
+		Pattern:        "aws_access_key_v1",
+		SourceProvider: "chatgpt",
+		AffectsLens:    true,
+		AffectsGateway: true,
 	}
 	_, err := store.Observe(ctx, oldIOC, ioc.TenantContext{TenantID: tenantID})
 	if err != nil {

@@ -126,7 +126,7 @@ func GenerateWorkpaper(category TrustServiceCategory, evidence []ControlEvidence
 		}
 		results = append(results, ControlResult{
 			ControlID:   e.ControlID,
-			ControlName:  e.ControlName,
+			ControlName: e.ControlName,
 			Status:      e.Status,
 			Details:     details,
 		})

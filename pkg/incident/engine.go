@@ -73,7 +73,7 @@ func NewEngine(incidentStore IncidentStore, playbookStore PlaybookStore, ruleSto
 		playbookStore:   playbookStore,
 		ruleStore:       ruleStore,
 		escalationStore: NewInMemoryEscalationPolicyStore(),
-		logger:         slog.Default().With("component", "incident-engine"),
+		logger:          slog.Default().With("component", "incident-engine"),
 	}
 }
 

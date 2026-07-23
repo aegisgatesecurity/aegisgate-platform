@@ -115,16 +115,16 @@ func DefaultStreamConfig() StreamConfig {
 //
 // Thread safety: all methods are safe for concurrent use.
 type TimelineStreamer struct {
-	cfg     StreamConfig
-	store   correlation.CorrelationStore
-	logger  *slog.Logger
+	cfg    StreamConfig
+	store  correlation.CorrelationStore
+	logger *slog.Logger
 
-	mu        sync.RWMutex
-	subs      map[string]chan *StreamEvent // clientID -> event channel
-	nextID    int64
-	ctx       context.Context
-	cancel    context.CancelFunc
-	running   bool
+	mu      sync.RWMutex
+	subs    map[string]chan *StreamEvent // clientID -> event channel
+	nextID  int64
+	ctx     context.Context
+	cancel  context.CancelFunc
+	running bool
 }
 
 // NewTimelineStreamer creates a new streamer. The store may be nil

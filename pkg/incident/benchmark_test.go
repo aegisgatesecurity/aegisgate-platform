@@ -77,12 +77,12 @@ func BenchmarkDetectionRuleEvaluation(b *testing.B) {
 
 	for i := 0; i < 50; i++ {
 		s.CreateRule(ctx, &DetectionRule{
-			ID:          fmt.Sprintf("rule-%d", i),
-			Name:        fmt.Sprintf("Benchmark Rule %d", i),
-			Enabled:     true,
-			EventTypes:  []string{"prompt_injection"},
-			Severity:    SeverityHigh,
-			AutoCreate:  true,
+			ID:         fmt.Sprintf("rule-%d", i),
+			Name:       fmt.Sprintf("Benchmark Rule %d", i),
+			Enabled:    true,
+			EventTypes: []string{"prompt_injection"},
+			Severity:   SeverityHigh,
+			AutoCreate: true,
 		})
 	}
 

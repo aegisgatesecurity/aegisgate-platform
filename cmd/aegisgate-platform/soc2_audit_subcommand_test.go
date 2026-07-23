@@ -19,10 +19,10 @@ func TestIsAuditSOC2Subcommand(t *testing.T) {
 		{[]string{"audit-soc2", "evidence"}, true},
 		{[]string{"audit-soc2", "workpapers"}, true},
 		{[]string{"audit-soc2", "policies"}, true},
-		{[]string{"audit-soc2"}, false},           // too short
-		{[]string{"benchmark", "run"}, false},     // different subcommand
-		{[]string{"evaluator"}, false},             // different subcommand
-		{[]string{}, false},                        // empty
+		{[]string{"audit-soc2"}, false},       // too short
+		{[]string{"benchmark", "run"}, false}, // different subcommand
+		{[]string{"evaluator"}, false},        // different subcommand
+		{[]string{}, false},                   // empty
 	}
 
 	for _, tt := range tests {

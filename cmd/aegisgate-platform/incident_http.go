@@ -177,12 +177,12 @@ func handleIncidentCreate(w http.ResponseWriter, r *http.Request, engine *incide
 	w.Header().Set("Content-Type", "application/json")
 
 	var req struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Severity    string `json:"severity"`
-		Source      string `json:"source"`
-		AgentID     string `json:"agent_id"`
-		SessionID   string `json:"session_id"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Severity    string   `json:"severity"`
+		Source      string   `json:"source"`
+		AgentID     string   `json:"agent_id"`
+		SessionID   string   `json:"session_id"`
 		Tags        []string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

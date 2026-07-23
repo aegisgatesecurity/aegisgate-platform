@@ -354,9 +354,9 @@ func TestContainsSource(t *testing.T) {
 
 func TestDefaultMappingForSource(t *testing.T) {
 	tests := []struct {
-		source      IncidentSource
-		wantCtrlID  string
-		wantFW      string
+		source     IncidentSource
+		wantCtrlID string
+		wantFW     string
 	}{
 		{SourceCorrelation, "IR-4", "FedRAMP"},
 		{SourceAutoRule, "IR-5", "FedRAMP"},

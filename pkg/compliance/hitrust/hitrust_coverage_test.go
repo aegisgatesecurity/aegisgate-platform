@@ -20,9 +20,9 @@ func TestCheckLogicalAccess_NonCompliant(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name          string
-		input         string
-		wantContains  string // substring expected in Message
+		name         string
+		input        string
+		wantContains string // substring expected in Message
 	}{
 		{
 			name:         "no rbac no auth no least_privilege",

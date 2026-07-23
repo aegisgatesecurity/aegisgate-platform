@@ -334,9 +334,9 @@ func TestInMemoryPlaybookStore_GetNotFound(t *testing.T) {
 func TestInMemoryPlaybookStore_ListBySeverity(t *testing.T) {
 	store := NewInMemoryPlaybookStore()
 
-	pb1 := FedRAMPIR4Playbook()   // SeverityHigh
-	pb2 := FedRAMPIR5Playbook()   // SeverityMedium
-	pb3 := SOC2CC61Playbook()     // SeverityHigh
+	pb1 := FedRAMPIR4Playbook() // SeverityHigh
+	pb2 := FedRAMPIR5Playbook() // SeverityMedium
+	pb3 := SOC2CC61Playbook()   // SeverityHigh
 
 	store.CreatePlaybook(context.Background(), pb1)
 	store.CreatePlaybook(context.Background(), pb2)

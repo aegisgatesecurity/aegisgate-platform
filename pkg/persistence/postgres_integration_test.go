@@ -50,7 +50,7 @@ func computeEntryHash(entry *opsec.AuditEntry) string {
 func makeEntry(id string, ts time.Time, level opsec.AuditLevel, eventType, message, source, tenantID string, prevHash string) *opsec.AuditEntry {
 	e := &opsec.AuditEntry{
 		ID:             id,
-		Timestamp:     ts,
+		Timestamp:      ts,
 		Level:          level,
 		EventType:      eventType,
 		Message:        message,
