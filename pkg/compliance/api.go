@@ -232,11 +232,11 @@ func normalizeFrameworkName(input string) string {
 	lower := strings.ToLower(input)
 	switch lower {
 	case "nist_ai_rmf", "nist-ai-rmf", "nist.ai-1.500", "nist", "nist ai rmf":
-		return "NIST.AI-1.500"
+		return "nist_ai_rmf"
 	case "atlas", "mitre atlas":
-		return "ATLAS"
+		return "atlas"
 	case "owasp", "owasp_llm", "owasp llm top 10", "owasp_llm_top_10":
-		return "OWASP"
+		return "owasp"
 	case "hipaa":
 		return "hipaa"
 	case "pci", "pci-dss", "pci_dss":

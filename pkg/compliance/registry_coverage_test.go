@@ -4,6 +4,7 @@
 package compliance
 
 import (
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"context"
 	"errors"
 	"testing"
@@ -61,7 +62,7 @@ func (m *mockCovFramework) GetSeverityLevels() []common.Severity     { return m.
 func TestRegistry_CheckAll_FrameworkFailure(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "failing-fw", Name: "Failing", Tier: TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "failing-fw", Name: "Failing", Tier: tier.TierCommunity})
 
 	registry.Register(&mockCovFramework{
 		id:         "failing-fw",
@@ -82,8 +83,8 @@ func TestRegistry_CheckAll_FrameworkFailure(t *testing.T) {
 func TestRegistry_CheckAll_OneFailsOneSucceeds(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "failing", Name: "Failing", Tier: TierCommunity})
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "success", Name: "Success", Tier: TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "failing", Name: "Failing", Tier: tier.TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "success", Name: "Success", Tier: tier.TierCommunity})
 
 	registry.Register(&mockCovFramework{
 		id:         "failing",
@@ -111,8 +112,8 @@ func TestRegistry_CheckAll_OneFailsOneSucceeds(t *testing.T) {
 func TestRegistry_CheckAll_DisabledFramework(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enabled", Name: "Enabled", Tier: TierCommunity})
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "disabled", Name: "Disabled", Tier: TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enabled", Name: "Enabled", Tier: tier.TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "disabled", Name: "Disabled", Tier: tier.TierCommunity})
 
 	registry.Register(&mockCovFramework{
 		id: "enabled", name: "Enabled", version: "1.0", desc: "Enabled", enabled: true,
@@ -145,7 +146,7 @@ func TestRegistry_CheckFramework_NotFound(t *testing.T) {
 func TestRegistry_CheckFramework_Disabled(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "disabled", Name: "Disabled", Tier: TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "disabled", Name: "Disabled", Tier: tier.TierCommunity})
 	registry.Register(&mockCovFramework{
 		id: "disabled", name: "Disabled", version: "1.0", desc: "Disabled", enabled: false,
 	})
@@ -159,8 +160,8 @@ func TestRegistry_CheckFramework_Disabled(t *testing.T) {
 func TestRegistry_CheckFramework_TierDenied(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise-fw", Name: "Enterprise", Tier: TierEnterprise})
-	registry.tierManager.SetTier(TierCommunity)
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise-fw", Name: "Enterprise", Tier: tier.TierEnterprise})
+	registry.tierManager.SetTier(tier.TierCommunity)
 	registry.Register(&mockCovFramework{
 		id: "enterprise-fw", name: "Enterprise", version: "1.0", desc: "Enterprise", enabled: true,
 	})
@@ -176,8 +177,8 @@ func TestRegistry_CheckFramework_RegistryTierDenied(t *testing.T) {
 	registry := NewRegistry()
 
 	// Register the framework at Enterprise tier but set registry to Community
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise-only", Name: "EnterpriseOnly", Tier: TierEnterprise})
-	registry.SetTier(TierCommunity)
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise-only", Name: "EnterpriseOnly", Tier: tier.TierEnterprise})
+	registry.SetTier(tier.TierCommunity)
 	registry.Register(&mockCovFramework{
 		id: "enterprise-only", name: "EnterpriseOnly", version: "1.0", desc: "Enterprise only", enabled: true,
 	})
@@ -195,8 +196,8 @@ func TestRegistry_CheckFramework_RegistryTierDenied(t *testing.T) {
 func TestRegistry_GetByTier_NoArgs_CommunityOnly(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "community", Name: "Community", Tier: TierCommunity})
-	registry.tierManager.SetTier(TierCommunity)
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "community", Name: "Community", Tier: tier.TierCommunity})
+	registry.tierManager.SetTier(tier.TierCommunity)
 	registry.Register(&mockCovFramework{id: "community", name: "Community", version: "1.0", desc: "Community", enabled: true})
 
 	frameworks := registry.GetByTier()
@@ -208,8 +209,8 @@ func TestRegistry_GetByTier_NoArgs_CommunityOnly(t *testing.T) {
 func TestRegistry_GetByTier_NoArgs_EnterpriseOnly(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise", Name: "Enterprise", Tier: TierEnterprise})
-	registry.tierManager.SetTier(TierEnterprise)
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise", Name: "Enterprise", Tier: tier.TierEnterprise})
+	registry.tierManager.SetTier(tier.TierEnterprise)
 	registry.Register(&mockCovFramework{id: "enterprise", name: "Enterprise", version: "1.0", desc: "Enterprise", enabled: true})
 
 	frameworks := registry.GetByTier()
@@ -221,8 +222,8 @@ func TestRegistry_GetByTier_NoArgs_EnterpriseOnly(t *testing.T) {
 func TestRegistry_GetByTier_NoArgs_Premium(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "premium", Name: "Premium", Tier: TierPremium})
-	registry.tierManager.SetTier(TierPremium)
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "premium", Name: "Premium", Tier: tier.TierProfessional})
+	registry.tierManager.SetTier(tier.TierProfessional)
 	registry.Register(&mockCovFramework{id: "premium", name: "Premium", version: "1.0", desc: "Premium", enabled: true})
 
 	frameworks := registry.GetByTier()
@@ -238,10 +239,10 @@ func TestRegistry_GetByTier_NoArgs_Premium(t *testing.T) {
 func TestRegistry_GetByTierID_Community(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "community", Name: "Community", Tier: TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "community", Name: "Community", Tier: tier.TierCommunity})
 	registry.Register(&mockCovFramework{id: "community", name: "Community", version: "1.0", desc: "Community", enabled: true})
 
-	frameworks := registry.GetByTierID(TierCommunity)
+	frameworks := registry.GetByTierID(tier.TierCommunity)
 	if len(frameworks) != 1 {
 		t.Errorf("expected 1 framework for community tier, got %d", len(frameworks))
 	}
@@ -250,12 +251,12 @@ func TestRegistry_GetByTierID_Community(t *testing.T) {
 func TestRegistry_GetByTierID_Enterprise(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "community", Name: "Community", Tier: TierCommunity})
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise", Name: "Enterprise", Tier: TierEnterprise})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "community", Name: "Community", Tier: tier.TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "enterprise", Name: "Enterprise", Tier: tier.TierEnterprise})
 	registry.Register(&mockCovFramework{id: "community", name: "Community", version: "1.0", desc: "Community", enabled: true})
 	registry.Register(&mockCovFramework{id: "enterprise", name: "Enterprise", version: "1.0", desc: "Enterprise", enabled: true})
 
-	frameworks := registry.GetByTierID(TierCommunity)
+	frameworks := registry.GetByTierID(tier.TierCommunity)
 	if len(frameworks) != 1 {
 		t.Errorf("expected 1 community framework, got %d", len(frameworks))
 	}
@@ -268,8 +269,8 @@ func TestRegistry_GetByTierID_Enterprise(t *testing.T) {
 func TestRegistry_GetAvailableFrameworks(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
-	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "fw2", Name: "FW2", Tier: TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
+	registry.tierManager.RegisterFramework(FrameworkTier{FrameworkID: "fw2", Name: "FW2", Tier: tier.TierCommunity})
 
 	registry.Register(&mockCovFramework{id: "fw1", name: "FW1", version: "1.0", desc: "FW1", enabled: true})
 	registry.Register(&mockCovFramework{id: "fw2", name: "FW2", version: "1.0", desc: "FW2", enabled: true})

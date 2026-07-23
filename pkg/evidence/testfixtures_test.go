@@ -67,7 +67,7 @@ func newTestScanner(t *testing.T) *comp.Scanner {
 func newTestRegistry(t *testing.T) *comp.Registry {
 	t.Helper()
 	tm := comp.NewTierManager()
-	tm.SetTier(comp.TierPremium)
+	tm.SetTier(comp.TierProfessional)
 	reg := comp.NewRegistryWithTierManager(tm)
 	// Register each known framework with a test-double implementation.
 	for _, id := range knownFrameworkIDs {

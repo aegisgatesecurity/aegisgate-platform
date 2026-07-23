@@ -38,16 +38,11 @@ import (
 // the Scanner uppercase form at scan time via scannerFrameworkID().
 func knownFrameworks() []string {
 	return []string{
-		"hipaa",
-		"pci",
-		"soc2",
-		"iso42001",
-		"fedramp",
-		"fips",
-		"eu_ai_act",
-		"atlas",
-		"nist_ai_rmf",
-		"owasp",
+		"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips",
+		"eu_ai_act", "iso27001", "nist_csf", "cis", "cmmcl2",
+		"nist800171", "hitrust", "tisax", "ccpa", "nist_ai_rmf",
+		"csa_star", "nist_ai_600_1", "owasp_web",
+		"atlas", "owasp", "gdpr",
 	}
 }
 
@@ -63,17 +58,11 @@ func knownFrameworks() []string {
 // Scanner, and add the translation here. The knownFrameworks() list
 // above also needs the lowercase form.
 func scannerFrameworkID(framework string) string {
-	switch framework {
-	case "atlas":
-		return string(compliance.FrameworkATLAS)
-	case "owasp":
-		return string(compliance.FrameworkOWASP)
-	case "nist_ai_rmf":
-		return string(compliance.FrameworkNIST1500)
-	default:
-		// Paid modules are already in the correct form.
-		return framework
-	}
+	// All framework IDs are now lowercase canonical IDs.
+	// The old uppercase constants (FrameworkATLAS = "ATLAS", etc.)
+	// are kept for backward compatibility but the scanner and tier
+	// manager use lowercase IDs throughout.
+	return framework
 }
 
 // BuilderDeps is the set of dependencies the Builder needs. Most
@@ -217,12 +206,36 @@ func (b *Builder) Build(ctx context.Context, framework string, start, end time.T
 // frameworks) to avoid silently losing audit data.
 func canonicalFrameworkID(s string) string {
 	switch s {
-	case "MITRE ATLAS", "mitre_atlas", "atlas":
-		return "mitre_atlas"
-	case "NIST AI RMF", "nist_ai_rmf":
+	case "MITRE ATLAS", "ATLAS", "mitre_atlas", "atlas":
+		return "atlas"
+	case "NIST AI RMF", "NIST.AI-1.500", "nist_ai_rmf":
 		return "nist_ai_rmf"
 	case "OWASP", "owasp", "OWASP LLM Top 10", "owasp_llm":
-		return "owasp_llm"
+		return "owasp"
+	case "OWASP Top 10", "owasp_web":
+		return "owasp_web"
+	case "GDPR", "gdpr":
+		return "gdpr"
+	case "CIS v8", "CIS", "cis":
+		return "cis"
+	case "NIST CSF 2.0", "nist_csf":
+		return "nist_csf"
+	case "NIST AI 600-1", "nist_ai_600_1":
+		return "nist_ai_600_1"
+	case "CSA STAR", "csa_star":
+		return "csa_star"
+	case "CCPA/CPRA", "CCPA", "ccpa":
+		return "ccpa"
+	case "ISO 27001", "iso27001":
+		return "iso27001"
+	case "CMMC Level 2", "cmmcl2":
+		return "cmmcl2"
+	case "NIST 800-171", "nist800171":
+		return "nist800171"
+	case "HITRUST CSF", "hitrust":
+		return "hitrust"
+	case "TISAX AL2", "tisax":
+		return "tisax"
 	case "CWE", "cwe":
 		return "cwe"
 	case "CVE", "cve":

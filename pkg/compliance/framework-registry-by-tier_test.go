@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
 // TestFrameworkRegistryByTier tests the GetByTier functions
@@ -20,7 +21,7 @@ func TestFrameworkRegistryByTier(t *testing.T) {
 	})
 
 	t.Run("GetByTierID Community", func(t *testing.T) {
-		frameworks := registry.GetByTierID(TierCommunity)
+		frameworks := registry.GetByTierID(tier.TierCommunity)
 		_ = frameworks
 	})
 

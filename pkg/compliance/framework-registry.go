@@ -13,12 +13,14 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
 // RegisteredFramework holds both the framework instance and its metadata
 type RegisteredFramework struct {
 	Instance common.Framework
-	Tier     Tier
+	Tier     tier.Tier
 	Metadata map[string]interface{}
 	LoadedAt int64
 }
@@ -166,7 +168,7 @@ func (r *Registry) GetAvailableFrameworks() []common.Framework {
 }
 
 // GetByTierID returns frameworks for a specific tier
-func (r *Registry) GetByTierID(tier Tier) []common.Framework {
+func (r *Registry) GetByTierID(tier tier.Tier) []common.Framework {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -317,11 +319,11 @@ func (r *Registry) Count() int {
 }
 
 // CountByTier returns the number of frameworks per tier
-func (r *Registry) CountByTier() map[Tier]int {
+func (r *Registry) CountByTier() map[tier.Tier]int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	counts := make(map[Tier]int)
+	counts := make(map[tier.Tier]int)
 	for _, rf := range r.frameworks {
 		counts[rf.Tier]++
 	}
@@ -334,12 +336,12 @@ func (r *Registry) GetTierManager() *TierManager {
 }
 
 // SetTier sets the current tier
-func (r *Registry) SetTier(tier Tier) {
+func (r *Registry) SetTier(tier tier.Tier) {
 	r.tierManager.SetTier(tier)
 }
 
 // GetTier gets the current tier
-func (r *Registry) GetTier() Tier {
+func (r *Registry) GetTier() tier.Tier {
 	return r.tierManager.GetTier()
 }
 

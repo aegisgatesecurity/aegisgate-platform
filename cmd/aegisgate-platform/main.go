@@ -1332,7 +1332,9 @@ func main() {
 	// live alongside the existing /api/v1/compliance (audit
 	// export) endpoint; they don't conflict.
 	compliance.RegisterBuiltinFrameworks()
-	complianceScanner := compliance.NewScanner(nil, &compliance.ScannerOpts{CacheTTL: 5 * time.Minute})
+	complianceRegistry := compliance.NewRegistry()
+	compliance.RegisterBuiltinFrameworksIntoRegistry(complianceRegistry)
+	complianceScanner := compliance.NewScanner(complianceRegistry, &compliance.ScannerOpts{CacheTTL: 5 * time.Minute})
 	complianceAPI := compliance.NewAPI(complianceScanner, licenseMgr)
 	dashMux.Handle("/api/v1/compliance/", complianceAPI)
 
