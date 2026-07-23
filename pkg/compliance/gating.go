@@ -138,6 +138,15 @@ var moduleRequirements = map[string]ModuleRequirement{
 		MinPriceCents:     0,    // Community tier, no add-on cost
 		HasImplementation: true, // pkg/compliance/ccpa/ (12 controls: 8 automated + 4 evidence-mapped)
 	},
+	// NIST AI RMF 1.0 (v3.7.0). Community tier, free.
+	// The foundational AI risk management framework — bundled with the platform.
+	license.ModuleNISTAIRMF: {
+		Module:            license.ModuleNISTAIRMF,
+		DisplayName:       "NIST AI RMF 1.0",
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, no add-on cost
+		HasImplementation: true,  // pkg/compliance/nist_ai_rmf/ (20 controls: 15 automated + 5 evidence-mapped)
+	},
 	// ModuleTrust is reserved for the future Trust Framework module
 	// (Phase 4). Not yet billable; listing it here as a placeholder so
 	// future code that checks for "trust" doesn't get a confusing "module

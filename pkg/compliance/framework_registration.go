@@ -29,6 +29,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso27001"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso42001"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist800171"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist_ai_rmf"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist_csf"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/pci"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/soc2"
@@ -207,6 +208,15 @@ func RegisterBuiltinFrameworks() {
 		if mod != nil {
 			controls := mod.Controls()
 			registerFrameworkControls("ccpa", len(controls))
+		}
+	}()
+	// NIST AI RMF 1.0 (Community tier, free)
+	func() {
+		defer func() { _ = recover() }()
+		mod := nist_ai_rmf.NewNISTAIRMFModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("nist_ai_rmf", len(controls))
 		}
 	}()
 }

@@ -279,8 +279,8 @@ func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 	s := NewScanner(nil, nil)
 	rpt, _ := s.Scan(context.Background(), buildValidationResult(t, "professional", []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips", "eu_ai_act", "cmmcl2", "nist800171", "hitrust", "tisax", "ccpa"}))
 	// 13 registered modules (7 original + EU AI Act + CMMC L2 + NIST 800-171 + HITRUST + TISAX + CCPA) + 1 reserved trust + 3 free = 16 frameworks.
-	if len(rpt.Frameworks) != 16 {
-		t.Errorf("Frameworks count = %d, want 16", len(rpt.Frameworks))
+	if len(rpt.Frameworks) != 17 {
+		t.Errorf("Frameworks count = %d, want 17", len(rpt.Frameworks))
 	}
 	// Verify all modules are present.
 	expected := map[string]bool{
@@ -288,7 +288,7 @@ func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 		"iso42001": true, "fedramp": true, "fips": true,
 		"eu_ai_act": true, "trust": true,
 		"cmmcl2": true, "nist800171": true, "hitrust": true,
-		"tisax": true, "ccpa": true,
+		"tisax": true, "ccpa": true, "nist_ai_rmf": true,
 	}
 	for _, f := range rpt.Frameworks {
 		if f.Module != "" {
