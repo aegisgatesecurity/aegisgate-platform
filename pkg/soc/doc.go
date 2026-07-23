@@ -6,6 +6,16 @@
 // of all events related to a single incident (a
 // session or thread of activity).
 //
+// v0.2 (shipped v3.8):
+//
+//   - Persistence via CorrelationStore (PostgreSQL for Pro/Enterprise,
+//     InMemoryCorrelationStore for Community/Developer).
+//   - Real-time SSE streaming via TimelineStreamer and ServeSSE.
+//   - Heartbeat keepalive (15s default).
+//   - Event replay from CorrelationStore on client connect.
+//   - Back-pressure: slow clients get events dropped, not blocking.
+//   - Per-agent timelines (via CorrelationStore.ListEventsByAgent).
+//
 // v0.1 ships:
 //
 //   - GetTimeline(ctx, sessionID): returns the
@@ -38,6 +48,7 @@
 // Wire target:
 //
 //   - GET /api/v1/soc/incidents/:id/timeline
+//   - GET /api/v1/soc/incidents/:id/stream (SSE)
 //   - aegisgate soc timeline --incident=<session-id>
 package soc
 
