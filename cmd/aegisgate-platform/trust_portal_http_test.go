@@ -130,14 +130,14 @@ func TestWireTrustPortalHandlers_FrameworksList(t *testing.T) {
 	// EU AI Act + CMMC L2 + NIST 800-171 + HITRUST + TISAX + CCPA +
 	// reserved Trust Framework). This locks in the expected module count
 	// so a future addition of a new module is a deliberate change.
-	if snap.TotalCount != 13 {
-		t.Errorf("total_count = %d, want 13 (8 billable + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA + reserved Trust Framework)", snap.TotalCount)
+	if snap.TotalCount != 14 {
+		t.Errorf("total_count = %d, want 14 (8 billable + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA, NIST AI RMF + reserved Trust Framework)", snap.TotalCount)
 	}
 	// 12 modules have HasImplementation=true (the Trust Framework
 	// module is reserved for future use and has no implementation
 	// yet, so it counts as Tier1=false).
-	if snap.Tier1Count != 12 {
-		t.Errorf("tier1_count = %d, want 12 (all except reserved Trust Framework)", snap.Tier1Count)
+	if snap.Tier1Count != 13 {
+		t.Errorf("tier1_count = %d, want 13 (all except reserved Trust Framework)", snap.Tier1Count)
 	}
 }
 

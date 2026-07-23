@@ -47,6 +47,7 @@ func TierIncludedFrameworks(t tierpkg.Tier) []string {
 	case tierpkg.TierCommunity:
 		return []string{
 			license.ModuleCCPA,
+			license.ModuleNISTAIRMF,
 			"gdpr",
 			"owasp_llm",
 			"owasp_web",

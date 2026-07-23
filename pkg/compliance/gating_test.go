@@ -489,7 +489,7 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 
 func TestModuleRequirementCount(t *testing.T) {
 	// 6 billable + 1 reserved (Trust) = 7.
-	if got := ModuleRequirementCount(); got != 13 {
-		t.Errorf("ModuleRequirementCount = %d, want 13 (8 v3.5.0 + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA)", got)
+	if got := ModuleRequirementCount(); got != 14 {
+		t.Errorf("ModuleRequirementCount = %d, want 14 (8 v3.5.0 + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA, NIST AI RMF)", got)
 	}
 }

@@ -102,6 +102,7 @@ const (
 	ModuleHITRUST    = "hitrust"    // v3.6.0 M3: HITRUST CSF
 	ModuleTISAX      = "tisax"      // v3.6.0 M3: TISAX AL2
 	ModuleCCPA       = "ccpa"       // v3.6.0 M3: CCPA/CPRA (Community tier)
+	ModuleNISTAIRMF  = "nist_ai_rmf" // v3.7.0: NIST AI RMF 1.0 (Community tier, free)
 	ModuleTrust      = "trust"      // reserved for future use
 )
 
@@ -155,6 +156,7 @@ var AllModules = []string{
 	ModuleHITRUST,
 	ModuleTISAX,
 	ModuleCCPA, // v3.6.0 M3: Community tier, not billable
+	ModuleNISTAIRMF, // v3.7.0: Community tier, free
 }
 
 // IsValidModule returns true if the given module name is a known billable module.
