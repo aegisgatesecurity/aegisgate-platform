@@ -126,18 +126,18 @@ func TestWireTrustPortalHandlers_FrameworksList(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &snap); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	// The trust portal should always return 8 modules (the 6
-	// billable + EU AI Act + the reserved Trust Framework).
-	// This locks in the expected module count so a future
-	// addition of a new module is a deliberate change.
-	if snap.TotalCount != 8 {
-		t.Errorf("total_count = %d, want 8 (6 billable + EU AI Act + reserved Trust Framework)", snap.TotalCount)
+	// The trust portal should always return 13 modules (6 original billable +
+	// EU AI Act + CMMC L2 + NIST 800-171 + HITRUST + TISAX + CCPA +
+	// reserved Trust Framework). This locks in the expected module count
+	// so a future addition of a new module is a deliberate change.
+	if snap.TotalCount != 13 {
+		t.Errorf("total_count = %d, want 13 (8 billable + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA + reserved Trust Framework)", snap.TotalCount)
 	}
-	// 7 modules have HasImplementation=true (the Trust Framework
+	// 12 modules have HasImplementation=true (the Trust Framework
 	// module is reserved for future use and has no implementation
 	// yet, so it counts as Tier1=false).
-	if snap.Tier1Count != 7 {
-		t.Errorf("tier1_count = %d, want 7 (all except reserved Trust Framework)", snap.Tier1Count)
+	if snap.Tier1Count != 12 {
+		t.Errorf("tier1_count = %d, want 12 (all except reserved Trust Framework)", snap.Tier1Count)
 	}
 }
 

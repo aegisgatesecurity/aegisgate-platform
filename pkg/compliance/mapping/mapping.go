@@ -754,6 +754,21 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-SC-23", Title: "Session Authenticity"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SC-28", Title: "Protection of Information at Rest"},
 			{Framework: "fips_140", ControlID: "FIPS-140-001", Title: "FIPS Mode Enabled"},
+			// v3.6.0 M3: CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA cross-framework mappings
+			{Framework: "cmmcl2", ControlID: "CMMCL2-AC-02", Title: "Access Control Policy"},
+			{Framework: "cmmcl2", ControlID: "CMMCL2-AC-03", Title: "Role Based Access Control"},
+			{Framework: "cmmcl2", ControlID: "CMMCL2-AC-04", Title: "Remote Access Control"},
+			{Framework: "nist800171", ControlID: "NIST800171-AC-2", Title: "Account Management"},
+			{Framework: "nist800171", ControlID: "NIST800171-AC-3", Title: "Access Enforcement"},
+			{Framework: "nist800171", ControlID: "NIST800171-AC-6", Title: "Least Privilege"},
+			{Framework: "nist800171", ControlID: "NIST800171-AC-17", Title: "Remote Access"},
+			{Framework: "hitrust", ControlID: "HITRUST-AM-02", Title: "User Authentication"},
+			{Framework: "hitrust", ControlID: "HITRUST-AM-03", Title: "Logical Access Control"},
+			{Framework: "hitrust", ControlID: "HITRUST-AM-04", Title: "MFA Enforcement"},
+			{Framework: "tisax", ControlID: "TISAX-IS-03", Title: "Asset Management"},
+			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
+			{Framework: "tisax", ControlID: "TISAX-IS-05", Title: "Cryptography"},
+			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 		},
 	},
 }
@@ -775,6 +790,12 @@ var FrameworkName = map[string]string{
 	"atlas":       "MITRE ATLAS",
 	"eu_ai_act":   "EU AI Act (Regulation 2024/1689)",
 	"gdpr":        "GDPR (Regulation 2016/679)",
+	// v3.6.0 M3 additions:
+	"cmmcl2":     "CMMC Level 2",
+	"nist800171": "NIST SP 800-171 Rev. 2",
+	"hitrust":    "HITRUST CSF v11.2",
+	"tisax":      "TISAX AL2",
+	"ccpa":       "CCPA/CPRA",
 }
 
 // MapByControlID returns all external framework controls that the

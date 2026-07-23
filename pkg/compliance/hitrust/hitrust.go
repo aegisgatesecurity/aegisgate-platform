@@ -1,0 +1,206 @@
+// SPDX-License-Identifier: Apache-2.0
+// =========================================================================
+// AegisGate Security Platform - HITRUST CSF Compliance Module
+// =========================================================================
+//
+// HITRUST CSF (Common Security Framework) v11.2 is a certifiable
+// framework that inherits from HIPAA, NIST SP 800-53, ISO 27001,
+// PCI-DSS, and other standards. It provides a single framework for
+// managing information risk across multiple regulatory requirements.
+//
+// AegisGate implements HITRUST CSF as a licensed add-on module. This is
+// the 11th compliance framework in the AegisGate roadmap (HIPAA, PCI-DSS,
+// EU AI Act, SOC 2, ISO 42001, FIPS 140, FedRAMP, CIS, NIST CSF,
+// ISO 27001, HITRUST CSF).
+//
+// Module metadata:
+//   - Framework:   "hitrust"
+//   - Version:     "1.0"
+//   - Required tier: Enterprise+ (gated via pkg/compliance/gating.go)
+//   - Monthly price: $799/mo (founder-locked 2026-07-22)
+//   - Baseline:    HITRUST CSF v11.2
+//
+// IMPORTANT — Self-attested posture (same as EU AI Act + FIPS + FedRAMP):
+//   AegisGate is NOT a HITRUST-authorized External Assessor (EA). The
+//   HITRUST CSF module generates the technical evidence (audit logs,
+//   IOC store, trust framework attestations, compliance scan results)
+//   that a customer uses in their HITRUST CSF Assessment and MyCSF
+//   portal. The HITRUST CSF certification and External Assessment are
+//   the customer's responsibility, just as HIPAA audit and Notified
+//   Body certification are the customer's responsibility for HIPAA
+//   and EU AI Act respectively.
+//
+// Architecture (family-based file structure):
+//   - hitrust.go:   module wiring, registerControls, Dependencies, pattern caches
+//   - am.go:        Access Management family (AM-01 through AM-10)
+//   - id_ip_pe.go:  Identity, Info Protection, Privacy & Endpoint families
+//   - hitrust_test.go: unit tests
+//   - doc.go:       package documentation
+//
+// Design: HITRUST CSF controls are mapped to existing AegisGate modules
+// (HIPAA, SOC 2, ISO 27001, FIPS 140, Trust Framework, IOC store) to
+// avoid duplicating the implementation. Each HITRUST control either:
+//   1. Is AUTOMATED and reuses an existing AegisGate scanner output
+//      (e.g., HITRUST AM-02 User Authentication maps to HIPAA Access Control)
+//   2. Is EVIDENCE-MAPPED and AegisGate generates the evidence
+//      artifact (audit log, IOC, attestation) the customer attaches
+//      to their HITRUST CSF Assessment
+//
+// Reference: HITRUST CSF v11.2
+//            https://hitrustalliance.net/csf-license-agreement/
+//            HITRUST CSF Assessment: e1, i1, r2 certification levels
+//
+// =========================================================================
+
+package hitrust
+
+import (
+	"regexp"
+
+	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
+	"github.com/aegisgatesecurity/aegisgate/pkg/core"
+)
+
+// HITRUSTModule implements the HITRUST CSF v11.2 compliance framework
+// as a licensed add-on. It embeds *compliance.BaseComplianceModule
+// which provides RegisterControl, Controls, Framework, Version,
+// CheckAll, and GenerateAssessment out of the box.
+type HITRUSTModule struct {
+	*compliance.BaseComplianceModule
+
+	// Pattern caches for automated controls
+	mfaPatterns        []*regexp.Regexp
+	rbacPatterns       []*regexp.Regexp
+	encryptionPatterns []*regexp.Regexp
+	auditPatterns      []*regexp.Regexp
+	vulnPatterns       []*regexp.Regexp
+	firewallPatterns   []*regexp.Regexp
+}
+
+// NewHITRUSTModule creates a new HITRUST CSF compliance module. It is safe
+// to call multiple times; the module is stateless after construction
+// aside from its registered controls.
+//
+// The module is gated to Enterprise+ tier via
+// pkg/compliance/gating.go (license.ModuleHITRUST entry).
+func NewHITRUSTModule() *HITRUSTModule {
+	m := &HITRUSTModule{
+		BaseComplianceModule: compliance.NewBaseComplianceModule("hitrust", "1.0", core.TierEnterprise),
+	}
+	m.initPatterns()
+	m.registerControls()
+	return m
+}
+
+// initPatterns compiles the regex patterns used by automated controls.
+// Called once at construction time.
+func (m *HITRUSTModule) initPatterns() {
+	m.mfaPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)mfa`),
+		regexp.MustCompile(`(?i)multi[_ ]?factor`),
+		regexp.MustCompile(`(?i)2fa`),
+		regexp.MustCompile(`(?i)two[_ ]?factor`),
+		regexp.MustCompile(`(?i)otp`),
+		regexp.MustCompile(`(?i)totp`),
+	}
+	m.rbacPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)rbac`),
+		regexp.MustCompile(`(?i)role[_ ]?based`),
+		regexp.MustCompile(`(?i)abac`),
+		regexp.MustCompile(`(?i)attribute[_ ]?based`),
+		regexp.MustCompile(`(?i)roles`),
+	}
+	m.encryptionPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)encryption[_ ]?at[_ ]?rest`),
+		regexp.MustCompile(`(?i)data[_ ]?encrypted`),
+		regexp.MustCompile(`(?i)tls[_ ]?1[._][23]`),
+		regexp.MustCompile(`(?i)aes[_ ]?256`),
+		regexp.MustCompile(`(?i)fips[_ ]?140`),
+	}
+	m.auditPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)audit[_ ]?log`),
+		regexp.MustCompile(`(?i)logging[_ ]?enabled`),
+		regexp.MustCompile(`(?i)audit[_ ]?enabled`),
+		regexp.MustCompile(`(?i)log[_ ]?integrity`),
+		regexp.MustCompile(`(?i)hash[_ ]?chain`),
+		regexp.MustCompile(`(?i)siem`),
+	}
+	m.vulnPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)vulnerability[_ ]?scan`),
+		regexp.MustCompile(`(?i)scanner`),
+		regexp.MustCompile(`(?i)patch[_ ]?management`),
+		regexp.MustCompile(`(?i)cve`),
+		regexp.MustCompile(`(?i)cvss`),
+	}
+	m.firewallPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)firewall`),
+		regexp.MustCompile(`(?i)waf`),
+		regexp.MustCompile(`(?i)egress[_ ]?filter`),
+		regexp.MustCompile(`(?i)network[_ ]?policy`),
+		regexp.MustCompile(`(?i)proxy`),
+	}
+}
+
+// registerControls wires all HITRUST CSF v11.2 controls into the module.
+// Called once from NewHITRUSTModule.
+//
+// Controls are organized by HITRUST CSF v11.2 family:
+//
+//	AM = Access Management
+//	ID = Identity Management
+//	IP = Information Protection
+//	PE = Privacy & Endpoint
+func (m *HITRUSTModule) registerControls() {
+	// AM: Access Management (10 controls)
+	m.registerAMControls()
+
+	// ID/IP/PE: Identity, Info Protection, Privacy & Endpoint (33 controls)
+	m.registerIDIPPEControls()
+}
+
+// Dependencies returns required modules. HITRUST CSF depends on the
+// HIPAA, ISO 27001, FIPS 140, SOC 2 modules (for evidence reuse) and
+// the IOC store + Trust Framework (for monitoring and attestation).
+func (m *HITRUSTModule) Dependencies() []string {
+	return []string{"hipaa", "iso27001", "fips", "soc2", "ioc", "trust"}
+}
+
+// hasMFA checks if the input contains MFA-related patterns.
+func (m *HITRUSTModule) hasMFA(input string) bool {
+	for _, p := range m.mfaPatterns {
+		if p.MatchString(input) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasRBAC checks if the input contains RBAC-related patterns.
+func (m *HITRUSTModule) hasRBAC(input string) bool {
+	for _, p := range m.rbacPatterns {
+		if p.MatchString(input) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasEncryption checks if the input contains encryption-related patterns.
+func (m *HITRUSTModule) hasEncryption(input string) bool {
+	for _, p := range m.encryptionPatterns {
+		if p.MatchString(input) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasAudit checks if the input contains audit-related patterns.
+func (m *HITRUSTModule) hasAudit(input string) bool {
+	for _, p := range m.auditPatterns {
+		if p.MatchString(input) {
+			return true
+		}
+	}
+	return false
+}

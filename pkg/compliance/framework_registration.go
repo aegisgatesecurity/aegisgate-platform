@@ -10,25 +10,29 @@
 // portal needs: "this framework has N controls, your current
 // scan covers M of them, compliance is M/N * 100%".
 //
-// v3.5.0: Added FedRAMP (60 controls), SOC 2, ISO 27001, ISO 42001,
-// FIPS 140, NIST CSF, and CIS registration alongside HIPAA, PCI,
-// and EU AI Act.
+// v3.6.0 M3: Added CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA
+// alongside existing frameworks.
 
 package compliance
 
 import (
 	"sync"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ccpa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cis"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cmmcl2"
 	eu_ai_act "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/eu-ai-act"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fedramp"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fips"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/hipaa"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/hitrust"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso27001"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso42001"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist800171"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist_csf"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/pci"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/soc2"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/tisax"
 )
 
 // controlCountCache caches the number of registered controls
@@ -62,7 +66,7 @@ func lookupControlCount(framework string) int {
 	return controlCountCache[framework]
 }
 
-// RegisterBuiltinFrameworks wires the HIPAA and PCI sub-packages
+// RegisterBuiltinFrameworks wires all compliance module sub-packages
 // into the scanner's control count cache. Should be called once
 // at platform startup, before the first /api/v1/compliance/scan
 // request is served.
@@ -70,37 +74,25 @@ func lookupControlCount(framework string) int {
 // Idempotent: safe to call multiple times. Safe to call
 // concurrently.
 func RegisterBuiltinFrameworks() {
-	// HIPAA: construct the module, read its controls, cache the count.
-	// We don't keep the module alive because the scanner doesn't
-	// run per-request control checks (yet); the count is enough
-	// for the customer portal's "this framework has N controls"
-	// display.
+	// HIPAA
 	func() {
-		defer func() {
-			// Swallow any panics from the constructor (defensive).
-			_ = recover()
-		}()
+		defer func() { _ = recover() }()
 		hipaaMod := hipaa.NewHIPAAModule()
 		if hipaaMod != nil {
-			// The HIPAAModule embeds *BaseComplianceModule
-			// (upstream). Its Controls() method returns the
-			// registered control definitions.
 			controls := hipaaMod.Controls()
 			registerFrameworkControls("hipaa", len(controls))
 		}
 	}()
-	// PCI: same pattern.
+	// PCI-DSS
 	func() {
-		defer func() {
-			_ = recover()
-		}()
+		defer func() { _ = recover() }()
 		pciMod := pci.NewPCIModule()
 		if pciMod != nil {
 			controls := pciMod.Controls()
 			registerFrameworkControls("pci", len(controls))
 		}
 	}()
-	// EU AI Act (v3.3.0 Phase 1).
+	// EU AI Act
 	func() {
 		defer func() { _ = recover() }()
 		mod := eu_ai_act.NewEUAIModule()
@@ -109,10 +101,7 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("eu_ai_act", len(controls))
 		}
 	}()
-
-	// FedRAMP Moderate (v3.5.0 M2 — Path C, 60 controls across 11
-	// NIST 800-53 families). This is the module that ships with the
-	// Professional+ tier.
+	// FedRAMP Moderate
 	func() {
 		defer func() { _ = recover() }()
 		mod := fedramp.NewFedRAMPModule()
@@ -121,8 +110,7 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("fedramp", len(controls))
 		}
 	}()
-
-	// SOC 2 Type II.
+	// SOC 2 Type II
 	func() {
 		defer func() { _ = recover() }()
 		mod := soc2.NewSOC2Module()
@@ -131,8 +119,7 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("soc2", len(controls))
 		}
 	}()
-
-	// ISO 27001:2022.
+	// ISO 27001:2022
 	func() {
 		defer func() { _ = recover() }()
 		mod := iso27001.NewISO27001Module()
@@ -141,8 +128,7 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("iso27001", len(controls))
 		}
 	}()
-
-	// ISO/IEC 42001:2023 (AI Management System).
+	// ISO/IEC 42001:2023
 	func() {
 		defer func() { _ = recover() }()
 		mod := iso42001.NewISO42001Module()
@@ -151,8 +137,7 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("iso42001", len(controls))
 		}
 	}()
-
-	// FIPS 140-2/140-3.
+	// FIPS 140-2/140-3
 	func() {
 		defer func() { _ = recover() }()
 		mod := fips.NewFIPS140Module()
@@ -161,8 +146,7 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("fips_140", len(controls))
 		}
 	}()
-
-	// NIST CSF 2.0.
+	// NIST CSF 2.0
 	func() {
 		defer func() { _ = recover() }()
 		mod := nist_csf.NewNISTCSFModule()
@@ -171,14 +155,58 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("nist_csf", len(controls))
 		}
 	}()
-
-	// CIS Critical Security Controls v8.
+	// CIS Critical Security Controls v8
 	func() {
 		defer func() { _ = recover() }()
 		mod := cis.NewCISModule()
 		if mod != nil {
 			controls := mod.Controls()
 			registerFrameworkControls("cis", len(controls))
+		}
+	}()
+	// CMMC Level 2 (v3.6.0 M3)
+	func() {
+		defer func() { _ = recover() }()
+		mod := cmmcl2.NewCMMCL2Module()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("cmmcl2", len(controls))
+		}
+	}()
+	// NIST SP 800-171 (v3.6.0 M3)
+	func() {
+		defer func() { _ = recover() }()
+		mod := nist800171.NewNIST800171Module()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("nist800171", len(controls))
+		}
+	}()
+	// HITRUST CSF v11.2 (v3.6.0 M3)
+	func() {
+		defer func() { _ = recover() }()
+		mod := hitrust.NewHITRUSTModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("hitrust", len(controls))
+		}
+	}()
+	// TISAX AL2 (v3.6.0 M3)
+	func() {
+		defer func() { _ = recover() }()
+		mod := tisax.NewTISAXModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("tisax", len(controls))
+		}
+	}()
+	// CCPA/CPRA (v3.6.0 M3, Community tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := ccpa.NewCCPAModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("ccpa", len(controls))
 		}
 	}()
 }
