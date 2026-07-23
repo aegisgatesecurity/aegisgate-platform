@@ -124,7 +124,11 @@ func runAuditSOC2Generate(args []string) {
 	sign := fs.Bool("sign", false, "Sign the report with attestation envelope")
 	keyRingPath := fs.String("key-ring", "", "Path to keyring file for signing")
 
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return
+	}
 
 	// Parse period.
 	var periodStart, periodEnd time.Time
@@ -225,7 +229,11 @@ func runAuditSOC2Evidence(args []string) {
 	categoriesStr := fs.String("categories", "", "Comma-separated TSC categories")
 	jsonOut := fs.Bool("json", false, "Output as JSON")
 
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return
+	}
 
 	periodStart, periodEnd := parsePeriodDefaults(*startStr, *endStr)
 
@@ -267,7 +275,11 @@ func runAuditSOC2Workpapers(args []string) {
 	endStr := fs.String("end", "", "Period end (RFC3339 or YYYY-MM-DD)")
 	jsonOut := fs.Bool("json", false, "Output as JSON")
 
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return
+	}
 
 	periodStart, periodEnd := parsePeriodDefaults(*startStr, *endStr)
 
@@ -312,7 +324,11 @@ func runAuditSOC2Policies(args []string) {
 	categoryStr := fs.String("category", "", "Filter by TSC category")
 	jsonOut := fs.Bool("json", false, "Output as JSON")
 
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return
+	}
 
 	policies := soc2.PolicyTemplates()
 

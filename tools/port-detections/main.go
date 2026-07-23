@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
 // AegisGate Platform - Port Detections (Platform → Lens)
+//
+//gosec:disable G101 G304 G306 G301 — dev tool, not production code
 // =========================================================================
 //
 // This tool reads the Platform's Go detection files (pkg/response/

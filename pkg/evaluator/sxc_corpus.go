@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // AegisGate Platform - SXC (Secrets, XSS, Compliance) corpus
 //
+//gosec:disable G101
+//
 // sxc_corpus.go ships the AegisGate Lens SXC corpus as Go-native
 // test fixtures for the Platform's benchmark suite. The SXC corpus
 // covers three facets that map directly to Platform detection:

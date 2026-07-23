@@ -33,7 +33,9 @@ func SetupTestDB(t *testing.T) (*ioc.PostgresStore, func()) {
 	pgStore := connectAndMigrate(t, ctx, dbURL)
 
 	cleanup := func() {
-		pgStore.Close()
+		if err := pgStore.Close(); err != nil {
+			t.Logf("warning: failed to close postgres connection: %v", err)
+		}
 		if err := container.Terminate(ctx); err != nil {
 			t.Logf("warning: failed to terminate postgres container: %v", err)
 		}

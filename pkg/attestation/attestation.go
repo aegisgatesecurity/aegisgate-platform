@@ -510,6 +510,7 @@ func fetchPublicKey(ctx context.Context, instanceID, keyID string) (*ecdsa.Publi
 
 	// HTTP GET with a 5-second timeout. The context is checked
 	// first so callers can cancel earlier.
+	//nosec G107 -- url is constructed from validated instanceID (path traversal chars rejected above)
 	httpClient := &http.Client{Timeout: 5 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

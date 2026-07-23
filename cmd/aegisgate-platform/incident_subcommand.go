@@ -105,7 +105,11 @@ func runIncidentList(args []string) int {
 	statusFilter := fs.String("status", "", "comma-separated status filter (new,triaged,investigating,contained,resolved,closed,false_positive)")
 	severityFilter := fs.String("severity", "", "comma-separated severity filter (low,medium,high,critical)")
 	jsonOut := fs.Bool("json", false, "emit JSON only")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return 1
+	}
 
 	// Create engine with in-memory stores (CLI uses ephemeral state).
 	engine := newIncidentEngine()
@@ -181,7 +185,11 @@ func runIncidentCreate(args []string) int {
 	agentID := fs.String("agent", "", "agent ID")
 	sessionID := fs.String("session", "", "session ID")
 	jsonOut := fs.Bool("json", false, "emit JSON only")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return 1
+	}
 
 	if *title == "" {
 		fmt.Fprintf(os.Stderr, "incident create: --title is required\n")
@@ -221,7 +229,11 @@ func runIncidentTriage(args []string) int {
 	severity := fs.String("severity", "high", "severity: low, medium, high, critical")
 	assignee := fs.String("assignee", "", "assignee (REQUIRED)")
 	jsonOut := fs.Bool("json", false, "emit JSON only")
-	fs.Parse(args[1:])
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return 1
+	}
 
 	if *assignee == "" {
 		fmt.Fprintf(os.Stderr, "incident triage: --assignee is required\n")
@@ -256,7 +268,11 @@ func runIncidentResolve(args []string) int {
 	fs := flag.NewFlagSet("incident resolve", flag.ExitOnError)
 	resolution := fs.String("resolution", "", "resolution description")
 	jsonOut := fs.Bool("json", false, "emit JSON only")
-	fs.Parse(args[1:])
+	if err := fs.Parse(args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", fs.Name(), err)
+		fs.Usage()
+		return 1
+	}
 
 	engine := newIncidentEngine()
 	resolved, err := engine.ResolveIncident(context.Background(), id, *resolution)
