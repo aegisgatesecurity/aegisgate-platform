@@ -78,7 +78,8 @@ type LicensePayload struct {
 	IssuedAt   time.Time `json:"issued_at"`         // When license was issued
 	ExpiresAt  time.Time `json:"expires_at"`        // When license expires
 	Features   []string  `json:"features"`          // Optional specific features
-	Modules    []string  `json:"modules,omitempty"` // v3.2.0 Phase 1: purchased compliance modules (hipaa, pci, soc2, iso42001, fedramp, fips, trust)
+	Modules    []string  `json:"modules,omitempty"` // v3.2.0: purchased compliance modules (a la carte)
+	Accelerators []string `json:"accelerators,omitempty"` // v3.7.0: purchased vertical bundles
 	MaxServers int       `json:"max_servers"`       // Max servers allowed
 	MaxUsers   int       `json:"max_users"`         // Max users allowed
 }
@@ -103,6 +104,41 @@ const (
 	ModuleCCPA       = "ccpa"       // v3.6.0 M3: CCPA/CPRA (Community tier)
 	ModuleTrust      = "trust"      // reserved for future use
 )
+
+// ---------------------------------------------------------------------------
+// Vertical accelerator bundles (v3.7.0)
+//
+// Bundles group compliance frameworks by industry at a discounted price.
+// They sit ON TOP of a tier subscription — you can't buy a bundle without
+// a tier, because the tier provides the platform capability.
+// ---------------------------------------------------------------------------
+
+const (
+	BundleHealthcare    = "healthcare"     // HIPAA + HITRUST CSF
+	BundleDefense        = "defense"        // CMMC L2 + NIST 800-171 + FedRAMP
+	BundleFinance       = "finance"        // PCI-DSS + SOC 2 + ISO 27001
+	BundleManufacturing = "manufacturing"  // TISAX + ISO 27001 + ISO 42001
+	BundlePrivacy       = "privacy"        // GDPR + CCPA + ISO 27001
+)
+
+// AllBundles is the canonical list of bundle IDs, in display order.
+var AllBundles = []string{
+	BundlePrivacy,
+	BundleFinance,
+	BundleHealthcare,
+	BundleDefense,
+	BundleManufacturing,
+}
+
+// IsValidBundle returns true if the given bundle ID is a known accelerator.
+func IsValidBundle(name string) bool {
+	for _, b := range AllBundles {
+		if b == name {
+			return true
+		}
+	}
+	return false
+}
 
 // AllModules is the canonical list of billable module names, in display order.
 // Used for validation when parsing Stripe webhook payloads.
@@ -499,6 +535,43 @@ func (m *Manager) Modules(result *ValidationResult) []string {
 	for _, m := range result.Payload.Modules {
 		if IsValidModule(m) {
 			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// HasAccelerator checks if a specific vertical accelerator bundle is owned
+// by the license. Returns false if the license is invalid or the bundle
+// is unknown.
+//
+// Example:
+//
+//	HasAccelerator(result, license.BundleHealthcare) // true if customer bought Healthcare pack
+func (m *Manager) HasAccelerator(result *ValidationResult, bundleID string) bool {
+	if result == nil || !result.Valid {
+		return false
+	}
+	if !IsValidBundle(bundleID) {
+		return false
+	}
+	for _, a := range result.Payload.Accelerators {
+		if a == bundleID {
+			return true
+		}
+	}
+	return false
+}
+
+// Accelerators returns the list of accelerator bundle IDs owned by the license.
+// Returns nil if the license is invalid.
+func (m *Manager) Accelerators(result *ValidationResult) []string {
+	if result == nil || !result.Valid {
+		return nil
+	}
+	out := make([]string, 0, len(result.Payload.Accelerators))
+	for _, a := range result.Payload.Accelerators {
+		if IsValidBundle(a) {
+			out = append(out, a)
 		}
 	}
 	return out
