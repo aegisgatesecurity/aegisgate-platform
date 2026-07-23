@@ -49,7 +49,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-4: Information flow enforcement between systems. AegisGate's protocol pillars (HTTP, MCP, A2A, ACP, ANP) enforce information flow boundaries. Customer documents the policy.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInfoFlowEnforcement,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-4", "FedRAMP Moderate AC-04"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -58,7 +59,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-5: Separation of duties for conflicting responsibilities. AegisGate's RBAC supports role-based separation. Customer defines the duty assignments.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSeparationOfDuties,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-5", "FedRAMP Moderate AC-05"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -67,7 +69,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-7: Enforces limits on unsuccessful login attempts. AegisGate's rate limiting and session management provide the enforcement evidence for AC-7.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUnsuccessfulLogin,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-7", "FedRAMP Moderate AC-07"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -94,7 +97,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-11: Session lock after inactivity. AegisGate's session timeout and idle timeout enforce session locks for AC-11.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSessionLock,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-11", "FedRAMP Moderate AC-11"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -103,7 +107,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-12: Automatic session termination. AegisGate's session management and Trust Framework EndSession provide termination evidence.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSessionTermination,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-12", "FedRAMP Moderate AC-12"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -132,7 +137,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AU-4: Audit log storage capacity defined and managed. AegisGate's persistence layer supports configurable retention periods (7-90 days by tier) for AU-4.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuditLogStorage,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-4", "FedRAMP Moderate AU-04"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -141,7 +147,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AU-5: Alert on audit processing failures. AegisGate's audit pipeline generates alerts for processing failures for AU-5.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkResponseToAuditFailures,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-5", "FedRAMP Moderate AU-05"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -150,7 +157,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AU-7: Audit record reduction and report generation. AegisGate's audit search API (POST /api/v1/audit/search) provides this capability for AU-7.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuditRecordReduction,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-7", "FedRAMP Moderate AU-07"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -159,7 +167,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AU-11: Audit log retention period defined. AegisGate's per-tier retention (7 days Community, 30 Developer, 90 Professional, 365 Enterprise) provides AU-11 evidence.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuditLogRetention,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-11", "FedRAMP Moderate AU-11"},
 	})
 
@@ -179,7 +188,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP IA-4: Organization manages system identifiers. AegisGate's trust framework identity system provides unique per-agent identifiers for IA-4.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIdentifierMgmt,
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-4", "FedRAMP Moderate IA-04"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -322,7 +332,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP CM-4: Security impact analysis for changes. AegisGate's CCM drift detection and compliance scan comparison provide impact analysis evidence for CM-4.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConfigMgmtImpactAnalysis,
 		References:  []string{"NIST SP 800-53 Rev. 5 CM-4", "FedRAMP Moderate CM-04"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
