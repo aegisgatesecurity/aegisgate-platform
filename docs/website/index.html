@@ -173,7 +173,7 @@
 </head>
 <body>
     <div class="test-mode-banner">
-        🟡 <strong>v3.3.0 Beta — Test Mode Active</strong> &nbsp;|&nbsp; Use Stripe test card <code>4242 4242 4242 4242</code> with any future expiry to simulate a purchase. <strong>No real money is charged.</strong> Live mode ships in v3.4.0.
+        🟡 <strong>v3.4.0 GA — Generally Available</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v3.4.0</code>.
     </div>
     <header>
         <div class="container">
@@ -223,8 +223,8 @@
                     <p>One binary runs HTTP proxy (8080), MCP server (8081), and dashboard (8443). No separate deployments. No configuration drift.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>🔒 10 Compliance Frameworks <span class="new-badge">v3.3.0</span></h3>
-                    <p><strong>Free:</strong> MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10 (Community tier, always on). <strong>Billable modules:</strong> HIPAA, PCI-DSS, SOC 2, ISO 42001, FedRAMP, FIPS 140-2/140-3, and <strong>EU AI Act (82 controls 🆕)</strong>. All gated via the Compliance Scan Engine.</p>
+                    <h3>🔒 15+ Compliance Frameworks <span class="new-badge">v3.4.0</span></h3>
+                    <p><strong>Free:</strong> MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10 (Community tier, always on). <strong>Billable modules:</strong> HIPAA, PCI-DSS, SOC 2, ISO 42001, ISO 27001, NIST 800-171, HITRUST, TISAX, CMMC L2, FedRAMP (150 controls 🆕), FIPS 140-2/140-3, and EU AI Act (82 controls). All gated via the Compliance Scan Engine.</p>
                 </div>
                 <div class="feature-card">
                     <h3>⚡ Lightning Performance</h3>
@@ -249,7 +249,7 @@
 
     <section class="features" style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
         <div class="container">
-            <h2>🆕 v3.3.0: EU AI Act Compliance Module</h2>
+            <h2>🆕 v3.4.0: 153-Pattern Detection, FedRAMP, PostgreSQL</h2>
             <div style="max-width: 800px; margin: 0 auto; text-align: center; margin-bottom: 40px;">
                 <p style="font-size: 1.2rem; color: #4a5568;">
                     AegisGate is the first AI security gateway with <strong>full EU AI Act (Regulation 2024/1689) coverage</strong>.
@@ -263,16 +263,16 @@
             </div>
             <div class="feature-grid" style="margin-top: 20px;">
                 <div class="feature-card">
-                    <h3>8 Categories</h3>
-                    <p>Prohibited Practices, Risk Management, Data Governance, Technical Documentation, Record Keeping, Transparency, Human Oversight, Accuracy/Robustness/Cybersecurity, GPAI Models, plus 10 AegisGate AI extensions.</p>
+                    <h3>153 Detection Patterns</h3>
+                    <p>Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns. All wired into the 7-stage ResponseGuard pipeline with per-category severity and confidence.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>9 of 82 Automated</h3>
-                    <p>Prohibited-practice pattern matching, prompt injection detection, data poisoning scanning, audit log integrity, human oversight markers, transparency disclosures. The remaining 73 are manual review items.</p>
+                    <h3>150 FedRAMP Controls</h3>
+                    <p>NIST 800-53 Moderate baseline across 18 families. Cross-framework traceability via hub-and-spoke model. Fuzz tests and performance benchmarks included.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>Compliance Scan Engine Integration</h3>
-                    <p>Pro + EU AI Act customers see the new framework alongside HIPAA, PCI, ISO 42001, FedRAMP, FIPS in every <code>/api/v1/compliance/scan</code> report. Real control counts (not 0 placeholders).</p>
+                    <h3>6 PostgreSQL Suites</h3>
+                    <p>107 integration tests across IOC, persistence, RBAC, license, correlation, and attestation packages. testcontainers-go with ephemeral PostgreSQL 16. 4 production bugs found and fixed.</p>
                 </div>
             </div>
         </div>
