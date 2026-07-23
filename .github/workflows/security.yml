@@ -148,38 +148,34 @@ jobs:
           fi
 
   # Job 4: Secret Detection (Gitleaks)
-  # NOTE: Switched from gitleaks-action@v3 (requires paid license for org
-  # repos) to the free gitleaks CLI. The CLI is fully open-source (Apache 2.0)
-  # and provides identical detection capability. The local .gitleaks.toml at
-  # the repo root is the authoritative config (allowlist for known false positives).
+  # NOTE: gitleaks-action@v3 requires GITLEAKS_LICENSE for organization repos.
+  # The license key is stored as a GitHub Secret (GITLEAKS_LICENSE) at
+  # Settings → Secrets and variables → Actions.
+  # The local .gitleaks.toml at the repo root is the authoritative
+  # config (allowlist for known false positives).
   gitleaks:
-    name: Gitleaks - Secret Detection (v8.x, CLI)
+    name: Gitleaks - Secret Detection (v8.x, licensed)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Install Gitleaks
-        run: |
-          GITLEAKS_VERSION="8.24.3"
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz -C /usr/local/bin gitleaks
-          gitleaks version
-
-      - name: Run Gitleaks detect
-        run: |
-          gitleaks detect --source . --verbose --report-format sarif --report-path gitleaks-results.sarif --exit-code 0 || true
-          # exit-code 0 means: always succeed the step, report findings in SARIF
-          # The summary job will surface any real findings
+      - name: Run Gitleaks
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: gitleaks/gitleaks-action@v3
 
       - name: Upload Gitleaks SARIF
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: gitleaks-results
-          path: gitleaks-results.sarif
+          path: |
+            results.sarif
+            gitleaks-results.sarif
 
   # Job 5: Secret Detection (TruffleHog)
   trufflehog:
@@ -224,7 +220,7 @@ jobs:
           path: trufflehog-results.json
 
   # NOTE: As of 2026-06-08, Gitleaks and TruffleHog both run in CI as
-  # complementary secret-detection scanners. Gitleaks (CLI,
+  # complementary secret-detection scanners. Gitleaks (gitleaks-action@v3,
   # upgraded 2026-06-08 to drop Node 20 dependency ahead of GitHub's
   # June 16, 2026 Node 20 sunset) runs first using our free OSS license
   # (configured as the GITLEAKS_LICENSE repo secret). TruffleHog (next
@@ -371,7 +367,7 @@ jobs:
           echo "| govulncheck | ${{ needs.govulncheck.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Gosec | ${{ needs.gosec.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Gitleaks (CLI) | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gitleaks (licensed) | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| TruffleHog | ${{ needs.trufflehog.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Standard Tools | ${{ needs.standard-tools.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| SBOM | ${{ needs.sbom.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
