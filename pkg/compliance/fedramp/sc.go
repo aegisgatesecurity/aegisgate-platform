@@ -6,28 +6,33 @@
 // NIST SP 800-53 Rev. 5 — System and Communications Protection family (SC)
 // FedRAMP Moderate baseline controls for AI/ML systems.
 //
-// In-scope SC controls (7 of 51 SC controls are scanner-checkable):
+// In-scope SC controls (12 of 51 SC controls):
+//   SC-3  Security Function Isolation            (automated, Path C — new)
 //   SC-4  Information in Shared Resources       (automated, Path C — new)
+//   SC-5  Denial of Service Protection           (automated, Path C — new)
 //   SC-7  Boundary Protection                   (automated, Path C — new)
 //   SC-8  Transmission Confidentiality & Integrity (automated, Path B)
 //   SC-12 Cryptographic Key Establishment        (automated, Path C — new)
 //   SC-13 Cryptographic Protection               (automated, Path C — new)
+//   SC-15 Collaborative Computing Devices        (evidence-mapped, no CheckFunc)
 //   SC-23 Session Protection                     (automated, Path C — new)
 //   SC-28 Protection of Information at Rest      (automated, Path C — new)
+//   SC-39 Port and Service Restrictions           (automated, Path C — new)
+//   SC-44 Detonatable Software                   (evidence-mapped, no CheckFunc)
 //
 // Out-of-scope SC controls (process/infrastructure):
-//   SC-1 Policy, SC-2 Access Control Policy, SC-5 Denial of Service,
+//   SC-1 Policy, SC-2 Access Control Policy,
 //   SC-6 Resource Priority, SC-9 Trusted Path, SC-10 Network Disconnect,
-//   SC-11 Trusted Path, SC-15 Collaborative Computing, SC-17 Public Key,
+//   SC-11 Trusted Path, SC-17 Public Key,
 //   SC-18 Mobile Code, SC-19 Voice Over IP, SC-20 Secure Name Resolution,
 //   SC-21 Architecture and Provisioning, SC-22 Fail-Safe Network,
 //   SC-24 Fail-Safe Communication, SC-26 Confidentiality of Stored Info,
 //   SC-29 Honeypots, SC-30 Concealment, SC-31 Covert Channel Analysis,
 //   SC-32 System Partitioning, SC-33 Transmission Path, SC-34 Non-Modifiable Program,
 //   SC-35 Loss of Communications, SC-36 Distributed Processing,
-//   SC-37 Out-of-Band Channel, SC-38 Operations Security, SC-39 Port and Service,
+//   SC-37 Out-of-Band Channel, SC-38 Operations Security,
 //   SC-40 Wireless Link, SC-41 Physical Isolation, SC-42 Cryptographic Infrastructure,
-//   SC-43 Use of Cryptography, SC-44 Information Sharing
+//   SC-43 Use of Cryptography
 //
 // =========================================================================
 
@@ -43,6 +48,18 @@ import (
 
 // registerSCControls wires the SC family controls into the module.
 func (m *FedRAMPModule) registerSCControls() {
+	// SC-3: Security Function Isolation (Path C — new)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-3",
+		Name:        "Security Function Isolation",
+		Description: "FedRAMP SC-3: Security functions isolated from non-security functions — sandbox, container, and isolation boundaries",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityFunctionIsolation,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-3", "FedRAMP Moderate SC-03"},
+	})
+
 	// SC-4: Information in Shared Resources (Path C — new)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-4",
@@ -53,6 +70,18 @@ func (m *FedRAMPModule) registerSCControls() {
 		Automated:   true,
 		CheckFunc:   m.checkSharedResources,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-4", "FedRAMP Moderate SC-04"},
+	})
+
+	// SC-5: Denial of Service Protection (Path C — new)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-5",
+		Name:        "Denial of Service Protection",
+		Description: "FedRAMP SC-5: Protection against denial of service attacks — rate limiting, throttling, circuit breaker, DDoS protection",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkDenialOfServiceProtection,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-5", "FedRAMP Moderate SC-05"},
 	})
 
 	// SC-7: Boundary Protection (Path C — new)
@@ -103,6 +132,17 @@ func (m *FedRAMPModule) registerSCControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-13", "FedRAMP Moderate SC-13"},
 	})
 
+	// SC-15: Collaborative Computing Devices (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-15",
+		Name:        "Collaborative Computing Devices",
+		Description: "FedRAMP SC-15: Collaborative computing devices controlled — video conference, screen sharing, and remote desktop restrictions",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-15", "FedRAMP Moderate SC-15"},
+	})
+
 	// SC-23: Session Protection (Path C — new)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-23",
@@ -126,6 +166,73 @@ func (m *FedRAMPModule) registerSCControls() {
 		CheckFunc:   m.checkDataAtRest,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-28", "FedRAMP Moderate SC-28"},
 	})
+
+	// SC-39: Port and Service Restrictions (Path C — new)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-39",
+		Name:        "Port and Service Restrictions",
+		Description: "FedRAMP SC-39: System restricted to essential ports and services — port restrictions, service allowlist, minimal services",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkPortServiceRestrictions,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-39", "FedRAMP Moderate SC-39"},
+	})
+
+	// SC-44: Detonatable Software (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-44",
+		Name:        "Detonatable Software",
+		Description: "FedRAMP SC-44: Detonatable software executed in sandbox or container isolation to prevent unauthorized system access",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-44", "FedRAMP Moderate SC-44"},
+	})
+}
+
+// checkSecurityFunctionIsolation verifies isolation of security functions.
+// Maps to SC-3.
+func (m *FedRAMPModule) checkSecurityFunctionIsolation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIsolation := strings.Contains(inputStr, "security_function_isolation") || strings.Contains(inputStr, "isolation") || strings.Contains(inputStr, "sandbox") || strings.Contains(inputStr, "container")
+	hasBoundary := strings.Contains(inputStr, "security_boundary") || strings.Contains(inputStr, "boundary") || strings.Contains(inputStr, "namespace") || strings.Contains(inputStr, "compartment")
+
+	if hasIsolation && hasBoundary {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-SC-3",
+			ControlName: "Security Function Isolation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Security function isolation verified (isolation + boundary enforcement)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if hasIsolation {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-SC-3",
+			ControlName: "Security Function Isolation",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Security isolation detected but boundary enforcement not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Configure security boundaries (security.security_boundary=true) alongside isolation",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-SC-3",
+		ControlName: "Security Function Isolation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No security function isolation detected",
+		Timestamp:   time.Now(),
+		Remediation: "Enable security function isolation (security.isolation=true, security.sandbox=true)",
+	}, nil
 }
 
 // checkSharedResources verifies multi-tenant isolation for shared resources.
@@ -458,5 +565,137 @@ func (m *FedRAMPModule) checkDataAtRest(ctx context.Context, input []byte) (*com
 		Message:     "Data at rest encryption not detected",
 		Timestamp:   time.Now(),
 		Remediation: "Enable data encryption at rest (persistence.encryption_at_rest=true) and configure key management",
+	}, nil
+}
+
+// checkDenialOfServiceProtection verifies DoS protection mechanisms.
+// Maps to SC-5.
+func (m *FedRAMPModule) checkDenialOfServiceProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRateLimit := strings.Contains(inputStr, "rate_limiting") || strings.Contains(inputStr, "rate_limit") || strings.Contains(inputStr, "rate_limiter")
+	hasThrottling := strings.Contains(inputStr, "throttling") || strings.Contains(inputStr, "throttle")
+	hasCircuitBreaker := strings.Contains(inputStr, "circuit_breaker") || strings.Contains(inputStr, "circuit_breaker")
+	hasDDoS := strings.Contains(inputStr, "ddos_protection") || strings.Contains(inputStr, "ddos") || strings.Contains(inputStr, "dos_protection")
+
+	score := 0
+	if hasRateLimit {
+		score++
+	}
+	if hasThrottling {
+		score++
+	}
+	if hasCircuitBreaker {
+		score++
+	}
+	if hasDDoS {
+		score++
+	}
+
+	if score >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-SC-5",
+			ControlName: "Denial of Service Protection",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Denial of service protection verified (multiple DoS mitigations active)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if score >= 1 {
+		violations := []string{}
+		if !hasRateLimit {
+			violations = append(violations, "rate limiting not configured")
+		}
+		if !hasThrottling {
+			violations = append(violations, "throttling not configured")
+		}
+		if !hasCircuitBreaker {
+			violations = append(violations, "circuit breaker not configured")
+		}
+		if !hasDDoS {
+			violations = append(violations, "DDoS protection not configured")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-SC-5",
+			ControlName: "Denial of Service Protection",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial DoS protection: " + strings.Join(violations, ", "),
+			Timestamp:   time.Now(),
+			Remediation: "Enable rate limiting (security.rate_limiting=true), throttling (security.throttling=true), circuit breaker (security.circuit_breaker=true), and DDoS protection (security.ddos_protection=true)",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-SC-5",
+		ControlName: "Denial of Service Protection",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No denial of service protection detected",
+		Timestamp:   time.Now(),
+		Remediation: "Enable rate limiting, throttling, circuit breaker, and DDoS protection (security.rate_limiting=true, security.ddos_protection=true)",
+	}, nil
+}
+
+// checkPortServiceRestrictions verifies port and service restrictions.
+// Maps to SC-39.
+func (m *FedRAMPModule) checkPortServiceRestrictions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPortRestrictions := strings.Contains(inputStr, "port_restrictions") || strings.Contains(inputStr, "port_restrict") || strings.Contains(inputStr, "allowed_ports")
+	hasServiceAllowlist := strings.Contains(inputStr, "service_allowlist") || strings.Contains(inputStr, "allowlist") || strings.Contains(inputStr, "whitelist")
+	hasMinimalServices := strings.Contains(inputStr, "minimal_services") || strings.Contains(inputStr, "minimal") || strings.Contains(inputStr, "hardening")
+	hasPortScan := strings.Contains(inputStr, "port_scan") || strings.Contains(inputStr, "port_scanning") || strings.Contains(inputStr, "vulnerability_scan")
+
+	if hasPortRestrictions && hasMinimalServices {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-SC-39",
+			ControlName: "Port and Service Restrictions",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Port and service restrictions verified (port restrictions + minimal services)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if hasPortRestrictions || hasMinimalServices || hasServiceAllowlist {
+		violations := []string{}
+		if !hasPortRestrictions {
+			violations = append(violations, "port restrictions not configured")
+		}
+		if !hasMinimalServices {
+			violations = append(violations, "minimal services not enforced")
+		}
+		if !hasServiceAllowlist {
+			violations = append(violations, "service allowlist not configured")
+		}
+		if !hasPortScan {
+			violations = append(violations, "port scanning detection not configured")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FedRAMP-SC-39",
+			ControlName: "Port and Service Restrictions",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial port/service restrictions: " + strings.Join(violations, ", "),
+			Timestamp:   time.Now(),
+			Remediation: "Configure port restrictions (security.port_restrictions=true), minimal services (security.minimal_services=true), and service allowlisting (security.service_allowlist=true)",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-SC-39",
+		ControlName: "Port and Service Restrictions",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No port and service restrictions detected",
+		Timestamp:   time.Now(),
+		Remediation: "Enable port restrictions (security.port_restrictions=true) and minimal services (security.minimal_services=true)",
 	}, nil
 }

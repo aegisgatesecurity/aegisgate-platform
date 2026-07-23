@@ -4,18 +4,22 @@
 // Path C: Full in-scope FedRAMP Moderate controls.
 // Test coverage target: 80%+ per pkg/compliance coverage floor.
 //
-// Total controls: 56 (31 automated + 25 evidence-mapped)
+// Total controls: 88 (49 automated + 39 evidence-mapped)
 //   AC: 6 (5 automated + 1 evidence-mapped)
 //   AU: 7 (5 automated + 2 evidence-mapped)
 //   IA: 6 (5 automated + 1 evidence-mapped)
-//   SC: 7 (7 automated + 0 evidence-mapped)
-//   CM: 5 (4 automated + 1 evidence-mapped)
-//   SI: 6 (4 automated + 2 evidence-mapped)
+//   SC: 12 (10 automated + 2 evidence-mapped)
+//   CM: 8 (5 automated + 3 evidence-mapped)
+//   SI: 11 (6 automated + 5 evidence-mapped)
 //   IR: 5 (3 automated + 2 evidence-mapped)
 //   SA: 5 (1 automated + 4 evidence-mapped)
 //   SR: 5 (1 automated + 4 evidence-mapped)
-//   RA: 4 (3 automated + 1 evidence-mapped)
-//   CA: 4 (1 automated + 3 evidence-mapped)
+//   RA: 6 (4 automated + 2 evidence-mapped)
+//   CA: 7 (2 automated + 5 evidence-mapped)
+//   AT: 3 (0 automated + 3 evidence-mapped)
+//   CP: 3 (1 automated + 2 evidence-mapped)
+//   MP: 2 (1 automated + 1 evidence-mapped)
+//   PE: 2 (0 automated + 2 evidence-mapped)
 
 package fedramp
 
@@ -39,10 +43,10 @@ func TestNewFedRAMPModule(t *testing.T) {
 		t.Errorf("Version() = %q, want 2.0", m.Version())
 	}
 
-	// Verify all 56 controls are registered
+	// Verify all 88 controls are registered
 	controls := m.Controls()
-	if len(controls) != 60 {
-		t.Errorf("len(Controls()) = %d, want 56", len(controls))
+	if len(controls) != 88 {
+		t.Errorf("len(Controls()) = %d, want 88", len(controls))
 	}
 
 	// Count automated vs evidence-mapped
@@ -55,11 +59,11 @@ func TestNewFedRAMPModule(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if automated != 38 {
-		t.Errorf("automated controls = %d, want 31", automated)
+	if automated != 49 {
+		t.Errorf("automated controls = %d, want 49", automated)
 	}
-	if evidenceMapped != 22 {
-		t.Errorf("evidence-mapped controls = %d, want 25", evidenceMapped)
+	if evidenceMapped != 39 {
+		t.Errorf("evidence-mapped controls = %d, want 39", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -71,14 +75,18 @@ func TestNewFedRAMPModule(t *testing.T) {
 		"Access Control":                            6,
 		"Audit and Accountability":                  7,
 		"Identification and Authentication":         6,
-		"System and Communications Protection":      7,
-		"Configuration Management":                  5,
-		"System and Information Integrity":          6,
+		"System and Communications Protection":      12,
+		"Configuration Management":                  8,
+		"System and Information Integrity":          11,
 		"Incident Response":                         5,
 		"System and Services Acquisition":           5,
 		"Supply Chain Risk Management":              5,
-		"Risk Assessment":                           4,
-		"Assessment, Authorization, and Monitoring": 4,
+		"Risk Assessment":                           6,
+		"Assessment, Authorization, and Monitoring": 7,
+		"Awareness and Training":                    3,
+		"Contingency Planning":                      3,
+		"Media Protection":                          2,
+		"Physical and Environmental Protection":     2,
 	}
 	for family, expected := range expectedFamilies {
 		if familyCount[family] != expected {
@@ -762,12 +770,18 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		"FedRAMP-AC-24",
 		"FedRAMP-AU-10", "FedRAMP-AU-16",
 		"FedRAMP-IA-8",
-		"FedRAMP-CM-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-8",
+		"FedRAMP-CM-2",
+		"FedRAMP-SI-1", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-8", "FedRAMP-SI-12", "FedRAMP-SI-16",
 		"FedRAMP-IR-7", "FedRAMP-IR-8",
 		"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11",
 		"FedRAMP-SR-3", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12",
-		"FedRAMP-RA-7",
-		"FedRAMP-CA-2", "FedRAMP-CA-8", "FedRAMP-CA-9",
+		"FedRAMP-RA-7", "FedRAMP-RA-9",
+		"FedRAMP-CA-1", "FedRAMP-CA-2", "FedRAMP-CA-3", "FedRAMP-CA-5", "FedRAMP-CA-8", "FedRAMP-CA-9",
+		"FedRAMP-SC-15", "FedRAMP-SC-44",
+		"FedRAMP-AT-1", "FedRAMP-AT-2", "FedRAMP-AT-3",
+		"FedRAMP-CP-1", "FedRAMP-CP-2",
+		"FedRAMP-MP-5",
+		"FedRAMP-PE-3", "FedRAMP-PE-20",
 	}
 
 	controlMap := map[string]compliance.ControlDefinition{}
@@ -783,6 +797,324 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		}
 		if c.Automated {
 			t.Errorf("Evidence-mapped control %s should have Automated=false, got true", id)
+		}
+	}
+}
+
+// --- New SC Family Controls (Path C expansion) ---
+
+func TestCheckSecurityFunctionIsolation(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "isolation sandbox container security_boundary", "compliant"},
+		{"partial", "isolation sandbox container", "partial"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-SC-3", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl SC-3 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("SC-3 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestCheckDenialOfServiceProtection(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "rate_limiting circuit_breaker ddos_protection", "compliant"},
+		{"partial", "rate_limiting", "partial"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-SC-5", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl SC-5 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("SC-5 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestCheckPortServiceRestrictions(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "port_restrictions minimal_services", "compliant"},
+		{"partial", "port_restrictions service_allowlist", "partial"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-SC-39", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl SC-39 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("SC-39 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+// --- New CM Family Controls (Path C expansion) ---
+
+func TestCheckLeastFunctionality(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "minimal_services allowlist", "compliant"},
+		{"noncompliant_nostack", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-CM-7", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl CM-7 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("CM-7 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestCheckSoftwareUsageRestrictions(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "aibom license apache", "compliant"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-CM-10", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl CM-10 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("CM-10 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestCheckInformationLocation(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "classification data_classification persistence retention", "compliant"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-CM-12", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl CM-12 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("CM-12 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+// --- New SI Family Controls (Path C expansion) ---
+
+func TestCheckErrorHandling(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "safe_errors error_handling", "compliant"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-SI-11", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl SI-11 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("SI-11 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestCheckNonDisruptiveIntegrity(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "ccm continuous hash_chain", "compliant"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-SI-14", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl SI-14 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("SI-14 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+// --- New RA Family Controls (Path C expansion) ---
+
+func TestCheckVulnerabilityRemediation(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "scanner sla sla_enabled", "compliant"},
+		{"partial", "scanner ioc", "partial"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-RA-4", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl RA-4 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("RA-4 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+// --- New Family Controls: CP, MP ---
+
+func TestCheckSystemBackup(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant", "backup persistence encryption_at_rest schedule", "compliant"},
+		{"partial", "backup persistence", "partial"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-CP-9", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl CP-9 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("CP-9 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestCheckMediaSanitization(t *testing.T) {
+	m := NewFedRAMPModule()
+	ctx := context.Background()
+	tests := []struct {
+		name       string
+		input      string
+		wantStatus string
+	}{
+		{"compliant_with_sanitization", "encryption_at_rest key_management sanitization", "compliant"},
+		{"compliant_key_destruction", "encryption_at_rest key_management", "compliant"},
+		{"noncompliant", "default_config", "non_compliant"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.CheckControl(ctx, "FedRAMP-MP-6", []byte(tt.input))
+			if err != nil {
+				t.Fatalf("CheckControl MP-6 %s: %v", tt.name, err)
+			}
+			if string(result.Status) != tt.wantStatus {
+				t.Errorf("MP-6 %s: got %q, want %q", tt.name, string(result.Status), tt.wantStatus)
+			}
+		})
+	}
+}
+
+// --- Test all 15 families are represented ---
+
+func TestFedRAMPModule_AllFifteenFamilies(t *testing.T) {
+	m := NewFedRAMPModule()
+	controls := m.Controls()
+
+	expectedCategories := map[string]int{
+		"Access Control":                            0,
+		"Audit and Accountability":                  0,
+		"Identification and Authentication":         0,
+		"System and Communications Protection":      0,
+		"Configuration Management":                  0,
+		"System and Information Integrity":          0,
+		"Incident Response":                         0,
+		"System and Services Acquisition":           0,
+		"Supply Chain Risk Management":              0,
+		"Risk Assessment":                           0,
+		"Assessment, Authorization, and Monitoring": 0,
+		"Awareness and Training":                    0,
+		"Contingency Planning":                      0,
+		"Media Protection":                          0,
+		"Physical and Environmental Protection":     0,
+	}
+
+	for _, c := range controls {
+		if _, ok := expectedCategories[c.Category]; !ok {
+			t.Errorf("unexpected category %q for control %s", c.Category, c.ID)
+		}
+		expectedCategories[c.Category]++
+	}
+
+	for cat, count := range expectedCategories {
+		if count == 0 {
+			t.Errorf("no controls found for category %q", cat)
 		}
 	}
 }
