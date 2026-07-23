@@ -25,6 +25,19 @@
 // on the design). See plans/THREAT-MODEL.md Section 2.6 for the
 // 10 STRIDE threats addressed.
 //
+// Persistence (v3.8):
+//   Community/Developer tiers use InMemoryAttestationStore (in-process map).
+//   Professional/Enterprise tiers use PostgresAttestationStore (shared pgxpool).
+//   The AttestationStore interface abstracts both backends:
+//
+//     store := attestation.NewInMemoryAttestationStore()
+//     // or, for Professional/Enterprise:
+//     store := attestation.NewPostgresAttestationStore(pool)
+//
+//   Envelopes are append-only: Store() rejects duplicates. PruneExpired()
+//   removes envelopes whose ValidUntil has passed. Envelopes with zero
+//   ValidUntil (no expiration) are never pruned.
+//
 // =========================================================================
 
 package attestation

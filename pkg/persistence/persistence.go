@@ -30,6 +30,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
@@ -78,18 +80,20 @@ func DefaultConfig() Config {
 // PostgreSQL for audit storage (Professional/Enterprise tiers). Otherwise
 // it falls back to file-based storage (Community/Developer tiers).
 type Manager struct {
-	cfg          Config
-	platformTier tier.Tier
-	storage      opsec.StorageBackend // file or postgres backend
-	fileStorage  *opsec.FileStorageBackend
-	pgStorage    *postgresStorageBackend
-	pgStore      *ioc.PostgresStore // nil for file-based persistence
-	auditLog     *opsec.ComplianceAuditLog
-	cancel       context.CancelFunc
-	done         chan struct{}
-	mu           sync.RWMutex
-	started      bool
-	usePostgres  bool
+	cfg               Config
+	platformTier      tier.Tier
+	storage           opsec.StorageBackend // file or postgres backend
+	fileStorage        *opsec.FileStorageBackend
+	pgStorage          *postgresStorageBackend
+	pgStore            *ioc.PostgresStore // nil for file-based persistence
+	auditLog           *opsec.ComplianceAuditLog
+	correlationStore   correlation.CorrelationStore   // nil for file-based persistence
+	attestationStore   attestation.AttestationStore   // nil for file-based persistence
+	cancel             context.CancelFunc
+	done               chan struct{}
+	mu                 sync.RWMutex
+	started            bool
+	usePostgres        bool
 }
 
 // New creates a new persistence Manager with file-based storage.
@@ -176,14 +180,16 @@ func NewWithPostgres(platformTier tier.Tier, cfg Config, pgStore *ioc.PostgresSt
 	})
 
 	return &Manager{
-		cfg:          cfg,
-		platformTier: platformTier,
-		storage:      pgBackend,
-		pgStorage:    pgBackend,
-		pgStore:      pgStore,
-		auditLog:     auditLog,
-		done:         make(chan struct{}),
-		usePostgres:  true,
+		cfg:             cfg,
+		platformTier:    platformTier,
+		storage:         pgBackend,
+		pgStorage:       pgBackend,
+		pgStore:         pgStore,
+		auditLog:        auditLog,
+		correlationStore: correlation.NewPostgresCorrelationStore(pgStore.Pool()),
+		attestationStore: attestation.NewPostgresAttestationStore(pgStore.Pool()),
+		done:            make(chan struct{}),
+		usePostgres:     true,
 	}, nil
 }
 
@@ -295,6 +301,24 @@ func (m *Manager) PostgresStore() *ioc.PostgresStore {
 	return m.pgStore
 }
 
+// CorrelationStore returns the correlation event store.
+// Returns nil if persistence is disabled or using file-based storage
+// (Community/Developer tiers use the in-memory correlation engine directly).
+func (m *Manager) CorrelationStore() correlation.CorrelationStore {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.correlationStore
+}
+
+// AttestationStore returns the attestation envelope store.
+// Returns nil if persistence is disabled or using file-based storage
+// (Community/Developer tiers use the in-memory attestation store).
+func (m *Manager) AttestationStore() attestation.AttestationStore {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.attestationStore
+}
+
 // IsEnabled returns whether persistence is active
 func (m *Manager) IsEnabled() bool {
 	m.mu.RLock()
@@ -315,15 +339,19 @@ func (m *Manager) Stats() map[string]interface{} {
 	defer m.mu.RUnlock()
 
 	stats := map[string]interface{}{
-		"enabled":        m.cfg.Enabled,
-		"audit_dir":      m.cfg.AuditDir,
-		"retention_days": m.platformTier.LogRetentionDays(),
-		"started":        m.started,
-		"backend":        "file",
+		"enabled":             m.cfg.Enabled,
+		"audit_dir":           m.cfg.AuditDir,
+		"retention_days":      m.platformTier.LogRetentionDays(),
+		"started":             m.started,
+		"backend":             "file",
+		"correlation_backend": "in-memory",
+		"attestation_backend": "in-memory",
 	}
 
 	if m.usePostgres {
 		stats["backend"] = "postgresql"
+		stats["correlation_backend"] = "postgresql"
+		stats["attestation_backend"] = "postgresql"
 		if m.pgStore != nil {
 			stats["pg_dsn"] = m.pgStore.DSN()
 		}
