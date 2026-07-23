@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
 // mockFramework implements common.Framework for testing
@@ -81,7 +82,7 @@ func TestRegistry_Register(t *testing.T) {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
-		Tier:        TierCommunity,
+		Tier:        tier.TierCommunity,
 	})
 
 	tests := []struct {
@@ -117,7 +118,7 @@ func TestRegistry_Unregister(t *testing.T) {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
-		Tier:        TierCommunity,
+		Tier:        tier.TierCommunity,
 	})
 	fw := newMockFramework("test-framework")
 
@@ -143,7 +144,7 @@ func TestRegistry_Get(t *testing.T) {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
-		Tier:        TierCommunity,
+		Tier:        tier.TierCommunity,
 	})
 	fw := newMockFramework("test-framework")
 	_ = registry.Register(fw)
@@ -170,7 +171,7 @@ func TestRegistry_GetRegisteredFramework(t *testing.T) {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "test-framework",
 		Name:        "Test Framework",
-		Tier:        TierCommunity,
+		Tier:        tier.TierCommunity,
 	})
 	fw := newMockFramework("test-framework")
 	_ = registry.Register(fw)
@@ -204,8 +205,8 @@ func TestRegistry_ListAll(t *testing.T) {
 	}
 
 	// Add frameworks
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw2", Name: "FW2", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw2", Name: "FW2", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 	_ = registry.Register(newMockFramework("fw2"))
 
@@ -218,7 +219,7 @@ func TestRegistry_ListAll(t *testing.T) {
 func TestRegistry_ListAllWithMetadata(t *testing.T) {
 	tm := NewTierManager()
 	registry := NewRegistryWithTierManager(tm)
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
 	rfs := registry.ListAllWithMetadata()
@@ -238,8 +239,8 @@ func TestRegistry_Count(t *testing.T) {
 		t.Error("Count() should be 0 for empty registry")
 	}
 
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw2", Name: "FW2", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw2", Name: "FW2", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 	_ = registry.Register(newMockFramework("fw2"))
 
@@ -251,7 +252,7 @@ func TestRegistry_Count(t *testing.T) {
 func TestRegistry_CountByTier(t *testing.T) {
 	tm := NewTierManager()
 	registry := NewRegistryWithTierManager(tm)
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
 	counts := registry.CountByTier()
@@ -271,17 +272,17 @@ func TestRegistry_GetTierManager(t *testing.T) {
 func TestRegistry_SetTier_GetTier(t *testing.T) {
 	registry := NewRegistry()
 
-	registry.SetTier(TierEnterprise)
+	registry.SetTier(tier.TierEnterprise)
 
-	if registry.GetTier() != TierEnterprise {
-		t.Errorf("GetTier() = %v, want TierEnterprise", registry.GetTier())
+	if registry.GetTier() != tier.TierEnterprise {
+		t.Errorf("GetTier() = %v, want tier.TierEnterprise", registry.GetTier())
 	}
 }
 
 func TestRegistry_Clear(t *testing.T) {
 	tm := NewTierManager()
 	registry := NewRegistryWithTierManager(tm)
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
 	registry.Clear()
@@ -294,7 +295,7 @@ func TestRegistry_Clear(t *testing.T) {
 func TestRegistry_GenerateReport(t *testing.T) {
 	tm := NewTierManager()
 	registry := NewRegistryWithTierManager(tm)
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "fw1", Name: "FW1", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("fw1"))
 
 	report := registry.GenerateReport()
@@ -316,7 +317,7 @@ func TestRegistry_GenerateReport(t *testing.T) {
 func TestRegistry_EnableDisableFramework(t *testing.T) {
 	tm := NewTierManager()
 	registry := NewRegistryWithTierManager(tm)
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: tier.TierCommunity})
 	_ = registry.Register(newMockFramework("test"))
 
 	// Disable
@@ -343,7 +344,7 @@ func TestRegistry_GetEnabledFrameworks(t *testing.T) {
 	registry := NewRegistryWithTierManager(tm)
 	fw := newMockFramework("test")
 	fw.enabled = true
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: tier.TierCommunity})
 	_ = registry.Register(fw)
 
 	enabled := registry.GetEnabledFrameworks()
@@ -360,7 +361,7 @@ func TestRegistry_GetDisabledFrameworks(t *testing.T) {
 	registry := NewRegistryWithTierManager(tm)
 	fw := newMockFramework("test")
 	fw.enabled = false
-	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: TierCommunity})
+	tm.RegisterFramework(FrameworkTier{FrameworkID: "test", Name: "Test", Tier: tier.TierCommunity})
 	_ = registry.Register(fw)
 
 	disabled := registry.GetDisabledFrameworks()

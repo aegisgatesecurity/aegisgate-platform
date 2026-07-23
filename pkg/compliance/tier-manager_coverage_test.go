@@ -4,24 +4,25 @@
 package compliance
 
 import (
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"testing"
 )
 
 func TestTier_String(t *testing.T) {
 	tests := []struct {
-		tier Tier
+		tierVal tier.Tier
 		want string
 	}{
-		{TierCommunity, "community"},
-		{TierEnterprise, "enterprise"},
-		{TierPremium, "premium"},
-		{Tier(99), "unknown"},
-		{Tier(-1), "unknown"},
+		{tier.TierCommunity, "community"},
+		{tier.TierEnterprise, "enterprise"},
+		{tier.TierProfessional, "professional"},
+		{tier.Tier(99), "unknown"},
+		{tier.Tier(-1), "unknown"},
 	}
 	for _, tt := range tests {
-		got := tt.tier.String()
+		got := tt.tierVal.String()
 		if got != tt.want {
-			t.Errorf("Tier(%d).String()=%q, want %q", tt.tier, got, tt.want)
+			t.Errorf("Tier(%d).String()=%q, want %q", tt.tierVal, got, tt.want)
 		}
 	}
 }

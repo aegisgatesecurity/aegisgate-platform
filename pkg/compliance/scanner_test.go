@@ -73,8 +73,8 @@ func TestScanner_Scan_CommunityNoModules(t *testing.T) {
 			freeCount++
 		}
 	}
-	if freeCount != 3 {
-		t.Errorf("free frameworks enforced = %d, want 3", freeCount)
+	if freeCount != 10 {
+		t.Errorf("free frameworks enforced = %d, want 10", freeCount)
 	}
 	// No billable modules should be enforced.
 	for _, f := range rpt.Frameworks {
@@ -278,9 +278,9 @@ func TestScanner_Scan_ScanDurationSet(t *testing.T) {
 func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 	s := NewScanner(nil, nil)
 	rpt, _ := s.Scan(context.Background(), buildValidationResult(t, "professional", []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips", "eu_ai_act", "cmmcl2", "nist800171", "hitrust", "tisax", "ccpa"}))
-	// 13 registered modules (7 original + EU AI Act + CMMC L2 + NIST 800-171 + HITRUST + TISAX + CCPA) + 1 reserved trust + 3 free = 16 frameworks.
-	if len(rpt.Frameworks) != 17 {
-		t.Errorf("Frameworks count = %d, want 17", len(rpt.Frameworks))
+	// 13 registered modules + 1 reserved trust + 10 free = 24 frameworks.
+	if len(rpt.Frameworks) != 24 {
+		t.Errorf("Frameworks count = %d, want 24", len(rpt.Frameworks))
 	}
 	// Verify all modules are present.
 	expected := map[string]bool{
@@ -329,9 +329,9 @@ func TestScanner_ScanFramework_UnknownFramework(t *testing.T) {
 
 func TestScanner_ScanFramework_FreeFramework(t *testing.T) {
 	s := NewScanner(nil, nil)
-	res, _, err := s.ScanFramework(context.Background(), nil, string(FrameworkATLAS))
+	res, _, err := s.ScanFramework(context.Background(), nil, "atlas")
 	if err != nil {
-		t.Fatalf("ScanFramework(ATLAS): %v", err)
+		t.Fatalf("ScanFramework(atlas): %v", err)
 	}
 	if !res.Enforced {
 		t.Error("ATLAS should be enforced (free framework)")
@@ -413,9 +413,16 @@ func TestDisplayNameForFree(t *testing.T) {
 		input string
 		want  string
 	}{
-		{string(FrameworkATLAS), "MITRE ATLAS"},
-		{string(FrameworkNIST1500), "NIST AI RMF"},
-		{string(FrameworkOWASP), "OWASP LLM Top 10"},
+		{"atlas", "MITRE ATLAS"},
+		{"nist_ai_rmf", "NIST AI RMF"},
+		{"owasp", "OWASP LLM Top 10"},
+		{"cis", "CIS v8"},
+		{"nist_csf", "NIST CSF 2.0"},
+		{"owasp_web", "OWASP Top 10 Web"},
+		{"csa_star", "CSA STAR"},
+		{"nist_ai_600_1", "NIST AI 600-1"},
+		{"ccpa", "CCPA/CPRA"},
+		{"gdpr", "GDPR"},
 		{"unknown", "unknown"},
 	}
 	for _, tc := range cases {

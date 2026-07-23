@@ -83,13 +83,17 @@ func TestValidateBuildInputs(t *testing.T) {
 
 func TestKnownFrameworks(t *testing.T) {
 	fw := knownFrameworks()
-	if len(fw) != 10 {
-		t.Errorf("expected 10 frameworks, got %d: %v", len(fw), fw)
+	if len(fw) != 22 {
+		t.Errorf("expected 22 frameworks, got %d: %v", len(fw), fw)
 	}
 	want := map[string]bool{
 		"hipaa": false, "pci": false, "soc2": false, "iso42001": false,
 		"fedramp": false, "fips": false, "eu_ai_act": false,
-		"atlas": false, "nist_ai_rmf": false, "owasp": false,
+		"iso27001": false, "nist_csf": false, "cis": false,
+		"cmmcl2": false, "nist800171": false, "hitrust": false,
+		"tisax": false, "ccpa": false, "nist_ai_rmf": false,
+		"csa_star": false, "nist_ai_600_1": false, "owasp_web": false,
+		"atlas": false, "owasp": false, "gdpr": false,
 	}
 	for _, f := range fw {
 		want[f] = true

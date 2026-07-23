@@ -219,8 +219,8 @@ func TestAPI_Report_Aliases(t *testing.T) {
 		alias    string
 		expected string
 	}{
-		{"nist_ai_rmf", "NIST.AI-1.500"},
-		{"nist-ai-rmf", "NIST.AI-1.500"},
+		{"nist_ai_rmf", "nist_ai_rmf"},
+		{"nist-ai-rmf", "nist_ai_rmf"},
 
 		{"pci-dss", "pci"},
 		{"pci_dss", "pci"},
@@ -263,7 +263,11 @@ func TestAPI_Report_AllEnforcedFrameworks(t *testing.T) {
 
 func TestAPI_Report_FreeFrameworkAlwaysEnforced(t *testing.T) {
 	api, _ := newTestAPI(t)
-	for _, fw := range []string{"ATLAS", "NIST.AI-1.500", "OWASP"} {
+	// Only the core free frameworks (ATLAS, OWASP LLM) are always enforced
+	// regardless of license. Other Community-tier frameworks (CIS, NIST CSF,
+	// OWASP Web, CSA STAR, NIST AI 600-1, CCPA, GDPR, NIST AI RMF) are
+	// $0 modules that still go through the module gating path.
+	for _, fw := range []string{"atlas", "owasp"} {
 		t.Run(fw, func(t *testing.T) {
 			w := doRequest(api, "GET", "/api/v1/compliance/report?framework="+fw)
 			if w.Code != http.StatusOK {
@@ -360,13 +364,13 @@ func TestAPI_Report_Aliases_WithSpaces(t *testing.T) {
 		alias    string
 		expected string
 	}{
-		{"nist ai rmf", "NIST.AI-1.500"},
+		{"nist ai rmf", "nist_ai_rmf"},
 		{"soc 2", "soc2"},
 		{"iso 42001", "iso42001"},
 		{"fips 140-2", "fips"},
 		{"fips 140-3", "fips"},
-		{"owasp llm top 10", "OWASP"},
-		{"mitre atlas", "ATLAS"},
+		{"owasp llm top 10", "owasp"},
+		{"mitre atlas", "atlas"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.alias, func(t *testing.T) {
@@ -409,15 +413,15 @@ func TestNormalizeFrameworkName(t *testing.T) {
 
 		{"fips140-2", "fips"},
 
-		{"nist_ai_rmf", "NIST.AI-1.500"},
-		{"nist-ai-rmf", "NIST.AI-1.500"},
-		{"NIST.AI-1.500", "NIST.AI-1.500"},
-		{"atlas", "ATLAS"},
+		{"nist_ai_rmf", "nist_ai_rmf"},
+		{"nist-ai-rmf", "nist_ai_rmf"},
+		{"nist_ai_rmf", "nist_ai_rmf"},
+		{"atlas", "atlas"},
 
-		{"ATLAS", "ATLAS"},
-		{"owasp", "OWASP"},
+		{"atlas", "atlas"},
+		{"owasp", "owasp"},
 
-		{"OWASP", "OWASP"},
+		{"owasp", "owasp"},
 		{"unknown-thing", "unknown-thing"}, // pass-through
 	}
 	for _, tc := range cases {

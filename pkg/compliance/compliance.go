@@ -510,12 +510,22 @@ type ComplianceReport = Report
 // ComplianceResult is an alias for Result (for backward compatibility)
 type ComplianceResult = Result
 
-// NewNIST1500Framework returns a stub (NIST framework not fully implemented)
+// NewNIST1500Framework returns a nil FrameworkChecker. NIST AI RMF 1.0
+// is now handled by the nist_ai_rmf sub-package (registered via
+// RegisterBuiltinFrameworks). This function is retained for backward
+// compatibility but should not be called directly.
+//
+// Deprecated: Use nist_ai_rmf.NewNISTAIRMFModule() instead.
 func NewNIST1500Framework() FrameworkChecker {
 	return nil
 }
 
-// NewOWASPFramework returns a stub (OWASP framework not fully implemented)
+// NewOWASPFramework returns a nil FrameworkChecker. OWASP LLM Top 10
+// is now handled by the community/owasp sub-package (registered via
+// RegisterBuiltinFrameworksIntoRegistry). This function is retained
+// for backward compatibility but should not be called directly.
+//
+// Deprecated: Use the community/owasp sub-package instead.
 func NewOWASPFramework() FrameworkChecker {
 	return nil
 }

@@ -28,6 +28,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
+
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
@@ -217,7 +219,7 @@ func (s *Scanner) Scan(ctx context.Context, lic *license.ValidationResult) (*Sca
 		s.mu.RUnlock()
 	}
 
-	// Walk the locked module requirements (6 billable modules).
+	// Walk the locked module requirements (all billable modules).
 	for _, modReq := range AllModuleRequirements() {
 		result := s.scanModule(ctx, modReq, lic)
 		rpt.Frameworks = append(rpt.Frameworks, result)
@@ -373,14 +375,27 @@ func (s *Scanner) runAssessment(ctx context.Context, framework string) (*Framewo
 	}, nil
 }
 
-// lookupRegistered finds a framework in the registry by name.
-func (s *Scanner) lookupRegistered(framework string) (any, bool) {
-	switch framework {
-	case string(FrameworkHIPAA), string(FrameworkPCIDSS), string(FrameworkATLAS),
-		string(FrameworkNIST1500), string(FrameworkOWASP):
+// lookupRegistered finds a framework in the scanner's registry by name.
+// It delegates to the Registry's Get method, which returns the
+// RegisteredFramework if the framework was registered via
+// RegisterBuiltinFrameworksIntoRegistry. The returned Instance
+// implements common.Framework and can be further cast to FrameworkModule
+// for assessment generation.
+// lookupRegistered finds a framework in the scanner's registry by name.
+// It delegates to the Registry's Get method, which returns the
+// RegisteredFramework if the framework was registered via
+// RegisterBuiltinFrameworksIntoRegistry. The returned Instance
+// implements common.Framework and can be further cast to FrameworkModule
+// for assessment generation.
+func (s *Scanner) lookupRegistered(framework string) (common.Framework, bool) {
+	if s.registry == nil {
 		return nil, false
 	}
-	return nil, false
+	fw, err := s.registry.Get(framework)
+	if err != nil {
+		return nil, false
+	}
+	return fw, true
 }
 
 // InvalidateCache clears the scan cache.
@@ -427,22 +442,42 @@ func formatUpgradeHint(d GatingDecision) string {
 
 // freeFrameworks are the frameworks available to every customer
 // regardless of paid tier or module ownership. These are part of
-// the "MUST be Community" mandate (MITRE ATLAS, NIST AI RMF, OWASP
-// LLM Top 10) and the platform's open-source commitment.
+// the Community tier mandate and the platform's open-source commitment.
 var freeFrameworks = []string{
-	string(FrameworkATLAS),    // MITRE ATLAS — 66 techniques
-	string(FrameworkNIST1500), // NIST AI RMF 1.0
-	string(FrameworkOWASP),    // OWASP LLM Top 10
+	"atlas",          // MITRE ATLAS — 24 technique patterns
+	"nist_ai_rmf",    // NIST AI RMF 1.0 — 20 controls
+	"owasp",          // OWASP LLM Top 10 — 10 risk categories
+	"cis",            // CIS Critical Security Controls v8 — 15 controls
+	"nist_csf",       // NIST CSF 2.0 — 6 core functions
+	"owasp_web",      // OWASP Top 10 Web Application Security — 10 categories
+	"csa_star",       // CSA STAR Level 1 — 16 CCM domains
+	"nist_ai_600_1",  // NIST AI 600-1 GenAI Profile — 12 categories
+	"ccpa",           // CCPA/CPRA — 12 controls
+	"gdpr",           // GDPR — 6 core requirements
 }
 
 func displayNameForFree(framework string) string {
 	switch framework {
-	case string(FrameworkATLAS):
+	case "atlas":
 		return "MITRE ATLAS"
-	case string(FrameworkNIST1500):
+	case "nist_ai_rmf":
 		return "NIST AI RMF"
-	case string(FrameworkOWASP):
+	case "owasp":
 		return "OWASP LLM Top 10"
+	case "cis":
+		return "CIS v8"
+	case "nist_csf":
+		return "NIST CSF 2.0"
+	case "owasp_web":
+		return "OWASP Top 10 Web"
+	case "csa_star":
+		return "CSA STAR"
+	case "nist_ai_600_1":
+		return "NIST AI 600-1"
+	case "ccpa":
+		return "CCPA/CPRA"
+	case "gdpr":
+		return "GDPR"
 	}
 	return framework
 }

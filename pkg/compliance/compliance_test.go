@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
 // ============================================================================
@@ -25,25 +27,25 @@ func TestTierManager_New(t *testing.T) {
 func TestTierManager_SetAndGetTier(t *testing.T) {
 	tm := NewTierManager()
 
-	tm.SetTier(TierCommunity)
-	if tm.GetTier() != TierCommunity {
+	tm.SetTier(tier.TierCommunity)
+	if tm.GetTier() != tier.TierCommunity {
 		t.Error("GetTier mismatch for Community")
 	}
 
-	tm.SetTier(TierEnterprise)
-	if tm.GetTier() != TierEnterprise {
+	tm.SetTier(tier.TierEnterprise)
+	if tm.GetTier() != tier.TierEnterprise {
 		t.Error("GetTier mismatch for Enterprise")
 	}
 
-	tm.SetTier(TierPremium)
-	if tm.GetTier() != TierPremium {
+	tm.SetTier(tier.TierProfessional)
+	if tm.GetTier() != tier.TierProfessional {
 		t.Error("GetTier mismatch for Premium")
 	}
 }
 
 func TestTierManager_IsFrameworkAllowed_Community(t *testing.T) {
 	tm := NewTierManager()
-	tm.SetTier(TierCommunity)
+	tm.SetTier(tier.TierCommunity)
 
 	if !tm.IsFrameworkAllowed("atlas") {
 		t.Error("Community should allow atlas")
@@ -52,7 +54,7 @@ func TestTierManager_IsFrameworkAllowed_Community(t *testing.T) {
 
 func TestTierManager_IsFrameworkAllowed_Premium(t *testing.T) {
 	tm := NewTierManager()
-	tm.SetTier(TierPremium)
+	tm.SetTier(tier.TierProfessional)
 
 	if !tm.IsFrameworkAllowed("atlas") {
 		t.Error("Premium should allow atlas")
@@ -101,28 +103,43 @@ func TestTierManager_GetEnterpriseFrameworks(t *testing.T) {
 	}
 }
 
-func TestTierManager_GetPremiumFrameworks(t *testing.T) {
+func TestTierManager_GetProfessionalFrameworks(t *testing.T) {
 	tm := NewTierManager()
-	frameworks := tm.GetPremiumFrameworks()
+	frameworks := tm.GetProfessionalFrameworks()
 
-	// May be empty but should not be nil
+	// Professional tier should have ISO 42001, FedRAMP, FIPS, etc.
 	if frameworks == nil {
-		t.Error("Expected non-nil premium frameworks")
+		t.Error("Expected non-nil professional frameworks")
+	}
+	if len(frameworks) == 0 {
+		t.Error("Expected at least one professional framework")
 	}
 }
 
-func TestTierManager_ValidateLicense(t *testing.T) {
+func TestTierManager_FrameworkAccess(t *testing.T) {
 	tm := NewTierManager()
 
-	if !tm.ValidateLicense("", TierCommunity) {
-		t.Error("Community tier should not require license")
+	// Community frameworks should always be accessible
+	tm.SetTier(tier.TierCommunity)
+	if !tm.IsFrameworkAllowed("atlas") {
+		t.Error("Community tier should allow atlas")
+	}
+	if !tm.IsFrameworkAllowed("cis") {
+		t.Error("Community tier should allow cis")
 	}
 
-	if tm.ValidateLicense("", TierEnterprise) {
-		t.Error("Enterprise tier requires license key")
+	// Enterprise-only frameworks should not be accessible at Community tier
+	if tm.IsFrameworkAllowed("hitrust") {
+		t.Error("Community tier should not allow hitrust (Enterprise)")
 	}
-	if !tm.ValidateLicense("valid-key", TierEnterprise) {
-		t.Error("Enterprise tier with valid key should pass")
+
+	// Professional tier should allow Professional and below
+	tm.SetTier(tier.TierProfessional)
+	if !tm.IsFrameworkAllowed("fedramp") {
+		t.Error("Professional tier should allow fedramp")
+	}
+	if !tm.IsFrameworkAllowed("atlas") {
+		t.Error("Professional tier should allow atlas")
 	}
 }
 
@@ -134,7 +151,7 @@ func TestTierManager_ConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			tm.SetTier(TierCommunity)
+			tm.SetTier(tier.TierCommunity)
 			tm.GetAllFrameworks()
 			tm.IsFrameworkAllowed("atlas")
 		}()
@@ -158,7 +175,7 @@ func TestTierManager_RegisterFramework(t *testing.T) {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "custom-fw",
 		Name:        "Custom Framework",
-		Tier:        TierCommunity,
+		Tier:        tier.TierCommunity,
 		Description: "Custom test framework",
 		Features:    []string{"test"},
 	})

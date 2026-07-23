@@ -68,20 +68,20 @@ func TestCanonicalFrameworkID(t *testing.T) {
 	cases := []struct {
 		in, want string
 	}{
-		{"MITRE ATLAS", "mitre_atlas"},
-		{"mitre_atlas", "mitre_atlas"},
-		{"atlas", "mitre_atlas"},
+		{"MITRE ATLAS", "atlas"},
+		{"atlas", "atlas"},
+		{"atlas", "atlas"},
 		{"NIST AI RMF", "nist_ai_rmf"},
 		{"nist_ai_rmf", "nist_ai_rmf"},
-		{"OWASP", "owasp_llm"},
-		{"OWASP LLM Top 10", "owasp_llm"},
-		{"owasp_llm", "owasp_llm"},
+		{"OWASP", "owasp"},
+		{"OWASP LLM Top 10", "owasp"},
+		{"owasp", "owasp"},
 		{"CWE", "cwe"},
 		{"CVE", "cve"},
 		// Unknown / fallback paths.
 		{"Unknown Framework", "unknown_framework"},
 		{"PCI-DSS", "pci_dss"},
-		{"ISO 27001", "iso_27001"},
+		{"ISO 27001", "iso27001"},
 		{"", ""},
 	}
 	for _, tc := range cases {
@@ -216,7 +216,7 @@ func TestCollectFrameworkCrossRefs_KnownControlID(t *testing.T) {
 	if len(entry.Targets) == 0 {
 		t.Error("GV1 should have non-empty Targets")
 	}
-	if at, ok := entry.Targets["mitre_atlas"]; !ok || len(at) == 0 {
+	if at, ok := entry.Targets["atlas"]; !ok || len(at) == 0 {
 		t.Errorf("GV1 should map to mitre_atlas, got Targets=%v", entry.Targets)
 	}
 	if entry.Confidence == 0 {
@@ -467,7 +467,7 @@ func TestAggregateControlCrossRefs_DeterministicOrdering(t *testing.T) {
 // TestAggregateControlCrossRefs_TargetsContributeToFrameworks
 // covers the cross-framework rollup: a FrameworkCrossRef with
 // Targets (e.g., {mitre_atlas: [T0010]}) should contribute
-// "mitre_atlas" to the FrameworkControlRef.Frameworks list.
+// "atlas" to the FrameworkControlRef.Frameworks list.
 func TestAggregateControlCrossRefs_TargetsContributeToFrameworks(t *testing.T) {
 	t.Parallel()
 	m := &Manifest{
@@ -477,8 +477,8 @@ func TestAggregateControlCrossRefs_TargetsContributeToFrameworks(t *testing.T) {
 				SourceFramework: "hipaa",
 				SourceControl:   "ACCESS-001",
 				Targets: map[string][]string{
-					"mitre_atlas": {"AML.T0010"},
-					"owasp_llm":   {"LLM05"},
+					"atlas": {"AML.T0010"},
+					"owasp":   {"LLM05"},
 				},
 			},
 		},
@@ -488,7 +488,7 @@ func TestAggregateControlCrossRefs_TargetsContributeToFrameworks(t *testing.T) {
 		t.Fatalf("got %d, want 1", len(got))
 	}
 	// Frameworks must include hipaa (source) + the two targets.
-	want := []string{"hipaa", "mitre_atlas", "owasp_llm"}
+	want := []string{"hipaa", "atlas", "owasp"}
 	if !equalSorted(got[0].Frameworks, want) {
 		t.Errorf("Frameworks = %v, want %v (sorted)", got[0].Frameworks, want)
 	}
@@ -595,7 +595,7 @@ func TestFrameworkCrossRef_JSONShape(t *testing.T) {
 			{
 				SourceFramework: "hipaa",
 				SourceControl:   "ACCESS-001",
-				Targets:         map[string][]string{"mitre_atlas": {"AML.T0010"}},
+				Targets:         map[string][]string{"atlas": {"AML.T0010"}},
 			},
 		},
 	}

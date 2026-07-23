@@ -168,9 +168,9 @@ func TestScannerFrameworkID(t *testing.T) {
 	cases := []struct {
 		in, want string
 	}{
-		{"atlas", "ATLAS"},
-		{"owasp", "OWASP"},
-		{"nist_ai_rmf", "NIST.AI-1.500"},
+		{"atlas", "atlas"},
+		{"owasp", "owasp"},
+		{"nist_ai_rmf", "nist_ai_rmf"},
 		{"hipaa", "hipaa"},         // paid module - passthrough
 		{"pci", "pci"},             // paid module - passthrough
 		{"eu_ai_act", "eu_ai_act"}, // paid module - passthrough
