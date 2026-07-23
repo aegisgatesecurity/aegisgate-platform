@@ -72,16 +72,16 @@ const (
 // LicensePayload represents the decoded license data
 // Note: This struct is serialized to JSON and signed
 type LicensePayload struct {
-	LicenseID  string    `json:"license_id"`        // UUID
-	Tier       string    `json:"tier"`              // Tier name
-	Customer   string    `json:"customer"`          // Customer identifier
-	IssuedAt   time.Time `json:"issued_at"`         // When license was issued
-	ExpiresAt  time.Time `json:"expires_at"`        // When license expires
-	Features   []string  `json:"features"`          // Optional specific features
-	Modules    []string  `json:"modules,omitempty"` // v3.2.0: purchased compliance modules (a la carte)
-	Accelerators []string `json:"accelerators,omitempty"` // v3.7.0: purchased vertical bundles
-	MaxServers int       `json:"max_servers"`       // Max servers allowed
-	MaxUsers   int       `json:"max_users"`         // Max users allowed
+	LicenseID    string    `json:"license_id"`             // UUID
+	Tier         string    `json:"tier"`                   // Tier name
+	Customer     string    `json:"customer"`               // Customer identifier
+	IssuedAt     time.Time `json:"issued_at"`              // When license was issued
+	ExpiresAt    time.Time `json:"expires_at"`             // When license expires
+	Features     []string  `json:"features"`               // Optional specific features
+	Modules      []string  `json:"modules,omitempty"`      // v3.2.0: purchased compliance modules (a la carte)
+	Accelerators []string  `json:"accelerators,omitempty"` // v3.7.0: purchased vertical bundles
+	MaxServers   int       `json:"max_servers"`            // Max servers allowed
+	MaxUsers     int       `json:"max_users"`              // Max users allowed
 }
 
 // v3.2.0 Phase 1: canonical names of the 6 billable compliance modules.
@@ -96,14 +96,14 @@ const (
 	ModuleISO42001   = "iso42001"
 	ModuleFedRAMP    = "fedramp"
 	ModuleFIPS       = "fips"
-	ModuleEUAIAct    = "eu_ai_act"  // v3.3.0 Phase 1: Regulation 2024/1689
-	ModuleCMMCL2     = "cmmcl2"     // v3.6.0 M3: CMMC Level 2
-	ModuleNIST800171 = "nist800171" // v3.6.0 M3: NIST SP 800-171
-	ModuleHITRUST    = "hitrust"    // v3.6.0 M3: HITRUST CSF
-	ModuleTISAX      = "tisax"      // v3.6.0 M3: TISAX AL2
-	ModuleCCPA       = "ccpa"       // v3.6.0 M3: CCPA/CPRA (Community tier)
+	ModuleEUAIAct    = "eu_ai_act"   // v3.3.0 Phase 1: Regulation 2024/1689
+	ModuleCMMCL2     = "cmmcl2"      // v3.6.0 M3: CMMC Level 2
+	ModuleNIST800171 = "nist800171"  // v3.6.0 M3: NIST SP 800-171
+	ModuleHITRUST    = "hitrust"     // v3.6.0 M3: HITRUST CSF
+	ModuleTISAX      = "tisax"       // v3.6.0 M3: TISAX AL2
+	ModuleCCPA       = "ccpa"        // v3.6.0 M3: CCPA/CPRA (Community tier)
 	ModuleNISTAIRMF  = "nist_ai_rmf" // v3.7.0: NIST AI RMF 1.0 (Community tier, free)
-	ModuleTrust      = "trust"      // reserved for future use
+	ModuleTrust      = "trust"       // reserved for future use
 )
 
 // ---------------------------------------------------------------------------
@@ -115,11 +115,11 @@ const (
 // ---------------------------------------------------------------------------
 
 const (
-	BundleHealthcare    = "healthcare"     // HIPAA + HITRUST CSF
-	BundleDefense        = "defense"        // CMMC L2 + NIST 800-171 + FedRAMP
-	BundleFinance       = "finance"        // PCI-DSS + SOC 2 + ISO 27001
-	BundleManufacturing = "manufacturing"  // TISAX + ISO 27001 + ISO 42001
-	BundlePrivacy       = "privacy"        // GDPR + CCPA + ISO 27001
+	BundleHealthcare    = "healthcare"    // HIPAA + HITRUST CSF
+	BundleDefense       = "defense"       // CMMC L2 + NIST 800-171 + FedRAMP
+	BundleFinance       = "finance"       // PCI-DSS + SOC 2 + ISO 27001
+	BundleManufacturing = "manufacturing" // TISAX + ISO 27001 + ISO 42001
+	BundlePrivacy       = "privacy"       // GDPR + CCPA + ISO 27001
 )
 
 // AllBundles is the canonical list of bundle IDs, in display order.
@@ -155,7 +155,7 @@ var AllModules = []string{
 	ModuleNIST800171,
 	ModuleHITRUST,
 	ModuleTISAX,
-	ModuleCCPA, // v3.6.0 M3: Community tier, not billable
+	ModuleCCPA,      // v3.6.0 M3: Community tier, not billable
 	ModuleNISTAIRMF, // v3.7.0: Community tier, free
 }
 

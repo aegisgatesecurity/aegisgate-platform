@@ -256,16 +256,16 @@ func TestProcessEvent_AutoExecute(t *testing.T) {
 	}
 
 	rule := &DetectionRule{
-		ID:           "rule_auto_exec",
-		Name:         "Auto-Execute Rule",
-		Description:  "Rule that auto-executes playbook",
-		Enabled:      true,
-		Source:       SourceCorrelation,
-		Severity:     SeverityCritical,
-		Patterns:     []string{"task_hijacking"},
-		PlaybookID:   "pb_test",
-		AutoCreate:   true,
-		AutoExecute:  true,
+		ID:          "rule_auto_exec",
+		Name:        "Auto-Execute Rule",
+		Description: "Rule that auto-executes playbook",
+		Enabled:     true,
+		Source:      SourceCorrelation,
+		Severity:    SeverityCritical,
+		Patterns:    []string{"task_hijacking"},
+		PlaybookID:  "pb_test",
+		AutoCreate:  true,
+		AutoExecute: true,
 	}
 	if err := rs.CreateRule(context.Background(), rule); err != nil {
 		t.Fatalf("CreateRule: %v", err)
@@ -286,7 +286,7 @@ func TestProcessEvent_AutoExecute(t *testing.T) {
 		Protocol:  "a2a",
 		AgentID:   "agent-1",
 		SessionID: "session-1",
-		EventType:  "message",
+		EventType: "message",
 		Severity:  "critical",
 		Timestamp: time.Now().UTC(),
 		Metadata:  map[string]string{"matched_patterns": "task_hijacking"},

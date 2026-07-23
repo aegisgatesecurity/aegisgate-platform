@@ -72,7 +72,7 @@ type perfMockScanner struct{}
 
 func (m *perfMockScanner) Scan(_ context.Context, record SXCRecord) (*BenchmarkDetection, error) {
 	return &BenchmarkDetection{
-		Detected:     record.ExpectedLabel > 0,
+		Detected:      record.ExpectedLabel > 0,
 		LatencyMillis: 1,
 	}, nil
 }

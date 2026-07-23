@@ -23,9 +23,9 @@
 // Professional/Enterprise tiers use PostgresCorrelationStore (shared pgxpool).
 // The CorrelationStore interface abstracts both backends:
 //
-//   store := correlation.NewInMemoryCorrelationStore(engine)
-//   // or, for Professional/Enterprise:
-//   store := correlation.NewPostgresCorrelationStore(pool)
+//	store := correlation.NewInMemoryCorrelationStore(engine)
+//	// or, for Professional/Enterprise:
+//	store := correlation.NewPostgresCorrelationStore(pool)
 //
 // ============================================================================
 package correlation

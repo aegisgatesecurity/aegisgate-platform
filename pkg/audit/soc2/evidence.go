@@ -78,10 +78,10 @@ func NewEvidenceCollector(config EvidenceCollectorConfig, scanner ComplianceScan
 // reports.
 //
 // The collector composes evidence from:
-//   1. Compliance scan results (if scanner is wired)
-//   2. Built-in SOC 2 control definitions (always)
-//   3. Policy template references (always)
-//   4. Attestation references for automated controls (always)
+//  1. Compliance scan results (if scanner is wired)
+//  2. Built-in SOC 2 control definitions (always)
+//  3. Policy template references (always)
+//  4. Attestation references for automated controls (always)
 func (c *EvidenceCollector) Collect(ctx context.Context, periodStart, periodEnd time.Time) ([]ControlEvidence, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, fmt.Errorf("soc2 evidence: context cancelled: %w", err)
@@ -118,12 +118,12 @@ func (c *EvidenceCollector) Collect(ctx context.Context, periodStart, periodEnd 
 		}
 
 		ce := ControlEvidence{
-			ControlID:   ctrl.ID,
-			ControlName: ctrl.Name,
-			Category:    ctrl.Category,
-			Status:      StatusNotMet,
-			Sources:     []EvidenceRef{},
-			Findings:    []string{},
+			ControlID:    ctrl.ID,
+			ControlName:  ctrl.Name,
+			Category:     ctrl.Category,
+			Status:       StatusNotMet,
+			Sources:      []EvidenceRef{},
+			Findings:     []string{},
 			LastAssessed: time.Now().UTC(),
 		}
 
@@ -134,17 +134,17 @@ func (c *EvidenceCollector) Collect(ctx context.Context, periodStart, periodEnd 
 
 		// 4. Add policy template references.
 		ce.Sources = append(ce.Sources, EvidenceRef{
-			Source:       EvidenceSourcePolicy,
-			ReferenceID:  fmt.Sprintf("POL-%s", ctrl.ID),
-			Description:  fmt.Sprintf("Policy template for %s", ctrl.Name),
+			Source:      EvidenceSourcePolicy,
+			ReferenceID: fmt.Sprintf("POL-%s", ctrl.ID),
+			Description: fmt.Sprintf("Policy template for %s", ctrl.Name),
 		})
 
 		// 5. Add attestation references for automated controls.
 		if ctrl.Automated {
 			ce.Sources = append(ce.Sources, EvidenceRef{
-				Source:       EvidenceSourceAttestation,
-				ReferenceID:  fmt.Sprintf("ATT-%s", ctrl.ID),
-				Description:  fmt.Sprintf("Signed attestation for %s", ctrl.ID),
+				Source:      EvidenceSourceAttestation,
+				ReferenceID: fmt.Sprintf("ATT-%s", ctrl.ID),
+				Description: fmt.Sprintf("Signed attestation for %s", ctrl.ID),
 			})
 		}
 
@@ -202,10 +202,10 @@ func enrichFromScan(ce ControlEvidence, sr *compliance.FrameworkScanResult) Cont
 		ce.Findings = append(ce.Findings, fmt.Sprintf("SOC 2 framework not enforced: %s", sr.ReasonNotEnforced))
 	}
 	ce.Sources = append(ce.Sources, EvidenceRef{
-		Source:       EvidenceSourceCompliance,
-		ReferenceID:  sr.Framework,
-		Description:  fmt.Sprintf("Compliance scan: %s (%d/%d controls)", sr.DisplayName, sr.ControlsEnforced, sr.ControlsTotal),
-		Timestamp:    sr.LastScan,
+		Source:      EvidenceSourceCompliance,
+		ReferenceID: sr.Framework,
+		Description: fmt.Sprintf("Compliance scan: %s (%d/%d controls)", sr.DisplayName, sr.ControlsEnforced, sr.ControlsTotal),
+		Timestamp:   sr.LastScan,
 	})
 	return ce
 }

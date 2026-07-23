@@ -26,8 +26,8 @@ import (
 
 // Compile-time interface compliance checks.
 var (
-	_ IncidentStore     = (*InMemoryIncidentStore)(nil)
-	_ PlaybookStore     = (*InMemoryPlaybookStore)(nil)
+	_ IncidentStore      = (*InMemoryIncidentStore)(nil)
+	_ PlaybookStore      = (*InMemoryPlaybookStore)(nil)
 	_ DetectionRuleStore = (*InMemoryDetectionRuleStore)(nil)
 )
 
@@ -308,8 +308,8 @@ func containsSource(sources []IncidentSource, s IncidentSource) bool {
 // InMemoryPlaybookStore implements PlaybookStore with an in-memory map.
 // Safe for concurrent use.
 type InMemoryPlaybookStore struct {
-	mu    sync.RWMutex
-	byID  map[string]*Playbook
+	mu   sync.RWMutex
+	byID map[string]*Playbook
 }
 
 // NewInMemoryPlaybookStore creates a new empty in-memory playbook store.

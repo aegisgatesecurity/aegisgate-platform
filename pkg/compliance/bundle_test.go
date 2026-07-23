@@ -102,7 +102,7 @@ func TestBundle_HasRequiredFields(t *testing.T) {
 func TestBundle_DiscountMath(t *testing.T) {
 	for _, b := range AllBundles() {
 		t.Run(b.ID, func(t *testing.T) {
-			actualDiscount := 100 - (b.BundlePriceCents*100/b.IndividualPriceCents)
+			actualDiscount := 100 - (b.BundlePriceCents * 100 / b.IndividualPriceCents)
 			// Allow 2% rounding tolerance
 			diff := actualDiscount - b.DiscountPercent
 			if diff < -2 || diff > 2 {

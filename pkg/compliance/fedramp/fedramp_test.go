@@ -91,8 +91,8 @@ func TestNewFedRAMPModule(t *testing.T) {
 		"Contingency Planning":                      9,
 		"Media Protection":                          2,
 		"Personnel Security":                        3,
-		"Program Management":                         2,
-		"Planning":                                   2,
+		"Program Management":                        2,
+		"Planning":                                  2,
 	}
 	for family, expected := range expectedFamilies {
 		if familyCount[family] != expected {
@@ -1627,9 +1627,9 @@ func TestFedRAMPModule_AllEighteenFamilies(t *testing.T) {
 		"Media Protection":                          0,
 		"Physical and Environmental Protection":     0,
 		"Personnel Security":                        0,
-		"Program Management":                         0,
-		"Planning":                                   0,
-		"Maintenance":                                0,
+		"Program Management":                        0,
+		"Planning":                                  0,
+		"Maintenance":                               0,
 	}
 
 	for _, c := range controls {

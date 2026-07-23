@@ -143,11 +143,11 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleHIPAA,
 			license.ModuleHITRUST,
 		},
-		RequiredTier:        tierpkg.TierEnterprise, // HITRUST requires Enterprise
-		BundlePriceCents:   59900,                  // $599/mo
-		IndividualPriceCents: 89800,                 // $99 + $799 = $898/mo individually
-		DiscountPercent:     33,
-		Industries:          []string{"healthcare", "medical", "pharma", "biotech"},
+		RequiredTier:         tierpkg.TierEnterprise, // HITRUST requires Enterprise
+		BundlePriceCents:     59900,                  // $599/mo
+		IndividualPriceCents: 89800,                  // $99 + $799 = $898/mo individually
+		DiscountPercent:      33,
+		Industries:           []string{"healthcare", "medical", "pharma", "biotech"},
 	},
 	"defense": {
 		ID:          "defense",
@@ -158,11 +158,11 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleNIST800171,
 			license.ModuleFedRAMP,
 		},
-		RequiredTier:        tierpkg.TierProfessional,
-		BundlePriceCents:   89900,                  // $899/mo
-		IndividualPriceCents: 139700,                // $499 + $399 + $499 = $1,397/mo
-		DiscountPercent:     36,
-		Industries:          []string{"defense", "aerospace", "government", "contracting", "dod"},
+		RequiredTier:         tierpkg.TierProfessional,
+		BundlePriceCents:     89900,  // $899/mo
+		IndividualPriceCents: 139700, // $499 + $399 + $499 = $1,397/mo
+		DiscountPercent:      36,
+		Industries:           []string{"defense", "aerospace", "government", "contracting", "dod"},
 	},
 	"finance": {
 		ID:          "finance",
@@ -173,11 +173,11 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleSOC2,
 			"iso27001",
 		},
-		RequiredTier:        tierpkg.TierDeveloper,
-		BundlePriceCents:   24900,                   // $249/mo
-		IndividualPriceCents: 32700,                  // $99 + $149 + $79 = $327/mo
-		DiscountPercent:     24,
-		Industries:          []string{"finance", "fintech", "banking", "insurance", "payments"},
+		RequiredTier:         tierpkg.TierDeveloper,
+		BundlePriceCents:     24900, // $249/mo
+		IndividualPriceCents: 32700, // $99 + $149 + $79 = $327/mo
+		DiscountPercent:      24,
+		Industries:           []string{"finance", "fintech", "banking", "insurance", "payments"},
 	},
 	"manufacturing": {
 		ID:          "manufacturing",
@@ -188,11 +188,11 @@ var verticalBundles = map[string]VerticalBundle{
 			"iso27001",
 			license.ModuleISO42001,
 		},
-		RequiredTier:        tierpkg.TierEnterprise, // TISAX requires Enterprise
-		BundlePriceCents:   49900,                   // $499/mo
-		IndividualPriceCents: 75700,                   // $599 + $79 + $79 = $757/mo
-		DiscountPercent:     34,
-		Industries:          []string{"manufacturing", "automotive", "supply_chain", "industry"},
+		RequiredTier:         tierpkg.TierEnterprise, // TISAX requires Enterprise
+		BundlePriceCents:     49900,                  // $499/mo
+		IndividualPriceCents: 75700,                  // $599 + $79 + $79 = $757/mo
+		DiscountPercent:      34,
+		Industries:           []string{"manufacturing", "automotive", "supply_chain", "industry"},
 	},
 	"privacy": {
 		ID:          "privacy",
@@ -203,11 +203,11 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleCCPA,
 			"iso27001",
 		},
-		RequiredTier:        tierpkg.TierCommunity, // Privacy is for everyone
-		BundlePriceCents:   4900,                    // $49/mo
-		IndividualPriceCents: 7900,                   // $0 + $0 + $79 = $79/mo (GDPR + CCPA free, ISO 27001 $79)
-		DiscountPercent:     38,
-		Industries:          []string{"privacy", "saas", "ecommerce", "adtech", "data"},
+		RequiredTier:         tierpkg.TierCommunity, // Privacy is for everyone
+		BundlePriceCents:     4900,                  // $49/mo
+		IndividualPriceCents: 7900,                  // $0 + $0 + $79 = $79/mo (GDPR + CCPA free, ISO 27001 $79)
+		DiscountPercent:      38,
+		Industries:           []string{"privacy", "saas", "ecommerce", "adtech", "data"},
 	},
 }
 

@@ -265,8 +265,8 @@ func TestSoc2Controls(t *testing.T) {
 		"SOC2-CC6.6": true, "SOC2-CC6.7": true,
 		"SOC2-CC7.2": true, "SOC2-CC7.3": true, "SOC2-CC7.4": true,
 		"SOC2-PI1.2": true,
-		"SOC2-A1.1": true,
-		"SOC2-C1.1": true, "SOC2-C2.1": true,
+		"SOC2-A1.1":  true,
+		"SOC2-C1.1":  true, "SOC2-C2.1": true,
 		"SOC2-AI-001": true,
 	}
 	for _, ctrl := range controls {
@@ -794,9 +794,9 @@ func TestEnrichWithAttestation_StatusPartiallyMetUpgraded(t *testing.T) {
 	// Create evidence with partially_met status to verify upgrade to met
 	evidence := []ControlEvidence{
 		{
-			ControlID:   "TEST-1",
-			ControlName: "Test Control",
-			Category:    TSCSecurity,
+			ControlID:    "TEST-1",
+			ControlName:  "Test Control",
+			Category:     TSCSecurity,
 			Status:       StatusPartiallyMet,
 			Sources:      []EvidenceRef{},
 			LastAssessed: time.Now().UTC(),

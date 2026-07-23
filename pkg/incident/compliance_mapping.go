@@ -78,28 +78,28 @@ func defaultMappingForSource(source IncidentSource) ComplianceMapping {
 	case SourceCorrelation:
 		return ComplianceMapping{
 			Framework:   "FedRAMP",
-			ControlID:  "IR-4",
+			ControlID:   "IR-4",
 			ControlName: "Incident Handling",
 			Relevance:   "Correlation engine detected threat pattern",
 		}
 	case SourceAutoRule:
 		return ComplianceMapping{
 			Framework:   "FedRAMP",
-			ControlID:  "IR-5",
+			ControlID:   "IR-5",
 			ControlName: "Incident Monitoring",
 			Relevance:   "Automated detection rule triggered",
 		}
 	case SourceSOC:
 		return ComplianceMapping{
 			Framework:   "SOC2",
-			ControlID:  "CC6.1",
+			ControlID:   "CC6.1",
 			ControlName: "Security Incident Response",
 			Relevance:   "SOC analyst created incident",
 		}
 	default:
 		return ComplianceMapping{
 			Framework:   "FedRAMP",
-			ControlID:  "IR-4",
+			ControlID:   "IR-4",
 			ControlName: "Incident Handling",
 			Relevance:   "External incident report",
 		}
@@ -113,31 +113,31 @@ func defaultMappingForSource(source IncidentSource) ComplianceMapping {
 var fedrampIRMappings = map[string]ComplianceMapping{
 	"mcp_error_injection": {
 		Framework:   "FedRAMP",
-		ControlID:  "IR-4",
+		ControlID:   "IR-4",
 		ControlName: "Incident Handling",
 		Relevance:   "MCP error injection triggers incident handling",
 	},
 	"task_hijacking": {
 		Framework:   "FedRAMP",
-		ControlID:  "IR-4",
+		ControlID:   "IR-4",
 		ControlName: "Incident Handling",
 		Relevance:   "Task hijacking requires immediate containment",
 	},
 	"browser_escalation": {
 		Framework:   "FedRAMP",
-		ControlID:  "IR-4",
+		ControlID:   "IR-4",
 		ControlName: "Incident Handling",
 		Relevance:   "Browser escalation requires containment",
 	},
 	"rate_anomaly": {
 		Framework:   "FedRAMP",
-		ControlID:  "IR-5",
+		ControlID:   "IR-5",
 		ControlName: "Incident Monitoring",
 		Relevance:   "Rate anomaly triggers monitoring procedures",
 	},
 	"capability_creep": {
 		Framework:   "FedRAMP",
-		ControlID:  "IR-6",
+		ControlID:   "IR-6",
 		ControlName: "Incident Reporting",
 		Relevance:   "Capability creep requires reporting",
 	},
@@ -150,31 +150,31 @@ var fedrampIRMappings = map[string]ComplianceMapping{
 var soc2Mappings = map[string]ComplianceMapping{
 	"mcp_error_injection": {
 		Framework:   "SOC2",
-		ControlID:  "CC6.1",
+		ControlID:   "CC6.1",
 		ControlName: "Security Incident Response",
 		Relevance:   "Cross-protocol attack requires security incident response",
 	},
 	"task_hijacking": {
 		Framework:   "SOC2",
-		ControlID:  "CC6.1",
+		ControlID:   "CC6.1",
 		ControlName: "Security Incident Response",
 		Relevance:   "Task hijacking is a high-severity security incident",
 	},
 	"browser_escalation": {
 		Framework:   "SOC2",
-		ControlID:  "CC6.1",
+		ControlID:   "CC6.1",
 		ControlName: "Security Incident Response",
 		Relevance:   "Privilege escalation is a critical security incident",
 	},
 	"rate_anomaly": {
 		Framework:   "SOC2",
-		ControlID:  "CC6.3",
+		ControlID:   "CC6.3",
 		ControlName: "Security Event Monitoring",
 		Relevance:   "Rate anomaly triggers event monitoring",
 	},
 	"capability_creep": {
 		Framework:   "SOC2",
-		ControlID:  "CC6.3",
+		ControlID:   "CC6.3",
 		ControlName: "Security Event Monitoring",
 		Relevance:   "Capability creep triggers access monitoring",
 	},
@@ -187,31 +187,31 @@ var soc2Mappings = map[string]ComplianceMapping{
 var nist171Mappings = map[string]ComplianceMapping{
 	"mcp_error_injection": {
 		Framework:   "NIST-800-171",
-		ControlID:  "IR.1",
+		ControlID:   "IR.1",
 		ControlName: "Incident Response",
 		Relevance:   "MCP error injection triggers incident response",
 	},
 	"task_hijacking": {
 		Framework:   "NIST-800-171",
-		ControlID:  "IR.1",
+		ControlID:   "IR.1",
 		ControlName: "Incident Response",
 		Relevance:   "Task hijacking requires incident response",
 	},
 	"browser_escalation": {
 		Framework:   "NIST-800-171",
-		ControlID:  "IR.1",
+		ControlID:   "IR.1",
 		ControlName: "Incident Response",
 		Relevance:   "Privilege escalation triggers incident response",
 	},
 	"rate_anomaly": {
 		Framework:   "NIST-800-171",
-		ControlID:  "IR.2",
+		ControlID:   "IR.2",
 		ControlName: "Incident Response Training",
 		Relevance:   "Rate anomaly informs incident response procedures",
 	},
 	"capability_creep": {
 		Framework:   "NIST-800-171",
-		ControlID:  "IR.1",
+		ControlID:   "IR.1",
 		ControlName: "Incident Response",
 		Relevance:   "Capability creep triggers incident response review",
 	},
@@ -224,31 +224,31 @@ var nist171Mappings = map[string]ComplianceMapping{
 var iso27001Mappings = map[string]ComplianceMapping{
 	"mcp_error_injection": {
 		Framework:   "ISO27001",
-		ControlID:  "A.16.1.1",
+		ControlID:   "A.16.1.1",
 		ControlName: "Responsibilities and Procedures",
 		Relevance:   "MCP error injection triggers incident management",
 	},
 	"task_hijacking": {
 		Framework:   "ISO27001",
-		ControlID:  "A.16.1.1",
+		ControlID:   "A.16.1.1",
 		ControlName: "Responsibilities and Procedures",
 		Relevance:   "Task hijacking triggers incident management",
 	},
 	"browser_escalation": {
 		Framework:   "ISO27001",
-		ControlID:  "A.16.1.2",
+		ControlID:   "A.16.1.2",
 		ControlName: "Reporting Information Security Events",
 		Relevance:   "Browser escalation requires immediate reporting",
 	},
 	"rate_anomaly": {
 		Framework:   "ISO27001",
-		ControlID:  "A.16.1.4",
+		ControlID:   "A.16.1.4",
 		ControlName: "Assessment of Information Security Events",
 		Relevance:   "Rate anomaly triggers event assessment",
 	},
 	"capability_creep": {
 		Framework:   "ISO27001",
-		ControlID:  "A.16.1.7",
+		ControlID:   "A.16.1.7",
 		ControlName: "Collection of Evidence",
 		Relevance:   "Capability creep requires evidence collection",
 	},

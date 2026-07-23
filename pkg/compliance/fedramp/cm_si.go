@@ -619,9 +619,9 @@ func (m *FedRAMPModule) checkSoftwareUsageRestrictions(ctx context.Context, inpu
 // checkInformationLocation verifies data location and classification. Maps to CM-12.
 func (m *FedRAMPModule) checkInformationLocation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasClassification := strings.Contains(inputStr, "classification") || strings.Contains(inputStr, "data_classification") || strings.Contains(inputStr, "sensitivity")
-hasLocation := strings.Contains(inputStr, "data_location") || strings.Contains(inputStr, "region") || strings.Contains(inputStr, "persistence")
-hasRetentionPolicy := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "retention_policy") || strings.Contains(inputStr, "log_retention")
+	hasClassification := strings.Contains(inputStr, "classification") || strings.Contains(inputStr, "data_classification") || strings.Contains(inputStr, "sensitivity")
+	hasLocation := strings.Contains(inputStr, "data_location") || strings.Contains(inputStr, "region") || strings.Contains(inputStr, "persistence")
+	hasRetentionPolicy := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "retention_policy") || strings.Contains(inputStr, "log_retention")
 
 	if hasClassification && (hasLocation || hasRetentionPolicy) {
 		return &compliance.ControlCheckResult{
@@ -698,7 +698,7 @@ func (m *FedRAMPModule) checkErrorHandling(ctx context.Context, input []byte) (*
 func (m *FedRAMPModule) checkNonDisruptiveIntegrity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasCCM := strings.Contains(inputStr, "ccm") || strings.Contains(inputStr, "continuous") || strings.Contains(inputStr, "schedule")
-hasPerformance := strings.Contains(inputStr, "performance") || strings.Contains(inputStr, "latency") || strings.Contains(inputStr, "rate_limit")
+	hasPerformance := strings.Contains(inputStr, "performance") || strings.Contains(inputStr, "latency") || strings.Contains(inputStr, "rate_limit")
 	hasIntegrity := strings.Contains(inputStr, "integrity") || strings.Contains(inputStr, "hash_chain") || strings.Contains(inputStr, "attestation")
 
 	if hasCCM && (hasPerformance || hasIntegrity) {

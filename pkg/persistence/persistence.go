@@ -32,8 +32,8 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
@@ -81,21 +81,21 @@ func DefaultConfig() Config {
 // PostgreSQL for audit storage (Professional/Enterprise tiers). Otherwise
 // it falls back to file-based storage (Community/Developer tiers).
 type Manager struct {
-	cfg               Config
-	platformTier      tier.Tier
-	storage           opsec.StorageBackend // file or postgres backend
-	fileStorage        *opsec.FileStorageBackend
-	pgStorage          *postgresStorageBackend
-	pgStore            *ioc.PostgresStore // nil for file-based persistence
-	auditLog           *opsec.ComplianceAuditLog
-	correlationStore   correlation.CorrelationStore   // nil for file-based persistence
-	attestationStore   attestation.AttestationStore   // nil for file-based persistence
-	incidentStore      incident.IncidentStore          // nil for file-based persistence
-	cancel             context.CancelFunc
-	done               chan struct{}
-	mu                 sync.RWMutex
-	started            bool
-	usePostgres        bool
+	cfg              Config
+	platformTier     tier.Tier
+	storage          opsec.StorageBackend // file or postgres backend
+	fileStorage      *opsec.FileStorageBackend
+	pgStorage        *postgresStorageBackend
+	pgStore          *ioc.PostgresStore // nil for file-based persistence
+	auditLog         *opsec.ComplianceAuditLog
+	correlationStore correlation.CorrelationStore // nil for file-based persistence
+	attestationStore attestation.AttestationStore // nil for file-based persistence
+	incidentStore    incident.IncidentStore       // nil for file-based persistence
+	cancel           context.CancelFunc
+	done             chan struct{}
+	mu               sync.RWMutex
+	started          bool
+	usePostgres      bool
 }
 
 // New creates a new persistence Manager with file-based storage.
@@ -182,17 +182,17 @@ func NewWithPostgres(platformTier tier.Tier, cfg Config, pgStore *ioc.PostgresSt
 	})
 
 	return &Manager{
-		cfg:             cfg,
-		platformTier:    platformTier,
-		storage:         pgBackend,
-		pgStorage:       pgBackend,
-		pgStore:         pgStore,
-		auditLog:        auditLog,
+		cfg:              cfg,
+		platformTier:     platformTier,
+		storage:          pgBackend,
+		pgStorage:        pgBackend,
+		pgStore:          pgStore,
+		auditLog:         auditLog,
 		correlationStore: correlation.NewPostgresCorrelationStore(pgStore.Pool()),
 		attestationStore: attestation.NewPostgresAttestationStore(pgStore.Pool()),
 		incidentStore:    incident.NewInMemoryIncidentStore(), // v3.8: in-memory; PostgreSQL in v2.0
-		done:            make(chan struct{}),
-		usePostgres:     true,
+		done:             make(chan struct{}),
+		usePostgres:      true,
 	}, nil
 }
 

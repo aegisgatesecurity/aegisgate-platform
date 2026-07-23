@@ -612,10 +612,10 @@ func TestCrossPackagePipeline(t *testing.T) {
 
 	// 3. Create an attestation envelope linked to the incident.
 	env := &attestation.Envelope{
-		ID:        "env_" + inc.ID,
-		Type:      attestation.TypeEvidenceManifest,
-		Subject:   "incident://" + inc.ID,
-		IssuedAt:  time.Now().UTC(),
+		ID:         "env_" + inc.ID,
+		Type:       attestation.TypeEvidenceManifest,
+		Subject:    "incident://" + inc.ID,
+		IssuedAt:   time.Now().UTC(),
 		RawPayload: json.RawMessage(`{"incident_id":"` + inc.ID + `"}`),
 	}
 	if err := attStore.Store(ctx, env); err != nil {
@@ -1347,10 +1347,10 @@ func TestDefaultPlaybooksIntegrity(t *testing.T) {
 	}
 
 	expectedIDs := map[string]int{
-		"pb_fedramp_ir4":     4, // 4 steps
-		"pb_fedramp_ir5":     3, // 3 steps
-		"pb_soc2_cc61":       5, // 5 steps
-		"pb_nist800171_ir1":  4, // 4 steps
+		"pb_fedramp_ir4":    4, // 4 steps
+		"pb_fedramp_ir5":    3, // 3 steps
+		"pb_soc2_cc61":      5, // 5 steps
+		"pb_nist800171_ir1": 4, // 4 steps
 	}
 
 	for _, pb := range playbooks {
@@ -1420,9 +1420,9 @@ func TestDefaultDetectionRulesIntegrity(t *testing.T) {
 func TestSeverityOrdering(t *testing.T) {
 	// Verify incident.SeverityAtLeast works correctly.
 	tests := []struct {
-		severity incident.IncidentSeverity
+		severity  incident.IncidentSeverity
 		threshold incident.IncidentSeverity
-		expected bool
+		expected  bool
 	}{
 		{incident.SeverityCritical, incident.SeverityLow, true},
 		{incident.SeverityCritical, incident.SeverityHigh, true},

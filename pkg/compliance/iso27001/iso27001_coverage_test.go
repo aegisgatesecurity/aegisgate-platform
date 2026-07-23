@@ -122,137 +122,203 @@ func TestISO27001_StandardCheckCoverage(t *testing.T) {
 func dispatch(m *ISO27001Module, name string, ctx context.Context, input []byte) (status string, message string, err error) {
 	switch name {
 	case "A.5.7_ThreatIntelligence":
-		r, e := m.checkThreatIntelligence(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkThreatIntelligence(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.10_AcceptableUse":
-		r, e := m.checkAcceptableUse(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAcceptableUse(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.12_DataClassification":
-		r, e := m.checkDataClassification(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkDataClassification(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.13_DataLabeling":
-		r, e := m.checkDataLabeling(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkDataLabeling(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.14_InformationTransfer":
-		r, e := m.checkInformationTransfer(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkInformationTransfer(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.23_CloudSecurity":
-		r, e := m.checkCloudSecurity(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkCloudSecurity(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.30_BusinessContinuity":
-		r, e := m.checkBusinessContinuity(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkBusinessContinuity(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.31_LegalCompliance":
-		r, e := m.checkLegalCompliance(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkLegalCompliance(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.34_PIIProtection":
-		r, e := m.checkPIIProtection(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkPIIProtection(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.37_OperatingProcedures":
-		r, e := m.checkOperatingProcedures(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkOperatingProcedures(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.6.3_SecurityAwareness":
-		r, e := m.checkSecurityAwareness(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSecurityAwareness(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.6.4_DisciplinaryProcess":
-		r, e := m.checkDisciplinaryProcess(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkDisciplinaryProcess(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.6.6_NDA":
-		r, e := m.checkNDA(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkNDA(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.6.7_RemoteWorking":
-		r, e := m.checkRemoteWorking(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkRemoteWorking(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.6.8_EventReporting":
-		r, e := m.checkEventReporting(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkEventReporting(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.27_EndpointSecurity":
-		r, e := m.checkEndpointSecurity(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkEndpointSecurity(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.4_PhysicalSecurityMonitoring":
-		r, e := m.checkPhysicalSecurityMonitoring(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkPhysicalSecurityMonitoring(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.10_StorageMedia":
-		r, e := m.checkStorageMedia(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkStorageMedia(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.13_EquipmentMaintenance":
-		r, e := m.checkEquipmentMaintenance(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkEquipmentMaintenance(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.14_SecureDisposal":
-		r, e := m.checkSecureDisposal(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSecureDisposal(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.5_PhysicalEnvironmentalThreats":
-		r, e := m.checkPhysicalEnvironmentalThreats(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkPhysicalEnvironmentalThreats(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.6_WorkingInSecureAreas":
-		r, e := m.checkWorkingInSecureAreas(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkWorkingInSecureAreas(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.7.9_AssetsOffPremises":
-		r, e := m.checkAssetsOffPremises(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAssetsOffPremises(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.1_UserEndpointDevices":
-		r, e := m.checkUserEndpointDevices(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkUserEndpointDevices(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.2_PrivilegedAccess":
-		r, e := m.checkPrivilegedAccess(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkPrivilegedAccess(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.3_AccessRestriction":
-		r, e := m.checkAccessRestriction(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAccessRestriction(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.5_SecureAuth":
-		r, e := m.checkSecureAuth(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSecureAuth(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.7_MalwareProtection":
-		r, e := m.checkMalwareProtection(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkMalwareProtection(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.8_VulnerabilityManagement":
-		r, e := m.checkVulnerabilityManagement(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkVulnerabilityManagement(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.9_ConfigManagement":
-		r, e := m.checkConfigManagement(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkConfigManagement(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.12_DataLeakage":
-		r, e := m.checkDataLeakage(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkDataLeakage(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.16_MonitoringActivities":
-		r, e := m.checkMonitoringActivities(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkMonitoringActivities(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.18_PrivilegedUtility":
-		r, e := m.checkPrivilegedUtility(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkPrivilegedUtility(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.20_NetworkSecurity":
-		r, e := m.checkNetworkSecurity(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkNetworkSecurity(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.21_NetworkServices":
-		r, e := m.checkNetworkServices(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkNetworkServices(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.22_NetworkSegregation":
-		r, e := m.checkNetworkSegregation(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkNetworkSegregation(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.23_WebFiltering":
-		r, e := m.checkWebFiltering(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkWebFiltering(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.24_Cryptography":
-		r, e := m.checkCryptography(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkCryptography(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.25_SDLC":
-		r, e := m.checkSDLC(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSDLC(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.26_AppSecReqs":
-		r, e := m.checkAppSecReqs(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAppSecReqs(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.28_SecureCoding":
-		r, e := m.checkSecureCoding(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSecureCoding(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.29_SecurityTesting":
-		r, e := m.checkSecurityTesting(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSecurityTesting(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.31_EnvironmentSeparation":
-		r, e := m.checkEnvironmentSeparation(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkEnvironmentSeparation(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.32_ChangeManagement":
-		r, e := m.checkChangeManagement(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkChangeManagement(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.33_TestInformation":
-		r, e := m.checkTestInformation(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkTestInformation(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.34_AuditTestingDev":
-		r, e := m.checkAuditTestingDev(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAuditTestingDev(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.35_AcceptanceTesting":
-		r, e := m.checkAcceptanceTesting(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAcceptanceTesting(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.17_ClockSync":
-		r, e := m.checkClockSync(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkClockSync(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.10_InformationDeletion":
-		r, e := m.checkInformationDeletion(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkInformationDeletion(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.11_DataMasking":
-		r, e := m.checkDataMasking(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkDataMasking(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.13_Backup":
-		r, e := m.checkBackup(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkBackup(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.14_Redundancy":
-		r, e := m.checkRedundancy(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkRedundancy(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.8.4_SourceCodeAccess":
-		r, e := m.checkSourceCodeAccess(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSourceCodeAccess(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.19_SupplierSecurity":
-		r, e := m.checkSupplierSecurity(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSupplierSecurity(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.20_SupplierAgreements":
-		r, e := m.checkSupplierAgreements(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSupplierAgreements(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.21_SupplyChain":
-		r, e := m.checkSupplyChain(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSupplyChain(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.22_SupplierMonitoring":
-		r, e := m.checkSupplierMonitoring(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkSupplierMonitoring(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.24_IRPlanning":
-		r, e := m.checkIRPlanning(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkIRPlanning(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.25_EventAssessment":
-		r, e := m.checkEventAssessment(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkEventAssessment(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.26_IRResponse":
-		r, e := m.checkIRResponse(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkIRResponse(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.27_IRLearning":
-		r, e := m.checkIRLearning(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkIRLearning(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.28_EvidenceCollection":
-		r, e := m.checkEvidenceCollection(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkEvidenceCollection(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.29_IRDuringDisruption":
-		r, e := m.checkIRDuringDisruption(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkIRDuringDisruption(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.35_IndependentReview":
-		r, e := m.checkIndependentReview(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkIndependentReview(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.36_ComplianceReview":
-		r, e := m.checkComplianceReview(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkComplianceReview(ctx, input)
+		return string(r.Status), r.Message, e
 	case "A.5.38_AuditTesting":
-		r, e := m.checkAuditTesting(ctx, input); return string(r.Status), r.Message, e
+		r, e := m.checkAuditTesting(ctx, input)
+		return string(r.Status), r.Message, e
 	default:
 		return "", "", nil
 	}

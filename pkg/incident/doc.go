@@ -27,13 +27,13 @@
 //
 // Incident Lifecycle
 //
-//   1. Detection   — correlation event matches a DetectionRule
-//   2. Triage      — severity assessed, assignee designated
-//   3. Investigation — root cause analysis, evidence collection
-//   4. Containment  — playbook execution (block agent, isolate
-//                     session, etc.)
-//   5. Resolution   — incident resolved, attestation created
-//   6. Close        — final review, incident closed
+//  1. Detection   — correlation event matches a DetectionRule
+//  2. Triage      — severity assessed, assignee designated
+//  3. Investigation — root cause analysis, evidence collection
+//  4. Containment  — playbook execution (block agent, isolate
+//     session, etc.)
+//  5. Resolution   — incident resolved, attestation created
+//  6. Close        — final review, incident closed
 //
 // v1.0 Scope
 //

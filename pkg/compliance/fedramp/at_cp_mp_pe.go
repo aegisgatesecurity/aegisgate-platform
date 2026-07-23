@@ -219,7 +219,7 @@ func (m *FedRAMPModule) checkSystemBackup(ctx context.Context, input []byte) (*c
 func (m *FedRAMPModule) checkMediaSanitization(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasEncryptionAtRest := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "data_encrypted") || strings.Contains(inputStr, "disk_encryption")
-HasKeyMgmt := strings.Contains(inputStr, "key_management") || strings.Contains(inputStr, "key_store") || strings.Contains(inputStr, "encryption_key")
+	HasKeyMgmt := strings.Contains(inputStr, "key_management") || strings.Contains(inputStr, "key_store") || strings.Contains(inputStr, "encryption_key")
 	hasSanitization := strings.Contains(inputStr, "sanitiz") || strings.Contains(inputStr, "purge") || strings.Contains(inputStr, "destroy")
 
 	if hasEncryptionAtRest && HasKeyMgmt {

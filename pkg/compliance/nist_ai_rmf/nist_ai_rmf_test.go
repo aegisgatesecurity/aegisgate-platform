@@ -198,8 +198,12 @@ func TestNISTAIRMF_Dependencies(t *testing.T) {
 	foundScanner := false
 	foundTrust := false
 	for _, d := range deps {
-		if d == "scanner" { foundScanner = true }
-		if d == "trust" { foundTrust = true }
+		if d == "scanner" {
+			foundScanner = true
+		}
+		if d == "trust" {
+			foundTrust = true
+		}
 	}
 	if !foundScanner {
 		t.Error("Dependencies must include scanner")

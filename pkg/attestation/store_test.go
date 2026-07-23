@@ -407,9 +407,9 @@ func TestInMemoryStore_ConcurrentStoreAndGet(t *testing.T) {
 // testing. If AEGISGATE_TEST_DATABASE_URL is set, it uses a real pool;
 // otherwise it falls back to a mock store.
 type pgTestHarness struct {
-	store    AttestationStore
-	realDB   bool
-	cleanup  func()
+	store   AttestationStore
+	realDB  bool
+	cleanup func()
 }
 
 // newPGTestHarness creates a test harness. Skips the test if
@@ -439,9 +439,9 @@ func newPGTestHarness(t *testing.T) *pgTestHarness {
 	t.Log("AEGISGATE_TEST_DATABASE_URL not set; using in-memory mock for PostgresAttestationStore tests")
 	memStore := NewInMemoryAttestationStore()
 	return &pgTestHarness{
-		store:    memStore,
-		realDB:   false,
-		cleanup:  func() {},
+		store:   memStore,
+		realDB:  false,
+		cleanup: func() {},
 	}
 }
 

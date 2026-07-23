@@ -38,19 +38,19 @@ type IncidentSource string
 
 const (
 	SourceCorrelation IncidentSource = "correlation" // from correlation engine
-	SourceSOC         IncidentSource = "soc"          // manual SOC analyst
-	SourceAutoRule    IncidentSource = "auto_rule"    // automated detection rule
-	SourceAPI         IncidentSource = "api"          // external API
+	SourceSOC         IncidentSource = "soc"         // manual SOC analyst
+	SourceAutoRule    IncidentSource = "auto_rule"   // automated detection rule
+	SourceAPI         IncidentSource = "api"         // external API
 )
 
 // Incident represents a security incident.
 type Incident struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	ID          string           `json:"id"`
+	Title       string           `json:"title"`
+	Description string           `json:"description"`
 	Severity    IncidentSeverity `json:"severity"`
-	Status      IncidentStatus  `json:"status"`
-	Source      IncidentSource  `json:"source"`
+	Status      IncidentStatus   `json:"status"`
+	Source      IncidentSource   `json:"source"`
 
 	// Correlation linkage.
 	SessionID           string   `json:"session_id"`
@@ -63,8 +63,8 @@ type Incident struct {
 
 	// Playbook — what automated response was (or will
 	// be) executed.
-	PlaybookID   string          `json:"playbook_id"`
-	PlaybookRuns []*PlaybookRun  `json:"playbook_runs"`
+	PlaybookID   string         `json:"playbook_id"`
+	PlaybookRuns []*PlaybookRun `json:"playbook_runs"`
 
 	// Escalation.
 	EscalationPolicyID string    `json:"escalation_policy_id"`
@@ -127,16 +127,16 @@ type PlaybookStep struct {
 
 // Playbook is an incident response playbook template.
 type Playbook struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Severity    IncidentSeverity  `json:"severity"`
-	Source      IncidentSource    `json:"source"`
-	Tags        []string          `json:"tags"`
-	Steps       []*PlaybookStep   `json:"steps"`
-	AutoExecute bool              `json:"auto_execute"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Severity    IncidentSeverity `json:"severity"`
+	Source      IncidentSource   `json:"source"`
+	Tags        []string         `json:"tags"`
+	Steps       []*PlaybookStep  `json:"steps"`
+	AutoExecute bool             `json:"auto_execute"`
+	CreatedAt   time.Time        `json:"created_at"`
+	UpdatedAt   time.Time        `json:"updated_at"`
 }
 
 // PlaybookRun tracks a playbook execution against an incident.
@@ -163,14 +163,14 @@ type StepResult struct {
 
 // EscalationPolicy defines when and how to escalate.
 type EscalationPolicy struct {
-	ID                 string            `json:"id"`
-	Name               string            `json:"name"`
-	SeverityThreshold  IncidentSeverity  `json:"severity_threshold"`
-	TimeThreshold      time.Duration     `json:"time_threshold"`
-	Recipients         []string          `json:"recipients"`
-	RepeatInterval     time.Duration     `json:"repeat_interval"`
-	MaxEscalations     int               `json:"max_escalations"`
-	NotifyOnResolve    bool              `json:"notify_on_resolve"`
+	ID                string           `json:"id"`
+	Name              string           `json:"name"`
+	SeverityThreshold IncidentSeverity `json:"severity_threshold"`
+	TimeThreshold     time.Duration    `json:"time_threshold"`
+	Recipients        []string         `json:"recipients"`
+	RepeatInterval    time.Duration    `json:"repeat_interval"`
+	MaxEscalations    int              `json:"max_escalations"`
+	NotifyOnResolve   bool             `json:"notify_on_resolve"`
 }
 
 // DetectionRule defines an automated incident detection rule.
@@ -181,9 +181,9 @@ type DetectionRule struct {
 	Enabled     bool   `json:"enabled"`
 
 	// Trigger conditions.
-	Source     IncidentSource  `json:"source"`
-	Severity  IncidentSeverity `json:"severity"`
-	Patterns  []string         `json:"patterns"`    // correlation pattern IDs
+	Source     IncidentSource   `json:"source"`
+	Severity   IncidentSeverity `json:"severity"`
+	Patterns   []string         `json:"patterns"`    // correlation pattern IDs
 	EventTypes []string         `json:"event_types"` // correlation event types
 	MinEvents  int              `json:"min_events"`
 	TimeWindow time.Duration    `json:"time_window"`
@@ -200,17 +200,17 @@ type DetectionRule struct {
 
 // IncidentQuery is a filter for listing incidents.
 type IncidentQuery struct {
-	Status    []IncidentStatus  `json:"status"`
+	Status    []IncidentStatus   `json:"status"`
 	Severity  []IncidentSeverity `json:"severity"`
-	Source    []IncidentSource  `json:"source"`
-	AgentID   string            `json:"agent_id"`
-	SessionID string            `json:"session_id"`
-	Tags      []string          `json:"tags"`
-	Limit     int               `json:"limit"`
-	Offset    int               `json:"offset"`
+	Source    []IncidentSource   `json:"source"`
+	AgentID   string             `json:"agent_id"`
+	SessionID string             `json:"session_id"`
+	Tags      []string           `json:"tags"`
+	Limit     int                `json:"limit"`
+	Offset    int                `json:"offset"`
 	From      time.Time          `json:"from"`
 	To        time.Time          `json:"to"`
-	TenantID  string            `json:"tenant_id"`
+	TenantID  string             `json:"tenant_id"`
 }
 
 // newID generates an ID with a prefix and nanosecond timestamp.

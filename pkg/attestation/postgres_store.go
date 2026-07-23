@@ -145,7 +145,7 @@ func (s *PostgresAttestationStore) Get(ctx context.Context, id string) (*Envelop
 		Algorithm: sigAlgo,
 		KeyID:     sigKeyID,
 		Value:     sigValue,
-		PublicKey:  sigPubKey,
+		PublicKey: sigPubKey,
 		SignedAt:  sigSignedAt,
 	}
 	return &env, nil
@@ -307,7 +307,7 @@ func (s *PostgresAttestationStore) queryEnvelopes(ctx context.Context, query str
 			Algorithm: sigAlgo,
 			KeyID:     sigKeyID,
 			Value:     sigValue,
-			PublicKey:  sigPubKey,
+			PublicKey: sigPubKey,
 			SignedAt:  sigSignedAt,
 		}
 		envelopes = append(envelopes, &env)

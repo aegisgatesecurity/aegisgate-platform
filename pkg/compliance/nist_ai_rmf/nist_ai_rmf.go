@@ -52,9 +52,9 @@ type NISTAIRMFModule struct {
 	*compliance.BaseComplianceModule
 
 	// Pattern caches for automated controls
-	policyPatterns   []*regexp.Regexp
-	riskPatterns     []*regexp.Regexp
-	monitorPatterns  []*regexp.Regexp
+	policyPatterns       []*regexp.Regexp
+	riskPatterns         []*regexp.Regexp
+	monitorPatterns      []*regexp.Regexp
 	transparencyPatterns []*regexp.Regexp
 }
 
@@ -467,10 +467,18 @@ func (m *NISTAIRMFModule) checkMS21(ctx context.Context, input []byte) (*complia
 	hasTransparency := matchAny(inputStr, m.transparencyPatterns)
 
 	present := 0
-	if hasSecurity { present++ }
-	if hasFairness { present++ }
-	if hasPrivacy { present++ }
-	if hasTransparency { present++ }
+	if hasSecurity {
+		present++
+	}
+	if hasFairness {
+		present++
+	}
+	if hasPrivacy {
+		present++
+	}
+	if hasTransparency {
+		present++
+	}
 
 	if present >= 3 {
 		return compliant(m, "MS-2.1", "AI system evaluated for trustworthiness characteristics")

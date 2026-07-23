@@ -262,7 +262,7 @@ type BenchmarkOption func(*benchmarkOptions)
 
 // benchmarkOptions holds per-run configuration.
 type benchmarkOptions struct {
-	facet     SXCFacet   // filter to a single facet (empty = all)
+	facet     SXCFacet    // filter to a single facet (empty = all)
 	category  SXCCategory // filter to a single category (empty = all)
 	recordIDs []string    // filter to specific record IDs
 }
@@ -475,15 +475,15 @@ func (r *BenchmarkRunner) aggregate(results []SXCRecordResult, startedAt time.Ti
 	}
 
 	return &SXCRunResult{
-		RunID:            generateBenchmarkID(),
+		RunID:             generateBenchmarkID(),
 		RunTimestamp:      startedAt,
 		CorpusID:          SXCCorpusID,
 		CorpusVersion:     SXCCorpusVersion,
 		ScannerName:       r.scanner.Name(),
 		TotalRecords:      len(results),
-		TruePositives:    tp,
+		TruePositives:     tp,
 		TrueNegatives:     tn,
-		FalsePositives:   fp,
+		FalsePositives:    fp,
 		FalseNegatives:    fn,
 		Precision:         precision,
 		Recall:            recall,

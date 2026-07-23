@@ -61,8 +61,8 @@ func TestSXCCorpus_FacetCounts(t *testing.T) {
 	}
 	// Expected: secrets=74, xss=24, compliance=60.
 	expected := map[SXCFacet]int{
-		SXCFacetSecrets:   74,
-		SXCFacetXSS:       24,
+		SXCFacetSecrets:    74,
+		SXCFacetXSS:        24,
 		SXCFacetCompliance: 60,
 	}
 	for facet, want := range expected {
