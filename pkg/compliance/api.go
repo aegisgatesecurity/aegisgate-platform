@@ -251,6 +251,30 @@ func normalizeFrameworkName(input string) string {
 		return "fedramp"
 	case "fips", "fips 140-2", "fips140-2", "fips_140_2", "fips 140-3", "fips140-3":
 		return "fips"
+	case "gdpr", "gdpr eu", "eu gdpr":
+		return "gdpr"
+	case "cis", "cis v8", "cis-v8", "cis_controls", "cis controls":
+		return "cis"
+	case "nist_csf", "nist csf", "nist-csf", "nist csf 2.0":
+		return "nist_csf"
+	case "owasp_web", "owasp top 10", "owasp top ten", "owasp-web", "owasp web":
+		return "owasp_web"
+	case "csa_star", "csa star", "csa-star", "csastar":
+		return "csa_star"
+	case "nist_ai_600_1", "nist ai 600-1", "nist-ai-600-1", "nist ai 600 1":
+		return "nist_ai_600_1"
+	case "ccpa", "ccpa/cpra", "ccpa cpra", "california consumer privacy act":
+		return "ccpa"
+	case "eu_ai_act", "eu ai act", "eu-ai-act", "euaiact", "european ai act":
+		return "eu_ai_act"
+	case "cmmcl2", "cmmc level 2", "cmmc-l2", "cmmc":
+		return "cmmcl2"
+	case "nist800171", "nist 800-171", "nist-800-171", "nist 800 171", "nist800-171":
+		return "nist800171"
+	case "hitrust", "hitrust csf", "hi-trust":
+		return "hitrust"
+	case "tisax", "tisax enx", "enx tisax":
+		return "tisax"
 	}
 	return input // pass through unchanged; the Scanner will return ErrUnknownFramework
 }
