@@ -44,6 +44,12 @@ type ResponseGuardConfig struct {
 	// Tier specifies the feature tier for this guard
 	Tier string
 
+	// EnableXSSDetection enables XSS vector detection in responses
+	EnableXSSDetection bool
+
+	// EnableComplianceDetection enables compliance framework detection
+	EnableComplianceDetection bool
+
 	// PIIPatterns custom PII patterns (nil = use defaults)
 	PIIPatterns []string
 
@@ -54,16 +60,18 @@ type ResponseGuardConfig struct {
 // DefaultResponseGuardConfig returns the default configuration
 func DefaultResponseGuardConfig() *ResponseGuardConfig {
 	return &ResponseGuardConfig{
-		EnablePIIScanner:      true,
-		EnableSecretDetection: true,
-		EnableToxicityFilter:  true,
-		EnableHallucination:   false,
-		MaxResponseTokens:     8192,
-		MaxResponseLatencyMS:  100,
-		StrictMode:            false,
-		Tier:                  "community",
-		PIIPatterns:           nil,
-		SecretPatterns:        nil,
+		EnablePIIScanner:          true,
+		EnableSecretDetection:     true,
+		EnableToxicityFilter:      true,
+		EnableHallucination:       false,
+		EnableXSSDetection:        true,
+		EnableComplianceDetection: true,
+		MaxResponseTokens:         8192,
+		MaxResponseLatencyMS:      100,
+		StrictMode:                false,
+		Tier:                      "community",
+		PIIPatterns:               nil,
+		SecretPatterns:            nil,
 	}
 }
 
@@ -87,6 +95,12 @@ type ResponseScanResult struct {
 
 	// DetectedSecrets contains descriptions of detected secrets
 	DetectedSecrets []string
+
+	// DetectedXSS contains categories of XSS vectors found
+	DetectedXSS []string
+
+	// DetectedCompliance contains categories of compliance violations found
+	DetectedCompliance []string
 
 	// Truncated is true if the response was truncated by the scanner
 	// (D28 scanner perf fix - cap input to first 64KB before regex
