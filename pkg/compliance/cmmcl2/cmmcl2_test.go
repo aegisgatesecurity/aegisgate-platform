@@ -33,14 +33,14 @@ func TestCMMCL2ControlCount(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if total != 79 {
-		t.Errorf("Controls() returned %d controls, want 79", total)
+	if total != 110 {
+		t.Errorf("Controls() returned %d controls, want 110", total)
 	}
-	if automated != 45 {
-		t.Errorf("Automated controls = %d, want 45", automated)
+	if automated != 67 {
+		t.Errorf("Automated controls = %d, want 67", automated)
 	}
-	if evidenceMapped != 34 {
-		t.Errorf("Evidence-mapped controls = %d, want 34", evidenceMapped)
+	if evidenceMapped != 43 {
+		t.Errorf("Evidence-mapped controls = %d, want 43", evidenceMapped)
 	}
 }
 
