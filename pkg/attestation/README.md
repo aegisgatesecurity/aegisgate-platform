@@ -165,7 +165,7 @@ Total: 36 tests, all green under `-race`. 85.4% coverage.
 
 ## The design
 
-See `plans/ENVELOPE-DESIGN-v1.1-FROZEN.md` for the full spec.
+See the internal envelope design spec (v1.1-FROZEN) for the full specification.
 The design is locked. Any deviation requires a new design-doc
 version (v1.2-FROZEN) and user approval.
 

@@ -203,7 +203,7 @@ Total:        23 tests ✅ PASS
 | `pkg/license/postgres_cache.go` | +60 | Added `LicenseTenantContext`, tenant-scoped cache |
 | `pkg/license/license.go` | +40 | Added context helpers, tenant context propagation |
 | `pkg/persistence/postgres_storage_backend.go` | +6 | Added `AuditTenantContext` |
-| `plans/D11-MULTI-TENANT-PLAN.md` | 277 | Created implementation plan |
+| D11 multi-tenant plan (internal) | 277 | Created implementation plan |
 | `pkg/ioc/tenant_isolation_test.go` | 388 | Created (7 tests) |
 | `pkg/rbac/tenant_isolation_test.go` | 399 | Created (7 tests) |
 | `pkg/license/tenant_isolation_test.go` | 263 | Created (9 tests) |
@@ -245,7 +245,7 @@ Total:        23 tests ✅ PASS
   - `TestLoadFromFile_ACPSection` — YAML loading of `acp:` section works
 
 #### Threat Model
-- **`plans/THREAT-MODEL.md`** — Added Section 2.5 "ACP Protocol Threats (STRIDE)" with 12 STRIDE threats:
+- **Threat Model (internal)** — Added Section 2.5 "ACP Protocol Threats (STRIDE)" with 12 STRIDE threats:
   - **S** (Spoofing): ACP-S-01 (impersonation), ACP-S-02 (origin spoofing)
   - **T** (Tampering): ACP-T-01 (content tampering), ACP-T-02 (capability forgery), ACP-T-03 (blocked method bypass)
   - **R** (Repudiation): ACP-R-01 (denial of sent message)
@@ -271,10 +271,10 @@ Full suite:        65/65 packages passing, 0 failures
 | `pkg/platformconfig/coverage_round2_test.go` | +71 lines: 5 ACP tests |
 | `configs/aegisgate-platform.yaml` | +3 lines: `acp:` section |
 | `cmd/aegisgate-platform/main.go` | +18 lines: ACP gated on `cfg.ACP.Enabled` |
-| `plans/THREAT-MODEL.md` | +50 lines: Section 2.5 ACP STRIDE, 4 CVSS, 7 mitigations, 1 component |
-| `plans/D14-ACP-PLAN.md` | 262 lines: Created implementation plan |
-| `plans/DEFERRED-ITEMS.md` | D14 marked complete |
-| `plans/SESSION-HANDOFF-2026-07-20.md` | D14 summary added |
+| Threat Model (internal) | +50 lines: Section 2.5 ACP STRIDE, 4 CVSS, 7 mitigations, 1 component |
+| D14 ACP Plan (internal) | 262 lines: Created implementation plan |
+| Deferred Items (internal) | D14 marked complete |
+| Session Handoff (internal) | D14 summary added |
 
 #### Impact
 - ✅ **5-protocol coverage complete**: HTTP, MCP, A2A, ACP, RESPONSE (matches the D14 strategic goal)
@@ -317,7 +317,7 @@ The Trust Framework was substantially built across 8 packages before D16:
   - `TestLoadFromFile_TrustSection` — YAML loading of `trust:` section works
 
 #### Threat Model
-- **`plans/THREAT-MODEL.md`** — Added Section 2.6 "Trust Framework Threats (STRIDE)" with 10 STRIDE threats:
+- **Threat Model (internal)** — Added Section 2.6 "Trust Framework Threats (STRIDE)" with 10 STRIDE threats:
   - **S** (Spoofing): TRF-S-01 (identity impersonation), TRF-S-02 (trust score spoofing)
   - **T** (Tampering): TRF-T-01 (trust score tampering), TRF-T-02 (capability contract forgery)
   - **R** (Repudiation): TRF-R-01 (denial of behavior)
@@ -349,9 +349,9 @@ Full suite: 65/65 packages passing, 0 failures
 | `pkg/platformconfig/coverage_round2_test.go` | +90 lines: 6 Trust tests |
 | `configs/aegisgate-platform.yaml` | +4 lines: `trust:` section |
 | `cmd/aegisgate-platform/main.go` | +30 lines: Component 6 wiring (Trust HTTP API gated on cfg.Trust.Enabled) |
-| `plans/THREAT-MODEL.md` | +60 lines: Section 2.6 Trust STRIDE, 4 CVSS, 7 mitigations, 1 component |
-| `plans/DEFERRED-ITEMS.md` | D16 marked complete in main table + completed items list |
-| `plans/TRUST-FRAMEWORK-AUDIT.md` | Created (284 lines, full implementation plan) |
+| Threat Model (internal) | +60 lines: Section 2.6 Trust STRIDE, 4 CVSS, 7 mitigations, 1 component |
+| Deferred Items (internal) | D16 marked complete in main table + completed items list |
+| Trust Framework Audit (internal) | Created (284 lines, full implementation plan) |
 | `CHANGELOG.md` | D16 entry in v3.4.0+ Unreleased section |
 
 #### Impact
@@ -435,8 +435,8 @@ tracking doc:
 
 #### New tracking doc
 
-`plans/TECHNICAL-DEBT.md` (151 lines, gitignored alongside other
-plans/ files) — the single source of truth for deprecation timelines.
+Internal technical debt tracker (151 lines, gitignored alongside other
+internal files) — the single source of truth for deprecation timelines.
 Includes:
 - Deprecation policy (≥ 2 minor versions before removal, target v3.7.0)
 - Process for adding/removing deprecations
@@ -479,7 +479,7 @@ The 3 real open-work TODOs are:
   library walk (Sprint 19+, well-known plan)
 - `pkg/reporting/doc_test.go:213` — intentional no-op test (doc marker)
 
-#### Updated `plans/TECHNICAL-DEBT.md` (gitignored)
+#### Updated internal technical debt tracker (gitignored)
 
 Added 2 new sections:
 - **"Known Gaps"** — 13 documented open-work items with file refs,
@@ -806,9 +806,9 @@ This is a **code-content fix, not a security fix**. No CVE, no vulnerability, no
 | `pkg/compliance/eu-ai-act/` (82 controls) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
 | `docs/compliance/eu-ai-act.md` (customer 1-pager) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
 | `docs/compliance/eu-ai-act-mapping.md` (full mapping) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
-| `content/pricing.md` / `content/tech.md` / `content/changelog.md` | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `content/pricing.md` (→ [public pricing page](https://aegisgatesecurity.io/pricing/)) / `content/tech.md` / `content/changelog.md`| | ❌ missing from `main` | ✅ **NOW INCLUDED** |
 | `docs/website/index.html` (EU AI Act section + test banner) | ❌ old version | ✅ **UPDATED** |
-| `.githooks/pre-commit` (plans/ + legal-docs/ guard rail) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
+| `.githooks/pre-commit` (internal docs + legal-docs/ guard rail) | ❌ missing from `main` | ✅ **NOW INCLUDED** |
 | `.gitignore` policy header (12 lines, no-force-add rule) | ❌ minimal | ✅ **EXPANDED** |
 | `gitleaks` CI job (licensed) | ✅ present (re-enabled today) | ✅ present (unchanged) |
 | 15 P3/P4 golangci-lint issues | ✅ fixed (commit `8b69aa2`) | ✅ fixed (unchanged) |
@@ -817,7 +817,7 @@ This is a **code-content fix, not a security fix**. No CVE, no vulnerability, no
 
 #### Repository hygiene (2026-06-07 → 2026-06-08)
 
-The fix/... branch's `.gitignore` policy header and `.githooks/pre-commit` script are now active on `main`. Any future attempt to `git add` a file under `plans/` or `legal-docs/` is blocked at the local hook level. This completes the **22-file history purge** started in v3.3.0-beta.1 (the purge itself happened on the v3.3.0-beta.1 commit `ffff4c1`; the enforcement tooling is now restored).
+The fix/... branch's `.gitignore` policy header and `.githooks/pre-commit` script are now active on `main`. Any future attempt to `git add` a file under internal `plans/` or `legal-docs/` is blocked at the local hook level. This completes the **22-file history purge** started in v3.3.0-beta.1 (the purge itself happened on the v3.3.0-beta.1 commit `ffff4c1`; the enforcement tooling is now restored).
 
 #### EU AI Act sub-package (Phase 1.1)
 
@@ -831,7 +831,7 @@ Two new files in `docs/compliance/`:
 
 #### Website/marketing update (Phase 1.3)
 
-`docs/website/index.html` updated with the v3.3.0 EU AI Act callout section (3 feature cards). `content/pricing.md`, `content/tech.md`, and `content/changelog.md` are the new source-of-truth files for the website regeneration. Buy buttons remain in their beta.1 state (4 live + 6 hidden) — no change to the visible website behavior.
+`docs/website/index.html` updated with the v3.3.0 EU AI Act callout section (3 feature cards). [public pricing page](https://aegisgatesecurity.io/pricing/), `content/tech.md`, and `content/changelog.md` are the new source-of-truth files for the website regeneration. Buy buttons remain in their beta.1 state (4 live + 6 hidden) — no change to the visible website behavior.
 
 ### Verification
 
@@ -883,16 +883,16 @@ The customer-facing documentation is at `docs/compliance/eu-ai-act.md` (1-page o
 
 #### Repository hygiene (2026-06-07)
 
-The public repo's history was rewritten to remove 22 internal-only files (1 `plans/` file in the current tree plus 21 in orphan history) that were reachable via `git log --all --reflog`. None of these files belong in a public open-source repo — the `plans/` files contained AegisGate Security LLC's commercial strategy, and the `legal-docs/` files contained draft legal documents.
+The public repo's history was rewritten to remove 22 internal-only files (1 internal `plans/` file in the current tree plus 21 in orphan history) that were reachable via `git log --all --reflog`. None of these files belong in a public open-source repo — the `plans/` files contained AegisGate Security LLC's commercial strategy, and the `legal-docs/` files contained draft legal documents.
 
 The cleanup is **enforced going forward** by:
 - A 12-line policy header in `.gitignore` explaining the rationale and a hard `# NEVER \`git add -f\`` directive
-- A new committed `.githooks/pre-commit` script that blocks any commit staging files under `plans/`, `legal-docs/`, or any internal wildcard pattern
+- A new committed `.githooks/pre-commit` script that blocks any commit staging files under `plans/` (internal), `legal-docs/`, or any internal wildcard pattern
 - `core.hooksPath = .githooks` set in the local repo config (defense in depth — even if a future contributor reverts the hook, `.gitignore` still blocks the file)
 - `git filter-repo` rewriting the history to remove all 22 leaked files and their blobs
 - The `v3.2.0` GPG-signed tag re-signed at the new SHA (release commit content is byte-identical to the original; shields.io, GitHub Releases, and container tags all continue to work)
 
-A fresh clone of the public repo now contains 0 `plans/` or `legal-docs/` files at all 3 verification layers (tree, history, blobs).
+A fresh clone of the public repo now contains 0 internal `plans/` or `legal-docs/` files at all 3 verification layers (tree, history, blobs).
 
 #### Security Posture Self-Attestation (Phase 3, 2026-06-08)
 
@@ -1207,7 +1207,7 @@ Sprint 4 complete: OIDC/SAML SSO ported and integrated. 28/29 packages now excee
 
 ### Documentation
 - New `testlab/README.md` for lab environment
-- New `plans/sprint4-status.md` for sprint details
+- New sprint4-status document (internal) for sprint details
 - Operations Order updated with Sprint 4 completion
 
 

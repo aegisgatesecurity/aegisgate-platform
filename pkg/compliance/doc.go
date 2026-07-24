@@ -25,7 +25,7 @@
 // for the framework definition pattern.
 //
 // Pricing: 3 of 7 modules are $79-$499/mo add-ons; the other 4
-// are "framework stub" or "coming Q4 2026" per content/pricing.md.
+// are "framework stub" or "coming Q4 2026" per https://aegisgatesecurity.io/pricing/.
 //
 // =========================================================================
 

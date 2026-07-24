@@ -70,9 +70,9 @@ paid pentest and legal review are signed off.
 ### Documentation
 
 - `docs/compliance/eu-ai-act.md` — customer 1-pager
-- `plans/EU-AI-ACT-CONTROL-MAPPING.md` — internal 82-control mapping
+- EU AI Act control mapping (internal) — 82-control mapping
   (the "we are experts" artifact)
-- `content/pricing.md` — pricing page (test mode banner)
+- [Pricing page](https://aegisgatesecurity.io/pricing/) — pricing page (test mode banner)
 - `content/tech.md` — updated framework list with control counts
 
 ### Known limitations (deferred to v3.4.0+)

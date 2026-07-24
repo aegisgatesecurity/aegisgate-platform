@@ -4,7 +4,7 @@
 **Last reviewed:** 2026-06-06  
 **Audience:** AegisGate customers evaluating EU AI Act readiness, EU enterprise procurement teams, and AegisGate sales engineers answering framework-coverage questions.
 
-This document is a 1-page summary. The full control-to-AegisGate-detection-pattern mapping lives at [`plans/EU-AI-ACT-CONTROL-MAPPING.md`](../plans/EU-AI-ACT-CONTROL-MAPPING.md). The Go implementation lives at `pkg/compliance/eu-ai-act/` (4 files, 82 controls).
+This document is a 1-page summary. The full control-to-AegisGate-detection-pattern mapping is documented internally (82 controls). The Go implementation lives at `pkg/compliance/eu-ai-act/` (4 files, 82 controls).
 
 ---
 

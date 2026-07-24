@@ -19,7 +19,7 @@ out-of-band key signing and bug-bounty support.
 ## 1. Threat model
 
 Release verification mitigates **F-13: Release artifact supply chain
-attack** (see `plans/LENS-THREAT-MODEL.md` for full details).
+attack** (see internal threat model for full details).
 
 ### Attack scenarios (without provenance)
 
@@ -69,13 +69,13 @@ provenance attestations. This is mitigated by **SLSA Build Level 3**
 | SLSA L3 requirement | Plan |
 |---|---|
 | Hardened build platform | Replace `ubuntu-latest` runners with isolated ephemeral runners; evaluate `runs-on: blacksmith-latest` (GitHub-hosted L3-eligible runners, currently in beta) |
-| Provenance non-forgeable by platform | SHA-pin the SLSA generator workflow (planned; deferred from Day 18 due to startup_failure debugging — see `plans/LENS-DAY-18-SLSA-L2-RELEASE-REPORT.md`) |
+| Provenance non-forgeable by platform | SHA-pin the SLSA generator workflow (planned; deferred from Day 18 due to startup_failure debugging — see internal Day 18 SLSA L2 report) |
 | Provenance includes all build inputs | Use the official slsa-framework/slsa-github-generator L3 reusable workflow |
 
 Day 18 attempted the L3 path and hit startup_failure debugging costs that
 weren't justified for a single-maintainer repo. We documented the
 attempt and the decision matrix in
-`plans/LENS-DAY-18-SLSA-L2-RELEASE-REPORT.md`. We'll revisit when we
+internal Day 18 SLSA L2 report. We'll revisit when we
 have admin log access to GitHub Actions or when GitHub's L3-eligible
 runners are GA.
 
@@ -198,8 +198,8 @@ If the failure is a real attack, we will:
 
 ## 7. References
 
-- **Day 18 SLSA L2 implementation report**: `plans/LENS-DAY-18-SLSA-L2-RELEASE-REPORT.md`
-- **Threat model (F-13 closed)**: `plans/LENS-THREAT-MODEL.md`
+- **Day 18 SLSA L2 implementation report**: internal document
+- **Threat model (F-13 closed)**: internal document
 - **Build workflow**: `.github/workflows/release-lens.yml`
 - **CodeQL config**: `.github/codeql/codeql-config.yml`
 - **SLSA framework**: https://slsa.dev
