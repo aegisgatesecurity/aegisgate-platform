@@ -2,9 +2,12 @@
 # =============================================================================
 # AegisGate Security — pre-commit guard rail
 # =============================================================================
-# Purpose: Enforce the .gitignore policy on plans/ and legal-docs/ by BLOCKING
-# any commit that stages files in those directories. This prevents the
-# "circumvent with `git add -f`" workaround from ever working again.
+# Purpose: Enforce the .gitignore policy by BLOCKING commits that stage:
+#   1. Files in plans/ or legal-docs/ (internal business strategy)
+#   2. Files containing live Stripe keys or webhook secrets
+#   3. Billing config with real product/price IDs
+#   4. Private keys or PEM certificates
+#   5. .env files with real credentials
 #
 # This hook is committed to the repo and activated via:
 #   git config core.hooksPath .githooks
@@ -23,46 +26,104 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACMR || true)
 
 if [ -z "$STAGED" ]; then
   exit 0  # nothing staged
- fi
+fi
 
-# Pattern: any path starting with plans/ or legal-docs/ (or the legacy
-# wildcard patterns that the .gitignore uses: plans-*.md, SPRINT*.md,
-# BUSINESS*.md, PLAN*.md, ROADMAP-INTERNAL.md, CI_DEBT.md).
 BLOCKED=0
 BLOCKED_LIST=""
 
+# ---------------------------------------------------------------------------
+# Check 1: Blocked directories and wildcard patterns (from .gitignore)
+# ---------------------------------------------------------------------------
 for path in $STAGED; do
   case "$path" in
-    plans/*|legal-docs/*|plans-*.md|SPRINT*.md|BUSINESS*.md|PLAN*.md|ROADMAP-INTERNAL.md|CI_DEBT.md)
+    plans/*|legal-docs/*|plans-*.md|SPRINT*.md|BUSINESS*.md|PLAN*.md|ROADMAP-INTERNAL.md|CI_DEBT.md|\
+    content/pricing.md|pkg/billing/billing-config.json|\
+    docs/lens-to-platform-upsell.md|docs/a2a-implementation-roadmap.md|\
+    D2*-*.md|Sprint-*.md|SPRINT-*-*.md)
       BLOCKED=1
-      BLOCKED_LIST="$BLOCKED_LIST  - $path"$'\n'
+      BLOCKED_LIST="$BLOCKED_LIST  - $path (gitignored internal)$NL"
       ;;
   esac
 done
 
+# ---------------------------------------------------------------------------
+# Check 2: Secret patterns in staged file content
+# ---------------------------------------------------------------------------
+NL=$'\n'
+for path in $STAGED; do
+  # Only scan text files (skip binaries)
+  case "$path" in
+    *.png|*.jpg|*.jpeg|*.gif|*.ico|*.woff|*.woff2|*.ttf|*.eot|*.svg|*.webp)
+      continue
+      ;;
+  esac
+
+  # Read staged content (handles new files and modifications)
+  CONTENT=$(git show ":$path" 2>/dev/null || true)
+  if [ -z "$CONTENT" ]; then
+    continue
+  fi
+
+  # Check for live Stripe keys (not test/placeholder patterns)
+  if echo "$CONTENT" | grep -qE 'sk_live_[a-zA-Z0-9]{20,}'; then
+    BLOCKED=1
+    BLOCKED_LIST="$BLOCKED_LIST  - $path (contains live Stripe secret key)$NL"
+  fi
+  if echo "$CONTENT" | grep -qE 'whsec_[a-zA-Z0-9]{20,}'; then
+    BLOCKED=1
+    BLOCKED_LIST="$BLOCKED_LIST  - $path (contains Stripe webhook secret)$NL"
+  fi
+
+  # Check for private keys
+  if echo "$CONTENT" | grep -q '-----BEGIN .*PRIVATE KEY-----'; then
+    BLOCKED=1
+    BLOCKED_LIST="$BLOCKED_LIST  - $path (contains private key)$NL"
+  fi
+
+  # Check for .env with real credentials (not placeholders)
+  if echo "$CONTENT" | grep -qE '(password|secret|token|key)\s*=\s*[a-zA-Z0-9_\-]{16,}'; then
+    # Allow .env.example with YOUR_xxx_HERE placeholders
+    case "$path" in
+      .env.example|.env.example.*) ;;
+      *)
+        BLOCKED=1
+        BLOCKED_LIST="$BLOCKED_LIST  - $path (may contain hardcoded credentials)$NL"
+        ;;
+    esac
+  fi
+done
+
+# ---------------------------------------------------------------------------
+# Report and exit
+# ---------------------------------------------------------------------------
 if [ "$BLOCKED" -eq 1 ]; then
   cat >&2 <<'EOF'
 
 ╔══════════════════════════════════════════════════════════════════════════╗
-║  PRE-COMMIT BLOCKED: plans/ and legal-docs/ are gitignored internals    ║
+║  PRE-COMMIT BLOCKED: OPSEC violation detected                            ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║                                                                         ║
-║  You tried to stage files that are part of AegisGate Security LLC's     ║
-║  internal commercial strategy, operational plans, or draft legal        ║
-║  documents. These must NEVER be committed to the public repo.           ║
+║  You tried to stage files that violate AegisGate Security's OPSEC        ║
+║  policy. This commit is blocked to prevent leaking internal business     ║
+║  strategy, credentials, or private keys to the public repository.       ║
 ║                                                                         ║
-║  Blocked paths:                                                         ║
+║  Blocked items:                                                         ║
 EOF
   printf '%b' "$BLOCKED_LIST" >&2
   cat >&2 <<'EOF'
 ║                                                                         ║
-║  To publish a doc, MOVE it out of plans/ or legal-docs/ (e.g., into     ║
-║  docs/), strip business-sensitive content, and commit it under its      ║
-║  new path. Do NOT use `git add -f` to bypass this rule.                 ║
+║  To publish a doc:                                                       ║
+║    1. Move it OUT of plans/ or legal-docs/ (e.g., into docs/)           ║
+║    2. Strip business-sensitive content                                   ║
+║    3. Commit under the new path                                          ║
 ║                                                                         ║
-║  To skip this hook (NOT RECOMMENDED), use `git commit --no-verify`.     ║
-║  --no-verify should only be used in genuine emergencies; it will be     ║
-║  logged in the commit's reflog and is auditable.                        ║
+║  To use billing config:                                                  ║
+║    - Copy billing-config.example.json to billing-config.json             ║
+║    - billing-config.json is gitignored and loaded at runtime             ║
+║                                                                         ║
+║  To skip this hook (NOT RECOMMENDED):                                   ║
+║    git commit --no-verify                                                ║
+║  --no-verify is auditable in the commit's reflog.                       ║
 ║                                                                         ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
