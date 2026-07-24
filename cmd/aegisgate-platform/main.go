@@ -64,7 +64,7 @@ import (
 )
 
 var (
-	version    = "3.4.0-beta.1"
+	version    = "3.4.1"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
