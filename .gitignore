@@ -146,3 +146,21 @@ pkg/lenstest/testdata/
 # synthetic secrets that trigger push protection)
 pkg/lenstest/corpus/*_gen.go
 pkg/lenstest/corpus/regenerate.sh
+
+# =============================================================================
+# OPSEC: Pricing, billing, and internal docs removed from public tracking
+# Added 2026-07-23 — these must never be re-committed to the public repo
+# =============================================================================
+
+# Pricing and billing config (loaded at runtime, contains Stripe keys)
+content/pricing.md
+pkg/billing/billing-config.json
+
+# Internal development reports
+D2*-*.md
+Sprint-*.md
+SPRINT-*-*.md
+
+# Internal sales/marketing strategy docs
+docs/lens-to-platform-upsell.md
+docs/a2a-implementation-roadmap.md
