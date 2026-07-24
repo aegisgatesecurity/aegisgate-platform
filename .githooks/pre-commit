@@ -75,9 +75,12 @@ for path in $STAGED; do
   fi
 
   # Check for private keys
-  if echo "$CONTENT" | grep -q '-----BEGIN .*PRIVATE KEY-----'; then
-    BLOCKED=1
-    BLOCKED_LIST="$BLOCKED_LIST  - $path (contains private key)$NL"
+  if echo "$CONTENT" | grep -qF 'PRIVATE KEY'; then
+    # Skip the pre-commit hook itself (it contains the detection pattern)
+    if [ "$path" != ".githooks/pre-commit" ]; then
+      BLOCKED=1
+      BLOCKED_LIST="$BLOCKED_LIST  - $path (contains private key)$NL"
+    fi
   fi
 
   # Check for .env with real credentials (not placeholders)
