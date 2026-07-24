@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// =========================================================================
-// =========================================================================
-//
+// ⚠️ DEPRECATED (v3.5.0): This legacy common.Framework implementation has been
+// superseded by pkg/compliance/iso42001/ which uses the BaseComplianceModule
+// pattern with 13 registered controls and 9 automated CheckFuncs. This package
+// will be removed in v3.7.0. Do not add new code here.
 // =========================================================================
 
 package iso42001

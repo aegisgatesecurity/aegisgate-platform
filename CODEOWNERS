@@ -1,0 +1,57 @@
+# CODEOWNERS — AegisGate Security Platform
+#
+# Each package has an owner responsible for reviewing changes.
+# New packages should be added here before merging.
+#
+# Global defaults
+* @aegisgate/engineering
+
+# ─── Security-critical packages (require extra review) ───
+pkg/auth/                         @aegisgate/security
+pkg/security/                     @aegisgate/security
+pkg/attestation/                  @aegisgate/security
+pkg/signature_verification/       @aegisgate/security
+pkg/sso/                          @aegisgate/security
+
+# ─── Compliance engine ───
+pkg/compliance/                   @aegisgate/compliance
+
+# ─── Protocol pillars ───
+pkg/bridge/                       @aegisgate/protocols
+pkg/mcpserver/                    @aegisgate/protocols
+pkg/a2a/                          @aegisgate/protocols
+pkg/acp/                          @aegisgate/protocols
+pkg/response/                     @aegisgate/protocols
+
+# ─── Trust framework ───
+pkg/trust/                        @aegisgate/trust
+pkg/trustportal/                  @aegisgate/trust
+pkg/digest/                       @aegisgate/trust
+
+# ─── Data & persistence ───
+pkg/ioc/                          @aegisgate/data
+pkg/persistence/                  @aegisgate/data
+pkg/correlation/                  @aegisgate/data
+
+# ─── Platform infrastructure ───
+pkg/platformconfig/               @aegisgate/infra
+pkg/license/                      @aegisgate/infra
+pkg/billing/                      @aegisgate/infra
+pkg/metrics/                      @aegisgate/infra
+pkg/logging/                      @aegisgate/infra
+
+# ─── Operations ───
+pkg/incident/                     @aegisgate/operations
+pkg/soc/                          @aegisgate/operations
+pkg/audit/                        @aegisgate/operations
+
+# ─── Detection & evaluation ───
+pkg/scanner/                      @aegisgate/detection
+pkg/evaluator/                    @aegisgate/detection
+pkg/evidence/                     @aegisgate/detection
+
+# ─── Frontend & API ───
+cmd/                              @aegisgate/infra
+
+# ─── Configuration & deployment ───
+deploy/                           @aegisgate/infra

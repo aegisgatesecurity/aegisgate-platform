@@ -541,6 +541,28 @@ func (m *PCIModule) registerControls() {
 		Automated:   true,
 		CheckFunc:   m.checkAITokenization,
 	})
+
+	// PCI-AI-003: AI Prompt Injection Protection
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "PCI-AI-003",
+		Name:        "AI Prompt Injection Protection",
+		Description: "Verify AI systems protect against prompt injection attacks that could expose cardholder data",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkAIPromptInjection,
+	})
+
+	// PCI-AI-004: AI Audit Trail Integrity
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "PCI-AI-004",
+		Name:        "AI Audit Trail Integrity",
+		Description: "Verify AI systems maintain immutable audit trails for all cardholder data access",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkAIAuditTrail,
+	})
 }
 
 // Check implementations
@@ -2393,6 +2415,70 @@ func (m *PCIModule) detectCardData(input string) []string {
 		}
 	}
 	return found
+}
+
+func (m *PCIModule) checkAIPromptInjection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPromptProtection := strings.Contains(inputStr, "prompt_injection_protection") ||
+		strings.Contains(inputStr, "input_sanitization") ||
+		strings.Contains(inputStr, "response_filter") ||
+		strings.Contains(inputStr, "content_policy") ||
+		strings.Contains(inputStr, "aegisgate")
+
+	if hasPromptProtection {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-AI-003",
+			ControlName: "AI Prompt Injection Protection",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Prompt injection protection detected for AI cardholder data systems",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-AI-003",
+		ControlName: "AI Prompt Injection Protection",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No prompt injection protection detected for AI cardholder data systems",
+		Timestamp:   time.Now(),
+		Remediation: "Deploy AegisGate or equivalent prompt injection protection for all AI systems handling cardholder data",
+	}, nil
+}
+
+func (m *PCIModule) checkAIAuditTrail(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAuditTrail := strings.Contains(inputStr, "audit_log") ||
+		strings.Contains(inputStr, "audit_trail") ||
+		strings.Contains(inputStr, "immutable_log") ||
+		strings.Contains(inputStr, "signed_attestation") ||
+		strings.Contains(inputStr, "evidence_envelope")
+
+	if hasAuditTrail {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-AI-004",
+			ControlName: "AI Audit Trail Integrity",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Immutable audit trail detected for AI cardholder data access",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-AI-004",
+		ControlName: "AI Audit Trail Integrity",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No immutable audit trail detected for AI cardholder data access",
+		Timestamp:   time.Now(),
+		Remediation: "Implement immutable audit trails with signed attestations for all AI systems accessing cardholder data",
+	}, nil
 }
 
 // Dependencies returns required modules.

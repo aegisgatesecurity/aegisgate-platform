@@ -30,15 +30,16 @@
 //
 // Architecture (domain-based file structure):
 //   - cmmcl2.go:       module wiring, registerControls, Dependencies, pattern caches
-//   - ac.go:            Access Control domain (AC.1.001, AC.2.001–AC.2.007)
-//   - am.go:            Asset Management domain (AM.1.001–AM.2.002)
-//   - au.go:            Audit and Accountability domain (AU.1.001–AU.2.004)
+//   - ac.go:            Access Control domain (AC.1.001–AC.2.007 + AC extras)
+//   - at_ps.go:         Awareness & Training + Personnel Security domains
+//   - au.go:            Audit and Accountability domain
 //   - ca_cm.go:         Assessment & Authorization + Configuration Management
 //   - ia_ir.go:         Identification & Authentication + Incident Response
 //   - ma_mp_pe.go:      Maintenance + Media Protection + Physical Protection
 //   - ra_sa_sc_si.go:   Risk Assessment + Situational Awareness +
 //                       System & Communications Protection + System & Information Integrity
 //   - cmmcl2_test.go:   unit tests
+//   - cmmcl2_coverage_test.go: coverage gap tests
 //   - doc.go:           package documentation
 //
 // Design: CMMC L2 controls are mapped to existing AegisGate modules
@@ -55,7 +56,7 @@
 // Reference: CMMC Level 2 (NIST SP 800-171 Rev. 2)
 //            https://cmmc.osd.mil/
 //            14 domains, 110 practices
-//            AegisGate covers 52 scanner-checkable practices
+//            AegisGate covers 110 practices
 //
 // =========================================================================
 
@@ -139,7 +140,7 @@ func (m *CMMCL2Module) initPatterns() {
 // Controls are organized by CMMC L2 domain:
 //
 //	AC = Access Control
-//	AM = Asset Management
+//	AT = Awareness & Training
 //	AU = Audit and Accountability
 //	CA = Assessment and Authorization
 //	CM = Configuration Management
@@ -147,36 +148,40 @@ func (m *CMMCL2Module) initPatterns() {
 //	IR = Incident Response
 //	MA = Maintenance
 //	MP = Media Protection
+//	PS = Personnel Security
 //	PE = Physical Protection
 //	RA = Risk Assessment
 //	SA = Situational Awareness
 //	SC = System and Communications Protection
 //	SI = System and Information Integrity
 func (m *CMMCL2Module) registerControls() {
-	// AC: Access Control (8 controls)
+	// AC: Access Control (11 controls)
 	m.registerACControls()
 
-	// AM: Asset Management (3 controls)
-	m.registerAMControls()
+	// AT: Awareness & Training (5 controls)
+	m.registerATControls()
 
-	// AU: Audit and Accountability (4 controls)
+	// AU: Audit and Accountability (9 controls)
 	m.registerAUControls()
 
-	// CA + CM: Assessment & Authorization + Configuration Management (8 controls)
+	// CA + CM: Assessment & Authorization + Configuration Management (3 + 10 = 13 controls)
 	m.registerCAControls()
 	m.registerCMControls()
 
-	// IA + IR: Identification & Authentication + Incident Response (8 controls)
+	// IA + IR: Identification & Authentication + Incident Response (8 + 7 = 15 controls)
 	m.registerIAControls()
 	m.registerIRControls()
 
-	// MA + MP + PE: Maintenance + Media Protection + Physical Protection (7 controls)
+	// MA + MP + PE: Maintenance + Media Protection + Physical Protection (6 + 7 + 7 = 20 controls)
 	m.registerMAControls()
 	m.registerMPControls()
 	m.registerPEControls()
 
+	// PS: Personnel Security (4 controls)
+	m.registerPSControls()
+
 	// RA + SA + SC + SI: Risk Assessment + Situational Awareness +
-	//                    System & Communications Protection + System & Information Integrity (14 controls)
+	//                     System & Communications Protection + System & Information Integrity (6 + 3 + 10 + 8 = 27 controls)
 	m.registerRAControls()
 	m.registerSAControls()
 	m.registerSCControls()

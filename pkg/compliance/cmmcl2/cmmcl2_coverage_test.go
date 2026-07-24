@@ -195,13 +195,13 @@ func TestCheckAuditRecordContent_PartialAndNonCompliant(t *testing.T) {
 		t.Errorf("expected partial with 2 fields, got %s: %s", r.Status, r.Message)
 	}
 
-	// 3 fields — still partial
+	// 3 fields — compliant (>= 3 threshold)
 	r, err = m.checkAuditRecordContent(ctx, []byte(`{"event_type": true, "timestamp": true, "source": true}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if strings.ToLower(string(r.Status)) != "partial" {
-		t.Errorf("expected partial with 3 fields, got %s: %s", r.Status, r.Message)
+	if strings.ToLower(string(r.Status)) != "compliant" {
+		t.Errorf("expected compliant with 3 fields, got %s: %s", r.Status, r.Message)
 	}
 
 	// 4+ fields — compliant

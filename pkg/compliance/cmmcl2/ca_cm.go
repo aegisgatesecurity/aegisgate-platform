@@ -127,6 +127,64 @@ func (m *CMMCL2Module) registerCMControls() {
 		Automated:   false,
 		References:  []string{"CMMC L2 CM.2.004", "NIST SP 800-171 §3.4.8"},
 	})
+
+	// CM.2.005: Software restrictions (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-06",
+		Name:        "Software Restrictions",
+		Description: "CMMC L2 CM.2.005: Restrict software installation to authorized software with allowlisting",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareRestrictions,
+		References:  []string{"CMMC L2 CM.2.005", "NIST SP 800-171 §3.4.9"},
+	})
+
+	// CM.2.006: Configuration change log (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-07",
+		Name:        "Configuration Change Log",
+		Description: "CMMC L2 CM.2.006: Maintain configuration change log with version control",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkConfigurationChangeLog,
+		References:  []string{"CMMC L2 CM.2.006", "NIST SP 800-171 §3.4.10"},
+	})
+
+	// CM.2.007: Security impact analysis (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-08",
+		Name:        "Security Impact Analysis",
+		Description: "CMMC L2 CM.2.007: Analyze security impact of configuration changes. AegisGate generates the impact analysis evidence for the customer's CMMC assessment.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 CM.2.007", "NIST SP 800-171 §3.4.11"},
+	})
+
+	// CM.2.008: Baseline configuration enforcement (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-09",
+		Name:        "Baseline Configuration Enforcement",
+		Description: "CMMC L2 CM.2.008: Enforce baseline configuration settings with drift detection",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkBaselineEnforcement,
+		References:  []string{"CMMC L2 CM.2.008", "NIST SP 800-171 §3.4.12"},
+	})
+
+	// CM.2.009: Configuration settings documentation (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-CM-10",
+		Name:        "Configuration Settings Documentation",
+		Description: "CMMC L2 CM.2.009: Document and maintain configuration settings documentation. AegisGate generates the configuration documentation evidence for the customer's CMMC assessment.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"CMMC L2 CM.2.009", "NIST SP 800-171 §3.4.13"},
+	})
 }
 
 // --- CA CheckFuncs ---
@@ -333,5 +391,122 @@ func (m *CMMCL2Module) checkComponentInventory(ctx context.Context, input []byte
 		Message:     "Component inventory gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Enable SBOM generation (sbom.enabled=true) and dependency tracking. Ensure all components have version metadata.",
+	}, nil
+}
+
+// checkSoftwareRestrictions verifies software installation restrictions.
+// Maps to CMMC L2 CM.2.005.
+func (m *CMMCL2Module) checkSoftwareRestrictions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAllowlist := strings.Contains(inputStr, "allowlist") || strings.Contains(inputStr, "whitelist") || strings.Contains(inputStr, "authorized_software")
+	hasRestriction := strings.Contains(inputStr, "software_restriction") || strings.Contains(inputStr, "installation_policy") || strings.Contains(inputStr, "app_control")
+
+	if hasAllowlist && hasRestriction {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CM-06",
+			ControlName: "Software Restrictions",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Software restrictions verified (allowlisting + installation policy)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasAllowlist {
+		violations = append(violations, "software allowlisting not configured")
+	}
+	if !hasRestriction {
+		violations = append(violations, "software installation restrictions not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CM-06",
+		ControlName: "Software Restrictions",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Software restrictions gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure software allowlisting (allowlist=true) and installation policy (software_restriction=true)",
+	}, nil
+}
+
+// checkConfigurationChangeLog verifies configuration change logging and
+// version control. Maps to CMMC L2 CM.2.006.
+func (m *CMMCL2Module) checkConfigurationChangeLog(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChangeLog := strings.Contains(inputStr, "change_log") || strings.Contains(inputStr, "config_version") || strings.Contains(inputStr, "version_control")
+	hasApproval := strings.Contains(inputStr, "approval") || strings.Contains(inputStr, "change_approval") || strings.Contains(inputStr, "review")
+
+	if hasChangeLog && hasApproval {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CM-07",
+			ControlName: "Configuration Change Log",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Configuration change log verified (change logging + approval process)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasChangeLog {
+		violations = append(violations, "configuration change log not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "change approval process not detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CM-07",
+		ControlName: "Configuration Change Log",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Configuration change log gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable configuration change logging (change_log=true, version_control=true) and change approval process",
+	}, nil
+}
+
+// checkBaselineEnforcement verifies baseline configuration enforcement
+// with drift detection. Maps to CMMC L2 CM.2.008.
+func (m *CMMCL2Module) checkBaselineEnforcement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBaseline := strings.Contains(inputStr, "baseline") || strings.Contains(inputStr, "config_baseline") || strings.Contains(inputStr, "golden_image")
+	hasDrift := strings.Contains(inputStr, "drift") || strings.Contains(inputStr, "drift_detection") || strings.Contains(inputStr, "configuration_monitoring")
+
+	if hasBaseline && hasDrift {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-CM-09",
+			ControlName: "Baseline Configuration Enforcement",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Baseline configuration enforcement verified (baseline + drift detection)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasBaseline {
+		violations = append(violations, "configuration baseline not defined")
+	}
+	if !hasDrift {
+		violations = append(violations, "configuration drift detection not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-CM-09",
+		ControlName: "Baseline Configuration Enforcement",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Baseline enforcement gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Define configuration baseline (config_baseline=true) and enable drift detection (drift_detection=true)",
 	}, nil
 }

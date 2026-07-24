@@ -90,6 +90,41 @@ func (m *CMMCL2Module) registerIAControls() {
 		Automated:   false,
 		References:  []string{"CMMC L2 IA.2.004", "NIST SP 800-171 §3.5.12"},
 	})
+
+	// IA.2.005: Centralized authentication (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-IA-06",
+		Name:        "Centralized Authentication",
+		Description: "CMMC L2 IA.2.005: Centralized authentication mechanism for all system access",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkCentralizedAuthentication,
+		References:  []string{"CMMC L2 IA.2.005", "NIST SP 800-171 §3.5.6"},
+	})
+
+	// IA.2.006: Session lock (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-IA-07",
+		Name:        "Session Lock",
+		Description: "CMMC L2 IA.2.006: Session lock after inactivity period to prevent unauthorized access",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSessionLock,
+		References:  []string{"CMMC L2 IA.2.006", "NIST SP 800-171 §3.5.7"},
+	})
+
+	// IA.2.007: Identifier management (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-IA-08",
+		Name:        "Identifier Management",
+		Description: "CMMC L2 IA.2.007: Manage user identifiers and assign unique identifiers. AegisGate generates the identifier management evidence for the customer's CMMC assessment.",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 IA.2.007", "NIST SP 800-171 §3.5.8"},
+	})
 }
 
 // registerIRControls wires the IR domain controls into the module.
@@ -364,5 +399,74 @@ func (m *CMMCL2Module) checkIncidentMonitoring(ctx context.Context, input []byte
 		Message:     "Incident monitoring gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Enable SIEM integration (siem.enabled=true) and incident tracking/alerting",
+	}, nil
+}
+
+// checkCentralizedAuthentication verifies centralized authentication management.
+// Maps to CMMC L2 IA.2.001.
+func (m *CMMCL2Module) checkCentralizedAuthentication(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCentralAuth := strings.Contains(inputStr, "central_auth") ||
+		strings.Contains(inputStr, "identity_provider") ||
+		strings.Contains(inputStr, "sso") ||
+		strings.Contains(inputStr, "ldap") ||
+		strings.Contains(inputStr, "active_directory") ||
+		strings.Contains(inputStr, "aegisgate")
+
+	if hasCentralAuth {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-IA-05",
+			ControlName: "Centralized Authentication",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Centralized authentication management detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-IA-05",
+		ControlName: "Centralized Authentication",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No centralized authentication management detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement centralized authentication (identity_provider=sso, ldap, or active_directory)",
+	}, nil
+}
+
+// checkSessionLock verifies automatic session lock after inactivity.
+// Maps to CMMC L2 IA.2.002.
+func (m *CMMCL2Module) checkSessionLock(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSessionLock := strings.Contains(inputStr, "session_lock") ||
+		strings.Contains(inputStr, "session_timeout") ||
+		strings.Contains(inputStr, "idle_timeout") ||
+		strings.Contains(inputStr, "auto_lock") ||
+		strings.Contains(inputStr, "screen_lock")
+
+	if hasSessionLock {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-IA-06",
+			ControlName: "Session Lock",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Automatic session lock detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-IA-06",
+		ControlName: "Session Lock",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No automatic session lock detected",
+		Timestamp:   time.Now(),
+		Remediation: "Configure automatic session lock after inactivity (session_timeout=900, auto_lock=true)",
 	}, nil
 }
