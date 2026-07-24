@@ -65,7 +65,13 @@ func GetNode() *NodeInfo {
 }
 
 // String returns a human-readable node identifier.
+// Uses the full ID if shorter than 8 chars, otherwise first 8 chars.
 func (n *NodeInfo) String() string {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+	if len(n.ID) < 8 {
+		return fmt.Sprintf("aegisgate-%s@%s", n.ID, n.Hostname)
+	}
 	return fmt.Sprintf("aegisgate-%s@%s", n.ID[:8], n.Hostname)
 }
 
