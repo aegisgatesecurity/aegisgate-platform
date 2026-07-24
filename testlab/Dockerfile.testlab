@@ -1,0 +1,15 @@
+FROM aegisgate-platform:prod
+
+EXPOSE 8080 8443 8081
+
+USER root
+RUN apk add --no-cache curl ca-certificates && \
+    mkdir -p /data/certs /data/audit /data/ioc /data/logs /app/certs && \
+    chown -R appuser:appuser /data /app/certs
+WORKDIR /app
+USER appuser
+
+ENV AEGISGATE_TLS_ENABLED=false
+ENV AEGISGATE_TLS_CERT=/data/certs/server.crt
+
+CMD ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp", "--tier=community"]
