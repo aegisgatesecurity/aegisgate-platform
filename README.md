@@ -4,11 +4,11 @@
 
 **Secure every AI interaction. Six pillars. One gateway. Zero external dependencies.**
 
-[![Version](https://img.shields.io/badge/Version-v3.4.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.4.0)
+[![Version](https://img.shields.io/badge/Version-v3.4.3-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.4.3)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-88_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-85%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-2454_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Coverage](https://img.shields.io/badge/Coverage-87.4%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![Lens](https://img.shields.io/badge/Lens-153_patterns-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
 
@@ -20,9 +20,9 @@
 
 ## What is AegisGate?
 
-AegisGate is the only AI security platform with **6 native protection pillars** — HTTP API, MCP, A2A, ACP, RESPONSE, and Trust Framework — in a single binary with zero external dependencies.
+AegisGate is the only AI security platform with **6 native protection pillars** — HTTP API, MCP, A2A, ACP, RESPONSE, and Trust Framework — in a single binary with zero external dependencies. Security hardening and red team verification ensure production-grade resilience.
 
-## v3.4.0 Highlights
+## v3.4.3 Highlights
 
 | Feature | Description |
 |---------|-------------|
@@ -34,6 +34,8 @@ AegisGate is the only AI security platform with **6 native protection pillars** 
 | **SOC 2 Audit** | Evidence collection, policy templates, workpapers |
 | **SSE Streaming** | Real-time SOC incident timeline |
 | **Multi-Tenant Isolation** | `tenant_id` across 4 packages with migration 004 |
+| **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
+| **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
 
 ## Quick Start
 
@@ -113,6 +115,7 @@ pkg/
 ├── attestation/            # Cryptographic envelope (Sign/Verify/VerifyWithKey/VerifyOnline)
 ├── audit/soc2/             # SOC 2 evidence collection
 ├── compliance/             # 15+ framework modules
+├── cluster/                # HA clustering & distributed rate limiting
 ├── correlation/            # Event correlation engine
 ├── cve/                    # CVE-for-AI feed
 ├── detectors/              # 153-pattern detection engine
@@ -129,7 +132,7 @@ pkg/
 ## Testing
 
 ```bash
-# Unit tests (88 packages)
+# Unit tests (99 packages)
 go test ./...
 
 # Integration tests (6 PostgreSQL packages, requires Docker)

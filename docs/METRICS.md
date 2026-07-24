@@ -1,6 +1,6 @@
-# Prometheus Metrics Documentation — AegisGate Platform v3.4.0
-**v3.4.0 Update** — Full Lens detection parity (153 patterns), 6 PostgreSQL integration suites, FedRAMP 150 controls, 5 new compliance modules, multi-tenant isolation, SOC 2 audit automation, SSE streaming.
-**v3.4.0 GA** — Detection parity, PostgreSQL persistence, FedRAMP compliance, multi-tenant isolation. 153 detection patterns, 107 integration tests, 88 packages passing, 85% coverage.
+# Prometheus Metrics Documentation — AegisGate Platform v3.4.3
+**v3.4.3 Update** — Security hardening release: 5 auth bypass fixes, localhost-only metrics, CSP hardening, HA clustering with distributed rate limiting. 26/27 red team tests pass. 2,454 tests, 87.4% coverage, 0 CVEs.
+**v3.4.0 baseline** — Detection parity, PostgreSQL persistence, FedRAMP compliance, multi-tenant isolation. 153 detection patterns, 107 integration tests, 99 packages passing, 87.4% coverage.
 
 **v1.3.6 Update** — MCP Security Enhancement complete. All metrics now support MCP guardrail tracking, authentication enforcement, and memory limit violation logging.
 

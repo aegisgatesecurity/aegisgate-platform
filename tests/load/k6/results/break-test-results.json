@@ -1,0 +1,25 @@
+{
+  "break_test": {
+    "version": "v3.4.1",
+    "timestamp": "2026-07-24T12:02:30.992Z",
+    "total_requests": 0,
+    "duration_sec": "90.0",
+    "avg_rps": "0",
+    "overall_latency": {
+      "avg": "undefinedms",
+      "p50": "undefinedms",
+      "p90": "166.75ms",
+      "p95": "193.50ms",
+      "p99": "undefinedms",
+      "max": "2901.11ms"
+    },
+    "error_rate": "0.00%",
+    "degradation_rate": "NaN% of requests > 100ms",
+    "critical_rate": "NaN% of requests > 500ms or 5xx",
+    "peak_vus": 2000,
+    "findings": {
+      "ceiling_note": "See per-scenario breakdown for where degradation begins",
+      "recovery_note": "Observe latency returning to baseline in crush_20x ramp-down phase"
+    }
+  }
+}

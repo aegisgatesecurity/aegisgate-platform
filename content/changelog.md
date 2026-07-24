@@ -6,7 +6,58 @@
 > For the full engineering changelog (per-commit, per-PR detail), see
 > `CHANGELOG.md` in the platform repository.
 >
-> Last updated: 2026-06-06 (v3.3.0 — EU AI Act)
+> Last updated: 2026-07-24 (v3.4.3 — Security Hardening)
+
+---
+
+## [3.4.3] - 2026-07-24 - Security Hardening 🔐
+
+> **v3.4.3** fixes critical auth bypass issues found during pre-ship adversarial
+> testing. 5 endpoints were accessible without authentication; all are now
+> wrapped with `RequireAuth()`. `/metrics` is restricted to localhost. CSP
+> is hardened (`unsafe-eval` removed). 26/27 red team tests pass.
+
+### Security Fixes
+
+- **🔴 CRITICAL:** IOC Admin API endpoints mounted without auth → now RequireAuth() + admin tier
+- **🔴:** `/metrics` exposed system internals → now localhost-only
+- **🟡:** `/cluster/health`, `/bridge`, `/guardrails`, `/policies` returned data without auth → now RequireAuth()
+- **🟡:** CSP `unsafe-eval` removed from dashboard, `unsafe-inline` removed from API
+
+### Metrics (v3.4.3)
+
+- 2,454 tests passing, 87.4% coverage, 99 packages
+- 24K+ RPS, 0 CVEs, 153 detection patterns
+- 15+ compliance frameworks, HA clustering support
+
+---
+
+## [3.4.2] - 2026-07-24 - HA Clustering & Break Testing 🏗️
+
+> **v3.4.2** adds horizontal scaling with distributed rate limiting, instance identity,
+> and cluster health monitoring. Break-tested at 20x baseline load (0% errors).
+
+### Highlights
+
+- HA clustering with distributed rate limiting (Professional+)
+- Instance identity headers (`X-Instance-Id`, `X-Cluster-Mode`)
+- Cluster health endpoint with node topology
+- 22 pkg/cluster tests, 56.5% coverage (PG-dependent paths exempted)
+- Break test: 0% errors at 20x baseline (2,000 VU, 24K+ RPS)
+
+---
+
+## [3.4.1] - 2026-07-24 - OPSEC Remediation & Compliance Expansion 🔒
+
+> **v3.4.1** fixes a critical 503 health-check regression, hardens the repository
+> against credential leaks, and includes CMMC L2 compliance expansion.
+
+### Highlights
+
+- Fix 503 health-check regression on Community tier
+- CMMC Level 2 compliance module (14 controls)
+- OPSEC cleanup: removed leaked credentials, scrubbed history
+- NIST 800-171, HITRUST, TISAX, ISO 27001 compliance modules
 
 ---
 

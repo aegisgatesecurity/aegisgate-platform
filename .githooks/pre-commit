@@ -8,6 +8,9 @@
 #   3. Billing config with real product/price IDs
 #   4. Private keys or PEM certificates
 #   5. .env files with real credentials
+#   6. Red team/adversarial testing documents (internal security)
+#   7. Install scripts, testlab configs, audit labs (internal infra)
+#   8. .env.example with real Stripe price IDs
 #
 # This hook is committed to the repo and activated via:
 #   git config core.hooksPath .githooks
@@ -39,6 +42,9 @@ for path in $STAGED; do
     plans/*|legal-docs/*|plans-*.md|SPRINT*.md|BUSINESS*.md|PLAN*.md|ROADMAP-INTERNAL.md|CI_DEBT.md|\
     content/pricing.md|pkg/billing/billing-config.json|\
     docs/lens-to-platform-upsell.md|docs/a2a-implementation-roadmap.md|\
+    RED-TEAM-*.md|red-team-*.md|install.sh|\
+    testlab/*|audit-lab/*|audit-results/*|\
+    .env.example|.env.example.*|\
     D2*-*.md|Sprint-*.md|SPRINT-*-*.md)
       BLOCKED=1
       BLOCKED_LIST="$BLOCKED_LIST  - $path (gitignored internal)$NL"
@@ -85,14 +91,9 @@ for path in $STAGED; do
 
   # Check for .env with real credentials (not placeholders)
   if echo "$CONTENT" | grep -qE '(password|secret|token|key)\s*=\s*[a-zA-Z0-9_\-]{16,}'; then
-    # Allow .env.example with YOUR_xxx_HERE placeholders
-    case "$path" in
-      .env.example|.env.example.*) ;;
-      *)
-        BLOCKED=1
-        BLOCKED_LIST="$BLOCKED_LIST  - $path (may contain hardcoded credentials)$NL"
-        ;;
-    esac
+    # No exceptions — .env.example is blocked in Check 1 now
+    BLOCKED=1
+    BLOCKED_LIST="$BLOCKED_LIST  - $path (may contain hardcoded credentials)$NL"
   fi
 done
 
