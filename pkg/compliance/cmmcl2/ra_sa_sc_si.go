@@ -9,7 +9,7 @@
 // RA (Risk Assessment): 3 practices (2 automated + 1 evidence-mapped)
 // SA (Situational Awareness): 3 practices (2 automated + 1 evidence-mapped)
 // SC (System & Comms Protection): 4 practices (2 automated + 2 evidence-mapped)
-// SI (System & Info Integrity): 4 practices (4 automated + 0 evidence-mapped)
+// SI (System & Info Integrity): 6 practices (5 automated + 1 evidence-mapped)
 //
 // =========================================================================
 
@@ -196,6 +196,29 @@ func (m *CMMCL2Module) registerSIControls() {
 		Automated:   true,
 		CheckFunc:   m.checkInformationIntegrity,
 		References:  []string{"CMMC L2 SI.2.004"},
+	})
+
+	// SI-05: Security Alerts (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-SI-05",
+		Name:        "Security Alerts",
+		Description: "CMMC L2 SI.2.005: Security alert and advisory processing",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityAlerts,
+		References:  []string{"CMMC L2 SI.2.005"},
+	})
+
+	// SI-06: Information Handling (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-SI-06",
+		Name:        "Information Handling",
+		Description: "CMMC L2 SI.2.006: Information handling and retention policies. AegisGate generates the information handling evidence for the customer's CMMC assessment.",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 SI.2.006"},
 	})
 }
 
@@ -534,5 +557,44 @@ func (m *CMMCL2Module) checkInformationIntegrity(ctx context.Context, input []by
 		Message:     "Information integrity controls not detected",
 		Timestamp:   time.Now(),
 		Remediation: "Enable integrity checking (integrity.hash_chain=true) and input validation",
+	}, nil
+}
+
+// checkSecurityAlerts verifies security alert and advisory processing.
+// Maps to CMMC L2 SI.2.005.
+func (m *CMMCL2Module) checkSecurityAlerts(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSecurityAlerts := strings.Contains(inputStr, "security_alerts") || strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "siem")
+	hasNotification := strings.Contains(inputStr, "notification") || strings.Contains(inputStr, "advisory") || strings.Contains(inputStr, "advisories")
+
+	if hasSecurityAlerts && hasNotification {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-SI-05",
+			ControlName: "Security Alerts",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Security alerts verified (alerts + notification/advisory processing)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasSecurityAlerts {
+		violations = append(violations, "security alerts not configured")
+	}
+	if !hasNotification {
+		violations = append(violations, "security advisory notification not detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-SI-05",
+		ControlName: "Security Alerts",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Security alerts gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure security alerts (security_alerts=true) and advisory notification processing",
 	}, nil
 }

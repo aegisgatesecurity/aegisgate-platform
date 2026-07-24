@@ -6,9 +6,9 @@
 // CMMC Level 2 — Maintenance, Media Protection, and Physical Protection
 // domains.
 //
-// MA (Maintenance): 3 practices (1 automated + 2 evidence-mapped)
+// MA (Maintenance): 5 practices (2 automated + 3 evidence-mapped)
 // MP (Media Protection): 5 practices (2 automated + 3 evidence-mapped)
-// PE (Physical Protection): 4 practices (1 automated + 3 evidence-mapped)
+// PE (Physical Protection): 6 practices (1 automated + 5 evidence-mapped)
 //
 // =========================================================================
 
@@ -56,6 +56,29 @@ func (m *CMMCL2Module) registerMAControls() {
 		Severity:    compliance.SeverityLow,
 		Automated:   false,
 		References:  []string{"CMMC L2 MA.2.003"},
+	})
+
+	// MA-04: Maintenance Personnel (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-MA-04",
+		Name:        "Maintenance Personnel",
+		Description: "CMMC L2 MA.2.004: Maintenance personnel with appropriate access authorization. AegisGate generates the maintenance personnel evidence for the customer's CMMC assessment.",
+		Category:    "Maintenance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 MA.2.004", "NIST SP 800-171 §3.7.4"},
+	})
+
+	// MA-05: Maintenance Logging (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-MA-05",
+		Name:        "Maintenance Logging",
+		Description: "CMMC L2 MA.2.005: Maintenance activities logged and audited",
+		Category:    "Maintenance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkMaintenanceLogging,
+		References:  []string{"CMMC L2 MA.2.005", "NIST SP 800-171 §3.7.5"},
 	})
 }
 
@@ -164,6 +187,28 @@ func (m *CMMCL2Module) registerPEControls() {
 		Severity:    compliance.SeverityMedium,
 		Automated:   false,
 		References:  []string{"CMMC L2 PE.2.003"},
+	})
+
+	// PE-05: Emergency Power (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-PE-05",
+		Name:        "Emergency Power",
+		Description: "CMMC L2 PE.2.004: Emergency power for CUI systems. AegisGate generates the emergency power evidence for the customer's CMMC assessment.",
+		Category:    "Physical Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 PE.2.004", "NIST SP 800-171 §3.10.4"},
+	})
+
+	// PE-06: Water Damage Protection (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-PE-06",
+		Name:        "Water Damage Protection",
+		Description: "CMMC L2 PE.2.005: Water damage protection for CUI systems. AegisGate generates the water damage protection evidence for the customer's CMMC assessment.",
+		Category:    "Physical Protection",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"CMMC L2 PE.2.005", "NIST SP 800-171 §3.10.5"},
 	})
 }
 
@@ -298,5 +343,42 @@ func (m *CMMCL2Module) checkPhysicalAccessControl(ctx context.Context, input []b
 		Message:     "Physical access controls not detected",
 		Timestamp:   time.Now(),
 		Remediation: "Configure physical access controls (physical.badge_access=true, physical.surveillance=true)",
+	}, nil
+}
+
+func (m *CMMCL2Module) checkMaintenanceLogging(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMaintenanceLog := strings.Contains(inputStr, "maintenance_log") || strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "patch_log")
+	hasReview := strings.Contains(inputStr, "review") || strings.Contains(inputStr, "log_review") || strings.Contains(inputStr, "analysis")
+
+	if hasMaintenanceLog && hasReview {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-MA-05",
+			ControlName: "Maintenance Logging",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Maintenance logging verified (maintenance_log + review)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasMaintenanceLog {
+		violations = append(violations, "maintenance logging not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "log review not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-MA-05",
+		ControlName: "Maintenance Logging",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Maintenance logging gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure maintenance logging (maintenance_log=true) and log review (log_review=true)",
 	}, nil
 }

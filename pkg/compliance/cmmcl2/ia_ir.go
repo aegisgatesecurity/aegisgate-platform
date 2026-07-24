@@ -13,10 +13,13 @@
 //   IA.2.003  Authenticator feedback                       (automated)
 //   IA.2.004  Cryptographic module authentication          (evidence-mapped)
 //
-// In-scope IR controls (3 of ~6 IR practices):
+// In-scope IR controls (6 of ~6 IR practices):
 //   IR.1.001  Incident response policy                     (evidence-mapped)
 //   IR.2.001  Incident handling                            (automated)
 //   IR.2.002  Incident monitoring                          (automated)
+//   IR.2.003  Incident response training                   (evidence-mapped)
+//   IR.2.004  Incident response testing                    (automated)
+//   IR.2.005  Incident response reporting                  (automated)
 //
 // =========================================================================
 
@@ -162,6 +165,41 @@ func (m *CMMCL2Module) registerIRControls() {
 		Automated:   true,
 		CheckFunc:   m.checkIncidentMonitoring,
 		References:  []string{"CMMC L2 IR.2.002", "NIST SP 800-171 §3.6.3"},
+	})
+
+	// IR.2.003: Incident response training (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-IR-04",
+		Name:        "Incident Response Training",
+		Description: "CMMC L2 IR.2.003: Incident response training for personnel. AegisGate generates the IR training evidence for the customer's CMMC assessment.",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 IR.2.003", "NIST SP 800-171 §3.6.4"},
+	})
+
+	// IR.2.004: Incident response testing (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-IR-05",
+		Name:        "Incident Response Testing",
+		Description: "CMMC L2 IR.2.004: Test incident response procedures — tabletop exercises, simulations",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponseTesting,
+		References:  []string{"CMMC L2 IR.2.004", "NIST SP 800-171 §3.6.5"},
+	})
+
+	// IR.2.005: Incident response reporting (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-IR-06",
+		Name:        "Incident Response Reporting",
+		Description: "CMMC L2 IR.2.005: Report incident information to designated authorities",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponseReporting,
+		References:  []string{"CMMC L2 IR.2.005", "NIST SP 800-171 §3.6.6"},
 	})
 }
 
@@ -399,6 +437,84 @@ func (m *CMMCL2Module) checkIncidentMonitoring(ctx context.Context, input []byte
 		Message:     "Incident monitoring gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Enable SIEM integration (siem.enabled=true) and incident tracking/alerting",
+	}, nil
+}
+
+// checkIncidentResponseTesting verifies incident response testing and exercises.
+// Maps to CMMC L2 IR.2.004.
+func (m *CMMCL2Module) checkIncidentResponseTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTesting := strings.Contains(inputStr, "incident_testing") || strings.Contains(inputStr, "tabletop") || strings.Contains(inputStr, "simulation")
+	hasResponse := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "response_plan") || strings.Contains(inputStr, "drill")
+
+	if hasTesting && hasResponse {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-IR-05",
+			ControlName: "Incident Response Testing",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Incident response testing verified (testing + response exercises)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasTesting {
+		violations = append(violations, "incident response testing not configured")
+	}
+	if !hasResponse {
+		violations = append(violations, "incident response exercises not detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-IR-05",
+		ControlName: "Incident Response Testing",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Incident response testing gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure incident response testing (incident_testing=true) and tabletop/simulation exercises",
+	}, nil
+}
+
+// checkIncidentResponseReporting verifies incident reporting to authorities.
+// Maps to CMMC L2 IR.2.005.
+func (m *CMMCL2Module) checkIncidentResponseReporting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReporting := strings.Contains(inputStr, "incident_reporting") || strings.Contains(inputStr, "reporting") || strings.Contains(inputStr, "notification")
+	hasTracking := strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "ticket") || strings.Contains(inputStr, "escalation")
+
+	if hasReporting && hasTracking {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-IR-06",
+			ControlName: "Incident Response Reporting",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Incident response reporting verified (reporting + tracking)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasReporting {
+		violations = append(violations, "incident reporting not configured")
+	}
+	if !hasTracking {
+		violations = append(violations, "incident tracking/escalation not detected")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-IR-06",
+		ControlName: "Incident Response Reporting",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Incident response reporting gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure incident reporting (incident_reporting=true) and tracking/escalation procedures",
 	}, nil
 }
 

@@ -29,18 +29,20 @@
 //   responsibility for HIPAA and EU AI Act respectively.
 //
 // Architecture (domain-based file structure):
-//   - cmmcl2.go:       module wiring, registerControls, Dependencies, pattern caches
-//   - ac.go:            Access Control domain (AC.1.001–AC.2.007 + AC extras)
-//   - at_ps.go:         Awareness & Training + Personnel Security domains
-//   - au.go:            Audit and Accountability domain
-//   - ca_cm.go:         Assessment & Authorization + Configuration Management
-//   - ia_ir.go:         Identification & Authentication + Incident Response
-//   - ma_mp_pe.go:      Maintenance + Media Protection + Physical Protection
-//   - ra_sa_sc_si.go:   Risk Assessment + Situational Awareness +
-//                       System & Communications Protection + System & Information Integrity
-//   - cmmcl2_test.go:   unit tests
+//   - cmmcl2.go:         module wiring, registerControls, Dependencies, pattern caches
+//   - ac.go:              Access Control domain (AC.1.001–AC.2.021)
+//   - am.go:              Asset Management domain (AM.1.001–AM.2.002)
+//   - at_ps.go:           Awareness & Training + Personnel Security domains
+//   - au.go:              Audit and Accountability domain
+//   - ca_cm.go:           Assessment & Authorization + Configuration Management
+//   - ia_ir.go:           Identification & Authentication + Incident Response
+//   - ma_mp_pe.go:        Maintenance + Media Protection + Physical Protection
+//   - ra_sa_sc_si.go:     Risk Assessment + Situational Awareness +
+//                         System & Communications Protection + System & Information Integrity
+//   - sc_extended.go:     System & Communications Protection (extended)
+//   - cmmcl2_test.go:     unit tests
 //   - cmmcl2_coverage_test.go: coverage gap tests
-//   - doc.go:           package documentation
+//   - doc.go:             package documentation
 //
 // Design: CMMC L2 controls are mapped to existing AegisGate modules
 // (SOC 2, ISO 27001, FedRAMP, IOC store, Trust Framework) to avoid
@@ -155,7 +157,7 @@ func (m *CMMCL2Module) initPatterns() {
 //	SC = System and Communications Protection
 //	SI = System and Information Integrity
 func (m *CMMCL2Module) registerControls() {
-	// AC: Access Control (11 controls)
+	// AC: Access Control (22 controls)
 	m.registerACControls()
 
 	// AT: Awareness & Training (5 controls)
@@ -168,11 +170,11 @@ func (m *CMMCL2Module) registerControls() {
 	m.registerCAControls()
 	m.registerCMControls()
 
-	// IA + IR: Identification & Authentication + Incident Response (8 + 7 = 15 controls)
+	// IA + IR: Identification & Authentication + Incident Response (8 + 6 = 14 controls)
 	m.registerIAControls()
 	m.registerIRControls()
 
-	// MA + MP + PE: Maintenance + Media Protection + Physical Protection (6 + 7 + 7 = 20 controls)
+	// MA + MP + PE: Maintenance + Media Protection + Physical Protection (5 + 5 + 6 = 16 controls)
 	m.registerMAControls()
 	m.registerMPControls()
 	m.registerPEControls()
@@ -181,10 +183,12 @@ func (m *CMMCL2Module) registerControls() {
 	m.registerPSControls()
 
 	// RA + SA + SC + SI: Risk Assessment + Situational Awareness +
-	//                     System & Communications Protection + System & Information Integrity (6 + 3 + 10 + 8 = 27 controls)
+	//                     System & Communications Protection + System & Information Integrity
+	//                     (3 + 3 + 4+15 + 6 = 31 controls)
 	m.registerRAControls()
 	m.registerSAControls()
 	m.registerSCControls()
+	m.registerSCExtendedControls()
 	m.registerSIControls()
 }
 
