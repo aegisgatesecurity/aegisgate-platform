@@ -1631,7 +1631,7 @@ func main() {
 
 		w.WriteHeader(code)
 		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","node_id":"%s","cluster_mode":"%s","checks":{"scanner":{"healthy":%v},"bridge":{"status":"%s","healthy":true},"persistence":{"enabled":%v,"started":%v,"healthy":%v,"backend":"%s"},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"a2a":{"status":"%s","healthy":%v}},"uptime":%.0f,"timestamp":"%s"}`,
-			status, version, platformTier.String(), clusterNode.ID[:8], clusterMode,
+			status, version, platformTier.String(), safeNodeID(clusterNode.ID), clusterMode,
 			scannerHealthy, bridgeStatus,
 			persistenceMgr.IsEnabled(), persistStarted, persistStarted, persistenceBackend,
 			licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
@@ -2165,7 +2165,7 @@ func main() {
 		log.Printf("Warning: Service verification: %v", err)
 	}
 
-	log.Printf("AegisGate Security Platform ready (v%s, cluster: %s, node: %s)", version, clusterMode, clusterNode.ID[:8])
+	log.Printf("AegisGate Security Platform ready (v%s, cluster: %s, node: %s)", version, clusterMode, safeNodeID(clusterNode.ID))
 	log.Printf("[STARTUP-COMPLETE] All services initialized")
 	log.Printf("Components:")
 	log.Printf("  Proxy:    http://0.0.0.0:%d -> %s (tier: %s)", *proxyPort, *targetURL, platformTier.String())
@@ -2296,6 +2296,14 @@ func verifyServicesReady() error {
 // user-controlled values (e.g., peer URLs in error
 // messages). ASCII printable characters and common
 // Unicode are preserved.
+// safeNodeID returns the first 8 chars of a node ID, or the full ID if shorter.
+func safeNodeID(id string) string {
+	if len(id) < 8 {
+		return id
+	}
+	return id[:8]
+}
+
 func sanitizeForLog(s string) string {
 	// G706 (CodeQL): use strings.ReplaceAll on the
 	// known log-injection characters. CodeQL's taint
