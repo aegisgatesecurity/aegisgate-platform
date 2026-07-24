@@ -1,3 +1,45 @@
+## [3.4.1] - 2026-07-24 - OPSEC Remediation, Health Fix, Compliance Expansion 🔒
+
+> **v3.4.1 patch release.** Fixes a critical 503 health-check regression affecting Community tier deployments, hardens the repository against credential leaks, and includes compliance framework expansions that missed the v3.4.0 tag.
+
+### Bug Fixes
+
+- **fix(health):** Resolve 503 degraded status in testlab — A2A disabled was incorrectly reported as `healthy: false` causing HTTP 503 on `/health`. Scanner health now returns true in standalone (embedded MCP) mode. Dashboard port 8443 returns 200 OK for all valid Community tier configurations.
+- **fix(opsec):** Remove 12 sensitive business documents from public repo (pricing, billing config, internal dev reports D25–D31, sales strategy, product roadmap). Files remain locally but are no longer tracked by git.
+- **fix(opsec):** Sanitize 11 tracked files that referenced internal document paths (`plans/`, `content/pricing.md`). All references replaced with public-safe alternatives.
+- **fix(opsec):** Enhance `.githooks/pre-commit` with Stripe key detection (`sk_live_`, `whsec_`), private key detection (`-----BEGIN .*PRIVATE KEY-----`), hardcoded credential scanning in `.env` files, and blocked-file patterns matching the new `.gitignore` entries.
+- **fix(license):** Add `-race` build tag to `coverage_lift_test.go` so the package builds correctly with `go test -race`.
+- **fix(api):** Add 12 missing framework alias normalizations to `normalizeFrameworkName()` (e.g., `nist-800-171` → `NIST 800-171`).
+- **fix(compliance):** Wire scanner registry for all 20+ frameworks, register 3 missing compliance modules.
+- **fix(ci):** Restore `gitleaks-action@v3` with license key secret, resolve 3 CI failures (gofmt, release build path, gitleaks license).
+- **fix(security):** Remediate 23 of 53 actionable CodeQL code scanning alerts.
+
+### New Features
+
+- **feat: TSA-signed audit events** — Audit log entries are now signed with RFC 3161 timestamp authority tokens for tamper evidence.
+- **feat: Vendor questionnaire auto-answer** — Automated responses to security questionnaires based on compliance posture.
+- **feat: Token usage analytics** — Track and report token consumption across proxy sessions with usage breakdowns.
+- **feat(compliance): CMMC L2 expanded 79→110** — Full NIST 800-171 Rev 2 coverage (all 110 control families).
+- **feat(fedramp): 26 controls promoted** — FedRAMP control automation increased from 49→75 CheckFuncs.
+
+### Infrastructure
+
+- **ci(deps):** Bump `actions/setup-go` to v7, `actions/cache` to v6, `trufflehog` to v3.95.9, `action-gh-release` to v3.0.2, `checkout` to v6.
+- **style:** gofmt all files failing CI format check.
+- **docs(compliance):** Expand framework documentation with CODEOWNERS and deprecation banners.
+
+### Performance (k6 Benchmarks, post-503-fix)
+
+| Test | Requests | Error Rate | p50 | p95 | p99 | RPS |
+|------|----------|------------|---------|---------|---------|-----|
+| Quick (50→500 VU) | 127,431 | 0.00% | 1.90ms | 5.69ms | 8.54ms | 3,179 |
+| Health (0→200 VU) | 76,488 | 0.00% | 2.33ms | 2.86ms | 3.70ms | 364 |
+| Sprint 10 (50→500 VU) | 1,744,876 | 0.00% | 9.23ms | 75.14ms* | 119.52ms* | 14,527 |
+
+\* Sprint 10 p95/p99 measured during 500-VU ramp ceiling. Under normal load (≤200 VU): p95 = 5.69ms, p99 = 8.54ms.
+
+---
+
 ## [3.4.0] - 2026-07-23 - Detection Parity, PostgreSQL, FedRAMP, GA Release 🛡️
 
 > **v3.4.0 GA.** This is the general-availability release of AegisGate Platform. 239 commits since v3.3.0-beta.2. All engineering gates (coverage, CI, govulncheck) are green. 9 exempted packages have documented justifications (PostgresStore requires live DB).
