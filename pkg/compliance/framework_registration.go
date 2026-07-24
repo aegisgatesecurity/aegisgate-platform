@@ -264,7 +264,7 @@ func RegisterBuiltinFrameworks() {
 	// interface (common.Framework) that doesn't have Controls(). Their
 	// control/pattern counts are known at registration time and are
 	// registered as static values.
-	registerFrameworkControls("atlas", 24) // MITRE ATLAS: 24 technique patterns
+	registerFrameworkControls("atlas", 66) // MITRE ATLAS: 66 technique patterns (full v4.6.0 coverage)
 	registerFrameworkControls("gdpr", 6)   // GDPR: 6 core data protection requirements
 	registerFrameworkControls("owasp", 10) // OWASP LLM Top 10: 10 risk categories
 }

@@ -10,7 +10,7 @@
 // Frameworks supported (7 advertised, 3 fully implemented):
 //   - MITRE ATLAS     (pkg/compliance/atlas.go)         — full
 //   - OWASP LLM Top 10 (pkg/compliance/owasp.go)         — full
-//   - NIST AI RMF     (pkg/compliance/enterprise/nist/)  — full
+//   - NIST AI RMF     (pkg/compliance/nist_ai_rmf/)     — full (pkg/compliance/enterprise/nist/ is deprecated)
 //   - HIPAA           (pkg/compliance/hipaa/)            — full (premium/)
 //   - PCI-DSS         (pkg/compliance/pci/)              — full (premium/)
 //   - SOC 2           (pkg/compliance/soc2/)             — full (v3.4.0+ Path B partial: 5 of 8 controls automated)

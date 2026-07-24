@@ -121,6 +121,41 @@ func (m *CMMCL2Module) registerACControls() {
 		Automated:   false,
 		References:  []string{"CMMC L2 AC.2.007", "NIST SP 800-171 §3.1.1"},
 	})
+
+	// AC.2.008: Session control (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AC-09",
+		Name:        "Session Control",
+		Description: "CMMC L2 AC.2.008: Control session timeouts and concurrent sessions for CUI access",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSessionControl,
+		References:  []string{"CMMC L2 AC.2.008", "NIST SP 800-171 §3.1.9"},
+	})
+
+	// AC.2.009: Wireless access restrictions (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AC-10",
+		Name:        "Wireless Access Restrictions",
+		Description: "CMMC L2 AC.2.009: Restrict wireless access to authorized users and devices with authentication and encryption",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkWirelessAccessRestrictions,
+		References:  []string{"CMMC L2 AC.2.009", "NIST SP 800-171 §3.1.16"},
+	})
+
+	// AC.2.010: Mobile device restrictions (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AC-11",
+		Name:        "Mobile Device Restrictions",
+		Description: "CMMC L2 AC.2.010: Restrict mobile device access to CUI. AegisGate generates the mobile device policy evidence for the customer's CMMC assessment.",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 AC.2.010", "NIST SP 800-171 §3.1.18"},
+	})
 }
 
 // checkLimitSystemAccess verifies system access is limited to authorized
@@ -310,5 +345,83 @@ func (m *CMMCL2Module) checkRoleBasedAccessControl(ctx context.Context, input []
 		Message:     "Role-based access control gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Enable RBAC with defined roles (admin, user, viewer). Remove wildcard/permit_all access rules. Set least_privilege=true.",
+	}, nil
+}
+
+// checkSessionControl verifies session timeout and concurrent session controls.
+// Maps to CMMC L2 AC.2.008.
+func (m *CMMCL2Module) checkSessionControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTimeout := strings.Contains(inputStr, "session_timeout") || strings.Contains(inputStr, "timeout")
+	hasConcurrent := strings.Contains(inputStr, "concurrent") || strings.Contains(inputStr, "concurrent_sessions") || strings.Contains(inputStr, "session_limit")
+
+	if hasTimeout && hasConcurrent {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-AC-09",
+			ControlName: "Session Control",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Session control verified (session timeout + concurrent session limits)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasTimeout {
+		violations = append(violations, "session timeout not configured")
+	}
+	if !hasConcurrent {
+		violations = append(violations, "concurrent session limits not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-AC-09",
+		ControlName: "Session Control",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Session control gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure session timeouts (session_timeout=900) and concurrent session limits (concurrent_sessions=1)",
+	}, nil
+}
+
+// checkWirelessAccessRestrictions verifies wireless access is controlled
+// with authentication and encryption. Maps to CMMC L2 AC.2.009.
+func (m *CMMCL2Module) checkWirelessAccessRestrictions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasWirelessAuth := strings.Contains(inputStr, "wireless_auth") || strings.Contains(inputStr, "wifi_authentication") || strings.Contains(inputStr, "wireless")
+	hasEncryption := strings.Contains(inputStr, "wpa3") || strings.Contains(inputStr, "wpa2") || strings.Contains(inputStr, "wireless_encryption") || strings.Contains(inputStr, "tls")
+
+	if hasWirelessAuth && hasEncryption {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-AC-10",
+			ControlName: "Wireless Access Restrictions",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Wireless access restrictions verified (authentication + encryption)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasWirelessAuth {
+		violations = append(violations, "wireless authentication not configured")
+	}
+	if !hasEncryption {
+		violations = append(violations, "wireless encryption not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-AC-10",
+		ControlName: "Wireless Access Restrictions",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Wireless access gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure wireless authentication (wireless_auth=wpa3) and encryption for all wireless access",
 	}, nil
 }

@@ -71,10 +71,147 @@ func (m *CMMCL2Module) registerAUControls() {
 		Automated:   false,
 		References:  []string{"CMMC L2 AU.2.003", "NIST SP 800-171 §3.3.7"},
 	})
+
+	// AU.2.004: Audit log retention (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AU-05",
+		Name:        "Audit Log Retention",
+		Description: "CMMC L2 AU.2.004: Retain audit logs for the required period with tamper-evident storage",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAuditLogRetention,
+		References:  []string{"CMMC L2 AU.2.004", "NIST SP 800-171 §3.3.4"},
+	})
+
+	// AU.2.005: Audit review and analysis (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AU-06",
+		Name:        "Audit Review And Analysis",
+		Description: "CMMC L2 AU.2.005: Review and analyze audit records for anomalies and security events",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkAuditReviewAnalysis,
+		References:  []string{"CMMC L2 AU.2.005", "NIST SP 800-171 §3.3.5"},
+	})
+
+	// AU.2.006: Time stamps (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AU-07",
+		Name:        "Time Stamps",
+		Description: "CMMC L2 AU.2.006: Use time stamps in audit records with synchronized time sources",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkTimeStamps,
+		References:  []string{"CMMC L2 AU.2.006", "NIST SP 800-171 §3.3.8"},
+	})
+
+	// AU.2.007: Audit reduction (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AU-08",
+		Name:        "Audit Reduction",
+		Description: "CMMC L2 AU.2.007: Audit reduction and report generation tools. AegisGate generates the audit reduction evidence for the customer's CMMC assessment.",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"CMMC L2 AU.2.007", "NIST SP 800-171 §3.3.9"},
+	})
+
+	// AU.2.008: Session audit (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CMMCL2-AU-09",
+		Name:        "Session Audit",
+		Description: "CMMC L2 AU.2.008: Audit session establishment and termination for CUI system access. AegisGate generates the session audit evidence for the customer's CMMC assessment.",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CMMC L2 AU.2.008", "NIST SP 800-171 §3.3.10"},
+	})
 }
 
-// checkAuditEvents verifies audit logging is enabled with integrity
-// protection. Maps to CMMC L2 AU.1.001.
+// checkAuditRecordContent verifies that audit records contain sufficient
+// information (event type, timestamp, source, user, result). Maps to AU.2.001.
+func (m *CMMCL2Module) checkAuditRecordContent(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEventType := strings.Contains(inputStr, "event_type") || strings.Contains(inputStr, "event")
+	hasTimestamp := strings.Contains(inputStr, "timestamp") || strings.Contains(inputStr, "time")
+	hasSource := strings.Contains(inputStr, "source") || strings.Contains(inputStr, "ip")
+	hasUser := strings.Contains(inputStr, "user_id") || strings.Contains(inputStr, "user") || strings.Contains(inputStr, "identity")
+	hasResult := strings.Contains(inputStr, "result") || strings.Contains(inputStr, "outcome")
+
+	fieldsFound := 0
+	if hasEventType {
+		fieldsFound++
+	}
+	if hasTimestamp {
+		fieldsFound++
+	}
+	if hasSource {
+		fieldsFound++
+	}
+	if hasUser {
+		fieldsFound++
+	}
+	if hasResult {
+		fieldsFound++
+	}
+
+	if fieldsFound >= 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-AU-02",
+			ControlName: "Audit Record Content",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Audit records contain sufficient information",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	missing := []string{}
+	if !hasEventType {
+		missing = append(missing, "event type")
+	}
+	if !hasTimestamp {
+		missing = append(missing, "timestamp")
+	}
+	if !hasSource {
+		missing = append(missing, "source")
+	}
+	if !hasUser {
+		missing = append(missing, "user identity")
+	}
+	if !hasResult {
+		missing = append(missing, "result/outcome")
+	}
+
+	if fieldsFound == 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-AU-02",
+			ControlName: "Audit Record Content",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial audit records: " + strings.Join(missing, ", ") + " missing",
+			Timestamp:   time.Now(),
+			Remediation: "Ensure audit records contain event type, timestamp, source, user, and result",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-AU-02",
+		ControlName: "Audit Record Content",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Missing audit record fields: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Ensure audit records contain event type, timestamp, source, user, and result",
+	}, nil
+}
+
 func (m *CMMCL2Module) checkAuditEvents(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasAuditLog := false
@@ -118,66 +255,113 @@ func (m *CMMCL2Module) checkAuditEvents(ctx context.Context, input []byte) (*com
 	}, nil
 }
 
-// checkAuditRecordContent verifies that audit records contain sufficient
-// information (event type, timestamp, source, user, result). Maps to AU.2.001.
-func (m *CMMCL2Module) checkAuditRecordContent(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+func (m *CMMCL2Module) checkAuditLogRetention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-	hasEventType := strings.Contains(inputStr, "event_type") || strings.Contains(inputStr, "event")
-	hasTimestamp := strings.Contains(inputStr, "timestamp") || strings.Contains(inputStr, "time")
-	hasSource := strings.Contains(inputStr, "source") || strings.Contains(inputStr, "ip")
-	hasUser := strings.Contains(inputStr, "user_id") || strings.Contains(inputStr, "user") || strings.Contains(inputStr, "identity")
-	hasResult := strings.Contains(inputStr, "result") || strings.Contains(inputStr, "outcome")
+	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "log_retention") || strings.Contains(inputStr, "archive")
+	hasTamperEvident := strings.Contains(inputStr, "tamper_evident") || strings.Contains(inputStr, "hash_chain") || strings.Contains(inputStr, "immutable") || strings.Contains(inputStr, "log_integrity")
 
-	fieldsFound := 0
-	if hasEventType {
-		fieldsFound++
-	}
-	if hasTimestamp {
-		fieldsFound++
-	}
-	if hasSource {
-		fieldsFound++
-	}
-	if hasUser {
-		fieldsFound++
-	}
-	if hasResult {
-		fieldsFound++
-	}
-
-	if fieldsFound >= 4 {
+	if hasRetention && hasTamperEvident {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CMMCL2-AU-02",
-			ControlName: "Audit Record Content",
+			ControlID:   "CMMCL2-AU-05",
+			ControlName: "Audit Log Retention",
 			Status:      compliance.StatusCompliant,
-			Severity:    compliance.SeverityMedium,
-			Message:     "Audit record content verified (sufficient fields present)",
+			Severity:    compliance.SeverityHigh,
+			Message:     "Audit log retention verified (retention policy + tamper-evident storage)",
 			Timestamp:   time.Now(),
 		}, nil
 	}
 
-	if fieldsFound >= 2 {
-		return &compliance.ControlCheckResult{
-			Framework:   m.Framework(),
-			ControlID:   "CMMCL2-AU-02",
-			ControlName: "Audit Record Content",
-			Status:      compliance.StatusPartial,
-			Severity:    compliance.SeverityMedium,
-			Message:     "Audit records contain some fields but not all required fields",
-			Timestamp:   time.Now(),
-			Remediation: "Configure audit records to include: event_type, timestamp, source, user_id, result",
-		}, nil
+	violations := []string{}
+	if !hasRetention {
+		violations = append(violations, "audit log retention policy not configured")
+	}
+	if !hasTamperEvident {
+		violations = append(violations, "tamper-evident audit storage not configured")
 	}
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CMMCL2-AU-02",
-		ControlName: "Audit Record Content",
+		ControlID:   "CMMCL2-AU-05",
+		ControlName: "Audit Log Retention",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Audit log retention gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure audit log retention (log_retention=365d) and enable tamper-evident storage (hash_chain=true, immutable=true)",
+	}, nil
+}
+
+func (m *CMMCL2Module) checkAuditReviewAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReview := strings.Contains(inputStr, "audit_review") || strings.Contains(inputStr, "review") || strings.Contains(inputStr, "analysis")
+	hasAnomaly := strings.Contains(inputStr, "anomaly") || strings.Contains(inputStr, "anomaly_detection") || strings.Contains(inputStr, "siem")
+
+	if hasReview && hasAnomaly {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-AU-06",
+			ControlName: "Audit Review And Analysis",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Audit review and analysis verified (review + anomaly detection)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasReview {
+		violations = append(violations, "audit review process not configured")
+	}
+	if !hasAnomaly {
+		violations = append(violations, "anomaly detection not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-AU-06",
+		ControlName: "Audit Review And Analysis",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
-		Message:     "Audit records lack required content fields",
+		Message:     "Audit review and analysis gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
-		Remediation: "Configure audit records to include: event_type, timestamp, source, user_id, result",
+		Remediation: "Configure audit review (audit_review=true) and anomaly detection (anomaly_detection=true or SIEM)",
+	}, nil
+}
+
+func (m *CMMCL2Module) checkTimeStamps(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTimestamp := strings.Contains(inputStr, "timestamp") || strings.Contains(inputStr, "time_sync") || strings.Contains(inputStr, "ntp")
+	hasSynchronized := strings.Contains(inputStr, "ntp") || strings.Contains(inputStr, "time_sync") || strings.Contains(inputStr, "synchronized") || strings.Contains(inputStr, "synchronization")
+
+	if hasTimestamp && hasSynchronized {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CMMCL2-AU-07",
+			ControlName: "Time Stamps",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Time stamps verified (timestamps + synchronized time source)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasTimestamp {
+		violations = append(violations, "timestamps not configured in audit records")
+	}
+	if !hasSynchronized {
+		violations = append(violations, "time synchronization not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CMMCL2-AU-07",
+		ControlName: "Time Stamps",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Time stamp gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure timestamp generation (timestamp=true) and NTP time synchronization (ntp.enabled=true)",
 	}, nil
 }

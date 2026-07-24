@@ -24,15 +24,21 @@
 //   CMMC assessment and certification are the customer's responsibility.
 //
 // Architecture (family-based file structure):
-//   - nist800171.go: module wiring, registerControls, Dependencies, pattern caches
-//   - ac.go:          Access Control family (AC-1 – AC-17)
-//   - au.go:          Audit and Accountability family (AU-1 – AU-9)
-//   - cm_si.go:       Configuration Management + System Integrity (CM-2 – SI-3)
-//   - ia.go:          Identification and Authentication family (IA-1 – IA-8)
-//   - ir_ra.go:       Incident Response + Risk Assessment (IR-1 – RA-3)
-//   - sc.go:          System and Communications Protection (SC-4 – SC-23)
-//   - cp_ma_sa.go:    Contingency Planning + Maintenance + System Acquisition (CP-1 – SA-5)
-//   - nist800171_test.go: unit tests
+//   - nist800171.go:           module wiring, registerControls, Dependencies, pattern caches
+//   - ac.go:                    Access Control family (AC-1 – AC-22)
+//   - au.go:                    Audit and Accountability family (AU-1 – AU-9)
+//   - cm_si.go:                 Configuration Management + System Integrity (CM-2 – SI-7)
+//   - ia.go:                    Identification and Authentication family (IA-1 – IA-11)
+//   - ir_ra.go:                 Incident Response + Risk Assessment (IR-1 – RA-7)
+//   - sc.go:                    System and Communications Protection (SC-4 – SC-23)
+//   - cp_ma_sa.go:              Contingency Planning + Maintenance + System Acquisition (CP-1 – SA-9)
+//   - at.go:                    Awareness and Training family (AT-1 – AT-5)
+//   - mp.go:                    Media Protection family (MP-1 – MP-7)
+//   - ps.go:                    Personnel Security family (PS-1 – PS-4)
+//   - pe.go:                    Physical Protection family (PE-1 – PE-3)
+//   - sa.go:                    Security Assessment family (SA-1 – SA-3)
+//   - additional_controls.go:   Additional controls across all families
+//   - nist800171_test.go:       unit tests
 //
 // Design: NIST 800-171 controls are mapped to existing AegisGate modules
 // (SOC 2, ISO 27001, HIPAA, FIPS 140, Trust Framework, IOC store) to
@@ -150,6 +156,24 @@ func (m *NIST800171Module) registerControls() {
 
 	// CP + MA + SA: Contingency Planning + Maintenance + System Acquisition (6 controls)
 	m.registerCPMASAControls()
+
+	// AT: Awareness and Training (5 controls)
+	m.registerATControls()
+
+	// MP: Media Protection (7 controls)
+	m.registerMPControls()
+
+	// PS: Personnel Security (4 controls)
+	m.registerPSControls()
+
+	// PE: Physical Protection (3 controls)
+	m.registerPEControls()
+
+	// SA: Security Assessment (3 controls)
+	m.registerSAControls2()
+
+	// Additional controls across all families (41 controls)
+	m.registerAdditionalControls()
 }
 
 // Dependencies returns required modules. NIST 800-171 depends on the
