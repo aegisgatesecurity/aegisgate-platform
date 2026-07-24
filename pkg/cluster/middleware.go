@@ -47,8 +47,8 @@ type ClusterHealthResponse struct {
 	Version     string                 `json:"version"`
 	Tier        string                 `json:"tier"`
 	Uptime      string                 `json:"uptime"`
-	Mode        string                 `json:"mode"` // "standalone" or "clustered"
-	Peers       map[string]string      `json:"peers"`       // peer node_id -> status
+	Mode        string                 `json:"mode"`  // "standalone" or "clustered"
+	Peers       map[string]string      `json:"peers"` // peer node_id -> status
 	LocalHealth map[string]interface{} `json:"local_health"`
 }
 
