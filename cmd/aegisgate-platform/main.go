@@ -65,7 +65,7 @@ import (
 )
 
 var (
-	version    = "3.4.2"
+	version    = "3.4.3"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -1339,10 +1339,25 @@ func main() {
 	if pgStore != nil {
 		clusterMode = "clustered"
 	}
-	dashMux.HandleFunc("/api/v1/cluster/health", cluster.ClusterHealthHandler(clusterNode, clusterMode, nil, nil))
+	// Cluster health endpoint — requires auth to prevent unauthenticated
+	// disclosure of node topology, hostname, and version information.
+	dashMux.HandleFunc("/api/v1/cluster/health", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		cluster.ClusterHealthHandler(clusterNode, clusterMode, nil, nil).ServeHTTP(w, r)
+	}))
 
-	// Metrics endpoint (Prometheus)
-	dashMux.Handle("/metrics", metrics.Handler())
+	// Metrics endpoint (Prometheus) — restrict to localhost to prevent
+	// unauthenticated disclosure of internal system metrics, connection
+	// pool details, and goroutine counts.
+	dashMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		// Allow only localhost connections to /metrics
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil || (host != "127.0.0.1" && host != "::1" && host != "localhost") {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprintf(w, `{"error":"metrics endpoint restricted to localhost"}`)
+			return
+		}
+		metrics.Handler().ServeHTTP(w, r)
+	})
 
 	// Compliance scan engine (v3.2.0 Phase 3.3). Wraps the
 	// scanner with the HTTP API at /api/v1/compliance/* (scan,
@@ -1383,12 +1398,24 @@ func main() {
 	}
 
 	// IOC admin API (v3.5.0+ Track 6 Task 5). Mounted on the
-	// dashboard mux (admin port) so the runtime share/receive
-	// toggles, key rotation, and reputation views are reachable
-	// for operators but NOT exposed to public proxy traffic.
+	// dashboard mux (admin port) with AdminOnly auth — these
+	// endpoints control key rotation, sharing toggles, and
+	// reputation data and must NOT be accessible without admin
+	// credentials.
 	if iocAdminAPIPtr != nil {
-		dashMux.Handle("/api/v1/ioc/admin/", iocAdminAPIPtr.Handler())
-		log.Printf("[IOC-ADMIN] Federated IOC admin API enabled at /api/v1/ioc/admin/")
+		iocAdminHandler := iocAdminAPIPtr.Handler()
+		dashMux.Handle("/api/v1/ioc/admin/", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			// Enforce admin-only access for IOC admin endpoints
+			tier := auth.GetTier(r.Context())
+			if tier != "enterprise" && tier != "professional" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprintf(w, `{"error":"forbidden","message":"admin access required"}`)
+				return
+			}
+			iocAdminHandler.ServeHTTP(w, r)
+		}))
+		log.Printf("[IOC-ADMIN] Federated IOC admin API enabled at /api/v1/ioc/admin/ (admin-only)")
 	}
 
 	// AR-EaaS HTTP endpoint (v3.7.0+ TODO-301). Mounted on the
@@ -1652,8 +1679,9 @@ func main() {
 		fmt.Fprintf(w, `{"scan_id":"%s","compliant":%v}`, resp.ScanID, resp.IsCompliant)
 	}))
 
-	// Bridge status endpoint
-	dashMux.HandleFunc("/api/v1/bridge", func(w http.ResponseWriter, r *http.Request) {
+	// Bridge status endpoint — requires auth to prevent unauthenticated
+	// disclosure of AI model configuration and traffic statistics.
+	dashMux.HandleFunc("/api/v1/bridge", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if platformBridge != nil {
 			stats := platformBridge.GetStats()
@@ -1662,7 +1690,7 @@ func main() {
 		} else {
 			fmt.Fprintf(w, `{"enabled":false}`)
 		}
-	})
+	}))
 
 	// Tier information endpoint
 	dashMux.HandleFunc("/api/v1/tier", func(w http.ResponseWriter, r *http.Request) {
@@ -1845,8 +1873,9 @@ func main() {
 		writeBytes(w, data)
 	}))
 
-	// MCP Guardrails stats endpoint
-	dashMux.HandleFunc("/api/v1/guardrails", func(w http.ResponseWriter, r *http.Request) {
+	// MCP Guardrails stats endpoint — requires auth to prevent unauthenticated
+	// disclosure of guardrail detection rules and configuration.
+	dashMux.HandleFunc("/api/v1/guardrails", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if mcpGuardrails == nil {
 			writeBytes(w, []byte(`{"error": "guardrails not active (run with --embedded-mcp)"}`))
@@ -1858,7 +1887,7 @@ func main() {
 			"data":    stats,
 		})
 		writeBytes(w, data)
-	})
+	}))
 
 	// Aggregated dashboard stats endpoint
 	dashMux.HandleFunc("/api/v1/stats", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -1926,8 +1955,9 @@ func main() {
 		}
 	}))
 
-	// Policy info endpoint — returns policy settings
-	dashMux.HandleFunc("/api/v1/policies", func(w http.ResponseWriter, r *http.Request) {
+	// Policy info endpoint — requires auth to prevent unauthenticated
+	// disclosure of security policy configuration and tier details.
+	dashMux.HandleFunc("/api/v1/policies", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		policies := map[string]interface{}{
 			"success": true,
@@ -1971,7 +2001,7 @@ func main() {
 		}
 		data, _ := json.Marshal(policies)
 		writeBytes(w, data)
-	})
+	}))
 
 	// Static UI file server
 	dashMux.Handle("/ui/", http.StripPrefix("/ui/", http.FileServer(http.Dir("ui/frontend"))))

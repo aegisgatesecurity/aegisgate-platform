@@ -35,11 +35,13 @@ type SecurityHeadersConfig struct {
 }
 
 // DefaultSecurityHeadersConfig returns secure default headers
+// for the API/proxy mux. APIs don't serve HTML, so script-src and
+// style-src are set to 'self' only (no unsafe-inline).
 func DefaultSecurityHeadersConfig() SecurityHeadersConfig {
 	return SecurityHeadersConfig{
 		ContentSecurityPolicy: "default-src 'self'; " +
-			"script-src 'self' 'unsafe-inline'; " +
-			"style-src 'self' 'unsafe-inline'; " +
+			"script-src 'self'; " +
+			"style-src 'self'; " +
 			"img-src 'self' data: https:; " +
 			"font-src 'self' https://fonts.gstatic.com; " +
 			"connect-src 'self' https: wss:; " +
@@ -73,10 +75,13 @@ func APISecurityHeadersConfig() SecurityHeadersConfig {
 }
 
 // DashboardSecurityHeadersConfig returns headers for web dashboards
+// Note: 'unsafe-inline' is required for inline event handlers in the
+// dashboard UI (onclick attributes, inline script blocks). 'unsafe-eval'
+// has been removed since no JS code uses eval() or new Function().
 func DashboardSecurityHeadersConfig() SecurityHeadersConfig {
 	return SecurityHeadersConfig{
 		ContentSecurityPolicy: "default-src 'self'; " +
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+			"script-src 'self' 'unsafe-inline'; " +
 			"style-src 'self' 'unsafe-inline'; " +
 			"img-src 'self' data: https:; " +
 			"font-src 'self' https://fonts.gstatic.com; " +
