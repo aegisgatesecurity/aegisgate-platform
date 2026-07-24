@@ -2345,7 +2345,6 @@ func truncateDBURL(dbURL string) string {
 	return u.String()
 }
 
-
 // rejectDangerousMethods rejects TRACE, TRACK, and CONNECT methods
 // to prevent cross-site tracing (XST) attacks. Go's default mux serves
 // static files on all methods including TRACE, which leaks auth headers.
