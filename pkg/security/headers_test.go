@@ -8,6 +8,7 @@ package security
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -232,6 +233,42 @@ func TestDashboardSecurityHeadersConfig(t *testing.T) {
 	}
 	if config.ContentSecurityPolicy == "default-src 'none'" {
 		t.Error("Dashboard CSP should be more permissive than API")
+	}
+	// v3.4.2 security hardening: dashboard CSP must NOT contain 'unsafe-eval'
+	if strings.Contains(config.ContentSecurityPolicy, "'unsafe-eval'") {
+		t.Error("Dashboard CSP must not contain 'unsafe-eval' — removed in v3.4.2 security hardening")
+	}
+	// Dashboard CSP MUST contain 'unsafe-inline' for onclick attributes
+	if !strings.Contains(config.ContentSecurityPolicy, "'unsafe-inline'") {
+		t.Error("Dashboard CSP should contain 'unsafe-inline' for inline event handlers")
+	}
+}
+
+func TestDefaultSecurityHeadersConfig_NoUnsafeInline(t *testing.T) {
+	config := DefaultSecurityHeadersConfig()
+
+	// API/proxy CSP should NOT contain 'unsafe-inline' in script-src
+	// (APIs don't serve HTML, so no inline scripts needed)
+	if strings.Contains(config.ContentSecurityPolicy, "'unsafe-inline'") {
+		t.Error("Default (API) CSP should not contain 'unsafe-inline' — APIs don't serve HTML")
+	}
+	if strings.Contains(config.ContentSecurityPolicy, "'unsafe-eval'") {
+		t.Error("Default (API) CSP should not contain 'unsafe-eval'")
+	}
+}
+
+func TestAPISecurityHeadersConfig_StrictCSP(t *testing.T) {
+	config := APISecurityHeadersConfig()
+
+	// API CSP should be maximally restrictive
+	if config.ContentSecurityPolicy != "default-src 'none'" {
+		t.Errorf("API CSP should be 'default-src 'none'', got: %s", config.ContentSecurityPolicy)
+	}
+	if config.XFrameOptions != "DENY" {
+		t.Error("API X-Frame-Options should be DENY")
+	}
+	if config.XContentTypeOptions != "nosniff" {
+		t.Error("API X-Content-Type-Options should be nosniff")
 	}
 }
 

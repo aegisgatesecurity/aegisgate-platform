@@ -1,3 +1,23 @@
+## [3.4.3] - 2026-07-24 - Security Hardening (Red Team Pre-Release) 🔐
+
+> **v3.4.3 security hardening release.** Fixes critical auth bypass on IOC admin endpoints, restricts metrics to localhost, adds auth to previously unauthenticated dashboard endpoints, and removes `unsafe-eval` from CSP. Found during pre-ship adversarial attack surface audit.
+
+### Security Fixes
+
+- **🔴 CRITICAL: fix(auth):** IOC Admin API endpoints (`/api/v1/ioc/admin/*`) were mounted on the dashboard mux WITHOUT authentication middleware. All 6 endpoints (status, share, receive, keyring, keyring/rotate, reputation) are now wrapped with `RequireAuth()` + admin tier enforcement. Unauthenticated access to IOC key rotation, sharing toggles, and keyring data is no longer possible.
+- **🔴 fix(auth):** `/metrics` endpoint (Prometheus) exposed full system internals without auth. Now restricted to localhost connections only (127.0.0.1, ::1). Remote access returns 403 Forbidden.
+- **🟡 fix(auth):** `/api/v1/cluster/health` returned node topology (hostname, version, node ID) without authentication. Now wrapped with `RequireAuth()`.
+- **🟡 fix(auth):** `/api/v1/bridge` returned AI model configuration and traffic statistics without auth. Now wrapped with `RequireAuth()`.
+- **🟡 fix(auth):** `/api/v1/guardrails` returned detection rule statistics without auth. Now wrapped with `RequireAuth()`.
+- **🟡 fix(auth):** `/api/v1/policies` returned security policy configuration without auth. Now wrapped with `RequireAuth()`.
+- **🟡 fix(csp):** Removed `'unsafe-eval'` from dashboard CSP (`DashboardSecurityHeadersConfig`). Verified no JS code uses `eval()` or `new Function()`. Removed `'unsafe-inline'` from default API CSP (`DefaultSecurityHeadersConfig`). APIs don't serve HTML.
+
+### Testing
+
+- **test(security):** New CSP hardening tests: `TestDashboardSecurityHeadersConfig` verifies no `unsafe-eval`, `TestDefaultSecurityHeadersConfig_NoUnsafeInline` verifies API CSP excludes `unsafe-inline`, `TestAPISecurityHeadersConfig_StrictCSP` verifies API CSP is `default-src 'none'`.
+- **test(cluster):** Expanded pkg/cluster tests from 9 to 22. Coverage 55.3% → 56.5% (all local-testable code at 100%, PG-dependent paths exempted in CI).
+- **fix(ci):** Added `pkg/cluster` to CI per-package coverage exemption list (same category as `pkg/persistence` and `pkg/rbac`).
+
 ## [3.4.2] - 2026-07-24 - HA Clustering, Break Testing, Distributed Rate Limiting 🏗️
 
 > **v3.4.2 patch release.** Adds horizontal scaling / high-availability clustering support, distributed rate limiting, and comprehensive break-test results proving the platform handles 20x baseline load without failure.
