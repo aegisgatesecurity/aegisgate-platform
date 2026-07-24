@@ -152,8 +152,7 @@ Host: node-1:8443
 ```json
 {
   "status": "healthy",
-  "version": "3.4.1",
-  "checks": {
+  "version": "3.4.3",
     "scanner": { "healthy": true },
     "persistence": { "healthy": true, "backend": "postgresql" },
     "a2a": { "healthy": true, "status": "disabled" }
@@ -171,8 +170,7 @@ GET /api/v1/cluster/health HTTP/1.1
 {
   "node_id": "node-1",
   "hostname": "aegisgate-1.prod",
-  "version": "3.4.1",
-  "tier": "professional",
+  "version": "3.4.3", "professional",
   "uptime": "72h15m30s",
   "mode": "clustered",
   "peers": {
@@ -226,7 +224,7 @@ During a network partition:
 
 ## Performance at Scale
 
-Based on k6 break testing (v3.4.1, single node):
+Based on k6 break testing (v3.4.3, single node):
 
 | VUs | Requests | p50 | p95 | p99 | Error Rate |
 |-----|----------|---------|---------|---------|------------|

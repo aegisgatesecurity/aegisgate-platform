@@ -112,7 +112,7 @@ This is the **network effect** that makes AegisGate more valuable as more custom
 | v3.0.0 and earlier | Local IOC store only, no federation |
 | v3.2.0 | IOC store introduced (pkg/ioc/, in-memory + PostgreSQL) |
 | v3.3.0 | ECDSA-signed IOCAttestation + Bundle wire format |
-| v3.4.0+ | Federated gossip protocol, opt-in/opt-out, TAXII 2.1 bridge |
+| v3.4.3+ | Federated gossip protocol, opt-in/opt-out, TAXII 2.1 bridge |
 | **v3.5.0+** (current) | **Shipped; production-ready; first production deployment 2026-06-15** |
 | v4.0+ (planned) | ML-based fuzzy matching; central coordinator (optional); push delivery |
 
@@ -129,4 +129,4 @@ This is the **network effect** that makes AegisGate more valuable as more custom
 
 *Document version: 1.0*  
 *Last updated: 2026-07-21*  
-*AegisGate Platform v3.4.0+*
+*AegisGate Platform v3.4.3+*

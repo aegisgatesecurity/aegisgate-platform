@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AegisGate Platform™ — Enterprise AI Security Gateway</title>
-    <meta name="description" content="Enterprise AI security gateway — unified HTTP proxy, MCP guardrails, and compliance automation. 24K+ RPS, 3.2ms latency, 0 CVEs. Apache 2.0.">
+    <meta name="description" content="Enterprise AI security gateway — unified HTTP proxy, MCP guardrails, and compliance automation. 24K+ RPS, zero CVEs, red-team hardened. Apache 2.0.">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -173,7 +173,7 @@
 </head>
 <body>
     <div class="test-mode-banner">
-        🟡 <strong>v3.4.0 GA — Generally Available</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v3.4.0</code>.
+        🟢 <strong>v3.4.3 — Security Hardened</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v3.4.3</code>.
     </div>
     <header>
         <div class="container">
@@ -191,19 +191,19 @@
         <section class="metrics">
             <div class="metrics-grid">
                 <div class="metric">
-                    <h3>11,681</h3>
+                    <h3>24,000+</h3>
                     <p>Peak Requests/Second</p>
                 </div>
                 <div class="metric">
-                    <h3>2.44ms</h3>
+                    <h3>3.2ms</h3>
                     <p>Average Latency</p>
                 </div>
                 <div class="metric">
-                    <h3>19.1MB</h3>
+                    <h3>14MB</h3>
                     <p>Docker Image Size</p>
                 </div>
                 <div class="metric">
-                    <h3>2,548</h3>
+                    <h3>2,454</h3>
                     <p>Tests Passing</p>
                 </div>
                 <div class="metric">
@@ -223,7 +223,7 @@
                     <p>One binary runs HTTP proxy (8080), MCP server (8081), and dashboard (8443). No separate deployments. No configuration drift.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>🔒 15+ Compliance Frameworks <span class="new-badge">v3.4.0</span></h3>
+                    <h3>🔒 15+ Compliance Frameworks <span class="new-badge">v3.4.3</span></h3>
                     <p><strong>Free:</strong> MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10 (Community tier, always on). <strong>Billable modules:</strong> HIPAA, PCI-DSS, SOC 2, ISO 42001, ISO 27001, NIST 800-171, HITRUST, TISAX, CMMC L2, FedRAMP (150 controls 🆕), FIPS 140-2/140-3, and EU AI Act (82 controls). All gated via the Compliance Scan Engine.</p>
                 </div>
                 <div class="feature-card">
@@ -240,7 +240,7 @@
                 </div>
                 <div class="feature-card">
                     <h3>🏢 Production Ready</h3>
-                    <p>97.7% test coverage. Docker + Kubernetes ready. Health checks. Graceful shutdown. 24/7 ready.</p>
+                    <p>87.4% test coverage. Docker + Kubernetes ready. Health checks. Graceful shutdown. 24/7 ready.</p>
                 </div>
             </div>
         </div>
@@ -249,7 +249,7 @@
 
     <section class="features" style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
         <div class="container">
-            <h2>🆕 v3.4.0: 153-Pattern Detection, FedRAMP, PostgreSQL</h2>
+            <h2>🆕 v3.4.3: Security Hardened, HA Clustering, 153-Pattern Detection</h2>
             <div style="max-width: 800px; margin: 0 auto; text-align: center; margin-bottom: 40px;">
                 <p style="font-size: 1.2rem; color: #4a5568;">
                     AegisGate is the first AI security gateway with <strong>full EU AI Act (Regulation 2024/1689) coverage</strong>.
@@ -260,6 +260,7 @@
                     <a href="https://aegisgatesecurity.io/pricing" style="color: #667eea;">💳 See pricing</a> &nbsp;|&nbsp;
                     <a href="https://github.com/aegisgatesecurity/aegisgate-platform" style="color: #667eea;">📦 View on GitHub</a>
                 </p>
+                <p style="font-size: 1rem; color: #718096; margin-top: 10px;">v3.4.3 hardens all authenticated endpoints, restricts metrics to localhost, and removes unsafe-eval from CSP. 26/27 red team tests pass.</p>
             </div>
             <div class="feature-grid" style="margin-top: 20px;">
                 <div class="feature-card">
@@ -273,6 +274,10 @@
                 <div class="feature-card">
                     <h3>6 PostgreSQL Suites</h3>
                     <p>107 integration tests across IOC, persistence, RBAC, license, correlation, and attestation packages. testcontainers-go with ephemeral PostgreSQL 16. 4 production bugs found and fixed.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>HA Clustering</h3>
+                    <p>Multi-node deployments with distributed rate limiting, instance identity headers, and cluster health monitoring. Professional+ tier.</p>
                 </div>
             </div>
         </div>

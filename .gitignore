@@ -164,3 +164,46 @@ SPRINT-*-*.md
 # Internal sales/marketing strategy docs
 docs/lens-to-platform-upsell.md
 docs/a2a-implementation-roadmap.md
+
+# =============================================================================
+# OPSEC: Second sweep (2026-07-24) — removed from tracking, must NEVER be
+# re-added. These contain real secrets, internal attack plans, or dev infra.
+# =============================================================================
+
+# Installer script (served from website, not shipped in repo)
+install.sh
+
+# Red team / adversarial testing documents (internal security, NEVER public)
+RED-TEAM-*.md
+red-team-*.md
+
+# Environment template with real Stripe price IDs
+.env.example
+.env.example.*
+
+# Billing config with live Stripe publishable key
+pkg/billing/billing-config.json
+billing-config.json
+
+# Test lab (internal Docker infra with TLS keys, Keycloak configs)
+testlab/
+
+# Red team audit lab (contains attacker scripts and configs)
+audit-lab/
+audit-results/
+
+# Signed evidence keys (runtime-generated)
+var/
+certs/
+
+# =============================================================================
+# OPSEC: Third sweep — large/diagnostic files must not be tracked
+# =============================================================================
+
+# k6 load test results (multi-GB JSON blobs, regenerated on demand)
+tests/load/k6/results/*.json
+!tests/load/k6/results/break-test-results.json
+
+# Sprint/diagnostic reports (internal planning artifacts)
+D*-*.md
+rate-limit-verification-results.json

@@ -113,10 +113,10 @@ team — this 91/9 split mirrors the HIPAA sub-package's approach.
 
 ## Performance
 
-- **11,681 peak RPS** (k6 load test)
-- **2.44ms average latency** at 1K RPS
-- **19.1MB Docker image** (distroless)
-- **2,548 tests passing** (97.7% coverage)
+- **24K+ peak RPS** (k6 load test, 0% errors at 20x baseline)
+- **3.2ms average latency** at 1K RPS
+- **14MB binary** (single Go binary, no runtime dependencies)
+- **2,454 tests passing** (87.4% coverage, 99 packages)
 - **0 known CVEs** (Trivy + Grype scanned)
 
 ---
