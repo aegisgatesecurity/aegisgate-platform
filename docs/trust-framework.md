@@ -4,7 +4,7 @@
 **Last reviewed:** 2026-07-21  
 **Audience:** AegisGate customers evaluating trust/identity/governance for AI agents, regulated-industry procurement teams (banking, healthcare, government), and AegisGate sales engineers answering "how does AegisGate handle AI agent trust?" questions.
 
-This document is a 1-page summary. The full technical architecture lives in `plans/THREAT-MODEL.md` Section 2.6 (10 STRIDE threats, CVSS 8.5–9.0, 7 mitigation mappings). The Go implementation lives in `pkg/trust/` + `pkg/attestation/` + `pkg/digest/` (8 packages, ~8,500 LOC, 548 tests, 85–91% coverage per package).
+This document is a 1-page summary. The full technical architecture is documented internally (Section 2.6 (10 STRIDE threats, CVSS 8.5–9.0, 7 mitigation mappings). The Go implementation lives in `pkg/trust/` + `pkg/attestation/` + `pkg/digest/` (8 packages, ~8,500 LOC, 548 tests, 85–91% coverage per package).
 
 ---
 
@@ -103,11 +103,11 @@ To enable: set `trust.enabled: true` in `configs/aegisgate-platform.yaml` (or `A
 
 ## References
 
-- Threat model: `plans/THREAT-MODEL.md` Section 2.6 (10 STRIDE threats, 7 mitigation mappings)
+- Threat model: internal document Section 2.6 (10 STRIDE threats, 7 mitigation mappings)
 - Envelope primitive: `pkg/attestation/attestation.go` (frozen 2026-06-15, ECDSA P-256)
 - Customer explainer for IOC federation: `docs/federated-ioc-library.md`
 - Customer explainer for EU AI Act: `docs/compliance/eu-ai-act.md` (Art 9 + Art 14 reference the Trust Framework)
-- Pricing source of truth: `content/pricing.md` (Professional+ tier, no separate Trust module cost)
+- Pricing: https://aegisgatesecurity.io/pricing/ (Professional+ tier, no separate Trust module cost)
 
 ---
 

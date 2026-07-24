@@ -120,10 +120,10 @@ This is the **network effect** that makes AegisGate more valuable as more custom
 
 - Technical architecture: `docs/federated-ioc-library.md` (architecture, operator guide, threat model, wire format)
 - IOC store implementation: `pkg/ioc/` (12,902 LOC, includes attest.go, bundle.go, postgres_store.go, taxii_integration.go)
-- Threat model: `plans/THREAT-MODEL.md` Section 2.7 (federated library STRIDE threats)
+- Threat model: internal document Section 2.7 (federated library STRIDE threats)
 - Customer explainer for Trust Framework: `docs/trust-framework.md`
 - Customer explainer for EU AI Act: `docs/compliance/eu-ai-act.md`
-- Pricing source of truth: `content/pricing.md` (Professional+ tier, no separate IOC module cost)
+- Pricing: https://aegisgatesecurity.io/pricing/ (Professional+ tier, no separate IOC module cost)
 
 ---
 

@@ -55,7 +55,7 @@ Comprehensive threat analysis for all six security pillars:
 | **ACP (Agent Communication Protocol)** | 12 STRIDE threats | HMAC bypass (CVSS 9.0) |
 | **Trust Framework** | 10 STRIDE threats | Identity spoofing (CVSS 9.0) |
 
-> **Total: 63 STRIDE threats documented** (see `plans/THREAT-MODEL.md` for
+> **Total: 63 STRIDE threats documented** (see internal threat model for
 > the full analysis with CVSS scoring and mitigation mappings). The Trust
 > Framework was promoted to first-class 6th pillar in v3.2.0+ and expanded
 > in v3.4.0+ with the envelope primitive.

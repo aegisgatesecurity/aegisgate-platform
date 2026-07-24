@@ -429,7 +429,7 @@ Detailed evidence requirements and references for each control, organized by cat
 - Tier feature: `pkg/tier/tier.go` `FeatureEUAIActModule` (Professional)
 - Billing: `pkg/billing/billing-config.json` `module_eu_ai_act` entry
 - Customer 1-pager: `docs/compliance/eu-ai-act.md`
-- Plan: `plans/V3.3.0-ROADMAP.md` Phase 1 (lines 225-260)
+- Plan: internal roadmap Phase 1
 
 ---
 

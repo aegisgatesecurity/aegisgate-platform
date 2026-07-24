@@ -5,7 +5,7 @@
 > when this file changes, the static site is regenerated.
 >
 > Last updated: 2026-06-06 (v3.3.0 — EU AI Act module)
-> Architecture decisions: see `plans/V3.3.0-ROADMAP.md` and the
+> Architecture decisions: see the internal roadmap and the
 > `aegisgate-v3.2.0-locked-decisions` decision log.
 
 ---
