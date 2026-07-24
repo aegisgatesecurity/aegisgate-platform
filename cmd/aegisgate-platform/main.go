@@ -1017,7 +1017,7 @@ func main() {
 	// the global ring buffer for compliance evidence packages.
 	var innerHandler http.Handler = proxyRecorderMiddleware(
 		security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)))
-	proxyHandler := http.MaxBytesHandler(innerHandler, int64(10<<20))
+	proxyHandler := http.MaxBytesHandler(rejectDangerousMethods(innerHandler), int64(10<<20))
 
 	// F-DOS-1 (D25 pentest): Add ReadHeaderTimeout to prevent
 	// Slowloris-style header-read attacks. The 10MB+ body
@@ -1657,7 +1657,7 @@ func main() {
 	// scanner creates an empty ScanRequest), but the HTTP server still
 	// reads up to Content-Length, which on a 5MB body can take 100s+
 	// through the embedded MCP server's transport layer. A
-	// per-endpoint MaxBytesHandler on the dashboard mux limits this
+	// rejectDangerousMethods is defined below main() — it rejects TRACE/TRACK/CONNECT MaxBytesHandler on the dashboard mux limits this
 	// without changing the proxy-wide 10MB cap (F-DOS-1) or the
 	// scanner's 64KB regex cap (D28 fix in pkg/response/guard.go).
 	const scanMaxBody = 1 << 20 // 1MB
@@ -2128,7 +2128,7 @@ func main() {
 
 	dashHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *dashPort),
-		Handler:      cluster.InstanceIdMiddleware(clusterNode, clusterMode, security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux))),
+		Handler:      cluster.InstanceIdMiddleware(clusterNode, clusterMode, rejectDangerousMethods(security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux)))),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -2343,4 +2343,19 @@ func truncateDBURL(dbURL string) string {
 		}
 	}
 	return u.String()
+}
+
+
+// rejectDangerousMethods rejects TRACE, TRACK, and CONNECT methods
+// to prevent cross-site tracing (XST) attacks. Go's default mux serves
+// static files on all methods including TRACE, which leaks auth headers.
+func rejectDangerousMethods(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodTrace, "TRACK", http.MethodConnect:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		default:
+			next.ServeHTTP(w, r)
+		}
+	})
 }

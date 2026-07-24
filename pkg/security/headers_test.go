@@ -284,3 +284,52 @@ func TestPermissionsPolicy(t *testing.T) {
 		t.Errorf("Unexpected Permissions-Policy: %s", pp)
 	}
 }
+
+func TestDashboardSecurityHeadersConfig_CORP(t *testing.T) {
+	config := DashboardSecurityHeadersConfig()
+	if config.CrossOriginResourcePolicy != "same-origin" {
+		t.Errorf("Dashboard CORP should be same-origin, got %q", config.CrossOriginResourcePolicy)
+	}
+	if config.CrossOriginEmbedderPolicy != "require-corp" {
+		t.Errorf("Dashboard COEP should be require-corp, got %q", config.CrossOriginEmbedderPolicy)
+	}
+	if config.CrossOriginOpenerPolicy != "same-origin" {
+		t.Errorf("Dashboard COOP should be same-origin, got %q", config.CrossOriginOpenerPolicy)
+	}
+}
+
+func TestDashboardHeadersMiddleware_IncludesCORP(t *testing.T) {
+	handler := DashboardHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	handler.ServeHTTP(rec, req)
+
+	corp := rec.Header().Get("Cross-Origin-Resource-Policy")
+	if corp != "same-origin" {
+		t.Errorf("Expected Cross-Origin-Resource-Policy same-origin, got %q", corp)
+	}
+	coep := rec.Header().Get("Cross-Origin-Embedder-Policy")
+	if coep != "require-corp" {
+		t.Errorf("Expected Cross-Origin-Embedder-Policy require-corp, got %q", coep)
+	}
+	coop := rec.Header().Get("Cross-Origin-Opener-Policy")
+	if coop != "same-origin" {
+		t.Errorf("Expected Cross-Origin-Opener-Policy same-origin, got %q", coop)
+	}
+}
+
+func TestDashboardHeadersMiddleware_NoUnsafeEval(t *testing.T) {
+	handler := DashboardHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	handler.ServeHTTP(rec, req)
+
+	csp := rec.Header().Get("Content-Security-Policy")
+	if strings.Contains(csp, "unsafe-eval") {
+		t.Errorf("Dashboard CSP must not contain unsafe-eval, got %q", csp)
+	}
+}
