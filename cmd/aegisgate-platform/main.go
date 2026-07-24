@@ -42,6 +42,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
@@ -179,6 +180,15 @@ func main() {
 	flag.Parse()
 
 	// ============================================================
+	// Cluster node identity (v3.4.1 clustering support)
+	// ============================================================
+	// Initialize node identity for this instance. If AEGISGATE_NODE_ID
+	// is set, it's used as a stable identifier (recommended for clusters).
+	// Otherwise, a random ID is generated per-process.
+	cluster.InitNode(version, "community") // tier updated later after license resolution
+	clusterNode := cluster.GetNode()
+
+	// ============================================================
 	// Audit ring buffer + global event recorder (v3.3.0+ Track 6)
 	// ============================================================
 	//
@@ -294,6 +304,9 @@ func main() {
 
 	// Store the resolved license key for context-aware validation
 	licenseMgr.SetLicenseKey(resolvedLicenseKey)
+
+	// Update cluster node tier now that license is resolved
+	clusterNode.Tier = platformTier.String()
 
 	// Warn if --tier flag conflicts with license-derived tier
 	if *tierName != "" && *tierName != "community" && *tierName != platformTier.String() {
@@ -1321,6 +1334,13 @@ func main() {
 
 	dashMux := http.NewServeMux()
 
+	// Cluster health endpoint (v3.4.1 clustering support)
+	clusterMode := "standalone"
+	if pgStore != nil {
+		clusterMode = "clustered"
+	}
+	dashMux.HandleFunc("/api/v1/cluster/health", cluster.ClusterHealthHandler(clusterNode, clusterMode, nil, nil))
+
 	// Metrics endpoint (Prometheus)
 	dashMux.Handle("/metrics", metrics.Handler())
 
@@ -1534,7 +1554,11 @@ func main() {
 		if started, ok := persistenceMgr.Stats()["started"].(bool); ok && started {
 			persistStarted = true
 		}
-		checks["persistence"] = map[string]interface{}{"enabled": persistenceMgr.IsEnabled(), "started": persistStarted, "healthy": persistStarted}
+		persistenceBackend := "file"
+		if backend, ok := persistenceMgr.Stats()["backend"].(string); ok {
+			persistenceBackend = backend
+		}
+		checks["persistence"] = map[string]interface{}{"enabled": persistenceMgr.IsEnabled(), "started": persistStarted, "healthy": persistStarted, "backend": persistenceBackend}
 		if !persistStarted {
 			allHealthy = false
 		}
@@ -1579,10 +1603,10 @@ func main() {
 		}
 
 		w.WriteHeader(code)
-		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","checks":{"scanner":{"healthy":%v},"bridge":{"status":"%s","healthy":true},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"a2a":{"status":"%s","healthy":%v}},"uptime":%.0f,"timestamp":"%s"}`,
-			status, version, platformTier.String(),
+		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","node_id":"%s","cluster_mode":"%s","checks":{"scanner":{"healthy":%v},"bridge":{"status":"%s","healthy":true},"persistence":{"enabled":%v,"started":%v,"healthy":%v,"backend":"%s"},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"a2a":{"status":"%s","healthy":%v}},"uptime":%.0f,"timestamp":"%s"}`,
+			status, version, platformTier.String(), clusterNode.ID[:8], clusterMode,
 			scannerHealthy, bridgeStatus,
-			persistenceMgr.IsEnabled(), persistStarted, persistStarted,
+			persistenceMgr.IsEnabled(), persistStarted, persistStarted, persistenceBackend,
 			licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
 			certHealthy, certHealthy,
 			a2aStatus, a2aHealthy,
@@ -2074,7 +2098,7 @@ func main() {
 
 	dashHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *dashPort),
-		Handler:      security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux)),
+		Handler:      cluster.InstanceIdMiddleware(clusterNode, clusterMode, security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux))),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -2111,7 +2135,7 @@ func main() {
 		log.Printf("Warning: Service verification: %v", err)
 	}
 
-	log.Printf("AegisGate Security Platform ready (v%s)", version)
+	log.Printf("AegisGate Security Platform ready (v%s, cluster: %s, node: %s)", version, clusterMode, clusterNode.ID[:8])
 	log.Printf("[STARTUP-COMPLETE] All services initialized")
 	log.Printf("Components:")
 	log.Printf("  Proxy:    http://0.0.0.0:%d -> %s (tier: %s)", *proxyPort, *targetURL, platformTier.String())
