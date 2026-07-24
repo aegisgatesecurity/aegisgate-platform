@@ -21,9 +21,9 @@
 //
 // The PostgreSQL implementation uses a sliding-window counter with a
 // 1-second granularity. Each instance:
-//   1. INSERTs or UPDATES its counter row for the current window
-//   2. Sums all instance counters for the current window
-//   3. Returns Allow if the sum is within the rate limit
+//  1. INSERTs or UPDATES its counter row for the current window
+//  2. Sums all instance counters for the current window
+//  3. Returns Allow if the sum is within the rate limit
 //
 // This design has the following properties:
 //   - Correctness: Within the 1-second window granularity, the global
