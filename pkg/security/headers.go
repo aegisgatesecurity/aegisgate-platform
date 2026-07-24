@@ -89,11 +89,14 @@ func DashboardSecurityHeadersConfig() SecurityHeadersConfig {
 			"frame-ancestors 'none'; " +
 			"base-uri 'self'; " +
 			"form-action 'self'",
-		XFrameOptions:           "DENY",
-		XContentTypeOptions:     "nosniff",
-		XXSSProtection:          "1; mode=block",
-		ReferrerPolicy:          "strict-origin-when-cross-origin",
-		StrictTransportSecurity: "max-age=31536000; includeSubDomains",
+		XFrameOptions:             "DENY",
+		XContentTypeOptions:       "nosniff",
+		XXSSProtection:             "1; mode=block",
+		ReferrerPolicy:             "strict-origin-when-cross-origin",
+		StrictTransportSecurity:    "max-age=31536000; includeSubDomains",
+		CrossOriginEmbedderPolicy:  "require-corp",
+		CrossOriginOpenerPolicy:    "same-origin",
+		CrossOriginResourcePolicy:  "same-origin",
 		PermissionsPolicy: "accelerometer=(), camera=(), geolocation=(), " +
 			"gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
 	}

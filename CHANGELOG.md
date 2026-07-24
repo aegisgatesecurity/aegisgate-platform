@@ -2,6 +2,12 @@
 
 > **v3.4.3 security hardening release.** Fixes critical auth bypass on IOC admin endpoints, restricts metrics to localhost, adds auth to previously unauthenticated dashboard endpoints, and removes `unsafe-eval` from CSP. Found during pre-ship adversarial attack surface audit.
 
+### Red Team Phase 2, 3, 5 Results
+
+- **✅ P2:** SQL injection, path traversal, header injection, large payload — all handled gracefully (401/404/503, no 500s)
+- **✅ P3:** All auth-required endpoints return 401 when unauthenticated. Node identity headers present.
+- **✅ P5:** TRACE/TRACK/CONNECT methods now return 405 (was 200 — cross-site tracing fix). All 8 security headers present. CORP/COEP/COOP added to dashboard. CSP confirmed no unsafe-eval.
+
 ### Security Fixes
 
 - **🔴 CRITICAL: fix(auth):** IOC Admin API endpoints (`/api/v1/ioc/admin/*`) were mounted on the dashboard mux WITHOUT authentication middleware. All 6 endpoints (status, share, receive, keyring, keyring/rotate, reputation) are now wrapped with `RequireAuth()` + admin tier enforcement. Unauthenticated access to IOC key rotation, sharing toggles, and keyring data is no longer possible.
@@ -15,6 +21,9 @@
 ### Testing
 
 - **test(security):** New CSP hardening tests: `TestDashboardSecurityHeadersConfig` verifies no `unsafe-eval`, `TestDefaultSecurityHeadersConfig_NoUnsafeInline` verifies API CSP excludes `unsafe-inline`, `TestAPISecurityHeadersConfig_StrictCSP` verifies API CSP is `default-src 'none'`.
+- **🟡 fix(security):** TRACE/TRACK/CONNECT methods returned 200 on dashboard static files (cross-site tracing/XST vulnerability). New `rejectDangerousMethods` middleware returns 405 for these methods on both proxy and dashboard muxes.
+- **🟡 fix(security):** Dashboard CSP was missing `Cross-Origin-Resource-Policy`, `Cross-Origin-Embedder-Policy`, and `Cross-Origin-Opener-Policy` headers. `DashboardSecurityHeadersConfig` now includes all three (same-origin, require-corp, same-origin).
+- **test(security):** `TestDashboardSecurityHeadersConfig_CORP` and `TestDashboardHeadersMiddleware_IncludesCORP` verify dashboard CORP/COEP/COOP headers. `TestRejectDangerousMethods` verifies TRACE/TRACK/CONNECT return 405.
 - **test(cluster):** Expanded pkg/cluster tests from 9 to 22. Coverage 55.3% → 56.5% (all local-testable code at 100%, PG-dependent paths exempted in CI).
 - **fix(ci):** Added `pkg/cluster` to CI per-package coverage exemption list (same category as `pkg/persistence` and `pkg/rbac`).
 
