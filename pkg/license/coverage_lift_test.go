@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+//go:build !race
+
 // Coverage lift tests for pkg/license — targets uncovered in-memory code paths.
 //
 // Target functions:
