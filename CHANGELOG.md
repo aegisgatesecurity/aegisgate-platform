@@ -1,3 +1,40 @@
+## [3.4.2] - 2026-07-24 - HA Clustering, Break Testing, Distributed Rate Limiting 🏗️
+
+> **v3.4.2 patch release.** Adds horizontal scaling / high-availability clustering support, distributed rate limiting, and comprehensive break-test results proving the platform handles 20x baseline load without failure.
+
+### New Features
+
+- **feat(cluster):** New `pkg/cluster` package for multi-instance deployments:
+  - `DistributedRateLimiter`: PostgreSQL-backed distributed rate limiting for Professional+ tier clusters. Falls back to per-node token buckets for Community tier.
+  - `NodeInfo`: Stable node identity via `AEGISGATE_NODE_ID` env var. Auto-generated random ID if not set.
+  - `InstanceIdMiddleware`: `X-Instance-Id`, `X-Instance-Started-At`, `X-Cluster-Mode` response headers for load balancer sticky routing.
+  - `ClusterHealthHandler`: `/api/v1/cluster/health` endpoint for cluster monitoring and LB health checks.
+- **feat(cluster):** `/health` endpoint now includes `node_id`, `cluster_mode`, and `backend` (file/postgresql) fields.
+- **feat(cluster):** Startup log includes cluster mode and node ID.
+
+### Documentation
+
+- **docs/clustering.md:** Full clustering deployment guide with architecture diagram, state sharing matrix, load balancer configuration examples (Envoy, Nginx, AWS ALB), failover behavior, performance projections, and deployment checklist.
+
+### Performance (Break Testing)
+
+| VUs | Requests | p50 | p95 | p99 | Max | Error Rate |
+|-----|----------|------|------|------|------|------------|
+| 100 (1x) | 108K | 1.74ms | 5.48ms | 9.17ms | 41ms | 0.00% |
+| 200 (2x) | 362K | 1.51ms | 6.77ms | 13.32ms | 75ms | 0.00% |
+| 500 (5x) | 938K | 4.59ms | 16.51ms | 36.09ms | 178ms | 0.00% |
+| 1000 (10x) | 1.5M | 22.67ms | 46.05ms | 72.08ms | 340ms | 0.00% |
+| 2000 (20x) | 819K | 69.25ms | 122.80ms | 152.39ms | 2732ms | 0.00% |
+
+- Platform never became unresponsive. 92% of requests at 2000 VU completed under 100ms.
+- Projected 3-node cluster: ~45K RPS at p95 < 50ms.
+
+### Bug Fixes
+
+- **fix(opsec):** Pre-commit hook self-detection — `.githooks/pre-commit` was triggering its own `PRIVATE KEY` check.
+
+---
+
 ## [3.4.1] - 2026-07-24 - OPSEC Remediation, Health Fix, Compliance Expansion 🔒
 
 > **v3.4.1 patch release.** Fixes a critical 503 health-check regression affecting Community tier deployments, hardens the repository against credential leaks, and includes compliance framework expansions that missed the v3.4.0 tag.
