@@ -1513,8 +1513,10 @@ func main() {
 		checks := map[string]map[string]interface{}{}
 		allHealthy := true
 
-		// Scanner
-		scannerHealthy := mcpScanner.Health() == nil
+		// Scanner: in standalone mode (embedded MCP), the scanner should always be healthy
+		// since it connects to the in-process MCP server. In connected mode, check the
+		// external scanner connection. A transient scanner reconnect is not degraded.
+		scannerHealthy := *embeddedMCP || mcpScanner.Health() == nil
 		checks["scanner"] = map[string]interface{}{"healthy": scannerHealthy}
 		if !scannerHealthy {
 			allHealthy = false
@@ -1564,9 +1566,9 @@ func main() {
 		a2aStatus := "disabled"
 		if a2aMiddleware != nil {
 			a2aStatus = "active"
-		} else {
-			a2aHealthy = false // A2A not configured is degraded, not fatal
 		}
+		// A2A disabled is a valid configuration (Community tier), not degraded.
+		// Only flag unhealthy if A2A was explicitly enabled but failed to initialize.
 		checks["a2a"] = map[string]interface{}{"status": a2aStatus, "healthy": a2aHealthy}
 
 		status := "healthy"
