@@ -1,0 +1,150 @@
+{
+  "locale": "ar",
+  "language": "العربية",
+  "direction": "rtl",
+  "messages": {
+    "error.filesystem_sealed": "نظام الملفات مختوم: التعديلات غير مسموحة",
+    "error.already_sealed": "نظام الملفات مختوم بالفعل",
+    "error.entry_not_found": "الإدخال {{.ID}} غير موجود",
+    "error.no_configs": "لا توجد تكوينات متاحة",
+    "error.checksum_mismatch": "عدم تطابق المجموع الاختباري للإدخال {{.ID}}",
+    "error.wal_load_failed": "فشل تحميل WAL: {{.Error}}",
+    "error.wal_directory": "فشل إنشاء دليل WAL: {{.Error}}",
+    "error.not_found": "غير موجود",
+    "error.invalid_locale": "لغة غير صالحة: {{.Locale}}",
+    "error.unauthorized": "وصول غير مصرح به",
+    "error.forbidden": "الدخول محظور",
+    "error.invalid_config": "تكوين غير صالح",
+    "error.operation_failed": "فشلت العملية: {{.Operation}}",
+    "error.method_not_allowed": "الطريقة غير مسموح بها",
+    "error.rate_limit_exceeded": "تم تجاوز حد المعدل. يرجى المحاولة لاحقاً.",
+    "error.internal": "خطأ داخلي في الخادم: {{.Error}}",
+    "error.invalid_request": "طلب غير صالح: {{.Error}}",
+    "error.websocket_unavailable": "خادم WebSocket غير متاح",
+
+    "http.method_not_allowed": "الطريقة غير مسموح بها",
+    "http.rate_limit_exceeded": "تم تجاوز حد المعدل",
+    "http.unauthorized": "غير مصرح",
+    "http.forbidden": "محظور",
+    "http.not_found": "غير موجود",
+    "http.bad_request": "طلب سيء",
+    "http.internal_error": "خطأ داخلي في الخادم",
+    "http.service_unavailable": "الخدمة غير متاحة",
+    "http.request_timeout": "انتهت مهلة الطلب",
+    "http.too_many_requests": "طلبات كثيرة جداً",
+
+    "log.starting": "بدء وكيل الأمان AegisGate",
+    "log.shutting_down": "إيقاف الخادم",
+    "log.server_stopped": "توقف الخادم",
+    "log.tls_initialized": "تم تهيئة مدير TLS",
+    "log.mitm_enabled": "تم تفعيل وضع MITM - تهيئة وكيل اعتراض HTTPS",
+    "log.mitm_ca_initialized": "تم تهيئة سلطةCertification MITM",
+    "log.upstream_proxy": "استخدام وكيل أعلى для MITM",
+    "log.dashboard_started": "بدأ خادم لوحة المعلومات",
+    "log.dashboard_stopped": "توقف خادم لوحة المعلومات",
+    "log.auth_enabled": "المصادقة مفعلة",
+    "log.auth_disabled": "المصادقة معطلة - العمل في الوضع المجهول",
+    "log.config_loaded": "تم تحميل التكوين بنجاح",
+    "log.config_failed": "فشل تحميل التكوين",
+
+    "health.status_healthy": "سليم",
+    "health.status_unhealthy": "غير سليم",
+    "health.status_degraded": "متدهور",
+    "health.status_ok": "موافق",
+    "health.metrics_connected": "متصل",
+    "health.metrics_disconnected": "غير متصل",
+    "health.check_passed": "نجح فحص الصحة",
+    "health.check_failed": "فشل فحص الصحة: {{.Reason}}",
+    "health.check_ok": "موافق",
+    "health.connected": "متصل",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "الوكيل مرتبط بـ {{.Address}}",
+    "config.upstream_set": "تم تكوين الوكيل الأعلى: {{.Upstream}}",
+    "config.tls_dir": "دليل شهادات TLS: {{.Dir}}",
+    "config.max_connections": "الحد الأقصى للاتصالات: {{.Max}}",
+
+    "audit.operation_logged": "تم تسجيل العملية: {{.Operation}}",
+    "audit.modification_blocked": "تم حظر التعديل: {{.Operation}}",
+    "audit.snapshot_created": "تم إنشاء لقطة: {{.ID}}",
+    "audit.seal_applied": "تم تطبيق الختم في {{.Time}}",
+    "audit.unseal_applied": "تمت إزالة الختم في {{.Time}}",
+
+    "proxy.started": "بدأ خادم الوكيل",
+    "proxy.stopped": "توقف خادم الوكيل",
+    "proxy.connection_accepted": "تم قبول الاتصال من {{.Remote}}",
+    "proxy.connection_closed": "تم إغلاق الاتصال",
+    "proxy.request_forwarded": "تم توجيه الطلب إلى {{.Target}}",
+
+    "certificate.generated": "تم إنشاء شهادة لـ {{.Host}}",
+    "certificate.ca_created": "تم إنشاء سلطة الشهادات",
+    "certificate.expired": "انتهت صلاحية الشهادة",
+    "certificate.invalid": "شهادة غير صالحة",
+
+    "compliance.violation": "تم اكتشاف انتهاك الامتثال: {{.Rule}}",
+    "compliance.check_passed": "نجح فحص الامتثال",
+    "compliance.framework_loaded": "تم تحميل إطار الامتثال: {{.Framework}}",
+
+    "metrics.collector_started": "بدأ جامع المقاييس",
+    "metrics.export": "تم تصدير المقاييس بنجاح",
+
+    "locale.en": "الإنجليزية",
+    "locale.fr": "الفرنسية",
+    "locale.de": "الألمانية",
+    "locale.es": "الإسبانية",
+    "locale.ja": "اليابانية",
+    "locale.zh": "الصينية المبسطة",
+    "locale.ar": "العربية"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "zero": "لا توجد مدخلات",
+      "one": "مدخل واحد غير موجود",
+      "two": "مدخلان غير موجودان",
+      "few": "{{.Count}} مدخلات غير موجودة",
+      "many": "{{.Count}} مدخل غير موجود",
+      "other": "{{.Count}} مدخل غير موجود"
+    },
+    "items.count": {
+      "zero": "لا توجد عناصر",
+      "one": "عنصر واحد",
+      "two": "عنصران",
+      "few": "{{.Count}} عناصر",
+      "many": "{{.Count}} عنصر",
+      "other": "{{.Count}} عنصر"
+    },
+    "violations.count": {
+      "zero": "لا توجد انتهاكات",
+      "one": "انتهاك واحد",
+      "two": "انتهاكان",
+      "few": "{{.Count}} انتهاكات",
+      "many": "{{.Count}} انتهاك",
+      "other": "{{.Count}} انتهاك"
+    },
+    "connections.active": {
+      "zero": "لا توجد اتصالات نشطة",
+      "one": "اتصال نشط واحد",
+      "two": "اتصالان نشطان",
+      "few": "{{.Count}} اتصالات نشطة",
+      "many": "{{.Count}} اتصال نشط",
+      "other": "{{.Count}} اتصال نشط"
+    },
+    "requests.processed": {
+      "zero": "لم تتم معالجة طلبات",
+      "one": "طلب واحد تمت معالجته",
+      "two": "طلبان تمت معالجتهما",
+      "few": "{{.Count}} طلبات تمت معالجتها",
+      "many": "{{.Count}} طلب تمت معالجته",
+      "other": "{{.Count}} طلب تمت معالجته"
+    },
+    "errors.occurred": {
+      "zero": "لم تحدث أخطاء",
+      "one": "حدث خطأ واحد",
+      "two": "حدث خطأان",
+      "few": "حدثت {{.Count}} أخطاء",
+      "many": "حدث {{.Count}} خطأ",
+      "other": "حدث {{.Count}} خطأ"
+    }
+  },
+  "copyright": "وكيل الأمان AegisGate - إدارة التكوين للمؤسسات"
+}
