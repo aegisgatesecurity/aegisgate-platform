@@ -45,6 +45,7 @@ for path in $STAGED; do
     RED-TEAM-*.md|red-team-*.md|install.sh|\
     testlab/*|audit-lab/*|audit-results/*|\
     .env.example|.env.example.*|\
+    upstream/*|\
     D2*-*.md|Sprint-*.md|SPRINT-*-*.md)
       BLOCKED=1
       BLOCKED_LIST="$BLOCKED_LIST  - $path (gitignored internal)$NL"

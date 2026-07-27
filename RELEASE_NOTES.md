@@ -1,6 +1,6 @@
-# AegisGate Platform v3.4.0 Release Notes
+# AegisGate Platform v3.4.3 Release Notes
 
-**Release Date**: 2026-07-23
+**Release Date**: 2026-07-24
 **Status**: General Availability (GA)
 
 ## Overview

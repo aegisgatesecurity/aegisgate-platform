@@ -9,10 +9,10 @@
 
 # === Secret findings: 3 RSA private keys in upstream/aegisgate/pkg/adapters/certs/ ===
 #
-# Reason: TEST FIXTURES for the platform's TLS adapter self-tests (verify
-# AegisGate TLS handshake, certificate validation, and CA-signed certificate
-# chain verification logic). They are intentionally checked into the
-# upstream source for self-test reproducibility.
+# Reason: REMOVED in v3.4.3 (OPSEC sweep #3). The upstream/ directory
+# contained committed RSA private keys (bug report confirmed). The entire
+# upstream/ directory has been removed from git tracking. These suppressions
+# are kept for historical reference but are no longer needed.
 #
 # Important:
 # - The `upstream/` directory is NOT part of the v3.2.0 release code. It is

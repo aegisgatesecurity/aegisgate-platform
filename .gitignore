@@ -207,3 +207,10 @@ tests/load/k6/results/*.json
 # Sprint/diagnostic reports (internal planning artifacts)
 D*-*.md
 rate-limit-verification-results.json
+
+# =============================================================================
+# OPSEC: Third sweep — remove upstream/ (contains private keys, 508 files)
+# upstream/ is deprecated reference code with committed RSA private keys
+# Bug report confirmed: pkg/adapters/certs/server.key is a real private key
+# =============================================================================
+upstream/
