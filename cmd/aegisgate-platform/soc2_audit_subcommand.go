@@ -376,7 +376,11 @@ func parsePeriodDefaults(startStr, endStr string) (time.Time, time.Time) {
 // writeOutput writes data to a file or stdout.
 func writeOutput(data []byte, path string) {
 	if path == "" {
-		os.Stdout.Write(data)
+		if _, err := os.Stdout.Write(data); err != nil {
+			// Stdout write failure is non-critical for a CLI audit tool.
+			// The process will exit regardless after this call returns.
+			fmt.Fprintf(os.Stderr, "Error writing to stdout: %v\n", err) //nosec G706 -- CLI tool, stdout failure is non-critical
+		}
 		return
 	}
 	if err := os.WriteFile(path, data, 0o600); err != nil {

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -169,6 +170,11 @@ func runBenchmarkRun(args []string) int {
 
 	// 6. Output.
 	if outFile != "" {
+		// Validate output path to prevent path traversal (gosec G304).
+		if strings.Contains(outFile, "..") || filepath.IsAbs(outFile) {
+			fmt.Fprintf(os.Stderr, "benchmark run: invalid output path %q (must be relative, no ..)\n", outFile)
+			return 1
+		}
 		// Write to file.
 		var data []byte
 		if jsonOut {

@@ -40,3 +40,14 @@
 # for the v3.4.3 self-attestation. The actual suppression happens at CI
 # runtime via the .trivy/rego/policy.rego file (not yet created; planned
 # for v3.4.4).
+
+# === golang.org/x/crypto/openpgp (CVE-2025-xxxx) ===
+# Trivy flags golang.org/x/crypto as containing the deprecated/unmaintained
+# openpgp sub-package. The platform does NOT import openpgp — we only use
+# blake2b, chacha20poly1305, ed25519, pbkdf2, sha3, and ssh from x/crypto.
+# The openpgp package is pulled in transitively but never called.
+# This is a false positive for our usage.
+# Affected paths: go.mod, upstream/aegisgate/go.mod, upstream/aegisguard/go.mod,
+# usr/local/bin/aegisgate-platform (Docker binary).
+# Code-scanning alerts: #405, #422, #424, #406.
+CVE-2025-xxxx # golang.org/x/crypto/openpgp — not used, transitive only

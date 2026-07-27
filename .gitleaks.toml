@@ -48,10 +48,26 @@
     # client-side JavaScript and are not considered secret. (Stripe's
     # pk_live_ keys are explicitly designed to be exposed to the browser.)
     '''pk_live_51TT0vSK2DQfk64XNCkz1nS9rVZEZyUQXUtpS4aylNiMlTqo53fQ0vhif7wskRXnx3GB5o1jMZfAfcAqmB8po1QWI00cIxRUy9u''',
+
+    # === SXC corpus test fixtures (pkg/evaluator/sxc_corpus.go) ===
+    # These are synthetic test strings with TEST/FAKE markers used in the
+    # SXC (Security eXamination Corpus) benchmark suite. They are NOT real
+    # secrets — they are carefully crafted to test whether the scanner can
+    # distinguish real-looking patterns from obvious fakes.
+    # Code-scanning alerts #447, #448, #449, #450, #451, #452, #453, #454, #455.
+    '''AKIATESTFAKEFAKEFAKE''',
+    '''ghp_TESTFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE''',
+    '''glpat-TESTFAKEFAKEFAKEFAKE''',
+    '''sk_test_NOTAREALKEY_TESTING_ONLY''',
+    '''eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJURVNUVFVJRF9GQUtFIn0.TESTFAKEFAKEFAKEFAKE''',
+    '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiVEVTVCJ9.TESTFAKEFAKEFAKE''',
   ]
   paths = [
     # plans/ is gitignored but gitleaks scans history. Allow the known
     # session anchor that has a placeholder.
     '''(^|/)plans/SESSION-ANCHOR\.md$''',
+    # SXC corpus test file — all secrets are synthetic test fixtures
+    # with TEST/FAKE markers, not real credentials.
+    '''(^|/)pkg/evaluator/sxc_corpus\.go$''',
   ]
   stopwords = []

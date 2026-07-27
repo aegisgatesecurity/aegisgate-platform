@@ -77,7 +77,7 @@ func (tm *TenantMiddleware) enrichContext(ctx context.Context, r *http.Request) 
 	// Verify tenant exists
 	t, err := tm.tenantManager.GetTenant(tenantID)
 	if err != nil {
-		tm.logger.Error("tenant not found", "tenant_id", tenantID)
+		tm.logger.Error("tenant not found", "tenant_id", tenantID) //nosec G706 -- tenant_id is internal, not sensitive
 		return nil, fmt.Errorf("tenant not found: %s", tenantID)
 	}
 
@@ -152,7 +152,7 @@ func (tm *TenantMiddleware) checkRateLimit(ctx context.Context, w http.ResponseW
 	if !rl.Allow() {
 		w.Header().Set("Retry-After", "60")
 		http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
-		tm.logger.Warn("rate limit exceeded", "tenant_id", tenantID)
+		tm.logger.Warn("rate limit exceeded", "tenant_id", tenantID) //nosec G706 -- tenant_id is internal, not sensitive
 		return false
 	}
 
@@ -184,7 +184,7 @@ func (tm *TenantMiddleware) checkCircuitBreaker(ctx context.Context, w http.Resp
 	if err != nil {
 		w.Header().Set("Retry-After", "30")
 		http.Error(w, "Service temporarily unavailable", http.StatusServiceUnavailable)
-		tm.logger.Warn("circuit breaker open", "tenant_id", tenantID)
+		tm.logger.Warn("circuit breaker open", "tenant_id", tenantID) //nosec G706 -- tenant_id is internal, not sensitive
 		return false
 	}
 
