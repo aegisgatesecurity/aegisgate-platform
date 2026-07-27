@@ -1432,7 +1432,7 @@ Sprint 4 complete: OIDC/SAML SSO ported and integrated. 28/29 packages now excee
 
 #### Files Removed from Repository
 - `CI_DEBT.md` — Internal CI debt tracker with commit hashes and lowered quality gates
-- `CONSOLIDATION-STATUS.md` — Internal project management with upstream source paths
+- `consolidation-status.md` — Internal project management (removed from public repo)
 - `EOF` — Empty junk file
 - `MCP_E2E_PREP.md` — Internal E2E test preparation with port configs
 - `fix_illegal_runes.sh` — One-shot script with developer username and absolute paths
