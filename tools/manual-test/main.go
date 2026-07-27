@@ -35,7 +35,7 @@
 //	go run ./tools/manual-test/ \
 //	    --dist /tmp/lens-dist \
 //	    --provider duck \
-//	    --output /home/chaos/Desktop/AegisGate/lens-repo-bootstrap/screenshots/
+//	    --output ./screenshots/
 //
 // v3.5.0+ Lens Phase 2.
 // =========================================================================

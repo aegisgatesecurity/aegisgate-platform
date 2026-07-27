@@ -90,9 +90,9 @@ licensegen-generate: licensegen ## Generate a license key (set CUSTOMER, TIER, D
 # The defaults assume a sibling-checkout layout:
 #   ../AegisGate-Lens/aegisgate-lens/src
 #   ../AegisGate-Lens/aegisgate-lens/test
-# In the founder's local setup the layout is:
-#   /home/chaos/Desktop/AegisGate/lens-repo-bootstrap/src
-#   /home/chaos/Desktop/AegisGate/lens-repo-bootstrap/test
+# In a local checkout the layout is:
+#   <repo-root>/aegisgate-lens/src
+#   <repo-root>/aegisgate-lens/test
 LENS_SRC_DIR     ?= ../aegisgate-lens/src
 LENS_TESTS_DIR   ?= ../aegisgate-lens/test
 LENS_DIST_DIR    ?= /tmp/lens-dist

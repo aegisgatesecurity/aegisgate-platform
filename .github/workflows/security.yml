@@ -53,6 +53,19 @@ jobs:
           path: govulncheck-results.txt
           retention-days: 30
 
+  # Job 2: OPSEC Scan
+  opsec-scan:
+    name: "OPSEC scan (tools/opsec-scan.sh)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+      - name: Run OPSEC scan
+        run: |
+          chmod +x tools/opsec-scan.sh
+          bash tools/opsec-scan.sh
+
   # Job 2: Static Analysis
   gosec:
     name: Gosec - Security Scanner
@@ -355,7 +368,7 @@ jobs:
   security-summary:
     name: Security Summary
     runs-on: ubuntu-latest
-    needs: [govulncheck, gosec, trivy, gitleaks, trufflehog, standard-tools]
+    needs: [govulncheck, opsec-scan, gosec, trivy, gitleaks, trufflehog, standard-tools]
     if: always()
     steps:
       - name: Generate Security Report
@@ -365,6 +378,7 @@ jobs:
           echo "| Tool | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| govulncheck | ${{ needs.govulncheck.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+| OPSEC Scan | ${{ needs.opsec-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} |
           echo "| Gosec | ${{ needs.gosec.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Gitleaks (licensed) | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY

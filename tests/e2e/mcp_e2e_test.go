@@ -80,7 +80,7 @@ func setupMCPE2E(t *testing.T) *MCPE2ESuite {
 	// Build binary
 	buildCmd := exec.Command("go", "build", "-o", suite.binaryPath,
 		"github.com/aegisgatesecurity/aegisgate-platform/cmd/aegisgate-platform")
-	buildCmd.Dir = "/home/chaos/Desktop/AegisGate/consolidated/aegisgate-platform"
+	buildCmd.Dir, _ = os.Getwd()
 	output, err := buildCmd.CombinedOutput()
 	require.NoError(t, err, "Failed to build binary: %s", output)
 
