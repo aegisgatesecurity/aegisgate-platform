@@ -171,6 +171,6 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting. See [govulncheck.tom
 
 [🌐 AegisGate Security](https://aegisgatesecurity.io) · [✉️ support@aegisgatesecurity.io](mailto:support@aegisgatesecurity.io)
 
-Made with ❤️ by AegisGate Security developers to secure the AI attack surface.
+Made with 🖤 by AegisGate Security developers to secure the AI attack surface.
 
 </div>
