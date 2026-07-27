@@ -37,6 +37,19 @@ AegisGate is the only AI security platform with **6 native protection pillars** 
 | **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
 | **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
 
+## Why AegisGate?
+
+Every AI interaction is an attack surface. Prompt injections leak secrets. MCP servers exfiltrate context. A2A agents escalate privileges across trust boundaries. A single misconfigured LLM response can expose PII, violate compliance, or hand an attacker a credential.
+
+AegisGate sits in front of all of it — one binary, zero dependencies, fail-closed by default.
+
+- **Sub-millisecond overhead.** 3.2ms p95 at 24K+ RPS. Your users won't notice it's there.
+- **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
+- **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
+- **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, RESPONSE, and Trust — no patchwork of point products.
+- **153 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
+- **Red-team hardened.** 26/27 adversarial tests pass. TRACE methods rejected. All security headers present. No `unsafe-eval` in CSP.
+
 ## Quick Start
 
 ```bash
@@ -151,3 +164,13 @@ Apache 2.0 — see [LICENSE](LICENSE).
 ## Security
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting. See [govulncheck.toml](govulncheck.toml) for the GO-2026-5932 suppression (openpgp transitive, not called).
+
+---
+
+<div align="center">
+
+[🌐 AegisGate Security](https://aegisgatesecurity.io) · [✉️ support@aegisgatesecurity.io](mailto:support@aegisgatesecurity.io)
+
+Made with ❤️ by AegisGate Security developers to secure the AI attack surface.
+
+</div>
