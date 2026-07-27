@@ -493,12 +493,53 @@ func generateUUID() string {
 // D22: replaces the v0.1 stub that always returned an error.
 // 5-second HTTP timeout, context-aware. Errors are wrapped
 // so callers can use errors.As to inspect the failure mode.
+// isPrivateOrReservedHost returns true if the hostname is a private, reserved,
+// or internal network address that should not be used for outbound HTTP requests.
+// This prevents SSRF by rejecting hostnames like "169.254.169.254",
+// "10.0.0.1", "192.168.1.1", "[::1]", etc.
+// Loopback addresses (localhost, 127.0.0.1, ::1) are NOT rejected here
+// because they are explicitly allowed for development (the caller checks them).
+func isPrivateOrReservedHost(host string) bool {
+	// Strip port if present (e.g., "127.0.0.1:8080" → "127.0.0.1").
+	// The port is not relevant to the SSRF check.
+	h := host
+	if idx := strings.LastIndex(h, ":"); idx > 0 {
+		h = h[:idx]
+	}
+	// Reject obvious private/internal patterns without DNS resolution.
+	// This covers the most common SSRF targets.
+	for _, prefix := range []string{
+		"169.254.", "10.", "172.16.", "172.17.", "172.18.", "172.19.",
+		"172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
+		"172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
+		"192.168.", "fc", "fd", "fe80::", "::ffff:",
+		"0.",
+	} {
+		if strings.HasPrefix(h, prefix) {
+			return true
+		}
+	}
+	// Allow 127.0.0.1 and localhost (handled by caller for HTTP scheme).
+	// Reject all other 127.x.x.x addresses.
+	if strings.HasPrefix(h, "127.") && h != "127.0.0.1" {
+		return true
+	}
+	return false
+}
+
 func fetchPublicKey(ctx context.Context, instanceID, keyID string) (*ecdsa.PublicKey, error) {
 	// Sanitize instanceID. parseIssuer already validated that
-	// it's ASCII, but we also reject path-traversal characters
-	// and ".." segments to prevent SSRF.
+	// it's ASCII, but we also reject path-traversal characters,
+	// ".." segments, and internal/private network addresses to
+	// prevent SSRF.
 	if instanceID == "" || strings.ContainsAny(instanceID, "/\\?#") || strings.Contains(instanceID, "..") {
 		return nil, fmt.Errorf("attestation: fetchPublicKey: invalid instance-id %q", instanceID)
+	}
+	// Reject internal/private network addresses to prevent SSRF.
+	// Only allowloopback (localhost/127.0.0.1/::1) for development
+	// and public hostnames for production.
+	if isPrivateOrReservedHost(instanceID) {
+		return nil, fmt.Errorf("attestation: fetchPublicKey: private/reserved instance-id rejected %q", instanceID)
 	}
 	// Build the well-known URL. Use HTTPS by default; fall back to
 	// HTTP if the instance is on localhost / 127.0.0.1 (development).
@@ -510,7 +551,7 @@ func fetchPublicKey(ctx context.Context, instanceID, keyID string) (*ecdsa.Publi
 
 	// HTTP GET with a 5-second timeout. The context is checked
 	// first so callers can cancel earlier.
-	//nosec G107 -- url is constructed from validated instanceID (path traversal chars rejected above)
+	//nosec G107 -- url is constructed from validated instanceID (path traversal + SSRF rejected above)
 	httpClient := &http.Client{Timeout: 5 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

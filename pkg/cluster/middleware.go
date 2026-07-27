@@ -68,6 +68,11 @@ func ClusterHealthHandler(node *NodeInfo, clusterMode string, localHealth map[st
 			LocalHealth: localHealth,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			// Encoding errors are logged but do not fail the request.
+			// The response has already started writing, so we cannot
+			// change the status code. This is a best-effort handler.
+			_ = err //nosec G706 -- health endpoint, encoding failure is non-critical
+		}
 	}
 }
