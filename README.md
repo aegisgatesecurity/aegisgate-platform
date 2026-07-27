@@ -18,24 +18,9 @@
 
 ---
 
-## What is AegisGate?
+> **🧩 Using AI without enterprise protections?** [AegisGate Lens](https://github.com/aegisgatesecurity/aegisgate-lens) is our free browser extension that brings 153 detection patterns to everyday AI conversations — for the 95% of users who don't have a security gateway. [Install Lens →](https://github.com/aegisgatesecurity/aegisgate-lens)
 
-AegisGate is the only AI security platform with **6 native protection pillars** — HTTP API, MCP, A2A, ACP, RESPONSE, and Trust Framework — in a single binary with zero external dependencies. Security hardening and red team verification ensure production-grade resilience.
-
-## v3.4.3 Highlights
-
-| Feature | Description |
-|---------|-------------|
-| **153-Pattern Detection Engine** | Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns |
-| **PostgreSQL Persistence** | 6 integration test suites (107 tests) via testcontainers-go |
-| **150 FedRAMP Controls** | NIST 800-53 Moderate baseline with cross-framework traceability |
-| **5 Compliance Modules** | CMMC L2, NIST 800-171, HITRUST, TISAX, ISO 27001 |
-| **Incident Response** | Automated detection rules, playbooks, compliance mapping |
-| **SOC 2 Audit** | Evidence collection, policy templates, workpapers |
-| **SSE Streaming** | Real-time SOC incident timeline |
-| **Multi-Tenant Isolation** | `tenant_id` across 4 packages with migration 004 |
-| **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
-| **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
+---
 
 ## Why AegisGate?
 
@@ -50,26 +35,64 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **153 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
 - **Red-team hardened.** 26/27 adversarial tests pass. TRACE methods rejected. All security headers present. No `unsafe-eval` in CSP.
 
-## Quick Start
+## Security Posture
 
-```bash
-# Build
-go build -o aegisgate ./cmd/aegisgate-platform
+| Metric | Value |
+|--------|-------|
+| CVEs | **0** |
+| Red team tests passed | **26 / 27** |
+| Fail-closed by default | ✅ |
+| TRACE/CONNECT/TRACK blocked | ✅ |
+| Security headers (CSP, CORP, COEP, COOP, HSTS) | ✅ |
+| Private keys in git | **0** (rotated, gitignored, pre-commit blocked) |
+| Code-scanning alerts open | **0** |
+| Dependabot alerts open | **0** |
 
-# Run with defaults (in-memory stores)
-./aegisgate
+## Request Flow
 
-# Run with PostgreSQL
-export DATABASE_URL="postgres://user:pass@localhost:5432/aegisgate"
-./aegisgate
+```mermaid
+flowchart LR
+    Client["👤 Client / Agent"] -->|"HTTP · MCP · A2A"| Gateway["🛡️ AegisGate"]
 
-# Run integration tests (requires Docker)
-go test -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/...
+    subgraph Pillars["6 Protection Pillars"]
+        direction TB
+        HTTP["HTTP API<br/>pkg/response/"]
+        MCP["MCP<br/>pkg/mcpserver/"]
+        A2A["A2A<br/>pkg/a2a/"]
+        ACP["ACP<br/>pkg/acp/"]
+        RESP["RESPONSE<br/>pkg/response/detectors/"]
+        TRUST["Trust<br/>pkg/attestation/"]
+    end
+
+    Gateway --> Pillars
+    Pillars -->|"Scanned ✅"| LLM["🤖 LLM / AI Service"]
+    Pillars -->|"Blocked ❌"| Client
+
+    LLM -->|"Response"| Gateway
+    Gateway -->|"Clean"| Client
+    Gateway -->|"Sanitized / Rejected"| Client
+
+    subgraph Infra["Infrastructure"]
+        PG[("PostgreSQL<br/>persistence")]
+        Redis[("Redis<br/>rate limiting")]
+    end
+
+    Gateway --- Infra
 ```
 
 ## Detection Engine
 
 The `pkg/response/detectors/` package provides 153 regex patterns with full Lens parity:
+
+| Category | Patterns | What it catches |
+|----------|----------|-----------------|
+| **Secrets** | 45 | AWS keys, GitHub PATs, Stripe keys, JWTs, GitLab tokens, Twilio, SendGrid, private keys |
+| **XSS** | 12 | `<script>`, event handlers, `javascript:`, SVG-based, encoded variants |
+| **PII (US Core)** | 15 | SSN, phone, DOB, MRN, ZIP+4, full names with context |
+| **PII (Extended)** | 13 | Email, IP addresses, passport numbers, driver's licenses |
+| **PII (International)** | 9 | National IDs (NHS, SIN, TFN, IRD, BSN, CF, SSN-IT, NRIC, MyNumber) |
+| **PII (Financial)** | 24 | Credit cards, IBANs, SWIFT/BIC, routing numbers |
+| **Compliance** | 35 | GDPR data types, HIPAA PHI indicators, PCI-DSS card data, CCPA personal info |
 
 ```go
 import "github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
@@ -88,6 +111,38 @@ guard := response.NewResponseGuard()
 result, _ := guard.Scan(ctx, text)
 // result.DetectedXSS, result.DetectedCompliance, result.DetectedPII, result.DetectedSecrets
 ```
+
+## How AegisGate Compares
+
+| Capability | AegisGate | Generic AI Firewalls |
+|------------|-----------|----------------------|
+| HTTP API scanning | ✅ Native | ✅ |
+| MCP guardrails | ✅ Native | ❌ Plugin or missing |
+| A2A protocol security | ✅ Native | ❌ Not supported |
+| ACP enforcement | ✅ Native | ❌ Not supported |
+| Response scanning (153 patterns) | ✅ Built-in | ⚠️ Limited or external |
+| Cryptographic attestation | ✅ Native | ❌ Not available |
+| Self-hosted, zero dependencies | ✅ Single binary | ❌ Requires external services |
+| Fail-closed by default | ✅ | ⚠️ Often fail-open |
+| 15+ compliance frameworks | ✅ | ⚠️ 3–5 typical |
+| PostgreSQL + file persistence | ✅ | ⚠️ Cloud-locked |
+| HA clustering | ✅ Native | ⚠️ Enterprise add-on |
+| Open source (Apache 2.0) | ✅ | ❌ Proprietary |
+
+## v3.4.3 Highlights
+
+| Feature | Description |
+|---------|-------------|
+| **153-Pattern Detection Engine** | Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns |
+| **PostgreSQL Persistence** | 6 integration test suites (107 tests) via testcontainers-go |
+| **150 FedRAMP Controls** | NIST 800-53 Moderate baseline with cross-framework traceability |
+| **5 Compliance Modules** | CMMC L2, NIST 800-171, HITRUST, TISAX, ISO 27001 |
+| **Incident Response** | Automated detection rules, playbooks, compliance mapping |
+| **SOC 2 Audit** | Evidence collection, policy templates, workpapers |
+| **SSE Streaming** | Real-time SOC incident timeline |
+| **Multi-Tenant Isolation** | `tenant_id` across 4 packages with migration 004 |
+| **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
+| **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
 
 ## 6 Pillars
 
@@ -117,6 +172,23 @@ result, _ := guard.Scan(ctx, text)
 | CCPA | 7 | `pkg/compliance/ccpa/` |
 | HIPAA | 11 | `pkg/compliance/hipaa/` |
 | PCI-DSS | 12 | `pkg/compliance/pci/` |
+
+## Quick Start
+
+```bash
+# Build
+go build -o aegisgate ./cmd/aegisgate-platform
+
+# Run with defaults (in-memory stores)
+./aegisgate
+
+# Run with PostgreSQL
+export DATABASE_URL="postgres://user:pass@localhost:5432/aegisgate"
+./aegisgate
+
+# Run integration tests (requires Docker)
+go test -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/...
+```
 
 ## Architecture
 
