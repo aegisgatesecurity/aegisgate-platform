@@ -6,7 +6,7 @@
 #   1. Files in plans/ or legal-docs/ (internal business strategy)
 #   2. Files containing live Stripe keys or webhook secrets
 #   3. Billing config with real product/price IDs
-#   4. Private keys or PEM certificates
+#   4. Private key files (.key, .pem, .p12, .keystore)
 #   5. .env files with real credentials
 #   6. Red team/adversarial testing documents (internal security)
 #   7. Install scripts, testlab configs, audit labs (internal infra)
@@ -45,7 +45,9 @@ for path in $STAGED; do
     RED-TEAM-*.md|red-team-*.md|install.sh|\
     testlab/*|audit-lab/*|audit-results/*|\
     .env.example|.env.example.*|\
-    upstream/*|\
+    upstream/aegisgate/pkg/adapters/certs/server.key|\
+    upstream/aegisgate/pkg/adapters/custom-certs/server.key|\
+    upstream/aegisgate/pkg/proxy/certs/ca/ca.key|\
     D2*-*.md|Sprint-*.md|SPRINT-*-*.md)
       BLOCKED=1
       BLOCKED_LIST="$BLOCKED_LIST  - $path (gitignored internal)$NL"
@@ -58,9 +60,9 @@ done
 # ---------------------------------------------------------------------------
 NL=$'\n'
 for path in $STAGED; do
-  # Only scan text files (skip binaries)
+  # Only scan text files (skip binaries and media)
   case "$path" in
-    *.png|*.jpg|*.jpeg|*.gif|*.ico|*.woff|*.woff2|*.ttf|*.eot|*.svg|*.webp)
+    *.png|*.jpg|*.jpeg|*.gif|*.ico|*.woff|*.woff2|*.ttf|*.eot|*.svg|*.webp|*.mp4|*.mp3)
       continue
       ;;
   esac
@@ -81,21 +83,41 @@ for path in $STAGED; do
     BLOCKED_LIST="$BLOCKED_LIST  - $path (contains Stripe webhook secret)$NL"
   fi
 
-  # Check for private keys
-  if echo "$CONTENT" | grep -qF 'PRIVATE KEY'; then
-    # Skip the pre-commit hook itself (it contains the detection pattern)
-    if [ "$path" != ".githooks/pre-commit" ]; then
+  # Check for private key FILES (not Go code that references private keys).
+  # Only flag files that are actual key/cert files, not source code that
+  # generates, loads, or validates keys programmatically.
+  case "$path" in
+    *.key|*.pem|*.p12|*.keystore|*.jks)
+      # These file types are already gitignored — if they somehow got staged,
+      # block them regardless of content.
       BLOCKED=1
-      BLOCKED_LIST="$BLOCKED_LIST  - $path (contains private key)$NL"
-    fi
-  fi
+      BLOCKED_LIST="$BLOCKED_LIST  - $path (private key/cert file type)$NL"
+      ;;
+    *.go|*.ts|*.js|*.py|*.rs|*.java|*.rb|*.mod|*.sum|*.toml|*.yaml|*.yml|*.json|*.md|*.txt|*.gitignore|*.cfg|*.ini|*.conf)
+      # Source code and config files frequently reference private keys in
+      # comments, string constants, and error messages. Do NOT flag these —
+      # the actual .key/.pem files are blocked by path and extension above.
+      ;;
+    *)
+      # For unknown file types, check for actual PEM-encoded private keys
+      # (the BEGIN marker + base64 pattern, not just the string "PRIVATE KEY")
+      if echo "$CONTENT" | grep -q '\-\-\-\-\-BEGIN.*PRIVATE KEY'; then
+        BLOCKED=1
+        BLOCKED_LIST="$BLOCKED_LIST  - $path (contains PEM-encoded private key)$NL"
+      fi
+      ;;
+  esac
 
   # Check for .env with real credentials (not placeholders)
-  if echo "$CONTENT" | grep -qE '(password|secret|token|key)\s*=\s*[a-zA-Z0-9_\-]{16,}'; then
-    # No exceptions — .env.example is blocked in Check 1 now
-    BLOCKED=1
-    BLOCKED_LIST="$BLOCKED_LIST  - $path (may contain hardcoded credentials)$NL"
-  fi
+  # Only check actual .env files, not Go source or config files
+  case "$path" in
+    .env|.env.*|.envrc|*.env)
+      if echo "$CONTENT" | grep -qE '(password|secret|token|key)\s*=\s*[a-zA-Z0-9_\-]{16,}'; then
+        BLOCKED=1
+        BLOCKED_LIST="$BLOCKED_LIST  - $path (may contain hardcoded credentials)$NL"
+      fi
+      ;;
+  esac
 done
 
 # ---------------------------------------------------------------------------

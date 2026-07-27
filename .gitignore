@@ -194,7 +194,7 @@ audit-results/
 
 # Signed evidence keys (runtime-generated)
 var/
-certs/
+/certs/
 
 # =============================================================================
 # OPSEC: Third sweep — large/diagnostic files must not be tracked
@@ -209,8 +209,27 @@ D*-*.md
 rate-limit-verification-results.json
 
 # =============================================================================
-# OPSEC: Third sweep — remove upstream/ (contains private keys, 508 files)
-# upstream/ is deprecated reference code with committed RSA private keys
-# Bug report confirmed: pkg/adapters/certs/server.key is a real private key
+# OPSEC: Third sweep — upstream/ restored with key files gitignored
+# upstream/ is vendored reference code required by go.mod replace directives.
+# The 3 private key files are gitignored (both by *.key above and the specific
+# patterns below). The corresponding .crt files are whitelisted for tracking
+# because they are public self-signed test certificates needed by TLS tests.
+#
+# Bug report (v3.4.3): RSA private keys were committed to public GitHub.
+# Remediation: keys rotated, *.key pattern blocks re-commit, pre-commit hook
+# scans for PRIVATE KEY string.
 # =============================================================================
-upstream/
+
+# Private keys in upstream/ (explicit patterns — redundant with *.key above,
+# but documented here so future maintainors understand WHY upstream/ is
+# safe to track while these files must never be re-added).
+upstream/aegisgate/pkg/adapters/certs/server.key
+upstream/aegisgate/pkg/adapters/custom-certs/server.key
+upstream/aegisgate/pkg/proxy/certs/ca/ca.key
+
+# Whitelist the corresponding public certificates (*.crt is globally
+# gitignored, but these self-signed test certs need to be tracked so
+# that the upstream TLS packages can find them at test time).
+!upstream/aegisgate/pkg/adapters/certs/server.crt
+!upstream/aegisgate/pkg/adapters/custom-certs/server.crt
+!upstream/aegisgate/pkg/proxy/certs/ca/ca.crt

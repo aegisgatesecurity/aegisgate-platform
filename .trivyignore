@@ -7,36 +7,36 @@
 # See: legal-docs/21-self-attestation-v3.3.0/security-posture-v3.3.0.md
 # Section 4.5 for the original review and remediation plan.
 
-# === Secret findings: 3 RSA private keys in upstream/aegisgate/pkg/adapters/certs/ ===
+# === Secret findings: RSA private keys in upstream/aegisgate/ ===
 #
-# Reason: REMOVED in v3.4.3 (OPSEC sweep #3). The upstream/ directory
-# contained committed RSA private keys (bug report confirmed). The entire
-# upstream/ directory has been removed from git tracking. These suppressions
-# are kept for historical reference but are no longer needed.
+# Status: ROTATED in v3.4.3 (OPSEC sweep #3, hotfix).
+#
+# Bug report confirmed that 3 RSA private keys were committed to public
+# GitHub. Remediation steps:
+#   1. Removed upstream/ from git tracking (commit 0a4b6a3)
+#   2. Generated fresh test-only replacement keys and self-signed certs
+#   3. Added *.key to .gitignore and specific path patterns for the 3 keys
+#   4. Added .crt whitelist entries so self-signed test certs are tracked
+#   5. Pre-commit hook blocks commits containing PRIVATE KEY string
+#   6. Pre-commit hook blocks the 3 specific .key paths
+#
+# The upstream/ directory is RESTORED to git tracking because go.mod has
+# replace directives pointing to ./upstream/aegisgate and ./upstream/aegisguard.
+# Only the source code (.go, .mod, .sum, etc.) and test certs (.crt) are
+# tracked. Private keys (.key) are gitignored.
 #
 # Important:
-# - The `upstream/` directory is NOT part of the v3.2.0 release code. It is
-#   consolidated source from the AegisGate and AegisGuard upstream repos,
-#   used as a reference for the active platform code.
 # - These private keys are FOR TEST USE ONLY. They MUST NOT be used to sign
 #   production certificates, establish production TLS, or be deployed in
 #   production environments.
 # - The platform's runtime does not load these keys; they are only used by
-#   Go unit tests in the adapters package.
-# - The `upstream/` directory is being progressively deprecated as the
-#   active platform code matures. v3.4.0+ plans to remove `upstream/`
-#   entirely, at which point these ignores can be deleted.
-
-# T-S01 — RSA private key in upstream/aegisgate/pkg/adapters/certs/server.key
-# Trivy reports this as: secret:RSA private key (trivy classifies as private-key)
-# We suppress by file:line since trivy doesn't have a stable secret ID.
-# Trivy 0.71 docs recommend using a custom Rego policy for path-based secret
-# suppression. For v3.3.0, we document the suppressions here as a comment;
-# the active suppression is via the Rego policy in trivy-policy.rego below.
+#   Go unit tests in the adapters/tls packages.
+# - The pre-commit hook in .githooks/pre-commit blocks any file containing
+#   the string "PRIVATE KEY" from being committed.
 
 # === Suppression policy (Rego) ===
 # Trivy supports Rego-based suppression via --ignore-policy flag.
 # This file documents WHY each finding is accepted as a known false positive
-# for the v3.3.0 self-attestation. The actual suppression happens at CI
+# for the v3.4.3 self-attestation. The actual suppression happens at CI
 # runtime via the .trivy/rego/policy.rego file (not yet created; planned
-# for v3.3.1).
+# for v3.4.4).

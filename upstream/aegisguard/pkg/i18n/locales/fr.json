@@ -1,0 +1,124 @@
+{
+  "locale": "fr",
+  "language": "Français",
+  "messages": {
+    "error.filesystem_sealed": "le système de fichiers est scellé: les modifications ne sont pas autorisées",
+    "error.already_sealed": "le système de fichiers est déjà scellé",
+    "error.entry_not_found": "entrée {{.ID}} non trouvée",
+    "error.no_configs": "aucune configuration disponible",
+    "error.checksum_mismatch": "somme de contrôle incorrecte pour l'entrée {{.ID}}",
+    "error.wal_load_failed": "échec du chargement WAL: {{.Error}}",
+    "error.wal_directory": "échec de la création du répertoire WAL: {{.Error}}",
+    "error.not_found": "non trouvé",
+    "error.invalid_locale": "locale invalide: {{.Locale}}",
+    "error.unauthorized": "accès non autorisé",
+    "error.forbidden": "accès interdit",
+    "error.invalid_config": "configuration invalide",
+    "error.operation_failed": "échec de l'opération: {{.Operation}}",
+    "error.method_not_allowed": "Méthode non autorisée",
+    "error.rate_limit_exceeded": "Limite de débit dépassée. Veuillez réessayer plus tard.",
+    "error.internal": "Erreur interne du serveur: {{.Error}}",
+    "error.invalid_request": "Requête invalide: {{.Error}}",
+    "error.websocket_unavailable": "Serveur WebSocket non disponible",
+
+    "http.method_not_allowed": "Méthode non autorisée",
+    "http.rate_limit_exceeded": "Limite de débit dépassée",
+    "http.unauthorized": "Non autorisé",
+    "http.forbidden": "Interdit",
+    "http.not_found": "Non trouvé",
+    "http.bad_request": "Mauvaise requête",
+    "http.internal_error": "Erreur interne du serveur",
+    "http.service_unavailable": "Service indisponible",
+    "http.request_timeout": "Délai de requête dépassé",
+    "http.too_many_requests": "Trop de requêtes",
+
+    "log.starting": "Démarrage de AegisGate Security Proxy",
+    "log.shutting_down": "Arrêt du serveur",
+    "log.server_stopped": "Serveur arrêté",
+    "log.tls_initialized": "Gestionnaire TLS initialisé",
+    "log.mitm_enabled": "Mode MITM activé - initialisation du proxy d'interception HTTPS",
+    "log.mitm_ca_initialized": "AC MITM initialisée",
+    "log.upstream_proxy": "Utilisation du proxy amont pour MITM",
+    "log.dashboard_started": "Serveur de tableau de bord démarré",
+    "log.dashboard_stopped": "Serveur de tableau de bord arrêté",
+    "log.auth_enabled": "Authentification activée",
+    "log.auth_disabled": "Authentification désactivée - exécution en mode anonyme",
+    "log.config_loaded": "Configuration chargée avec succès",
+    "log.config_failed": "Échec du chargement de la configuration",
+
+    "health.status_healthy": "sain",
+    "health.status_unhealthy": "non sain",
+    "health.status_degraded": "dégradé",
+    "health.status_ok": "OK",
+    "health.metrics_connected": "connecté",
+    "health.metrics_disconnected": "déconnecté",
+    "health.check_passed": "contrôle de santé réussi",
+    "health.check_failed": "contrôle de santé échoué: {{.Reason}}",
+    "health.check_ok": "OK",
+    "health.connected": "connecté",
+    "health.readiness_status": "{{.Status}}",
+
+    "config.bound": "Proxy lié à {{.Address}}",
+    "config.upstream_set": "Proxy amont configuré: {{.Upstream}}",
+    "config.tls_dir": "Répertoire des certificats TLS: {{.Dir}}",
+    "config.max_connections": "Connexions max: {{.Max}}",
+
+    "audit.operation_logged": "Opération journalisée: {{.Operation}}",
+    "audit.modification_blocked": "Modification bloquée: {{.Operation}}",
+    "audit.snapshot_created": "Instantané créé: {{.ID}}",
+    "audit.seal_applied": "Sceau appliqué à {{.Time}}",
+    "audit.unseal_applied": "Sceau retiré à {{.Time}}",
+
+    "proxy.started": "Serveur proxy démarré",
+    "proxy.stopped": "Serveur proxy arrêté",
+    "proxy.connection_accepted": "Connexion acceptée de {{.Remote}}",
+    "proxy.connection_closed": "Connexion fermée",
+    "proxy.request_forwarded": "Requête transmise à {{.Target}}",
+
+    "certificate.generated": "Certificat généré pour {{.Host}}",
+    "certificate.ca_created": "Autorité de certification créée",
+    "certificate.expired": "Le certificat a expiré",
+    "certificate.invalid": "Certificat invalide",
+
+    "compliance.violation": "Violation de conformité détectée: {{.Rule}}",
+    "compliance.check_passed": "Contrôle de conformité réussi",
+    "compliance.framework_loaded": "Framework de conformité chargé: {{.Framework}}",
+
+    "metrics.collector_started": "Collecteur de métriques démarré",
+    "metrics.export": "Métriques exportées avec succès",
+
+    "locale.en": "Anglais",
+    "locale.fr": "Français",
+    "locale.de": "Allemand",
+    "locale.es": "Espagnol",
+    "locale.ja": "Japonais",
+    "locale.zh": "Chinois Simplifié"
+  },
+  "plurals": {
+    "error.entries_not_found": {
+      "one": "{{.Count}} entrée non trouvée",
+      "other": "{{.Count}} entrées non trouvées"
+    },
+    "items.count": {
+      "one": "{{.Count}} élément",
+      "other": "{{.Count}} éléments"
+    },
+    "violations.count": {
+      "one": "{{.Count}} violation",
+      "other": "{{.Count}} violations"
+    },
+    "connections.active": {
+      "one": "{{.Count}} connexion active",
+      "other": "{{.Count}} connexions actives"
+    },
+    "requests.processed": {
+      "one": "{{.Count}} requête traitée",
+      "other": "{{.Count}} requêtes traitées"
+    },
+    "errors.occurred": {
+      "one": "{{.Count}} erreur survenue",
+      "other": "{{.Count}} erreurs survenues"
+    }
+  },
+  "copyright": "AegisGate Security Proxy - Gestion de Configuration d'Entreprise"
+}
