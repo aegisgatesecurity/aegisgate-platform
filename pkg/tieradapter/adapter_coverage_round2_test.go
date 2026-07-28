@@ -87,3 +87,71 @@ func TestFeatureAccessibleInAll_TierProfessional_CodeExecSandbox(t *testing.T) {
 		t.Error("FeatureAccessibleInAll(CodeExecSandbox, Professional) = false, want true")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// T2: Rate limit wiring tests
+// ---------------------------------------------------------------------------
+
+func TestProxyRateLimitForTier_AllTiers(t *testing.T) {
+	tests := []struct {
+		name     string
+		tier     tier.Tier
+		expected int
+	}{
+		{"Community unlimited", tier.TierCommunity, -1},
+		{"Developer 1000", tier.TierDeveloper, 1000},
+		{"Professional 10000", tier.TierProfessional, 10000},
+		{"Enterprise unlimited", tier.TierEnterprise, -1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ProxyRateLimitForTier(tt.tier)
+			if got != tt.expected {
+				t.Errorf("ProxyRateLimitForTier(%s) = %d, want %d", tt.tier, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMCPRateLimitForTier_AllTiers(t *testing.T) {
+	tests := []struct {
+		name     string
+		tier     tier.Tier
+		expected int
+	}{
+		{"Community unlimited", tier.TierCommunity, -1},
+		{"Developer 500", tier.TierDeveloper, 500},
+		{"Professional 5000", tier.TierProfessional, 5000},
+		{"Enterprise unlimited", tier.TierEnterprise, -1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := MCPRateLimitForTier(tt.tier)
+			if got != tt.expected {
+				t.Errorf("MCPRateLimitForTier(%s) = %d, want %d", tt.tier, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestProxyRateLimitForTier_MatchesTierMethod(t *testing.T) {
+	tiers := []tier.Tier{tier.TierCommunity, tier.TierDeveloper, tier.TierProfessional, tier.TierEnterprise}
+	for _, t2 := range tiers {
+		got := ProxyRateLimitForTier(t2)
+		want := t2.RateLimitProxy()
+		if got != want {
+			t.Errorf("ProxyRateLimitForTier(%s) = %d, want %d (from RateLimitProxy)", t2, got, want)
+		}
+	}
+}
+
+func TestMCPRateLimitForTier_MatchesTierMethod(t *testing.T) {
+	tiers := []tier.Tier{tier.TierCommunity, tier.TierDeveloper, tier.TierProfessional, tier.TierEnterprise}
+	for _, t2 := range tiers {
+		got := MCPRateLimitForTier(t2)
+		want := t2.RateLimitMCP()
+		if got != want {
+			t.Errorf("MCPRateLimitForTier(%s) = %d, want %d (from RateLimitMCP)", t2, got, want)
+		}
+	}
+}

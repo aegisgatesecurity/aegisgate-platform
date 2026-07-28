@@ -7,6 +7,7 @@ package analytics
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"testing"
 	"time"
@@ -1328,5 +1329,471 @@ func TestDashboardData_AlertThresholds(t *testing.T) {
 	}
 	if data.AlertThresholds.ErrorRateThreshold != 0.1 {
 		t.Errorf("expected ErrorRateThreshold=0.1, got %.4f", data.AlertThresholds.ErrorRateThreshold)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// RecordUsageFromRequest tests — proxy/bridge wiring
+// ---------------------------------------------------------------------------
+
+func TestRecordUsageFromRequest_Basic(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	info := RequestInfo{
+		TokenID:        "tok-proxy-001",
+		UserID:         "user-bridge-001",
+		OrganizationID: "org-proxy-001",
+		Endpoint:       "/v1/chat/completions",
+		Model:          "gpt-4",
+		TokensUsed:     1500,
+		CostCents:      7.5,
+		LatencyMs:      350,
+		Success:        true,
+	}
+
+	if err := tr.RecordUsageFromRequest(info); err != nil {
+		t.Fatalf("RecordUsageFromRequest failed: %v", err)
+	}
+
+	// Verify the record was stored correctly.
+	tr.mu.RLock()
+	recs := tr.records["org-proxy-001"]
+	tr.mu.RUnlock()
+	if len(recs) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(recs))
+	}
+	r := recs[0]
+	if r.TokenID != "tok-proxy-001" {
+		t.Errorf("expected TokenID=tok-proxy-001, got %s", r.TokenID)
+	}
+	if r.Endpoint != "/v1/chat/completions" {
+		t.Errorf("expected Endpoint=/v1/chat/completions, got %s", r.Endpoint)
+	}
+	if r.Model != "gpt-4" {
+		t.Errorf("expected Model=gpt-4, got %s", r.Model)
+	}
+	if r.TokensUsed != 1500 {
+		t.Errorf("expected TokensUsed=1500, got %d", r.TokensUsed)
+	}
+	if r.CostCents != 7.5 {
+		t.Errorf("expected CostCents=7.5, got %.2f", r.CostCents)
+	}
+	if r.LatencyMs != 350 {
+		t.Errorf("expected LatencyMs=350, got %d", r.LatencyMs)
+	}
+	if !r.Success {
+		t.Error("expected Success=true")
+	}
+	if r.Timestamp.IsZero() {
+		t.Error("expected timestamp to be auto-populated")
+	}
+}
+
+func TestRecordUsageFromRequest_FailedRequest(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	info := RequestInfo{
+		TokenID:        "tok-err-001",
+		UserID:         "user-err",
+		OrganizationID: "org-001",
+		Endpoint:       "/v1/chat/completions",
+		Model:          "gpt-3.5",
+		TokensUsed:     0,
+		CostCents:      0,
+		LatencyMs:      5000,
+		Success:        false,
+	}
+
+	if err := tr.RecordUsageFromRequest(info); err != nil {
+		t.Fatalf("RecordUsageFromRequest failed: %v", err)
+	}
+
+	// Verify it shows up as a failed request.
+	summary, err := tr.GetSummary("org-001", time.Now().Add(-time.Hour), time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("GetSummary failed: %v", err)
+	}
+	if summary.RequestCount != 1 {
+		t.Errorf("expected 1 request, got %d", summary.RequestCount)
+	}
+	if summary.ErrorRate != 1.0 {
+		t.Errorf("expected ErrorRate=1.0, got %.4f", summary.ErrorRate)
+	}
+}
+
+func TestRecordUsageFromRequest_MissingTokenID(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	info := RequestInfo{
+		UserID:         "user-001",
+		OrganizationID: "org-001",
+	}
+	if err := tr.RecordUsageFromRequest(info); err == nil {
+		t.Fatal("expected error for missing token_id")
+	}
+}
+
+func TestRecordUsageFromRequest_MissingOrgID(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	info := RequestInfo{
+		TokenID: "tok-001",
+	}
+	if err := tr.RecordUsageFromRequest(info); err == nil {
+		t.Fatal("expected error for missing organization_id")
+	}
+}
+
+func TestRecordUsageFromRequest_Concurrent(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	var wg sync.WaitGroup
+	numGoroutines := 50
+	recordsPerGoroutine := 10
+
+	for g := 0; g < numGoroutines; g++ {
+		wg.Add(1)
+		go func(goroutineID int) {
+			defer wg.Done()
+			for i := 0; i < recordsPerGoroutine; i++ {
+				info := RequestInfo{
+					TokenID:        fmt.Sprintf("tok-%d", goroutineID),
+					UserID:         fmt.Sprintf("user-%d", goroutineID),
+					OrganizationID: "org-proxy",
+					Endpoint:       "/v1/chat/completions",
+					Model:          "gpt-4",
+					TokensUsed:     100,
+					CostCents:      0.5,
+					LatencyMs:      200,
+					Success:        true,
+				}
+				if err := tr.RecordUsageFromRequest(info); err != nil {
+					t.Errorf("RecordUsageFromRequest failed: %v", err)
+				}
+			}
+		}(g)
+	}
+	wg.Wait()
+
+	tr.mu.RLock()
+	recs := tr.records["org-proxy"]
+	tr.mu.RUnlock()
+	expected := numGoroutines * recordsPerGoroutine
+	if len(recs) != expected {
+		t.Errorf("expected %d records, got %d", expected, len(recs))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// RecordBridgeUsage tests — bridge LLM request wiring
+// ---------------------------------------------------------------------------
+
+func TestRecordBridgeUsage_Basic(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	err := tr.RecordBridgeUsage(
+		"org-bridge-001", // orgID
+		"tok-bridge-001", // tokenID
+		"user-bridge-001", // userID
+		"gpt-4",          // model
+		"/v1/chat/completions", // endpoint
+		2000,             // tokensUsed
+		10.0,             // costCents
+		450,              // latencyMs
+		true,             // success
+	)
+	if err != nil {
+		t.Fatalf("RecordBridgeUsage failed: %v", err)
+	}
+
+	// Verify the record was stored correctly.
+	tr.mu.RLock()
+	recs := tr.records["org-bridge-001"]
+	tr.mu.RUnlock()
+	if len(recs) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(recs))
+	}
+	r := recs[0]
+	if r.TokenID != "tok-bridge-001" {
+		t.Errorf("expected TokenID=tok-bridge-001, got %s", r.TokenID)
+	}
+	if r.UserID != "user-bridge-001" {
+		t.Errorf("expected UserID=user-bridge-001, got %s", r.UserID)
+	}
+	if r.OrganizationID != "org-bridge-001" {
+		t.Errorf("expected OrganizationID=org-bridge-001, got %s", r.OrganizationID)
+	}
+	if r.Model != "gpt-4" {
+		t.Errorf("expected Model=gpt-4, got %s", r.Model)
+	}
+	if r.Endpoint != "/v1/chat/completions" {
+		t.Errorf("expected Endpoint=/v1/chat/completions, got %s", r.Endpoint)
+	}
+	if r.TokensUsed != 2000 {
+		t.Errorf("expected TokensUsed=2000, got %d", r.TokensUsed)
+	}
+	if r.CostCents != 10.0 {
+		t.Errorf("expected CostCents=10.0, got %.2f", r.CostCents)
+	}
+	if r.LatencyMs != 450 {
+		t.Errorf("expected LatencyMs=450, got %d", r.LatencyMs)
+	}
+	if !r.Success {
+		t.Error("expected Success=true")
+	}
+	if r.Timestamp.IsZero() {
+		t.Error("expected timestamp to be auto-populated")
+	}
+}
+
+func TestRecordBridgeUsage_FailedRequest(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	err := tr.RecordBridgeUsage(
+		"org-fail",       // orgID
+		"tok-fail",       // tokenID
+		"user-fail",      // userID
+		"claude-3",       // model
+		"/v1/messages",   // endpoint
+		0,                // tokensUsed (failed, no tokens consumed)
+		0,                // costCents
+		12000,            // latencyMs (high latency before failure)
+		false,            // success
+	)
+	if err != nil {
+		t.Fatalf("RecordBridgeUsage failed: %v", err)
+	}
+
+	summary, err := tr.GetSummary("org-fail", time.Now().Add(-time.Hour), time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("GetSummary failed: %v", err)
+	}
+	if summary.ErrorRate != 1.0 {
+		t.Errorf("expected ErrorRate=1.0 for failed request, got %.4f", summary.ErrorRate)
+	}
+	if summary.AvgLatencyMs != 12000 {
+		t.Errorf("expected AvgLatencyMs=12000, got %.1f", summary.AvgLatencyMs)
+	}
+}
+
+func TestRecordBridgeUsage_MissingOrgID(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	err := tr.RecordBridgeUsage("", "tok-001", "user-001", "gpt-4", "/v1/chat", 100, 1.0, 200, true)
+	if err == nil {
+		t.Fatal("expected error for missing organization_id")
+	}
+}
+
+func TestRecordBridgeUsage_MissingTokenID(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	err := tr.RecordBridgeUsage("org-001", "", "user-001", "gpt-4", "/v1/chat", 100, 1.0, 200, true)
+	if err == nil {
+		t.Fatal("expected error for missing token_id")
+	}
+}
+
+func TestRecordBridgeUsage_MultipleBridgedRequests(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	models := []string{"gpt-4", "gpt-3.5", "claude-3", "text-embedding-3"}
+	endpoints := []string{"/v1/chat/completions", "/v1/chat/completions", "/v1/messages", "/v1/embeddings"}
+	tokens := []int{1500, 800, 2000, 500}
+	costs := []float64{7.5, 2.0, 10.0, 1.0}
+
+	for i := range models {
+		err := tr.RecordBridgeUsage(
+			"org-multi",
+			fmt.Sprintf("tok-%d", i),
+			"user-001",
+			models[i],
+			endpoints[i],
+			tokens[i],
+			costs[i],
+			100+i*50,
+			true,
+		)
+		if err != nil {
+			t.Fatalf("RecordBridgeUsage(%d) failed: %v", i, err)
+		}
+	}
+
+	summary, err := tr.GetSummary("org-multi", time.Now().Add(-time.Hour), time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("GetSummary failed: %v", err)
+	}
+	if summary.RequestCount != 4 {
+		t.Errorf("expected 4 requests, got %d", summary.RequestCount)
+	}
+	if summary.TotalTokens != 4800 {
+		t.Errorf("expected TotalTokens=4800, got %d", summary.TotalTokens)
+	}
+	if len(summary.ByModel) != 4 {
+		t.Errorf("expected 4 models, got %d", len(summary.ByModel))
+	}
+	if len(summary.ByEndpoint) != 3 {
+		t.Errorf("expected 3 endpoints (/v1/chat/completions appears twice), got %d", len(summary.ByEndpoint))
+	}
+}
+
+func TestRecordBridgeUsage_Concurrent(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	var wg sync.WaitGroup
+	numGoroutines := 30
+
+	for g := 0; g < numGoroutines; g++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			err := tr.RecordBridgeUsage(
+				"org-concurrent",
+				fmt.Sprintf("tok-concurrent-%d", id),
+				fmt.Sprintf("user-%d", id),
+				"gpt-4",
+				"/v1/chat/completions",
+				100,
+				0.5,
+				200,
+				true,
+			)
+			if err != nil {
+				t.Errorf("RecordBridgeUsage(%d) failed: %v", id, err)
+			}
+		}(g)
+	}
+	wg.Wait()
+
+	tr.mu.RLock()
+	recs := tr.records["org-concurrent"]
+	tr.mu.RUnlock()
+	if len(recs) != numGoroutines {
+		t.Errorf("expected %d records, got %d", numGoroutines, len(recs))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// CheckTierRateLimit tests — tier-aware rate limiting
+// ---------------------------------------------------------------------------
+
+func TestCheckTierRateLimit_Unlimited(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	// -1 means unlimited (Community/Enterprise soft-throttle policy)
+	allowed, remaining, err := tr.CheckTierRateLimit("tok-unlimited", -1)
+	if err != nil {
+		t.Fatalf("CheckTierRateLimit failed: %v", err)
+	}
+	if !allowed {
+		t.Error("expected unlimited requests to be allowed")
+	}
+	if remaining != math.MaxInt {
+		t.Errorf("expected remaining=MaxInt for unlimited, got %d", remaining)
+	}
+}
+
+func TestCheckTierRateLimit_ZeroLimit(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	_, _, err := tr.CheckTierRateLimit("tok-zero", 0)
+	if err == nil {
+		t.Fatal("expected error for zero rate limit")
+	}
+}
+
+func TestCheckTierRateLimit_DeveloperLimit(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	// Developer tier: 1000 RPM proxy limit
+	allowed, remaining, err := tr.CheckTierRateLimit("tok-dev", 1000)
+	if err != nil {
+		t.Fatalf("CheckTierRateLimit failed: %v", err)
+	}
+	if !allowed {
+		t.Error("expected first request to be allowed")
+	}
+	if remaining != 999 {
+		t.Errorf("expected remaining=999, got %d", remaining)
+	}
+}
+
+func TestCheckTierRateLimit_ProfessionalLimit(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	// Professional tier: 10000 RPM proxy limit
+	allowed, remaining, err := tr.CheckTierRateLimit("tok-pro", 10000)
+	if err != nil {
+		t.Fatalf("CheckTierRateLimit failed: %v", err)
+	}
+	if !allowed {
+		t.Error("expected first request to be allowed")
+	}
+	if remaining != 9999 {
+		t.Errorf("expected remaining=9999, got %d", remaining)
+	}
+}
+
+func TestCheckTierRateLimit_Exceeded(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	// Small limit for testing
+	limit := 3
+	for i := 0; i < limit; i++ {
+		_, _, err := tr.CheckTierRateLimit("tok-small", limit)
+		if err != nil {
+			t.Fatalf("CheckTierRateLimit(%d) failed: %v", i, err)
+		}
+	}
+
+	// Next request should be denied
+	allowed, remaining, err := tr.CheckTierRateLimit("tok-small", limit)
+	if err != nil {
+		t.Fatalf("CheckTierRateLimit failed: %v", err)
+	}
+	if allowed {
+		t.Error("expected request to be denied after limit exceeded")
+	}
+	if remaining != 0 {
+		t.Errorf("expected remaining=0, got %d", remaining)
+	}
+}
+
+func TestCheckTierRateLimit_DifferentTokensDifferentLimits(t *testing.T) {
+	tr := newTestTracker()
+	defer tr.Close()
+
+	// Exhaust a small limit for one token.
+	smallLimit := 2
+	for i := 0; i < smallLimit; i++ {
+		_, _, err := tr.CheckTierRateLimit("tok-A", smallLimit)
+		if err != nil {
+			t.Fatalf("CheckTierRateLimit(A) failed: %v", err)
+		}
+	}
+
+	// A different token with a different (larger) limit should still be allowed.
+	allowed, _, err := tr.CheckTierRateLimit("tok-B", 1000)
+	if err != nil {
+		t.Fatalf("CheckTierRateLimit(B) failed: %v", err)
+	}
+	if !allowed {
+		t.Error("expected tok-B to be allowed (different token, different limit)")
 	}
 }
