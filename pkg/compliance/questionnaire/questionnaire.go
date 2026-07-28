@@ -17,8 +17,7 @@
 //
 // Export formats:
 //   - CSV (fully implemented)
-//   - PDF (stub — returns structured text; real PDF generation
-//     requires wkhtmltopdf or similar external dependency)
+//   - PDF (fully implemented via pkg/pdf renderer; produces real PDF 1.4 documents)
 //
 // Architecture follows the BaseComplianceModule pattern from
 // pkg/compliance/module.go so the questionnaire engine can be
@@ -36,6 +35,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/pdf"
 )
 
 // Question represents a single questionnaire question with its
@@ -619,25 +620,54 @@ func ExportToCSV(response *QuestionnaireResponse) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// ExportToPDF exports a QuestionnaireResponse to a structured text
-// representation suitable for PDF conversion. This is a stub — real
-// PDF generation requires wkhtmltopdf or a similar external dependency.
-// The returned bytes contain a structured plain-text document that can
-// be piped into a PDF converter.
+// ExportToPDF exports a QuestionnaireResponse to a real PDF document
+// using the AegisGate PDF renderer (pkg/pdf). The generated PDF includes
+// a title page, per-category headings, question/answer tables with
+// confidence scores, and a summary section.
+//
+// The PDF is self-contained (no external dependencies like wkhtmltopdf)
+// and suitable for compliance audits, vendor assessments, and regulatory
+// submissions.
 func ExportToPDF(response *QuestionnaireResponse) ([]byte, error) {
 	if response == nil {
 		return nil, fmt.Errorf("response cannot be nil")
 	}
 
-	var buf bytes.Buffer
+	// Build PDF sections from the questionnaire response.
+	var sections []pdf.Section
 
-	buf.WriteString("=" + strings.Repeat("=", 78) + "\n")
-	buf.WriteString(fmt.Sprintf("  %s Questionnaire — Version %s\n", response.Framework, response.Version))
-	buf.WriteString(fmt.Sprintf("  Organization: %s\n", response.OrganizationName))
-	buf.WriteString(fmt.Sprintf("  Generated: %s\n", response.GeneratedAt.Format(time.RFC3339)))
-	buf.WriteString(strings.Repeat("=", 79) + "\n\n")
+	// Document metadata header.
+	sections = append(sections, pdf.Section{
+		Kind: pdf.SectionParagraph,
+		Text: fmt.Sprintf("Organization: %s", response.OrganizationName),
+	})
+	sections = append(sections, pdf.Section{
+		Kind: pdf.SectionParagraph,
+		Text: fmt.Sprintf("Generated: %s", response.GeneratedAt.Format(time.RFC3339)),
+	})
 
-	// Group questions by category.
+	// Compute summary statistics.
+	total, autoCount, policyCount, manualCount, avgConfidence := SummaryStats(response)
+	summaryTable := pdf.Table{
+		Rows: [][]string{
+			{"Metric", "Value"},
+			{"Total Questions", fmt.Sprintf("%d", total)},
+			{"Auto-Answered", fmt.Sprintf("%d", autoCount)},
+			{"Policy-Inferred", fmt.Sprintf("%d", policyCount)},
+			{"Manual Review", fmt.Sprintf("%d", manualCount)},
+			{"Avg Confidence", fmt.Sprintf("%.2f", avgConfidence)},
+		},
+	}
+	sections = append(sections, pdf.Section{
+		Kind: pdf.SectionHeading,
+		Text: "Summary",
+	})
+	sections = append(sections, pdf.Section{
+		Kind:  pdf.SectionTable,
+		Table: summaryTable,
+	})
+
+	// Group questions by category for structured output.
 	categories := make(map[string][]Question)
 	var catOrder []string
 	for _, q := range response.Questions {
@@ -647,27 +677,92 @@ func ExportToPDF(response *QuestionnaireResponse) ([]byte, error) {
 		categories[q.Category] = append(categories[q.Category], q)
 	}
 
+	// Render each category as a heading + question table.
 	for _, cat := range catOrder {
 		questions := categories[cat]
-		buf.WriteString(fmt.Sprintf("--- %s ---\n\n", cat))
-		for i, q := range questions {
-			buf.WriteString(fmt.Sprintf("Q%d: [%s] %s\n", i+1, q.ID, q.Text))
-			buf.WriteString(fmt.Sprintf("    Answer:     %s\n", q.Answer))
-			buf.WriteString(fmt.Sprintf("    Confidence: %.2f\n", q.Confidence))
-			buf.WriteString(fmt.Sprintf("    Source:      %s\n", q.Source))
-			if len(q.Evidence) > 0 {
-				buf.WriteString("    Evidence:   " + strings.Join(q.Evidence, "; ") + "\n")
+
+		sections = append(sections, pdf.Section{
+			Kind: pdf.SectionPageBreak,
+		})
+		sections = append(sections, pdf.Section{
+			Kind: pdf.SectionHeading,
+			Text: cat,
+		})
+
+		// Build question table: ID | Question | Answer | Confidence | Source
+		rows := [][]string{
+			{"ID", "Question", "Answer", "Confidence", "Source"},
+		}
+		for _, q := range questions {
+			answer := q.Answer
+			if len(answer) > 80 {
+				answer = answer[:77] + "..."
 			}
-			buf.WriteString("\n")
+			questionText := q.Text
+			if len(questionText) > 120 {
+				questionText = questionText[:117] + "..."
+			}
+			rows = append(rows, []string{
+				q.ID,
+				questionText,
+				answer,
+				fmt.Sprintf("%.2f", q.Confidence),
+				q.Source,
+			})
+		}
+
+		sections = append(sections, pdf.Section{
+			Kind: pdf.SectionTable,
+			Table: pdf.Table{
+				Rows: rows,
+			},
+		})
+
+		// Add evidence section for questions with evidence.
+		var evidenceQuestions []Question
+		for _, q := range questions {
+			if len(q.Evidence) > 0 {
+				evidenceQuestions = append(evidenceQuestions, q)
+			}
+		}
+		if len(evidenceQuestions) > 0 {
+			sections = append(sections, pdf.Section{
+				Kind: pdf.SectionHeading,
+				Text: fmt.Sprintf("%s — Evidence", cat),
+			})
+			evidenceRows := [][]string{
+				{"Question ID", "Evidence"},
+			}
+			for _, q := range evidenceQuestions {
+				evidenceRows = append(evidenceRows, []string{
+					q.ID,
+					strings.Join(q.Evidence, "; "),
+				})
+			}
+			sections = append(sections, pdf.Section{
+				Kind: pdf.SectionTable,
+				Table: pdf.Table{
+					Rows: evidenceRows,
+				},
+			})
 		}
 	}
 
-	buf.WriteString("\n" + strings.Repeat("=", 79) + "\n")
-	buf.WriteString("NOTE: This is a structured text export. For PDF generation, pipe this\n")
-	buf.WriteString("output through wkhtmltopdf or a similar tool.\n")
-	buf.WriteString(strings.Repeat("=", 79) + "\n")
+	// Render the PDF.
+	req := &pdf.RenderRequest{
+		Title:        fmt.Sprintf("%s Questionnaire — Version %s", response.Framework, response.Version),
+		Author:       "AegisGate Security Platform",
+		Subject:      fmt.Sprintf("%s %s Questionnaire for %s", response.Framework, response.Version, response.OrganizationName),
+		Keywords:     fmt.Sprintf("%s, questionnaire, compliance, vendor assessment", response.Framework),
+		Sections:     sections,
+		Footer:       fmt.Sprintf("%s Questionnaire — %s", response.Framework, response.OrganizationName),
+		Header:       "AegisGate",
+		HeaderSubtitle: response.Version,
+		FooterURL:    "https://aegisgatesecurity.io",
+		GeneratedAt:  response.GeneratedAt,
+	}
 
-	return buf.Bytes(), nil
+	return pdf.RenderReport(req)
 }
 
 // flattenResults converts nested scanner results into a flat

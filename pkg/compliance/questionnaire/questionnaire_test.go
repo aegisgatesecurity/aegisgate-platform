@@ -687,21 +687,24 @@ func TestExportToPDFValid(t *testing.T) {
 		t.Fatalf("ExportToPDF failed: %v", err)
 	}
 
-	pdfStr := string(pdfBytes)
+	// Should produce valid PDF bytes (PDF header starts with %PDF-).
+	if len(pdfBytes) == 0 {
+		t.Fatal("ExportToPDF should return non-empty bytes")
+	}
+	if !bytes.HasPrefix(pdfBytes, []byte("%PDF-")) {
+		t.Errorf("ExportToPDF should produce a valid PDF document, got prefix: %q", string(pdfBytes[:min(20, len(pdfBytes))]))
+	}
 
-	// Should contain the framework header.
+	// The PDF should contain the organization name and framework in metadata.
+	pdfStr := string(pdfBytes)
 	if !strings.Contains(pdfStr, "SIG Questionnaire") {
-		t.Error("PDF export should contain framework header")
+		t.Error("PDF export should contain framework header in metadata")
 	}
 	if !strings.Contains(pdfStr, "PDF Test Corp") {
 		t.Error("PDF export should contain organization name")
 	}
-	if !strings.Contains(pdfStr, "Version 4.0") {
+	if !strings.Contains(pdfStr, "4.0") {
 		t.Error("PDF export should contain version")
-	}
-	// Should contain note about PDF generation.
-	if !strings.Contains(pdfStr, "wkhtmltopdf") {
-		t.Error("PDF export should mention wkhtmltopdf dependency")
 	}
 }
 
@@ -721,11 +724,19 @@ func TestExportToPDFCAIQ(t *testing.T) {
 		t.Fatalf("ExportToPDF failed: %v", err)
 	}
 
+	// Should produce valid PDF bytes.
+	if len(pdfBytes) == 0 {
+		t.Fatal("ExportToPDF should return non-empty bytes")
+	}
+	if !bytes.HasPrefix(pdfBytes, []byte("%PDF-")) {
+		t.Errorf("ExportToPDF should produce a valid PDF document, got prefix: %q", string(pdfBytes[:min(20, len(pdfBytes))]))
+	}
+
 	pdfStr := string(pdfBytes)
 	if !strings.Contains(pdfStr, "CAIQ Questionnaire") {
 		t.Error("PDF export should contain CAIQ framework header")
 	}
-	if !strings.Contains(pdfStr, "Version 4.0.1") {
+	if !strings.Contains(pdfStr, "4.0.1") {
 		t.Error("PDF export should contain CAIQ version")
 	}
 }
