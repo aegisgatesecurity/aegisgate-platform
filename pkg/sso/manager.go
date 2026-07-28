@@ -438,10 +438,16 @@ func (m *Manager) Stats() (*ManagerStats, error) {
 	}
 
 	// Count sessions if possible
-	if sessions, ok := m.sessions.(*MemorySessionStore); ok {
-		sessions.mu.RLock()
-		stats.ActiveSessions = len(sessions.sessions)
-		sessions.mu.RUnlock()
+	switch s := m.sessions.(type) {
+	case *MemorySessionStore:
+		s.mu.RLock()
+		stats.ActiveSessions = len(s.sessions)
+		s.mu.RUnlock()
+	case *PostgresSessionStore:
+		active, _, err := s.StatsPostgres()
+		if err == nil {
+			stats.ActiveSessions = active
+		}
 	}
 
 	return stats, nil
