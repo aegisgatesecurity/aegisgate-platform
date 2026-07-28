@@ -98,15 +98,8 @@ func (m *FedRAMPModule) registerRAControls() {
 
 // registerCAControls wires the CA family controls into the module.
 func (m *FedRAMPModule) registerCAControls() {
-	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FedRAMP-CA-2",
-		Name:        "Assessments",
-		Description: "FedRAMP CA-2: Security assessments conducted by independent assessors. AegisGate generates the compliance scan evidence for the customer's CA-2 package.",
-		Category:    "Assessment, Authorization, and Monitoring",
-		Severity:    compliance.SeverityMedium,
-		Automated:   false,
-		References:  []string{"NIST SP 800-53 Rev. 5 CA-2", "FedRAMP Moderate CA-02"},
-	})
+	// CA-2 and CA-5 are registered as automated CheckFuncs in fedramp.go
+	// (checkAssessmentAuthorization, checkPlanOfAction).
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CA-7",
 		Name:        "Continuous Monitoring",
@@ -158,16 +151,6 @@ func (m *FedRAMPModule) registerCAControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-3", "FedRAMP Moderate CA-03"},
 	})
 
-	// CA-5: Plan of Action and Milestones (evidence-mapped)
-	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FedRAMP-CA-5",
-		Name:        "Plan of Action and Milestones",
-		Description: "FedRAMP CA-5: Plan of Action and Milestones (POA&M) for security weaknesses. AegisGate's compliance scan drift detection and CCM provide the evidence for tracking POA&M items.",
-		Category:    "Assessment, Authorization, and Monitoring",
-		Severity:    compliance.SeverityMedium,
-		Automated:   false,
-		References:  []string{"NIST SP 800-53 Rev. 5 CA-5", "FedRAMP Moderate CA-05"},
-	})
 }
 
 // --- RA Check Functions ---

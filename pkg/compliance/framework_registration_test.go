@@ -45,9 +45,11 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 			t.Errorf("%s control count should be > 0 after RegisterBuiltinFrameworks", fw)
 		}
 	}
-	// FedRAMP Path C has exactly 134 controls (49 automated + 85 evidence-mapped, 18 NIST 800-53 families).
-	if fedrampCount := frameworks["fedramp"]; fedrampCount != 175 {
-		t.Errorf("fedramp control count = %d, want 175 (Path C + v3.6.0 T8)", fedrampCount)
+	// FedRAMP v3.5.0: 170 controls (120 automated CheckFuncs + 50 evidence-mapped).
+	// Removed 5 duplicate registrations (AT-2, AT-3, CA-2, CA-5, SI-1) that were
+	// overriding automated CheckFuncs with manual stubs.
+	if fedrampCount := frameworks["fedramp"]; fedrampCount != 170 {
+		t.Errorf("fedramp control count = %d, want 170", fedrampCount)
 	}
 }
 

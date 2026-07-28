@@ -55,27 +55,8 @@ func (m *FedRAMPModule) registerATControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 AT-1", "FedRAMP Moderate AT-01"},
 	})
 
-	// AT-2: Security Awareness Training (evidence-mapped)
-	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FedRAMP-AT-2",
-		Name:        "Security Awareness Training",
-		Description: "FedRAMP AT-2: Organization provides security awareness training to system users. AegisGate generates compliance scan evidence and training-relevant threat indicators (IOC store, ATLAS patterns) for the customer's AT-2 training program.",
-		Category:    "Awareness and Training",
-		Severity:    compliance.SeverityLow,
-		Automated:   false,
-		References:  []string{"NIST SP 800-53 Rev. 5 AT-2", "FedRAMP Moderate AT-02"},
-	})
-
-	// AT-3: Role-Based Security Training (evidence-mapped)
-	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FedRAMP-AT-3",
-		Name:        "Role-Based Security Training",
-		Description: "FedRAMP AT-3: Organization provides role-based security training for personnel with significant security responsibilities. AegisGate generates the threat intelligence and compliance evidence (incident reports, ATLAS patterns) for the customer's role-based training content.",
-		Category:    "Awareness and Training",
-		Severity:    compliance.SeverityLow,
-		Automated:   false,
-		References:  []string{"NIST SP 800-53 Rev. 5 AT-3", "FedRAMP Moderate AT-03"},
-	})
+	// AT-2 and AT-3 are registered as automated CheckFuncs in fedramp.go
+	// (checkSecurityAwarenessTraining, checkRoleBasedTraining).
 }
 
 // registerCPControls wires the CP (Contingency Planning) family controls.
