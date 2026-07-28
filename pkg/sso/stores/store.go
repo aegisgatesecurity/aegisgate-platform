@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// SSO Stores Package (Stub)
+// SSO Stores Package
 // =========================================================================
-// This package provides stub implementations for SSO session/token storage.
-// Full implementation pending dependency injection architecture decisions.
+// This package provides in-memory implementations for SSO session/token
+// storage. For production persistence, use the PostgreSQL-backed stores
+// in the parent sso package (PostgresSessionStore, PostgresRequestStore)
+// which share the ioc.PostgresStore connection pool.
+//
+// Architecture:
+//   - InMemorySessionStore / InMemoryTokenStore: for development and testing
+//   - sso.PostgresSessionStore / sso.PostgresRequestStore: for production (Professional+)
+//   - Both satisfy the sso.SessionStore / sso.RequestStore interfaces
+//
+// v3.5.0+ D1 Phase 1E.
 
 package stores
 
