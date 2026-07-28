@@ -85,10 +85,11 @@ func (m *FedRAMPModule) registerManualStubs() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AC-10",
 		Name:        "Concurrent Session Control",
-		Description: "FedRAMP AC-10: Limits concurrent sessions per account. AegisGate's session management supports session limits. Customer configures the limit.",
+		Description: "FedRAMP AC-10: Limits concurrent sessions per account. AegisGate's session management enforces configurable session limits per user and role.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConcurrentSessionControl,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-10", "FedRAMP Moderate AC-10"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -204,10 +205,11 @@ func (m *FedRAMPModule) registerManualStubs() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IA-10",
 		Name:        "Identification and Authentication (Adversary Detection)",
-		Description: "FedRAMP IA-10: Adversary identification. AegisGate's IOC store and scanner detect adversary behavior for IA-10 evidence.",
+		Description: "FedRAMP IA-10: Adversary identification. AegisGate's IOC store and anomaly detection detect adversary behavior.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAdversaryDetection,
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-10", "FedRAMP Moderate IA-10"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -233,19 +235,21 @@ func (m *FedRAMPModule) registerManualStubs() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-6",
 		Name:        "Protection of Information at System Boundaries",
-		Description: "FedRAMP SC-6: Protection of information at system boundaries. AegisGate's proxy gateway, rate limiting, and TLS enforcement provide boundary protection evidence for SC-6.",
+		Description: "FedRAMP SC-6: Protection of information at system boundaries. AegisGate's 5 protocol pillars enforce boundary protection between trust zones.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBoundaryProtectionSC6,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-6", "FedRAMP Moderate SC-06"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-22",
 		Name:        "Fail-Safe Network",
-		Description: "FedRAMP SC-22: Fail-safe network communications. AegisGate's fail-closed security architecture (default-deny) provides fail-safe evidence for SC-22.",
+		Description: "FedRAMP SC-22: Fail-safe network communications. AegisGate's fail-closed security architecture (default-deny) verifies fail-safe behavior.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFailSafeNetwork,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-22", "FedRAMP Moderate SC-22"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -289,10 +293,11 @@ func (m *FedRAMPModule) registerManualStubs() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IR-10",
 		Name:        "Incident Response Integration",
-		Description: "FedRAMP IR-10: Integration of incident response with other organizational functions. AegisGate's SIEM dispatcher and SOC timeline provide integration evidence for IR-10.",
+		Description: "FedRAMP IR-10: Integration of incident response with other organizational functions. AegisGate's SIEM dispatcher provides automated IR integration.",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIRIntegration,
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-10", "FedRAMP Moderate IR-10"},
 	})
 
@@ -339,19 +344,21 @@ func (m *FedRAMPModule) registerManualStubs() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CM-9",
 		Name:        "Configuration Management Plan",
-		Description: "FedRAMP CM-9: Configuration management plan developed and maintained. AegisGate generates the system configuration evidence for the customer's CM-9 plan.",
+		Description: "FedRAMP CM-9: Configuration management plan developed and maintained. AegisGate's platform configuration subsystem provides the CM baseline.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConfigurationManagementPlan,
 		References:  []string{"NIST SP 800-53 Rev. 5 CM-9", "FedRAMP Moderate CM-09"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CM-11",
 		Name:        "Software Installation Restrictions",
-		Description: "FedRAMP CM-11: Software installation restricted by policy. AegisGate's allowlist enforcement and AIBOM tracking provide installation restriction evidence for CM-11.",
+		Description: "FedRAMP CM-11: Software installation restricted by policy. AegisGate's admin-only configuration and RBAC enforce installation restrictions.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareInstallationRestrictions,
 		References:  []string{"NIST SP 800-53 Rev. 5 CM-11", "FedRAMP Moderate CM-11"},
 	})
 

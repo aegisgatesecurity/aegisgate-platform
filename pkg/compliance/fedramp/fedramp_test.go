@@ -63,11 +63,11 @@ func TestNewFedRAMPModule(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if automated != 75 {
-		t.Errorf("automated controls = %d, want 75", automated)
+	if automated != 82 {
+		t.Errorf("automated controls = %d, want 82", automated)
 	}
-	if evidenceMapped != 75 {
-		t.Errorf("evidence-mapped controls = %d, want 75", evidenceMapped)
+	if evidenceMapped != 68 {
+		t.Errorf("evidence-mapped controls = %d, want 68", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -1285,8 +1285,8 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		"FedRAMP-MP-5",
 		"FedRAMP-PE-3", "FedRAMP-PE-20",
 		// Manual stubs (customer responsibility)
-		"FedRAMP-SC-1", "FedRAMP-SC-6", "FedRAMP-SC-22", "FedRAMP-SC-40",
-		"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3", "FedRAMP-IR-10",
+		"FedRAMP-SC-1", "FedRAMP-SC-40",
+		"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3",
 		"FedRAMP-SA-1", "FedRAMP-SA-8",
 		"FedRAMP-RA-1",
 		"FedRAMP-CP-3", "FedRAMP-CP-4", "FedRAMP-CP-6", "FedRAMP-CP-7", "FedRAMP-CP-8",
