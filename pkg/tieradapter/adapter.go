@@ -205,6 +205,20 @@ func PlatformFeatureToAegisGuard(f tier.Feature) (string, bool) {
 	return mapped, true
 }
 
+// ProxyRateLimitForTier returns the proxy RPM limit for the given tier,
+// using the platform tier definition. This is the canonical source for
+// proxy rate limits across all components.
+func ProxyRateLimitForTier(t tier.Tier) int {
+	return t.RateLimitProxy()
+}
+
+// MCPRateLimitForTier returns the MCP RPM limit for the given tier,
+// using the platform tier definition. This is the canonical source for
+// MCP rate limits across all components.
+func MCPRateLimitForTier(t tier.Tier) int {
+	return t.RateLimitMCP()
+}
+
 // FeatureAccessibleInAll checks if a platform feature is accessible in all three
 // tier systems at the given tier level.
 func FeatureAccessibleInAll(f tier.Feature, t tier.Tier) bool {

@@ -747,3 +747,87 @@ func maskToken(tokenID string) string {
 func roundToCent(v float64) float64 {
 	return math.Round(v*100+0.0000001) / 100
 }
+
+// ---------------------------------------------------------------------------
+// Request-path wiring: RecordUsage from HTTP and Bridge requests
+// ---------------------------------------------------------------------------
+
+// RequestInfo holds metadata extracted from an HTTP or bridge request,
+// used to create a UsageRecord. Fields with zero values are omitted
+// from the record; the caller should set as many fields as available.
+type RequestInfo struct {
+	TokenID        string
+	UserID         string
+	OrganizationID string
+	Endpoint       string
+	Model          string
+	TokensUsed     int
+	CostCents      float64
+	LatencyMs      int
+	Success        bool
+}
+
+// RecordUsageFromRequest records a usage entry from request metadata.
+// It fills in the timestamp automatically and delegates to RecordUsage.
+// This is the primary wiring point for proxy/bridge request paths.
+func (t *TokenUsageTracker) RecordUsageFromRequest(info RequestInfo) error {
+	rec := &UsageRecord{
+		TokenID:        info.TokenID,
+		UserID:         info.UserID,
+		OrganizationID: info.OrganizationID,
+		Endpoint:       info.Endpoint,
+		Model:          info.Model,
+		TokensUsed:     info.TokensUsed,
+		CostCents:      info.CostCents,
+		LatencyMs:      info.LatencyMs,
+		Success:        info.Success,
+	}
+	return t.RecordUsage(rec)
+}
+
+// RecordBridgeUsage records analytics for a bridge (LLM proxy) request.
+// This is the bridge-side wiring: after RouteLLMCall completes, the
+// caller invokes RecordBridgeUsage with the request/response metadata
+// to track token consumption, cost, and latency.
+//
+// Parameters:
+//   - orgID:      organization ID (required)
+//   - tokenID:    API token used for the request (required)
+//   - userID:     user who initiated the request (optional)
+//   - model:      LLM model invoked (e.g., "gpt-4")
+//   - endpoint:   API endpoint (e.g., "/v1/chat/completions")
+//   - tokensUsed: total tokens consumed (prompt + completion)
+//   - costCents:  cost in cents (USD cents)
+//   - latencyMs:  total latency in milliseconds
+//   - success:    whether the request succeeded
+func (t *TokenUsageTracker) RecordBridgeUsage(orgID, tokenID, userID, model, endpoint string, tokensUsed int, costCents float64, latencyMs int, success bool) error {
+	rec := &UsageRecord{
+		TokenID:        tokenID,
+		UserID:         userID,
+		OrganizationID: orgID,
+		Endpoint:       endpoint,
+		Model:          model,
+		TokensUsed:     tokensUsed,
+		CostCents:      costCents,
+		LatencyMs:      latencyMs,
+		Success:        success,
+	}
+	return t.RecordUsage(rec)
+}
+
+// CheckTierRateLimit checks whether a token is within its tier-based rate
+// limit for proxy requests. It maps the tier's RPM limit to the analytics
+// tracker's sliding-window CheckRateLimit. Returns (allowed, remaining, error).
+//
+// For Community and Enterprise tiers (which return -1 = unlimited),
+// this always returns (true, math.MaxInt, nil).
+func (t *TokenUsageTracker) CheckTierRateLimit(tokenID string, rpmLimit int) (bool, int, error) {
+	if rpmLimit < 0 {
+		// Unlimited rate limit (Community/Enterprise soft-throttle policy)
+		return true, math.MaxInt, nil
+	}
+	if rpmLimit == 0 {
+		return false, 0, fmt.Errorf("rate limit cannot be zero")
+	}
+	return t.CheckRateLimit(tokenID, time.Minute, rpmLimit)
+}
