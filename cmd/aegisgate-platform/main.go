@@ -65,6 +65,37 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/siem"
 )
 
+// tsaSignerAdapter wraps audit.TSAClient to satisfy the
+// logging.AuditEventSigner interface. This avoids an import cycle:
+// pkg/logging cannot import pkg/audit, but cmd/aegisgate-platform
+// imports both, so the adapter lives here.
+type tsaSignerAdapter struct {
+	client *audit.TSAClient
+}
+
+func (a *tsaSignerAdapter) SignAuditEvent(eventID string, data []byte) (*logging.AuditEventSigned, error) {
+	signed, err := a.client.SignAuditEvent(eventID, data)
+	if err != nil {
+		return nil, err
+	}
+	result := &logging.AuditEventSigned{
+		EventID:  signed.EventID,
+		DataHash: signed.DataHash,
+		Verified: signed.Verified,
+	}
+	if signed.Token != nil {
+		result.GenTime = signed.Token.Timestamp
+	}
+	if len(a.client.Endpoints()) > 0 {
+		result.TSAEndpoint = a.client.Endpoints()[0]
+	}
+	return result, nil
+}
+
+func (a *tsaSignerAdapter) Endpoints() []string {
+	return a.client.Endpoints()
+}
+
 var (
 	version    = "3.4.3"
 	commit     = "unknown"
@@ -764,6 +795,21 @@ func main() {
 		} else {
 			log.Printf("⚠️  TSA requires Professional+ tier (current: %s); TSA disabled", platformTier)
 		}
+	}
+
+	// Component 0a-2b: Wire TSA into audit ring buffer
+	// When TSA is enabled, wrap the audit ring buffer with the
+	// TSA recording wrapper so every audit event receives a
+	// cryptographic proof-of-existence timestamp. This provides
+	// non-repudiation evidence for FedRAMP AU-10/AU-11, ISO 27001
+	// A.12.4.3, and SOC 2 CC7.3. When TSA is disabled, events
+	// pass through unchanged (zero overhead).
+	var tsaWrapper *logging.TSARecordingWrapper
+	if tsaClient != nil {
+		tsaAdapter := &tsaSignerAdapter{client: tsaClient}
+		tsaWrapper = logging.NewTSARecordingWrapper(auditRing, tsaAdapter)
+		logging.SetDefault(tsaWrapper)
+		log.Printf("TSA recording wrapper: installed (events will be cryptographically timestamped)")
 	}
 
 	// ============================================================
@@ -2030,7 +2076,7 @@ func main() {
 
 	// TSA status endpoint — requires auth. Shows whether RFC 3161
 	// timestamping is active, which endpoints are configured, and
-	// the last successful timestamp.
+	// the number of events successfully timestamped (v3.5.0+).
 	dashMux.HandleFunc("/api/v1/tsa/status", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		tsaStatus := map[string]interface{}{
@@ -2041,6 +2087,11 @@ func main() {
 			tsaStatus["endpoints"] = tsaClient.Endpoints()
 		} else {
 			tsaStatus["healthy"] = false
+		}
+		if tsaWrapper != nil {
+			signed, failed := tsaWrapper.Stats()
+			tsaStatus["events_signed"] = signed
+			tsaStatus["events_failed"] = failed
 		}
 		if err := json.NewEncoder(w).Encode(map[string]interface{}{
 			"tsa": tsaStatus,

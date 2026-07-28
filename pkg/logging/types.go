@@ -63,6 +63,37 @@ type Event struct {
 	// FrameworkRefCache attached to logging.Record(); empty if no
 	// mapping is known for this detection. Tier 1 (TODO-401).
 	FrameworkRefs map[string][]string `json:"frameworkRefs,omitempty"`
+
+	// TSA holds the RFC 3161 timestamp token data for this event.
+	// When TSA timestamping is enabled (v3.5.0+), each audit event
+	// receives a cryptographic proof-of-existence from an independent
+	// Time Stamp Authority. This provides non-repudiation evidence
+	// for compliance frameworks (FedRAMP AU-10/AU-11, ISO 27001
+	// A.12.4.3, SOC 2 CC7.3). Populated by the TSARecordingWrapper
+	// attached to the audit ring buffer; nil when TSA is disabled.
+	// Tier 1 (TODO-401): audit event lifecycle.
+	TSA *EventTSA `json:"tsa,omitempty"`
+}
+
+// EventTSA carries the RFC 3161 timestamp proof for an audit event.
+// This is the serialized form of audit.AuditEventTSA, suitable for
+// JSON storage in the ring buffer and persistence layer.
+type EventTSA struct {
+	// EventID is the unique identifier of the original audit event.
+	EventID string `json:"eventId"`
+
+	// DataHash is the SHA-256 hash of the original event data.
+	DataHash []byte `json:"dataHash"`
+
+	// Timestamp is the genTime from the RFC 3161 token (UTC).
+	Timestamp time.Time `json:"timestamp"`
+
+	// TSAEndpoint is the URL of the TSA that issued the token.
+	TSAEndpoint string `json:"tsaEndpoint"`
+
+	// Verified indicates whether the token was successfully verified
+	// against the data hash at sign time.
+	Verified bool `json:"verified"`
 }
 
 // Get* accessors expose Event fields through a small interface.
