@@ -179,10 +179,10 @@ func TestCompatibilityRouteAllEndpoints(t *testing.T) {
 	srv, _ := newFPTestServer(t)
 
 	tests := []struct {
-		name     string
-		apiPath  string
-		method   string
-		authed   bool
+		name    string
+		apiPath string
+		method  string
+		authed  bool
 	}{
 		{"healthz", "/api/v1/lens/healthz", http.MethodGet, false},
 		{"telemetry", "/api/v1/lens/telemetry", http.MethodPost, true},
