@@ -176,6 +176,19 @@ func (s *Server) Mux() *http.ServeMux {
 	gated("/api/v1/lens/check", h.HandleCheck)
 	gated("/api/v1/lens/stats", h.HandleStats)
 
+	// Compatibility routes: the Lens extension constructs the
+	// backend URL as <backend>/lens/telemetry/fp-report. When
+	// the backend is the Platform, these paths need to resolve
+	// to the same handlers as /api/v1/lens/*. The standalone
+	// lensbackend binary (used in the testlab) also needs these
+	// routes so the E2E integration test can use the same paths
+	// the Lens extension uses.
+	gated("/lens/telemetry", h.HandleTelemetry)
+	gated("/lens/fp-report", h.HandleFPReport)
+	gated("/lens/check", h.HandleCheck)
+	gated("/lens/stats", h.HandleStats)
+	mux.Handle("/lens/healthz", corsMiddleware(http.HandlerFunc(h.HandleHealthz)))
+
 	return mux
 }
 
