@@ -264,6 +264,11 @@ type TSAClient struct {
 	client *http.Client
 }
 
+// Endpoints returns the configured TSA endpoint URLs.
+func (c *TSAClient) Endpoints() []string {
+	return c.config.Endpoints
+}
+
 // NewTSAClient creates a new TSA client with the given configuration.
 // If config.Endpoints is empty, DefaultTSAEndpoints is used. If
 // config.Timeout is zero, 10 seconds is used.
