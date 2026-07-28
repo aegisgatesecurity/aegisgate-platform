@@ -66,7 +66,7 @@ jobs:
           chmod +x tools/opsec-scan.sh
           bash tools/opsec-scan.sh
 
-  # Job 2: Static Analysis
+  # Job 3: Static Analysis
   gosec:
     name: Gosec - Security Scanner
     runs-on: ubuntu-latest
@@ -378,7 +378,7 @@ jobs:
           echo "| Tool | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| govulncheck | ${{ needs.govulncheck.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
-| OPSEC Scan | ${{ needs.opsec-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} |
+          echo "| OPSEC Scan | ${{ needs.opsec-scan.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Gosec | ${{ needs.gosec.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy | ${{ needs.trivy.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Gitleaks (licensed) | ${{ needs.gitleaks.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
