@@ -48,10 +48,10 @@ func TestNewFedRAMPModule(t *testing.T) {
 		t.Errorf("Version() = %q, want 2.0", m.Version())
 	}
 
-	// Verify all 175 controls are registered
+	// Verify all 170 controls are registered (150 baseline + 20 enhancements)
 	controls := m.Controls()
-	if len(controls) != 175 {
-		t.Errorf("len(Controls()) = %d, want 175", len(controls))
+	if len(controls) != 170 {
+		t.Errorf("len(Controls()) = %d, want 170", len(controls))
 	}
 
 	// Count automated vs evidence-mapped
@@ -67,8 +67,8 @@ func TestNewFedRAMPModule(t *testing.T) {
 	if automated != 120 {
 		t.Errorf("automated controls = %d, want 120", automated)
 	}
-	if evidenceMapped != 55 {
-		t.Errorf("evidence-mapped controls = %d, want 55", evidenceMapped)
+	if evidenceMapped != 50 {
+		t.Errorf("evidence-mapped controls = %d, want 50", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -82,13 +82,13 @@ func TestNewFedRAMPModule(t *testing.T) {
 		"Identification and Authentication":         13,
 		"System and Communications Protection":      25,
 		"Configuration Management":                  14,
-		"System and Information Integrity":          15,
+		"System and Information Integrity":          14,
 		"Incident Response":                         10,
 		"System and Services Acquisition":            8,
 		"Supply Chain Risk Management":              6,
 		"Risk Assessment":                           8,
-		"Assessment, Authorization, and Monitoring": 10,
-		"Awareness and Training":                    5,
+		"Assessment, Authorization, and Monitoring":  8,
+		"Awareness and Training":                    3,
 		"Contingency Planning":                      9,
 		"Media Protection":                          3,
 		"Personnel Security":                        3,

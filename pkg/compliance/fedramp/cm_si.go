@@ -202,16 +202,8 @@ func (m *FedRAMPModule) registerSIControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-10", "FedRAMP Moderate SI-10"},
 	})
 
-	// SI-1: System and Information Integrity Policy (evidence-mapped)
-	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FedRAMP-SI-1",
-		Name:        "System and Information Integrity Policy and Procedures",
-		Description: "FedRAMP SI-1: Organization develops, documents, and disseminates a system and information integrity policy. AegisGate generates the scanner, IOC, and audit evidence for the customer's SI-1 documentation.",
-		Category:    "System and Information Integrity",
-		Severity:    compliance.SeverityLow,
-		Automated:   false,
-		References:  []string{"NIST SP 800-53 Rev. 5 SI-1", "FedRAMP Moderate SI-01"},
-	})
+	// SI-1 is registered as an automated CheckFunc in fedramp.go
+	// (checkSystemIntegrityPolicy).
 
 	// SI-11: Error Handling (Path C — new)
 	m.RegisterControl(compliance.ControlDefinition{
