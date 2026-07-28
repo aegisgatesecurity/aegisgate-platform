@@ -817,6 +817,16 @@ func main() {
 		lensMux := lensServer.Mux()
 		proxyMux.Handle("/api/v1/lens/", lensMux)
 		log.Printf("Lens backend: handler mounted at /api/v1/lens/")
+
+		// Compatibility route: the Lens extension constructs the
+		// backend URL as <backend>/lens/telemetry/fp-report. When
+		// the backend is the Platform (not the Cloudflare Worker),
+		// the extension's constructed path (/lens/...) does not
+		// match the Platform's /api/v1/lens/... routes. Mounting
+		// the same mux at /lens/ makes both paths work without
+		// requiring any changes to the Lens extension's URL logic.
+		proxyMux.Handle("/lens/", lensMux)
+		log.Printf("Lens backend: compatibility route mounted at /lens/")
 	}
 
 	// IOC admin API (v3.5.0+ Track 6 Task 5): mount on the
