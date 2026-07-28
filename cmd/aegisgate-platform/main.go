@@ -38,6 +38,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/acp"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/analytics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/audit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
@@ -124,6 +125,11 @@ var (
 	siemEnabled       = flag.Bool("siem-enabled", false, "Enable the SIEM dispatcher to forward audit events to external SIEM platforms (AEGISGATE_SIEM_ENABLED)")
 	lensBearerToken   = flag.String("lens-bearer-token", "", "Bearer token for Lens telemetry endpoints (AEGISGATE_LENS_BEARER_TOKEN)")
 	lensIOCStoreDir   = flag.String("lens-ioc-store-dir", "", "Directory for Lens IOC store persistence (default: <DataDir>/lens)")
+	tsaEnabled        = flag.Bool("tsa-enabled", false, "Enable RFC 3161 TSA timestamping for audit events (AEGISGATE_TSA_ENABLED)")
+	tsaEndpoints      = flag.String("tsa-endpoints", "", "Comma-separated TSA server URLs (default: DigiCert,Sectigo,Apple). Env: AEGISGATE_TSA_ENDPOINTS")
+	tsaTimeout        = flag.Duration("tsa-timeout", 10*time.Second, "Per-endpoint TSA request timeout (AEGISGATE_TSA_TIMEOUT)")
+	tsaRetryCount     = flag.Int("tsa-retry-count", 2, "Retry attempts per TSA endpoint (AEGISGATE_TSA_RETRY_COUNT)")
+	tokenAnalytics    = flag.Bool("token-analytics", false, "Enable token usage analytics (AEGISGATE_TOKEN_ANALYTICS)")
 )
 
 // iocWiringPtr is the package-level pointer to the IOC wiring
@@ -722,6 +728,63 @@ func main() {
 		}
 	} else if siemEnabledFlag {
 		log.Printf("⚠️  SIEM requires Professional+ tier (current: %s); SIEM disabled", platformTier)
+	}
+
+	// ============================================================
+	// Component 0a-2: RFC 3161 TSA Timestamping (audit integrity)
+	// ============================================================
+	// When enabled, every audit event receives a cryptographic
+	// timestamp from an RFC 3161 Time Stamp Authority (DigiCert,
+	// Sectigo, Apple). This provides non-repudiation evidence for
+	// compliance frameworks (FedRAMP AU-10, SOC 2 CC6.1, ISO 27001
+	// A.12.4). Professional+ tier feature.
+	var tsaClient *audit.TSAClient
+	if *tsaEnabled {
+		if tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
+			tsaCfg := audit.DefaultTSAConfig()
+			tsaCfg.Enabled = true
+			if *tsaEndpoints != "" {
+				tsaCfg.Endpoints = strings.Split(*tsaEndpoints, ",")
+			}
+			tsaCfg.Timeout = *tsaTimeout
+			tsaCfg.RetryCount = *tsaRetryCount
+			// Apply defaults for empty/zero fields.
+			if len(tsaCfg.Endpoints) == 0 {
+				tsaCfg.Endpoints = audit.DefaultTSAEndpoints()
+			}
+			if tsaCfg.Timeout <= 0 {
+				tsaCfg.Timeout = 10 * time.Second
+			}
+			if tsaCfg.RetryCount < 0 {
+				tsaCfg.RetryCount = 2
+			}
+			tsaClient = audit.NewTSAClient(tsaCfg)
+			log.Printf("TSA timestamping: enabled (endpoints=%v, timeout=%s, retries=%d)",
+				tsaCfg.Endpoints, tsaCfg.Timeout, tsaCfg.RetryCount)
+		} else {
+			log.Printf("⚠️  TSA requires Professional+ tier (current: %s); TSA disabled", platformTier)
+		}
+	}
+
+	// ============================================================
+	// Component 0a-3: Token Usage Analytics
+	// ============================================================
+	// Tracks API token usage per org/user/endpoint for dashboards,
+	// rate limiting, cost attribution, and anomaly detection.
+	// Professional+ tier feature. v1 uses in-memory storage; v2
+	// will use TimescaleDB/ClickHouse via the Store interface.
+	var tokenTracker *analytics.TokenUsageTracker
+	if *tokenAnalytics {
+		if tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
+			tokenTracker = analytics.NewTokenUsageTracker(&analytics.AlertConfig{
+				RateLimitThreshold: 100,
+				CostThresholdCents: 2000,
+				ErrorRateThreshold: 0.1,
+			})
+			log.Printf("Token analytics: enabled (in-memory store)")
+		} else {
+			log.Printf("⚠️  Token analytics requires Professional+ tier (current: %s); analytics disabled", platformTier)
+		}
 	}
 
 	// ============================================================
@@ -1965,6 +2028,107 @@ func main() {
 		}
 	}))
 
+	// TSA status endpoint — requires auth. Shows whether RFC 3161
+	// timestamping is active, which endpoints are configured, and
+	// the last successful timestamp.
+	dashMux.HandleFunc("/api/v1/tsa/status", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		tsaStatus := map[string]interface{}{
+			"enabled": *tsaEnabled,
+		}
+		if tsaClient != nil {
+			tsaStatus["healthy"] = true
+			tsaStatus["endpoints"] = tsaClient.Endpoints()
+		} else {
+			tsaStatus["healthy"] = false
+		}
+		if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			"tsa": tsaStatus,
+		}); err != nil {
+			log.Printf("tsa status encode: %v", err)
+		}
+	}))
+
+	// Token analytics endpoints — requires auth. Professional+ feature.
+	// GET /api/v1/analytics/usage?org=<orgID>&from=<ts>&to=<ts>
+	// GET /api/v1/analytics/cost?org=<orgID>&from=<ts>&to=<ts>
+	// GET /api/v1/analytics/anomalies?org=<orgID>&window=<duration>
+	// GET /api/v1/analytics/dashboard?org=<orgID>
+	if tokenTracker != nil {
+		dashMux.HandleFunc("/api/v1/analytics/usage", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			orgID := r.URL.Query().Get("org")
+			if orgID == "" {
+				http.Error(w, `{"error":"missing org parameter"}`, http.StatusBadRequest)
+				return
+			}
+			start, end := parseTimeRange(r)
+			summary, err := tokenTracker.GetSummary(orgID, start, end)
+			if err != nil {
+				http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(summary); err != nil {
+				log.Printf("analytics usage encode: %v", err)
+			}
+		}))
+		dashMux.HandleFunc("/api/v1/analytics/cost", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			orgID := r.URL.Query().Get("org")
+			if orgID == "" {
+				http.Error(w, `{"error":"missing org parameter"}`, http.StatusBadRequest)
+				return
+			}
+			start, end := parseTimeRange(r)
+			costs, err := tokenTracker.GetCostAttribution(orgID, start, end)
+			if err != nil {
+				http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(costs); err != nil {
+				log.Printf("analytics cost encode: %v", err)
+			}
+		}))
+		dashMux.HandleFunc("/api/v1/analytics/anomalies", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			orgID := r.URL.Query().Get("org")
+			if orgID == "" {
+				http.Error(w, `{"error":"missing org parameter"}`, http.StatusBadRequest)
+				return
+			}
+			window := 5 * time.Minute
+			if ws := r.URL.Query().Get("window"); ws != "" {
+				if d, err := time.ParseDuration(ws); err == nil {
+					window = d
+				}
+			}
+			anomalies, err := tokenTracker.DetectAnomalies(orgID, window)
+			if err != nil {
+				http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(anomalies); err != nil {
+				log.Printf("analytics anomalies encode: %v", err)
+			}
+		}))
+		dashMux.HandleFunc("/api/v1/analytics/dashboard", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			orgID := r.URL.Query().Get("org")
+			if orgID == "" {
+				http.Error(w, `{"error":"missing org parameter"}`, http.StatusBadRequest)
+				return
+			}
+			dash, err := tokenTracker.GetDashboardData(orgID)
+			if err != nil {
+				http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(dash); err != nil {
+				log.Printf("analytics dashboard encode: %v", err)
+			}
+		}))
+	}
+
 	// Policy info endpoint — requires auth to prevent unauthenticated
 	// disclosure of security policy configuration and tier details.
 	dashMux.HandleFunc("/api/v1/policies", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -2367,4 +2531,23 @@ func rejectDangerousMethods(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
+}
+
+// parseTimeRange parses the "from" and "to" query parameters from an
+// HTTP request as RFC3339 timestamps. Defaults to last 24 hours if
+// not specified.
+func parseTimeRange(r *http.Request) (start, end time.Time) {
+	end = time.Now().UTC()
+	start = end.Add(-24 * time.Hour)
+	if from := r.URL.Query().Get("from"); from != "" {
+		if t, err := time.Parse(time.RFC3339, from); err == nil {
+			start = t
+		}
+	}
+	if to := r.URL.Query().Get("to"); to != "" {
+		if t, err := time.Parse(time.RFC3339, to); err == nil {
+			end = t
+		}
+	}
+	return start, end
 }
