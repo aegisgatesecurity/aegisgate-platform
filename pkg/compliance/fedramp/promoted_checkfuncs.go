@@ -73,15 +73,15 @@ func (m *FedRAMPModule) checkConcurrentSessionControl(ctx context.Context, input
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-AC-10",
-		ControlName:  "Concurrent Session Control",
-		Status:       status,
-		Severity:     compliance.SeverityMedium,
-		Message:      message,
-		Remediation:  remediation,
-		Timestamp:    time.Now(),
-		References:   []string{"NIST SP 800-53 Rev. 5 AC-10", "FedRAMP Moderate AC-10"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-AC-10",
+		ControlName: "Concurrent Session Control",
+		Status:      status,
+		Severity:    compliance.SeverityMedium,
+		Message:     message,
+		Remediation: remediation,
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 AC-10", "FedRAMP Moderate AC-10"},
 	}, nil
 }
 
@@ -125,15 +125,15 @@ func (m *FedRAMPModule) checkAdversaryDetection(ctx context.Context, input []byt
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-IA-10",
-		ControlName:  "Identification and Authentication (Adversary Detection)",
-		Status:       status,
-		Severity:     compliance.SeverityHigh,
-		Message:      message,
-		Remediation:  remediation,
-		Timestamp:    time.Now(),
-		References:   []string{"NIST SP 800-53 Rev. 5 IA-10", "FedRAMP Moderate IA-10"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-IA-10",
+		ControlName: "Identification and Authentication (Adversary Detection)",
+		Status:      status,
+		Severity:    compliance.SeverityHigh,
+		Message:     message,
+		Remediation: remediation,
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 IA-10", "FedRAMP Moderate IA-10"},
 	}, nil
 }
 
@@ -178,15 +178,15 @@ func (m *FedRAMPModule) checkIRIntegration(ctx context.Context, input []byte) (*
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-IR-10",
-		ControlName:  "Incident Response Integration",
-		Status:       status,
-		Severity:     compliance.SeverityMedium,
-		Message:      message,
-		Remediation:  remediation,
-		Timestamp:    time.Now(),
-		References:   []string{"NIST SP 800-53 Rev. 5 IR-10", "FedRAMP Moderate IR-10"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-IR-10",
+		ControlName: "Incident Response Integration",
+		Status:      status,
+		Severity:    compliance.SeverityMedium,
+		Message:     message,
+		Remediation: remediation,
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 IR-10", "FedRAMP Moderate IR-10"},
 	}, nil
 }
 
@@ -232,15 +232,15 @@ func (m *FedRAMPModule) checkBoundaryProtectionSC6(ctx context.Context, input []
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-SC-6",
-		ControlName:  "Protection of Information at System Boundaries",
-		Status:        status,
-		Severity:      compliance.SeverityHigh,
-		Message:       message,
-		Remediation:   remediation,
-		Timestamp:     time.Now(),
-		References:    []string{"NIST SP 800-53 Rev. 5 SC-6", "FedRAMP Moderate SC-06"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-SC-6",
+		ControlName: "Protection of Information at System Boundaries",
+		Status:      status,
+		Severity:    compliance.SeverityHigh,
+		Message:     message,
+		Remediation: remediation,
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-6", "FedRAMP Moderate SC-06"},
 	}, nil
 }
 
@@ -277,15 +277,15 @@ func (m *FedRAMPModule) checkFailSafeNetwork(ctx context.Context, input []byte) 
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-SC-22",
-		ControlName:  "Fail-Safe Network",
-		Status:        compliance.StatusNonCompliant,
-		Severity:      compliance.SeverityMedium,
-		Message:       "Fail-safe network not configured (no deny-by-default policy detected)",
-		Remediation:   "Configure deny-by-default/fail-closed policy for network traffic",
-		Timestamp:     time.Now(),
-		References:    []string{"NIST SP 800-53 Rev. 5 SC-22", "FedRAMP Moderate SC-22"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-SC-22",
+		ControlName: "Fail-Safe Network",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Fail-safe network not configured (no deny-by-default policy detected)",
+		Remediation: "Configure deny-by-default/fail-closed policy for network traffic",
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-22", "FedRAMP Moderate SC-22"},
 	}, nil
 }
 
@@ -321,15 +321,15 @@ func (m *FedRAMPModule) checkConfigurationManagementPlan(ctx context.Context, in
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-CM-9",
-		ControlName:  "Configuration Management Plan",
-		Status:        compliance.StatusNonCompliant,
-		Severity:      compliance.SeverityMedium,
-		Message:       "Configuration management plan not detected",
-		Remediation:   "Ensure platform configuration subsystem is active",
-		Timestamp:     time.Now(),
-		References:    []string{"NIST SP 800-53 Rev. 5 CM-9", "FedRAMP Moderate CM-09"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-CM-9",
+		ControlName: "Configuration Management Plan",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Configuration management plan not detected",
+		Remediation: "Ensure platform configuration subsystem is active",
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 CM-9", "FedRAMP Moderate CM-09"},
 	}, nil
 }
 
@@ -374,14 +374,14 @@ func (m *FedRAMPModule) checkSoftwareInstallationRestrictions(ctx context.Contex
 	}
 
 	return &compliance.ControlCheckResult{
-		Framework:    m.Framework(),
-		ControlID:    "FedRAMP-CM-11",
-		ControlName:  "Software Installation Restrictions",
-		Status:        status,
-		Severity:      compliance.SeverityMedium,
-		Message:       message,
-		Remediation:   remediation,
-		Timestamp:     time.Now(),
-		References:    []string{"NIST SP 800-53 Rev. 5 CM-11", "FedRAMP Moderate CM-11"},
+		Framework:   m.Framework(),
+		ControlID:   "FedRAMP-CM-11",
+		ControlName: "Software Installation Restrictions",
+		Status:      status,
+		Severity:    compliance.SeverityMedium,
+		Message:     message,
+		Remediation: remediation,
+		Timestamp:   time.Now(),
+		References:  []string{"NIST SP 800-53 Rev. 5 CM-11", "FedRAMP Moderate CM-11"},
 	}, nil
 }
