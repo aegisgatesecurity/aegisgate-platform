@@ -231,6 +231,96 @@ var TechniqueMappings = []TechniqueMapping{
 	{TechniqueID: "MP4", TechniqueName: "Map: Adversarial Profiling", Framework: "nist_ai_rmf", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "supports", Confidence: 0.9, Description: "AI safety measurement supports adversarial threat profiling"},
 	{TechniqueID: "LLM01", TechniqueName: "Prompt Injection", Framework: "owasp_llm", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.95, Description: "AI safety controls are primary defense against prompt injection"},
 	{TechniqueID: "LLM09", TechniqueName: "Overreliance", Framework: "owasp_llm", AegisGateControl: "AG-AI-SAFETY-QUALITY", Relationship: "mitigates", Confidence: 0.85, Description: "AI quality controls prevent overreliance on LLM outputs"},
+
+	// ================================================================
+	// P0/P1/P2: New cross-framework AG controls — technique mappings
+	// ================================================================
+
+	// AG-AC-CONCURRENT-SESSIONS — Session management
+	{TechniqueID: "T1535", TechniqueName: "Unsecured Credentials", Framework: "atlas", AegisGateControl: "AG-AC-CONCURRENT-SESSIONS", Relationship: "mitigates", Confidence: 0.85, Description: "Concurrent session limits prevent credential reuse attacks"},
+	{TechniqueID: "T1110", TechniqueName: "Brute Force", Framework: "atlas", AegisGateControl: "AG-AC-CONCURRENT-SESSIONS", Relationship: "mitigates", Confidence: 0.9, Description: "Session limits prevent brute-force credential attacks"},
+	{TechniqueID: "GV2", TechniqueName: "Govern: Accountability", Framework: "nist_ai_rmf", AegisGateControl: "AG-AC-CONCURRENT-SESSIONS", Relationship: "supports", Confidence: 0.8, Description: "Session management supports accountability governance"},
+
+	// AG-IA-ADVERSARY-DETECTION — Adversary detection and identification
+	{TechniqueID: "T1556", TechniqueName: "Modify Authentication Process", Framework: "atlas", AegisGateControl: "AG-IA-ADVERSARY-DETECTION", Relationship: "detects", Confidence: 0.9, Description: "Adversary detection identifies authentication manipulation attempts"},
+	{TechniqueID: "T1584", TechniqueName: "Access Token Manipulation", Framework: "atlas", AegisGateControl: "AG-IA-ADVERSARY-DETECTION", Relationship: "detects", Confidence: 0.9, Description: "Adversary detection identifies token manipulation"},
+	{TechniqueID: "MP4", TechniqueName: "Map: Adversarial Profiling", Framework: "nist_ai_rmf", AegisGateControl: "AG-IA-ADVERSARY-DETECTION", Relationship: "supports", Confidence: 0.85, Description: "Adversary detection supports adversarial threat profiling"},
+	{TechniqueID: "LLM06", TechniqueName: "Sensitive Data Disclosure", Framework: "owasp_llm", AegisGateControl: "AG-IA-ADVERSARY-DETECTION", Relationship: "detects", Confidence: 0.85, Description: "Adversary detection identifies unauthorized data access attempts"},
+
+	// AG-IR-INTEGRATION — Incident response integration
+	{TechniqueID: "T1484", TechniqueName: "Jailbreak", Framework: "atlas", AegisGateControl: "AG-IR-INTEGRATION", Relationship: "supports", Confidence: 0.85, Description: "IR integration provides coordinated response to jailbreak events"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-IR-INTEGRATION", Relationship: "supports", Confidence: 0.8, Description: "IR integration supports organizational incident governance"},
+	{TechniqueID: "LLM09", TechniqueName: "Overreliance", Framework: "owasp_llm", AegisGateControl: "AG-IR-INTEGRATION", Relationship: "supports", Confidence: 0.8, Description: "IR integration handles incidents from AI overreliance"},
+
+	// AG-SC-RESOURCE-AVAILABILITY — DoS protection, fail-safe networks
+	{TechniqueID: "T1498", TechniqueName: "Network DoS", Framework: "atlas", AegisGateControl: "AG-SC-RESOURCE-AVAILABILITY", Relationship: "mitigates", Confidence: 0.9, Description: "Resource availability controls prevent denial-of-service"},
+	{TechniqueID: "T1486", TechniqueName: "Data Encrypted for Impact", Framework: "atlas", AegisGateControl: "AG-SC-RESOURCE-AVAILABILITY", Relationship: "mitigates", Confidence: 0.85, Description: "Fail-safe networks prevent data impact from DoS"},
+	{TechniqueID: "GV2", TechniqueName: "Govern: Accountability", Framework: "nist_ai_rmf", AegisGateControl: "AG-SC-RESOURCE-AVAILABILITY", Relationship: "supports", Confidence: 0.8, Description: "Resource availability supports system accountability governance"},
+
+	// AG-CM-CONFIGURATION-PLANNING — Configuration management
+	{TechniqueID: "T1648", TechniqueName: "Serverless Function Exploitation", Framework: "atlas", AegisGateControl: "AG-CM-CONFIGURATION-PLANNING", Relationship: "mitigates", Confidence: 0.85, Description: "Configuration management prevents unauthorized software installation"},
+	{TechniqueID: "T1599", TechniqueName: "Exploit Public-Facing Application", Framework: "atlas", AegisGateControl: "AG-CM-CONFIGURATION-PLANNING", Relationship: "mitigates", Confidence: 0.85, Description: "Configuration planning ensures secure application configurations"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-CM-CONFIGURATION-PLANNING", Relationship: "supports", Confidence: 0.8, Description: "Configuration management supports organizational governance"},
+
+	// AG-AT-AWARENESS-TRAINING — Security awareness
+	{TechniqueID: "T1566", TechniqueName: "Phishing", Framework: "atlas", AegisGateControl: "AG-AT-AWARENESS-TRAINING", Relationship: "mitigates", Confidence: 0.85, Description: "Security awareness training reduces phishing susceptibility"},
+	{TechniqueID: "T1535", TechniqueName: "Unsecured Credentials", Framework: "atlas", AegisGateControl: "AG-AT-AWARENESS-TRAINING", Relationship: "mitigates", Confidence: 0.8, Description: "Training reduces credential exposure"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-AT-AWARENESS-TRAINING", Relationship: "supports", Confidence: 0.85, Description: "Awareness training supports organizational risk governance"},
+
+	// AG-CP-CONTINGENCY — Business continuity and contingency
+	{TechniqueID: "T1498", TechniqueName: "Network DoS", Framework: "atlas", AegisGateControl: "AG-CP-CONTINGENCY", Relationship: "mitigates", Confidence: 0.85, Description: "Contingency planning provides recovery from DoS attacks"},
+	{TechniqueID: "T1486", TechniqueName: "Data Encrypted for Impact", Framework: "atlas", AegisGateControl: "AG-CP-CONTINGENCY", Relationship: "mitigates", Confidence: 0.85, Description: "Business continuity planning provides recovery from ransomware"},
+	{TechniqueID: "GV2", TechniqueName: "Govern: Accountability", Framework: "nist_ai_rmf", AegisGateControl: "AG-CP-CONTINGENCY", Relationship: "supports", Confidence: 0.8, Description: "Contingency planning supports accountability governance"},
+
+	// AG-CA-SECURITY-ASSESSMENT — Security assessments
+	{TechniqueID: "T1590", TechniqueName: "Gather Victim Network Info", Framework: "atlas", AegisGateControl: "AG-CA-SECURITY-ASSESSMENT", Relationship: "detects", Confidence: 0.85, Description: "Security assessments identify network reconnaissance"},
+	{TechniqueID: "T1592", TechniqueName: "Gather Victim Host Info", Framework: "atlas", AegisGateControl: "AG-CA-SECURITY-ASSESSMENT", Relationship: "detects", Confidence: 0.85, Description: "Security assessments identify host reconnaissance"},
+	{TechniqueID: "MP5", TechniqueName: "Measure: Risk Tracking", Framework: "nist_ai_rmf", AegisGateControl: "AG-CA-SECURITY-ASSESSMENT", Relationship: "supports", Confidence: 0.85, Description: "Security assessments support AI risk tracking"},
+
+	// AG-AC-ACCESS-ENFORCEMENT — Access enforcement and info sharing
+	{TechniqueID: "T1556", TechniqueName: "Modify Authentication Process", Framework: "atlas", AegisGateControl: "AG-AC-ACCESS-ENFORCEMENT", Relationship: "mitigates", Confidence: 0.9, Description: "Access enforcement prevents authentication manipulation"},
+	{TechniqueID: "T1584", TechniqueName: "Access Token Manipulation", Framework: "atlas", AegisGateControl: "AG-AC-ACCESS-ENFORCEMENT", Relationship: "mitigates", Confidence: 0.85, Description: "Information flow enforcement prevents token manipulation"},
+	{TechniqueID: "LLM06", TechniqueName: "Sensitive Data Disclosure", Framework: "owasp_llm", AegisGateControl: "AG-AC-ACCESS-ENFORCEMENT", Relationship: "mitigates", Confidence: 0.85, Description: "Access enforcement prevents unauthorized data disclosure"},
+
+	// AG-AU-AUDIT-MONITORING — Audit monitoring and analysis
+	{TechniqueID: "T1535", TechniqueName: "Unsecured Credentials", Framework: "atlas", AegisGateControl: "AG-AU-AUDIT-MONITORING", Relationship: "detects", Confidence: 0.85, Description: "Audit monitoring detects credential exposure events"},
+	{TechniqueID: "T1589", TechniqueName: "Gather Victim Network Info", Framework: "atlas", AegisGateControl: "AG-AU-AUDIT-MONITORING", Relationship: "detects", Confidence: 0.85, Description: "Audit monitoring detects network reconnaissance patterns"},
+	{TechniqueID: "MS2", TechniqueName: "Measure: AI System Risk Assessment", Framework: "nist_ai_rmf", AegisGateControl: "AG-AU-AUDIT-MONITORING", Relationship: "supports", Confidence: 0.85, Description: "Audit monitoring supports AI system risk measurement"},
+
+	// AG-PL-PLANNING — Security planning
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-PL-PLANNING", Relationship: "supports", Confidence: 0.9, Description: "Security planning supports organizational risk governance"},
+	{TechniqueID: "GV2", TechniqueName: "Govern: Accountability", Framework: "nist_ai_rmf", AegisGateControl: "AG-PL-PLANNING", Relationship: "supports", Confidence: 0.85, Description: "Security planning supports accountability governance"},
+	{TechniqueID: "T1566", TechniqueName: "Phishing", Framework: "atlas", AegisGateControl: "AG-PL-PLANNING", Relationship: "mitigates", Confidence: 0.8, Description: "Security planning reduces phishing impact through policy"},
+
+	// AG-MA-MAINTENANCE — System maintenance and media protection
+	{TechniqueID: "T1648", TechniqueName: "Serverless Function Exploitation", Framework: "atlas", AegisGateControl: "AG-MA-MAINTENANCE", Relationship: "mitigates", Confidence: 0.8, Description: "Proper maintenance reduces serverless exploitation risk"},
+	{TechniqueID: "T1599", TechniqueName: "Exploit Public-Facing Application", Framework: "atlas", AegisGateControl: "AG-MA-MAINTENANCE", Relationship: "mitigates", Confidence: 0.8, Description: "Maintenance reduces public-facing application vulnerabilities"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-MA-MAINTENANCE", Relationship: "supports", Confidence: 0.8, Description: "Maintenance supports organizational governance"},
+
+	// AG-PS-PERSONNEL-SECURITY — Personnel security
+	{TechniqueID: "T1535", TechniqueName: "Unsecured Credentials", Framework: "atlas", AegisGateControl: "AG-PS-PERSONNEL-SECURITY", Relationship: "mitigates", Confidence: 0.8, Description: "Personnel security reduces insider credential threats"},
+	{TechniqueID: "T1566", TechniqueName: "Phishing", Framework: "atlas", AegisGateControl: "AG-PS-PERSONNEL-SECURITY", Relationship: "mitigates", Confidence: 0.85, Description: "Personnel security screening reduces phishing susceptibility"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-PS-PERSONNEL-SECURITY", Relationship: "supports", Confidence: 0.8, Description: "Personnel security supports organizational risk governance"},
+
+	// AG-IR-IR-POLICY-PLANNING — IR policy and coordination
+	{TechniqueID: "T1484", TechniqueName: "Jailbreak", Framework: "atlas", AegisGateControl: "AG-IR-IR-POLICY-PLANNING", Relationship: "supports", Confidence: 0.8, Description: "IR policy provides structured response to jailbreak incidents"},
+	{TechniqueID: "GV2", TechniqueName: "Govern: Accountability", Framework: "nist_ai_rmf", AegisGateControl: "AG-IR-IR-POLICY-PLANNING", Relationship: "supports", Confidence: 0.85, Description: "IR policy supports accountability governance"},
+	{TechniqueID: "LLM02", TechniqueName: "Sensitive Information Leakage", Framework: "owasp_llm", AegisGateControl: "AG-IR-IR-POLICY-PLANNING", Relationship: "supports", Confidence: 0.8, Description: "IR policy coordinates response to sensitive information leakage"},
+
+	// AG-SC-COMM-PROTECTION — Extended SC controls
+	{TechniqueID: "T1498", TechniqueName: "Network DoS", Framework: "atlas", AegisGateControl: "AG-SC-COMM-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "Communication protection controls prevent network DoS"},
+	{TechniqueID: "T1590", TechniqueName: "Gather Victim Network Info", Framework: "atlas", AegisGateControl: "AG-SC-COMM-PROTECTION", Relationship: "mitigates", Confidence: 0.85, Description: "DNS and mobile code controls prevent network reconnaissance"},
+	{TechniqueID: "MP4", TechniqueName: "Map: Adversarial Profiling", Framework: "nist_ai_rmf", AegisGateControl: "AG-SC-COMM-PROTECTION", Relationship: "supports", Confidence: 0.8, Description: "Communication protection supports adversarial profiling defense"},
+
+	// AG-SI-SYSTEM-INTEGRITY — Extended SI controls
+	{TechniqueID: "T1484", TechniqueName: "Jailbreak", Framework: "atlas", AegisGateControl: "AG-SI-SYSTEM-INTEGRITY", Relationship: "detects", Confidence: 0.85, Description: "System integrity controls detect jailbreak-related anomalies"},
+	{TechniqueID: "T1658", TechniqueName: "Exploitable Prompt Injection", Framework: "atlas", AegisGateControl: "AG-SI-SYSTEM-INTEGRITY", Relationship: "detects", Confidence: 0.85, Description: "Integrity validation detects prompt injection exploits"},
+	{TechniqueID: "MS2", TechniqueName: "Measure: AI System Risk Assessment", Framework: "nist_ai_rmf", AegisGateControl: "AG-SI-SYSTEM-INTEGRITY", Relationship: "supports", Confidence: 0.8, Description: "System integrity supports AI risk measurement"},
+
+	// AG-SA-SYSTEM-ACQUISITION — System acquisition
+	{TechniqueID: "T1599", TechniqueName: "Exploit Public-Facing Application", Framework: "atlas", AegisGateControl: "AG-SA-SYSTEM-ACQUISITION", Relationship: "mitigates", Confidence: 0.85, Description: "Secure acquisition processes reduce exploitable software risk"},
+	{TechniqueID: "T1648", TechniqueName: "Serverless Function Exploitation", Framework: "atlas", AegisGateControl: "AG-SA-SYSTEM-ACQUISITION", Relationship: "mitigates", Confidence: 0.85, Description: "Acquisition security requirements prevent serverless exploits"},
+	{TechniqueID: "GV1", TechniqueName: "Govern: Organizational Context", Framework: "nist_ai_rmf", AegisGateControl: "AG-SA-SYSTEM-ACQUISITION", Relationship: "supports", Confidence: 0.8, Description: "Secure acquisition supports organizational risk governance"},
 }
 
 // TechniquesForControl returns all technique mappings that target
