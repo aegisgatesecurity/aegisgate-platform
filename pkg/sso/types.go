@@ -97,6 +97,7 @@ type OIDCConfig struct {
 	ClientSecret        string
 	RedirectURL         string
 	Scopes              []string
+	AcrValues           []string // Authentication Context Class Reference values (OIDC §5.1). Sent as acr_values in the auth request; mapped from ID token acr claim on response.
 	UsePKCE             bool
 	PKCEChallenge       string
 	ValidateAccessToken bool
