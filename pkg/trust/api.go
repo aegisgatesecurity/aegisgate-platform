@@ -46,7 +46,8 @@ import (
 type API struct {
 	manager *Manager
 	// attestGenerator is optional. If nil, the /attestations endpoints
-	// return 501 Not Implemented. Phase 4.4 will wire this in.
+	// return 501 Not Implemented. When provided (wired via main.go),
+	// the endpoints serve live compliance attestations.
 	attestGenerator *attestation.Generator
 	// attestValidator is optional. Same as above.
 	attestValidator *attestation.Validator
