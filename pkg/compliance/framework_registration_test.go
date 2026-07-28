@@ -46,8 +46,8 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		}
 	}
 	// FedRAMP Path C has exactly 134 controls (49 automated + 85 evidence-mapped, 18 NIST 800-53 families).
-	if fedrampCount := frameworks["fedramp"]; fedrampCount != 150 {
-		t.Errorf("fedramp control count = %d, want 150 (Path C)", fedrampCount)
+	if fedrampCount := frameworks["fedramp"]; fedrampCount != 175 {
+		t.Errorf("fedramp control count = %d, want 175 (Path C + v3.6.0 T8)", fedrampCount)
 	}
 }
 

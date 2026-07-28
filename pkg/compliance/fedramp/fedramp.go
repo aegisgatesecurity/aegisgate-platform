@@ -193,6 +193,9 @@ func (m *FedRAMPModule) registerControls() {
 
 	// Additional stubs: 16 controls to reach 150 total
 	m.registerAdditionalStubs()
+
+	// Promoted v2 controls: 25 new FedRAMP Moderate controls (v3.6.0)
+	m.registerPromotedV2Controls()
 }
 
 // Dependencies returns required modules. FedRAMP depends on the
@@ -200,4 +203,292 @@ func (m *FedRAMPModule) registerControls() {
 // IOC store + Trust Framework (for monitoring and attestation).
 func (m *FedRAMPModule) Dependencies() []string {
 	return []string{"soc2", "iso42001", "fips", "ioc", "trust"}
+}
+
+// registerPromotedV2Controls wires 25 new FedRAMP Moderate controls
+// added in v3.6.0 (T8). These controls were not in the original 150
+// baseline but extend coverage for the Moderate baseline's enhanced
+// control requirements.
+func (m *FedRAMPModule) registerPromotedV2Controls() {
+	// --- AT: Awareness and Training (2 new controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AT-2",
+		Name:        "Security Awareness Training",
+		Description: "FedRAMP AT-2: Security awareness training for all users. AegisGate's RBAC role mapping and training content provide verification for AT-2.",
+		Category:    "Awareness and Training",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityAwarenessTraining,
+		References:  []string{"NIST SP 800-53 Rev. 5 AT-2", "FedRAMP Moderate AT-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AT-3",
+		Name:        "Role-Based Training",
+		Description: "FedRAMP AT-3: Role-based security training. AegisGate's RBAC roles mapped to training content provide verification for AT-3.",
+		Category:    "Awareness and Training",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkRoleBasedTraining,
+		References:  []string{"NIST SP 800-53 Rev. 5 AT-3", "FedRAMP Moderate AT-03"},
+	})
+
+	// --- CA: Assessment & Authorization (3 new controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CA-2",
+		Name:        "Security Assessments",
+		Description: "FedRAMP CA-2: Security assessments conducted. AegisGate's compliance scanning and authorization tracking provide evidence for CA-2.",
+		Category:    "Assessment, Authorization, and Monitoring",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkAssessmentAuthorization,
+		References:  []string{"NIST SP 800-53 Rev. 5 CA-2", "FedRAMP Moderate CA-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CA-5",
+		Name:        "Plan of Action and Milestones",
+		Description: "FedRAMP CA-5: POA&M tracking for compliance posture deltas. AegisGate's compliance delta and remediation tracking provide evidence for CA-5.",
+		Category:    "Assessment, Authorization, and Monitoring",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkPlanOfAction,
+		References:  []string{"NIST SP 800-53 Rev. 5 CA-5", "FedRAMP Moderate CA-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CA-7",
+		Name:        "Continuous Monitoring",
+		Description: "FedRAMP CA-7: Continuous monitoring verification. AegisGate's CCM scheduler and IOC store provide continuous monitoring for CA-7.",
+		Category:    "Assessment, Authorization, and Monitoring",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkContinuousMonitoringVerification,
+		References:  []string{"NIST SP 800-53 Rev. 5 CA-7", "FedRAMP Moderate CA-07"},
+	})
+
+	// --- CM: Configuration Management (2 new controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CM-10",
+		Name:        "Software Usage Restrictions",
+		Description: "FedRAMP CM-10: Software usage restrictions enforced. AegisGate's license enforcement and RBAC provide usage restrictions for CM-10.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareUsageRestrictionsV2,
+		References:  []string{"NIST SP 800-53 Rev. 5 CM-10", "FedRAMP Moderate CM-10"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-CM-12",
+		Name:        "Information Location",
+		Description: "FedRAMP CM-12: Information location tracking. AegisGate's data inventory and classification tracking provide location evidence for CM-12.",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkInformationLocationV2,
+		References:  []string{"NIST SP 800-53 Rev. 5 CM-12", "FedRAMP Moderate CM-12"},
+	})
+
+	// --- PE: Physical & Environmental (1 new control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-PE-1",
+		Name:        "Physical and Environmental Protection Policy",
+		Description: "FedRAMP PE-1: Physical and environmental protection policy. AegisGate's attestation export provides evidence for PE-1.",
+		Category:    "Physical and Environmental Protection",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkPEPhysicalPolicy,
+		References:  []string{"NIST SP 800-53 Rev. 5 PE-1", "FedRAMP Moderate PE-01"},
+	})
+
+	// --- MP: Media Protection (1 new control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-MP-1",
+		Name:        "Media Protection Policy",
+		Description: "FedRAMP MP-1: Media protection policy. AegisGate's data classification and media sanitization controls provide evidence for MP-1.",
+		Category:    "Media Protection",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkMediaProtectionPolicy,
+		References:  []string{"NIST SP 800-53 Rev. 5 MP-1", "FedRAMP Moderate MP-01"},
+	})
+
+	// --- SI: System & Information Integrity (3 new controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SI-1",
+		Name:        "System and Information Integrity Policy",
+		Description: "FedRAMP SI-1: System and information integrity policy. AegisGate's scanner integrity and error handling provide evidence for SI-1.",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkSystemIntegrityPolicy,
+		References:  []string{"NIST SP 800-53 Rev. 5 SI-1", "FedRAMP Moderate SI-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SI-11",
+		Name:        "Error Handling",
+		Description: "FedRAMP SI-11: Error handling for system operations. AegisGate's fail-safe error handling and alerting provide evidence for SI-11.",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkErrorHandlingVerification,
+		References:  []string{"NIST SP 800-53 Rev. 5 SI-11", "FedRAMP Moderate SI-11"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SI-14",
+		Name:        "Non-Disruptive Integrity Verification",
+		Description: "FedRAMP SI-14: Non-disruptive integrity verification. AegisGate's hash chain attestation and CCM provide integrity verification for SI-14.",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkNonDisruptiveIntegrityVerification,
+		References:  []string{"NIST SP 800-53 Rev. 5 SI-14", "FedRAMP Moderate SI-14"},
+	})
+
+	// --- SR: Supply Chain Risk Management (1 new control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SR-1",
+		Name:        "Supply Chain Risk Management Policy",
+		Description: "FedRAMP SR-1: Supply chain risk management policy. AegisGate's AIBOM and SBOM provenance tracking provide evidence for SR-1.",
+		Category:    "Supply Chain Risk Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSupplyChainRiskManagement,
+		References:  []string{"NIST SP 800-53 Rev. 5 SR-1", "FedRAMP Moderate SR-01"},
+	})
+
+	// --- AU: Audit (1 new enhanced control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AU-12(1)",
+		Name:        "Audit Log Generation (Enhanced)",
+		Description: "FedRAMP AU-12(1): Enhanced audit log generation with TSA timestamps. AegisGate's audit ring buffer and TSA timestamping provide evidence for AU-12(1).",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkAuditLogGeneration,
+		References:  []string{"NIST SP 800-53 Rev. 5 AU-12(1)", "FedRAMP Moderate AU-12(1)"},
+	})
+
+	// --- SC: System & Communications Protection (2 new enhanced controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-7(5)",
+		Name:        "Boundary Protection (Restricts External Connections)",
+		Description: "FedRAMP SC-7(5): Boundary protection that restricts external connections. AegisGate's 5 protocol pillars restrict external connections for SC-7(5).",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkBoundaryProtectionRestricts,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-7(5)", "FedRAMP Moderate SC-7(5)"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-7(8)",
+		Name:        "Network Isolation",
+		Description: "FedRAMP SC-7(8): Network isolation between trust zones. AegisGate's protocol pillars and boundary controls provide network isolation for SC-7(8).",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkNetworkIsolation,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-7(8)", "FedRAMP Moderate SC-7(8)"},
+	})
+
+	// --- AC: Access Control (2 new enhanced controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AC-2(1)",
+		Name:        "Account Management (Automated)",
+		Description: "FedRAMP AC-2(1): Automated account management support. AegisGate's RBAC and automated provisioning provide evidence for AC-2(1).",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkAccountManagementAutomated,
+		References:  []string{"NIST SP 800-53 Rev. 5 AC-2(1)", "FedRAMP Moderate AC-2(1)"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AC-2(3)",
+		Name:        "Account Management (Removal)",
+		Description: "FedRAMP AC-2(3): Automated account removal. AegisGate's RBAC and deprovisioning provide evidence for AC-2(3).",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkAccountManagementRemoval,
+		References:  []string{"NIST SP 800-53 Rev. 5 AC-2(3)", "FedRAMP Moderate AC-2(3)"},
+	})
+
+	// --- AC: Access Control (1 new enhanced control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AC-17(1)",
+		Name:        "Remote Access (Monitoring)",
+		Description: "FedRAMP AC-17(1): Remote access monitoring. AegisGate's session logging and monitoring provide evidence for AC-17(1).",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkRemoteAccessMonitoring,
+		References:  []string{"NIST SP 800-53 Rev. 5 AC-17(1)", "FedRAMP Moderate AC-17(1)"},
+	})
+
+	// --- IA: Identification & Authentication (2 new enhanced controls) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-IA-2(1)",
+		Name:        "MFA for Network Access to Privileged Accounts",
+		Description: "FedRAMP IA-2(1): MFA for network access to privileged accounts. AegisGate's MFA enforcement provides evidence for IA-2(1).",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMFAForNetworkAccess,
+		References:  []string{"NIST SP 800-53 Rev. 5 IA-2(1)", "FedRAMP Moderate IA-2(1)"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-IA-2(2)",
+		Name:        "MFA for Network Access to Non-Privileged Accounts",
+		Description: "FedRAMP IA-2(2): MFA for network access to non-privileged accounts. AegisGate's MFA enforcement provides evidence for IA-2(2).",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMFAForNonPrivilegedAccess,
+		References:  []string{"NIST SP 800-53 Rev. 5 IA-2(2)", "FedRAMP Moderate IA-2(2)"},
+	})
+
+	// --- AU: Audit (1 new enhanced control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-AU-6(1)",
+		Name:        "Audit Review, Analysis, and Reporting",
+		Description: "FedRAMP AU-6(1): Audit review, analysis, and reporting. AegisGate's audit correlation and SIEM reporting provide evidence for AU-6(1).",
+		Category:    "Audit and Accountability",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkAuditReviewAnalysis,
+		References:  []string{"NIST SP 800-53 Rev. 5 AU-6(1)", "FedRAMP Moderate AU-6(1)"},
+	})
+
+	// --- RA: Risk Assessment (1 new enhanced control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-RA-5(1)",
+		Name:        "Vulnerability Scanning (Automated)",
+		Description: "FedRAMP RA-5(1): Automated vulnerability scanning. AegisGate's scanner and CCM provide automated vulnerability scanning for RA-5(1).",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkVulnerabilityScanningAutomation,
+		References:  []string{"NIST SP 800-53 Rev. 5 RA-5(1)", "FedRAMP Moderate RA-5(1)"},
+	})
+
+	// --- SC: System & Communications Protection (1 new enhanced control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SC-28(1)",
+		Name:        "Encryption at Rest (Protection)",
+		Description: "FedRAMP SC-28(1): Encryption at rest protection. AegisGate's AES encryption and key management provide evidence for SC-28(1).",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkEncryptionAtRestVerification,
+		References:  []string{"NIST SP 800-53 Rev. 5 SC-28(1)", "FedRAMP Moderate SC-28(1)"},
+	})
+
+	// --- SI: System & Information Integrity (1 new enhanced control) ---
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FedRAMP-SI-4(2)",
+		Name:        "System Monitoring (Automated Alerts)",
+		Description: "FedRAMP SI-4(2): Automated monitoring alerts. AegisGate's anomaly detection and alerting provide evidence for SI-4(2).",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSystemMonitoringAlerts,
+		References:  []string{"NIST SP 800-53 Rev. 5 SI-4(2)", "FedRAMP Moderate SI-4(2)"},
+	})
 }
