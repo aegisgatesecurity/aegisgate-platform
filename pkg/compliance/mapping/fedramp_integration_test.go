@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Cross-Framework FedRAMP Integration Tests
 //
-// Validates the end-to-end fan-out from AegisGate's 60 FedRAMP controls
+// Validates the end-to-end fan-out from AegisGate's 150 FedRAMP controls
 // through the cross-framework mapping to SOC 2, ISO 27001, HIPAA, PCI,
 // NIST CSF, CIS, OWASP, and the other 15 frameworks.
 //
@@ -20,19 +20,66 @@ import (
 // maps back to at least one AegisGate internal control, and that each
 // AegisGate control fans out to multiple frameworks.
 func TestFedRAMPCrossFrameworkFanout(t *testing.T) {
-	// Step 1: All 60 FedRAMP controls must have reverse mappings
+	// Step 1: All 150 FedRAMP controls must have reverse mappings
 	allFedRAMP := []string{
-		"FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-6", "FedRAMP-AC-14", "FedRAMP-AC-17", "FedRAMP-AC-24",
-		"FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-6", "FedRAMP-AU-9", "FedRAMP-AU-10", "FedRAMP-AU-12", "FedRAMP-AU-16",
-		"FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-5", "FedRAMP-IA-6", "FedRAMP-IA-7", "FedRAMP-IA-8",
-		"FedRAMP-SC-4", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13", "FedRAMP-SC-23", "FedRAMP-SC-28",
-		"FedRAMP-CM-2", "FedRAMP-CM-3", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-8",
-		"FedRAMP-SI-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-7", "FedRAMP-SI-8", "FedRAMP-SI-10",
-		"FedRAMP-IR-4", "FedRAMP-IR-5", "FedRAMP-IR-6", "FedRAMP-IR-7", "FedRAMP-IR-8",
-		"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11", "FedRAMP-SA-22",
+		// AC family (18 controls)
+		"FedRAMP-AC-1", "FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-4", "FedRAMP-AC-5",
+		"FedRAMP-AC-6", "FedRAMP-AC-7", "FedRAMP-AC-8", "FedRAMP-AC-10", "FedRAMP-AC-11",
+		"FedRAMP-AC-12", "FedRAMP-AC-14", "FedRAMP-AC-17", "FedRAMP-AC-20", "FedRAMP-AC-21",
+		"FedRAMP-AC-22", "FedRAMP-AC-23", "FedRAMP-AC-24",
+		// AT family (3 controls)
+		"FedRAMP-AT-1", "FedRAMP-AT-2", "FedRAMP-AT-3",
+		// AU family (13 controls)
+		"FedRAMP-AU-1", "FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-4", "FedRAMP-AU-5",
+		"FedRAMP-AU-6", "FedRAMP-AU-7", "FedRAMP-AU-9", "FedRAMP-AU-10", "FedRAMP-AU-11",
+		"FedRAMP-AU-12", "FedRAMP-AU-13", "FedRAMP-AU-14", "FedRAMP-AU-16",
+		// CA family (6 controls)
+		"FedRAMP-CA-1", "FedRAMP-CA-2", "FedRAMP-CA-3", "FedRAMP-CA-5", "FedRAMP-CA-7",
+		"FedRAMP-CA-8", "FedRAMP-CA-9",
+		// CM family (12 controls)
+		"FedRAMP-CM-1", "FedRAMP-CM-2", "FedRAMP-CM-3", "FedRAMP-CM-4", "FedRAMP-CM-5",
+		"FedRAMP-CM-6", "FedRAMP-CM-7", "FedRAMP-CM-8", "FedRAMP-CM-9", "FedRAMP-CM-10",
+		"FedRAMP-CM-11", "FedRAMP-CM-12",
+		// CP family (9 controls)
+		"FedRAMP-CP-1", "FedRAMP-CP-2", "FedRAMP-CP-3", "FedRAMP-CP-4", "FedRAMP-CP-6",
+		"FedRAMP-CP-7", "FedRAMP-CP-8", "FedRAMP-CP-9", "FedRAMP-CP-10",
+		// IA family (10 controls)
+		"FedRAMP-IA-1", "FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-4", "FedRAMP-IA-5",
+		"FedRAMP-IA-6", "FedRAMP-IA-7", "FedRAMP-IA-8", "FedRAMP-IA-9", "FedRAMP-IA-10",
+		"FedRAMP-IA-11",
+		// IR family (10 controls)
+		"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3", "FedRAMP-IR-4", "FedRAMP-IR-5",
+		"FedRAMP-IR-6", "FedRAMP-IR-7", "FedRAMP-IR-8", "FedRAMP-IR-9", "FedRAMP-IR-10",
+		// MA family (2 controls)
+		"FedRAMP-MA-1", "FedRAMP-MA-4",
+		// MP family (2 controls)
+		"FedRAMP-MP-5", "FedRAMP-MP-6",
+		// PE family (2 controls)
+		"FedRAMP-PE-3", "FedRAMP-PE-20",
+		// PL family (2 controls)
+		"FedRAMP-PL-1", "FedRAMP-PL-2",
+		// PM family (2 controls)
+		"FedRAMP-PM-1", "FedRAMP-PM-14",
+		// PS family (3 controls)
+		"FedRAMP-PS-1", "FedRAMP-PS-2", "FedRAMP-PS-3",
+		// RA family (6 controls)
+		"FedRAMP-RA-1", "FedRAMP-RA-3", "FedRAMP-RA-4", "FedRAMP-RA-5", "FedRAMP-RA-6",
+		"FedRAMP-RA-7", "FedRAMP-RA-9",
+		// SA family (6 controls)
+		"FedRAMP-SA-1", "FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-8", "FedRAMP-SA-9",
+		"FedRAMP-SA-10", "FedRAMP-SA-11", "FedRAMP-SA-22",
+		// SC family (22 controls)
+		"FedRAMP-SC-1", "FedRAMP-SC-2", "FedRAMP-SC-3", "FedRAMP-SC-4", "FedRAMP-SC-5",
+		"FedRAMP-SC-6", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13",
+		"FedRAMP-SC-15", "FedRAMP-SC-21", "FedRAMP-SC-22", "FedRAMP-SC-23", "FedRAMP-SC-24",
+		"FedRAMP-SC-25", "FedRAMP-SC-26", "FedRAMP-SC-28", "FedRAMP-SC-34", "FedRAMP-SC-39",
+		"FedRAMP-SC-40", "FedRAMP-SC-44",
+		// SI family (11 controls)
+		"FedRAMP-SI-1", "FedRAMP-SI-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-7",
+		"FedRAMP-SI-8", "FedRAMP-SI-10", "FedRAMP-SI-11", "FedRAMP-SI-12", "FedRAMP-SI-14",
+		"FedRAMP-SI-16",
+		// SR family (5 controls)
 		"FedRAMP-SR-3", "FedRAMP-SR-4", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12",
-		"FedRAMP-RA-3", "FedRAMP-RA-5", "FedRAMP-RA-6", "FedRAMP-RA-7",
-		"FedRAMP-CA-2", "FedRAMP-CA-7", "FedRAMP-CA-8", "FedRAMP-CA-9",
 	}
 
 	noReverse := []string{}
@@ -80,17 +127,25 @@ func TestFedRAMPCrossFrameworkFanout(t *testing.T) {
 // has at least one control in the mapping (no family entirely missing).
 func TestFedRAMPFamilyCoverage(t *testing.T) {
 	families := map[string][]string{
-		"AC": {"FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-6", "FedRAMP-AC-14", "FedRAMP-AC-17", "FedRAMP-AC-24"},
-		"AU": {"FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-6", "FedRAMP-AU-9", "FedRAMP-AU-10", "FedRAMP-AU-12", "FedRAMP-AU-16"},
-		"IA": {"FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-5", "FedRAMP-IA-6", "FedRAMP-IA-7", "FedRAMP-IA-8"},
-		"SC": {"FedRAMP-SC-4", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13", "FedRAMP-SC-23", "FedRAMP-SC-28"},
-		"CM": {"FedRAMP-CM-2", "FedRAMP-CM-3", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-8"},
-		"SI": {"FedRAMP-SI-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-7", "FedRAMP-SI-8", "FedRAMP-SI-10"},
-		"IR": {"FedRAMP-IR-4", "FedRAMP-IR-5", "FedRAMP-IR-6", "FedRAMP-IR-7", "FedRAMP-IR-8"},
-		"SA": {"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11", "FedRAMP-SA-22"},
+		"AC": {"FedRAMP-AC-1", "FedRAMP-AC-2", "FedRAMP-AC-3", "FedRAMP-AC-4", "FedRAMP-AC-5", "FedRAMP-AC-6", "FedRAMP-AC-7", "FedRAMP-AC-8", "FedRAMP-AC-10", "FedRAMP-AC-11", "FedRAMP-AC-12", "FedRAMP-AC-14", "FedRAMP-AC-17", "FedRAMP-AC-20", "FedRAMP-AC-21", "FedRAMP-AC-22", "FedRAMP-AC-23", "FedRAMP-AC-24"},
+		"AT": {"FedRAMP-AT-1", "FedRAMP-AT-2", "FedRAMP-AT-3"},
+		"AU": {"FedRAMP-AU-1", "FedRAMP-AU-2", "FedRAMP-AU-3", "FedRAMP-AU-4", "FedRAMP-AU-5", "FedRAMP-AU-6", "FedRAMP-AU-7", "FedRAMP-AU-9", "FedRAMP-AU-10", "FedRAMP-AU-11", "FedRAMP-AU-12", "FedRAMP-AU-13", "FedRAMP-AU-14", "FedRAMP-AU-16"},
+		"CA": {"FedRAMP-CA-1", "FedRAMP-CA-2", "FedRAMP-CA-3", "FedRAMP-CA-5", "FedRAMP-CA-7", "FedRAMP-CA-8", "FedRAMP-CA-9"},
+		"CM": {"FedRAMP-CM-1", "FedRAMP-CM-2", "FedRAMP-CM-3", "FedRAMP-CM-4", "FedRAMP-CM-5", "FedRAMP-CM-6", "FedRAMP-CM-7", "FedRAMP-CM-8", "FedRAMP-CM-9", "FedRAMP-CM-10", "FedRAMP-CM-11", "FedRAMP-CM-12"},
+		"CP": {"FedRAMP-CP-1", "FedRAMP-CP-2", "FedRAMP-CP-3", "FedRAMP-CP-4", "FedRAMP-CP-6", "FedRAMP-CP-7", "FedRAMP-CP-8", "FedRAMP-CP-9", "FedRAMP-CP-10"},
+		"IA": {"FedRAMP-IA-1", "FedRAMP-IA-2", "FedRAMP-IA-3", "FedRAMP-IA-4", "FedRAMP-IA-5", "FedRAMP-IA-6", "FedRAMP-IA-7", "FedRAMP-IA-8", "FedRAMP-IA-9", "FedRAMP-IA-10", "FedRAMP-IA-11"},
+		"IR": {"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3", "FedRAMP-IR-4", "FedRAMP-IR-5", "FedRAMP-IR-6", "FedRAMP-IR-7", "FedRAMP-IR-8", "FedRAMP-IR-9", "FedRAMP-IR-10"},
+		"MA": {"FedRAMP-MA-1", "FedRAMP-MA-4"},
+		"MP": {"FedRAMP-MP-5", "FedRAMP-MP-6"},
+		"PE": {"FedRAMP-PE-3", "FedRAMP-PE-20"},
+		"PL": {"FedRAMP-PL-1", "FedRAMP-PL-2"},
+		"PM": {"FedRAMP-PM-1", "FedRAMP-PM-14"},
+		"PS": {"FedRAMP-PS-1", "FedRAMP-PS-2", "FedRAMP-PS-3"},
+		"RA": {"FedRAMP-RA-1", "FedRAMP-RA-3", "FedRAMP-RA-4", "FedRAMP-RA-5", "FedRAMP-RA-6", "FedRAMP-RA-7", "FedRAMP-RA-9"},
+		"SA": {"FedRAMP-SA-1", "FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-8", "FedRAMP-SA-9", "FedRAMP-SA-10", "FedRAMP-SA-11", "FedRAMP-SA-22"},
+		"SC": {"FedRAMP-SC-1", "FedRAMP-SC-2", "FedRAMP-SC-3", "FedRAMP-SC-4", "FedRAMP-SC-5", "FedRAMP-SC-6", "FedRAMP-SC-7", "FedRAMP-SC-8", "FedRAMP-SC-12", "FedRAMP-SC-13", "FedRAMP-SC-15", "FedRAMP-SC-21", "FedRAMP-SC-22", "FedRAMP-SC-23", "FedRAMP-SC-24", "FedRAMP-SC-25", "FedRAMP-SC-26", "FedRAMP-SC-28", "FedRAMP-SC-34", "FedRAMP-SC-39", "FedRAMP-SC-40", "FedRAMP-SC-44"},
+		"SI": {"FedRAMP-SI-1", "FedRAMP-SI-2", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-7", "FedRAMP-SI-8", "FedRAMP-SI-10", "FedRAMP-SI-11", "FedRAMP-SI-12", "FedRAMP-SI-14", "FedRAMP-SI-16"},
 		"SR": {"FedRAMP-SR-3", "FedRAMP-SR-4", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12"},
-		"RA": {"FedRAMP-RA-3", "FedRAMP-RA-5", "FedRAMP-RA-6", "FedRAMP-RA-7"},
-		"CA": {"FedRAMP-CA-2", "FedRAMP-CA-7", "FedRAMP-CA-8", "FedRAMP-CA-9"},
 	}
 
 	for family, controls := range families {
@@ -128,8 +183,8 @@ func TestFedRAMPReportGeneration(t *testing.T) {
 	if fr.FrameworkName != "FedRAMP Moderate (NIST 800-53)" {
 		t.Errorf("FrameworkName = %q, want FedRAMP Moderate (NIST 800-53)", fr.FrameworkName)
 	}
-	if fr.TotalControls < 60 {
-		t.Errorf("TotalControls = %d, want at least 60 (Path C)", fr.TotalControls)
+	if fr.TotalControls < 150 {
+		t.Errorf("TotalControls = %d, want at least 150 (full 150-control matrix)", fr.TotalControls)
 	}
 	if fr.CoveragePct <= 0 {
 		t.Errorf("CoveragePct = %f, want > 0", fr.CoveragePct)
@@ -151,7 +206,7 @@ func TestFedRAMPReportInFullReport(t *testing.T) {
 		if fr.Framework == "fedramp" {
 			foundFedRAMP = true
 			if fr.TotalControls < 60 {
-				t.Errorf("FedRAMP TotalControls = %d, want at least 60", fr.TotalControls)
+				t.Errorf("FedRAMP TotalControls = %d, want at least 150", fr.TotalControls)
 			}
 			break
 		}
@@ -254,7 +309,7 @@ func TestFedRAMPMappingSymmetry(t *testing.T) {
 }
 
 // TestFedRAMPMatrixIncludesAllFamilies verifies the CoverageMatrix
-// includes the fedramp key with all 11 NIST 800-53 families.
+// includes the fedramp key with all 19 NIST 800-53 families.
 func TestFedRAMPMatrixIncludesAllFamilies(t *testing.T) {
 	matrix := CoverageMatrix()
 	fedrampMatrix, ok := matrix["fedramp"]
@@ -262,7 +317,12 @@ func TestFedRAMPMatrixIncludesAllFamilies(t *testing.T) {
 		t.Fatal("CoverageMatrix missing fedramp framework")
 	}
 
-	familyPrefixes := []string{"FedRAMP-AC-", "FedRAMP-AU-", "FedRAMP-IA-", "FedRAMP-SC-", "FedRAMP-CM-", "FedRAMP-SI-", "FedRAMP-IR-", "FedRAMP-SA-", "FedRAMP-SR-", "FedRAMP-RA-", "FedRAMP-CA-"}
+	familyPrefixes := []string{
+		"FedRAMP-AC-", "FedRAMP-AT-", "FedRAMP-AU-", "FedRAMP-CA-", "FedRAMP-CM-",
+		"FedRAMP-CP-", "FedRAMP-IA-", "FedRAMP-IR-", "FedRAMP-MA-", "FedRAMP-MP-",
+		"FedRAMP-PE-", "FedRAMP-PL-", "FedRAMP-PM-", "FedRAMP-PS-", "FedRAMP-RA-",
+		"FedRAMP-SA-", "FedRAMP-SC-", "FedRAMP-SI-", "FedRAMP-SR-",
+	}
 	for _, prefix := range familyPrefixes {
 		found := false
 		for controlID := range fedrampMatrix {
