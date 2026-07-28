@@ -4,26 +4,27 @@
 // Path C: Full in-scope FedRAMP Moderate controls.
 // Test coverage target: 80%+ per pkg/compliance coverage floor.
 //
-// Total controls: 150 (49 automated + 101 evidence-mapped)
-//   AC: 18 (5 automated + 13 evidence-mapped)
-//   AU: 14 (5 automated + 9 evidence-mapped)
-//   IA: 11 (5 automated + 6 evidence-mapped)
-//   SC: 22 (10 automated + 12 evidence-mapped)
-//   CM: 12 (5 automated + 7 evidence-mapped)
-//   SI: 11 (6 automated + 5 evidence-mapped)
-//   IR: 10 (3 automated + 7 evidence-mapped)
-//   SA: 8 (1 automated + 7 evidence-mapped)
-//   SR: 5 (1 automated + 4 evidence-mapped)
-//   RA: 7 (4 automated + 3 evidence-mapped)
-//   CA: 7 (2 automated + 5 evidence-mapped)
-//   AT: 3 (0 automated + 3 evidence-mapped)
-//   CP: 9 (1 automated + 8 evidence-mapped)
-//   MP: 2 (1 automated + 1 evidence-mapped)
-//   PE: 2 (0 automated + 2 evidence-mapped)
-//   PS: 3 (0 automated + 3 evidence-mapped)
-//   PM: 2 (0 automated + 2 evidence-mapped)
-//   PL: 2 (0 automated + 2 evidence-mapped)
-//   MA: 2 (0 automated + 2 evidence-mapped)
+// Total controls: 175 (120 automated + 55 evidence-mapped)
+// v3.6.0: 13 promoted from manual + 25 new controls added
+//   AC: 21 (8 automated + 7 promoted + 4 enhanced + 2 manual)
+//   AU: 16 (5 automated + 4 promoted + 2 enhanced + 5 manual)
+//   IA: 13 (5 automated + 2 promoted + 2 enhanced + 4 manual)
+//   SC: 25 (10 automated + 2 promoted + 4 enhanced + 9 manual)
+//   CM: 14 (5 automated + 2 promoted + 2 new + 5 manual)
+//   SI: 15 (6 automated + 3 new + 6 manual)
+//   IR: 10 (3 automated + 2 promoted + 5 manual)
+//   SA: 8 (1 automated + 1 promoted + 6 manual)
+//   SR: 6 (1 automated + 1 new + 4 manual)
+//   RA: 8 (4 automated + 1 enhanced + 3 manual)
+//   CA: 10 (2 automated + 3 new + 5 manual)
+//   AT: 5 (2 new + 3 manual)
+//   CP: 9 (1 automated + 4 promoted + 4 manual)
+//   MP: 3 (1 automated + 1 new + 1 manual)
+//   PE: 3 (1 new + 2 manual)
+//   PS: 3 (0 automated + 3 manual)
+//   PM: 2 (0 automated + 2 manual)
+//   PL: 2 (0 automated + 2 manual)
+//   MA: 2 (0 automated + 2 manual)
 
 package fedramp
 
@@ -47,10 +48,10 @@ func TestNewFedRAMPModule(t *testing.T) {
 		t.Errorf("Version() = %q, want 2.0", m.Version())
 	}
 
-	// Verify all 150 controls are registered
+	// Verify all 175 controls are registered
 	controls := m.Controls()
-	if len(controls) != 150 {
-		t.Errorf("len(Controls()) = %d, want 150", len(controls))
+	if len(controls) != 175 {
+		t.Errorf("len(Controls()) = %d, want 175", len(controls))
 	}
 
 	// Count automated vs evidence-mapped
@@ -63,11 +64,11 @@ func TestNewFedRAMPModule(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if automated != 82 {
-		t.Errorf("automated controls = %d, want 82", automated)
+	if automated != 120 {
+		t.Errorf("automated controls = %d, want 120", automated)
 	}
-	if evidenceMapped != 68 {
-		t.Errorf("evidence-mapped controls = %d, want 68", evidenceMapped)
+	if evidenceMapped != 55 {
+		t.Errorf("evidence-mapped controls = %d, want 55", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -76,23 +77,24 @@ func TestNewFedRAMPModule(t *testing.T) {
 		familyCount[c.Category]++
 	}
 	expectedFamilies := map[string]int{
-		"Access Control":                            18,
-		"Audit and Accountability":                  14,
-		"Identification and Authentication":         11,
-		"System and Communications Protection":      22,
-		"Configuration Management":                  12,
-		"System and Information Integrity":          11,
+		"Access Control":                            21,
+		"Audit and Accountability":                  16,
+		"Identification and Authentication":         13,
+		"System and Communications Protection":      25,
+		"Configuration Management":                  14,
+		"System and Information Integrity":          15,
 		"Incident Response":                         10,
-		"System and Services Acquisition":           8,
-		"Supply Chain Risk Management":              5,
-		"Risk Assessment":                           7,
-		"Assessment, Authorization, and Monitoring": 7,
-		"Awareness and Training":                    3,
+		"System and Services Acquisition":            8,
+		"Supply Chain Risk Management":              6,
+		"Risk Assessment":                           8,
+		"Assessment, Authorization, and Monitoring": 10,
+		"Awareness and Training":                    5,
 		"Contingency Planning":                      9,
-		"Media Protection":                          2,
+		"Media Protection":                          3,
 		"Personnel Security":                        3,
 		"Program Management":                        2,
 		"Planning":                                  2,
+		"Physical and Environmental Protection":     3,
 	}
 	for family, expected := range expectedFamilies {
 		if familyCount[family] != expected {
@@ -1273,26 +1275,30 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		"FedRAMP-AU-10", "FedRAMP-AU-16",
 		"FedRAMP-IA-8",
 		"FedRAMP-CM-2",
-		"FedRAMP-SI-1", "FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-8", "FedRAMP-SI-12", "FedRAMP-SI-16",
+		"FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-8", "FedRAMP-SI-12", "FedRAMP-SI-16",
 		"FedRAMP-IR-7", "FedRAMP-IR-8",
 		"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11",
 		"FedRAMP-SR-3", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12",
 		"FedRAMP-RA-7", "FedRAMP-RA-9",
-		"FedRAMP-CA-1", "FedRAMP-CA-2", "FedRAMP-CA-3", "FedRAMP-CA-5", "FedRAMP-CA-8", "FedRAMP-CA-9",
+		"FedRAMP-CA-1", "FedRAMP-CA-3", "FedRAMP-CA-8", "FedRAMP-CA-9",
 		"FedRAMP-SC-15", "FedRAMP-SC-44",
-		"FedRAMP-AT-1", "FedRAMP-AT-2", "FedRAMP-AT-3",
+		"FedRAMP-AT-1",
 		"FedRAMP-CP-1", "FedRAMP-CP-2",
 		"FedRAMP-MP-5",
 		"FedRAMP-PE-3", "FedRAMP-PE-20",
-		// Manual stubs (customer responsibility)
-		"FedRAMP-SC-1", "FedRAMP-SC-40",
-		"FedRAMP-IR-1", "FedRAMP-IR-2", "FedRAMP-IR-3",
-		"FedRAMP-SA-1", "FedRAMP-SA-8",
+		// Manual stubs (customer responsibility — policies, procedures, HR, physical)
+		"FedRAMP-AC-1",
+		"FedRAMP-AU-1",
+		"FedRAMP-IA-1",
+		"FedRAMP-SC-1",
+		"FedRAMP-IR-1",
+		"FedRAMP-SA-1",
+		"FedRAMP-CM-1",
 		"FedRAMP-RA-1",
-		"FedRAMP-CP-3", "FedRAMP-CP-4", "FedRAMP-CP-6", "FedRAMP-CP-7", "FedRAMP-CP-8",
 		"FedRAMP-PS-1", "FedRAMP-PS-2", "FedRAMP-PS-3",
 		"FedRAMP-PM-1", "FedRAMP-PM-14",
 		"FedRAMP-PL-1", "FedRAMP-PL-2",
+		"FedRAMP-MA-1",
 	}
 
 	controlMap := map[string]compliance.ControlDefinition{}

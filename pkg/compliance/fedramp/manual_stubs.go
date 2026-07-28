@@ -9,13 +9,14 @@
 // attach to their FedRAMP A&A packages, but the controls themselves
 // require customer documentation, training, or physical implementation.
 //
-// These 62 controls bring FedRAMP from 88 (scanner-checkable) to
-// 150 (full in-scope coverage). The customer is responsible for:
+// v3.6.0: 13 controls promoted from manual to automated in
+// promoted_checkfuncs_v2.go (AC-8, AC-20, IA-9, IA-11, SC-40,
+// IR-2, IR-3, SA-8, CP-3, CP-4, CP-6, CP-7, CP-8).
+// 25 new controls added in promoted_checkfuncs_v2.go.
+//
+// Remaining 30 controls are genuinely customer-responsibility:
 //   - Writing policies and procedures
-//   - Conducting training
-//   - Performing physical security measures
 //   - Managing personnel security
-//   - Developing contingency plans
 //   - Creating program management documentation
 //
 // AegisGate provides the evidence package that makes demonstrating
@@ -29,9 +30,10 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 )
 
-// registerManualStubs wires the 62 evidence-mapped controls that are
-// the customer's responsibility. AegisGate generates the evidence
-// artifacts; the customer provides the policy/documentation/process.
+// registerManualStubs wires the 30 remaining evidence-mapped controls
+// that are genuinely the customer's responsibility (policy, procedure,
+// HR, physical, program management). 13 controls were promoted to
+// automated in v3.6.0 (promoted_checkfuncs_v2.go).
 func (m *FedRAMPModule) registerManualStubs() {
 	// --- AC: Access Control (19 manual stubs for remaining AC controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
@@ -79,7 +81,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-8: System use notification before granting access. AegisGate's login banner and API authentication provide notification evidence for AC-8.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemUseNotification,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-8", "FedRAMP Moderate AC-08"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -118,7 +121,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP AC-20: Limits use of external systems. AegisGate's trust framework and capability contracts manage external system interactions for AC-20.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUseOfExternalSystems,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-20", "FedRAMP Moderate AC-20"},
 	})
 
@@ -199,7 +203,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP IA-9: Non-organizational users identified and authenticated. AegisGate's API key and token-based authentication for external users provides IA-9 evidence.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkNonOrganizationalUserAuth,
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-9", "FedRAMP Moderate IA-09"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -218,7 +223,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP IA-11: Re-authentication for privileged actions. AegisGate's MFA enforcement for privileged operations provides IA-11 evidence.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkReAuthentication,
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-11", "FedRAMP Moderate IA-11"},
 	})
 
@@ -258,7 +264,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP SC-40: Wireless link protection. AegisGate's TLS 1.2+ requirement for all communications (including wireless) provides SC-40 evidence.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkWirelessLinkProtection,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-40", "FedRAMP Moderate SC-40"},
 	})
 
@@ -278,7 +285,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP IR-2: Incident response training for personnel. AegisGate's incident playbooks and SOC timeline provide training content for IR-2.",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIRTraining,
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-2", "FedRAMP Moderate IR-02"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -287,7 +295,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP IR-3: Incident response testing. AegisGate's adversarial benchmark suite and incident playbooks provide testing infrastructure for IR-3.",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIRTesting,
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-3", "FedRAMP Moderate IR-03"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -317,7 +326,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP SA-8: Security engineering principles applied in system development. AegisGate's fail-closed architecture, STRIDE threat model, and secure-by-design principles provide SA-8 evidence.",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityEngineeringPrinciples,
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-8", "FedRAMP Moderate SA-08"},
 	})
 
@@ -380,7 +390,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP CP-3: Contingency training for personnel. AegisGate's incident playbooks and SOC timeline provide training content for CP-3.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkContingencyTraining,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-3", "FedRAMP Moderate CP-03"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -389,7 +400,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP CP-4: Contingency plan testing. AegisGate's benchmark suite and incident playbooks can be used for contingency testing exercises.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkContingencyPlanTesting,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-4", "FedRAMP Moderate CP-04"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -398,7 +410,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP CP-6: Alternate storage site for backup. AegisGate's persistence layer supports PostgreSQL replication for CP-6 evidence.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAlternateStorageSite,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-6", "FedRAMP Moderate CP-06"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -407,7 +420,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP CP-7: Alternate processing site for system recovery. Customer is responsible for alternate site; AegisGate's self-hosted single-binary architecture supports rapid deployment at any site.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAlternateProcessingSite,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-7", "FedRAMP Moderate CP-07"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -416,7 +430,8 @@ func (m *FedRAMPModule) registerManualStubs() {
 		Description: "FedRAMP CP-8: Telecommunications services for contingency operations. Customer is responsible for telecom redundancy; AegisGate supports multiple API endpoints for CP-8.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTelecomServices,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-8", "FedRAMP Moderate CP-08"},
 	})
 
