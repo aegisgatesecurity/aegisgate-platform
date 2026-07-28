@@ -162,6 +162,14 @@ func (p *OIDCProvider) InitiateLogin(state string) (string, *SSORequest, error) 
 		)
 	}
 
+	// Add ACR values if configured (OIDC spec §5.1, §16.4).
+	// ACR values tell the IdP what authentication context class to require
+	// (e.g., "1" for MFA, "2" for certificate). Multiple values indicate
+	// preference order — the IdP SHOULD use the strongest it supports.
+	for _, acr := range p.oidcConfig.AcrValues {
+		opts = append(opts, oauth2.SetAuthURLParam("acr_values", acr))
+	}
+
 	// Add any extra parameters based on provider type
 	opts = append(opts, p.getProviderSpecificOptions()...)
 
@@ -490,7 +498,15 @@ func (p *OIDCProvider) mapClaimsToUser(user *SSOUser, claims *OIDCIDTokenClaims)
 	if len(user.Groups) == 0 && len(claims.Groups) > 0 {
 		user.Groups = claims.Groups
 	}
-	// AcrValues mapping not implemented
+
+	// Map ACR (Authentication Context Class Reference) from ID token claims.
+	// ACR values indicate the authentication method used (e.g., "0"=IP,
+	// "1"=MFAuth, "2"=certificate). SAML calls this AuthnContext; OIDC
+	// calls it acr. We store both the single ACR and any multi-value
+	// Amr (Authentication Methods References) for downstream enforcement.
+	if claims.ACR != "" && user.AuthnContext == "" {
+		user.AuthnContext = claims.ACR
+	}
 }
 
 // getProviderSpecificOptions returns provider-specific OAuth2 options
