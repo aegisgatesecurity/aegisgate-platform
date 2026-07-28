@@ -60,6 +60,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/trust"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/trust/attestation"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 	"github.com/aegisgatesecurity/aegisgate/pkg/siem"
@@ -1239,8 +1240,15 @@ func main() {
 		// manager is wrapped in a tier check (Professional+ per Q3).
 		if cfg != nil && cfg.Trust.Enabled {
 			trustMgr := trust.NewManager(nil, nil)
+			attestGen, err := attestation.NewGenerator()
+			if err != nil {
+				log.Printf("[TRUST] Warning: failed to create attestation generator: %v; attestation endpoints will return 501", err)
+			}
+			attestVal := attestation.NewValidator()
 			trustAPI := trust.NewAPI(trustMgr, &trust.APIConfig{
-				AttestationCap: 1000,
+				AttestationGenerator: attestGen,
+				AttestationValidator: attestVal,
+				AttestationCap:       1000,
 			})
 			if cfg.Trust.RequireLicense && licenseMgr != nil {
 				// Wrap trustAPI in a tier-gated HandlerFunc via adapter
