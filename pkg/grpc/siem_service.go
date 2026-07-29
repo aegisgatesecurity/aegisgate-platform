@@ -75,7 +75,7 @@ func (s *SIEMService) GetEvents(ctx context.Context, req *GetSIEMEventsRequest) 
 			Id:        e.ID,
 			Timestamp: e.Timestamp,
 			Source:    e.Source,
-			Category: e.Category,
+			Category:  e.Category,
 			Type:      e.Type,
 			Severity:  e.Severity,
 			Message:   e.Message,

@@ -1498,15 +1498,15 @@ func TestRecordBridgeUsage_Basic(t *testing.T) {
 	defer tr.Close()
 
 	err := tr.RecordBridgeUsage(
-		"org-bridge-001", // orgID
-		"tok-bridge-001", // tokenID
-		"user-bridge-001", // userID
-		"gpt-4",          // model
+		"org-bridge-001",       // orgID
+		"tok-bridge-001",       // tokenID
+		"user-bridge-001",      // userID
+		"gpt-4",                // model
 		"/v1/chat/completions", // endpoint
-		2000,             // tokensUsed
-		10.0,             // costCents
-		450,              // latencyMs
-		true,             // success
+		2000,                   // tokensUsed
+		10.0,                   // costCents
+		450,                    // latencyMs
+		true,                   // success
 	)
 	if err != nil {
 		t.Fatalf("RecordBridgeUsage failed: %v", err)
@@ -1557,15 +1557,15 @@ func TestRecordBridgeUsage_FailedRequest(t *testing.T) {
 	defer tr.Close()
 
 	err := tr.RecordBridgeUsage(
-		"org-fail",       // orgID
-		"tok-fail",       // tokenID
-		"user-fail",      // userID
-		"claude-3",       // model
-		"/v1/messages",   // endpoint
-		0,                // tokensUsed (failed, no tokens consumed)
-		0,                // costCents
-		12000,            // latencyMs (high latency before failure)
-		false,            // success
+		"org-fail",     // orgID
+		"tok-fail",     // tokenID
+		"user-fail",    // userID
+		"claude-3",     // model
+		"/v1/messages", // endpoint
+		0,              // tokensUsed (failed, no tokens consumed)
+		0,              // costCents
+		12000,          // latencyMs (high latency before failure)
+		false,          // success
 	)
 	if err != nil {
 		t.Fatalf("RecordBridgeUsage failed: %v", err)

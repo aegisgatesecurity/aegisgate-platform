@@ -266,15 +266,15 @@ type Violation struct {
 type ViolationType int32
 
 const (
-	ViolationTypeUnknown         ViolationType = 0
+	ViolationTypeUnknown          ViolationType = 0
 	ViolationTypeMaliciousRequest ViolationType = 1
-	ViolationTypeSQLInjection    ViolationType = 2
-	ViolationTypeXSS             ViolationType = 3
-	ViolationTypeCSRF            ViolationType = 4
-	ViolationTypePathTraversal   ViolationType = 5
+	ViolationTypeSQLInjection     ViolationType = 2
+	ViolationTypeXSS              ViolationType = 3
+	ViolationTypeCSRF             ViolationType = 4
+	ViolationTypePathTraversal    ViolationType = 5
 	ViolationTypeCommandInjection ViolationType = 6
-	ViolationTypeAtlasTechnique  ViolationType = 7
-	ViolationTypeCustomPattern   ViolationType = 8
+	ViolationTypeAtlasTechnique   ViolationType = 7
+	ViolationTypeCustomPattern    ViolationType = 8
 )
 
 // ViolationSeverity enumerates violation severity levels.
@@ -348,11 +348,11 @@ type GenerateReportResponse struct {
 type ComplianceStatus int32
 
 const (
-	ComplianceStatusUnknown      ComplianceStatus = 0
-	ComplianceStatusPass         ComplianceStatus = 1
-	ComplianceStatusFail         ComplianceStatus = 2
-	ComplianceStatusWarning      ComplianceStatus = 3
-	ComplianceStatusPending      ComplianceStatus = 4
+	ComplianceStatusUnknown       ComplianceStatus = 0
+	ComplianceStatusPass          ComplianceStatus = 1
+	ComplianceStatusFail          ComplianceStatus = 2
+	ComplianceStatusWarning       ComplianceStatus = 3
+	ComplianceStatusPending       ComplianceStatus = 4
 	ComplianceStatusNotApplicable ComplianceStatus = 5
 )
 

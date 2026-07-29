@@ -166,10 +166,10 @@ func ConfigFromPlatform(cfg PlatformSIEMConfig) siem.Config {
 // as loaded from platformconfig.yaml. This is separate from the upstream
 // siem.Config to allow platform-specific extensions.
 type PlatformSIEMConfig struct {
-	Source      string                `yaml:"source" json:"source"`
-	Environment string                `yaml:"environment" json:"environment"`
-	Enabled     bool                  `yaml:"enabled" json:"enabled"`
-	Platforms   []PlatformSIEMTarget  `yaml:"platforms" json:"platforms"`
+	Source      string               `yaml:"source" json:"source"`
+	Environment string               `yaml:"environment" json:"environment"`
+	Enabled     bool                 `yaml:"enabled" json:"enabled"`
+	Platforms   []PlatformSIEMTarget `yaml:"platforms" json:"platforms"`
 }
 
 // PlatformSIEMTarget represents a single SIEM platform configuration target.

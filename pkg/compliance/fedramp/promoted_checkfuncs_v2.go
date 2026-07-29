@@ -425,7 +425,7 @@ func (m *FedRAMPModule) checkContingencyTraining(ctx context.Context, input []by
 	hasPlaybook := strings.Contains(inputStr, "playbook") ||
 		strings.Contains(inputStr, "contingency") ||
 		strings.Contains(inputStr, "incident")
-_hasRecovery := strings.Contains(inputStr, "recovery") ||
+	_hasRecovery := strings.Contains(inputStr, "recovery") ||
 		strings.Contains(inputStr, "backup") ||
 		strings.Contains(inputStr, "restore")
 
@@ -466,7 +466,7 @@ func (m *FedRAMPModule) checkContingencyPlanTesting(ctx context.Context, input [
 	hasTest := strings.Contains(inputStr, "benchmark") ||
 		strings.Contains(inputStr, "test") ||
 		strings.Contains(inputStr, "exercise")
-_hasBackup := strings.Contains(inputStr, "backup") ||
+	_hasBackup := strings.Contains(inputStr, "backup") ||
 		strings.Contains(inputStr, "recovery") ||
 		strings.Contains(inputStr, "persistence")
 
@@ -566,7 +566,7 @@ func (m *FedRAMPModule) checkAlternateProcessingSite(ctx context.Context, input 
 	hasDeploy := strings.Contains(inputStr, "deploy") ||
 		strings.Contains(inputStr, "single_binary") ||
 		strings.Contains(inputStr, "container")
-_hasConfig := strings.Contains(inputStr, "configuration") ||
+	_hasConfig := strings.Contains(inputStr, "configuration") ||
 		strings.Contains(inputStr, "platformconfig") ||
 		strings.Contains(inputStr, "env")
 
@@ -734,7 +734,7 @@ func (m *FedRAMPModule) checkAssessmentAuthorization(ctx context.Context, input 
 	hasScan := strings.Contains(inputStr, "scan") ||
 		strings.Contains(inputStr, "compliance") ||
 		strings.Contains(inputStr, "assessment")
-_hasAuth := strings.Contains(inputStr, "authorization") ||
+	_hasAuth := strings.Contains(inputStr, "authorization") ||
 		strings.Contains(inputStr, "auth") ||
 		strings.Contains(inputStr, "cmmc")
 
@@ -771,7 +771,7 @@ func (m *FedRAMPModule) checkPlanOfAction(ctx context.Context, input []byte) (*c
 	hasDelta := strings.Contains(inputStr, "delta") ||
 		strings.Contains(inputStr, "poam") ||
 		strings.Contains(inputStr, "remediation")
-_hasCompliance := strings.Contains(inputStr, "compliance") ||
+	_hasCompliance := strings.Contains(inputStr, "compliance") ||
 		strings.Contains(inputStr, "scan") ||
 		strings.Contains(inputStr, "posture")
 
@@ -808,7 +808,7 @@ func (m *FedRAMPModule) checkContinuousMonitoringVerification(ctx context.Contex
 	hasCCM := strings.Contains(inputStr, "ccm") ||
 		strings.Contains(inputStr, "continuous") ||
 		strings.Contains(inputStr, "monitoring")
-_hasIOC := strings.Contains(inputStr, "ioc") ||
+	_hasIOC := strings.Contains(inputStr, "ioc") ||
 		strings.Contains(inputStr, "threat_intelligence") ||
 		strings.Contains(inputStr, "anomaly")
 
@@ -846,7 +846,7 @@ func (m *FedRAMPModule) checkSoftwareUsageRestrictionsV2(ctx context.Context, in
 	hasLicense := strings.Contains(inputStr, "license") ||
 		strings.Contains(inputStr, "tier") ||
 		strings.Contains(inputStr, "subscription")
-_hasRBAC := strings.Contains(inputStr, "rbac") ||
+	_hasRBAC := strings.Contains(inputStr, "rbac") ||
 		strings.Contains(inputStr, "roles") ||
 		strings.Contains(inputStr, "restricted")
 
@@ -884,7 +884,7 @@ func (m *FedRAMPModule) checkInformationLocationV2(ctx context.Context, input []
 	hasInventory := strings.Contains(inputStr, "inventory") ||
 		strings.Contains(inputStr, "data_location") ||
 		strings.Contains(inputStr, "location")
-_hasPII := strings.Contains(inputStr, "pii") ||
+	_hasPII := strings.Contains(inputStr, "pii") ||
 		strings.Contains(inputStr, "classification") ||
 		strings.Contains(inputStr, "data_classification")
 
@@ -921,7 +921,7 @@ func (m *FedRAMPModule) checkPEPhysicalPolicy(ctx context.Context, input []byte)
 	hasAttestation := strings.Contains(inputStr, "attestation") ||
 		strings.Contains(inputStr, "trust") ||
 		strings.Contains(inputStr, "evidence")
-_hasPhysical := strings.Contains(inputStr, "physical") ||
+	_hasPhysical := strings.Contains(inputStr, "physical") ||
 		strings.Contains(inputStr, "data_center") ||
 		strings.Contains(inputStr, "environmental")
 
@@ -995,7 +995,7 @@ func (m *FedRAMPModule) checkSystemIntegrityPolicy(ctx context.Context, input []
 	hasScanner := strings.Contains(inputStr, "scanner") ||
 		strings.Contains(inputStr, "integrity") ||
 		strings.Contains(inputStr, "siem")
-_hasError := strings.Contains(inputStr, "error") ||
+	_hasError := strings.Contains(inputStr, "error") ||
 		strings.Contains(inputStr, "error_handling") ||
 		strings.Contains(inputStr, "fail_safe")
 
@@ -1029,7 +1029,7 @@ _hasError := strings.Contains(inputStr, "error") ||
 // (fail-safe, error codes, alerts).
 func (m *FedRAMPModule) checkErrorHandlingVerification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-_hasError := strings.Contains(inputStr, "error_handling") ||
+	_hasError := strings.Contains(inputStr, "error_handling") ||
 		strings.Contains(inputStr, "fail_safe") ||
 		strings.Contains(inputStr, "fail_closed")
 	hasAlert := strings.Contains(inputStr, "alert") ||
@@ -1069,7 +1069,7 @@ func (m *FedRAMPModule) checkNonDisruptiveIntegrityVerification(ctx context.Cont
 	hasHashChain := strings.Contains(inputStr, "hash_chain") ||
 		strings.Contains(inputStr, "integrity") ||
 		strings.Contains(inputStr, "attestation")
-_hasCCM := strings.Contains(inputStr, "ccm") ||
+	_hasCCM := strings.Contains(inputStr, "ccm") ||
 		strings.Contains(inputStr, "continuous") ||
 		strings.Contains(inputStr, "monitoring")
 
@@ -1106,7 +1106,7 @@ func (m *FedRAMPModule) checkSupplyChainRiskManagement(ctx context.Context, inpu
 	hasAIBOM := strings.Contains(inputStr, "aibom") ||
 		strings.Contains(inputStr, "provenance") ||
 		strings.Contains(inputStr, "supply_chain")
-_hasSBOM := strings.Contains(inputStr, "sbom") ||
+	_hasSBOM := strings.Contains(inputStr, "sbom") ||
 		strings.Contains(inputStr, "dependency") ||
 		strings.Contains(inputStr, "component")
 
@@ -1181,7 +1181,7 @@ func (m *FedRAMPModule) checkBoundaryProtectionRestricts(ctx context.Context, in
 		strings.Contains(inputStr, "mcp") ||
 		strings.Contains(inputStr, "a2a") ||
 		strings.Contains(inputStr, "acp")
-_hasDeny := strings.Contains(inputStr, "deny") ||
+	_hasDeny := strings.Contains(inputStr, "deny") ||
 		strings.Contains(inputStr, "restrict") ||
 		strings.Contains(inputStr, "block")
 
@@ -1215,7 +1215,7 @@ _hasDeny := strings.Contains(inputStr, "deny") ||
 // management (RBAC + account provisioning).
 func (m *FedRAMPModule) checkAccountManagementAutomated(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-_hasAccount := strings.Contains(inputStr, "account") ||
+	_hasAccount := strings.Contains(inputStr, "account") ||
 		strings.Contains(inputStr, "provisioning") ||
 		strings.Contains(inputStr, "user_management")
 	hasRBAC := strings.Contains(inputStr, "rbac") ||
@@ -1254,7 +1254,7 @@ func (m *FedRAMPModule) checkAccountManagementRemoval(ctx context.Context, input
 	hasDeprov := strings.Contains(inputStr, "deprovisioning") ||
 		strings.Contains(inputStr, "removal") ||
 		strings.Contains(inputStr, "disable")
-_hasAccount := strings.Contains(inputStr, "account") ||
+	_hasAccount := strings.Contains(inputStr, "account") ||
 		strings.Contains(inputStr, "rbac")
 
 	if hasDeprov && _hasAccount {
@@ -1287,10 +1287,10 @@ _hasAccount := strings.Contains(inputStr, "account") ||
 // and control (session logging + access control).
 func (m *FedRAMPModule) checkRemoteAccessMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-_hasRemote := strings.Contains(inputStr, "remote") ||
+	_hasRemote := strings.Contains(inputStr, "remote") ||
 		strings.Contains(inputStr, "session") ||
 		strings.Contains(inputStr, "proxy")
-hasAudit := strings.Contains(inputStr, "audit") ||
+	hasAudit := strings.Contains(inputStr, "audit") ||
 		strings.Contains(inputStr, "logging") ||
 		strings.Contains(inputStr, "monitoring")
 
@@ -1327,7 +1327,7 @@ func (m *FedRAMPModule) checkMFAForNetworkAccess(ctx context.Context, input []by
 	hasMFA := strings.Contains(inputStr, "mfa") ||
 		strings.Contains(inputStr, "multi_factor") ||
 		strings.Contains(inputStr, "2fa")
-_hasNetwork := strings.Contains(inputStr, "network") ||
+	_hasNetwork := strings.Contains(inputStr, "network") ||
 		strings.Contains(inputStr, "remote") ||
 		strings.Contains(inputStr, "access")
 
@@ -1364,7 +1364,7 @@ func (m *FedRAMPModule) checkMFAForNonPrivilegedAccess(ctx context.Context, inpu
 	hasMFA := strings.Contains(inputStr, "mfa") ||
 		strings.Contains(inputStr, "multi_factor") ||
 		strings.Contains(inputStr, "2fa")
-_hasNonPriv := strings.Contains(inputStr, "user") ||
+	_hasNonPriv := strings.Contains(inputStr, "user") ||
 		strings.Contains(inputStr, "non_privileged") ||
 		strings.Contains(inputStr, "regular")
 
@@ -1398,7 +1398,7 @@ _hasNonPriv := strings.Contains(inputStr, "user") ||
 // reporting capabilities (correlation + SIEM integration).
 func (m *FedRAMPModule) checkAuditReviewAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasAuditReview := strings.Contains(inputStr, "audit_review") ||
+	hasAuditReview := strings.Contains(inputStr, "audit_review") ||
 		strings.Contains(inputStr, "analysis") ||
 		strings.Contains(inputStr, "correlation")
 	hasSIEM := strings.Contains(inputStr, "siem") ||
@@ -1435,10 +1435,10 @@ hasAuditReview := strings.Contains(inputStr, "audit_review") ||
 // vulnerability scanning (scanner + continuous monitoring).
 func (m *FedRAMPModule) checkVulnerabilityScanningAutomation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-_hasScan := strings.Contains(inputStr, "scanner") ||
+	_hasScan := strings.Contains(inputStr, "scanner") ||
 		strings.Contains(inputStr, "vulnerability") ||
 		strings.Contains(inputStr, "scan")
-hasCCM := strings.Contains(inputStr, "ccm") ||
+	hasCCM := strings.Contains(inputStr, "ccm") ||
 		strings.Contains(inputStr, "continuous") ||
 		strings.Contains(inputStr, "monitoring")
 
@@ -1509,7 +1509,7 @@ func (m *FedRAMPModule) checkNetworkIsolation(ctx context.Context, input []byte)
 // (data encryption + key management).
 func (m *FedRAMPModule) checkEncryptionAtRestVerification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasEncryption := strings.Contains(inputStr, "encryption") ||
+	hasEncryption := strings.Contains(inputStr, "encryption") ||
 		strings.Contains(inputStr, "encrypted") ||
 		strings.Contains(inputStr, "aes")
 	hasKeyMgmt := strings.Contains(inputStr, "key_management") ||
@@ -1549,7 +1549,7 @@ func (m *FedRAMPModule) checkSystemMonitoringAlerts(ctx context.Context, input [
 	hasAnomaly := strings.Contains(inputStr, "anomaly") ||
 		strings.Contains(inputStr, "ioc") ||
 		strings.Contains(inputStr, "threat")
-_hasAlert := strings.Contains(inputStr, "alert") ||
+	_hasAlert := strings.Contains(inputStr, "alert") ||
 		strings.Contains(inputStr, "siem") ||
 		strings.Contains(inputStr, "monitoring")
 
