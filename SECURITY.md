@@ -151,6 +151,8 @@ We thank security researchers who responsibly disclose vulnerabilities.
 
 - **Security Issues**: security@aegisgatesecurity.io
 - **General Support**: support@aegisgatesecurity.io
+- **X/Twitter**: https://x.com/aegisgate
+- **Mastodon**: https://mastodon.social/@aegisgate
 
 ## Code-Scanning Alerts (Updated 2026-07-01)
 
