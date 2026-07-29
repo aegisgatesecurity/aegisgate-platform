@@ -84,7 +84,18 @@ We authorize and appreciate security research on our systems, provided researche
 - Allow reasonable time for remediation before public disclosure
 - Do not engage in social engineering or physical attacks
 
-### 3.4 Out of Scope
+### 3.4 CVE-for-AI Feed
+
+AegisGate Security Research publishes CVE entries for AI/ML vulnerabilities at
+[**aegisgatesecurity.io/cve/**](https://aegisgatesecurity.io/cve/). Every entry is tamper-evident
+(ECDSA P-256 signed) and third-party-verifiable offline. The programmatic feed is available at
+[**aegisgatesecurity.io/feed.json**](https://aegisgatesecurity.io/feed.json).
+
+To report an AI/ML vulnerability, see our
+[**security.txt**](https://aegisgatesecurity.io/.well-known/security.txt) or email
+security@aegisgatesecurity.io.
+
+### 3.5 Out of Scope
 
 The following are outside the scope of our vulnerability disclosure program:
 - Social engineering attacks
