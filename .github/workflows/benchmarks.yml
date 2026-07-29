@@ -11,7 +11,7 @@
 #   2. Parse results and compare against baseline thresholds
 #   3. Fail CI if any benchmark regresses beyond threshold
 #
-# v3.4.3+ coverage lift.
+# v3.5.0+ cross-framework mapping.
 
 name: Performance Benchmarks
 

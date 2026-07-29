@@ -152,7 +152,7 @@ Host: node-1:8443
 ```json
 {
   "status": "healthy",
-  "version": "3.4.3",
+  "version": "3.5.0",
     "scanner": { "healthy": true },
     "persistence": { "healthy": true, "backend": "postgresql" },
     "a2a": { "healthy": true, "status": "disabled" }
@@ -170,7 +170,7 @@ GET /api/v1/cluster/health HTTP/1.1
 {
   "node_id": "node-1",
   "hostname": "aegisgate-1.prod",
-  "version": "3.4.3", "professional",
+  "version": "3.5.0", "professional",
   "uptime": "72h15m30s",
   "mode": "clustered",
   "peers": {
