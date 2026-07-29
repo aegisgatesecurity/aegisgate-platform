@@ -35,14 +35,15 @@ import (
 
 // registerCMControls wires the CM family controls into the module.
 func (m *FedRAMPModule) registerCMControls() {
-	// CM-2: Baseline Configuration (Path B — carried forward, evidence-mapped)
+	// CM-2: Baseline Configuration (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CM-2",
 		Name:        "Baseline Configuration",
-		Description: "FedRAMP CM-2: Baseline configuration documented and maintained. AegisGate generates the configuration audit log as evidence for the customer's CM-2 SSP section.",
+		Description: "FedRAMP CM-2: Baseline configuration documented and maintained. AegisGate verifies config baseline tracking, audit logging, and drift detection.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false, // Evidence-mapped: AegisGate generates compliance scan output
+		Automated:   true,
+		CheckFunc:   m.checkBaselineConfiguration,
 		References:  []string{"NIST SP 800-53 Rev. 5 CM-2", "FedRAMP Moderate CM-02"},
 	})
 
@@ -145,25 +146,27 @@ func (m *FedRAMPModule) registerSIControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-2", "FedRAMP Moderate SI-02"},
 	})
 
-	// SI-3: Malicious Code Protection (Path C — new, evidence-mapped)
+	// SI-3: Malicious Code Protection (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SI-3",
 		Name:        "Malicious Code Protection",
-		Description: "FedRAMP SI-3: Malicious code protection at system entry/exit points. AegisGate's scanner + IOC store provide the evidence.",
+		Description: "FedRAMP SI-3: Malicious code protection at system entry/exit points. AegisGate verifies scanner, PII/secret detection, and IOC tracking.",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false, // Evidence-mapped
+		Automated:   true,
+		CheckFunc:   m.checkMaliciousCodeProtection,
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-3", "FedRAMP Moderate SI-03"},
 	})
 
-	// SI-4: System and Information Integrity (Path B — carried forward, evidence-mapped)
+	// SI-4: System and Information Integrity (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SI-4",
 		Name:        "Information System Monitoring",
-		Description: "FedRAMP SI-4: Information system monitoring detects attacks, indicators of potential attacks, and unauthorized activity. AegisGate's IOC store + scanner + anomaly detection provide the monitoring infrastructure.",
+		Description: "FedRAMP SI-4: Information system monitoring detects attacks, indicators of potential attacks, and unauthorized activity. AegisGate verifies scanner, IOC detection, and SIEM alerting.",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false, // Evidence-mapped: AegisGate generates IOC + scanner output
+		Automated:   true,
+		CheckFunc:   m.checkSystemMonitoringSI4,
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-4", "FedRAMP Moderate SI-04"},
 	})
 
@@ -179,14 +182,15 @@ func (m *FedRAMPModule) registerSIControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-7", "FedRAMP Moderate SI-07"},
 	})
 
-	// SI-8: Spam Protection (Path C — new, evidence-mapped)
+	// SI-8: Spam Protection (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SI-8",
 		Name:        "Spam Protection",
-		Description: "FedRAMP SI-8: Protection against spam and unauthorized messages at system boundaries. AegisGate's content filtering provides this evidence.",
+		Description: "FedRAMP SI-8: Protection against spam and unauthorized messages at system boundaries. AegisGate verifies content filtering and rate limiting.",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityLow,
-		Automated:   false, // Evidence-mapped
+		Automated:   true,
+		CheckFunc:   m.checkSpamProtection,
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-8", "FedRAMP Moderate SI-08"},
 	})
 
@@ -217,14 +221,15 @@ func (m *FedRAMPModule) registerSIControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-11", "FedRAMP Moderate SI-11"},
 	})
 
-	// SI-12: Information Management (evidence-mapped)
+	// SI-12: Information Management (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SI-12",
 		Name:        "Information Management",
-		Description: "FedRAMP SI-12: Organization manages information in accordance with applicable policy. AegisGate's data classification, retention, and audit log integrity provide the technical evidence for SI-12.",
+		Description: "FedRAMP SI-12: Organization manages information in accordance with applicable policy. AegisGate verifies data classification and retention controls.",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInformationManagement,
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-12", "FedRAMP Moderate SI-12"},
 	})
 
@@ -240,14 +245,15 @@ func (m *FedRAMPModule) registerSIControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-14", "FedRAMP Moderate SI-14"},
 	})
 
-	// SI-16: Memory Protection (evidence-mapped)
+	// SI-16: Memory Protection (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SI-16",
 		Name:        "Memory Protection",
-		Description: "FedRAMP SI-16: Memory protection to prevent unauthorized code execution. AegisGate runs as a compiled Go binary with ASLR, stack canaries, and PIE enabled, providing memory protection by default.",
+		Description: "FedRAMP SI-16: Memory protection to prevent unauthorized code execution. AegisGate verifies sandbox isolation and security boundary enforcement.",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMemoryProtection,
 		References:  []string{"NIST SP 800-53 Rev. 5 SI-16", "FedRAMP Moderate SI-16"},
 	})
 }

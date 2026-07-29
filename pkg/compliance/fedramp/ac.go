@@ -98,14 +98,15 @@ func (m *FedRAMPModule) registerACControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-17", "FedRAMP Moderate AC-17"},
 	})
 
-	// AC-24: Access Control Policy Support (Path C — new, evidence-mapped)
+	// AC-24: Access Control Policy Support (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AC-24",
 		Name:        "Access Control Policy Support",
-		Description: "FedRAMP AC-24: Complementary policy controls supporting the access control program. AegisGate generates the policy enforcement evidence for the customer's AC-24 SSP section.",
+		Description: "FedRAMP AC-24: Complementary policy controls supporting the access control program. AegisGate verifies RBAC policy enforcement, session controls, and access audit evidence.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false, // Evidence-mapped: AegisGate generates compliance scan output
+		Automated:   true,
+		CheckFunc:   m.checkAccessControlPolicySupport,
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-24", "FedRAMP Moderate AC-24"},
 	})
 }

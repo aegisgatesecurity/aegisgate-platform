@@ -93,14 +93,15 @@ func (m *FedRAMPModule) registerIAControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-7", "FedRAMP Moderate IA-07"},
 	})
 
-	// IA-8: Non-Organizational Users (Path C — new, evidence-mapped)
+	// IA-8: Non-Organizational Users (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IA-8",
 		Name:        "Non-Organizational Users",
-		Description: "FedRAMP IA-8: Non-organizational users (external, federated) uniquely identified and authenticated. AegisGate's multi-tenant isolation and SSO integration provide the evidence.",
+		Description: "FedRAMP IA-8: Non-organizational users (external, federated) uniquely identified and authenticated. AegisGate verifies SSO and API key authentication for external users.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false, // Evidence-mapped
+		Automated:   true,
+		CheckFunc:   m.checkNonOrgUserAuthSFO,
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-8", "FedRAMP Moderate IA-08"},
 	})
 }

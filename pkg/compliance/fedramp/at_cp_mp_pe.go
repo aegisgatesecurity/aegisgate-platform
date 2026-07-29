@@ -44,14 +44,15 @@ import (
 
 // registerATControls wires the AT (Awareness & Training) family controls.
 func (m *FedRAMPModule) registerATControls() {
-	// AT-1: Security Awareness Training Policy (evidence-mapped)
+	// AT-1: Security Awareness Training Policy (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AT-1",
 		Name:        "Security Awareness Training Policy and Procedures",
-		Description: "FedRAMP AT-1: Organization develops, documents, and disseminates a security awareness training policy. AegisGate generates policy enforcement evidence (scan results, access audit logs) that the customer attaches to their AT-1 SSP section.",
+		Description: "FedRAMP AT-1: Organization develops, documents, and disseminates a security awareness training policy. AegisGate generates policy enforcement evidence (role-based training tracking, compliance audit results).",
 		Category:    "Awareness and Training",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityAwarenessTrainingPolicy,
 		References:  []string{"NIST SP 800-53 Rev. 5 AT-1", "FedRAMP Moderate AT-01"},
 	})
 
@@ -61,25 +62,27 @@ func (m *FedRAMPModule) registerATControls() {
 
 // registerCPControls wires the CP (Contingency Planning) family controls.
 func (m *FedRAMPModule) registerCPControls() {
-	// CP-1: Contingency Planning Policy (evidence-mapped)
+	// CP-1: Contingency Planning Policy (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CP-1",
 		Name:        "Contingency Planning Policy and Procedures",
-		Description: "FedRAMP CP-1: Organization develops, documents, and disseminates a contingency planning policy. AegisGate generates system configuration evidence (SBOM, audit logs, attestation chain) for the customer's CP-1 documentation.",
+		Description: "FedRAMP CP-1: Organization develops, documents, and disseminates a contingency planning policy. AegisGate generates system configuration evidence (component inventory, backup verification, compliance scans).",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkContingencyPlanningPolicy,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-1", "FedRAMP Moderate CP-01"},
 	})
 
-	// CP-2: Contingency Plan (evidence-mapped)
+	// CP-2: Contingency Plan (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CP-2",
 		Name:        "Contingency Plan",
-		Description: "FedRAMP CP-2: Organization develops a contingency plan for the information system. AegisGate provides system topology evidence (component inventory, dependency mapping, trust framework identity records) for the customer's CP-2 contingency plan.",
+		Description: "FedRAMP CP-2: Organization develops a contingency plan for the information system. AegisGate verifies component inventory, trust identity records, and dependency mapping evidence.",
 		Category:    "Contingency Planning",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkContingencyPlan,
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-2", "FedRAMP Moderate CP-02"},
 	})
 
@@ -98,14 +101,15 @@ func (m *FedRAMPModule) registerCPControls() {
 
 // registerMPControls wires the MP (Media Protection) family controls.
 func (m *FedRAMPModule) registerMPControls() {
-	// MP-5: Media Transport (evidence-mapped)
+	// MP-5: Media Transport (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-MP-5",
 		Name:        "Media Transport",
-		Description: "FedRAMP MP-5: Organization controls and documents the transport of information system media. AegisGate generates evidence of data-in-transit encryption (TLS 1.2+, FIPS-approved ciphers) for the customer's MP-5 documentation.",
+		Description: "FedRAMP MP-5: Organization controls and documents the transport of information system media. AegisGate verifies TLS in-transit encryption and data-at-rest encryption.",
 		Category:    "Media Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMediaTransport,
 		References:  []string{"NIST SP 800-53 Rev. 5 MP-5", "FedRAMP Moderate MP-05"},
 	})
 

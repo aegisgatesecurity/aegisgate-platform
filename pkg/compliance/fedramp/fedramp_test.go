@@ -4,26 +4,27 @@
 // Path C: Full in-scope FedRAMP Moderate controls.
 // Test coverage target: 80%+ per pkg/compliance coverage floor.
 //
-// Total controls: 175 (120 automated + 55 evidence-mapped)
-// v3.6.0: 13 promoted from manual + 25 new controls added
-//   AC: 21 (8 automated + 7 promoted + 4 enhanced + 2 manual)
-//   AU: 16 (5 automated + 4 promoted + 2 enhanced + 5 manual)
-//   IA: 13 (5 automated + 2 promoted + 2 enhanced + 4 manual)
-//   SC: 25 (10 automated + 2 promoted + 4 enhanced + 9 manual)
-//   CM: 14 (5 automated + 2 promoted + 2 new + 5 manual)
-//   SI: 15 (6 automated + 3 new + 6 manual)
-//   IR: 10 (3 automated + 2 promoted + 5 manual)
-//   SA: 8 (1 automated + 1 promoted + 6 manual)
-//   SR: 6 (1 automated + 1 new + 4 manual)
-//   RA: 8 (4 automated + 1 enhanced + 3 manual)
-//   CA: 10 (2 automated + 3 new + 5 manual)
-//   AT: 5 (2 new + 3 manual)
-//   CP: 9 (1 automated + 4 promoted + 4 manual)
-//   MP: 3 (1 automated + 1 new + 1 manual)
-//   PE: 3 (1 new + 2 manual)
-//   PS: 3 (0 automated + 3 manual)
-//   PM: 2 (0 automated + 2 manual)
-//   PL: 2 (0 automated + 2 manual)
+// Total controls: 170 (151 automated + 19 evidence-mapped)
+// v3.6.0: 31 controls promoted from evidence-mapped to automated
+//   AC: 21 (20 automated + 1 policy)
+//   AU: 16 (13 automated + 3 policy)
+//   IA: 13 (10 automated + 3 policy)
+//   SC: 25 (23 automated + 2 policy)
+//   CM: 14 (13 automated + 1 policy)
+//   SI: 14 (13 automated + 1 policy)
+//   IR: 10 (7 automated + 3 policy)
+//   SA: 8 (6 automated + 2 policy)
+//   SR: 6 (6 automated + 0 policy)
+//   RA: 8 (7 automated + 1 policy)
+//   CA: 8 (6 automated + 2 policy)
+//   AT: 3 (3 automated + 0 policy)
+//   CP: 9 (7 automated + 2 policy)
+//   MP: 3 (3 automated + 0 policy)
+//   PE: 3 (1 automated + 2 physical)
+//   PS: 3 (0 automated + 3 HR)
+//   PM: 2 (0 automated + 2 program)
+//   PL: 2 (0 automated + 2 policy)
+//   MA: 2 (1 automated + 1 policy)
 //   MA: 2 (0 automated + 2 manual)
 
 package fedramp
@@ -64,11 +65,11 @@ func TestNewFedRAMPModule(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if automated != 120 {
-		t.Errorf("automated controls = %d, want 120", automated)
+	if automated != 151 {
+		t.Errorf("automated controls = %d, want 151", automated)
 	}
-	if evidenceMapped != 50 {
-		t.Errorf("evidence-mapped controls = %d, want 50", evidenceMapped)
+	if evidenceMapped != 19 {
+		t.Errorf("evidence-mapped controls = %d, want 19", evidenceMapped)
 	}
 
 	// Verify each family has the right number of controls
@@ -1271,21 +1272,6 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 	controls := m.Controls()
 
 	evidenceMappedIDs := []string{
-		"FedRAMP-AC-24",
-		"FedRAMP-AU-10", "FedRAMP-AU-16",
-		"FedRAMP-IA-8",
-		"FedRAMP-CM-2",
-		"FedRAMP-SI-3", "FedRAMP-SI-4", "FedRAMP-SI-8", "FedRAMP-SI-12", "FedRAMP-SI-16",
-		"FedRAMP-IR-7", "FedRAMP-IR-8",
-		"FedRAMP-SA-4", "FedRAMP-SA-5", "FedRAMP-SA-9", "FedRAMP-SA-11",
-		"FedRAMP-SR-3", "FedRAMP-SR-6", "FedRAMP-SR-8", "FedRAMP-SR-12",
-		"FedRAMP-RA-7", "FedRAMP-RA-9",
-		"FedRAMP-CA-1", "FedRAMP-CA-3", "FedRAMP-CA-8", "FedRAMP-CA-9",
-		"FedRAMP-SC-15", "FedRAMP-SC-44",
-		"FedRAMP-AT-1",
-		"FedRAMP-CP-1", "FedRAMP-CP-2",
-		"FedRAMP-MP-5",
-		"FedRAMP-PE-3", "FedRAMP-PE-20",
 		// Manual stubs (customer responsibility — policies, procedures, HR, physical)
 		"FedRAMP-AC-1",
 		"FedRAMP-AU-1",
@@ -1299,6 +1285,8 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 		"FedRAMP-PM-1", "FedRAMP-PM-14",
 		"FedRAMP-PL-1", "FedRAMP-PL-2",
 		"FedRAMP-MA-1",
+		"FedRAMP-CA-1",
+		"FedRAMP-PE-3", "FedRAMP-PE-20",
 	}
 
 	controlMap := map[string]compliance.ControlDefinition{}

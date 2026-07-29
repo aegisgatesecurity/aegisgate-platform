@@ -86,10 +86,11 @@ func (m *FedRAMPModule) registerAUControls() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AU-10",
 		Name:        "Auditor Actions",
-		Description: "FedRAMP AU-10: Prevent unauthorized modification of auditor actions. AegisGate generates the audit log integrity evidence for the customer's AU-10 SSP section.",
+		Description: "FedRAMP AU-10: Prevent unauthorized modification of auditor actions. AegisGate verifies TSA timestamping and hash-chain integrity for non-repudiation.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false, // Evidence-mapped
+		Automated:   true,
+		CheckFunc:   m.checkAuditorActions,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-10", "FedRAMP Moderate AU-10"},
 	})
 
@@ -105,14 +106,15 @@ func (m *FedRAMPModule) registerAUControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-12", "FedRAMP Moderate AU-12"},
 	})
 
-	// AU-16: Cross-Organization Audit (Path C — new, evidence-mapped)
+	// AU-16: Cross-Organization Audit (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AU-16",
 		Name:        "Cross-Organization Audit",
-		Description: "FedRAMP AU-16: Audit information shared across organizational boundaries. AegisGate's multi-tenant isolation supports cross-tenant audit correlation.",
+		Description: "FedRAMP AU-16: Audit information shared across organizational boundaries. AegisGate verifies attestation signing and evidence sharing capabilities.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityLow,
-		Automated:   false, // Evidence-mapped
+		Automated:   true,
+		CheckFunc:   m.checkCrossOrgAudit,
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-16", "FedRAMP Moderate AU-16"},
 	})
 }

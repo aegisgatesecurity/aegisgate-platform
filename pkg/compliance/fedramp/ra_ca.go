@@ -65,10 +65,11 @@ func (m *FedRAMPModule) registerRAControls() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-RA-7",
 		Name:        "Risk Response",
-		Description: "FedRAMP RA-7: Risk response actions documented and tracked. AegisGate's compliance scan and drift detection provide risk evidence.",
+		Description: "FedRAMP RA-7: Risk response actions documented and tracked. AegisGate verifies compliance scan posture deltas and remediation tracking.",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskResponse,
 		References:  []string{"NIST SP 800-53 Rev. 5 RA-7", "FedRAMP Moderate RA-07"},
 	})
 
@@ -84,14 +85,15 @@ func (m *FedRAMPModule) registerRAControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 RA-4", "FedRAMP Moderate RA-04"},
 	})
 
-	// RA-9: Criticality Analysis (evidence-mapped)
+	// RA-9: Criticality Analysis (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-RA-9",
 		Name:        "Criticality Analysis",
-		Description: "FedRAMP RA-9: Organization conducts a criticality analysis for system components. AegisGate's trust framework scoring and component inventory provide the evidence for RA-9.",
+		Description: "FedRAMP RA-9: Organization conducts a criticality analysis for system components. AegisGate verifies AIBOM dependency mapping and vulnerability scanning.",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCriticalityAnalysis,
 		References:  []string{"NIST SP 800-53 Rev. 5 RA-9", "FedRAMP Moderate RA-09"},
 	})
 }
@@ -113,23 +115,25 @@ func (m *FedRAMPModule) registerCAControls() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CA-8",
 		Name:        "Penetration Testing",
-		Description: "FedRAMP CA-8: Penetration testing at defined intervals. AegisGate's scanner provides continuous scanning; annual pentest is customer's responsibility.",
+		Description: "FedRAMP CA-8: Penetration testing at defined intervals. AegisGate verifies scanner capabilities and posture assessment results.",
 		Category:    "Assessment, Authorization, and Monitoring",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPenetrationTesting,
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-8", "FedRAMP Moderate CA-08"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CA-9",
 		Name:        "Internal Connections",
-		Description: "FedRAMP CA-9: Internal connections between system components authorized and documented. AegisGate's AIBOM and trust framework attestations provide the evidence.",
+		Description: "FedRAMP CA-9: Internal connections between system components authorized and documented. AegisGate verifies AIBOM and trust framework identity mapping.",
 		Category:    "Assessment, Authorization, and Monitoring",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInternalConnections,
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-9", "FedRAMP Moderate CA-09"},
 	})
 
-	// CA-1: Assessment and Authorization Policy (evidence-mapped)
+	// CA-1: Assessment and Authorization Policy (evidence-mapped — customer responsibility)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CA-1",
 		Name:        "Assessment and Authorization Policy and Procedures",
@@ -140,14 +144,15 @@ func (m *FedRAMPModule) registerCAControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-1", "FedRAMP Moderate CA-01"},
 	})
 
-	// CA-3: System Interconnections (evidence-mapped)
+	// CA-3: System Interconnections (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CA-3",
 		Name:        "System Interconnections",
-		Description: "FedRAMP CA-3: System interconnections authorized and documented. AegisGate's trust framework identity and capability contracts provide the interconnection evidence for CA-3.",
+		Description: "FedRAMP CA-3: System interconnections authorized and documented. AegisGate verifies trust framework contracts and AIBOM for interconnection evidence.",
 		Category:    "Assessment, Authorization, and Monitoring",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemInterconnections,
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-3", "FedRAMP Moderate CA-03"},
 	})
 
