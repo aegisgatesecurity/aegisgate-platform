@@ -750,16 +750,16 @@ func ExportToPDF(response *QuestionnaireResponse) ([]byte, error) {
 
 	// Render the PDF.
 	req := &pdf.RenderRequest{
-		Title:        fmt.Sprintf("%s Questionnaire — Version %s", response.Framework, response.Version),
-		Author:       "AegisGate Security Platform",
-		Subject:      fmt.Sprintf("%s %s Questionnaire for %s", response.Framework, response.Version, response.OrganizationName),
-		Keywords:     fmt.Sprintf("%s, questionnaire, compliance, vendor assessment", response.Framework),
-		Sections:     sections,
-		Footer:       fmt.Sprintf("%s Questionnaire — %s", response.Framework, response.OrganizationName),
-		Header:       "AegisGate",
+		Title:          fmt.Sprintf("%s Questionnaire — Version %s", response.Framework, response.Version),
+		Author:         "AegisGate Security Platform",
+		Subject:        fmt.Sprintf("%s %s Questionnaire for %s", response.Framework, response.Version, response.OrganizationName),
+		Keywords:       fmt.Sprintf("%s, questionnaire, compliance, vendor assessment", response.Framework),
+		Sections:       sections,
+		Footer:         fmt.Sprintf("%s Questionnaire — %s", response.Framework, response.OrganizationName),
+		Header:         "AegisGate",
 		HeaderSubtitle: response.Version,
-		FooterURL:    "https://aegisgatesecurity.io",
-		GeneratedAt:  response.GeneratedAt,
+		FooterURL:      "https://aegisgatesecurity.io",
+		GeneratedAt:    response.GeneratedAt,
 	}
 
 	return pdf.RenderReport(req)

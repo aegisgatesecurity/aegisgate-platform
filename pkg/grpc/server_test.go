@@ -27,7 +27,7 @@ type mockAuthBackend struct{}
 func (m *mockAuthBackend) Login(_ context.Context, username, password string) (string, int64, error) {
 	return "mock_token_" + username, time.Now().Add(24 * time.Hour).Unix(), nil
 }
-func (m *mockAuthBackend) Logout(_ context.Context, token string) error              { return nil }
+func (m *mockAuthBackend) Logout(_ context.Context, token string) error { return nil }
 func (m *mockAuthBackend) ValidateToken(_ context.Context, token string) (bool, string, int64, error) {
 	if token == "valid_token" {
 		return true, "user123", time.Now().Add(24 * time.Hour).Unix(), nil
@@ -108,8 +108,8 @@ func (m *mockProxyBackend) GetConfig(_ context.Context) (*ProxyConfigInfo, error
 	return &ProxyConfigInfo{Enabled: true, Host: "0.0.0.0", Port: 8080, TLSEnabled: true, RateLimit: 100, RateLimitBurst: 150, CORSEnabled: true, CORSOrigins: []string{"*"}}, nil
 }
 func (m *mockProxyBackend) IsEnabled(_ context.Context) (bool, error) { return m.enabled, nil }
-func (m *mockProxyBackend) Enable(_ context.Context) error              { m.enabled = true; return nil }
-func (m *mockProxyBackend) Disable(_ context.Context) error              { m.enabled = false; return nil }
+func (m *mockProxyBackend) Enable(_ context.Context) error            { m.enabled = true; return nil }
+func (m *mockProxyBackend) Disable(_ context.Context) error           { m.enabled = false; return nil }
 func (m *mockProxyBackend) GetViolations(_ context.Context, _ []ViolationSeverity, _ int32) ([]*ViolationInfo, error) {
 	return []*ViolationInfo{{ID: "v1", Type: ViolationTypeSQLInjection, Severity: ViolationSeverityCritical, Message: "SQL injection attempt", ClientIP: "10.0.0.1", Method: "POST", Path: "/api/data", Blocked: true, Timestamp: 1000}}, nil
 }
@@ -147,7 +147,7 @@ func (m *mockWebhookBackend) CreateWebhook(_ context.Context, name, url string, 
 func (m *mockWebhookBackend) UpdateWebhook(_ context.Context, id, name, url string, events []string, enabled bool) (*WebhookDetail, error) {
 	return &WebhookDetail{ID: id, Name: name, URL: url, Events: events, Enabled: enabled}, nil
 }
-func (m *mockWebhookBackend) DeleteWebhook(_ context.Context, id string) error  { return nil }
+func (m *mockWebhookBackend) DeleteWebhook(_ context.Context, id string) error { return nil }
 func (m *mockWebhookBackend) EnableWebhook(_ context.Context, id string) (*WebhookDetail, error) {
 	return &WebhookDetail{ID: id, Name: "hook", URL: "https://example.com", Events: []string{"*"}, Enabled: true}, nil
 }

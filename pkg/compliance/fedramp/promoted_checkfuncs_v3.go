@@ -399,7 +399,7 @@ func (m *FedRAMPModule) checkBaselineConfiguration(ctx context.Context, input []
 	inputStr := string(input)
 	hasConfig := strings.Contains(inputStr, "config") || strings.Contains(inputStr, "baseline") || strings.Contains(inputStr, "platform_config")
 	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "change_log") || strings.Contains(inputStr, "config_audit")
-hasDRIFT := strings.Contains(inputStr, "drift") || strings.Contains(inputStr, "ccm") || strings.Contains(inputStr, "compliance_scan")
+	hasDRIFT := strings.Contains(inputStr, "drift") || strings.Contains(inputStr, "ccm") || strings.Contains(inputStr, "compliance_scan")
 
 	score := 0
 	if hasConfig {
@@ -502,7 +502,7 @@ func (m *FedRAMPModule) checkContingencyPlan(ctx context.Context, input []byte) 
 	inputStr := string(input)
 	hasInventory := strings.Contains(inputStr, "component") || strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "dependency")
 	hasTrust := strings.Contains(inputStr, "trust") || strings.Contains(inputStr, "identity") || strings.Contains(inputStr, "agent")
-hasDRIFT := strings.Contains(inputStr, "recovery") || strings.Contains(inputStr, "backup") || strings.Contains(inputStr, "persistence")
+	hasDRIFT := strings.Contains(inputStr, "recovery") || strings.Contains(inputStr, "backup") || strings.Contains(inputStr, "persistence")
 
 	if hasInventory && (hasTrust || hasDRIFT) {
 		return &compliance.ControlCheckResult{
@@ -595,7 +595,7 @@ func (m *FedRAMPModule) checkNonOrgUserAuthSFO(ctx context.Context, input []byte
 func (m *FedRAMPModule) checkIRAssistance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasSIEM := strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "dispatch") || strings.Contains(inputStr, "alert")
-hasIncident := strings.Contains(inputStr, "incident") || strings.Contains(inputStr, "playbook") || strings.Contains(inputStr, "response")
+	hasIncident := strings.Contains(inputStr, "incident") || strings.Contains(inputStr, "playbook") || strings.Contains(inputStr, "response")
 	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "ioc") || strings.Contains(inputStr, "correlation")
 
 	if hasSIEM && hasIncident {
@@ -688,7 +688,7 @@ func (m *FedRAMPModule) checkMediaTransport(ctx context.Context, input []byte) (
 	inputStr := string(input)
 	hasTLS := strings.Contains(inputStr, "tls") || strings.Contains(inputStr, "encryption_in_transit") || strings.Contains(inputStr, "https")
 	hasEncrypt := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "encrypted") || strings.Contains(inputStr, "data_encrypted")
-hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "integrity") || strings.Contains(inputStr, "hash_chain")
+	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "integrity") || strings.Contains(inputStr, "hash_chain")
 
 	if hasTLS && hasEncrypt {
 		return &compliance.ControlCheckResult{
@@ -827,7 +827,7 @@ func (m *FedRAMPModule) checkAcquisitionProcess(ctx context.Context, input []byt
 	inputStr := string(input)
 	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
 	hasSecurity := strings.Contains(inputStr, "security") || strings.Contains(inputStr, "scan") || strings.Contains(inputStr, "assessment")
-hasTrust := strings.Contains(inputStr, "trust") || strings.Contains(inputStr, "contract") || strings.Contains(inputStr, "vendor")
+	hasTrust := strings.Contains(inputStr, "trust") || strings.Contains(inputStr, "contract") || strings.Contains(inputStr, "vendor")
 
 	if hasAIBOM && hasSecurity {
 		return &compliance.ControlCheckResult{
@@ -871,7 +871,7 @@ hasTrust := strings.Contains(inputStr, "trust") || strings.Contains(inputStr, "c
 func (m *FedRAMPModule) checkSystemDocumentation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasReport := strings.Contains(inputStr, "report") || strings.Contains(inputStr, "compliance") || strings.Contains(inputStr, "scan")
-hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
+	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
 	hasEvidence := strings.Contains(inputStr, "evidence") || strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "signature")
 
 	if (hasReport || hasAIBOM) && hasEvidence {
@@ -916,7 +916,7 @@ hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "s
 func (m *FedRAMPModule) checkExternalSystemServices(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasTrust := strings.Contains(inputStr, "trust") || strings.Contains(inputStr, "contract") || strings.Contains(inputStr, "capability")
-hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sub_processor") || strings.Contains(inputStr, "vendor")
+	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sub_processor") || strings.Contains(inputStr, "vendor")
 	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "external") || strings.Contains(inputStr, "third_party")
 
 	if hasTrust && (hasAIBOM || hasAudit) {
@@ -961,8 +961,8 @@ hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "s
 func (m *FedRAMPModule) checkDevelopmentProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasScan := strings.Contains(inputStr, "scan") || strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "security_check")
-hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "attestation")
-hasCI := strings.Contains(inputStr, "pipeline") || strings.Contains(inputStr, "ci") || strings.Contains(inputStr, "opsec")
+	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "attestation")
+	hasCI := strings.Contains(inputStr, "pipeline") || strings.Contains(inputStr, "ci") || strings.Contains(inputStr, "opsec")
 
 	if hasScan && (hasAIBOM || hasCI) {
 		return &compliance.ControlCheckResult{
@@ -1101,7 +1101,7 @@ func (m *FedRAMPModule) checkMaliciousCodeProtection(ctx context.Context, input 
 	inputStr := string(input)
 	hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "detection") || strings.Contains(inputStr, "malicious")
 	hasPII := strings.Contains(inputStr, "pii") || strings.Contains(inputStr, "secret") || strings.Contains(inputStr, "injection")
-hasIOC := strings.Contains(inputStr, "ioc") || strings.Contains(inputStr, "indicator") || strings.Contains(inputStr, "threat")
+	hasIOC := strings.Contains(inputStr, "ioc") || strings.Contains(inputStr, "indicator") || strings.Contains(inputStr, "threat")
 
 	if hasScanner && (hasPII || hasIOC) {
 		return &compliance.ControlCheckResult{
@@ -1144,7 +1144,7 @@ hasIOC := strings.Contains(inputStr, "ioc") || strings.Contains(inputStr, "indic
 // Maps to FedRAMP SI-4.
 func (m *FedRAMPModule) checkSystemMonitoringSI4(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "detection") || strings.Contains(inputStr, "anomaly")
+	hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "detection") || strings.Contains(inputStr, "anomaly")
 	hasIOC := strings.Contains(inputStr, "ioc") || strings.Contains(inputStr, "indicator") || strings.Contains(inputStr, "threat")
 	hasSIEM := strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "dispatch")
 
@@ -1189,9 +1189,9 @@ hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr
 // Maps to FedRAMP SI-8.
 func (m *FedRAMPModule) checkSpamProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "filter") || strings.Contains(inputStr, "detection")
+	hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "filter") || strings.Contains(inputStr, "detection")
 	hasRateLimit := strings.Contains(inputStr, "rate_limit") || strings.Contains(inputStr, "throttle") || strings.Contains(inputStr, "quota")
-hasReputation := strings.Contains(inputStr, "reputation") || strings.Contains(inputStr, "trust_score") || strings.Contains(inputStr, "scoring")
+	hasReputation := strings.Contains(inputStr, "reputation") || strings.Contains(inputStr, "trust_score") || strings.Contains(inputStr, "scoring")
 
 	if hasScanner && (hasRateLimit || hasReputation) {
 		return &compliance.ControlCheckResult{
@@ -1234,9 +1234,9 @@ hasReputation := strings.Contains(inputStr, "reputation") || strings.Contains(in
 // Maps to FedRAMP SI-12.
 func (m *FedRAMPModule) checkInformationManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasClass := strings.Contains(inputStr, "classification") || strings.Contains(inputStr, "pii") || strings.Contains(inputStr, "sensitivity")
-hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "ttl") || strings.Contains(inputStr, "data_lifecycle")
-hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "evidence") || strings.Contains(inputStr, "compliance")
+	hasClass := strings.Contains(inputStr, "classification") || strings.Contains(inputStr, "pii") || strings.Contains(inputStr, "sensitivity")
+	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "ttl") || strings.Contains(inputStr, "data_lifecycle")
+	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "evidence") || strings.Contains(inputStr, "compliance")
 
 	if hasClass && (hasRetention || hasAudit) {
 		return &compliance.ControlCheckResult{
@@ -1279,9 +1279,9 @@ hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "e
 // Maps to FedRAMP SI-16.
 func (m *FedRAMPModule) checkMemoryProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasIsolation := strings.Contains(inputStr, "sandbox") || strings.Contains(inputStr, "isolation") || strings.Contains(inputStr, "container")
+	hasIsolation := strings.Contains(inputStr, "sandbox") || strings.Contains(inputStr, "isolation") || strings.Contains(inputStr, "container")
 	hasBoundary := strings.Contains(inputStr, "boundary") || strings.Contains(inputStr, "security_function_isolation") || strings.Contains(inputStr, "namespace")
-hasExec := strings.Contains(inputStr, "prevent_execution") || strings.Contains(inputStr, "no_execute") || strings.Contains(inputStr, "dep")
+	hasExec := strings.Contains(inputStr, "prevent_execution") || strings.Contains(inputStr, "no_execute") || strings.Contains(inputStr, "dep")
 
 	if hasIsolation && (hasBoundary || hasExec) {
 		return &compliance.ControlCheckResult{
@@ -1326,9 +1326,9 @@ hasExec := strings.Contains(inputStr, "prevent_execution") || strings.Contains(i
 // Maps to FedRAMP SR-3.
 func (m *FedRAMPModule) checkSupplyChainControls(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
-hasVendor := strings.Contains(inputStr, "sub_processor") || strings.Contains(inputStr, "vendor") || strings.Contains(inputStr, "supply_chain")
-hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "provenance")
+	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
+	hasVendor := strings.Contains(inputStr, "sub_processor") || strings.Contains(inputStr, "vendor") || strings.Contains(inputStr, "supply_chain")
+	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "provenance")
 
 	if hasAIBOM && (hasVendor || hasAudit) {
 		return &compliance.ControlCheckResult{
@@ -1371,8 +1371,8 @@ hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "a
 // Maps to FedRAMP SR-6.
 func (m *FedRAMPModule) checkSupplierAssessment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasCVE := strings.Contains(inputStr, "cve") || strings.Contains(inputStr, "vulnerability") || strings.Contains(inputStr, "security")
-hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
+	hasCVE := strings.Contains(inputStr, "cve") || strings.Contains(inputStr, "vulnerability") || strings.Contains(inputStr, "security")
+	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
 	hasAudit := strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "assessment") || strings.Contains(inputStr, "scan")
 
 	if hasCVE && (hasAIBOM || hasAudit) {
@@ -1416,9 +1416,9 @@ hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "s
 // Maps to FedRAMP SR-8.
 func (m *FedRAMPModule) checkNotificationAgreements(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasSIEM := strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "dispatch") || strings.Contains(inputStr, "alert")
+	hasSIEM := strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "dispatch") || strings.Contains(inputStr, "alert")
 	hasAudit := strings.Contains(inputStr, "audit") || strings.Contains(inputStr, "event_log") || strings.Contains(inputStr, "notification")
-hasIncident := strings.Contains(inputStr, "incident") || strings.Contains(inputStr, "response") || strings.Contains(inputStr, "playbook")
+	hasIncident := strings.Contains(inputStr, "incident") || strings.Contains(inputStr, "response") || strings.Contains(inputStr, "playbook")
 
 	if hasSIEM && (hasAudit || hasIncident) {
 		return &compliance.ControlCheckResult{
@@ -1461,8 +1461,8 @@ hasIncident := strings.Contains(inputStr, "incident") || strings.Contains(inputS
 // Maps to FedRAMP SR-12.
 func (m *FedRAMPModule) checkSCRMPlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
-hasVuln := strings.Contains(inputStr, "vulnerability") || strings.Contains(inputStr, "cve") || strings.Contains(inputStr, "security")
+	hasAIBOM := strings.Contains(inputStr, "aibom") || strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "component")
+	hasVuln := strings.Contains(inputStr, "vulnerability") || strings.Contains(inputStr, "cve") || strings.Contains(inputStr, "security")
 	hasAudit := strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "provenance") || strings.Contains(inputStr, "evidence")
 
 	if hasAIBOM && (hasVuln || hasAudit) {

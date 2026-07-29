@@ -70,12 +70,12 @@ type AuthSessionInfo struct {
 
 // AuthConfig holds authentication configuration.
 type AuthConfig struct {
-	SessionDurationSec  int32
-	MaxSessions         int32
-	EnableMFA           bool
-	LoginAttempts       int32
-	LockoutDurationSec  int32
-	PasswordMinLength   int32
+	SessionDurationSec int32
+	MaxSessions        int32
+	EnableMFA          bool
+	LoginAttempts      int32
+	LockoutDurationSec int32
+	PasswordMinLength  int32
 }
 
 // ====================================================================
@@ -172,7 +172,7 @@ type ProxyBackend interface {
 type ProxyStatsInfo struct {
 	RequestsTotal     int64
 	RequestsBlocked   int64
-	RequestsAllowed    int64
+	RequestsAllowed   int64
 	BytesIn           int64
 	BytesOut          int64
 	ActiveConnections int

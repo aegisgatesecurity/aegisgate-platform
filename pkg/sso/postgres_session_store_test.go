@@ -142,25 +142,25 @@ func TestPostgresRequestStore_NilRequest(t *testing.T) {
 func TestSSOSession_JSONSerialization(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	session := &SSOSession{
-		ID:           "sess-abc123",
-		UserID:       "user-456",
-		SessionID:    "session-xyz",
-		Provider:     ProviderOIDC,
-		ProviderName: "google",
-		CreatedAt:    now,
-		ExpiresAt:    now.Add(24 * time.Hour),
-		LastActivity: now,
-		LastRefreshed: now,
-		IPAddress:    "192.168.1.100",
-		UserAgent:    "Mozilla/5.0",
-		InitialIDP:   "accounts.google.com",
-		NameID:       "user@example.com",
-		SessionIndex: "idx-789",
-		AccessToken:  "ya29.access-token",
-		RefreshToken: "1//refresh-token",
-		IDToken:      "eyJhbGciOiJSUzI1NiJ9...",
+		ID:             "sess-abc123",
+		UserID:         "user-456",
+		SessionID:      "session-xyz",
+		Provider:       ProviderOIDC,
+		ProviderName:   "google",
+		CreatedAt:      now,
+		ExpiresAt:      now.Add(24 * time.Hour),
+		LastActivity:   now,
+		LastRefreshed:  now,
+		IPAddress:      "192.168.1.100",
+		UserAgent:      "Mozilla/5.0",
+		InitialIDP:     "accounts.google.com",
+		NameID:         "user@example.com",
+		SessionIndex:   "idx-789",
+		AccessToken:    "ya29.access-token",
+		RefreshToken:   "1//refresh-token",
+		IDToken:        "eyJhbGciOiJSUzI1NiJ9...",
 		TokenExpiresAt: now.Add(time.Hour),
-		Active:       true,
+		Active:         true,
 		Flags: map[string]bool{
 			"mfa_verified":   true,
 			"first_login":    false,
@@ -171,13 +171,13 @@ func TestSSOSession_JSONSerialization(t *testing.T) {
 			"risk_score":   0.15,
 		},
 		User: &SSOUser{
-			ID:           "user-456",
-			Email:        "user@example.com",
-			Name:         "Test User",
-			Role:         "admin",
-			SSOProvider:  ProviderOIDC,
+			ID:            "user-456",
+			Email:         "user@example.com",
+			Name:          "Test User",
+			Role:          "admin",
+			SSOProvider:   ProviderOIDC,
 			SSOProviderID: "google",
-			Groups:       []string{"admins", "engineers"},
+			Groups:        []string{"admins", "engineers"},
 		},
 	}
 
@@ -347,10 +347,10 @@ func TestSSOSession_IsValid(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name     string
-		active   bool
+		name      string
+		active    bool
 		expiresAt time.Time
-		valid    bool
+		valid     bool
 	}{
 		{"active_future", true, now.Add(1 * time.Hour), true},
 		{"inactive_future", false, now.Add(1 * time.Hour), false},
@@ -479,15 +479,15 @@ func TestSSOSession_IsTokenExpired(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name          string
-		accessToken   string
+		name           string
+		accessToken    string
 		tokenExpiresAt time.Time
-		expired       bool
+		expired        bool
 	}{
-		{"no_token", "", time.Time{}, false},           // No token → not expired
+		{"no_token", "", time.Time{}, false},                   // No token → not expired
 		{"future_token", "tok", now.Add(1 * time.Hour), false}, // Future → not expired
 		{"past_token", "tok", now.Add(-1 * time.Hour), true},   // Past → expired
-		{"zero_expiry", "tok", time.Time{}, false},      // Zero time → not expired (unknown)
+		{"zero_expiry", "tok", time.Time{}, false},             // Zero time → not expired (unknown)
 	}
 
 	for _, tt := range tests {
@@ -508,10 +508,10 @@ func TestSSOSession_NeedsTokenRefresh(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name          string
-		refreshToken  string
+		name           string
+		refreshToken   string
 		tokenExpiresAt time.Time
-		needsRefresh  bool
+		needsRefresh   bool
 	}{
 		{"no_refresh_token", "", now.Add(-1 * time.Hour), false},
 		{"token_still_valid", "refresh", now.Add(1 * time.Hour), false},
@@ -522,7 +522,7 @@ func TestSSOSession_NeedsTokenRefresh(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			session := &SSOSession{
-				RefreshToken:  tt.refreshToken,
+				RefreshToken:   tt.refreshToken,
 				TokenExpiresAt: tt.tokenExpiresAt,
 			}
 			buffer := 5 * time.Minute
@@ -553,18 +553,18 @@ func TestPostgresSessionStore_StatsPostgres_Closed(t *testing.T) {
 // TestSSOUser_JSONSerialization verifies SSOUser serializes completely.
 func TestSSOUser_JSONSerialization(t *testing.T) {
 	user := &SSOUser{
-		ID:           "user-1",
-		Email:        "admin@example.com",
-		Name:         "Admin User",
-		Role:         "admin",
-		SSOProvider:  ProviderSAML,
+		ID:            "user-1",
+		Email:         "admin@example.com",
+		Name:          "Admin User",
+		Role:          "admin",
+		SSOProvider:   ProviderSAML,
 		SSOProviderID: "okta",
-		UpstreamID:   "okta-12345",
-		UpstreamName: "Admin User (Okta)",
-		SessionIndex: "idx-abc",
-		NameID:       "admin@example.com",
-		AuthnContext: "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport",
-		Groups:       []string{"admins", "ops", "security"},
+		UpstreamID:    "okta-12345",
+		UpstreamName:  "Admin User (Okta)",
+		SessionIndex:  "idx-abc",
+		NameID:        "admin@example.com",
+		AuthnContext:  "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport",
+		Groups:        []string{"admins", "ops", "security"},
 	}
 
 	data, err := json.Marshal(user)
@@ -676,7 +676,7 @@ func TestSSOSession_RoundTrip(t *testing.T) {
 		Active:         true,
 		Flags: map[string]bool{
 			"mfa_verified":    true,
-			"consent_given":  true,
+			"consent_given":   true,
 			"risk_assessment": false,
 		},
 		Metadata: map[string]interface{}{
@@ -685,14 +685,14 @@ func TestSSOSession_RoundTrip(t *testing.T) {
 			"geo_location": "US-CA",
 		},
 		User: &SSOUser{
-			ID:           "user-rt",
-			Email:        "user@example.com",
-			Name:         "Round Trip User",
-			Role:         "operator",
-			SSOProvider:  ProviderSAML,
+			ID:            "user-rt",
+			Email:         "user@example.com",
+			Name:          "Round Trip User",
+			Role:          "operator",
+			SSOProvider:   ProviderSAML,
 			SSOProviderID: "okta",
-			UpstreamID:   "okta-rt-123",
-			Groups:       []string{"operators", "devops"},
+			UpstreamID:    "okta-rt-123",
+			Groups:        []string{"operators", "devops"},
 		},
 	}
 
