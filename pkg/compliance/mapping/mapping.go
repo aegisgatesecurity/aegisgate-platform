@@ -112,6 +112,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "owasp_web", ControlID: "OWASPWeb-A02", Title: "Cryptographic Failures"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art10-001", Title: "Data governance requirements"},
 			{Framework: "gdpr", ControlID: "GDPR-5", Title: "Data minimization"},
+			{Framework: "fedramp", ControlID: "FedRAMP-MP-1", Title: "Media Protection Policy"},
 		},
 	},
 
@@ -196,6 +197,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-SR-3", Title: "Supply Chain Controls and Processes"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SR-4", Title: "Provenance"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SR-12", Title: "Software and Firmware Integrity Verification"},
+			{Framework: "fedramp", ControlID: "FedRAMP-SR-1", Title: "Supply Chain Risk Management Policy"},
 			{Framework: "iso_42001", ControlID: "ISO42001-8.3", Title: "AI system supply chain management"},
 			{Framework: "owasp_llm", ControlID: "LLM05", Title: "Supply Chain Vulnerabilities"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art9-001", Title: "Risk management system"},
@@ -368,6 +370,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "pci", ControlID: "9.2", Title: "Physical media controls"},
 			{Framework: "nist_csf", ControlID: "PR.AC-2", Title: "Physical access control"},
 			{Framework: "fedramp", ControlID: "FedRAMP-AC-14", Title: "Permitted Actions Without Identification"},
+			{Framework: "fedramp", ControlID: "FedRAMP-PE-1", Title: "Physical and Environmental Protection Policy"},
 		},
 	},
 
