@@ -132,14 +132,15 @@ func (m *FedRAMPModule) registerSCControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-13", "FedRAMP Moderate SC-13"},
 	})
 
-	// SC-15: Collaborative Computing Devices (evidence-mapped)
+	// SC-15: Collaborative Computing Devices (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-15",
 		Name:        "Collaborative Computing Devices",
-		Description: "FedRAMP SC-15: Collaborative computing devices controlled — video conference, screen sharing, and remote desktop restrictions",
+		Description: "FedRAMP SC-15: Collaborative computing devices controlled — MCP tool authorization and A2A intent signing",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCollaborativeComputing,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-15", "FedRAMP Moderate SC-15"},
 	})
 
@@ -179,14 +180,15 @@ func (m *FedRAMPModule) registerSCControls() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-39", "FedRAMP Moderate SC-39"},
 	})
 
-	// SC-44: Detonatable Software (evidence-mapped)
+	// SC-44: Detonatable Software (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-44",
 		Name:        "Detonatable Software",
-		Description: "FedRAMP SC-44: Detonatable software executed in sandbox or container isolation to prevent unauthorized system access",
+		Description: "FedRAMP SC-44: Detonatable software detected and isolated — prompt scanner, sandbox isolation, IOC detection",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDetonatableSoftware,
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-44", "FedRAMP Moderate SC-44"},
 	})
 }

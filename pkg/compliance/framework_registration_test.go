@@ -45,7 +45,7 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 			t.Errorf("%s control count should be > 0 after RegisterBuiltinFrameworks", fw)
 		}
 	}
-	// FedRAMP v3.5.0: 170 controls (120 automated CheckFuncs + 50 evidence-mapped).
+	// FedRAMP v3.6.0: 170 controls (151 automated CheckFuncs + 19 evidence-mapped).
 	// Removed 5 duplicate registrations (AT-2, AT-3, CA-2, CA-5, SI-1) that were
 	// overriding automated CheckFuncs with manual stubs.
 	if fedrampCount := frameworks["fedramp"]; fedrampCount != 170 {

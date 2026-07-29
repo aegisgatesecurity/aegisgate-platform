@@ -74,59 +74,69 @@ func (m *FedRAMPModule) registerIRControls() {
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IR-7",
 		Name:        "Incident Response Assistance",
-		Description: "FedRAMP IR-7: Incident response assistance from external resources. AegisGate's IOC store and trust framework provide automated threat intelligence.",
+		Description: "FedRAMP IR-7: Incident response assistance from external resources. AegisGate verifies SIEM dispatch and incident engine integration.",
 		Category:    "Incident Response",
-		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkIRAssistance,
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-7", "FedRAMP Moderate IR-07"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IR-8",
 		Name:        "Incident Response Plan",
-		Description: "FedRAMP IR-8: Incident response plan documented, tested, and updated. AegisGate generates the audit evidence for the customer's IR-8 SSP section.",
+		Description: "FedRAMP IR-8: Incident response plan documented, tested, and updated. AegisGate verifies incident playbooks, audit timeline, and IOC store.",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIRPlan,
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-8", "FedRAMP Moderate IR-08"},
 	})
 }
 
 // registerSAControls wires the SA family controls into the module.
 func (m *FedRAMPModule) registerSAControls() {
+	// SA-4: Acquisition Process (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SA-4",
 		Name:        "Acquisition Process",
-		Description: "FedRAMP SA-4: Security requirements included in acquisition process. AegisGate's SBOM and security documentation support this.",
+		Description: "FedRAMP SA-4: Security requirements included in acquisition process. AegisGate verifies AIBOM and security assessment integration.",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAcquisitionProcess,
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-4", "FedRAMP Moderate SA-04"},
 	})
+	// SA-5: Information System Documentation (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SA-5",
 		Name:        "Information System Documentation",
-		Description: "FedRAMP SA-5: Security documentation maintained and available. AegisGate generates compliance scan reports and SBOM.",
+		Description: "FedRAMP SA-5: Security documentation maintained and available. AegisGate verifies compliance reports, SBOM, and attestation evidence.",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemDocumentation,
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-5", "FedRAMP Moderate SA-05"},
 	})
+	// SA-9: External System Services (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SA-9",
 		Name:        "External System Services",
-		Description: "FedRAMP SA-9: External system services meet security requirements. AegisGate's sub-processor list and vendor assessment provide evidence.",
+		Description: "FedRAMP SA-9: External system services meet security requirements. AegisGate verifies trust framework contracts and sub-processor tracking.",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkExternalSystemServices,
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-9", "FedRAMP Moderate SA-09"},
 	})
+	// SA-11: Development Process (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SA-11",
 		Name:        "Development Process",
-		Description: "FedRAMP SA-11: Security engineering practices in development. AegisGate's CI/CD pipeline and security scanning provide evidence.",
+		Description: "FedRAMP SA-11: Security engineering practices in development. AegisGate verifies security scanning and SBOM attestation.",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDevelopmentProcess,
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-11", "FedRAMP Moderate SA-11"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -143,13 +153,15 @@ func (m *FedRAMPModule) registerSAControls() {
 
 // registerSRControls wires the SR family controls into the module.
 func (m *FedRAMPModule) registerSRControls() {
+	// SR-3: Supply Chain Controls (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SR-3",
 		Name:        "Supply Chain Controls",
-		Description: "FedRAMP SR-3: Supply chain controls implemented. AegisGate's AIBOM and sub-processor documentation provide evidence.",
+		Description: "FedRAMP SR-3: Supply chain controls implemented. AegisGate verifies AIBOM, vendor tracking, and attestation evidence.",
 		Category:    "Supply Chain Risk Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSupplyChainControls,
 		References:  []string{"NIST SP 800-53 Rev. 5 SR-3", "FedRAMP Moderate SR-03"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -162,31 +174,37 @@ func (m *FedRAMPModule) registerSRControls() {
 		CheckFunc:   m.checkProvenance,
 		References:  []string{"NIST SP 800-53 Rev. 5 SR-4", "FedRAMP Moderate SR-04"},
 	})
+	// SR-6: Supplier Assessment (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SR-6",
 		Name:        "Supplier Assessment",
-		Description: "FedRAMP SR-6: Supplier assessment and monitoring. AegisGate's sub-processor list and security documentation support this.",
+		Description: "FedRAMP SR-6: Supplier assessment and monitoring. AegisGate verifies CVE tracking and SBOM for supplier assessment.",
 		Category:    "Supply Chain Risk Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSupplierAssessment,
 		References:  []string{"NIST SP 800-53 Rev. 5 SR-6", "FedRAMP Moderate SR-06"},
 	})
+	// SR-8: Notification Agreements (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SR-8",
 		Name:        "Notification Agreements",
-		Description: "FedRAMP SR-8: Notification agreements for supply chain events. AegisGate's audit log and monitoring infrastructure support incident notification.",
+		Description: "FedRAMP SR-8: Notification agreements for supply chain events. AegisGate verifies SIEM dispatch and audit log notification.",
 		Category:    "Supply Chain Risk Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkNotificationAgreements,
 		References:  []string{"NIST SP 800-53 Rev. 5 SR-8", "FedRAMP Moderate SR-08"},
 	})
+	// SR-12: SCRM Plan (promoted v3.6.0)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SR-12",
 		Name:        "Supply Chain Risk Management",
-		Description: "FedRAMP SR-12: Supply chain risk management plan documented. AegisGate provides SBOM, vulnerability data, and sub-processor transparency.",
+		Description: "FedRAMP SR-12: Supply chain risk management plan documented. AegisGate verifies AIBOM, vulnerability tracking, and attestation evidence.",
 		Category:    "Supply Chain Risk Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSCRMPlan,
 		References:  []string{"NIST SP 800-53 Rev. 5 SR-12", "FedRAMP Moderate SR-12"},
 	})
 }
