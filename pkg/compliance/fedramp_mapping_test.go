@@ -27,12 +27,14 @@ func TestFedRAMPMappingCreation(t *testing.T) {
 	}
 }
 
-// TestFedRAMPMappingAllFamilies verifies all 11 NIST 800-53 families are represented.
+// TestFedRAMPMappingAllFamilies verifies all 18 NIST 800-53 families are represented.
 func TestFedRAMPMappingAllFamilies(t *testing.T) {
 	mapping := NewFedRAMPMapping()
 	familyPrefixes := map[string]bool{
-		"AC": false, "AU": false, "IA": false, "SC": false, "CM": false,
-		"SI": false, "IR": false, "RA": false, "CA": false, "SA": false, "SR": false,
+		"AC": false, "AT": false, "AU": false, "CA": false, "CM": false,
+		"CP": false, "IA": false, "IR": false, "MA": false, "MP": false,
+		"PE": false, "PL": false, "PM": false, "PS": false, "RA": false,
+		"SA": false, "SC": false, "SI": false, "SR": false,
 	}
 	for ctrl := range mapping.ControlToTechnique {
 		for prefix := range familyPrefixes {
@@ -117,9 +119,22 @@ func TestFedRAMPMappingTechniqueCount(t *testing.T) {
 			uniqueTechniques[t] = true
 		}
 	}
-	// Should cover at least 15 unique ATLAS techniques
-	if len(uniqueTechniques) < 15 {
-		t.Errorf("FedRAMP mapping covers only %d ATLAS techniques, want at least 15", len(uniqueTechniques))
+	// Should cover at least 30 unique ATLAS techniques (expanded from 15 in v3.5.0)
+	if len(uniqueTechniques) < 30 {
+		t.Errorf("FedRAMP mapping covers only %d ATLAS techniques, want at least 30", len(uniqueTechniques))
+	}
+}
+
+// TestFedRAMPMappingFullCoverage verifies all FedRAMP registry controls have ATLAS mappings.
+func TestFedRAMPMappingFullCoverage(t *testing.T) {
+	mapping := NewFedRAMPMapping()
+	// Every FedRAMP control in the registry should have an ATLAS mapping
+	if len(mapping.ControlToTechnique) < 150 {
+		t.Errorf("FedRAMP ATLAS mapping covers only %d controls, want at least 150", len(mapping.ControlToTechnique))
+	}
+	// Every technique should have at least one control
+	if len(mapping.TechniqueToControl) < 30 {
+		t.Errorf("FedRAMP ATLAS mapping covers only %d techniques, want at least 30", len(mapping.TechniqueToControl))
 	}
 }
 
