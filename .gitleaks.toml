@@ -1,4 +1,4 @@
-# gitleaks configuration for AegisGate Security Platform v3.4.3
+# gitleaks configuration for AegisGate Security Platform v3.5.0
 #
 # This file is a deliberate, line-precise allowlist for KNOWN FALSE POSITIVES
 # that gitleaks would otherwise flag. Each allowlist entry documents:
@@ -11,10 +11,10 @@
 # of the tool. Every entry below is line-specific and traceable to a known
 # non-secret pattern.
 #
-# See: legal-docs/21-self-attestation-v3.4.3/security-posture-v3.4.3.md
+# See: legal-docs/21-self-attestation-v3.5.0/security-posture-v3.5.0.md
 # Section 4.4 for the gitleaks false-positive review.
 #
-# NOTE (v3.4.3 OPSEC): The 3 RSA private keys in upstream/ were rotated after
+# NOTE (v3.5.0 OPSEC): The 3 RSA private keys in upstream/ were rotated after
 # a bug report confirmed they had been committed to public GitHub. The .key
 # files are gitignored and blocked by the pre-commit hook. The .crt files are
 # self-signed test certificates that are tracked (whitelisted in .gitignore).

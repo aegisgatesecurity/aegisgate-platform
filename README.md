@@ -4,7 +4,7 @@
 
 **Secure every AI interaction. Six pillars. One gateway. Zero external dependencies.**
 
-[![Version](https://img.shields.io/badge/Version-v3.4.3-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.4.3)
+[![Version](https://img.shields.io/badge/Version-v3.5.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.5.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-2454_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
@@ -129,18 +129,19 @@ result, _ := guard.Scan(ctx, text)
 | HA clustering | ✅ Native | ⚠️ Enterprise add-on |
 | Open source (Apache 2.0) | ✅ | ❌ Proprietary |
 
-## v3.4.3 Highlights
+## v3.5.0 Highlights
 
 | Feature | Description |
 |---------|-------------|
+| **FedRAMP 151/170 Automated (88.8%)** | Compliance Engine v2: 69 controls promoted from manual/stub to real CheckFuncs. 19 remaining are customer-responsibility. |
+| **gRPC Service Layer** | 7 services, 50 RPCs with health checking, reflection, and TLS |
+| **Trust API Attestation** | Cryptographic attestation generation and verification (RFC 3161 TSA) |
+| **SIEM Promotion** | Real event forwarding to Splunk/Datadog/ELK (no longer a stub) |
+| **SSO Persistence** | PostgreSQL-backed OIDC session storage with TTL and ACR value mapping |
+| **Token Analytics** | Per-request token usage metrics wired into the request pipeline |
+| **PDF Export** | Questionnaire results export to formatted PDF with scoring and evidence citations |
 | **153-Pattern Detection Engine** | Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns |
 | **PostgreSQL Persistence** | 6 integration test suites (107 tests) via testcontainers-go |
-| **150 FedRAMP Controls** | NIST 800-53 Moderate baseline with cross-framework traceability |
-| **5 Compliance Modules** | CMMC L2, NIST 800-171, HITRUST, TISAX, ISO 27001 |
-| **Incident Response** | Automated detection rules, playbooks, compliance mapping |
-| **SOC 2 Audit** | Evidence collection, policy templates, workpapers |
-| **SSE Streaming** | Real-time SOC incident timeline |
-| **Multi-Tenant Isolation** | `tenant_id` across 4 packages with migration 004 |
 | **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
 | **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
 
@@ -160,7 +161,7 @@ result, _ := guard.Scan(ctx, text)
 | Framework | Controls | Package |
 |-----------|----------|---------|
 | EU AI Act | 82 | `pkg/compliance/eu-ai-act/` |
-| FedRAMP (NIST 800-53) | 150 | `pkg/compliance/fedramp/` |
+| FedRAMP (NIST 800-53) | 170 (151 automated) | `pkg/compliance/fedramp/` |
 | SOC 2 Type II | 5 | `pkg/compliance/soc2/` |
 | ISO 27001 | 14 | `pkg/compliance/iso27001/` |
 | HITRUST CSF | 6 | `pkg/compliance/hitrust/` |

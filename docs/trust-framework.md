@@ -1,6 +1,6 @@
 # AegisGate Trust Framework (1-pager)
 
-**Status:** v3.4.3 (shipped 2026-07-24, security hardening)  
+**Status:** v3.5.0 (shipped 2026-07-24, security hardening)  
 **Last reviewed:** 2026-07-21  
 **Audience:** AegisGate customers evaluating trust/identity/governance for AI agents, regulated-industry procurement teams (banking, healthcare, government), and AegisGate sales engineers answering "how does AegisGate handle AI agent trust?" questions.
 
@@ -98,7 +98,7 @@ To enable: set `trust.enabled: true` in `configs/aegisgate-platform.yaml` (or `A
 | v3.0.0 and earlier | Not present (HTTP/MCP/A2A/RESPONSE only — 4 pillars) |
 | v3.1.0 / v3.2.0 | Trust packages pre-built (~8,500 LOC, 548 tests) but not first-class |
 | v3.3.0 | Trust packages available as opt-in; not yet wired in main.go |
-| **v3.4.3** (current) | **Trust Framework promoted to 6th pillar; HTTP API at `/api/v1/trust/*`; tier-gated to Professional+ per locked decision Q3** |
+| **v3.5.0** (current) | **Trust Framework promoted to 6th pillar; HTTP API at `/api/v1/trust/*`; tier-gated to Professional+ per locked decision Q3** |
 | v4.0+ (planned) | Cross-organization trust federation; PKI integration; ML-based anomaly detection (the v4.x ML tier) |
 
 ## References
@@ -113,4 +113,4 @@ To enable: set `trust.enabled: true` in `configs/aegisgate-platform.yaml` (or `A
 
 *Document version: 1.0*  
 *Last updated: 2026-07-21*  
-*AegisGate Platform v3.4.3*
+*AegisGate Platform v3.5.0*

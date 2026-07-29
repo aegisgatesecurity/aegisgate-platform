@@ -307,7 +307,7 @@ func streamRecoveryInterceptor(logger *slog.Logger) grpc.StreamServerInterceptor
 // ====================================================================
 
 // Version is the platform version, overridden at build time.
-var Version = "3.4.3"
+var Version = "3.5.0"
 
 // BuildTime is the build timestamp, overridden at build time.
 var BuildTime = "unknown"

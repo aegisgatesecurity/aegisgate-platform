@@ -6,7 +6,27 @@
 > For the full engineering changelog (per-commit, per-PR detail), see
 > `CHANGELOG.md` in the platform repository.
 >
-> Last updated: 2026-07-24 (v3.4.3 — Security Hardening)
+> Last updated: 2026-07-28 (v3.5.0 — Compliance Engine v2)
+
+---
+
+## [3.5.0] - 2026-07-28 - Compliance Engine v2, gRPC, Trust API, SIEM, SSO Persistence 🏛️
+
+> **v3.5.0** is a major feature release: FedRAMP automation from 82→151 controls (88.8%), gRPC service layer with 50 RPCs, Trust API attestation, SIEM promotion, SSO PostgreSQL persistence, token analytics, and PDF export.
+
+### Highlights
+
+- **FedRAMP 151/170 automated (88.8%)** — 69 controls promoted from manual/stub to real CheckFuncs. 19 remaining are genuinely customer-responsibility (policy-only, HR, physical security).
+- **gRPC service layer** — 7 services, 50 RPCs, health checking, reflection, TLS.
+- **Trust API attestation** — Cryptographic attestation with RFC 3161 TSA timestamping.
+- **SIEM promotion** — Real event forwarding to Splunk/Datadog/ELK.
+- **SSO PostgreSQL persistence** — Sessions survive restarts. ACR value mapping for OIDC.
+- **Token analytics** — Per-request usage metrics wired into the pipeline.
+- **PDF export** — Questionnaire results to formatted PDF with scoring and evidence.
+
+### Breaking Changes
+
+- Starter tier removed from billing. Community is free, Developer ($79/mo) is first paid tier.
 
 ---
 
@@ -24,7 +44,7 @@
 - **🟡:** `/cluster/health`, `/bridge`, `/guardrails`, `/policies` returned data without auth → now RequireAuth()
 - **🟡:** CSP `unsafe-eval` removed from dashboard, `unsafe-inline` removed from API
 
-### Metrics (v3.4.3)
+### Metrics (v3.5.0)
 
 - 2,454 tests passing, 87.4% coverage, 99 packages
 - 24K+ RPS, 0 CVEs, 153 detection patterns
