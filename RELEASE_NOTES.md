@@ -1,95 +1,88 @@
-# AegisGate Platform v3.4.3 Release Notes
+# AegisGate Platform v3.5.0 Release Notes
 
-**Release Date**: 2026-07-24
+**Release Date**: 2026-07-28
 **Status**: General Availability (GA)
 
 ## Overview
 
-AegisGate Platform v3.4.0 is the general-availability release. It delivers full detection parity with AegisGate Lens (153 patterns), PostgreSQL persistence with integration tests, FedRAMP compliance (150 controls), 5 new compliance modules, multi-tenant isolation, and 4 production bug fixes.
+AegisGate Platform v3.5.0 is a major feature release focused on compliance engine maturation and production infrastructure. It delivers FedRAMP automation from 82 to 151 controls (88.8%), gRPC service layer, Trust API attestation, SIEM promotion, SSO PostgreSQL persistence, token analytics, and PDF export. 17 commits, 93 packages, 0 race conditions.
 
 ## Breaking Changes
 
-None. All changes are backward-compatible. The new `tenant_id` column (migration 004) defaults to `''` for existing rows.
+- **Starter tier removed from billing.** Community is free, Developer ($79/mo) is the first paid tier. The `inferTierFromAmount()` function now maps amounts under $79 to "developer" (Community is not a paid tier). Any Stripe metadata referencing `tier=starter` will be rejected by `tier.ParseTier()`.
 
 ## New Features
 
-### Detection Engine — 153 Patterns (Full Lens Parity)
+### Compliance Engine v2 — FedRAMP 151/170 Automated (88.8%)
 
-A new `pkg/response/detectors/` package ports all 153 regex detection patterns from AegisGate Lens:
+Two waves of CheckFunc promotion bring FedRAMP from 82/170 (48%) to 151/170 (88.8%):
 
-- **45 secret patterns**: AWS, GitHub, GCP, Azure, JWT, Stripe, OpenAI, Anthropic, GitLab, npm, PyPI, Supabase, DigitalOcean, Linode, Vercel, Groq, Replicate, Cursor, and more
-- **12 XSS patterns**: script tags, event handlers, javascript/data URLs, SVG abuse, mXSS, polyglot, DOM clobbering
-- **15 PII US Core patterns**: SSN, email, phone, credit card, DOB, address, driver license, passport, EIN, bank account, IP, MRN, ICD-10, NPI
-- **13 PII US Extended patterns**: loose credit card, CJK email, international phone, generic IDs, French SSN, Russian SNILS, Swiss UID, IPv6
-- **9 PII Financial patterns**: BTC, ETH, BNB, LTC, SOL, PayPal, Stripe, Venmo, Cash App
-- **24 PII International patterns**: Brazilian CPF, Indian Aadhaar, UK NHS, Australian TFN, Canadian SIN, IBAN, BIP39 seed, passports, national IDs
-- **35 Compliance patterns**: OWASP LLM Top 10, MITRE ATLAS, EU AI Act, GDPR, CCPA, LGPD, PIPEDA, POPIA, NIST CSF, ISO 27001, toxicity detection
+- **T8 (38 controls)**: Bulk promotion from manual/evidence-mapped to automated CheckFuncs. Scanner-backed checks for AC, AU, CM, IA, RA, SC, SI families.
+- **P3 (31 controls)**: Second wave promoting evidence-mapped controls that had stubs but no real verification logic. Now checks platform config for real capabilities (scanner integration, RBAC policies, SIEM forwarding, etc.).
+- **Bug fix**: 5 controls (SA-9(1), SA-11(1), SC-15(1), SI-4(1), SR-8(1)) had duplicate registrations where Go map last-write-wins silently overrode automated CheckFuncs with manual stubs. Fixed by removing the duplicate stubs.
+- **19 remaining controls** are genuinely customer-responsibility: policy-only (AC-1, AU-1, CM-1, IA-1, IR-1, PL-1, RA-1, SC-1), HR/personnel (PS-1, PS-2, PS-3, PM-1, PM-14), physical security (PE-3, PE-20), and process documents (CA-1, MA-1, PL-2, SA-9). These cannot be verified by any vendor's software.
 
-The ResponseGuard pipeline now runs 7 detection stages: PII → Secrets → XSS → Compliance → Token Limit → Toxicity → Hallucination.
+### gRPC Service Layer
 
-### PostgreSQL Integration Tests
+7 gRPC services with 50 RPCs, health checking, server reflection, and TLS support:
 
-6 packages have testcontainers-go integration test suites (107 total tests):
+- `ComplianceService`: Framework listing, control checking, evidence retrieval
+- `ScannerService`: Pattern detection, scan requests, result streaming
+- `TrustService`: Attestation generation/verification, score queries
+- `SSOService`: Session management, provider configuration
+- `AuditService`: Event retrieval, export, TSA timestamping
+- `AnalyticsService`: Token usage metrics, dashboard data
+- `HealthService`: gRPC health checking per gRPC spec
 
-- `pkg/ioc/` (17 tests) — including migration bug fixes
-- `pkg/persistence/` (17 tests)
-- `pkg/rbac/` (27 tests)
-- `pkg/license/` (12 tests)
-- `pkg/correlation/` (20 tests)
-- `pkg/attestation/` (14 tests)
+### Trust API Attestation
 
-### FedRAMP — 150 NIST 800-53 Controls
+- `AttestationGenerator` and `AttestationValidator` now wired into Trust API endpoints
+- Real attestation generation with cryptographic signing (no more stub responses)
+- TSA (RFC 3161) timestamping wired into audit pipeline for non-repudiation
 
-`pkg/compliance/fedramp/` covers 150 controls across 18 families (Moderate baseline). Includes cross-framework traceability via hub-and-spoke model.
+### SIEM Promotion
 
-### 5 New Compliance Modules
+- `pkg/siem/` promoted from stub to production package
+- Public API with config bridging from `platformconfig`
+- Health check endpoint
+- Forwarder registration for Splunk, Datadog, ELK
 
-| Module | Controls | Coverage |
-|--------|----------|----------|
-| CMMC Level 2 | 14 domains | 98.3% |
-| NIST 800-171 | 14 families | 99.6% |
-| HITRUST CSF | 6 categories | 100% |
-| TISAX | 7 categories | 100% |
-| ISO 27001 | 14 categories | 98.9% |
+### SSO PostgreSQL Persistence
 
-### Multi-Tenant Isolation
+- OIDC sessions persist to PostgreSQL with TTL handling and session cleanup
+- ACR value mapping: IdP assurance levels map to AegisGate assurance levels
+- Session state survives platform restarts
 
-Migration 004 adds `tenant_id` to 6 tables with tenant-scoped indexes. Four `TenantContext` structs provide consistent isolation across IOC, RBAC, license, and persistence packages.
+### Token Analytics
 
-### Incident Response Engine
+- `RecordUsage()` wired into every API request path
+- Per-request metrics: model, tokens, latency, tier
+- Analytics dashboard has real data
 
-`pkg/incident/` provides automated detection rules, playbooks, and compliance mapping.
+### PDF Export
 
-### SOC 2 Audit Automation
-
-`pkg/audit/soc2/` provides evidence collection, policy templates, and workpapers.
-
-### SSE Real-Time Streaming
-
-`pkg/soc/` adds Server-Sent Events for the SOC incident timeline.
+- Questionnaire results export to properly formatted PDF
+- Compliance scoring, evidence citations, executive summary
+- Replaces the previous `return nil` stub
 
 ## Bug Fixes
 
-1. **Migration 002 tsvector bug**: `to_tsvector('english', message) || to_tsvector('english', COALESCE(data::text, ''))` fails in `CREATE INDEX`. Fixed with `audit_tsvector_search()` IMMUTABLE function wrapper.
-2. **RBAC `GetAgentSessions`**: SELECT missing `tenant_id` column (9 vs 10 expected). Fixed.
-3. **Attestation `Store` zero `ValidUntil`**: Stored `0001-01-01` instead of NULL, causing `PruneExpired` to delete non-expiring envelopes. Fixed with nil interface{} for zero time.
-4. **IOC `migrate()` chicken-and-egg**: Queries `ioc_schema_migrations` before creating it. Fixed with `CREATE TABLE IF NOT EXISTS` preamble.
+1. **Trust API attestation wiring**: `AttestationGenerator` and `AttestationValidator` were not wired into Trust API handlers. Fixed.
+2. **SSO ACR values**: SSO was accepting all ACR values without verification. Now maps IdP ACR values to platform assurance levels. Fixed.
+3. **FedRAMP duplicate registrations**: 5 controls had duplicate registrations where manual stubs overrode automated CheckFuncs via Go map last-write-wins. Fixed by removing duplicate stubs.
 
-## Security
+## Testing
 
-- **GO-2026-5932** (`golang.org/x/crypto/openpgp`): Documented suppression in `govulncheck.toml`. Our code does not call openpgp (confirmed by `govulncheck` exit 0).
-
-## Dependencies
-
-- **Added**: `testcontainers-go`, `testcontainers-go/modules/postgres` (integration tests only)
-- **No new runtime dependencies** since v3.3.0-beta.2
+- 93 packages, 0 failures, 0 race conditions
+- 5 consecutive full test suite runs confirmed stable
+- Stripe webhook integration validated (HMAC-SHA256, ToS audit, module parsing, tier validation)
 
 ## Compatibility
 
 - Go 1.26.5+
-- PostgreSQL 16+ (for persistence backend)
-- Docker (for integration tests)
+- PostgreSQL 16+ (for persistence, SSO, RBAC)
+- Docker (for production deployment)
 
 ## Full Changelog
 
-https://github.com/aegisgatesecurity/aegisgate-platform/compare/v3.3.0-beta.2...v3.4.0
+https://github.com/aegisgatesecurity/aegisgate-platform/compare/v3.4.3...v3.5.0

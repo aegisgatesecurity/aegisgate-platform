@@ -94,7 +94,7 @@ This is the same posture as the HIPAA, PCI, and SOC 2 modules. We engineer the s
 |-------------------|------------------|
 | v3.2.0 and earlier | Not present |
 | **v3.3.0** (this release) | **82 controls, 9 automated, Professional+ tier, $99/mo** |
-| v3.4.3 (current) | 5 auth bypass fixes, localhost-only metrics, CSP hardening, HA clustering |
+| v3.5.0 (current) | 5 auth bypass fixes, localhost-only metrics, CSP hardening, HA clustering |
 | v3.5.0 (planned) | Add Art 27 fundamental rights impact assessment template; integrate with the Trust Framework for cryptographic evidence attestation |
 
 ---

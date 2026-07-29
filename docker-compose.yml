@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/aegisgatesecurity/aegisgate-platform:3.4.3
+    image: ghcr.io/aegisgatesecurity/aegisgate-platform:3.5.0
     container_name: aegisgate-platform
     ports:
       - "8080:8080"  # AegisGate proxy (AI API gateway)

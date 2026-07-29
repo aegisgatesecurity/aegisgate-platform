@@ -1,7 +1,7 @@
 # AegisGate Platform — Enterprise Performance Report
 
 > **This is a historical performance report for v3.0.0 / v2.0.1, dated 2026-05-19.**
-> For the **current v3.4.3 release**, see [`README.md`](README.md) and the [latest GitHub release](https://github.com/aegisgatesecurity/aegisgate-platform/releases/latest).
+> For the **current v3.5.0 release**, see [`README.md`](README.md) and the [latest GitHub release](https://github.com/aegisgatesecurity/aegisgate-platform/releases/latest).
 >
 > **Version**: 3.0.0  
 > **Date**: 2026-05-19  

@@ -38,9 +38,9 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **MCP Registration Logging** (v1.3.6) |
 | ✅ | **Tool Call Limits** (v1.3.6) |
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
-| ✅ | **87.4% Test Coverage** (v3.4.3) |
+| ✅ | **87.4% Test Coverage** (v3.5.0) |
 
-## Threat Model (v3.4.3+)
+## Threat Model (v3.5.0+)
 
 Comprehensive threat analysis for all six security pillars:
 
@@ -58,7 +58,7 @@ Comprehensive threat analysis for all six security pillars:
 > **Total: 63 STRIDE threats documented** (see internal threat model for
 > the full analysis with CVSS scoring and mitigation mappings). The Trust
 > Framework was promoted to first-class 6th pillar in v3.2.0+ and expanded
-> in v3.4.0+ with the envelope primitive. v3.4.3 adds auth hardening
+> in v3.4.0+ with the envelope primitive. v3.5.0 adds auth hardening
 > (5 endpoints now RequireAuth), localhost-only metrics, and CSP
 > hardening (unsafe-eval removed).
 

@@ -224,7 +224,7 @@ During a network partition:
 
 ## Performance at Scale
 
-Based on k6 break testing (v3.4.3, single node):
+Based on k6 break testing (v3.5.0, single node):
 
 | VUs | Requests | p50 | p95 | p99 | Error Rate |
 |-----|----------|---------|---------|---------|------------|
