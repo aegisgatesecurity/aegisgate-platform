@@ -242,7 +242,7 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting. See [govulncheck.tom
 
 <div align="center">
 
-[🌐 AegisGate Security](https://aegisgatesecurity.io) · [✉️ support@aegisgatesecurity.io](mailto:support@aegisgatesecurity.io)
+[🌐 AegisGate Security](https://aegisgatesecurity.io) · [✉️ support@aegisgatesecurity.io](mailto:support@aegisgatesecurity.io) · [🐦 X/Twitter](https://x.com/aegisgate) · [🐘 Mastodon](https://mastodon.social/@aegisgate)
 
 Made with 🖤 by AegisGate Security developers to secure the AI attack surface.
 
