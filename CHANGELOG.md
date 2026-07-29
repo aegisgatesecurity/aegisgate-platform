@@ -1,3 +1,46 @@
+## [3.5.0] - 2026-07-28 - Compliance Engine v2, gRPC, Trust API, SIEM, SSO Persistence 🏛️
+
+> **v3.5.0 feature release.** Major compliance engine overhaul (FedRAMP 82→151 automated controls), gRPC service layer, TSA timestamping, Trust API attestation, SIEM promotion, SSO PostgreSQL persistence, token analytics wiring, PDF export, and SSO ACR values. 17 commits, 93 packages passing, 0 race conditions.
+
+### Compliance Engine v2 (FedRAMP)
+
+- **feat(fedramp): T8 — FedRAMP 82→120 automated CheckFuncs** (`a541555`). Bulk promotion of 38 controls from manual/evidence-mapped to fully automated CheckFuncs, bringing FedRAMP from 82/170 (48%) to 120/170 (71%) automated coverage.
+- **feat(fedramp): P3 — promote 31 evidence-mapped controls to automated CheckFuncs** (`a6165d1`). Second wave of promotions: 31 controls that previously relied on evidence-mapping now have real CheckFunc implementations. FedRAMP coverage: 151/170 (88.8%) automated. The remaining 19 controls are genuinely customer-responsibility (policy-only, HR/personnel, physical security).
+- **fix(fedramp): remove 5 duplicate manual stubs overriding automated CheckFuncs** (`0177742`). Bug fix: Go map last-write-wins caused 5 automated CheckFunc registrations to be silently overwritten by later manual stub registrations in the same family file. Controls affected: SA-9(1), SA-11(1), SC-15(1), SI-4(1), SR-8(1).
+- **feat(fedramp): promote 7 controls from manual to automated CheckFuncs** (`b005acd`). Initial wave: AC-24, AU-10, CM-2, IA-8, RA-9, SC-44, SI-16.
+- **feat(compliance): map all 150 FedRAMP controls in cross-framework matrix** (`9318dce`). Complete cross-framework mapping showing which controls map to SOC 2, ISO 27001, NIST 800-171, etc.
+
+### Infrastructure
+
+- **feat(grpc): complete gRPC service layer** (`813c4e7`). 7 gRPC services with 50 RPCs: ComplianceService, ScannerService, TrustService, SSOService, AuditService, AnalyticsService, HealthService. Includes health checking, server reflection, TLS support, and graceful shutdown.
+- **feat(siem): T4 — promote SIEM package** (`d8a7580`). Public API, config bridging from platformconfig, health check endpoint, and forwarder registration. SIEM is no longer a stub — real event forwarding to Splunk/Datadog/ELK.
+- **feat(sso): T9 — PostgreSQL-backed session persistence** (`8b784a9`). SSO sessions now persist to PostgreSQL with proper TTL handling, session cleanup, and store initialization. Session state survives restarts.
+- **feat(sso): implement ACR values mapping for OIDC authentication** (`05d93d6`). Maps IdP ACR values to AegisGate assurance levels. Fixes P2 where SSO was accepting all ACR values without verification.
+
+### Security & Trust
+
+- **feat(audit): wire TSA timestamping into audit pipeline** (`8696908`). Audit events are now RFC 3161 timestamped by the configured TSA server, providing non-repudiation for compliance evidence.
+- **fix(trust): wire AttestationGenerator and AttestationValidator into Trust API** (`6ac59e6`). Trust API endpoints now actually generate and verify attestations instead of returning stub responses. Fixes P1.
+- **feat: wire TSA timestamping and token analytics into main.go** (`f0eef4d`). Production wiring for both features — main.go now initializes TSA timestamping and injects analytics recorder into the request pipeline.
+
+### Features
+
+- **feat(analytics): T2 — wire token analytics RecordUsage() into request path** (`bdac4d8`). Every API request now records token usage metrics (model, tokens, latency, tier). Analytics dashboard has real data.
+- **feat(questionnaire): T6 — real PDF export replacing stub** (`a94231b`). Questionnaire results export to properly formatted PDF with compliance scoring, evidence citations, and executive summary. No more `return nil` stub.
+- **feat(lens): add /lens/* compatibility routes for E2E integration** (`1fe6e3e`). Lens CWS extension routes for browser-to-platform communication.
+
+### Testing
+
+- 93 packages, 0 failures, 0 race conditions across 5 consecutive full test suite runs.
+- FedRAMP: 151/170 (88.8%) automated, 19/170 (11.2%) customer-responsibility (policy-only, HR, physical security).
+- Stripe webhook integration: validated — HMAC-SHA256 signature verification, ToS acceptance audit trail, module line-item parsing, tier validation.
+
+### Breaking Changes
+
+- **Starter tier removed** from billing. Community is free, Developer ($79/mo) is the first paid tier. The `inferTierFromAmount()` function now maps amounts < $79 to "developer" (Community is free, not a paid tier).
+
+---
+
 ## [3.4.3] - 2026-07-24 - Security Hardening (Red Team Pre-Release) 🔐
 
 > **v3.4.3 security hardening release.** Fixes critical auth bypass on IOC admin endpoints, restricts metrics to localhost, adds auth to previously unauthenticated dashboard endpoints, and removes `unsafe-eval` from CSP. Found during pre-ship adversarial attack surface audit.
