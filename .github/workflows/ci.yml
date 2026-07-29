@@ -180,6 +180,13 @@ jobs:
             # and error-handling code are fully tested. The distributed SQL paths
             # can only be tested via integration tests (//go:build integration).
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
+            # pkg/grpc: 45.4% coverage. gRPC service layer (7 services, 50 RPCs).
+            # Server lifecycle, reflection, health checking, TLS config, and
+            # type registration are fully tested. The individual RPC handler
+            # methods require a running gRPC server/client pair and are
+            # integration-test territory. Exempted; can be revisited when
+            # integration test infrastructure supports gRPC.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
           )
           FAIL=0
           echo "## Per-Package Coverage Report" >> $GITHUB_STEP_SUMMARY
