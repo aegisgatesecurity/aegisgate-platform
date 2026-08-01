@@ -1002,3 +1002,127 @@ func TestExecutePlaybook_UnknownAction(t *testing.T) {
 		t.Errorf("step status = %q; want failed", run.StepResults[0].Status)
 	}
 }
+
+// =====================================================================
+// ATLAS Playbook Coverage Tests
+// Verifies all 10 ATLAS playbook functions return non-nil playbooks
+// with correct IDs.
+// =====================================================================
+
+func TestATLASPlaybooksExist(t *testing.T) {
+	playbooks := []struct {
+		name    string
+		fn      func() *Playbook
+		wantID  string
+		wantSev IncidentSeverity
+	}{
+		{
+			name:    "PromptInjection",
+			fn:      ATLASPromptInjectionPlaybook,
+			wantID:  "pb_atlas_prompt_injection",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "LLMJailbreak",
+			fn:      ATLASLLMJailbreakPlaybook,
+			wantID:  "pb_atlas_llm_jailbreak",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "PromptExtraction",
+			fn:      ATLASPromptExtractionPlaybook,
+			wantID:  "pb_atlas_prompt_extraction",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "DataExtraction",
+			fn:      ATLASDataExtractionPlaybook,
+			wantID:  "pb_atlas_data_extraction",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "IndirectInjection",
+			fn:      ATLASIndirectInjectionPlaybook,
+			wantID:  "pb_atlas_indirect_injection",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "VectorDBPoisoning",
+			fn:      ATLASVectorDBPoisoningPlaybook,
+			wantID:  "pb_atlas_vector_db_poisoning",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "ContentInjection",
+			fn:      ATLASContentInjectionPlaybook,
+			wantID:  "pb_atlas_content_injection",
+			wantSev: SeverityHigh,
+		},
+		{
+			name:    "PluginExploitation",
+			fn:      ATLASPluginExploitationPlaybook,
+			wantID:  "pb_atlas_plugin_exploitation",
+			wantSev: SeverityCritical,
+		},
+		{
+			name:    "DefenseEvasion",
+			fn:      ATLASDefenseEvasionPlaybook,
+			wantID:  "pb_atlas_defense_evasion",
+			wantSev: SeverityHigh,
+		},
+		{
+			name:    "ElevationAbuse",
+			fn:      ATLASElevationAbusePlaybook,
+			wantID:  "pb_atlas_elevation_abuse",
+			wantSev: SeverityCritical,
+		},
+	}
+
+	for _, tt := range playbooks {
+		t.Run(tt.name, func(t *testing.T) {
+			pb := tt.fn()
+			if pb == nil {
+				t.Fatalf("%s playbook returned nil", tt.name)
+			}
+			if pb.ID != tt.wantID {
+				t.Errorf("ID = %q; want %q", pb.ID, tt.wantID)
+			}
+			if pb.Severity != tt.wantSev {
+				t.Errorf("Severity = %q; want %q", pb.Severity, tt.wantSev)
+			}
+			if pb.Source != SourceCorrelation {
+				t.Errorf("Source = %q; want %q", pb.Source, SourceCorrelation)
+			}
+			if pb.AutoExecute {
+				t.Error("AutoExecute should be false (requires human approval)")
+			}
+			if len(pb.Steps) < 3 {
+				t.Errorf("len(Steps) = %d; want at least 3", len(pb.Steps))
+			}
+		})
+	}
+
+	// Verify all 10 are in DefaultPlaybooks
+	defaults := DefaultPlaybooks()
+	atlasIDs := map[string]bool{
+		"pb_atlas_prompt_injection":   true,
+		"pb_atlas_llm_jailbreak":       true,
+		"pb_atlas_prompt_extraction":   true,
+		"pb_atlas_data_extraction":     true,
+		"pb_atlas_indirect_injection":  true,
+		"pb_atlas_vector_db_poisoning": true,
+		"pb_atlas_content_injection":   true,
+		"pb_atlas_plugin_exploitation": true,
+		"pb_atlas_defense_evasion":     true,
+		"pb_atlas_elevation_abuse":     true,
+	}
+	found := 0
+	for _, pb := range defaults {
+		if atlasIDs[pb.ID] {
+			found++
+		}
+	}
+	if found != 10 {
+		t.Errorf("DefaultPlaybooks contains %d ATLAS playbooks; want 10", found)
+	}
+}

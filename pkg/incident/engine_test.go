@@ -854,8 +854,8 @@ func TestListIncidents_FilterByAgentID(t *testing.T) {
 
 func TestDefaultPlaybooks(t *testing.T) {
 	playbooks := DefaultPlaybooks()
-	if len(playbooks) != 4 {
-		t.Fatalf("len(DefaultPlaybooks()) = %d; want 4", len(playbooks))
+	if len(playbooks) != 14 {
+		t.Fatalf("len(DefaultPlaybooks()) = %d; want 14", len(playbooks))
 	}
 
 	ids := make(map[string]bool)
