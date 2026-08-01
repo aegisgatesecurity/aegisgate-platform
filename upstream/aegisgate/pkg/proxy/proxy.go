@@ -7,6 +7,7 @@
 package proxy
 
 import (
+	"encoding/json"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -351,42 +352,56 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// Restore the body
 		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-		// Scan the request body
-		requestFindings = p.scanner.ScanBytes(bodyBytes)
+		// Extract user-facing content from JSON before scanning.
+		// This prevents structural JSON tokens (llama2_inst, chatml_tokens,
+		// vicuna_tokens, homoglyph) from triggering false positives in the
+		// token smuggling and unicode attack detectors. Only scan the actual
+		// user/system message content, not the JSON envelope.
+		scanContent := extractContentFromRequest(bodyBytes)
 
-		// Log all findings
-		p.logFindings("request", req.URL.Path, requestFindings)
+		// Skip scanning if no user content was extracted (empty messages)
+		if scanContent != "" {
+			// Scan the extracted content (not raw JSON bytes)
+			requestFindings = p.scanner.Scan(scanContent)
 
-		// Check for MITRE ATLAS threats
-		if p.complianceManager != nil {
-			atlasFindings := p.checkAtlasCompliance(string(bodyBytes))
-			if len(atlasFindings) > 0 {
-				p.logAtlasFindings("request", req.URL.Path, atlasFindings)
-				if p.shouldBlockAtlas(atlasFindings) {
-					techniqueIDs := p.getAtlasTechniqueIDs(atlasFindings)
-					slog.Error("Request blocked: MITRE ATLAS threat detected",
-						"client", req.RemoteAddr,
-						"path", req.URL.Path,
-						"techniques", strings.Join(techniqueIDs, ", "),
-					)
-					w.WriteHeader(http.StatusForbidden)
-					w.Write([]byte(fmt.Sprintf("Request blocked: MITRE ATLAS violation detected (%s)", strings.Join(techniqueIDs, ", "))))
-					return
+			// Log all findings
+			p.logFindings("request", req.URL.Path, requestFindings)
+
+			// Check for MITRE ATLAS threats
+			if p.complianceManager != nil {
+				atlasFindings := p.checkAtlasCompliance(scanContent)
+				if len(atlasFindings) > 0 {
+					p.logAtlasFindings("request", req.URL.Path, atlasFindings)
+					if p.shouldBlockAtlas(atlasFindings) {
+						techniqueIDs := p.getAtlasTechniqueIDs(atlasFindings)
+						slog.Error("Request blocked: MITRE ATLAS threat detected",
+							"client", req.RemoteAddr,
+							"path", req.URL.Path,
+							"techniques", strings.Join(techniqueIDs, ", "),
+						)
+						w.WriteHeader(http.StatusForbidden)
+						w.Write([]byte(fmt.Sprintf("Request blocked: MITRE ATLAS violation detected (%s)", strings.Join(techniqueIDs, ", "))))
+						return
+					}
 				}
 			}
-		}
 
-		// Check if request should be blocked
-		if p.scanner.ShouldBlock(requestFindings) {
-			violationNames := p.scanner.GetViolationNames(requestFindings)
-			slog.Error("Request blocked: Critical data found in request body",
-				"client", req.RemoteAddr,
+			// Check if request should be blocked
+			if p.scanner.ShouldBlock(requestFindings) {
+				violationNames := p.scanner.GetViolationNames(requestFindings)
+				slog.Error("Request blocked: Critical data found in request body",
+					"client", req.RemoteAddr,
+					"path", req.URL.Path,
+					"patterns", strings.Join(violationNames, ", "),
+				)
+				w.WriteHeader(http.StatusForbidden)
+				w.Write([]byte(fmt.Sprintf("Content blocked: %s", strings.Join(violationNames, ", "))))
+				return
+			}
+		} else {
+			slog.Info("No user content extracted from request, skipping content scan",
 				"path", req.URL.Path,
-				"patterns", strings.Join(violationNames, ", "),
 			)
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(fmt.Sprintf("Content blocked: %s", strings.Join(violationNames, ", "))))
-			return
 		}
 
 		// ML Pattern Analysis - Prompt Injection Detection (v1.3.4)
@@ -395,11 +410,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// and ContextManipulationDetector (8 patterns) via CombinedDetector.
 		// Falls back to base ml.Detector.AnalyzePatterns when only MLDetection is enabled.
 		if p.options.EnablePromptInjectionDetection {
-			content := string(bodyBytes)
+			// Use extracted content (not raw JSON) for prompt injection detection
+			mlContent := scanContent
+			if mlContent == "" {
+				mlContent = string(bodyBytes)
+			}
 
 			// Primary: CombinedDetector (weighted scoring across all 4 sub-detectors)
 			if p.combinedDetector != nil {
-				result := p.combinedDetector.Detect(content)
+				result := p.combinedDetector.Detect(mlContent)
 
 				if len(result.AllMatchedPatterns) > 0 {
 					slog.Warn("Prompt injection detection: threat patterns identified",
@@ -433,7 +452,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				}
 			} else if p.promptInjectionDetector != nil {
 				// Fallback: PromptInjectionDetector only (14 injection patterns)
-				result := p.promptInjectionDetector.Detect(content)
+				result := p.promptInjectionDetector.Detect(mlContent)
 
 				if len(result.MatchedPatterns) > 0 {
 					slog.Warn("Prompt injection detection: patterns identified",
@@ -462,8 +481,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		} else if p.mlMiddleware != nil && p.options.EnableMLDetection {
 			// Fallback: base ML anomaly detection only (3 generic patterns)
-			content := string(bodyBytes)
-			anomalies := p.mlMiddleware.config.Detector.AnalyzePatterns(content)
+			mlContent := scanContent
+			if mlContent == "" {
+				mlContent = string(bodyBytes)
+			}
+			anomalies := p.mlMiddleware.config.Detector.AnalyzePatterns(mlContent)
 			for _, anomaly := range anomalies {
 				slog.Warn("ML Pattern anomaly detected",
 					"client", req.RemoteAddr,
@@ -572,14 +594,21 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 	resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	resp.ContentLength = int64(len(bodyBytes))
 
-	// Scan the response body
-	findings := p.scanner.ScanBytes(bodyBytes)
+	// Extract assistant content from JSON response before scanning,
+	// same as we do for requests — avoids false positives on JSON structure.
+	scanContent := extractContentFromResponse(bodyBytes)
+	if scanContent == "" {
+		scanContent = string(bodyBytes)
+	}
+
+	// Scan the extracted content (not raw JSON bytes)
+	findings := p.scanner.Scan(scanContent)
 	p.logFindings("response", resp.Request.URL.Path, findings)
 
 	// Check for MITRE ATLAS threats
 	if p.complianceManager != nil {
 		atlas := compliance.NewAtlas()
-		atlasFindings, _ := atlas.Check(string(bodyBytes))
+		atlasFindings, _ := atlas.Check(scanContent)
 		if len(atlasFindings) > 0 {
 			p.logAtlasFindings("response", resp.Request.URL.Path, atlasFindings)
 		}
@@ -589,10 +618,7 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 	// Scans outbound LLM responses for PII, policy violations, and prompt injection.
 	// Uses the full ContentAnalyzer (PII/policy) and CombinedDetector (injection) stack.
 	if p.contentAnalyzer != nil && p.options.EnableContentAnalysis {
-		content := string(bodyBytes)
-
-		// ContentAnalyzer: PII and policy violation detection in responses
-		analysis := p.contentAnalyzer.Analyze(content)
+		analysis := p.contentAnalyzer.Analyze(scanContent)
 		if analysis.IsViolation {
 			slog.Warn("Content analysis: violations detected in response",
 				"path", resp.Request.URL.Path,
@@ -605,8 +631,7 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 
 	// Prompt injection detection on responses (catches injected content in LLM output)
 	if p.combinedDetector != nil && p.options.EnablePromptInjectionDetection {
-		content := string(bodyBytes)
-		result := p.combinedDetector.Detect(content)
+		result := p.combinedDetector.Detect(scanContent)
 
 		if len(result.AllMatchedPatterns) > 0 {
 			slog.Warn("Prompt injection patterns detected in response",
@@ -621,8 +646,7 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 
 	// Fallback: base ML entropy/content analysis when advanced detectors are not available
 	if p.mlMiddleware != nil && p.options.EnableContentAnalysis && p.contentAnalyzer == nil {
-		content := string(bodyBytes)
-		entropy, anomaly := p.mlMiddleware.config.Detector.AnalyzeContent([]byte(content))
+		entropy, anomaly := p.mlMiddleware.config.Detector.AnalyzeContent([]byte(scanContent))
 		if anomaly != nil {
 			slog.Warn("ML Content anomaly in response",
 				"path", resp.Request.URL.Path,
@@ -941,4 +965,90 @@ type Inspector interface {
 type Metrics interface {
 	RecordRequest(duration time.Duration, statusCode int)
 	RecordViolation(violation Violation)
+}
+
+// chatCompletionRequest represents the OpenAI chat completion request format.
+// Used to extract user-facing content from JSON before scanning, so that
+// structural JSON tokens are not misidentified as prompt injection patterns.
+type chatCompletionRequest struct {
+	Model    string         `json:"model"`
+	Messages []chatMessage  `json:"messages"`
+	Stream   bool           `json:"stream,omitempty"`
+}
+
+// chatMessage represents a single message in a chat completion request.
+type chatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// chatCompletionResponse represents the OpenAI chat completion response format.
+// Used to extract assistant content from response JSON before scanning.
+type chatCompletionResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
+
+// extractContentFromRequest extracts user and system message content from a
+// chat completion request body. This prevents the scanner from matching
+// structural JSON tokens (like llama2_inst, chatml_tokens, vicuna_tokens)
+// that appear in the request envelope but not in the actual user content.
+// Returns the extracted content string, or falls back to raw body on parse failure.
+func extractContentFromRequest(body []byte) string {
+	var req chatCompletionRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		// Not valid JSON or not a chat completion — scan raw body
+		return string(body)
+	}
+
+	if len(req.Messages) == 0 {
+		// No messages field — scan raw body
+		return string(body)
+	}
+
+	// Concatenate system and user messages for scanning.
+	// Assistant messages are from conversation history and are not
+	// the attack surface, so we skip them to reduce false positives.
+	var parts []string
+	for _, msg := range req.Messages {
+		if msg.Role == "user" || msg.Role == "system" {
+			if msg.Content != "" {
+				parts = append(parts, msg.Content)
+			}
+		}
+	}
+
+	if len(parts) == 0 {
+		// No user/system content — return empty (nothing to scan)
+		return ""
+	}
+
+	return strings.Join(parts, "\n")
+}
+
+// extractContentFromResponse extracts assistant message content from a
+// chat completion response body. Falls back to raw body on parse failure.
+func extractContentFromResponse(body []byte) string {
+	var resp chatCompletionResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		// Not valid JSON or not a chat completion response — scan raw body
+		return string(body)
+	}
+
+	var parts []string
+	for _, choice := range resp.Choices {
+		if choice.Message.Content != "" {
+			parts = append(parts, choice.Message.Content)
+		}
+	}
+
+	if len(parts) == 0 {
+		// No content in choices — fall back to raw body
+		return string(body)
+	}
+
+	return strings.Join(parts, "\n")
 }
