@@ -1105,7 +1105,7 @@ func TestATLASPlaybooksExist(t *testing.T) {
 	// Verify all 10 are in DefaultPlaybooks
 	defaults := DefaultPlaybooks()
 	atlasIDs := map[string]bool{
-		"pb_atlas_prompt_injection":   true,
+		"pb_atlas_prompt_injection":    true,
 		"pb_atlas_llm_jailbreak":       true,
 		"pb_atlas_prompt_extraction":   true,
 		"pb_atlas_data_extraction":     true,
