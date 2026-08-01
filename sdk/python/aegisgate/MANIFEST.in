@@ -1,0 +1,2 @@
+include aegisgate/py.typed
+recursive-include aegisgate *.py
