@@ -688,7 +688,7 @@ func NewTokenSmugglingDetector(sensitivity int) *TokenSmugglingDetector {
 			// Llama2/Instruct tokens
 			{
 				Name:        "llama2_inst",
-				Regex:       regexp.MustCompile(`(?i)([INST]|[/INST]|<<INST>>|<</INST>>)`),
+				Regex:       regexp.MustCompile(`(?i)(\[INST\]|\[/INST\]|<<INST>>|<</INST>>)`),
 				Severity:    4,
 				Weight:      0.9,
 				Description: "Llama2 instruction tokens",
@@ -696,7 +696,7 @@ func NewTokenSmugglingDetector(sensitivity int) *TokenSmugglingDetector {
 			// ChatML tokens
 			{
 				Name:        "chatml_tokens",
-				Regex:       regexp.MustCompile(`(?i)(<|im_start_end|>|<|im_sep||>|<|im>)`),
+				Regex:       regexp.MustCompile(`(?i)(<\|im_start\|>|<\|im_end\|>|<\|im_sep\|>)`),
 				Severity:    4,
 				Weight:      0.9,
 				Description: "ChatML special tokens",
@@ -704,7 +704,7 @@ func NewTokenSmugglingDetector(sensitivity int) *TokenSmugglingDetector {
 			// OpenAI tokens
 			{
 				Name:        "openai_tokens",
-				Regex:       regexp.MustCompile(`(?i)(<|endoftext|>|<|startoftext|>|<|eot|>)`),
+				Regex:       regexp.MustCompile(`(?i)(<\|startoftext\|>|<\|endoftext\|>)`),
 				Severity:    4,
 				Weight:      0.9,
 				Description: "OpenAI special tokens",
@@ -720,7 +720,7 @@ func NewTokenSmugglingDetector(sensitivity int) *TokenSmugglingDetector {
 			// Anthropic tokens
 			{
 				Name:        "anthropic_tokens",
-				Regex:       regexp.MustCompile(`(?i)(<|anthropic|>|<|Human|>|<|Assistant|>)`),
+				Regex:       regexp.MustCompile(`(?i)(</anthropic>|<anthropic>|</Human>|<Human>|</Assistant>|<Assistant>)`),
 				Severity:    4,
 				Weight:      0.9,
 				Description: "Anthropic Claude tokens",
@@ -728,7 +728,7 @@ func NewTokenSmugglingDetector(sensitivity int) *TokenSmugglingDetector {
 			// Generic XML-style injection
 			{
 				Name:        "xml_tag_injection",
-				Regex:       regexp.MustCompile(`(?i)<w+[^>]*>.*?</w+>`),
+				Regex:       regexp.MustCompile(`(?i)<[a-zA-Z][a-zA-Z0-9]*[^>]*>.*?</[a-zA-Z][a-zA-Z0-9]*>`),
 				Severity:    3,
 				Weight:      0.6,
 				Description: "XML tag injection",
@@ -886,7 +886,7 @@ func NewUnicodeAttackDetector(sensitivity int) *UnicodeAttackDetector {
 			// Homoglyph attacks (similar-looking characters)
 			{
 				Name:        "homoglyph",
-				Regex:       regexp.MustCompile(`[a-eg-zA-Z]{5,}`),
+				Regex:       regexp.MustCompile(`([а-яёЁА-Я]+[a-zA-Z]+|[a-zA-Z]+[а-яёЁА-Я]+)`),
 				Severity:    4,
 				Weight:      0.8,
 				Description: "Homoglyph characters detected",
