@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisGate - Compliance Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .compliance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .compliance-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; }
+        .compliance-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .compliance-score { font-size: 2rem; font-weight: bold; }
+        .compliance-badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .compliance-badge.enforced { background: #10b981; color: white; }
+        .compliance-badge.not-enforced { background: #ef4444; color: white; }
+        .compliance-badge.partial { background: #eab308; color: black; }
+        .risk-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 0.5rem 0; }
+        .risk-item { padding: 0.5rem; border-radius: 4px; font-size: 0.875rem; }
+        .risk-item.detected { background: rgba(16,185,129,0.15); border-left: 3px solid #10b981; }
+        .risk-item.partial { background: rgba(234,179,8,0.15); border-left: 3px solid #eab308; }
+        .risk-item.not-detected { background: rgba(239,68,68,0.15); border-left: 3px solid #ef4444; }
+        .audit-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .audit-table th { text-align: left; padding: 0.5rem; border-bottom: 2px solid var(--border-color); font-weight: 600; }
+        .audit-table td { padding: 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .audit-table tr:hover { background: rgba(59,130,246,0.05); }
+        .change-type { padding: 0.125rem 0.375rem; border-radius: 3px; font-size: 0.75rem; }
+        .change-type.added { background: #10b981; color: white; }
+        .change-type.modified { background: #3b82f6; color: white; }
+        .change-type.removed { background: #ef4444; color: white; }
+        .drift-bar { height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 0.25rem; }
+        .drift-fill { height: 100%; transition: width 0.3s; }
+        .drift-fill.stable { background: #10b981; }
+        .drift-fill.warning { background: #eab308; }
+        .drift-fill.drifting { background: #ef4444; }
+        .regression-badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; }
+        .regression-badge.pass { background: #10b981; color: white; }
+        .regression-badge.fail { background: #ef4444; color: white; }
+        .tab-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); margin-bottom: 1rem; }
+        .tab-btn { padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-size: 0.875rem; font-weight: 500; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab-btn.active { color: var(--text-primary); border-bottom-color: #3b82f6; }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .severity-critical { color: #ef4444; }
+        .severity-high { color: #f97316; }
+        .severity-medium { color: #eab308; }
+        .severity-low { color: #3b82f6; }
+        .severity-info { color: #6b7280; }
+        .ml-metric { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); }
+        .ml-metric:last-child { border-bottom: none; }
+        .ml-metric-label { font-size: 0.875rem; color: var(--text-muted); }
+        .ml-metric-value { font-size: 1.125rem; font-weight: 600; }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="live-region" class="sr-only" aria-live="polite"></div>
+
+    <header class="header" role="banner">
+        <h1><span aria-hidden="true">🔒</span> AegisGate <span class="version">v3.6.0</span></h1>
+        <nav><button id="logout-btn" type="button" aria-label="Logout"><span aria-hidden="true">🚪</span></button></nav>
+    </header>
+
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+        <a href="index.html" class="nav-link"><span aria-hidden="true">📊</span> Dashboard</a>
+        <a href="trust-dashboard.html" class="nav-link"><span aria-hidden="true">🤖</span> Agent Trust</a>
+        <a href="#compliance" class="nav-link active" role="tab" aria-selected="true"><span aria-hidden="true">✅</span> Compliance</a>
+        <a href="policy.html" class="nav-link"><span aria-hidden="true">📜</span> Policy</a>
+        <a href="settings.html" class="nav-link"><span aria-hidden="true">⚙️</span> Settings</a>
+    </nav>
+
+    <main id="main-content" role="main">
+        <h2>✅ Compliance Dashboard</h2>
+        <p class="subtitle">Real-time compliance posture, residual risk, and audit trail</p>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar" role="tablist">
+            <button class="tab-btn active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+            <button class="tab-btn" data-tab="risk-map" role="tab" aria-selected="false">Risk Map</button>
+            <button class="tab-btn" data-tab="audit-trail" role="tab" aria-selected="false">Audit Trail</button>
+            <button class="tab-btn" data-tab="ml-metrics" role="tab" aria-selected="false">ML Metrics</button>
+            <button class="tab-btn" data-tab="regression" role="tab" aria-selected="false">Regression Gate</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <section id="overview" class="tab-content active" role="tabpanel">
+            <div class="compliance-grid" id="framework-cards">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading compliance frameworks...</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem;">Overall Compliance Score</h3>
+            <div style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0;">
+                <div class="compliance-score" id="overall-score">—</div>
+                <div>
+                    <div id="overall-pct" style="font-size: 0.875rem; color: var(--text-muted);">—</div>
+                    <div id="frameworks-count" style="font-size: 0.875rem; color: var(--text-muted);">—</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Risk Map Tab -->
+        <section id="risk-map" class="tab-content" role="tabpanel">
+            <h3>ATLAS Residual Risk Map</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Shows which ATLAS techniques are detected, partially detected, or not detected — and which external controls cover the gaps.
+            </p>
+            <div id="risk-summary" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <div class="risk-item detected" style="flex:1; text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold;" id="detected-count">—</div>
+                    <div style="font-size: 0.75rem;">Detected</div>
+                </div>
+                <div class="risk-item partial" style="flex:1; text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold;" id="partial-count">—</div>
+                    <div style="font-size: 0.75rem;">Partially Detected</div>
+                </div>
+                <div class="risk-item not-detected" style="flex:1; text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: bold;" id="not-detected-count">—</div>
+                    <div style="font-size: 0.75rem;">Not Detected</div>
+                </div>
+            </div>
+            <div id="risk-details" style="max-height: 500px; overflow-y: auto;">
+                <table class="audit-table">
+                    <thead>
+                        <tr><th>Technique</th><th>Name</th><th>Status</th><th>Coverage</th></tr>
+                    </thead>
+                    <tbody id="risk-table-body">
+                        <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Audit Trail Tab -->
+        <section id="audit-trail" class="tab-content" role="tabpanel">
+            <h3>Rule Change Audit Trail</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Complete history of compliance pattern changes: who changed what, when, and why.
+            </p>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <select id="audit-framework-filter" aria-label="Filter by framework" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <option value="">All Frameworks</option>
+                    <option value="ATLAS">ATLAS</option>
+                    <option value="OWASP">OWASP</option>
+                    <option value="NIST">NIST</option>
+                    <option value="HIPAA">HIPAA</option>
+                    <option value="PCI-DSS">PCI-DSS</option>
+                    <option value="SOC2">SOC2</option>
+                </select>
+                <select id="audit-type-filter" aria-label="Filter by change type" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <option value="">All Changes</option>
+                    <option value="added">Added</option>
+                    <option value="modified">Modified</option>
+                    <option value="removed">Removed</option>
+                </select>
+                <input type="number" id="audit-limit" value="50" min="1" max="500" aria-label="Max entries" style="width: 80px; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                <button id="audit-refresh" style="padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid var(--border-color); cursor: pointer;">↻ Refresh</button>
+            </div>
+            <table class="audit-table">
+                <thead>
+                    <tr><th>Time</th><th>Pattern</th><th>Framework</th><th>Change</th><th>Field</th><th>Author</th><th>Reason</th></tr>
+                </thead>
+                <tbody id="audit-table-body">
+                    <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ML Metrics Tab -->
+        <section id="ml-metrics" class="tab-content" role="tabpanel">
+            <h3>ML Threat Detection Metrics</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Shadow mode metrics, calibration data, and drift monitoring for the ML threat detection layer.
+            </p>
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <div class="compliance-card-header"><span>Shadow Mode Stats</span><span id="ml-mode" class="compliance-badge enforced">Shadow</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Total Predictions</span><span class="ml-metric-value" id="ml-total-predictions">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Flagged as Threat</span><span class="ml-metric-value" id="ml-flagged">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Confirmed Threats</span><span class="ml-metric-value" id="ml-confirmed">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">False Positives</span><span class="ml-metric-value" id="ml-fp">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">False Negatives</span><span class="ml-metric-value" id="ml-fn">—</span></div>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-card-header"><span>Calibration</span><span id="ml-calibration-status" class="compliance-badge enforced">Calibrated</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Optimal Threshold</span><span class="ml-metric-value" id="ml-threshold">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">TPR at Threshold</span><span class="ml-metric-value" id="ml-tpr">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">FPR at Threshold</span><span class="ml-metric-value" id="ml-fpr">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">AUROC</span><span class="ml-metric-value" id="ml-auroc">—</span></div>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-card-header"><span>Data Drift</span></div>
+                    <div id="drift-metrics">
+                        <div class="ml-metric"><span class="ml-metric-label">PSI</span><span class="ml-metric-value" id="drift-psi">—</span></div>
+                        <div class="ml-metric"><span class="ml-metric-label">Status</span><span class="ml-metric-value" id="drift-status">—</span></div>
+                        <div class="drift-bar"><div class="drift-fill stable" id="drift-bar-fill" style="width: 0%"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Regression Gate Tab -->
+        <section id="regression" class="tab-content" role="tabpanel">
+            <h3>Compliance Regression Gate</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Automated CI check ensuring compliance scan results don't regress between deployments.
+            </p>
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <div class="compliance-card-header"><span>Last CI Check</span><span id="regression-status" class="regression-badge pass">Checking...</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Baseline Version</span><span class="ml-metric-value" id="regression-baseline-version">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Baseline Timestamp</span><span class="ml-metric-value" id="regression-baseline-ts">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Frameworks Checked</span><span class="ml-metric-value" id="regression-frameworks">—</span></div>
+                    <div class="ml-metric"><span class="ml-metric-label">Regressions Found</span><span class="ml-metric-value" id="regression-count">—</span></div>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-card-header"><span>Baseline Scores</span></div>
+                    <div id="regression-scores">
+                        <div class="empty-state"><div class="empty-state-icon">📊</div><p>Run a compliance scan to establish baseline</p></div>
+                    </div>
+                </div>
+            </div>
+            <div id="regression-details" style="margin-top: 1rem;"></div>
+        </section>
+    </main>
+
+    <script src="js/compliance-client.js"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Initialize compliance client
+        const client = new AegisGateComplianceClient();
+        client.init();
+    </script>
+</body>
+</html>
