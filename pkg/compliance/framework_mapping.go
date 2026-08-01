@@ -187,7 +187,7 @@ func (m *FrameworkMapping) GetMappingsForControl(controlID string) []MappingRela
 
 func NewConsolidatedFinding(title, description, severity, remediation string) *ConsolidatedFinding {
 	return &ConsolidatedFinding{
-		ID:                 generateID(),
+		ID:                 generateFrameworkMapID(),
 		Title:              title,
 		Description:        description,
 		Severity:           severity,
@@ -359,7 +359,7 @@ func (m *FrameworkMapping) identifyGaps(report *UnifiedComplianceReport) []Compl
 		controls, ok := report.TechniqueCoverage[technique]
 		if !ok || len(controls) == 0 {
 			gap := ComplianceGap{
-				ID:              generateID(),
+				ID:              generateFrameworkMapID(),
 				Title:           fmt.Sprintf("Uncovered Technique: %s", technique),
 				Description:     fmt.Sprintf("No findings are associated with %s - potential blind spot", technique),
 				MissingControls: m.getControlsForTechnique(technique),
@@ -369,7 +369,7 @@ func (m *FrameworkMapping) identifyGaps(report *UnifiedComplianceReport) []Compl
 			gaps = append(gaps, gap)
 		} else if len(controls) < 2 {
 			gap := ComplianceGap{
-				ID:              generateID(),
+				ID:              generateFrameworkMapID(),
 				Title:           fmt.Sprintf("Undercovered Technique: %s", technique),
 				Description:     fmt.Sprintf("Only %d control(s) cover %s - consider additional controls", len(controls), technique),
 				MissingControls: []string{},
@@ -417,7 +417,7 @@ func (r *UnifiedComplianceReport) ToJSON() (string, error) {
 	return string(data), nil
 }
 
-func generateID() string {
+func generateFrameworkMapID() string {
 	return fmt.Sprintf("MAP-%d", time.Now().UnixNano())
 }
 

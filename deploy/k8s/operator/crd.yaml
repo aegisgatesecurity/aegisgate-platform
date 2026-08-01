@@ -1,0 +1,184 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: aegisgatedeployments.aegisgate.io
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+spec:
+  group: aegisgate.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Tier
+          type: string
+          jsonPath: .spec.tier
+        - name: Ready
+          type: string
+          jsonPath: .status.ready
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          description: AegisGateDeployment is the Schema for the aegisgatedeployments API
+          type: object
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object.'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents.'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: AegisGateDeploymentSpec defines the desired state of AegisGateDeployment
+              type: object
+              required:
+                - image
+              properties:
+                replicas:
+                  description: Number of AegisGate replicas
+                  type: integer
+                  default: 1
+                  minimum: 1
+                  maximum: 100
+                image:
+                  description: Container image for the AegisGate deployment
+                  type: string
+                  minLength: 1
+                tier:
+                  description: AegisGate tier level
+                  type: string
+                  enum:
+                    - community
+                    - professional
+                    - enterprise
+                  default: community
+                proxyPort:
+                  description: Port for the AegisGate proxy server
+                  type: integer
+                  default: 8080
+                  minimum: 1
+                  maximum: 65535
+                mcpPort:
+                  description: Port for the MCP (Model Context Protocol) server
+                  type: integer
+                  default: 8081
+                  minimum: 1
+                  maximum: 65535
+                dashboardPort:
+                  description: Port for the AegisGate dashboard
+                  type: integer
+                  default: 8443
+                  minimum: 1
+                  maximum: 65535
+                mlEnabled:
+                  description: Enable ML-based anomaly detection
+                  type: boolean
+                  default: false
+                mlShadowMode:
+                  description: Run ML in shadow mode (log but don't block)
+                  type: boolean
+                  default: true
+                mlThreshold:
+                  description: ML anomaly threshold (0.0-1.0)
+                  type: number
+                  default: 0.85
+                  minimum: 0
+                  maximum: 1
+                resources:
+                  description: Resource requirements for the AegisGate container
+                  type: object
+                  properties:
+                    requests:
+                      description: Minimum resource requirements
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                    limits:
+                      description: Maximum resource limits
+                      type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
+                licenseKeySecret:
+                  description: Name of the Kubernetes Secret containing the AegisGate license key
+                  type: string
+                persistence:
+                  description: Persistence configuration for AegisGate data
+                  type: object
+                  properties:
+                    enabled:
+                      description: Enable persistent storage
+                      type: boolean
+                      default: false
+                    size:
+                      description: Size of the persistent volume claim
+                      type: string
+                      default: "10Gi"
+                compliance:
+                  description: Compliance framework configuration
+                  type: object
+                  properties:
+                    frameworks:
+                      description: List of compliance frameworks to enforce
+                      type: array
+                      items:
+                        type: string
+                      default:
+                        - owasp-top-10
+                    regressionGate:
+                      description: Enable compliance regression gate
+                      type: boolean
+                      default: false
+            status:
+              description: AegisGateDeploymentStatus defines the observed state of AegisGateDeployment
+              type: object
+              properties:
+                availableReplicas:
+                  description: Number of available replicas
+                  type: integer
+                  format: int32
+                ready:
+                  description: Whether the deployment is ready
+                  type: boolean
+                conditions:
+                  description: List of status conditions
+                  type: array
+                  items:
+                    description: AegisGateCondition describes the state of a condition
+                    type: object
+                    required:
+                      - type
+                    properties:
+                      type:
+                        description: Type of the condition
+                        type: string
+                      reason:
+                        description: Machine-readable reason for the condition
+                        type: string
+                      message:
+                        description: Human-readable message
+                        type: string
+                      lastTransitionTime:
+                        description: Last time the condition transitioned
+                        type: string
+                        format: date-time
+  scope: Namespaced
+  names:
+    plural: aegisgatedeployments
+    singular: aegisgatedeployment
+    kind: AegisGateDeployment
+    shortNames:
+      - agd
+      - aegisgate
