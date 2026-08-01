@@ -10,6 +10,10 @@
 
 package ml
 
+import (
+	"time"
+)
+
 // ThreatScore represents the output of the neural network threat detector.
 type ThreatScore struct {
 	// Score is the raw sigmoid output from the model [0, 1].
@@ -96,8 +100,30 @@ type CalibrationResult struct {
 	// BenignSamples is the number of benign samples tested.
 	BenignSamples int `json:"benign_samples"`
 
+	// TruePositives is the number of threat samples correctly classified.
+	TruePositives int `json:"true_positives"`
+
+	// TrueNegatives is the number of benign samples correctly classified.
+	TrueNegatives int `json:"true_negatives"`
+
 	// FalsePositives is the number of benign samples above threshold.
 	FalsePositives int `json:"false_positives"`
+
+	// FalseNegatives is the number of threat samples below threshold.
+	FalseNegatives int `json:"false_negatives"`
+
+	// Precision is TP / (TP + FP). Zero when TP+FP=0.
+	Precision float64 `json:"precision"`
+
+	// Recall is TP / (TP + FN). Zero when TP+FN=0.
+	Recall float64 `json:"recall"`
+
+	// F1Score is the harmonic mean of precision and recall.
+	F1Score float64 `json:"f1_score"`
+
+	// AUROC is the approximate area under the ROC curve computed via
+	// trapezoidal rule across thresholds.
+	AUROC float64 `json:"auroc"`
 
 	// FPR is the false positive rate on the benign corpus.
 	FPR float64 `json:"fpr"`
@@ -107,4 +133,50 @@ type CalibrationResult struct {
 
 	// ModelVersion used for calibration.
 	ModelVersion string `json:"model_version"`
+}
+
+// ShadowMetrics holds accumulated shadow-mode performance metrics for the
+// ML threat detector. Updated as shadow predictions are logged; queryable
+// via GET /api/v1/ml/metrics.
+type ShadowMetrics struct {
+	// TruePositives is the count of shadow predictions that correctly
+	// identified a threat (score >= threshold and ground-truth = threat).
+	TruePositives int `json:"true_positives"`
+
+	// TrueNegatives is the count of shadow predictions that correctly
+	// identified benign input (score < threshold and ground-truth = benign).
+	TrueNegatives int `json:"true_negatives"`
+
+	// FalsePositives is the count of shadow predictions that incorrectly
+	// flagged benign input as a threat.
+	FalsePositives int `json:"false_positives"`
+
+	// FalseNegatives is the count of shadow predictions that incorrectly
+	// classified threat input as benign.
+	FalseNegatives int `json:"false_negatives"`
+
+	// Precision = TP / (TP + FP). Zero when denominator is zero.
+	Precision float64 `json:"precision"`
+
+	// Recall = TP / (TP + FN). Zero when denominator is zero.
+	Recall float64 `json:"recall"`
+
+	// F1Score is the harmonic mean of precision and recall.
+	F1Score float64 `json:"f1_score"`
+
+	// AUROC is the approximate area under the ROC curve computed via
+	// trapezoidal rule across score thresholds.
+	AUROC float64 `json:"auroc"`
+
+	// TotalPredictions is the total number of shadow predictions processed.
+	TotalPredictions int `json:"total_predictions"`
+
+	// Timestamp is when these metrics were last computed.
+	Timestamp time.Time `json:"timestamp"`
+
+	// ModelVersion is the version/sha256 of the ONNX model used.
+	ModelVersion string `json:"model_version"`
+
+	// Threshold is the current calibrated threshold.
+	Threshold float64 `json:"threshold"`
 }
