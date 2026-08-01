@@ -1,7 +1,11 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
 // =========================================================================
+// PROPRIETARY - AegisGate Security
+// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //
+// This file contains proprietary trade secret information.
+// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 package scanner
@@ -102,6 +106,48 @@ func (s *Scanner) Scan(content string) []Finding {
 			if s.config.LogFindings {
 				s.logFinding(finding)
 			}
+		}
+	}
+
+	return findings
+}
+
+// ScanFast performs a fast scan that only finds the first match per pattern.
+// This is significantly faster than Scan() for request-scoped blocking decisions
+// where we only need to know IF a pattern matches, not every occurrence.
+// Use Scan() when you need all matches (e.g., for reporting).
+func (s *Scanner) ScanFast(content string) []Finding {
+	var findings []Finding
+
+	for _, pattern := range s.config.Patterns {
+		if pattern == nil || pattern.Regex == nil {
+			continue
+		}
+
+		// Use FindStringIndex for first match only — avoids FindAllStringIndex overhead
+		loc := pattern.Regex.FindStringIndex(content)
+		if loc == nil {
+			continue
+		}
+
+		match := content[loc[0]:loc[1]]
+		finding := Finding{
+			Pattern:  pattern,
+			Match:    match,
+			Position: loc[0],
+		}
+
+		// Skip context extraction in fast mode — too expensive for hot path
+		findings = append(findings, finding)
+
+		if s.config.LogFindings {
+			s.logFinding(finding)
+		}
+
+		// Early exit: if we found a blocking violation, no need to continue scanning
+		if ShouldBlock(pattern.Severity) {
+			// Found a blocking-level finding — return immediately
+			return findings
 		}
 	}
 

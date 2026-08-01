@@ -259,6 +259,80 @@ func (d *PromptInjectionDetector) Detect(content string) *DetectionResult {
 	return result
 }
 
+// DetectFast performs a fast detection scan using read-lock for concurrent access.
+// It avoids double-matching (content + contentLower) by using (?i) patterns exclusively,
+// and uses RLock instead of exclusive Lock for better throughput.
+// Stats tracking is batched to reduce mutex contention.
+func (d *PromptInjectionDetector) DetectFast(content string) *DetectionResult {
+	if content == "" {
+		return &DetectionResult{
+			IsInjection:     false,
+			Score:           0,
+			MatchedPatterns: []string{},
+			Severity:        0,
+		}
+	}
+
+	var matchedPatterns []string
+	var totalScore float64
+	var maxSeverity int
+
+	// Read patterns with read lock — patterns are immutable after init
+	d.mu.RLock()
+	patterns := d.patterns
+	d.mu.RUnlock()
+
+	for _, pattern := range patterns {
+		// All patterns use (?i) flag, so only one match call needed
+		if pattern.Regex.MatchString(content) {
+			matchedPatterns = append(matchedPatterns, pattern.Name)
+			patternScore := float64(pattern.Severity) * pattern.Weight * 20
+			totalScore += patternScore
+			if pattern.Severity > maxSeverity {
+				maxSeverity = pattern.Severity
+			}
+		}
+	}
+
+	// Adjust score based on sensitivity
+	sensitivityFactor := float64(d.sensitivity) / 100.0
+	adjustedScore := totalScore * (0.5 + sensitivityFactor)
+	if adjustedScore > 100 {
+		adjustedScore = 100
+	}
+
+	threshold := 100 - float64(d.sensitivity)
+	isInjection := adjustedScore >= threshold
+
+	result := &DetectionResult{
+		IsInjection:     isInjection,
+		Score:           adjustedScore,
+		MatchedPatterns: matchedPatterns,
+		Severity:        maxSeverity,
+	}
+
+	if len(matchedPatterns) > 0 {
+		result.Explanation = "Detected " + strings.Join(matchedPatterns, ", ")
+	}
+
+	// Batch update stats with exclusive lock (reduced contention)
+	d.mu.Lock()
+	d.stats.TotalScanned++
+	for _, name := range matchedPatterns {
+		d.stats.ByPattern[name]++
+	}
+	if len(matchedPatterns) > 0 {
+		d.stats.ThreatsDetected++
+		d.stats.LastDetection = time.Now()
+		if isInjection {
+			d.stats.BlockedCount++
+		}
+	}
+	d.mu.Unlock()
+
+	return result
+}
+
 // GetStats returns detection statistics
 func (d *PromptInjectionDetector) GetStats() map[string]interface{} {
 	d.stats.mu.Lock()
@@ -1307,6 +1381,62 @@ func (cd *CombinedDetector) Detect(content string) *CombinedResult {
 
 	// Run all detectors
 	promptResult := cd.PromptInjection.Detect(content)
+	tokenResult := cd.TokenSmuggling.Detect(content)
+	unicodeResult := cd.UnicodeAttack.Detect(content)
+	contextResult := cd.ContextManipulation.Detect(content)
+
+	result.PromptInjectionScore = promptResult.Score
+	result.TokenSmugglingScore = tokenResult.Score
+	result.UnicodeAttackScore = unicodeResult.Score
+	result.ContextScore = contextResult.Score
+
+	// Collect all matched patterns
+	result.AllMatchedPatterns = append(result.AllMatchedPatterns, promptResult.MatchedPatterns...)
+	result.AllMatchedPatterns = append(result.AllMatchedPatterns, tokenResult.MatchedTokens...)
+	result.AllMatchedPatterns = append(result.AllMatchedPatterns, unicodeResult.MatchedTypes...)
+	result.AllMatchedPatterns = append(result.AllMatchedPatterns, contextResult.MatchedTypes...)
+
+	// Calculate highest severity
+	highestSeverity := promptResult.Severity
+	if tokenResult.Severity > highestSeverity {
+		highestSeverity = tokenResult.Severity
+	}
+	if unicodeResult.Severity > highestSeverity {
+		highestSeverity = unicodeResult.Severity
+	}
+	if contextResult.Severity > highestSeverity {
+		highestSeverity = contextResult.Severity
+	}
+	result.HighestSeverity = highestSeverity
+
+	// Calculate weighted total score
+	result.TotalScore = (promptResult.Score * 0.35) +
+		(tokenResult.Score * 0.25) +
+		(unicodeResult.Score * 0.20) +
+		(contextResult.Score * 0.20)
+
+	// Determine if threat
+	result.IsThreat = promptResult.IsInjection ||
+		tokenResult.IsSmuggling ||
+		unicodeResult.IsAttack ||
+		contextResult.IsManipulation ||
+		result.TotalScore > 50
+
+	return result
+}
+
+// DetectFast runs detection using fast sub-detector methods (DetectFast for PromptInjection).
+// Falls back to regular Detect for sub-detectors that don't have fast variants yet.
+// This is the preferred method for request-scoped scanning.
+func (cd *CombinedDetector) DetectFast(content string) *CombinedResult {
+	result := &CombinedResult{
+		IsThreat:           false,
+		TotalScore:         0,
+		AllMatchedPatterns: []string{},
+	}
+
+	// Use DetectFast for prompt injection (our most expensive detector)
+	promptResult := cd.PromptInjection.DetectFast(content)
 	tokenResult := cd.TokenSmuggling.Detect(content)
 	unicodeResult := cd.UnicodeAttack.Detect(content)
 	contextResult := cd.ContextManipulation.Detect(content)

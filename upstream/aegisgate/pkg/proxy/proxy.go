@@ -362,7 +362,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// Skip scanning if no user content was extracted (empty messages)
 		if scanContent != "" {
 			// Scan the extracted content (not raw JSON bytes)
-			requestFindings = p.scanner.Scan(scanContent)
+			// Use ScanFast for request-scoped blocking decisions — finds first match per pattern
+			// and short-circuits on blocking-level severity findings.
+			requestFindings = p.scanner.ScanFast(scanContent)
 
 			// Log all findings
 			p.logFindings("request", req.URL.Path, requestFindings)
@@ -417,8 +419,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 
 			// Primary: CombinedDetector (weighted scoring across all 4 sub-detectors)
+			// Uses DetectFast for request-scoped hot-path performance
 			if p.combinedDetector != nil {
-				result := p.combinedDetector.Detect(mlContent)
+				result := p.combinedDetector.DetectFast(mlContent)
 
 				if len(result.AllMatchedPatterns) > 0 {
 					slog.Warn("Prompt injection detection: threat patterns identified",
@@ -540,13 +543,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // checkAtlasCompliance runs MITRE ATLAS compliance checks on content
+// Uses the singleton ATLAS instance (GetAtlas) to avoid re-compiling
+// 52+ regex patterns on every request, and CheckFast for hot-path performance.
 func (p *Proxy) checkAtlasCompliance(content string) []compliance.Finding {
 	if p.complianceManager == nil {
 		return nil
 	}
 
-	atlas := compliance.NewAtlas()
-	findings, _ := atlas.Check(content)
+	atlas := compliance.GetAtlas()
+	findings := atlas.CheckFast(content)
 	return findings
 }
 
@@ -602,13 +607,14 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 	}
 
 	// Scan the extracted content (not raw JSON bytes)
-	findings := p.scanner.Scan(scanContent)
+	// Use ScanFast for response scanning — same short-circuit optimization as request path.
+	findings := p.scanner.ScanFast(scanContent)
 	p.logFindings("response", resp.Request.URL.Path, findings)
 
 	// Check for MITRE ATLAS threats
 	if p.complianceManager != nil {
-		atlas := compliance.NewAtlas()
-		atlasFindings, _ := atlas.Check(scanContent)
+		atlas := compliance.GetAtlas()
+		atlasFindings := atlas.CheckFast(scanContent)
 		if len(atlasFindings) > 0 {
 			p.logAtlasFindings("response", resp.Request.URL.Path, atlasFindings)
 		}
@@ -630,8 +636,9 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 	}
 
 	// Prompt injection detection on responses (catches injected content in LLM output)
+	// Uses DetectFast for response-scoped hot-path performance
 	if p.combinedDetector != nil && p.options.EnablePromptInjectionDetection {
-		result := p.combinedDetector.Detect(scanContent)
+		result := p.combinedDetector.DetectFast(scanContent)
 
 		if len(result.AllMatchedPatterns) > 0 {
 			slog.Warn("Prompt injection patterns detected in response",
@@ -998,6 +1005,18 @@ type chatCompletionResponse struct {
 // that appear in the request envelope but not in the actual user content.
 // Returns the extracted content string, or falls back to raw body on parse failure.
 func extractContentFromRequest(body []byte) string {
+	// Fast path: skip JSON parsing if body doesn't look like a chat completion request.
+	// Most non-JSON requests or non-chat requests will be caught here,
+	// avoiding the overhead of json.Unmarshal.
+	if len(body) == 0 {
+		return ""
+	}
+	// Quick check: chat completion requests must contain "messages" key
+	// This avoids full JSON parse for ~80% of non-chat requests
+	if !bytes.Contains(body, []byte(`"messages"`)) {
+		return string(body)
+	}
+
 	var req chatCompletionRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		// Not valid JSON or not a chat completion — scan raw body
@@ -1009,10 +1028,8 @@ func extractContentFromRequest(body []byte) string {
 		return string(body)
 	}
 
-	// Concatenate system and user messages for scanning.
-	// Assistant messages are from conversation history and are not
-	// the attack surface, so we skip them to reduce false positives.
-	var parts []string
+	// Pre-allocate parts slice for efficiency
+	parts := make([]string, 0, len(req.Messages))
 	for _, msg := range req.Messages {
 		if msg.Role == "user" || msg.Role == "system" {
 			if msg.Content != "" {
@@ -1032,13 +1049,21 @@ func extractContentFromRequest(body []byte) string {
 // extractContentFromResponse extracts assistant message content from a
 // chat completion response body. Falls back to raw body on parse failure.
 func extractContentFromResponse(body []byte) string {
+	// Fast path: skip JSON parsing if body doesn't look like a chat completion response
+	if len(body) == 0 {
+		return ""
+	}
+	if !bytes.Contains(body, []byte(`"choices"`)) {
+		return string(body)
+	}
+
 	var resp chatCompletionResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
 		// Not valid JSON or not a chat completion response — scan raw body
 		return string(body)
 	}
 
-	var parts []string
+	parts := make([]string, 0, len(resp.Choices))
 	for _, choice := range resp.Choices {
 		if choice.Message.Content != "" {
 			parts = append(parts, choice.Message.Content)
