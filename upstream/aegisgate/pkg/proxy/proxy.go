@@ -1,16 +1,20 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
 // =========================================================================
+// PROPRIETARY - AegisGate Security
+// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //
+// This file contains proprietary trade secret information.
+// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 package proxy
 
 import (
-	"encoding/json"
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -23,8 +27,8 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
-	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 
+	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 	"github.com/aegisgatesecurity/aegisgate/pkg/resilience"
 	"github.com/aegisgatesecurity/aegisgate/pkg/scanner"
 )
@@ -54,11 +58,7 @@ type Options struct {
 	PromptInjectionSensitivity     int
 	EnableContentAnalysis          bool
 	EnableBehavioralAnalysis       bool
-
-	// OnRateLimited is called when a request is rejected by rate limiting.
-	// The callback receives the client remote address for metrics/accounting.
-	// If nil, no callback is invoked (backward compatible).
-	OnRateLimited func(client string)
+	OnRateLimited                  func(client string) // Callback when rate limit is hit
 }
 
 // TLSConfig holds TLS settings
@@ -92,16 +92,11 @@ type Proxy struct {
 	// ML Anomaly Detection - v0.41.0
 	mlMiddleware *MLMiddleware
 
-	// Advanced ML Detection - v1.3.4
-	// PromptInjectionDetector: 14 pattern prompt injection scanner
-	promptInjectionDetector *ml.PromptInjectionDetector
-	// CombinedDetector: unified facade across all 4 sub-detectors
-	// (prompt injection 35%, token smuggling 25%, unicode attacks 20%, context manipulation 20%)
+	// Multi-turn Attack Detection - P3.6
+	multiTurn *MultiTurnMiddleware
+
+	// Combined ML Detector for multi-turn signal extraction
 	combinedDetector *ml.CombinedDetector
-	// ContentAnalyzer: PII/policy violation scanner for LLM responses
-	contentAnalyzer *ml.ContentAnalyzer
-	// BehavioralAnalyzer: anomaly detection for client behavior patterns
-	behavioralAnalyzer *ml.BehavioralAnalyzer
 }
 
 // RateLimiter implements token bucket rate limiting
@@ -174,29 +169,11 @@ func New(opts *Options) *Proxy {
 		}
 	}
 
-	// Initialize advanced ML detectors (v1.3.4)
-	// These provide deep prompt injection, token smuggling, unicode attack,
-	// and context manipulation detection beyond the base ml.Detector.
-	if opts.EnablePromptInjectionDetection {
-		sensitivity := opts.PromptInjectionSensitivity
-		if sensitivity <= 0 {
-			sensitivity = 50 // default: medium
-		}
-		p.promptInjectionDetector = ml.NewPromptInjectionDetector(sensitivity)
-		p.combinedDetector = ml.NewCombinedDetector(sensitivity)
-		slog.Info("Prompt injection detection enabled",
-			"sensitivity", sensitivity,
-			"detectors", "prompt_injection+token_smuggling+unicode+context",
-		)
-	}
-	if opts.EnableContentAnalysis {
-		p.contentAnalyzer = ml.NewContentAnalyzer()
-		slog.Info("Content analysis (PII/policy) enabled")
-	}
-	if opts.EnableBehavioralAnalysis {
-		p.behavioralAnalyzer = ml.NewBehavioralAnalyzer()
-		slog.Info("Behavioral analysis (anomaly detection) enabled")
-	}
+	// Initialize multi-turn attack detection
+	p.multiTurn = NewMultiTurnMiddleware(DefaultMultiTurnMiddlewareConfig())
+
+	// Initialize combined ML detector for multi-turn signal extraction
+	p.combinedDetector = ml.NewCombinedDetector(70)
 
 	// Initialize circuit breaker if configured
 	if opts.CircuitBreaker != nil {
@@ -299,9 +276,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Check rate limit
 	if !p.rateLimiter.Allow() {
 		slog.Warn("Rate limit exceeded", "client", req.RemoteAddr, "path", req.URL.Path)
-		if p.options.OnRateLimited != nil {
-			p.options.OnRateLimited(req.RemoteAddr)
-		}
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("Rate limit exceeded. Please try again later."))
 		return
@@ -323,23 +297,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// Behavioral Analysis - v1.3.4
-	// Tracks per-client request patterns for anomaly detection (high-frequency, scraping, exfiltration)
-	if p.behavioralAnalyzer != nil && p.options.EnableBehavioralAnalysis {
-		clientID := getClientIP(req)
-		behavioralResult := p.behavioralAnalyzer.AnalyzeRequest(clientID, req.Method, req.URL.Path, req.ContentLength)
-		if behavioralResult.IsAnomaly {
-			slog.Warn("Behavioral anomaly detected",
-				"client", req.RemoteAddr,
-				"anomaly_type", behavioralResult.AnomalyType,
-				"score", fmt.Sprintf("%.1f", behavioralResult.Score),
-				"description", behavioralResult.Description,
-			)
-		}
-	}
-
 	// Scan request body if present
 	var requestFindings []scanner.Finding
+	var atlasFindings []compliance.Finding
 	if req.Body != nil {
 		bodyBytes, err := io.ReadAll(req.Body)
 		if err != nil {
@@ -371,7 +331,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 			// Check for MITRE ATLAS threats
 			if p.complianceManager != nil {
-				atlasFindings := p.checkAtlasCompliance(scanContent)
+				atlasFindings = p.checkAtlasCompliance(scanContent)
 				if len(atlasFindings) > 0 {
 					p.logAtlasFindings("request", req.URL.Path, atlasFindings)
 					if p.shouldBlockAtlas(atlasFindings) {
@@ -400,103 +360,65 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				w.Write([]byte(fmt.Sprintf("Content blocked: %s", strings.Join(violationNames, ", "))))
 				return
 			}
+
+			// ML Pattern Analysis - Prompt Injection Detection
+			if p.mlMiddleware != nil && p.options.EnablePromptInjectionDetection {
+				anomalies := p.mlMiddleware.config.Detector.AnalyzePatterns(scanContent)
+				for _, anomaly := range anomalies {
+					slog.Warn("ML Pattern anomaly detected",
+						"client", req.RemoteAddr,
+						"path", req.URL.Path,
+						"type", anomaly.Type,
+						"score", anomaly.Score,
+					)
+				}
+			}
+
+			// Multi-turn attack detection (P3.6)
+			// Analyzes cumulative suspicious patterns across conversation turns.
+			// Uses results from scanner, ATLAS, and ML detection to build per-turn signals.
+			if p.multiTurn != nil {
+				conversationID := ExtractConversationID(req)
+
+				// Run combined ML detection for per-category scores
+				var mlResult *ml.CombinedResult
+				if p.combinedDetector != nil {
+					mlResult = p.combinedDetector.DetectFast(scanContent)
+				}
+
+				mtResult := p.multiTurn.AnalyzeRequest(
+					conversationID,
+					"user",
+					scanContent,
+					requestFindings,
+					atlasFindings,
+					mlResult,
+				)
+				if mtResult != nil && mtResult.ShouldBlock {
+					slog.Error("Multi-turn attack blocked",
+						"client", req.RemoteAddr,
+						"path", req.URL.Path,
+						"session_id", mtResult.SessionID,
+						"turn", mtResult.TurnNumber,
+						"cumulative_score", fmt.Sprintf("%.1f", mtResult.CumulativeScore),
+						"turn_score", fmt.Sprintf("%.1f", mtResult.TurnScore),
+						"chains", strings.Join(mtResult.MatchedChains, ", "),
+						"escalation", mtResult.EscalationDetected,
+						"repetition", mtResult.RepetitionDetected,
+					)
+					w.WriteHeader(http.StatusForbidden)
+					chainInfo := ""
+					if len(mtResult.ChainDetails) > 0 {
+						chainInfo = fmt.Sprintf(" (chains: %s)", strings.Join(mtResult.ChainDetails, "; "))
+					}
+					w.Write([]byte(fmt.Sprintf("Request blocked: multi-turn attack pattern detected%s [score: %.1f]", chainInfo, mtResult.CumulativeScore)))
+					return
+				}
+			}
 		} else {
 			slog.Info("No user content extracted from request, skipping content scan",
 				"path", req.URL.Path,
 			)
-		}
-
-		// ML Pattern Analysis - Prompt Injection Detection (v1.3.4)
-		// Runs the full detection stack: PromptInjectionDetector (14 patterns),
-		// TokenSmugglingDetector (7 patterns), UnicodeAttackDetector (7 patterns),
-		// and ContextManipulationDetector (8 patterns) via CombinedDetector.
-		// Falls back to base ml.Detector.AnalyzePatterns when only MLDetection is enabled.
-		if p.options.EnablePromptInjectionDetection {
-			// Use extracted content (not raw JSON) for prompt injection detection
-			mlContent := scanContent
-			if mlContent == "" {
-				mlContent = string(bodyBytes)
-			}
-
-			// Primary: CombinedDetector (weighted scoring across all 4 sub-detectors)
-			// Uses DetectFast for request-scoped hot-path performance
-			if p.combinedDetector != nil {
-				result := p.combinedDetector.DetectFast(mlContent)
-
-				if len(result.AllMatchedPatterns) > 0 {
-					slog.Warn("Prompt injection detection: threat patterns identified",
-						"client", req.RemoteAddr,
-						"path", req.URL.Path,
-						"is_threat", result.IsThreat,
-						"total_score", fmt.Sprintf("%.1f", result.TotalScore),
-						"prompt_injection_score", fmt.Sprintf("%.1f", result.PromptInjectionScore),
-						"token_smuggling_score", fmt.Sprintf("%.1f", result.TokenSmugglingScore),
-						"unicode_attack_score", fmt.Sprintf("%.1f", result.UnicodeAttackScore),
-						"context_score", fmt.Sprintf("%.1f", result.ContextScore),
-						"severity", result.HighestSeverity,
-						"patterns", strings.Join(result.AllMatchedPatterns, ", "),
-					)
-				}
-
-				// Block on confirmed threats (IsThreat=true) or high severity (>=4)
-				if result.IsThreat || result.HighestSeverity >= 4 {
-					slog.Error("Request blocked: prompt injection threat detected",
-						"client", req.RemoteAddr,
-						"path", req.URL.Path,
-						"total_score", fmt.Sprintf("%.1f", result.TotalScore),
-						"severity", result.HighestSeverity,
-						"patterns", strings.Join(result.AllMatchedPatterns, ", "),
-					)
-					w.WriteHeader(http.StatusForbidden)
-					w.Write([]byte(fmt.Sprintf(
-						"Request blocked: prompt injection threat detected (severity %d, score %.1f)",
-						result.HighestSeverity, result.TotalScore)))
-					return
-				}
-			} else if p.promptInjectionDetector != nil {
-				// Fallback: PromptInjectionDetector only (14 injection patterns)
-				result := p.promptInjectionDetector.Detect(mlContent)
-
-				if len(result.MatchedPatterns) > 0 {
-					slog.Warn("Prompt injection detection: patterns identified",
-						"client", req.RemoteAddr,
-						"path", req.URL.Path,
-						"is_injection", result.IsInjection,
-						"score", fmt.Sprintf("%.1f", result.Score),
-						"severity", result.Severity,
-						"patterns", strings.Join(result.MatchedPatterns, ", "),
-					)
-
-					if result.IsInjection || result.Severity >= 4 {
-						slog.Error("Request blocked: prompt injection detected",
-							"client", req.RemoteAddr,
-							"path", req.URL.Path,
-							"score", fmt.Sprintf("%.1f", result.Score),
-							"severity", result.Severity,
-							"explanation", result.Explanation,
-						)
-						w.WriteHeader(http.StatusForbidden)
-						w.Write([]byte(fmt.Sprintf(
-							"Request blocked: %s", result.Explanation)))
-						return
-					}
-				}
-			}
-		} else if p.mlMiddleware != nil && p.options.EnableMLDetection {
-			// Fallback: base ML anomaly detection only (3 generic patterns)
-			mlContent := scanContent
-			if mlContent == "" {
-				mlContent = string(bodyBytes)
-			}
-			anomalies := p.mlMiddleware.config.Detector.AnalyzePatterns(mlContent)
-			for _, anomaly := range anomalies {
-				slog.Warn("ML Pattern anomaly detected",
-					"client", req.RemoteAddr,
-					"path", req.URL.Path,
-					"type", anomaly.Type,
-					"score", anomaly.Score,
-				)
-			}
 		}
 	}
 
@@ -558,7 +480,7 @@ func (p *Proxy) checkAtlasCompliance(content string) []compliance.Finding {
 // shouldBlockAtlas returns true if ATLAS findings should block the request
 func (p *Proxy) shouldBlockAtlas(findings []compliance.Finding) bool {
 	for _, finding := range findings {
-		if finding.Severity == compliance.SeverityCritical || finding.Severity == compliance.SeverityHigh {
+		if finding.Severity == compliance.SeverityCritical {
 			return true
 		}
 	}
@@ -602,76 +524,44 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 	// Extract assistant content from JSON response before scanning,
 	// same as we do for requests — avoids false positives on JSON structure.
 	scanContent := extractContentFromResponse(bodyBytes)
-	if scanContent == "" {
-		scanContent = string(bodyBytes)
-	}
 
 	// Scan the extracted content (not raw JSON bytes)
 	// Use ScanFast for response scanning — same short-circuit optimization as request path.
-	findings := p.scanner.ScanFast(scanContent)
-	p.logFindings("response", resp.Request.URL.Path, findings)
+	if scanContent != "" {
+		findings := p.scanner.ScanFast(scanContent)
+		p.logFindings("response", resp.Request.URL.Path, findings)
 
-	// Check for MITRE ATLAS threats
-	if p.complianceManager != nil {
-		atlas := compliance.GetAtlas()
-		atlasFindings := atlas.CheckFast(scanContent)
-		if len(atlasFindings) > 0 {
-			p.logAtlasFindings("response", resp.Request.URL.Path, atlasFindings)
+		// Check for MITRE ATLAS threats
+		if p.complianceManager != nil {
+			atlas := compliance.GetAtlas()
+			atlasFindings := atlas.CheckFast(scanContent)
+			if len(atlasFindings) > 0 {
+				p.logAtlasFindings("response", resp.Request.URL.Path, atlasFindings)
+			}
 		}
-	}
 
-	// ML Content Analysis for LLM Responses (v1.3.4)
-	// Scans outbound LLM responses for PII, policy violations, and prompt injection.
-	// Uses the full ContentAnalyzer (PII/policy) and CombinedDetector (injection) stack.
-	if p.contentAnalyzer != nil && p.options.EnableContentAnalysis {
-		analysis := p.contentAnalyzer.Analyze(scanContent)
-		if analysis.IsViolation {
-			slog.Warn("Content analysis: violations detected in response",
+		// ML Content Analysis for LLM Responses
+		if p.mlMiddleware != nil && p.options.EnableContentAnalysis {
+			entropy, anomaly := p.mlMiddleware.config.Detector.AnalyzeContent([]byte(scanContent))
+			if anomaly != nil {
+				slog.Warn("ML Content anomaly in response",
+					"path", resp.Request.URL.Path,
+					"entropy", entropy,
+					"type", anomaly.Type,
+					"score", anomaly.Score,
+				)
+			}
+		}
+
+		// Log critical findings
+		if p.scanner.ShouldBlock(findings) {
+			violationNames := p.scanner.GetViolationNames(findings)
+			slog.Error("Critical data found in response",
 				"path", resp.Request.URL.Path,
-				"score", fmt.Sprintf("%.1f", analysis.Score),
-				"severity", analysis.Severity,
-				"violation_types", strings.Join(analysis.ViolationTypes, ", "),
+				"status", resp.StatusCode,
+				"patterns", strings.Join(violationNames, ", "),
 			)
 		}
-	}
-
-	// Prompt injection detection on responses (catches injected content in LLM output)
-	// Uses DetectFast for response-scoped hot-path performance
-	if p.combinedDetector != nil && p.options.EnablePromptInjectionDetection {
-		result := p.combinedDetector.DetectFast(scanContent)
-
-		if len(result.AllMatchedPatterns) > 0 {
-			slog.Warn("Prompt injection patterns detected in response",
-				"path", resp.Request.URL.Path,
-				"is_threat", result.IsThreat,
-				"total_score", fmt.Sprintf("%.1f", result.TotalScore),
-				"severity", result.HighestSeverity,
-				"patterns", strings.Join(result.AllMatchedPatterns, ", "),
-			)
-		}
-	}
-
-	// Fallback: base ML entropy/content analysis when advanced detectors are not available
-	if p.mlMiddleware != nil && p.options.EnableContentAnalysis && p.contentAnalyzer == nil {
-		entropy, anomaly := p.mlMiddleware.config.Detector.AnalyzeContent([]byte(scanContent))
-		if anomaly != nil {
-			slog.Warn("ML Content anomaly in response",
-				"path", resp.Request.URL.Path,
-				"entropy", entropy,
-				"type", anomaly.Type,
-				"score", anomaly.Score,
-			)
-		}
-	}
-
-	// Log critical findings
-	if p.scanner.ShouldBlock(findings) {
-		violationNames := p.scanner.GetViolationNames(findings)
-		slog.Error("Critical data found in response",
-			"path", resp.Request.URL.Path,
-			"status", resp.StatusCode,
-			"patterns", strings.Join(violationNames, ", "),
-		)
 	}
 
 	return nil
@@ -814,19 +704,15 @@ func (p *Proxy) Stop(ctx context.Context) error {
 // GetHealth returns health status
 func (p *Proxy) GetHealth() map[string]interface{} {
 	health := map[string]interface{}{
-		"status":                     "healthy",
-		"enabled":                    p.IsEnabled(),
-		"bind_address":               p.options.BindAddress,
-		"upstream":                   p.options.Upstream,
-		"request_count":              p.requestCount.Load(),
-		"max_body_size":              p.options.MaxBodySize,
-		"timeout":                    p.options.Timeout.String(),
-		"rate_limit":                 p.options.RateLimit,
-		"ml_enabled":                 p.mlMiddleware != nil,
-		"prompt_injection_detection": p.promptInjectionDetector != nil,
-		"combined_detection":         p.combinedDetector != nil,
-		"content_analysis":           p.contentAnalyzer != nil,
-		"behavioral_analysis":        p.behavioralAnalyzer != nil,
+		"status":        "healthy",
+		"enabled":       p.IsEnabled(),
+		"bind_address":  p.options.BindAddress,
+		"upstream":      p.options.Upstream,
+		"request_count": p.requestCount.Load(),
+		"max_body_size": p.options.MaxBodySize,
+		"timeout":       p.options.Timeout.String(),
+		"rate_limit":    p.options.RateLimit,
+		"ml_enabled":    p.mlMiddleware != nil,
 	}
 
 	if p.circuitBreaker != nil {
@@ -847,20 +733,6 @@ func (p *Proxy) GetHealth() map[string]interface{} {
 			"analyzed_requests": mlStats.AnalyzedRequests,
 			"blocked_requests":  mlStats.BlockedRequests,
 		}
-	}
-
-	// Add advanced ML detector stats if enabled (v1.3.4)
-	if p.promptInjectionDetector != nil {
-		health["prompt_injection_stats"] = p.promptInjectionDetector.GetStats()
-	}
-	if p.combinedDetector != nil {
-		health["combined_detection_stats"] = p.combinedDetector.GetAllStats()
-	}
-	if p.contentAnalyzer != nil {
-		health["content_analysis_stats"] = p.contentAnalyzer.GetStats()
-	}
-	if p.behavioralAnalyzer != nil {
-		health["behavioral_analysis_stats"] = p.behavioralAnalyzer.GetStats()
 	}
 
 	return health
@@ -896,6 +768,10 @@ func (p *Proxy) GetStats() map[string]interface{} {
 			"blocked_requests":  mlStats.BlockedRequests,
 			"anomaly_counts":    mlStats.AnomalyCounts,
 		}
+	}
+
+	if p.multiTurn != nil {
+		stats["multiturn"] = p.multiTurn.GetStats()
 	}
 
 	return stats
@@ -978,9 +854,9 @@ type Metrics interface {
 // Used to extract user-facing content from JSON before scanning, so that
 // structural JSON tokens are not misidentified as prompt injection patterns.
 type chatCompletionRequest struct {
-	Model    string         `json:"model"`
-	Messages []chatMessage  `json:"messages"`
-	Stream   bool           `json:"stream,omitempty"`
+	Model    string          `json:"model"`
+	Messages []chatMessage   `json:"messages"`
+	Stream   bool            `json:"stream,omitempty"`
 }
 
 // chatMessage represents a single message in a chat completion request.
@@ -1006,13 +882,9 @@ type chatCompletionResponse struct {
 // Returns the extracted content string, or falls back to raw body on parse failure.
 func extractContentFromRequest(body []byte) string {
 	// Fast path: skip JSON parsing if body doesn't look like a chat completion request.
-	// Most non-JSON requests or non-chat requests will be caught here,
-	// avoiding the overhead of json.Unmarshal.
 	if len(body) == 0 {
 		return ""
 	}
-	// Quick check: chat completion requests must contain "messages" key
-	// This avoids full JSON parse for ~80% of non-chat requests
 	if !bytes.Contains(body, []byte(`"messages"`)) {
 		return string(body)
 	}
