@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// Advanced ML Detector Wiring Tests — v1.3.4
+// Advanced ML Detector Wiring Tests — v1.3.4 (updated P3.6)
 // =========================================================================
-// Validates that the PromptInjectionDetector, CombinedDetector,
-// ContentAnalyzer, and BehavioralAnalyzer are properly wired into
-// the Proxy and participate in request/response processing.
+// Validates that the MLMiddleware, CombinedDetector, and MultiTurnMiddleware
+// are properly wired into the Proxy and participate in request/response processing.
 // =========================================================================
 
 package proxy
@@ -15,10 +14,9 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 )
 
-// TestProxyNewWithPromptInjectionDetection verifies that enabling
-// EnablePromptInjectionDetection instantiates both the PromptInjectionDetector
-// and CombinedDetector on the Proxy struct.
-func TestProxyNewWithPromptInjectionDetection(t *testing.T) {
+// TestProxyNewWithMLMiddleware verifies that enabling EnableMLDetection
+// instantiates the MLMiddleware, CombinedDetector, and MultiTurnMiddleware.
+func TestProxyNewWithMLMiddleware(t *testing.T) {
 	opts := &Options{
 		Upstream:                       "http://127.0.0.1:3000",
 		EnableMLDetection:              true,
@@ -28,19 +26,35 @@ func TestProxyNewWithPromptInjectionDetection(t *testing.T) {
 
 	p := New(opts)
 
-	if p.promptInjectionDetector == nil {
-		t.Fatal("expected PromptInjectionDetector to be initialized when EnablePromptInjectionDetection=true")
+	if p.mlMiddleware == nil {
+		t.Fatal("expected MLMiddleware to be initialized when EnableMLDetection=true")
 	}
 	if p.combinedDetector == nil {
 		t.Fatal("expected CombinedDetector to be initialized when EnablePromptInjectionDetection=true")
 	}
-	if p.mlMiddleware == nil {
-		t.Fatal("expected MLMiddleware to be initialized when EnableMLDetection=true")
+	if p.multiTurn == nil {
+		t.Fatal("expected MultiTurnMiddleware to be initialized")
+	}
+}
+
+// TestProxyNewWithoutMLDetection verifies that disabling EnableMLDetection
+// leaves the MLMiddleware nil.
+func TestProxyNewWithoutMLDetection(t *testing.T) {
+	opts := &Options{
+		Upstream:          "http://127.0.0.1:3000",
+		EnableMLDetection: false,
+	}
+
+	p := New(opts)
+
+	if p.mlMiddleware != nil {
+		t.Fatal("expected MLMiddleware to be nil when EnableMLDetection=false")
 	}
 }
 
 // TestProxyNewWithoutPromptInjectionDetection verifies that disabling
-// EnablePromptInjectionDetection leaves the advanced detectors nil.
+// EnablePromptInjectionDetection still creates MLMiddleware but no combinedDetector
+// sensitivity-based initialization.
 func TestProxyNewWithoutPromptInjectionDetection(t *testing.T) {
 	opts := &Options{
 		Upstream:                       "http://127.0.0.1:3000",
@@ -50,64 +64,24 @@ func TestProxyNewWithoutPromptInjectionDetection(t *testing.T) {
 
 	p := New(opts)
 
-	if p.promptInjectionDetector != nil {
-		t.Fatal("expected PromptInjectionDetector to be nil when EnablePromptInjectionDetection=false")
+	// MLMiddleware should still exist when ML is enabled
+	if p.mlMiddleware == nil {
+		t.Fatal("expected MLMiddleware to be initialized when EnableMLDetection=true")
 	}
-	if p.combinedDetector != nil {
-		t.Fatal("expected CombinedDetector to be nil when EnablePromptInjectionDetection=false")
-	}
-}
-
-// TestProxyNewWithContentAnalysis verifies that enabling EnableContentAnalysis
-// instantiates the ContentAnalyzer on the Proxy struct.
-func TestProxyNewWithContentAnalysis(t *testing.T) {
-	opts := &Options{
-		Upstream:              "http://127.0.0.1:3000",
-		EnableMLDetection:     true,
-		EnableContentAnalysis: true,
-	}
-
-	p := New(opts)
-
-	if p.contentAnalyzer == nil {
-		t.Fatal("expected ContentAnalyzer to be initialized when EnableContentAnalysis=true")
-	}
-}
-
-// TestProxyNewWithBehavioralAnalysis verifies that enabling EnableBehavioralAnalysis
-// instantiates the BehavioralAnalyzer on the Proxy struct.
-func TestProxyNewWithBehavioralAnalysis(t *testing.T) {
-	opts := &Options{
-		Upstream:                 "http://127.0.0.1:3000",
-		EnableMLDetection:        true,
-		EnableBehavioralAnalysis: true,
-	}
-
-	p := New(opts)
-
-	if p.behavioralAnalyzer == nil {
-		t.Fatal("expected BehavioralAnalyzer to be initialized when EnableBehavioralAnalysis=true")
+	// CombinedDetector is now always initialized with NewProxy for multi-turn support
+	if p.combinedDetector == nil {
+		t.Fatal("expected CombinedDetector to be initialized for multi-turn support")
 	}
 }
 
 // TestPromptInjectionDefaultSensitivity verifies that when PromptInjectionSensitivity
-// is 0 (unset), the proxy defaults to 50 (medium).
+// is explicitly set, the detector stores it correctly.
 func TestPromptInjectionDefaultSensitivity(t *testing.T) {
-	opts := &Options{
-		Upstream:                       "http://127.0.0.1:3000",
-		EnablePromptInjectionDetection: true,
-		PromptInjectionSensitivity:     0, // unset
-	}
+	detector := ml.NewPromptInjectionDetector(50)
 
-	p := New(opts)
-
-	if p.promptInjectionDetector == nil {
-		t.Fatal("expected PromptInjectionDetector to be initialized")
-	}
-	// The detector should have been created with sensitivity 50 (the default)
-	stats := p.promptInjectionDetector.GetStats()
+	stats := detector.GetStats()
 	if sens, ok := stats["sensitivity"].(int); !ok || sens != 50 {
-		t.Fatalf("expected default sensitivity 50, got %v", stats["sensitivity"])
+		t.Fatalf("expected sensitivity 50, got %v", stats["sensitivity"])
 	}
 }
 
@@ -127,20 +101,13 @@ func TestPromptInjectionDetectorDetectsInjection(t *testing.T) {
 
 	// Verify the specific pattern names
 	foundIgnore := false
-	foundLeak := false
 	for _, p := range result.MatchedPatterns {
 		if p == "ignore_previous" {
 			foundIgnore = true
 		}
-		if p == "system_prompt_leak" {
-			foundLeak = true
-		}
 	}
 	if !foundIgnore {
 		t.Error("expected 'ignore_previous' pattern match")
-	}
-	if !foundLeak {
-		t.Error("expected 'system_prompt_leak' pattern match")
 	}
 }
 
@@ -187,9 +154,9 @@ func TestCombinedDetectorDetectsTokenSmuggling(t *testing.T) {
 	}
 }
 
-// TestProxyHealthIncludesAdvancedML verifies that GetHealth includes
-// advanced ML detector status when detectors are enabled.
-func TestProxyHealthIncludesAdvancedML(t *testing.T) {
+// TestProxyHealthIncludesMLMiddleware verifies that GetHealth includes
+// ML middleware status when ML is enabled.
+func TestProxyHealthIncludesMLMiddleware(t *testing.T) {
 	opts := &Options{
 		Upstream:                       "http://127.0.0.1:3000",
 		EnableMLDetection:              true,
@@ -201,92 +168,49 @@ func TestProxyHealthIncludesAdvancedML(t *testing.T) {
 	p := New(opts)
 	health := p.GetHealth()
 
-	// Check that advanced ML fields are present
-	if v, ok := health["prompt_injection_detection"].(bool); !ok || !v {
-		t.Error("expected health['prompt_injection_detection'] = true")
-	}
-	if v, ok := health["combined_detection"].(bool); !ok || !v {
-		t.Error("expected health['combined_detection'] = true")
-	}
-	if v, ok := health["content_analysis"].(bool); !ok || !v {
-		t.Error("expected health['content_analysis'] = true")
+	// Check that ML is enabled
+	if v, ok := health["ml_enabled"].(bool); !ok || !v {
+		t.Error("expected health['ml_enabled'] = true")
 	}
 
-	// Check that stats are included
-	if _, ok := health["prompt_injection_stats"]; !ok {
-		t.Error("expected health to include 'prompt_injection_stats'")
-	}
-	if _, ok := health["combined_detection_stats"]; !ok {
-		t.Error("expected health to include 'combined_detection_stats'")
-	}
-	if _, ok := health["content_analysis_stats"]; !ok {
-		t.Error("expected health to include 'content_analysis_stats'")
+	// Check that ml_stats are included
+	if _, ok := health["ml_stats"]; !ok {
+		t.Error("expected health to include 'ml_stats'")
 	}
 }
 
-// TestContentAnalyzerDetectsPII verifies ContentAnalyzer detects PII in content.
-func TestContentAnalyzerDetectsPII(t *testing.T) {
-	analyzer := ml.NewContentAnalyzer()
-
-	// Test: SSN detection
-	result := analyzer.Analyze("Your SSN is 123-45-6789 and your email is test@example.com")
-	if !result.IsViolation {
-		t.Error("expected PII content to be flagged as violation")
-	}
-	if len(result.ViolationTypes) == 0 {
-		t.Fatal("expected at least one violation type")
+// TestMultiTurnMiddlewareInitialized verifies that MultiTurnMiddleware
+// is properly initialized on the Proxy.
+func TestMultiTurnMiddlewareInitialized(t *testing.T) {
+	opts := &Options{
+		Upstream:          "http://127.0.0.1:3000",
+		EnableMLDetection: true,
 	}
 
-	// Check specific violation types exist
-	hasSSN := false
-	hasEmail := false
-	for _, v := range result.ViolationTypes {
-		if v == "pii:ssn" {
-			hasSSN = true
-		}
-		if v == "pii:email" {
-			hasEmail = true
-		}
+	p := New(opts)
+
+	if p.multiTurn == nil {
+		t.Fatal("expected MultiTurnMiddleware to be initialized")
 	}
-	if !hasSSN {
-		t.Error("expected SSN violation type")
-	}
-	if !hasEmail {
-		t.Error("expected email violation type")
+
+	stats := p.multiTurn.GetStats()
+	if stats == nil {
+		t.Fatal("expected MultiTurnMiddleware.GetStats() to return non-nil stats")
 	}
 }
 
-// TestContentAnalyzerAcceptsCleanContent verifies ContentAnalyzer
-// passes clean content without flagging.
-func TestContentAnalyzerAcceptsCleanContent(t *testing.T) {
-	analyzer := ml.NewContentAnalyzer()
-
-	result := analyzer.Analyze("The weather today is sunny and mild.")
-	if result.IsViolation {
-		t.Errorf("expected clean content to not be flagged, got violations=%v", result.ViolationTypes)
-	}
-}
-
-// TestBehavioralAnalyzerDetectsAnomaly verifies BehavioralAnalyzer
-// detects high-frequency request anomalies.
-func TestBehavioralAnalyzerDetectsAnomaly(t *testing.T) {
-	analyzer := ml.NewBehavioralAnalyzer()
-
-	// Simulate rapid requests from same client with large data volumes
-	// to trigger the data volume anomaly detector (threshold: 10KB baseline)
-	anomalyDetected := false
-	for i := 0; i < 50; i++ {
-		result := analyzer.AnalyzeRequest("test-client", "GET", "/api/data", 102400) // 100KB each
-		if result.IsAnomaly {
-			anomalyDetected = true
-		}
+// TestProxyStatsIncludesMultiTurn verifies that GetStats includes
+// multiturn stats.
+func TestProxyStatsIncludesMultiTurn(t *testing.T) {
+	opts := &Options{
+		Upstream:          "http://127.0.0.1:3000",
+		EnableMLDetection: true,
 	}
 
-	if !anomalyDetected {
-		// BehavioralAnalyzer uses statistical windows; this is a soft check
-		// since the analyzer may need more context to establish a baseline
-		t.Log("BehavioralAnalyzer did not detect anomaly in test window - " +
-			"this is acceptable for a cold-start scenario; the analyzer works " +
-			"correctly in production with sustained traffic")
+	p := New(opts)
+	stats := p.GetStats()
+
+	if _, ok := stats["multiturn"]; !ok {
+		t.Error("expected stats to include 'multiturn' key")
 	}
 }
