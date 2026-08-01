@@ -363,8 +363,8 @@ func TestInMemoryPlaybookStore_ListAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListPlaybooks: %v", err)
 	}
-	if len(results) != 4 {
-		t.Errorf("len(results) = %d; want 4", len(results))
+	if len(results) != 14 {
+		t.Errorf("len(results) = %d; want 14", len(results))
 	}
 }
 
@@ -673,6 +673,8 @@ func TestInMemoryPlaybookStore_Concurrent(t *testing.T) {
 
 	done := make(chan bool, 4)
 
+	expectedCount := len(DefaultPlaybooks())
+
 	for _, pb := range DefaultPlaybooks() {
 		go func(playbook *Playbook) {
 			store.CreatePlaybook(context.Background(), playbook)
@@ -680,7 +682,7 @@ func TestInMemoryPlaybookStore_Concurrent(t *testing.T) {
 		}(pb)
 	}
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i < expectedCount; i++ {
 		<-done
 	}
 
@@ -688,7 +690,7 @@ func TestInMemoryPlaybookStore_Concurrent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListPlaybooks: %v", err)
 	}
-	if len(results) != 4 {
-		t.Errorf("len(results) = %d; want 4", len(results))
+	if len(results) != expectedCount {
+		t.Errorf("len(results) = %d; want %d", len(results), expectedCount)
 	}
 }

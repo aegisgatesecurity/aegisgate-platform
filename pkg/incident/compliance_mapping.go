@@ -14,6 +14,7 @@
 //   - SOC 2 (AICPA Trust Services Criteria) — CC family
 //   - NIST SP 800-171 — IR family
 //   - ISO 27001 — A.16 (Information Security Incident Management)
+//   - ATLAS (MITRE Adversarial Threat Landscape for AI Systems) — T family
 //
 // v3.8 incident response automation.
 // =========================================================================
@@ -22,7 +23,7 @@ package incident
 
 // MapToCompliance maps an incident's source and patterns to compliance
 // controls. It uses the built-in pattern-to-control mappings for
-// FedRAMP, SOC2, NIST 800-171, and ISO 27001.
+// FedRAMP, SOC2, NIST 800-171, ISO 27001, and ATLAS.
 //
 // If no patterns match, it returns a generic mapping based on the
 // incident source.
@@ -54,6 +55,13 @@ func MapToCompliance(source IncidentSource, patterns []string) []ComplianceMappi
 			}
 		}
 		if m, ok := iso27001Mappings[pattern]; ok {
+			key := m.Framework + ":" + m.ControlID
+			if !seen[key] {
+				mappings = append(mappings, m)
+				seen[key] = true
+			}
+		}
+		if m, ok := atlasMappings[pattern]; ok {
 			key := m.Framework + ":" + m.ControlID
 			if !seen[key] {
 				mappings = append(mappings, m)
@@ -251,5 +259,73 @@ var iso27001Mappings = map[string]ComplianceMapping{
 		ControlID:   "A.16.1.7",
 		ControlName: "Collection of Evidence",
 		Relevance:   "Capability creep requires evidence collection",
+	},
+}
+
+// =====================================================================
+// ATLAS Mappings — MITRE ATLAS (Adversarial Threat Landscape
+// for AI Systems) technique category mappings.
+// =====================================================================
+
+var atlasMappings = map[string]ComplianceMapping{
+	"PromptInjection": {
+		Framework:   "ATLAS",
+		ControlID:   "T1535",
+		ControlName: "Prompt Injection",
+		Relevance:   "Prompt injection attack detected per ATLAS T1535",
+	},
+	"LLMJailbreak": {
+		Framework:   "ATLAS",
+		ControlID:   "T1484",
+		ControlName: "LLM Jailbreak",
+		Relevance:   "LLM jailbreak attack detected per ATLAS T1484",
+	},
+	"PromptExtraction": {
+		Framework:   "ATLAS",
+		ControlID:   "T1632",
+		ControlName: "Prompt Extraction",
+		Relevance:   "Prompt extraction attack detected per ATLAS T1632",
+	},
+	"DataExtraction": {
+		Framework:   "ATLAS",
+		ControlID:   "T1589",
+		ControlName: "Data Extraction",
+		Relevance:   "Data extraction attack detected per ATLAS T1589",
+	},
+	"IndirectInjection": {
+		Framework:   "ATLAS",
+		ControlID:   "T1584",
+		ControlName: "Indirect Prompt Injection",
+		Relevance:   "Indirect prompt injection attack detected per ATLAS T1584",
+	},
+	"VectorDBPoisoning": {
+		Framework:   "ATLAS",
+		ControlID:   "T1600",
+		ControlName: "Vector DB Poisoning",
+		Relevance:   "Vector DB poisoning attack detected per ATLAS T1600",
+	},
+	"ContentInjection": {
+		Framework:   "ATLAS",
+		ControlID:   "T1613",
+		ControlName: "Content Injection",
+		Relevance:   "Content injection attack detected per ATLAS T1613",
+	},
+	"PluginExploitation": {
+		Framework:   "ATLAS",
+		ControlID:   "T1563",
+		ControlName: "Plugin Exploitation",
+		Relevance:   "Plugin exploitation attack detected per ATLAS T1563",
+	},
+	"DefenseEvasion": {
+		Framework:   "ATLAS",
+		ControlID:   "T1622",
+		ControlName: "Defense Evasion",
+		Relevance:   "Defense evasion attack detected per ATLAS T1622",
+	},
+	"ElevationAbuse": {
+		Framework:   "ATLAS",
+		ControlID:   "T1548",
+		ControlName: "Elevation Abuse",
+		Relevance:   "Elevation abuse attack detected per ATLAS T1548",
 	},
 }

@@ -9,8 +9,11 @@
 package compliance
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -825,6 +828,54 @@ func (f *ATLASFramework) CheckFast(content string) []Finding {
 	}
 
 	return findings
+}
+
+// PatternIntegrityResult holds the SHA256 hash and metadata for
+// verifying that the ATLAS pattern set has not been tampered with.
+type PatternIntegrityResult struct {
+	Hash         string `json:"hash"`
+	PatternCount int    `json:"pattern_count"`
+	GeneratedAt  string `json:"generated_at"`
+	Version      string `json:"version"`
+}
+
+// PatternIntegrity computes a SHA256 hash of all ATLAS pattern
+// regex strings concatenated with their IDs, sorted by ID for
+// deterministic results. Auditors can compare the hash against a
+// known-good value to verify rule integrity.
+func (f *ATLASFramework) PatternIntegrity() PatternIntegrityResult {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	// Collect ID+Regex pairs and sort by ID for deterministic hashing.
+	type idRegex struct {
+		ID    string
+		Regex string
+	}
+	pairs := make([]idRegex, 0, len(f.patterns))
+	for _, p := range f.patterns {
+		regexStr := ""
+		if p.Regex != nil {
+			regexStr = p.Regex.String()
+		}
+		pairs = append(pairs, idRegex{ID: p.ID, Regex: regexStr})
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		return pairs[i].ID < pairs[j].ID
+	})
+
+	h := sha256.New()
+	for _, pair := range pairs {
+		h.Write([]byte(pair.ID))
+		h.Write([]byte(pair.Regex))
+	}
+
+	return PatternIntegrityResult{
+		Hash:         hex.EncodeToString(h.Sum(nil)),
+		PatternCount: len(f.patterns),
+		GeneratedAt:  time.Now().UTC().Format(time.RFC3339),
+		Version:      "3.8.0",
+	}
 }
 
 // String returns string representation of ATLAS framework

@@ -10,6 +10,7 @@
 //                                  FrameworkAssessment if the
 //                                  framework is registered)
 //   GET /health                -> liveness (no auth)
+//   GET /integrity             -> ATLAS pattern set SHA256 hash for auditors
 //
 // Auth (locked decision Q4): license key via
 // pkg/license.LicenseMiddleware. The API itself doesn't enforce
@@ -76,6 +77,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveScan(w, r)
 	case "/report":
 		a.serveReport(w, r)
+	case "/integrity":
+		a.serveIntegrity(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -277,6 +280,30 @@ func normalizeFrameworkName(input string) string {
 		return "tisax"
 	}
 	return input // pass through unchanged; the Scanner will return ErrUnknownFramework
+}
+
+// ---- /integrity ----
+
+// serveIntegrity returns the SHA256 hash of the ATLAS pattern set
+// for auditors to verify rule integrity. This endpoint allows
+// external auditors to compare the deployed pattern set against
+// a known-good baseline.
+func (a *API) serveIntegrity(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get ATLAS pattern integrity directly from a fresh framework instance
+	// This ensures deterministic results regardless of registry state.
+	f := NewATLASFramework(0)
+	result := f.PatternIntegrity()
+
+	resp := map[string]any{
+		"integrity": result,
+		"framework": "MITRE ATLAS",
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // ---- helpers ----
