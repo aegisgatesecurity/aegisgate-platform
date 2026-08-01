@@ -1,0 +1,133 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aegisgate-operator
+  namespace: aegisgate-system
+  labels:
+    app.kubernetes.io/name: aegisgate-operator
+    app.kubernetes.io/part-of: aegisgate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aegisgate-operator
+  labels:
+    app.kubernetes.io/name: aegisgate-operator
+    app.kubernetes.io/part-of: aegisgate
+rules:
+  # Custom resource: AegisGateDeployment
+  - apiGroups:
+      - aegisgate.io
+    resources:
+      - aegisgatedeployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # Custom resource status subresource
+  - apiGroups:
+      - aegisgate.io
+    resources:
+      - aegisgatedeployments/status
+    verbs:
+      - get
+      - update
+      - patch
+  # Custom resource finalizers subresource
+  - apiGroups:
+      - aegisgate.io
+    resources:
+      - aegisgatedeployments/finalizers
+    verbs:
+      - update
+  # Deployments
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # Services
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # ConfigMaps
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # Secrets
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  # Pods (for status reads)
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  # HorizontalPodAutoscalers
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aegisgate-operator
+  labels:
+    app.kubernetes.io/name: aegisgate-operator
+    app.kubernetes.io/part-of: aegisgate
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aegisgate-operator
+subjects:
+  - kind: ServiceAccount
+    name: aegisgate-operator
+    namespace: aegisgate-system
