@@ -109,6 +109,18 @@ security:
   enable_xss: true               # XSS protection
   enable_panic_recovery: true    # recover from panics and return 500 (don't crash)
   enable_audit_middleware: true  # log all requests to the audit pipeline
+
+  # ML threat detection feature flags (cold-start deployment)
+  # The neural network threat detector (Char CNN-BiLSTM) is DISABLED by default.
+  # Deployment sequence:
+  #   1. Ship with ml_threat_detection_enabled=false, ml_shadow_mode=true
+  #   2. Run calibration to find zero-FPR threshold
+  #   3. 7-day shadow validation (detector logs but never blocks)
+  #   4. Set ml_threat_detection_enabled=true only after validation passes
+  #   5. Set ml_shadow_mode=false only after confirming zero FPR in production
+  ml_threat_detection_enabled: false  # Cold-start: disabled by default. Enable after 7-day shadow validation with 0% FPR.
+  ml_shadow_mode: true                  # Shadow mode: log predictions but never block. Set false only after calibration.
+
   allowed_origins: []            # CORS allowed origins (empty = no CORS)
   allowed_methods:               # CORS allowed methods
     - "GET"

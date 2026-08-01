@@ -157,6 +157,16 @@ type SecurityConfig struct {
 	AllowedOrigins        []string `yaml:"allowed_origins"`
 	AllowedMethods        []string `yaml:"allowed_methods"`
 	AllowedHeaders        []string `yaml:"allowed_headers"`
+
+	// MLThreatDetectionEnabled controls whether the neural network threat
+	// detector (Char CNN-BiLSTM) is active. Default: false (cold-start safety).
+	// Only enable after 7-day shadow validation with 0% FPR.
+	MLThreatDetectionEnabled bool `yaml:"ml_threat_detection_enabled"`
+
+	// MLShadowMode controls whether the neural threat detector runs in shadow
+	// mode (log predictions but never block). Default: true (safe deployment).
+	// Set to false only after calibration confirms zero FPR.
+	MLShadowMode bool `yaml:"ml_shadow_mode"`
 }
 
 // LoggingConfig holds structured logging settings
@@ -305,14 +315,16 @@ func DefaultConfig() *Config {
 			},
 		},
 		Security: SecurityConfig{
-			EnableSecurityHeaders: true,
-			EnableCSRF:            true,
-			EnableXSS:             true,
-			EnablePanicRecovery:   true,
-			EnableAuditMiddleware: true,
-			AllowedOrigins:        []string{},
-			AllowedMethods:        []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"},
-			AllowedHeaders:        []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},
+			EnableSecurityHeaders:    true,
+			EnableCSRF:               true,
+			EnableXSS:                true,
+			EnablePanicRecovery:      true,
+			EnableAuditMiddleware:    true,
+			AllowedOrigins:           []string{},
+			AllowedMethods:           []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"},
+			AllowedHeaders:           []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},
+			MLThreatDetectionEnabled: false, // Cold-start: disabled by default
+			MLShadowMode:             true,  // Safe deployment: shadow mode on by default
 		},
 		Logging: LoggingConfig{
 			Level:  "info",
@@ -589,6 +601,14 @@ func (c *Config) applyEnvOverrides() {
 	// Security overrides
 	if v := os.Getenv("AEGISGATE_SECURITY_HEADERS"); v != "" {
 		c.Security.EnableSecurityHeaders = strings.ToLower(v) == "true"
+	}
+
+	// ML threat detection overrides
+	if v := os.Getenv("AEGISGATE_ML_THREAT_DETECTION_ENABLED"); v != "" {
+		c.Security.MLThreatDetectionEnabled = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_ML_SHADOW_MODE"); v != "" {
+		c.Security.MLShadowMode = strings.ToLower(v) == "true"
 	}
 
 	// FIPS overrides

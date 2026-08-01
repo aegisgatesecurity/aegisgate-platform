@@ -59,6 +59,14 @@ type Options struct {
 	EnableContentAnalysis          bool
 	EnableBehavioralAnalysis       bool
 	OnRateLimited                  func(client string) // Callback when rate limit is hit
+
+	// ML Threat Detector (neural network) feature flags — cold-start deployment
+	// MLThreatDetectionEnabled: false by default. Enable only after 7-day shadow
+	// validation with 0% FPR. When false, Detect() returns zero-score results.
+	MLThreatDetectionEnabled bool
+	// MLShadowMode: true by default. In shadow mode, the detector logs predictions
+	// but never blocks traffic. Set to false only after calibration confirms zero FPR.
+	MLShadowMode bool
 }
 
 // TLSConfig holds TLS settings
@@ -179,8 +187,13 @@ func New(opts *Options) *Proxy {
 	// Initialize combined ML detector for multi-turn signal extraction
 	p.combinedDetector = ml.NewCombinedDetector(70)
 
-	// Initialize neural network threat detector (disabled by default — cold-start)
-	p.threatDetector = ml.NewThreatDetector(ml.DefaultDetectorConfig())
+	// Initialize neural network threat detector.
+	// Cold-start: disabled by default. Enable via MLThreatDetectionEnabled
+	// after 7-day shadow validation with 0% FPR.
+	tdCfg := ml.DefaultDetectorConfig()
+	tdCfg.Enabled = p.options.MLThreatDetectionEnabled
+	tdCfg.ShadowMode = p.options.MLShadowMode
+	p.threatDetector = ml.NewThreatDetector(tdCfg)
 
 	// Initialize circuit breaker if configured
 	if opts.CircuitBreaker != nil {
@@ -963,9 +976,9 @@ type Metrics interface {
 // Used to extract user-facing content from JSON before scanning, so that
 // structural JSON tokens are not misidentified as prompt injection patterns.
 type chatCompletionRequest struct {
-	Model    string          `json:"model"`
-	Messages []chatMessage   `json:"messages"`
-	Stream   bool            `json:"stream,omitempty"`
+	Model    string        `json:"model"`
+	Messages []chatMessage `json:"messages"`
+	Stream   bool          `json:"stream,omitempty"`
 }
 
 // chatMessage represents a single message in a chat completion request.
