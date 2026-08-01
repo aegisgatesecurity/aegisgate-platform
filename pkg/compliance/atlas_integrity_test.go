@@ -7,7 +7,7 @@
 // endpoint. Verifies that the SHA256 hash of the ATLAS pattern set
 // is deterministic, non-empty, and matches the pattern count.
 //
-// v3.8.0 — P1 Item 2: Rule Integrity Verification.
+// v3.6.0 — P1 Item 2: Rule Integrity Verification.
 // =========================================================================
 
 package compliance

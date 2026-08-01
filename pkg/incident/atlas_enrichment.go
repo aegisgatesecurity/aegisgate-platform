@@ -17,7 +17,7 @@
 //   - Incident creation (auto-populates ComplianceMappings)
 //   - Dashboard alerts (shows technique + severity + response)
 //
-// v3.8.0 — P2 Item 10: MTTI auto-enrichment.
+// v3.6.0 — P2 Item 10: MTTI auto-enrichment.
 // =========================================================================
 
 package incident
