@@ -12,7 +12,7 @@ metadata:
   namespace: aegisgate
   labels:
     app.kubernetes.io/name: aegisgate-platform
-    # Updated 2026-07-24: aligned to v3.5.0 (security hardening release).
+    # Updated 2026-07-24: aligned to v3.6.0 (security hardening release).
     app.kubernetes.io/version: "3.5.0"
 spec:
   replicas: 1

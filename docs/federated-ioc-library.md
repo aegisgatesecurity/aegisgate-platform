@@ -1,6 +1,6 @@
 # Federated IOC Library
 
-> **Status:** Shipped in AegisGate v3.5.0+ (Track 6 Task 3+4).
+> **Status:** Shipped in AegisGate v3.6.0+ (Track 6 Task 3+4).
 > **Audience:** AegisGate operators, SREs, and security architects.
 > **Scope:** Architecture, operator guide, threat model, wire format.
 
@@ -375,7 +375,7 @@ permissions (`0600`, owner read/write only).
   signature authenticates the source, but it does not
   authenticate the *truth* of the IOCs inside. A peer can
   sign a bundle of fake IOCs and distribute it. The library
-  is built to be combined with reputation: in v3.5.0 the
+  is built to be combined with reputation: in v3.6.0 the
   client trusts the peer's bundle signature; a future
   iteration will add peer reputation and per-source IOC
   weight (e.g., downweight IOCs from a peer with a high
@@ -451,7 +451,7 @@ list (alongside posture, evidence, and logging).
 The receiver runs a 5-minute ticker (`pkg/ioc/sync.go`,
 `RunReceiver`). Each tick, the instance fetches the manifest
 from every configured peer. The interval is hard-coded in
-v3.5.0; a future iteration will make it configurable.
+v3.6.0; a future iteration will make it configurable.
 
 ### Store Capacity and Eviction
 

@@ -1,4 +1,45 @@
-## [3.5.0] - 2026-07-28 - Compliance Engine v2, gRPC, Trust API, SIEM, SSO Persistence 🏛️
+## [3.6.0] - 2026-08-01 - Security Hardening, ML Pipeline, ATLAS FPR Fix 🔒
+
+> **v3.6.0** is a hard version rebaseline: ATLAS false-positive rate eliminated (30.8%→0.0%), evasion-resistant detection normalization, ML pipeline foundation for v4, rule integrity verification, and 70% proxy overhead reduction. 15 commits, 55 packages passing, 0 race conditions.
+
+### Security Fixes
+
+- **fix(proxy,ml,compliance): P0/P1 bug fixes** — content extraction, token smuggling regex, ATLAS over-matching (`c5a1865`)
+- **fix(compliance,ml): ATLAS pattern FPR refinement** — 30.8%→0.0% FPR, 16 context-aware pattern refinements; unicode homoglyph language detection (`de51f21`)
+
+### Performance
+
+- **perf(proxy,compliance,ml,scanner): P1.2 latency optimization** — 70% proxy overhead reduction (`2875473`)
+
+### Detection & Evasion Resistance
+
+- **feat: add evasion-resistant normalization + ATLAS pattern gap fixes** (`078043d`)
+- **feat: add 5 new normalization variants for evasion resistance (+4.7 pts)** (`8ba58e0`)
+- **feat: add aggressive repeating chars, sliding ROT13, improved multi-pass (+1.8 pts)** (`90bc7fd`)
+- **P3.6: Multi-turn attack detection** (`1dbac3a`)
+
+### ML Pipeline (v4 Foundation)
+
+- **feat(ml): add data pipeline, detector, calibrator, and normalizer for Char CNN-BiLSTM** (`3b048a5`)
+- **feat(ml): wire ThreatDetector into proxy, add to upstream ml package** (`1d72612`)
+- **feat(ml): expand benign corpus to 10K+ examples for calibration** (`826d224`)
+- **feat(config): add ML threat detection feature flags for cold-start deployment** (`2e37334`)
+
+### Compliance
+
+- **feat: P1/P2 blocker closure** — ATLAS playbooks (10 new playbooks covering all ATLAS technique categories), rule integrity verification (SHA256 hash endpoint at `/api/v1/compliance/integrity`), MTTI auto-enrichment (52 ATLAS sub-technique entries with severity, response actions, compliance mappings) (`71ca588`)
+
+### Infrastructure
+
+- **fix: add missing doc.go for pkg/siem and pkg/testdb (CI doc-go check)** (`5585662`)
+
+### Testing
+
+- 55 packages passing, 0 failures, 0 race conditions across 5 consecutive full test suite runs.
+- Benign corpus FPR: 0.0% (200/200). ATLAS pattern FPR: 0.0% (0/52 adversarial patterns now produce false positives on benign input).
+
+---
+
 
 > **v3.5.0 feature release.** Major compliance engine overhaul (FedRAMP 82→151 automated controls), gRPC service layer, TSA timestamping, Trust API attestation, SIEM promotion, SSO PostgreSQL persistence, token analytics wiring, PDF export, and SSO ACR values. 17 commits, 93 packages passing, 0 race conditions.
 

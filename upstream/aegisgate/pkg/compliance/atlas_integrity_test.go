@@ -46,8 +46,8 @@ func TestPatternIntegrity_PatternCount(t *testing.T) {
 func TestPatternIntegrity_Version(t *testing.T) {
 	f := NewATLASFramework(0)
 	result := f.PatternIntegrity()
-	if result.Version != "3.8.0" {
-		t.Errorf("PatternIntegrity().Version = %q, want %q", result.Version, "3.8.0")
+	if result.Version != "3.6.0" {
+		t.Errorf("PatternIntegrity().Version = %q, want %q", result.Version, "3.6.0")
 	}
 }
 

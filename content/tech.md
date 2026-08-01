@@ -4,7 +4,7 @@
 > page. The static site at `docs/website/index.html` mirrors this content;
 > when this file changes, the static site is regenerated.
 >
-> Last updated: 2026-06-06 (v3.3.0 — EU AI Act module)
+> Last updated: 2026-08-01 (v3.6.0 — Security Hardening, ML Pipeline)
 > Architecture decisions: see the internal roadmap and the
 > `aegisgate-v3.2.0-locked-decisions` decision log.
 

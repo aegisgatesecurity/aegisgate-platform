@@ -97,7 +97,7 @@
 ## Citation
 
 ```
-AegisGate Platform v3.8.0
+AegisGate Platform v3.6.0
 Char CNN-BiLSTM with Attention — Threat Detection Model v4.0
 Apache License 2.0
 https://github.com/aegisgatesecurity/aegisgate-platform
