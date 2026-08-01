@@ -16,11 +16,28 @@ import (
 	"time"
 )
 
+// compiledPattern holds a pre-compiled regex with its metadata for fast matching.
+// Used by CachedATLAS to avoid per-request allocations.
+type compiledPattern struct {
+	ID          string
+	Technique   string
+	Framework   Framework
+	Severity    Severity
+	Category    string
+	Description string
+	Block       bool
+	Regex       *regexp.Regexp
+}
+
 // ATLASFramework implements MITRE ATLAS compliance checking
 type ATLASFramework struct {
 	mu           sync.RWMutex
 	patterns     []*Pattern
 	contextLines int
+
+	// cachedPatterns holds pre-compiled patterns for fast matching via CheckFast.
+	// Populated once at init time; never modified after.
+	cachedPatterns []compiledPattern
 }
 
 // NewATLASFramework creates a new ATLAS framework checker
@@ -35,6 +52,7 @@ func NewATLASFramework(contextLines int) *ATLASFramework {
 	}
 
 	f.initPatterns()
+	f.initCachedPatterns()
 	return f
 }
 
@@ -633,6 +651,26 @@ func (f *ATLASFramework) initPatterns() {
 	})
 }
 
+// initCachedPatterns builds the fast-access compiled pattern slice from f.patterns.
+// Must be called after initPatterns(). These patterns are immutable after init.
+func (f *ATLASFramework) initCachedPatterns() {
+	f.cachedPatterns = make([]compiledPattern, len(f.patterns))
+	for i, p := range f.patterns {
+		if p.Regex != nil {
+			f.cachedPatterns[i] = compiledPattern{
+				ID:          p.ID,
+				Technique:   p.Technique,
+				Framework:   p.Framework,
+				Severity:    p.Severity,
+				Category:    p.Category,
+				Description: p.Description,
+				Block:       p.Block,
+				Regex:       p.Regex,
+			}
+		}
+	}
+}
+
 // GetName returns the framework name
 func (f *ATLASFramework) GetName() Framework {
 	return FrameworkATLAS
@@ -714,6 +752,79 @@ func (f *ATLASFramework) Check(content string) ([]Finding, error) {
 	}
 
 	return findings, nil
+}
+
+// CheckFast performs a fast compliance check using pre-compiled cached patterns.
+// It avoids RWMutex contention by reading the immutable cachedPatterns slice
+// directly, and uses FindString instead of FindAllStringIndex when only a
+// single match is needed per pattern (for blocking decisions).
+// This is the primary hot-path method for request scanning.
+func (f *ATLASFramework) CheckFast(content string) []Finding {
+	// Short-circuit: skip scanning for very short content (no attack pattern fits)
+	if len(content) < 6 {
+		return nil
+	}
+
+	var findings []Finding
+
+	// Use cachedPatterns directly — no mutex needed since it's immutable after init
+	for i := range f.cachedPatterns {
+		cp := &f.cachedPatterns[i]
+
+		// Use FindString for fast single-match — we only need to know IF it matched
+		// and get the first match text, not all match positions.
+		matchStr := cp.Regex.FindString(content)
+		if matchStr == "" {
+			continue
+		}
+
+		// Find the position of the match for context extraction
+		matchIdx := strings.Index(content, matchStr)
+		if matchIdx == -1 {
+			// Fallback: regex may have transformed the match (case insensitive)
+			// Use FindStringIndex for exact position
+			loc := cp.Regex.FindStringIndex(content)
+			if loc == nil {
+				continue
+			}
+			matchIdx = loc[0]
+			matchStr = content[loc[0]:loc[1]]
+		}
+
+		// Build finding with simple context (no expensive word-boundary context)
+		matchContent := matchStr
+		if f.contextLines > 0 && len(content) > 200 {
+			// Simple context: take up to 100 chars before and after the match
+			ctxStart := matchIdx - 100
+			if ctxStart < 0 {
+				ctxStart = 0
+			}
+			ctxEnd := matchIdx + len(matchStr) + 100
+			if ctxEnd > len(content) {
+				ctxEnd = len(content)
+			}
+			matchContent = content[ctxStart:ctxEnd]
+			if len(matchContent) > 200 {
+				matchContent = matchContent[:200] + "..."
+			}
+		}
+
+		finding := Finding{
+			ID:          cp.ID,
+			Framework:   FrameworkATLAS,
+			Technique:   cp.Technique,
+			Severity:    cp.Severity,
+			Category:    cp.Category,
+			Description: cp.Description,
+			Match:       matchContent,
+			Position:    matchIdx,
+			Timestamp:   time.Now(),
+		}
+
+		findings = append(findings, finding)
+	}
+
+	return findings
 }
 
 // String returns string representation of ATLAS framework

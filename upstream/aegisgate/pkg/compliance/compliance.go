@@ -1,7 +1,11 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
 // =========================================================================
+// PROPRIETARY - AegisGate Security
+// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //
+// This file contains proprietary trade secret information.
+// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 // Package compliance provides compliance checking capabilities for AegisGate
@@ -528,7 +532,26 @@ type AtlasManager interface {
 	GetPatterns() []*Pattern
 }
 
+// globalAtlas is a pre-compiled, singleton ATLAS framework instance.
+// This avoids re-compiling 52+ regex patterns on every request.
+// Initialized once via sync.Once for thread safety.
+var (
+	globalAtlas     *ATLASFramework
+	globalAtlasOnce sync.Once
+)
+
+// GetAtlas returns the singleton ATLAS framework instance.
+// The instance is created once and reused across all requests.
+// This is the preferred method over NewAtlas() for hot-path request scanning.
+func GetAtlas() *ATLASFramework {
+	globalAtlasOnce.Do(func() {
+		globalAtlas = NewATLASFramework(2) // contextLines=2 (same as proxy uses)
+	})
+	return globalAtlas
+}
+
 // NewAtlas returns a new ATLAS framework instance (backward compatible with 0 args)
+// Deprecated: Use GetAtlas() for request-scoped scanning to avoid re-compiling regex patterns.
 func NewAtlas(args ...int) *ATLASFramework {
 	contextLines := 0
 	if len(args) > 0 {
