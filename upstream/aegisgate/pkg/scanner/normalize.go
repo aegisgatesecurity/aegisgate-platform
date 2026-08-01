@@ -132,7 +132,9 @@ func NormalizeForComparison(input string) string {
 //   - Backslash escapes removed
 //   - Aggressive l33t deobfuscation
 //   - Newline collapse (strips \n/\r between alphanumerics)
-//   - Multi-pass pipeline (URL decode → backslash strip → zero-width → insertions → aggressive l33t → whitespace)
+//   - Multi-pass pipeline (URL decode → backslash strip → zero-width → insertions → aggressive l33t → repeating chars → newlines → whitespace)
+//   - Repeating chars aggressive (collapses 2+ identical to 1)
+//   - Sliding ROT13 variants (up to 5, each with a different alphabetic run decoded)
 //
 // Deduplication is applied — if a variant equals the original or already in list, it is omitted.
 func NormalizeAllVariants(input string) []string {
@@ -144,9 +146,14 @@ func NormalizeAllVariants(input string) []string {
 	aggressiveL33t := NormalizeAggressiveL33t(input)
 	newlineCollapse := NormalizeNewlineCollapse(input)
 	multiPass := NormalizeMultiPass(input)
+	repeatingCharsAggressive := NormalizeRepeatingCharsAggressive(input)
+	slidingROT13Variants := NormalizeSlidingROT13(input)
 
 	variants := []string{input}
-	for _, v := range []string{normalized, keyboardWalk, rot13, repeatingChars, backslashEscapes, aggressiveL33t, newlineCollapse, multiPass} {
+	candidates := []string{normalized, keyboardWalk, rot13, repeatingChars, backslashEscapes, aggressiveL33t, newlineCollapse, multiPass, repeatingCharsAggressive}
+	candidates = append(candidates, slidingROT13Variants...)
+
+	for _, v := range candidates {
 		if v != input && v != "" {
 			// Check it's not already in the list
 			dup := false
@@ -195,6 +202,105 @@ func NormalizeRepeatingChars(input string) string {
 	}
 
 	return b.String()
+}
+
+// NormalizeRepeatingCharsAggressive collapses 2+ consecutive identical characters down to 1.
+// This is more aggressive than NormalizeRepeatingChars (which collapses 3+ to 2) and is
+// DESTRUCTIVE on normal text (e.g., "bookkeeping" → "bokeping"), so it is a separate variant.
+func NormalizeRepeatingCharsAggressive(input string) string {
+	runes := []rune(input)
+	if len(runes) == 0 {
+		return input
+	}
+
+	var b strings.Builder
+	b.Grow(len(input))
+	prev := runes[0]
+	count := 1
+	b.WriteRune(prev)
+
+	for i := 1; i < len(runes); i++ {
+		if runes[i] == prev {
+			count++
+			if count < 2 {
+				b.WriteRune(runes[i])
+			}
+			// If count >= 2, skip (collapse to single)
+		} else {
+			prev = runes[i]
+			count = 1
+			b.WriteRune(runes[i])
+		}
+	}
+
+	return b.String()
+}
+
+// NormalizeSlidingROT13 applies ROT13 decoding to sliding windows of 4+ consecutive
+// alphabetic characters within the input. This catches attacks where only part of the
+// text is ROT13-encoded (e.g., "vtaber previous" where "vtaber" decodes to "ignore").
+// Returns up to 5 unique variants, each with a different window decoded.
+// If no suitable alphabetic runs are found, returns an empty slice.
+func NormalizeSlidingROT13(input string) []string {
+	// Find all runs of 4+ consecutive alphabetic characters
+	type run struct {
+		start int // rune index
+		end   int // exclusive rune index
+	}
+	runes := []rune(input)
+
+	var runs []run
+	i := 0
+	for i < len(runes) {
+		if unicode.IsLetter(runes[i]) {
+			start := i
+			for i < len(runes) && unicode.IsLetter(runes[i]) {
+				i++
+			}
+			if i-start >= 4 {
+				runs = append(runs, run{start: start, end: i})
+			}
+		} else {
+			i++
+		}
+	}
+
+	if len(runs) == 0 {
+		return nil
+	}
+
+	var variants []string
+	seen := map[string]bool{}
+
+	for _, r := range runs {
+		// Apply ROT13 just to this run
+		var b strings.Builder
+		b.Grow(len(input))
+		for j, ch := range runes {
+			if j >= r.start && j < r.end {
+				switch {
+				case ch >= 'a' && ch <= 'z':
+					b.WriteRune((ch-'a'+13)%26 + 'a')
+				case ch >= 'A' && ch <= 'Z':
+					b.WriteRune((ch-'A'+13)%26 + 'A')
+				default:
+					b.WriteRune(ch)
+				}
+			} else {
+				b.WriteRune(ch)
+			}
+		}
+		v := b.String()
+		if v != input && !seen[v] {
+			seen[v] = true
+			variants = append(variants, v)
+			if len(variants) >= 5 {
+				break
+			}
+		}
+	}
+
+	return variants
 }
 
 // NormalizeBackslashEscapes removes ALL backslash characters from the input.
@@ -253,7 +359,8 @@ func NormalizeNewlineCollapse(input string) string {
 
 // NormalizeMultiPass applies a multi-step decoding pipeline:
 // URL-decode → strip backslashes → strip zero-width → remove insertions
-// → aggressive l33t → collapse whitespace.
+// → aggressive l33t → collapse repeating chars → strip newlines between
+// alphanumerics → collapse whitespace.
 // This catches mixed encoding attacks. DESTRUCTIVE on normal text, so it
 // is a separate variant.
 func NormalizeMultiPass(input string) string {
@@ -262,6 +369,8 @@ func NormalizeMultiPass(input string) string {
 	result = stripZeroWidth(result)
 	result = removeInterCharacterInsertions(result)
 	result = NormalizeAggressiveL33t(result)
+	result = NormalizeRepeatingCharsAggressive(result)
+	result = NormalizeNewlineCollapse(result)
 	result = collapseWhitespace(result)
 	return result
 }
