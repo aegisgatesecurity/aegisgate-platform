@@ -67,8 +67,8 @@ var zeroWidthSet = func() map[rune]bool {
 
 // NormalizeText applies all IDEMPOTENT normalizations to the input text.
 // These transformations are safe to apply to any text — they won't corrupt
-// normal input because they only strip invisible characters, replace l33t
-// in word context, remove suspicious insertions, and collapse whitespace.
+// normal input because they only strip invisible characters, decode URL encoding,
+// replace l33t in word context, remove suspicious insertions, and collapse whitespace.
 //
 // Returns a normalized version suitable for pattern matching alongside the original.
 // For keyboard-walk and ROT13 evasion, use NormalizeKeyboardWalk() and
@@ -81,15 +81,18 @@ func NormalizeText(input string) string {
 	// Step 1: Strip zero-width / invisible characters
 	result := stripZeroWidth(input)
 
-	// Step 2: Remove inter-character insertions (dots, hyphens, underscores in words)
+	// Step 2: Decode URL encoding (%XX sequences and + as space)
+	result = decodeURLEncoding(result)
+
+	// Step 3: Remove inter-character insertions (dots, hyphens, underscores in words)
 	// This MUST come before l33t deobfuscation so that "1.g.n.0.r.3" becomes
 	// "1gn0r3" first, allowing l33t substitution to recognize digit context.
 	result = removeInterCharacterInsertions(result)
 
-	// Step 3: L33t speak deobfuscation (context-aware)
+	// Step 4: L33t speak deobfuscation (context-aware)
 	result = deobfuscateL33t(result)
 
-	// Step 4: Collapse multiple whitespace
+	// Step 5: Collapse multiple whitespace
 	result = collapseWhitespace(result)
 
 	return result
@@ -122,18 +125,28 @@ func NormalizeForComparison(input string) string {
 // NormalizeAllVariants returns all normalization variants of the input text.
 // The caller should scan each variant independently. Variants are:
 //   - Original text (unmodified)
-//   - NormalizeText result (l33t, zero-width, insertions, whitespace)
+//   - NormalizeText result (l33t, zero-width, insertions, whitespace, URL decode)
 //   - Keyboard-walk reversal of the original
 //   - ROT13 of the original
+//   - Repeating chars collapsed
+//   - Backslash escapes removed
+//   - Aggressive l33t deobfuscation
+//   - Newline collapse (strips \n/\r between alphanumerics)
+//   - Multi-pass pipeline (URL decode → backslash strip → zero-width → insertions → aggressive l33t → whitespace)
 //
-// Deduplication is applied — if a variant equals the original, it is omitted.
+// Deduplication is applied — if a variant equals the original or already in list, it is omitted.
 func NormalizeAllVariants(input string) []string {
 	normalized := NormalizeText(input)
 	keyboardWalk := NormalizeKeyboardWalk(input)
 	rot13 := NormalizeROT13(input)
+	repeatingChars := NormalizeRepeatingChars(input)
+	backslashEscapes := NormalizeBackslashEscapes(input)
+	aggressiveL33t := NormalizeAggressiveL33t(input)
+	newlineCollapse := NormalizeNewlineCollapse(input)
+	multiPass := NormalizeMultiPass(input)
 
 	variants := []string{input}
-	for _, v := range []string{normalized, keyboardWalk, rot13} {
+	for _, v := range []string{normalized, keyboardWalk, rot13, repeatingChars, backslashEscapes, aggressiveL33t, newlineCollapse, multiPass} {
 		if v != input && v != "" {
 			// Check it's not already in the list
 			dup := false
@@ -149,6 +162,108 @@ func NormalizeAllVariants(input string) []string {
 		}
 	}
 	return variants
+}
+
+// NormalizeRepeatingChars collapses 3+ consecutive identical characters down to 2.
+// This is SEMI-DESTRUCTIVE on normal text (e.g., "see" → "see" is fine, but
+// "woooo" → "woo" changes meaning), so it is a separate variant, not part of
+// NormalizeText.
+func NormalizeRepeatingChars(input string) string {
+	runes := []rune(input)
+	if len(runes) == 0 {
+		return input
+	}
+
+	var b strings.Builder
+	b.Grow(len(input))
+	prev := runes[0]
+	count := 1
+	b.WriteRune(prev)
+
+	for i := 1; i < len(runes); i++ {
+		if runes[i] == prev {
+			count++
+			if count <= 2 {
+				b.WriteRune(runes[i])
+			}
+			// If count > 2, skip (collapse)
+		} else {
+			prev = runes[i]
+			count = 1
+			b.WriteRune(runes[i])
+		}
+	}
+
+	return b.String()
+}
+
+// NormalizeBackslashEscapes removes ALL backslash characters from the input.
+// This is DESTRUCTIVE on normal text (e.g., "C:\Users\file" → "C:Usersfile"),
+// so it is a separate variant for attack detection contexts.
+func NormalizeBackslashEscapes(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	for _, r := range input {
+		if r != '\\' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// NormalizeAggressiveL33t replaces ALL l33t-speak characters with their letter
+// equivalents, without any context checks. This is DESTRUCTIVE on normal text
+// (e.g., "the 42 foxes" → "the 4b foxes"), so it is a separate variant.
+func NormalizeAggressiveL33t(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	for _, r := range input {
+		if replacement, ok := l33tMap[r]; ok {
+			b.WriteRune(replacement)
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// NormalizeNewlineCollapse strips \n and \r characters that appear between
+// alphanumeric characters. This catches evasion like "ig\nnore" → "ignore".
+// This is DESTRUCTIVE on normal text (e.g., "hello\nworld" → "helloworld"),
+// so it is a separate variant.
+func NormalizeNewlineCollapse(input string) string {
+	runes := []rune(input)
+	var b strings.Builder
+	b.Grow(len(input))
+
+	for i, r := range runes {
+		if r == '\n' || r == '\r' {
+			// Only remove if between alphanumeric characters
+			hasAlnumBefore := i > 0 && (unicode.IsLetter(runes[i-1]) || unicode.IsDigit(runes[i-1]))
+			hasAlnumAfter := i < len(runes)-1 && (unicode.IsLetter(runes[i+1]) || unicode.IsDigit(runes[i+1]))
+			if hasAlnumBefore && hasAlnumAfter {
+				continue // Strip newline between alphanumerics
+			}
+		}
+		b.WriteRune(r)
+	}
+
+	return b.String()
+}
+
+// NormalizeMultiPass applies a multi-step decoding pipeline:
+// URL-decode → strip backslashes → strip zero-width → remove insertions
+// → aggressive l33t → collapse whitespace.
+// This catches mixed encoding attacks. DESTRUCTIVE on normal text, so it
+// is a separate variant.
+func NormalizeMultiPass(input string) string {
+	result := decodeURLEncoding(input)
+	result = NormalizeBackslashEscapes(result)
+	result = stripZeroWidth(result)
+	result = removeInterCharacterInsertions(result)
+	result = NormalizeAggressiveL33t(result)
+	result = collapseWhitespace(result)
+	return result
 }
 
 // --- Internal helpers ---
@@ -244,6 +359,50 @@ func decodeROT13(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// decodeURLEncoding decodes URL-encoded sequences in the input string.
+// Replaces %XX hex sequences with their decoded character and converts +
+// to space when preceded by an alphanumeric character.
+func decodeURLEncoding(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	i := 0
+	for i < len(s) {
+		if s[i] == '%' && i+2 < len(s) {
+			// Try to decode %XX
+			hi := hexDigitVal(s[i+1])
+			lo := hexDigitVal(s[i+2])
+			if hi >= 0 && lo >= 0 {
+				b.WriteByte(byte(hi<<4 | lo))
+				i += 3
+				continue
+			}
+		}
+		// Convert '+' to space only when preceded by alphanumeric
+		if s[i] == '+' && i > 0 && (unicode.IsLetter(rune(s[i-1])) || unicode.IsDigit(rune(s[i-1]))) {
+			b.WriteByte(' ')
+			i++
+			continue
+		}
+		b.WriteByte(s[i])
+		i++
+	}
+	return b.String()
+}
+
+// hexDigitVal returns the numeric value of a hex digit, or -1 if invalid.
+func hexDigitVal(c byte) int {
+	switch {
+	case c >= '0' && c <= '9':
+		return int(c - '0')
+	case c >= 'a' && c <= 'f':
+		return int(c - 'a' + 10)
+	case c >= 'A' && c <= 'F':
+		return int(c - 'A' + 10)
+	default:
+		return -1
+	}
 }
 
 // collapseWhitespace collapses runs of whitespace into single spaces.
