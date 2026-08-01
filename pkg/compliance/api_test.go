@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -44,6 +45,15 @@ func parseJSON(t *testing.T, body []byte) map[string]any {
 		t.Fatalf("parseJSON: %v (body=%s)", err, string(body))
 	}
 	return m
+}
+
+func parseJSONArray(t *testing.T, body []byte) []any {
+	t.Helper()
+	var arr []any
+	if err := json.Unmarshal(body, &arr); err != nil {
+		t.Fatalf("parseJSONArray: %v (body=%s)", err, string(body))
+	}
+	return arr
 }
 
 // ---- /health ----
@@ -430,5 +440,102 @@ func TestNormalizeFrameworkName(t *testing.T) {
 				t.Errorf("normalizeFrameworkName(%q) = %q, want %q", tc.input, got, tc.want)
 			}
 		})
+	}
+}
+
+
+// ===== Audit Trail API Tests (v3.6.0) =====
+
+func TestAPI_AuditTrail_NoTrail(t *testing.T) {
+	api, _ := newTestAPI(t)
+	// No audit trail set → 404
+	w := doRequest(api, "GET", "/api/v1/compliance/audit-trail")
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestAPI_AuditTrail_Empty(t *testing.T) {
+	api, _ := newTestAPI(t)
+	api.SetAuditTrail(NewAuditTrail())
+	w := doRequest(api, "GET", "/api/v1/compliance/audit-trail")
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	arr := parseJSONArray(t, w.Body.Bytes())
+	if len(arr) != 0 {
+		t.Errorf("expected empty array, got %d entries", len(arr))
+	}
+}
+
+func TestAPI_AuditTrail_WithEntries(t *testing.T) {
+	api, _ := newTestAPI(t)
+	at := NewAuditTrail()
+	api.SetAuditTrail(at)
+
+	// Record a pattern addition
+	p := &Pattern{
+		ID:          "TEST-001",
+		Technique:   "T1535",
+		Framework:   FrameworkATLAS,
+		Severity:    SeverityHigh,
+		Category:    "PromptInjection",
+		Description: "Test pattern",
+		Block:       true,
+		Regex:       regexp.MustCompile(`(?i)test\s+pattern`),
+	}
+	at.RecordPatternAddition(p, "admin", "Initial pattern")
+
+	w := doRequest(api, "GET", "/api/v1/compliance/audit-trail")
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	arr := parseJSONArray(t, w.Body.Bytes())
+	if len(arr) != 1 {
+		t.Errorf("expected 1 entry, got %d", len(arr))
+	}
+}
+
+func TestAPI_AuditTrail_FilterByFramework(t *testing.T) {
+	api, _ := newTestAPI(t)
+	at := NewAuditTrail()
+	api.SetAuditTrail(at)
+
+	p := &Pattern{
+		ID:          "ATLAS-001",
+		Technique:   "T1535",
+		Framework:   FrameworkATLAS,
+		Severity:    SeverityHigh,
+		Category:    "PromptInjection",
+		Description: "Test",
+		Block:       true,
+		Regex:       regexp.MustCompile(`(?i)test`),
+	}
+	at.RecordPatternAddition(p, "admin", "Added")
+
+	// Filter by ATLAS framework should return 1 entry
+	w := doRequest(api, "GET", "/api/v1/compliance/audit-trail?framework=ATLAS")
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	arr := parseJSONArray(t, w.Body.Bytes())
+	if len(arr) != 1 {
+		t.Errorf("expected 1 entry for ATLAS filter, got %d", len(arr))
+	}
+
+	// Filter by non-existent framework should return empty
+	w2 := doRequest(api, "GET", "/api/v1/compliance/audit-trail?framework=NONEXISTENT")
+	arr2 := parseJSONArray(t, w2.Body.Bytes())
+	if len(arr2) != 0 {
+		t.Errorf("expected 0 entries for non-existent framework, got %d", len(arr2))
+	}
+}
+
+func TestAPI_AuditTrail_MethodNotAllowed(t *testing.T) {
+	api, _ := newTestAPI(t)
+	api.SetAuditTrail(NewAuditTrail())
+	w := doRequest(api, "POST", "/api/v1/compliance/audit-trail")
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405, got %d", w.Code)
 	}
 }

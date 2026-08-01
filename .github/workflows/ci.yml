@@ -250,6 +250,22 @@ jobs:
             exit 1
           fi
 
+      - name: Compliance regression gate
+        run: |
+          echo "## Compliance Regression Gate" >> $GITHUB_STEP_SUMMARY
+          # Run compliance regression tests (baseline comparison, audit trail)
+          go test ./pkg/compliance/ -run "TestRegression|TestCompare|TestCheckInCI|TestSnapshotBaseline|TestLoadBaseline|TestExportBaseline|TestDefaultRegression" \
+            -count=1 -v 2>&1 | tee compliance-regression-results.txt
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Compliance regression gate failed" >> $GITHUB_STEP_SUMMARY
+            echo "   One or more compliance regression tests failed." >> $GITHUB_STEP_SUMMARY
+            echo "   This may indicate a pattern or score regression." >> $GITHUB_STEP_SUMMARY
+            echo "   If intentional, update the baseline and re-commit." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ No compliance regressions detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -261,6 +277,7 @@ jobs:
             coverage.txt
             coverage.out
             doc-go-results.txt
+            compliance-regression-results.txt
 
   govulncheck:
     name: govulncheck

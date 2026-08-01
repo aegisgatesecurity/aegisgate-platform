@@ -11,6 +11,7 @@
 //                                  framework is registered)
 //   GET /health                -> liveness (no auth)
 //   GET /integrity             -> ATLAS pattern set SHA256 hash for auditors
+//   GET /audit-trail            -> rule change audit entries (v3.6.0)
 //
 // Auth (locked decision Q4): license key via
 // pkg/license.LicenseMiddleware. The API itself doesn't enforce
@@ -32,6 +33,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,6 +47,9 @@ type API struct {
 	// license from the request context and call Validate to
 	// produce a ValidationResult for the scanner.
 	mgr *license.Manager
+	// auditTrail is the rule change audit trail. Optional;
+	// if nil, /audit-trail returns 404.
+	auditTrail *AuditTrail
 }
 
 // NewAPI creates a new compliance HTTP API. Both scanner and mgr
@@ -52,6 +57,12 @@ type API struct {
 // scan requests (fail-closed).
 func NewAPI(scanner *Scanner, mgr *license.Manager) *API {
 	return &API{scanner: scanner, mgr: mgr}
+}
+
+// SetAuditTrail sets the audit trail for the API. If set, the
+// /audit-trail endpoint is enabled.
+func (a *API) SetAuditTrail(at *AuditTrail) {
+	a.auditTrail = at
 }
 
 // ServeHTTP implements http.Handler. Strips the
@@ -79,6 +90,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveReport(w, r)
 	case "/integrity":
 		a.serveIntegrity(w, r)
+	case "/audit-trail":
+		a.serveAuditTrail(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -304,6 +317,57 @@ func (a *API) serveIntegrity(w http.ResponseWriter, r *http.Request) {
 		"framework": "MITRE ATLAS",
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// serveAuditTrail returns audit trail entries matching the query
+// parameters. Supports filtering by pattern_id, framework, change_type,
+// since (RFC3339), until (RFC3339), author, and limit.
+//
+// GET /api/v1/compliance/audit-trail?framework=ATLAS&limit=50
+// GET /api/v1/compliance/audit-trail?pattern_id=T1535.001
+// GET /api/v1/compliance/audit-trail?change_type=modified&since=2025-01-01T00:00:00Z
+func (a *API) serveAuditTrail(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.auditTrail == nil {
+		writeError(w, http.StatusNotFound, "audit trail not configured")
+		return
+	}
+
+	q := AuditQuery{
+		PatternID:  r.URL.Query().Get("pattern_id"),
+		ChangeType: ChangeType(r.URL.Query().Get("change_type")),
+		Author:     r.URL.Query().Get("author"),
+	}
+	if fw := r.URL.Query().Get("framework"); fw != "" {
+		q.Framework = Framework(fw)
+	}
+	if since := r.URL.Query().Get("since"); since != "" {
+		if t, err := time.Parse(time.RFC3339, since); err == nil {
+			q.Since = t
+		}
+	}
+	if until := r.URL.Query().Get("until"); until != "" {
+		if t, err := time.Parse(time.RFC3339, until); err == nil {
+			q.Until = t
+		}
+	}
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if n, err := strconv.Atoi(limitStr); err == nil && n > 0 {
+			q.Limit = n
+		}
+	}
+
+	data, err := a.auditTrail.AuditEntriesAsJSON(q)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to query audit trail: "+err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
 }
 
 // ---- helpers ----
