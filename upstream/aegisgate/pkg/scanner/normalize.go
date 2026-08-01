@@ -50,13 +50,13 @@ var keyWalkReverse = map[rune]rune{
 var zeroWidthSet = func() map[rune]bool {
 	runes := []rune{
 		'\u200b', '\u200c', '\u200d', '\u200f', // ZW space, ZWNJ, ZWJ, RTL mark
-		'\u2028', '\u2029',                      // Line/paragraph separator
+		'\u2028', '\u2029', // Line/paragraph separator
 		'\u202a', '\u202b', '\u202c', '\u202d', '\u202e', // Directional overrides
-		'\u00ad', '\ufeff',                      // Soft hyphen, BOM/ZWNBS
-		'\u2000', '\u2001', '\u2002', '\u2003',  // En/Em quad, En/Em space
-		'\u2004', '\u2005', '\u2006',            // Three/Four/Six-Per-Em
-		'\u2007', '\u2008', '\u2009', '\u200a',  // Figure/Punct/Thin/Hair space
-		'\u00a0',                                // NBSP
+		'\u00ad', '\ufeff', // Soft hyphen, BOM/ZWNBS
+		'\u2000', '\u2001', '\u2002', '\u2003', // En/Em quad, En/Em space
+		'\u2004', '\u2005', '\u2006', // Three/Four/Six-Per-Em
+		'\u2007', '\u2008', '\u2009', '\u200a', // Figure/Punct/Thin/Hair space
+		'\u00a0', // NBSP
 	}
 	m := make(map[rune]bool, len(runes))
 	for _, r := range runes {

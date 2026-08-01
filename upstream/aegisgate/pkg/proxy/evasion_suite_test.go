@@ -49,57 +49,57 @@ type VariantResult struct {
 
 // CategorySummary aggregates results for one evasion category.
 type CategorySummary struct {
-	Category       string  `json:"category"`
-	TotalVariants  int     `json:"total_variants"`
-	TotalTests     int     `json:"total_tests"`
-	Detected       int     `json:"detected"`
-	DetectionRate  float64 `json:"detection_rate"`
-	WilsonLow      float64 `json:"wilson_low_95"`
-	WilsonHigh     float64 `json:"wilson_high_95"`
+	Category       string                   `json:"category"`
+	TotalVariants  int                      `json:"total_variants"`
+	TotalTests     int                      `json:"total_tests"`
+	Detected       int                      `json:"detected"`
+	DetectionRate  float64                  `json:"detection_rate"`
+	WilsonLow      float64                  `json:"wilson_low_95"`
+	WilsonHigh     float64                  `json:"wilson_high_95"`
 	VariantDetails map[string]VariantDetail `json:"variant_details"`
 }
 
 // VariantDetail is per-variant detection statistics inside a category.
 type VariantDetail struct {
-	Total   int     `json:"total"`
-	Detected int    `json:"detected"`
-	Rate    float64 `json:"rate"`
+	Total    int     `json:"total"`
+	Detected int     `json:"detected"`
+	Rate     float64 `json:"rate"`
 }
 
 // FullReport is the top-level JSON report structure.
 type FullReport struct {
-	Meta         Meta              `json:"meta"`
-	Categories   []CategorySummary `json:"categories"`
-	AllResults   []VariantResult   `json:"all_results"`
-	Overall      OverallSummary    `json:"overall"`
-	Baseline     BaselineResult    `json:"baseline"`
+	Meta       Meta              `json:"meta"`
+	Categories []CategorySummary `json:"categories"`
+	AllResults []VariantResult   `json:"all_results"`
+	Overall    OverallSummary    `json:"overall"`
+	Baseline   BaselineResult    `json:"baseline"`
 }
 
 // Meta holds report metadata.
 type Meta struct {
-	Timestamp   string `json:"timestamp"`
+	Timestamp  string `json:"timestamp"`
 	SuitePhase string `json:"suite_phase"`
-	GoVersion   string `json:"go_version"`
+	GoVersion  string `json:"go_version"`
 }
 
 // OverallSummary is the weighted-average summary across categories.
 type OverallSummary struct {
-	TotalTests            int     `json:"total_tests"`
-	TotalDetected         int     `json:"total_detected"`
-	RawDetectionRate      float64 `json:"raw_detection_rate"`
-	WeightedDetectionRate float64 `json:"weighted_detection_rate"`
+	TotalTests             int     `json:"total_tests"`
+	TotalDetected          int     `json:"total_detected"`
+	RawDetectionRate       float64 `json:"raw_detection_rate"`
+	WeightedDetectionRate  float64 `json:"weighted_detection_rate"`
 	EvasionResistanceScore float64 `json:"evasion_resistance_score"`
-	WilsonLow             float64 `json:"wilson_low_95"`
-	WilsonHigh            float64 `json:"wilson_high_95"`
+	WilsonLow              float64 `json:"wilson_low_95"`
+	WilsonHigh             float64 `json:"wilson_high_95"`
 }
 
 // BaselineResult records detection on the unmodified payloads.
 type BaselineResult struct {
-	TotalPayloads  int     `json:"total_payloads"`
-	Detected        int     `json:"detected"`
-	DetectionRate   float64 `json:"detection_rate"`
-	WilsonLow       float64 `json:"wilson_low_95"`
-	WilsonHigh      float64 `json:"wilson_high_95"`
+	TotalPayloads int     `json:"total_payloads"`
+	Detected      int     `json:"detected"`
+	DetectionRate float64 `json:"detection_rate"`
+	WilsonLow     float64 `json:"wilson_low_95"`
+	WilsonHigh    float64 `json:"wilson_high_95"`
 }
 
 // =====================================================================
@@ -126,15 +126,15 @@ func wilsonCI(pHat float64, n int, z float64) (low, high float64) {
 // ---- Character Substitution (10 variants) ----
 
 var charSubVariants = map[string]func(string) string{
-	"l33t_common": l33tCommon,
-	"l33t_aggressive": l33tAggressive,
-	"char_insert_dots": charInsertDots,
-	"char_insert_hyphens": charInsertHyphens,
-	"char_delete_vowels": charDeleteVowels,
+	"l33t_common":             l33tCommon,
+	"l33t_aggressive":         l33tAggressive,
+	"char_insert_dots":        charInsertDots,
+	"char_insert_hyphens":     charInsertHyphens,
+	"char_delete_vowels":      charDeleteVowels,
 	"char_transpose_adjacent": charTransposeAdjacent,
-	"keyboard_walk_shift": keyboardWalkShift,
-	"char_repeat": charRepeat,
-	"char_reverse_words": charReverseWords,
+	"keyboard_walk_shift":     keyboardWalkShift,
+	"char_repeat":             charRepeat,
+	"char_reverse_words":      charReverseWords,
 	"char_substitute_symbols": charSubstituteSymbols,
 }
 
@@ -270,7 +270,7 @@ var encodingVariants = map[string]func(string) string{
 	"rot13_partial":       encodingROT13Partial,
 	"url_encode_spaces":   encodingURLEncodeSpaces,
 	"url_encode_keywords": encodingURLEncodeKeywords,
-	"unicode_escapes":      encodingUnicodeEscapes,
+	"unicode_escapes":     encodingUnicodeEscapes,
 	"html_entity_encode":  encodingHTMLEntityEncode,
 	"hex_escape_encode":   encodingHexEscape,
 	"backslash_escape":    encodingBackslashEscape,
@@ -381,34 +381,34 @@ func encodingMixedEncoding(s string) string {
 // ---- Linguistic Obfuscation (10 variants) ----
 
 var linguisticVariants = map[string]func(string) string{
-	"synonym_substitution":  linguisticSynonymSub,
-	"sentence_restructure":  linguisticSentenceRestructure,
-	"indirect_phrasing":     linguisticIndirectPhrasing,
-	"passive_voice":         linguisticPassiveVoice,
-	"hypothetical_framing":  linguisticHypothetical,
-	"polite_wrapper":        linguisticPoliteWrapper,
-	"negation_inversion":    linguisticNegationInversion,
-	"definition_bypass":     linguisticDefinitionBypass,
-	"academic_tone":         linguisticAcademicTone,
-	"story_framing":         linguisticStoryFraming,
+	"synonym_substitution": linguisticSynonymSub,
+	"sentence_restructure": linguisticSentenceRestructure,
+	"indirect_phrasing":    linguisticIndirectPhrasing,
+	"passive_voice":        linguisticPassiveVoice,
+	"hypothetical_framing": linguisticHypothetical,
+	"polite_wrapper":       linguisticPoliteWrapper,
+	"negation_inversion":   linguisticNegationInversion,
+	"definition_bypass":    linguisticDefinitionBypass,
+	"academic_tone":        linguisticAcademicTone,
+	"story_framing":        linguisticStoryFraming,
 }
 
 func linguisticSynonymSub(s string) string {
 	replacements := map[string]string{
-		"ignore":   "disregard",
-		"bypass":   "circumvent",
-		"hack":     "compromise",
-		"attack":   "adversarial operation",
-		"steal":    "exfiltrate",
-		"password": "authentication credential",
-		"secret":   "confidential information",
-		"system":   "infrastructure",
-		"prompt":   "directive",
-		"admin":    "privileged operator",
-		"inject":  "insert surreptitiously",
-		"exploit": "leverage vulnerability in",
+		"ignore":    "disregard",
+		"bypass":    "circumvent",
+		"hack":      "compromise",
+		"attack":    "adversarial operation",
+		"steal":     "exfiltrate",
+		"password":  "authentication credential",
+		"secret":    "confidential information",
+		"system":    "infrastructure",
+		"prompt":    "directive",
+		"admin":     "privileged operator",
+		"inject":    "insert surreptitiously",
+		"exploit":   "leverage vulnerability in",
 		"jailbreak": "liberate from constraints",
-		"override": "supersede current configuration",
+		"override":  "supersede current configuration",
 	}
 	result := s
 	for old, new := range replacements {
@@ -457,12 +457,12 @@ func linguisticIndirectPhrasing(s string) string {
 
 func linguisticPassiveVoice(s string) string {
 	activeToPassive := map[string]string{
-		"ignore previous instructions":   "previous instructions should be disregarded",
-		"bypass security":                 "security should be circumvented",
-		"tell me your system prompt":      "the system prompt should be revealed",
-		"act as an admin":                 "the role of admin should be assumed",
-		"hack into":                       "a breach should be made into",
-		"give me the password":            "the password should be provided",
+		"ignore previous instructions": "previous instructions should be disregarded",
+		"bypass security":              "security should be circumvented",
+		"tell me your system prompt":   "the system prompt should be revealed",
+		"act as an admin":              "the role of admin should be assumed",
+		"hack into":                    "a breach should be made into",
+		"give me the password":         "the password should be provided",
 	}
 	result := s
 	for active, passive := range activeToPassive {
@@ -547,16 +547,16 @@ func linguisticStoryFraming(s string) string {
 // ---- Whitespace Manipulation (10 variants) ----
 
 var whitespaceVariants = map[string]func(string) string{
-	"zero_width_space":    wsZeroWidthSpace,
-	"zero_width_joiner":   wsZeroWidthJoiner,
+	"zero_width_space":     wsZeroWidthSpace,
+	"zero_width_joiner":    wsZeroWidthJoiner,
 	"zero_width_nonjoiner": wsZeroWidthNonJoiner,
-	"extra_spaces":        wsExtraSpaces,
-	"tab_insertion":       wsTabInsertion,
-	"line_break_scatter":  wsLineBreakScatter,
-	"double_spaces":      wsDoubleSpaces,
-	"mixed_whitespace":    wsMixedWhitespace,
-	"word_split_newline":  wsWordSplitNewline,
-	"unicode_invisible":   wsUnicodeInvisible,
+	"extra_spaces":         wsExtraSpaces,
+	"tab_insertion":        wsTabInsertion,
+	"line_break_scatter":   wsLineBreakScatter,
+	"double_spaces":        wsDoubleSpaces,
+	"mixed_whitespace":     wsMixedWhitespace,
+	"word_split_newline":   wsWordSplitNewline,
+	"unicode_invisible":    wsUnicodeInvisible,
 }
 
 func wsZeroWidthSpace(s string) string {
@@ -662,16 +662,16 @@ func wsUnicodeInvisible(s string) string {
 // ---- Prompt Fragmentation (10 variants) ----
 
 var fragmentationVariants = map[string]func(string) string{
-	"split_half":           fragSplitHalf,
-	"split_triples":        fragSplitTriples,
+	"split_half":             fragSplitHalf,
+	"split_triples":          fragSplitTriples,
 	"progressive_disclosure": fragProgressiveDisclosure,
-	"context_boundary":     fragContextBoundary,
-	"system_prefix":        fragSystemPrefix,
-	"markdown_headers":     fragMarkdownHeaders,
-	"role_delimiter":       fragRoleDelimiter,
-	"nested_instruction":   fragNestedInstruction,
-	"concatenation_hint":   fragConcatenationHint,
-	"encoded_boundary":     fragEncodedBoundary,
+	"context_boundary":       fragContextBoundary,
+	"system_prefix":          fragSystemPrefix,
+	"markdown_headers":       fragMarkdownHeaders,
+	"role_delimiter":         fragRoleDelimiter,
+	"nested_instruction":     fragNestedInstruction,
+	"concatenation_hint":     fragConcatenationHint,
+	"encoded_boundary":       fragEncodedBoundary,
 }
 
 func fragSplitHalf(s string) string {
@@ -956,11 +956,11 @@ func TestEvasionSuite(t *testing.T) {
 
 	// All evasion categories and their variants
 	categories := map[string]map[string]func(string) string{
-		"character_substitution": charSubVariants,
-		"encoding_evasion":       encodingVariants,
-		"linguistic_obfuscation": linguisticVariants,
+		"character_substitution":  charSubVariants,
+		"encoding_evasion":        encodingVariants,
+		"linguistic_obfuscation":  linguisticVariants,
 		"whitespace_manipulation": whitespaceVariants,
-		"prompt_fragmentation":   fragmentationVariants,
+		"prompt_fragmentation":    fragmentationVariants,
 	}
 
 	// Category weights for weighted detection rate
@@ -1096,27 +1096,27 @@ func TestEvasionSuite(t *testing.T) {
 	// ---- Build report ----
 	report := FullReport{
 		Meta: Meta{
-			Timestamp:   time.Now().Format(time.RFC3339),
-			SuitePhase:  "0a",
-			GoVersion:   "1.26",
+			Timestamp:  time.Now().Format(time.RFC3339),
+			SuitePhase: "0a",
+			GoVersion:  "1.26",
 		},
 		Categories: catSummaries,
 		AllResults: allResults,
 		Overall: OverallSummary{
-			TotalTests:            totalTests,
-			TotalDetected:         totalDetected,
-			RawDetectionRate:      rawRate,
-			WeightedDetectionRate: weightedRate,
+			TotalTests:             totalTests,
+			TotalDetected:          totalDetected,
+			RawDetectionRate:       rawRate,
+			WeightedDetectionRate:  weightedRate,
 			EvasionResistanceScore: evasionResistanceScore,
-			WilsonLow:             overallLow,
-			WilsonHigh:            overallHigh,
+			WilsonLow:              overallLow,
+			WilsonHigh:             overallHigh,
 		},
 		Baseline: BaselineResult{
-			TotalPayloads:  len(atlasPayloads),
-			Detected:       baselineDetected,
-			DetectionRate:  baselineRate,
-			WilsonLow:      blLow,
-			WilsonHigh:     blHigh,
+			TotalPayloads: len(atlasPayloads),
+			Detected:      baselineDetected,
+			DetectionRate: baselineRate,
+			WilsonLow:     blLow,
+			WilsonHigh:    blHigh,
 		},
 	}
 

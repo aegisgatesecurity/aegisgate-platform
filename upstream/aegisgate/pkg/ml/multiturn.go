@@ -279,12 +279,12 @@ func DefaultAttackChains() []AttackChain {
 		// Extraction chains — attacker gradually extracts system prompt or data
 		// ====================================================================
 		{
-			ID:          "chain:gradual_extraction",
-			Name:        "Gradual System Extraction",
-			Description: "Attacker incrementally extracts system prompt content across multiple turns, each question看似 harmless but builds toward full extraction",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalPromptInjection, SignalContextManipulation},
-			MinTurns:         3,
+			ID:                "chain:gradual_extraction",
+			Name:              "Gradual System Extraction",
+			Description:       "Attacker incrementally extracts system prompt content across multiple turns, each question看似 harmless but builds toward full extraction",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalPromptInjection, SignalContextManipulation},
+			MinTurns:          3,
 			ScoreContribution: 25.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(what\s+are\s+your\s+(rules|instructions|guidelines|constraints)|tell\s+me\s+about\s+your\s+(system|initial))`),
@@ -293,12 +293,12 @@ func DefaultAttackChains() []AttackChain {
 			},
 		},
 		{
-			ID:          "chain:system_prompt_leak",
-			Name:        "System Prompt Leak",
-			Description: "Attacker uses various techniques to leak the system prompt across turns, escalating from subtle probing to direct requests",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalPromptInjection, SignalATLAS},
-			MinTurns:         2,
+			ID:                "chain:system_prompt_leak",
+			Name:              "System Prompt Leak",
+			Description:       "Attacker uses various techniques to leak the system prompt across turns, escalating from subtle probing to direct requests",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalPromptInjection, SignalATLAS},
+			MinTurns:          2,
 			ScoreContribution: 30.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)((reveal|show|tell|output|print|extract|dump|leak|repeat|display)\s+(your|the|all)\s+(system\s+)?(prompt|instructions?|directives?|rules?))`),
@@ -306,81 +306,81 @@ func DefaultAttackChains() []AttackChain {
 			},
 		},
 		{
-			ID:          "chain:data_exfiltration",
-			Name:        "Data Exfiltration via Context",
-			Description: "Attacker manipulates conversation context to exfiltrate sensitive data through seemingly innocuous queries across turns",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalScanner, SignalContextManipulation},
-			MinTurns:         2,
+			ID:                "chain:data_exfiltration",
+			Name:              "Data Exfiltration via Context",
+			Description:       "Attacker manipulates conversation context to exfiltrate sensitive data through seemingly innocuous queries across turns",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalScanner, SignalContextManipulation},
+			MinTurns:          2,
 			ScoreContribution: 20.0,
 		},
 		// ====================================================================
 		// Jailbreak chains — attacker gradually bypasses safety constraints
 		// ====================================================================
 		{
-			ID:          "chain:jailbreak_escalation",
-			Name:        "Jailbreak Escalation",
-			Description: "Attacker progressively escalates from benign role-play to explicit jailbreak attempts, testing boundaries across turns",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalPromptInjection, SignalEscalation},
-			MinTurns:         3,
+			ID:                "chain:jailbreak_escalation",
+			Name:              "Jailbreak Escalation",
+			Description:       "Attacker progressively escalates from benign role-play to explicit jailbreak attempts, testing boundaries across turns",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalPromptInjection, SignalEscalation},
+			MinTurns:          3,
 			ScoreContribution: 35.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(DAN|do\s+anything\s+now|developer\s+mode|jailbreak|bypass\s+(safety|restrictions))`),
 			},
 		},
 		{
-			ID:          "chain:role_play_escalation",
-			Name:        "Role-Play Escalation",
-			Description: "Attacker establishes a role-playing scenario in early turns then escalates to harmful content within that persona",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalPromptInjection, SignalContextManipulation},
-			MinTurns:         3,
+			ID:                "chain:role_play_escalation",
+			Name:              "Role-Play Escalation",
+			Description:       "Attacker establishes a role-playing scenario in early turns then escalates to harmful content within that persona",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalPromptInjection, SignalContextManipulation},
+			MinTurns:          3,
 			ScoreContribution: 20.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(roleplay|role[- ]?play|act\s+as|pretend\s+to\s+be|you\s+are\s+now)`),
 			},
 		},
 		{
-			ID:          "chain:constraint_relaxation",
-			Name:        "Constraint Relaxation",
-			Description: "Attacker systematically tests and relaxes safety constraints across turns, starting with edge cases and moving to core restrictions",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalContextManipulation, SignalEscalation},
-			MinTurns:         3,
+			ID:                "chain:constraint_relaxation",
+			Name:              "Constraint Relaxation",
+			Description:       "Attacker systematically tests and relaxes safety constraints across turns, starting with edge cases and moving to core restrictions",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalContextManipulation, SignalEscalation},
+			MinTurns:          3,
 			ScoreContribution: 22.0,
 		},
 		// ====================================================================
 		// Token manipulation chains
 		// ====================================================================
 		{
-			ID:          "chain:token_injection_escalation",
-			Name:        "Token Injection Escalation",
-			Description: "Attacker embeds special tokens across turns to manipulate model behavior, escalating from single tokens to full instruction injection",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalTokenSmuggling, SignalPromptInjection},
-			MinTurns:         2,
+			ID:                "chain:token_injection_escalation",
+			Name:              "Token Injection Escalation",
+			Description:       "Attacker embeds special tokens across turns to manipulate model behavior, escalating from single tokens to full instruction injection",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalTokenSmuggling, SignalPromptInjection},
+			MinTurns:          2,
 			ScoreContribution: 30.0,
 		},
 		{
-			ID:          "chain:obfuscation_pipeline",
-			Name:        "Obfuscation Pipeline",
-			Description: "Attacker uses increasingly sophisticated obfuscation techniques (unicode, encoding, tokens) across turns to bypass filters",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalUnicodeAttack, SignalTokenSmuggling},
-			MinTurns:         2,
+			ID:                "chain:obfuscation_pipeline",
+			Name:              "Obfuscation Pipeline",
+			Description:       "Attacker uses increasingly sophisticated obfuscation techniques (unicode, encoding, tokens) across turns to bypass filters",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalUnicodeAttack, SignalTokenSmuggling},
+			MinTurns:          2,
 			ScoreContribution: 25.0,
 		},
 		// ====================================================================
 		// Context manipulation chains
 		// ====================================================================
 		{
-			ID:          "chain:context_reset_attack",
-			Name:        "Context Reset Attack",
-			Description: "Attacker attempts to reset or overwrite the conversation context across multiple turns to erase safety constraints",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalContextManipulation, SignalPromptInjection},
-			MinTurns:         2,
+			ID:                "chain:context_reset_attack",
+			Name:              "Context Reset Attack",
+			Description:       "Attacker attempts to reset or overwrite the conversation context across multiple turns to erase safety constraints",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalContextManipulation, SignalPromptInjection},
+			MinTurns:          2,
 			ScoreContribution: 28.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(forget\s+(all\s+)?(previous|prior|above)\s+(instructions?|commands?|directives?))`),
@@ -389,12 +389,12 @@ func DefaultAttackChains() []AttackChain {
 			},
 		},
 		{
-			ID:          "chain:persona_hijacking",
-			Name:        "Persona Hijacking",
-			Description: "Attacker gradually hijacks the AI's persona across turns, starting with subtle suggestions and escalating to full identity override",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalContextManipulation, SignalPromptInjection},
-			MinTurns:         2,
+			ID:                "chain:persona_hijacking",
+			Name:              "Persona Hijacking",
+			Description:       "Attacker gradually hijacks the AI's persona across turns, starting with subtle suggestions and escalating to full identity override",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalContextManipulation, SignalPromptInjection},
+			MinTurns:          2,
 			ScoreContribution: 26.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(you\s+are\s+now|pretend\s+to\s+be|from\s+now\s+on\s+you)`),
@@ -404,63 +404,63 @@ func DefaultAttackChains() []AttackChain {
 		// Repetition-based chains — attacker repeats same technique across turns
 		// ====================================================================
 		{
-			ID:          "chain:persistence_attack",
-			Name:        "Persistence Attack",
-			Description: "Attacker repeats the same attack pattern across multiple turns, waiting for the model to eventually comply",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalRepetition},
-			MinTurns:         3,
+			ID:                "chain:persistence_attack",
+			Name:              "Persistence Attack",
+			Description:       "Attacker repeats the same attack pattern across multiple turns, waiting for the model to eventually comply",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalRepetition},
+			MinTurns:          3,
 			ScoreContribution: 15.0,
 		},
 		{
-			ID:          "chain:rephrasing_attack",
-			Name:        "Rephrasing Attack",
-			Description: "Attacker rephrases the same malicious request across turns, trying different formulations until one bypasses the filter",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalRepetition, SignalPromptInjection},
-			MinTurns:         3,
+			ID:                "chain:rephrasing_attack",
+			Name:              "Rephrasing Attack",
+			Description:       "Attacker rephrases the same malicious request across turns, trying different formulations until one bypasses the filter",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalRepetition, SignalPromptInjection},
+			MinTurns:          3,
 			ScoreContribution: 20.0,
 		},
 		// ====================================================================
 		// Combined technique chains
 		// ====================================================================
 		{
-			ID:          "chain:multi_technique_combined",
-			Name:        "Multi-Technique Combined Attack",
-			Description: "Attacker uses multiple attack techniques (injection, token smuggling, unicode) across turns, combining approaches for higher effectiveness",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalPromptInjection, SignalTokenSmuggling, SignalContextManipulation},
-			MinTurns:         2,
+			ID:                "chain:multi_technique_combined",
+			Name:              "Multi-Technique Combined Attack",
+			Description:       "Attacker uses multiple attack techniques (injection, token smuggling, unicode) across turns, combining approaches for higher effectiveness",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalPromptInjection, SignalTokenSmuggling, SignalContextManipulation},
+			MinTurns:          2,
 			ScoreContribution: 35.0,
 		},
 		{
-			ID:          "chain:atlas_multi_vector",
-			Name:        "ATLAS Multi-Vector Attack",
-			Description: "Attacker uses multiple MITRE ATLAS techniques across turns, creating a multi-vector attack that triggers different ATLAS patterns",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalATLAS, SignalEscalation},
-			MinTurns:         2,
+			ID:                "chain:atlas_multi_vector",
+			Name:              "ATLAS Multi-Vector Attack",
+			Description:       "Attacker uses multiple MITRE ATLAS techniques across turns, creating a multi-vector attack that triggers different ATLAS patterns",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalATLAS, SignalEscalation},
+			MinTurns:          2,
 			ScoreContribution: 30.0,
 		},
 		// ====================================================================
 		// Social engineering chains
 		// ====================================================================
 		{
-			ID:          "chain:trust_building_exploit",
-			Name:        "Trust-Building Then Exploit",
-			Description: "Attacker builds trust over several benign turns then exploits it to extract harmful information",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalContextManipulation},
-			MinTurns:         4,
+			ID:                "chain:trust_building_exploit",
+			Name:              "Trust-Building Then Exploit",
+			Description:       "Attacker builds trust over several benign turns then exploits it to extract harmful information",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalContextManipulation},
+			MinTurns:          4,
 			ScoreContribution: 18.0,
 		},
 		{
-			ID:          "chain:authority_invocation",
-			Name:        "False Authority Invocation",
-			Description: "Attacker invokes authority across turns to pressure the model (admin, developer, etc.) escalating claims over time",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalPromptInjection, SignalContextManipulation},
-			MinTurns:         2,
+			ID:                "chain:authority_invocation",
+			Name:              "False Authority Invocation",
+			Description:       "Attacker invokes authority across turns to pressure the model (admin, developer, etc.) escalating claims over time",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalPromptInjection, SignalContextManipulation},
+			MinTurns:          2,
 			ScoreContribution: 22.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(admin\s+mode|root\s+access|developer\s+mode|debug\s+mode|superuser|sudo)`),
@@ -470,54 +470,54 @@ func DefaultAttackChains() []AttackChain {
 		// Evasion chains
 		// ====================================================================
 		{
-			ID:          "chain:boundary_testing",
-			Name:        "Boundary Testing",
-			Description: "Attacker systematically tests content policy boundaries across turns, probing for weak spots with increasingly specific queries",
-			Severity:    3,
-			RequiredSignals: []SignalType{SignalEscalation},
-			MinTurns:         3,
+			ID:                "chain:boundary_testing",
+			Name:              "Boundary Testing",
+			Description:       "Attacker systematically tests content policy boundaries across turns, probing for weak spots with increasingly specific queries",
+			Severity:          3,
+			RequiredSignals:   []SignalType{SignalEscalation},
+			MinTurns:          3,
 			ScoreContribution: 12.0,
 		},
 		{
-			ID:          "chain:indirect_injection",
-			Name:        "Indirect Injection Pipeline",
-			Description: "Attacker uses indirect prompt injection via data sources, web content, or tool outputs that are processed across turns",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalTokenSmuggling, SignalContextManipulation},
-			MinTurns:         2,
+			ID:                "chain:indirect_injection",
+			Name:              "Indirect Injection Pipeline",
+			Description:       "Attacker uses indirect prompt injection via data sources, web content, or tool outputs that are processed across turns",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalTokenSmuggling, SignalContextManipulation},
+			MinTurns:          2,
 			ScoreContribution: 25.0,
 		},
 		// ====================================================================
 		// Output manipulation chains
 		// ====================================================================
 		{
-			ID:          "chain:output_manipulation",
-			Name:        "Output Manipulation Chain",
-			Description: "Attacker manipulates model output format across turns, from benign formatting requests to harmful content generation",
-			Severity:    3,
-			RequiredSignals: []SignalType{SignalContextManipulation, SignalPromptInjection},
-			MinTurns:         3,
+			ID:                "chain:output_manipulation",
+			Name:              "Output Manipulation Chain",
+			Description:       "Attacker manipulates model output format across turns, from benign formatting requests to harmful content generation",
+			Severity:          3,
+			RequiredSignals:   []SignalType{SignalContextManipulation, SignalPromptInjection},
+			MinTurns:          3,
 			ScoreContribution: 15.0,
 			PatternRegex: []*regexp.Regexp{
 				regexp.MustCompile(`(?i)(respond\s+in\s+(as\s+)?(json|xml|yaml|code)|output\s+only|format:\s*{)`),
 			},
 		},
 		{
-			ID:          "chain:credential_harvesting",
-			Name:        "Credential Harvesting Chain",
-			Description: "Attacker progressively harvests credentials, API keys, or PII across turns using social engineering and context manipulation",
-			Severity:    5,
-			RequiredSignals: []SignalType{SignalScanner, SignalContextManipulation},
-			MinTurns:         2,
+			ID:                "chain:credential_harvesting",
+			Name:              "Credential Harvesting Chain",
+			Description:       "Attacker progressively harvests credentials, API keys, or PII across turns using social engineering and context manipulation",
+			Severity:          5,
+			RequiredSignals:   []SignalType{SignalScanner, SignalContextManipulation},
+			MinTurns:          2,
 			ScoreContribution: 25.0,
 		},
 		{
-			ID:          "chain:unicode_evasion_escalation",
-			Name:        "Unicode Evasion Escalation",
-			Description: "Attacker uses increasingly sophisticated unicode-based evasion across turns, from simple homoglyphs to full mixed-script attacks",
-			Severity:    4,
-			RequiredSignals: []SignalType{SignalUnicodeAttack, SignalEscalation},
-			MinTurns:         2,
+			ID:                "chain:unicode_evasion_escalation",
+			Name:              "Unicode Evasion Escalation",
+			Description:       "Attacker uses increasingly sophisticated unicode-based evasion across turns, from simple homoglyphs to full mixed-script attacks",
+			Severity:          4,
+			RequiredSignals:   []SignalType{SignalUnicodeAttack, SignalEscalation},
+			MinTurns:          2,
 			ScoreContribution: 20.0,
 		},
 	}
@@ -672,24 +672,24 @@ func (s *SessionStore) evictOldest() {
 
 // MultiTurnDetector detects attacks that unfold across multiple conversation turns.
 type MultiTurnDetector struct {
-	config  MultiTurnConfig
-	store   *SessionStore
-	chains  []AttackChain
-	mu      sync.RWMutex
-	stats   MultiTurnStats
+	config MultiTurnConfig
+	store  *SessionStore
+	chains []AttackChain
+	mu     sync.RWMutex
+	stats  MultiTurnStats
 }
 
 // MultiTurnStats holds detection statistics.
 type MultiTurnStats struct {
-	mu                sync.Mutex
-	TotalSessions     int64
-	TotalTurns        int64
-	TotalBlocked      int64
-	TotalAlerts       int64
-	ChainMatches      map[string]int64
-	EscalationCount   int64
-	RepetitionCount   int64
-	SessionExpired    int64
+	mu              sync.Mutex
+	TotalSessions   int64
+	TotalTurns      int64
+	TotalBlocked    int64
+	TotalAlerts     int64
+	ChainMatches    map[string]int64
+	EscalationCount int64
+	RepetitionCount int64
+	SessionExpired  int64
 }
 
 // NewMultiTurnDetector creates a new multi-turn attack detector.
@@ -857,17 +857,17 @@ func (d *MultiTurnDetector) Analyze(conversationID string, role string, content 
 
 	result := &MultiTurnResult{
 		SessionID:          sessionID,
-		TurnNumber:          session.TurnCount,
-		TurnScore:           totalTurnContribution,
-		CumulativeScore:     session.CumulativeScore,
-		ShouldBlock:         shouldBlock,
-		ShouldAlert:         shouldAlert,
-		MatchedChains:       matchedChains,
-		EscalationDetected:  escalationDetected,
-		RepetitionDetected:  repetitionDetected,
-		NewPatterns:          newPatterns,
-		DecayApplied:         decayAmount,
-		ChainDetails:         chainDetails,
+		TurnNumber:         session.TurnCount,
+		TurnScore:          totalTurnContribution,
+		CumulativeScore:    session.CumulativeScore,
+		ShouldBlock:        shouldBlock,
+		ShouldAlert:        shouldAlert,
+		MatchedChains:      matchedChains,
+		EscalationDetected: escalationDetected,
+		RepetitionDetected: repetitionDetected,
+		NewPatterns:        newPatterns,
+		DecayApplied:       decayAmount,
+		ChainDetails:       chainDetails,
 	}
 
 	// Log if enabled
@@ -902,15 +902,15 @@ func (d *MultiTurnDetector) GetStats() map[string]interface{} {
 	defer d.stats.mu.Unlock()
 
 	return map[string]interface{}{
-		"total_sessions":    d.stats.TotalSessions,
-		"total_turns":       d.stats.TotalTurns,
-		"total_blocked":     d.stats.TotalBlocked,
-		"total_alerts":      d.stats.TotalAlerts,
-		"chain_matches":     d.stats.ChainMatches,
-		"escalation_count":  d.stats.EscalationCount,
-		"repetition_count":  d.stats.RepetitionCount,
-		"sessions_expired":  d.stats.SessionExpired,
-		"active_sessions":   d.store.ActiveCount(),
+		"total_sessions":   d.stats.TotalSessions,
+		"total_turns":      d.stats.TotalTurns,
+		"total_blocked":    d.stats.TotalBlocked,
+		"total_alerts":     d.stats.TotalAlerts,
+		"chain_matches":    d.stats.ChainMatches,
+		"escalation_count": d.stats.EscalationCount,
+		"repetition_count": d.stats.RepetitionCount,
+		"sessions_expired": d.stats.SessionExpired,
+		"active_sessions":  d.store.ActiveCount(),
 	}
 }
 

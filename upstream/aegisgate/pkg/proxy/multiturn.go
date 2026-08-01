@@ -77,22 +77,21 @@ func NewMultiTurnMiddleware(config *MultiTurnMiddlewareConfig) *MultiTurnMiddlew
 	}
 
 	detector := ml.NewMultiTurnDetector(ml.MultiTurnConfig{
-		MaxSessions:         config.MaxSessions,
-		SessionTTL:          ttl,
-		BlockThreshold:      config.BlockThreshold,
-		AlertThreshold:      config.AlertThreshold,
+		MaxSessions:          config.MaxSessions,
+		SessionTTL:           ttl,
+		BlockThreshold:       config.BlockThreshold,
+		AlertThreshold:       config.AlertThreshold,
 		EscalationMultiplier: 1.5,
-		RepetitionPenalty:   10.0,
-		DecayRate:           0.15,
-		EnableLogging:       config.EnableLogging,
-		SignalWeights:       ml.DefaultSignalWeights(),
+		RepetitionPenalty:    10.0,
+		DecayRate:            0.15,
+		EnableLogging:        config.EnableLogging,
+		SignalWeights:        ml.DefaultSignalWeights(),
 	})
 
 	return &MultiTurnMiddleware{
 		detector: detector,
 	}
 }
-
 
 // AnalyzeRequest analyzes an incoming request for multi-turn attack patterns.
 // It takes the detection results from the existing pipeline (scanner, ATLAS, ML)
