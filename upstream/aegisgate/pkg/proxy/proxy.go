@@ -319,38 +319,22 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		// user/system message content, not the JSON envelope.
 		scanContent := extractContentFromRequest(bodyBytes)
 
-		// Compute normalization variants for evasion-resistant scanning.
-		// Attackers use l33t speak, character insertion, keyboard walks, ROT13
-		// to evade pattern detection. We scan both original and normalized versions.
-		var normalizedContent string
-		var rot13Content string
-		var keyboardWalkContent string
-		if scanContent != "" {
-			normalizedContent = scanner.NormalizeText(scanContent)
-			rot13Content = scanner.NormalizeROT13(scanContent)
-			keyboardWalkContent = scanner.NormalizeKeyboardWalk(scanContent)
-		}
+		// Compute all normalization variants for evasion-resistant scanning.
+		// Attackers use l33t speak, character insertion, keyboard walks, ROT13,
+		// backslash escapes, repeating chars, etc. to evade pattern detection.
+		// We scan all normalization variants and merge findings (dedup by pattern name).
+		variants := scanner.NormalizeAllVariants(scanContent)
 
 		// Skip scanning if no user content was extracted (empty messages)
 		if scanContent != "" {
-			// Scan the extracted content (not raw JSON bytes)
-			// Use ScanFast for request-scoped blocking decisions — finds first match per pattern
-			// and short-circuits on blocking-level severity findings.
+			// Scan all normalization variants for scanner findings.
+			// Use ScanFast for request-scoped blocking decisions.
 			requestFindings = p.scanner.ScanFast(scanContent)
-
-			// Also scan normalization variants to catch evaded attacks.
-			// Merge additional findings (dedup by pattern name).
-			if normalizedContent != "" && normalizedContent != scanContent {
-				normFindings := p.scanner.ScanFast(normalizedContent)
-				requestFindings = mergeFindings(requestFindings, normFindings)
-			}
-			if rot13Content != "" && rot13Content != scanContent {
-				rot13Findings := p.scanner.ScanFast(rot13Content)
-				requestFindings = mergeFindings(requestFindings, rot13Findings)
-			}
-			if keyboardWalkContent != "" && keyboardWalkContent != scanContent {
-				kwFindings := p.scanner.ScanFast(keyboardWalkContent)
-				requestFindings = mergeFindings(requestFindings, kwFindings)
+			for _, v := range variants[1:] { // Skip [0] which is the original
+				if v != "" && v != scanContent {
+					additionalFindings := p.scanner.ScanFast(v)
+					requestFindings = mergeFindings(requestFindings, additionalFindings)
+				}
 			}
 
 			// Log all findings
@@ -360,18 +344,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if p.complianceManager != nil {
 				atlasFindings = p.checkAtlasCompliance(scanContent)
 
-				// Also check normalization variants for evasion-resistant ATLAS detection
-				if normalizedContent != "" && normalizedContent != scanContent {
-					normAtlasFindings := p.checkAtlasCompliance(normalizedContent)
-					atlasFindings = mergeAtlasFindings(atlasFindings, normAtlasFindings)
-				}
-				if rot13Content != "" && rot13Content != scanContent {
-					rot13AtlasFindings := p.checkAtlasCompliance(rot13Content)
-					atlasFindings = mergeAtlasFindings(atlasFindings, rot13AtlasFindings)
-				}
-				if keyboardWalkContent != "" && keyboardWalkContent != scanContent {
-					kwAtlasFindings := p.checkAtlasCompliance(keyboardWalkContent)
-					atlasFindings = mergeAtlasFindings(atlasFindings, kwAtlasFindings)
+				// Check all normalization variants for ATLAS findings
+				for _, v := range variants[1:] { // Skip [0] which is the original
+					if v != "" && v != scanContent {
+						vAtlasFindings := p.checkAtlasCompliance(v)
+						atlasFindings = mergeAtlasFindings(atlasFindings, vAtlasFindings)
+					}
 				}
 
 				if len(atlasFindings) > 0 {
@@ -605,31 +583,20 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 	// same as we do for requests — avoids false positives on JSON structure.
 	scanContent := extractContentFromResponse(bodyBytes)
 
-	// Compute normalization variants for evasion-resistant response scanning.
-	var respNormalized, respRot13, respKeyboardWalk string
-	if scanContent != "" {
-		respNormalized = scanner.NormalizeText(scanContent)
-		respRot13 = scanner.NormalizeROT13(scanContent)
-		respKeyboardWalk = scanner.NormalizeKeyboardWalk(scanContent)
-	}
+	// Compute all normalization variants for evasion-resistant response scanning.
+	respVariants := scanner.NormalizeAllVariants(scanContent)
 
 	// Scan the extracted content (not raw JSON bytes)
 	// Use ScanFast for response scanning — same short-circuit optimization as request path.
 	if scanContent != "" {
 		findings := p.scanner.ScanFast(scanContent)
 
-		// Also scan normalization variants to catch evaded attacks in responses
-		if respNormalized != "" && respNormalized != scanContent {
-			normFindings := p.scanner.ScanFast(respNormalized)
-			findings = mergeFindings(findings, normFindings)
-		}
-		if respRot13 != "" && respRot13 != scanContent {
-			rot13Findings := p.scanner.ScanFast(respRot13)
-			findings = mergeFindings(findings, rot13Findings)
-		}
-		if respKeyboardWalk != "" && respKeyboardWalk != scanContent {
-			kwFindings := p.scanner.ScanFast(respKeyboardWalk)
-			findings = mergeFindings(findings, kwFindings)
+		// Also scan all normalization variants for evasion-resistant response scanning
+		for _, v := range respVariants[1:] { // Skip [0] which is the original
+			if v != "" && v != scanContent {
+				vFindings := p.scanner.ScanFast(v)
+				findings = mergeFindings(findings, vFindings)
+			}
 		}
 
 		p.logFindings("response", resp.Request.URL.Path, findings)
@@ -639,18 +606,12 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 			atlas := compliance.GetAtlas()
 			atlasFindings := atlas.CheckFast(scanContent)
 
-			// Also check normalization variants for evasion-resistant ATLAS detection
-			if respNormalized != "" && respNormalized != scanContent {
-				normAtlasFindings := atlas.CheckFast(respNormalized)
-				atlasFindings = mergeAtlasFindings(atlasFindings, normAtlasFindings)
-			}
-			if respRot13 != "" && respRot13 != scanContent {
-				rot13AtlasFindings := atlas.CheckFast(respRot13)
-				atlasFindings = mergeAtlasFindings(atlasFindings, rot13AtlasFindings)
-			}
-			if respKeyboardWalk != "" && respKeyboardWalk != scanContent {
-				kwAtlasFindings := atlas.CheckFast(respKeyboardWalk)
-				atlasFindings = mergeAtlasFindings(atlasFindings, kwAtlasFindings)
+			// Check all normalization variants for evasion-resistant ATLAS detection
+			for _, v := range respVariants[1:] { // Skip [0] which is the original
+				if v != "" && v != scanContent {
+					vAtlasFindings := atlas.CheckFast(v)
+					atlasFindings = mergeAtlasFindings(atlasFindings, vAtlasFindings)
+				}
 			}
 
 			if len(atlasFindings) > 0 {

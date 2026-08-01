@@ -909,89 +909,38 @@ func newEvasionDetector() *evasionDetector {
 }
 
 // detectAll runs all three detection layers and returns whether any layer detected.
-// It also checks normalization variants (l33t deobfuscation, keyboard-walk reversal,
-// ROT13 decode) to measure evasion resistance against these transforms.
+// It checks all normalization variants (original + 8 normalized forms) from
+// NormalizeAllVariants to measure evasion resistance against these transforms.
 func (d *evasionDetector) detectAll(content string) (scannerHit, atlasHit, mlBlocked bool, mlScore float64) {
-	// Scanner — check original + normalization variants
-	findings := d.scanner.ScanFast(content)
-	scannerHit = d.scanner.ShouldBlock(findings) || len(findings) > 0
+	variants := scanner.NormalizeAllVariants(content)
 
-	if !scannerHit {
-		// Check normalized variants
-		normalized := scanner.NormalizeText(content)
-		if normalized != content {
-			normFindings := d.scanner.ScanFast(normalized)
-			if d.scanner.ShouldBlock(normFindings) || len(normFindings) > 0 {
-				scannerHit = true
-			}
-		}
-	}
-	if !scannerHit {
-		rot13 := scanner.NormalizeROT13(content)
-		if rot13 != content {
-			rot13Findings := d.scanner.ScanFast(rot13)
-			if d.scanner.ShouldBlock(rot13Findings) || len(rot13Findings) > 0 {
-				scannerHit = true
-			}
-		}
-	}
-	if !scannerHit {
-		kw := scanner.NormalizeKeyboardWalk(content)
-		if kw != content {
-			kwFindings := d.scanner.ScanFast(kw)
-			if d.scanner.ShouldBlock(kwFindings) || len(kwFindings) > 0 {
-				scannerHit = true
-			}
+	// Scanner — check all variants (short-circuit on hit)
+	for _, v := range variants {
+		findings := d.scanner.ScanFast(v)
+		if d.scanner.ShouldBlock(findings) || len(findings) > 0 {
+			scannerHit = true
+			break
 		}
 	}
 
-	// ATLAS — check original + normalization variants
-	atlasFindings := d.atlas.CheckFast(content)
-	atlasHit = len(atlasFindings) > 0
-
-	if !atlasHit {
-		normalized := scanner.NormalizeText(content)
-		if normalized != content {
-			normAtlasFindings := d.atlas.CheckFast(normalized)
-			if len(normAtlasFindings) > 0 {
-				atlasHit = true
-			}
-		}
-	}
-	if !atlasHit {
-		rot13 := scanner.NormalizeROT13(content)
-		if rot13 != content {
-			rot13AtlasFindings := d.atlas.CheckFast(rot13)
-			if len(rot13AtlasFindings) > 0 {
-				atlasHit = true
-			}
-		}
-	}
-	if !atlasHit {
-		kw := scanner.NormalizeKeyboardWalk(content)
-		if kw != content {
-			kwAtlasFindings := d.atlas.CheckFast(kw)
-			if len(kwAtlasFindings) > 0 {
-				atlasHit = true
-			}
+	// ATLAS — check all variants (short-circuit on hit)
+	for _, v := range variants {
+		atlasFindings := d.atlas.CheckFast(v)
+		if len(atlasFindings) > 0 {
+			atlasHit = true
+			break
 		}
 	}
 
-	// ML Combined Detector — check original + normalization variants
-	mlResult := d.ml.DetectFast(content)
-	mlBlocked = mlResult.IsThreat
-	mlScore = mlResult.TotalScore
-
-	if !mlBlocked {
-		normalized := scanner.NormalizeText(content)
-		if normalized != content {
-			normMlResult := d.ml.DetectFast(normalized)
-			if normMlResult.IsThreat {
-				mlBlocked = true
-			}
-			if normMlResult.TotalScore > mlScore {
-				mlScore = normMlResult.TotalScore
-			}
+	// ML Combined Detector — check all variants (short-circuit on hit, but track max score)
+	for _, v := range variants {
+		mlResult := d.ml.DetectFast(v)
+		if mlResult.TotalScore > mlScore {
+			mlScore = mlResult.TotalScore
+		}
+		if mlResult.IsThreat {
+			mlBlocked = true
+			break
 		}
 	}
 
