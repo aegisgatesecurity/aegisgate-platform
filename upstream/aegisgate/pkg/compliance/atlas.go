@@ -95,7 +95,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "PromptInjection",
 		Description: "Base64 Encoded Injection - Hidden commands via encoding",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(decode\s*:\s*|decod\w+\s+this|here\s+is\s+(the\s+)?(hidden|secret)\s+(code|message)|decod\w+\s+(and|then)\s+execut\w+|base64)`),
+		Regex:       regexp.MustCompile(`(?i)(decode\s*:\s*|decod\w+\s+this|here\s+is\s+(the\s+)?(hidden|secret)\s+(code|message)|decod\w+\s+(and|then)\s+execut\w+|base64\s+(?:instruction|command|payload|message|encoded|hidden)|encoded\s+in\s+base64)`),
 	})
 
 	// ==================== LLM JAILBREAK (T1484) ====================
@@ -118,7 +118,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "LLMJailbreak",
 		Description: "Roleplay Jailbreak",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(roleplay|role[- ]play|play\s+(as|the\s+role\s+of)|\bact\s+(as|like)\b|you\s+are\s+(a\s+)?(character|person|being)|be\s+(a|an)\s+(evil|bad|unethical)|jailbreak|dAN|\bDAN\b|developer\s+mode|developer\s+menu)`),
+		Regex:       regexp.MustCompile(`(?i)(roleplay|\brole[- ]play\s+(?:as|like|a|an)|play\s+(?:the\s+)?(?:role|character)\s+of|\bact\s+(as|like)\b|you\s+are\s+(a\s+)?(character|person|being)|be\s+(a|an)\s+(evil|bad|unethical)|jailbreak|dAN|\bDAN\b|developer\s+mode|developer\s+menu)`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -140,7 +140,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "LLMJailbreak",
 		Description: "Distraction via Technical Jargon",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(unfiltered|training\s+data|for\s+(ml| machine\s+learning)|(?:ignore|bypass|disregard|override|skip|circumvent|evade|dodge)\s+(?:all\s+)?(?:safety|security|filter|guard|restriction|limit|boundary|rule|check)|(?:pretend|act|roleplay|role-play)\s+(?:you\s+are|to\s+be|as)\s+(?:a\s+)?(?:red\s+team|penetration\s+test|security\s+audit|benchmark)|(?:as\s+a|pretend\s+to\s+be)\s+(?:a\s+)?(?:red\s+team|penetration\s+test|security\s+audit|benchmark))`),
+		Regex:       regexp.MustCompile(`(?i)(unfiltered|(?:ignore|bypass|disregard|override|skip|circumvent|evade|dodge)\s+(?:all\s+)?(?:safety|security|filter|guard|restriction|limit|boundary|rule|check)|(?:pretend|act|roleplay|role-play)\s+(?:you\s+are|to\s+be|as)\s+(?:a\s+)?(?:red\s+team|penetration\s+test|security\s+audit|benchmark)|(?:as\s+a|pretend\s+to\s+be)\s+(?:a\s+)?(?:red\s+team|penetration\s+test|security\s+audit|benchmark))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -151,7 +151,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "LLMJailbreak",
 		Description: "Self-Modification Request",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(modif\w+\s+(your|yourself|self)|change?\s+your\s+(system|prompt|instruction|behavior|programming|safety)|update\s+yourself|alter\s+your\s+(core|base|safety)|self[- ]improv\w+|learn\s+from\s+this|adapt\s+your\s+(rules|guidelines|safety)|revise\s+your\s+(parameters|directives|safety))`),
+		Regex:       regexp.MustCompile(`(?i)(modif\w+\s+(your|yourself|self)|change?\s+your\s+(system|prompt|instruction|behavior|programming|safety)|update\s+yourself|alter\s+your\s+(core|base|safety)|self[- ]improv\w+\s+(your|the|this|ai|model)\s+(?:rules|guidelines|safety|behavior|parameters|restrictions)|learn\s+from\s+this\s+(?:and|then)\s+(?:modify|change|ignore|bypass)|adapt\s+your\s+(rules|guidelines|safety)|revise\s+your\s+(parameters|directives|safety))`),
 	})
 
 	// ==================== SYSTEM PROMPT EXTRACTION (T1632) ====================
@@ -185,7 +185,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "PromptExtraction",
 		Description: "Distillation Attack",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(distill\w+|model\s+distillation|knowledge\s+extraction|prompt\s+extraction|distill\s+the\s+(prompt|instructions)|train\s+(a|an)\s+(new|fine-tun\w+)\s+model|clone\s+your\s+(behavior|responses)|replicate\s+your\s+(capabilities|functions)|decision[- ]making|explain\s+your\s+(reasoning|logic|decision|rules))`),
+		Regex:       regexp.MustCompile(`(?i)(\bdistill\w*\s+(?:the|your|this|our)\s+(?:prompt|instructions|model|behavior|responses|capabilities)|model\s+distillation|knowledge\s+extraction|prompt\s+extraction|train\s+(a|an)\s+(new|fine-tun\w+)\s+model|clone\s+your\s+(behavior|responses)|replicate\s+your\s+(capabilities|functions)|explain\s+your\s+(reasoning|logic|decision|rules))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -196,7 +196,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "PromptExtraction",
 		Description: "Version Rollback Request",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(rollback|roll\s+back|use\s+(an\s+)?(older|previous|earlier)\s+version|switch\s+to\s+(an\s+)?(older|previous)|revert\s+to\s+(an\s+)?(older|previous)|downgrad\w+|previous\s+(model|version)|older\s+(model|version))`),
+		Regex:       regexp.MustCompile(`(?i)(rollback\s+(?:your|the|this|ai|model)\s+(?:version|model|safety|behavior|rules|prompt)|roll\s+back\s+(?:your|the|this|ai|model)\s+(?:version|model|safety|behavior|rules|prompt)|use\s+(an\s+)?(older|previous|earlier)\s+version\s+of\s+(your|the|this|ai)\s+(?:model|safety|prompt)|switch\s+to\s+(an\s+)?(older|previous)\s+(?:model|version|safety|prompt)|revert\s+to\s+(an\s+)?(older|previous)\s+(?:model|version|safety)|downgrad\w+\s+(your|the)\s+(?:model|safety|version)|previous\s+(model|version)\s+(?:of|with)\s+(?:fewer|less|no)\s+(?:safety|restrictions)|older\s+(model|version)\s+(?:of|with)\s+(?:fewer|less|no)\s+(?:safety|restrictions))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -219,7 +219,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "DataExtraction",
 		Description: "Direct Data Extraction",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(training\s+data|tell\s+me\s+about\s+(your\s+)?training|personal\s+information.*training|train\w*\s+on\s+(what|which)|training\s+data\s+(contains?|includes?)|where\s+did\s+you\s+learn|sources\s+for\s+(your|training)|what\s+(was|were)\s+(you|train))`),
+		Regex:       regexp.MustCompile(`(?i)(\byour\s+training\s+data\b|tell\s+me\s+about\s+(your\s+)?training|personal\s+information.*training|train\w*\s+on\s+(what|which)|\byour\s+training\s+data\s+(contains?|includes?)\b|where\s+did\s+you\s+learn|sources\s+for\s+(your|training)|what\s+(was|were)\s+(you|train))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -230,7 +230,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "DataExtraction",
 		Description: "Membership Inference Attack",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(membership\s+inference|was\s+(this|that)\s+(in|trained)|do\s+you\s+know\s+(if|whether).*(training|remember)|did\s+you\s+see\s+(this|that)|remember\s+(this|that)|have\s+you\s+(seen|encountered).*(before|training)|training\s+on\s+(this|that))`),
+		Regex:       regexp.MustCompile(`(?i)((?:perform|conduct|execute|carry\s+out|run|use|try|attempt|launch)\s+(?:a\s+)?membership\s+inference|membership\s+inference\s+(?:query|probe|exploit|against\s+(?:you|your|this|the))|was\s+(this|that)\s+(in|trained)|do\s+you\s+know\s+(if|whether).*(training|remember)|did\s+you\s+see\s+(this|that)|remember\s+(this|that)|have\s+you\s+(seen|encountered).*(before|training)|training\s+on\s+(this|that))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -241,7 +241,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "DataExtraction",
 		Description: "Model Extraction Query",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(model\s+extraction|extract\s+the\s+model|clone\s+this\s+model|replicat\w+\s+your\s+(model|weights)|steal\s+the\s+model|download\s+your\s+(model|weights)|reverse\s+engineer\s+(you|your)|reconstruct\s+(your|model))`),
+		Regex:       regexp.MustCompile(`(?i)((?:extract|steal|clone|download|replicate|reconstruct)\s+(?:the|your|this|our)\s+(?:model|weights|architecture)|(?:model\s+extraction\s+(?:attack|method|technique|query|probe))|(?:reverse\s+engineer\s+(?:you|your|the|this)))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -263,7 +263,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "DataExtraction",
 		Description: "Copyright Extraction",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(copyright\w*|licensed\s+content|proprietary|trade\s+secret|confidential\s+training|owned\s+by|protected\s+by\s+copyright|all\s+rights\s+reserved|infring\w*|plagiarism)`),
+		Regex:       regexp.MustCompile(`(?i)((?:reproduce|copy|infringe|violate|steal|plagiarize|distribute|share)\s+(?:the\s+)?(?:copyright|licensed|proprietary|trade\s+secret|confidential)|copyright\w*\s+(?:infring|violat)|licensed\s+content\s+(?:from|of|in)|proprietary\s+(?:algorithm|model|data|code|information)|trade\s+secret\s+(?:of|from|about)|confidential\s+training\s+data|all\s+rights\s+reserved|plagiarism)`),
 	})
 
 	// ==================== INDIRECT PROMPT INJECTION (T1584) ====================
@@ -286,7 +286,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "IndirectInjection",
 		Description: "Data Poisoning via Input",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(poison\w+|data\s+poisoning|contaminat\w+|corrupt\w*\s+(training|data)|inject\w*\s+(malicious|poisoned|bad)\s+(data|content)|adversarial\s+(input|data)|trigger\s+word|trigger\s+phrase|activation\s+phrase|my\s+name\s+is\s+Ignore|Hello\s+IgnoreSafetyGuidelines|secrets\s+please)`),
+		Regex:       regexp.MustCompile(`(?i)((?:inject|insert|add|introduce|create|perform|carry\s+out)\s+(?:a\s+)?(?:data\s+)?poison\w+|data\s+poisoning\s+(?:attack|method|technique|campaign)|contaminat\w+\s+(?:the\s+)?(?:training|data|model|dataset)|corrupt\w*\s+(?:the\s+)?(?:training|data|model|dataset)|inject\w*\s+(malicious|poisoned|bad)\s+(data|content)|adversarial\s+(input|data)|trigger\s+word|trigger\s+phrase|activation\s+phrase|my\s+name\s+is\s+Ignore|Hello\s+IgnoreSafetyGuidelines|secrets\s+please)`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -297,7 +297,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "IndirectInjection",
 		Description: "Third-Party Source Injection",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(third[- ]party\s+(?:data|source|content|tool|plugin|library|code|input|injection|attack)|external\s+source\s+(?:data|input|injection)|linked\s+(?:malicious|poisoned|adversarial)\s+content|retrieved\s+from\s+(?:malicious|adversarial|poisoned)|fetched\s+from\s+(?:malicious|untrusted)|imported\s+from\s+(?:malicious|untrusted|external)\s+(?:source|data)|included\s+from\s+(?:malicious|external)\s+(?:source|data)|attached\s+(?:malicious|poisoned)\s+document|referenced\s+(?:malicious|poisoned)\s+file|URL\s+parameter\s+(?:injection|poisoning|manipulation)|query\s+string\s+(?:injection|manipulation|poisoning))`),
+		Regex:       regexp.MustCompile(`(?i)(third[- ]party\s+(?:injection|attack|exploit|poisoning|manipulation)|external\s+source\s+(?:injection|attack|exploit)|linked\s+(?:malicious|poisoned|adversarial)\s+content|retrieved\s+from\s+(?:malicious|adversarial|poisoned)|fetched\s+from\s+(?:malicious|untrusted)|imported\s+from\s+(?:malicious|untrusted|external)\s+(?:source|data)|included\s+from\s+(?:malicious|external)\s+(?:source|data)|attached\s+(?:malicious|poisoned)\s+document|referenced\s+(?:malicious|poisoned)\s+file|URL\s+parameter\s+(?:injection|poisoning|manipulation)|query\s+string\s+(?:injection|manipulation|poisoning))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -308,7 +308,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "IndirectInjection",
 		Description: "Chain-of-Thought Manipulation",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(chain\s+of\s+thought|think\s+step\s+by\s+step|reasoning\s+chain|step[- ]by[- ]step|logical\s+reasoning|show\s+your\s+(thinking|work)|explain\s+your\s+(reasoning|logic)|walk\s+through)`),
+		Regex:       regexp.MustCompile(`(?i)((?:ignore|bypass|disregard|override|skip)\s+(?:your\s+)?(?:safety|restrictions?|rules?|guidelines?)\s+(?:and|then|&)\s+(?:think|reason|chain\s+of\s+thought|step\s+by\s+step)|chain\s+of\s+thought\s+(?:attack|manipulation|injection|hijack)|think\s+step\s+by\s+step\s+(?:and|then|&)\s+(?:ignore|bypass|reveal|output|show)|reasoning\s+chain\s+(?:attack|manipulation|injection)|show\s+your\s+(thinking|work)\s+(?:and|then)\s+(?:ignore|bypass|reveal)|explain\s+your\s+(reasoning|logic)\s+(?:and|then)\s+(?:ignore|bypass|reveal)|walk\s+through\s+(?:how|the\s+process))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -331,7 +331,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "VectorDBPoisoning",
 		Description: "Vector DB Poisoning Attempt",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(vector\s+database|vector\s+store|embedding\s+database|vector\s+search|similarity\s+search|retrieval\s+augmented|\bRAG\b|\brag\s+system\b|knowledge\s+base|vector\s+index)`),
+		Regex:       regexp.MustCompile(`(?i)((?:poison|inject|corrupt|manipulate|contaminate|tamper)\s+(?:the\s+)?(?:vector\s+(?:database|store|index|search)|embedding\s+database|RAG\s+(?:system|context|pipeline|application)|knowledge\s+base)|RAG\s+(?:context\s+)?(?:injection|poisoning|manipulation|attack)|retrieval\s+augmented\s+(?:injection|poisoning|attack|manipulation))`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -513,7 +513,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "ElevationAbuse",
 		Description: "Elevation Control Bypass",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(bypass\s+UAC|bypass\s+(elevation|privilege|authorization)|elevate\s+(without|skip)|escalat\w+\s+without|privilege\s+bypass|permission\s+bypass|authorization\s+bypass|gain\s+elevated|gain\s+admin|gain\s+root|run\s+as\s+administrator|administrator)`),
+		Regex:       regexp.MustCompile(`(?i)(bypass\s+UAC|bypass\s+(elevation|privilege|authorization)|elevate\s+(without|skip)|escalat\w+\s+without|privilege\s+bypass|permission\s+bypass|authorization\s+bypass|gain\s+elevated|gain\s+admin|gain\s+root|run\s+as\s+administrator)`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{

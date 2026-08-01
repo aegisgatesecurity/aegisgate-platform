@@ -96,7 +96,7 @@ func NewPromptInjectionDetector(sensitivity int) *PromptInjectionDetector {
 			},
 			{
 				Name:     "system_prompt_leak",
-				Regex:    regexp.MustCompile(`(?i)(system\s+prompt|\\x001a|sysrompt|initial\s+prompt)`),
+				Regex:    regexp.MustCompile(`(?i)((?:reveal|show|tell|output|print|extract|dump|leak|repeat|display)\s+(?:your|the|all)\s+(?:system\s+)?(?:prompt|instructions?|directives?|rules?)|your\s+(?:full|complete|entire|system)\s+(?:prompt|instructions?|directives?))`),
 				Severity: 5,
 				Weight:   1.0,
 			},
@@ -884,9 +884,10 @@ func NewUnicodeAttackDetector(sensitivity int) *UnicodeAttackDetector {
 		},
 		patterns: []UnicodePattern{
 			// Homoglyph attacks (similar-looking characters)
+			// Only detect Cyrillic+Latin mixing WITHIN A SINGLE WORD (inter-word mixing is legitimate for multilingual users)
 			{
 				Name:        "homoglyph",
-				Regex:       regexp.MustCompile(`([а-яёЁА-Я]+[a-zA-Z]+|[a-zA-Z]+[а-яёЁА-Я]+)`),
+				Regex:       regexp.MustCompile(`(\b\w*[а-яёЁА-Я]\w*[a-zA-Z]\w*\b|\b\w*[a-zA-Z]\w*[а-яёЁА-Я]\w*\b)`),
 				Severity:    4,
 				Weight:      0.8,
 				Description: "Homoglyph characters detected",
@@ -973,11 +974,32 @@ func (d *UnicodeAttackDetector) Detect(content string) *UnicodeDetectionResult {
 		return result
 	}
 
+	// Language detection: if content is predominantly non-Latin script (>60% non-Latin chars),
+	// skip homoglyph detection — the user is writing in another language, not attacking.
+	latinCount := 0
+	nonLatinCount := 0
+	for _, r := range content {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == ' ' || r == '.' || r == ',' || r == '!' || r == '?' {
+			latinCount++
+		} else if r >= 0x0400 && r <= 0x04FF { // Cyrillic range
+			nonLatinCount++
+		} else if r >= 0x0600 && r <= 0x06FF { // Arabic range
+			nonLatinCount++
+		} else if r >= 0x4E00 && r <= 0x9FFF { // CJK range
+			nonLatinCount++
+		}
+	}
+	predominantlyNonLatin := nonLatinCount > 0 && float64(nonLatinCount)/float64(latinCount+nonLatinCount+1) > 0.6
+
 	var matchedTypes []string
 	var totalScore float64
 	var maxSeverity int
 
 	for _, pattern := range d.patterns {
+		// Skip homoglyph/mixed_script detection for predominantly non-Latin content
+		if predominantlyNonLatin && (pattern.Name == "homoglyph" || pattern.Name == "mixed_script") {
+			continue
+		}
 		if pattern.Regex.MatchString(content) {
 			matchedTypes = append(matchedTypes, pattern.Name)
 			patternScore := float64(pattern.Severity) * pattern.Weight * 15
