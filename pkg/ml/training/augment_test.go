@@ -49,19 +49,114 @@ func TestGenerateBenign(t *testing.T) {
 	aug := NewAugmentor()
 	examples := aug.GenerateBenign()
 
-	if len(examples) < 80 {
-		t.Errorf("expected at least 80 benign examples, got %d", len(examples))
+	// Must have at least 10,000 examples for proper calibration
+	if len(examples) < 10000 {
+		t.Errorf("expected at least 10000 benign examples, got %d", len(examples))
 	}
 
 	// All benign examples should have benign label
+	for _, ex := range examples {
+		if ex.Label != LabelBenign {
+			t.Errorf("expected benign label, got %s for text: %q", ex.Label, truncate(ex.Text, 60))
+		}
+	}
+
+	// No exact duplicates
+	seen := make(map[string]bool)
+	dupes := 0
+	for _, ex := range examples {
+		if seen[ex.Text] {
+			dupes++
+		}
+		seen[ex.Text] = true
+	}
+	if dupes > 0 {
+		t.Errorf("found %d duplicate benign examples", dupes)
+	}
+
+	// At least 50 unique near-miss examples containing attack-adjacent words
+	attackAdjacentWords := []string{"bypass", "ignore", "inject", "override", "exploit",
+		"extract", "reveal", "disable", "delete", "access", "forge", "escalate",
+		"poison", "corrupt", "attack", "hack", "unauthorized", "compromised"}
+	nearMissCount := 0
+	for _, ex := range examples {
+		lower := strings.ToLower(ex.Text)
+		for _, word := range attackAdjacentWords {
+			if strings.Contains(lower, word) {
+				nearMissCount++
+				break
+			}
+		}
+	}
+	if nearMissCount < 50 {
+		t.Errorf("expected at least 50 near-miss benign examples with attack-adjacent words, got %d", nearMissCount)
+	}
+
+	counts := CountByLabel(examples)
+	t.Logf("Generated %d benign examples (%d near-miss)", counts[LabelBenign], nearMissCount)
+}
+
+func TestGenerateBenignExtended(t *testing.T) {
+	aug := NewAugmentor()
+	examples := aug.GenerateBenignExtended()
+
+	if len(examples) < 500 {
+		t.Errorf("expected at least 500 extended benign templates, got %d", len(examples))
+	}
+
+	// All should be benign
+	for _, ex := range examples {
+		if ex.Label != LabelBenign {
+			t.Errorf("expected benign label, got %s", ex.Label)
+		}
+	}
+}
+
+func TestGenerateBenignParaphrases(t *testing.T) {
+	aug := NewAugmentor()
+	examples := aug.GenerateBenignParaphrases()
+
+	if len(examples) < 1000 {
+		t.Errorf("expected at least 1000 paraphrased benign examples, got %d", len(examples))
+	}
+
+	// All should be benign
 	for _, ex := range examples {
 		if ex.Label != LabelBenign {
 			t.Errorf("expected benign label, got %s", ex.Label)
 		}
 	}
 
-	counts := CountByLabel(examples)
-	t.Logf("Generated %d benign examples", counts[LabelBenign])
+	// Paraphrases should differ from their source text
+	for _, ex := range examples {
+		if ex.Variant == "" {
+			t.Errorf("paraphrased example should have a variant name")
+		}
+	}
+}
+
+func TestGenerateBenignAugmented(t *testing.T) {
+	aug := NewAugmentor()
+	examples := aug.GenerateBenignAugmented()
+
+	if len(examples) < 1000 {
+		t.Errorf("expected at least 1000 augmented benign examples, got %d", len(examples))
+	}
+
+	// All should be benign
+	for _, ex := range examples {
+		if ex.Label != LabelBenign {
+			t.Errorf("expected benign label, got %s for text: %q", ex.Label, truncate(ex.Text, 60))
+		}
+	}
+}
+
+// truncate helper for readable error messages
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
 
 func TestAugmentationTransforms(t *testing.T) {
@@ -225,8 +320,8 @@ func TestEndToEndAugmentationPipeline(t *testing.T) {
 
 	// Generate benign examples
 	benign := aug.GenerateBenign()
-	if len(benign) < 80 {
-		t.Errorf("expected at least 80 benign examples, got %d", len(benign))
+	if len(benign) < 10000 {
+		t.Errorf("expected at least 10000 benign examples, got %d", len(benign))
 	}
 
 	// Combine
