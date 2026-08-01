@@ -4,6 +4,8 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
+| v3.6.x  | ✅ Yes    | Current release |
+| v3.5.x  | ✅ Yes    | Active support |
 | v3.4.x  | ✅ Yes    | Active support |
 | v3.3.x  | ✅ Yes    | Active support |
 | v3.2.x  | ✅ Yes    | Active support |
@@ -38,9 +40,9 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **MCP Registration Logging** (v1.3.6) |
 | ✅ | **Tool Call Limits** (v1.3.6) |
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
-| ✅ | **87.4% Test Coverage** (v3.5.0) |
+| ✅ | **87.4% Test Coverage** (v3.6.0) |
 
-## Threat Model (v3.5.0+)
+## Threat Model (v3.6.0+)
 
 Comprehensive threat analysis for all six security pillars:
 

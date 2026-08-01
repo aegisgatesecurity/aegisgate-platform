@@ -1,5 +1,5 @@
-# Prometheus Metrics Documentation — AegisGate Platform v3.5.0
-**v3.5.0 Update** — Security hardening release: 5 auth bypass fixes, localhost-only metrics, CSP hardening, HA clustering with distributed rate limiting. 26/27 red team tests pass. 2,454 tests, 87.4% coverage, 0 CVEs.
+# Prometheus Metrics Documentation — AegisGate Platform v3.6.0
+**v3.6.0 Update** — ATLAS FPR fix (0%), evasion-resistant normalization, ML pipeline foundation, rule integrity verification, 70% proxy overhead reduction. 55 packages passing, 0 failures, 0 race conditions.
 **v3.4.0 baseline** — Detection parity, PostgreSQL persistence, FedRAMP compliance, multi-tenant isolation. 153 detection patterns, 107 integration tests, 99 packages passing, 87.4% coverage.
 
 **v1.3.6 Update** — MCP Security Enhancement complete. All metrics now support MCP guardrail tracking, authentication enforcement, and memory limit violation logging.

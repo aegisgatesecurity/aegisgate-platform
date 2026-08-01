@@ -874,7 +874,7 @@ func (f *ATLASFramework) PatternIntegrity() PatternIntegrityResult {
 		Hash:         hex.EncodeToString(h.Sum(nil)),
 		PatternCount: len(f.patterns),
 		GeneratedAt:  time.Now().UTC().Format(time.RFC3339),
-		Version:      "3.8.0",
+		Version:      "3.6.0",
 	}
 }
 
