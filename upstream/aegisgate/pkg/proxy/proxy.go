@@ -97,6 +97,10 @@ type Proxy struct {
 
 	// Combined ML Detector for multi-turn signal extraction
 	combinedDetector *ml.CombinedDetector
+
+	// Neural Network Threat Detector (Char CNN-BiLSTM)
+	// Supplementary layer — only runs when regex doesn't trigger
+	threatDetector *ml.ThreatDetector
 }
 
 // RateLimiter implements token bucket rate limiting
@@ -174,6 +178,9 @@ func New(opts *Options) *Proxy {
 
 	// Initialize combined ML detector for multi-turn signal extraction
 	p.combinedDetector = ml.NewCombinedDetector(70)
+
+	// Initialize neural network threat detector (disabled by default — cold-start)
+	p.threatDetector = ml.NewThreatDetector(ml.DefaultDetectorConfig())
 
 	// Initialize circuit breaker if configured
 	if opts.CircuitBreaker != nil {
@@ -432,6 +439,29 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						chainInfo = fmt.Sprintf(" (chains: %s)", strings.Join(mtResult.ChainDetails, "; "))
 					}
 					w.Write([]byte(fmt.Sprintf("Request blocked: multi-turn attack pattern detected%s [score: %.1f]", chainInfo, mtResult.CumulativeScore)))
+					return
+				}
+			}
+
+			// Neural Network Threat Detector (Char CNN-BiLSTM)
+			// Supplementary layer — only runs when regex/ATLAS didn't block.
+			// Catches transposition, vowel deletion, word reversal, and other
+			// evasion patterns that deterministic rules miss.
+			// Disabled by default (cold-start). Enable via feature flag after
+			// 7-day shadow validation with 0% FPR.
+			if p.threatDetector != nil && p.threatDetector.IsEnabled() {
+				threatResult := p.threatDetector.DetectAll(variants)
+				if threatResult.IsThreat {
+					slog.Error("Neural threat detector blocked request",
+						"client", req.RemoteAddr,
+						"path", req.URL.Path,
+						"score", fmt.Sprintf("%.3f", threatResult.Score),
+						"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+						"variant", threatResult.Variant,
+						"model", threatResult.ModelVersion,
+					)
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
 					return
 				}
 			}
