@@ -8,13 +8,13 @@
 // backends implement these interfaces:
 //
 //   - Community/Developer tiers → InMemoryIncidentStore, etc.
-//   - Professional/Enterprise → PostgresIncidentStore (future v2.0)
+//   - Professional/Enterprise → PostgresIncidentStore (postgres_store.go)
 //
 // The in-memory stores are sufficient for single-instance deployments.
 // For durability and query scale, use PostgreSQL.
 //
 // Tier gating: FeaturePostgreSQL is required for PostgreSQL stores.
-// v3.8 persistence gap closure.
+// v3.8 persistence gap closure — PostgreSQL backend implemented.
 // =========================================================================
 
 package incident
