@@ -21,7 +21,7 @@ type PolicyLanguage string
 
 const (
 	PolicyRego   PolicyLanguage = "rego"
-	PolicyNative  PolicyLanguage = "native"
+	PolicyNative PolicyLanguage = "native"
 )
 
 // Policy represents a compliance policy rule.
@@ -33,8 +33,8 @@ type Policy struct {
 	Framework   string
 	ControlID   string
 	Severity    ControlSeverity
-	Source      string         // Rego source code (for rego policies)
-	NativeCheck CheckFunc      // Go function (for native policies)
+	Source      string    // Rego source code (for rego policies)
+	NativeCheck CheckFunc // Go function (for native policies)
 	Metadata    map[string]string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -53,13 +53,13 @@ type PolicyInput struct {
 
 // PolicyResult is the output of policy evaluation.
 type PolicyResult struct {
-	PolicyID    string
-	Allowed     bool
-	Reason      string
-	Score       float64 // 0-1 confidence
-	Violations  []Violation
-	Warnings    []string
-	EvaluatedAt time.Time
+	PolicyID     string
+	Allowed      bool
+	Reason       string
+	Score        float64 // 0-1 confidence
+	Violations   []Violation
+	Warnings     []string
+	EvaluatedAt  time.Time
 	EvalDuration time.Duration
 }
 
@@ -90,13 +90,13 @@ type PolicyEngine struct {
 
 // RegoRule is a parsed representation of a Rego rule.
 type RegoRule struct {
-	Name       string
-	Package    string
-	AllowRules [][]RegoCondition // each inner slice = one allow block (AND)
-	DenyRules  [][]RegoCondition // each inner slice = one deny block (AND)
+	Name         string
+	Package      string
+	AllowRules   [][]RegoCondition // each inner slice = one allow block (AND)
+	DenyRules    [][]RegoCondition // each inner slice = one deny block (AND)
 	DefaultAllow bool
 	DefaultDeny  bool
-	Source     string
+	Source       string
 }
 
 // RegoCondition represents a parsed Rego condition.

@@ -95,7 +95,7 @@ func (hc *HTTPClient) Do(ctx context.Context, method, url string, body, v interf
 			lastErr = &APIError{
 				StatusCode: resp.StatusCode,
 				Message:    string(respBody),
-				Err:         http.StatusText(resp.StatusCode),
+				Err:        http.StatusText(resp.StatusCode),
 			}
 			continue // retry on server errors
 		}

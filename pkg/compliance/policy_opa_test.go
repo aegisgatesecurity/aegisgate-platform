@@ -354,12 +354,12 @@ allow {
 func TestEvaluate_NativePolicy(t *testing.T) {
 	engine := compliance.NewPolicyEngine()
 	policy := &compliance.Policy{
-		ID:          "native-eval-001",
-		Name:        "native-eval-test",
-		Language:     compliance.PolicyNative,
-		Framework:   "HIPAA",
-		ControlID:   "164.312(a)",
-		Severity:    compliance.SeverityCritical,
+		ID:        "native-eval-001",
+		Name:      "native-eval-test",
+		Language:  compliance.PolicyNative,
+		Framework: "HIPAA",
+		ControlID: "164.312(a)",
+		Severity:  compliance.SeverityCritical,
 		NativeCheck: func(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 			return &compliance.ControlCheckResult{
 				ControlID: "164.312(a)",
@@ -380,12 +380,12 @@ func TestEvaluate_NativePolicy(t *testing.T) {
 func TestEvaluate_NativePolicy_NonCompliant(t *testing.T) {
 	engine := compliance.NewPolicyEngine()
 	policy := &compliance.Policy{
-		ID:          "native-noncomp-001",
-		Name:        "native-noncomp-test",
-		Language:     compliance.PolicyNative,
-		Framework:   "HIPAA",
-		ControlID:   "164.312(a)",
-		Severity:    compliance.SeverityCritical,
+		ID:        "native-noncomp-001",
+		Name:      "native-noncomp-test",
+		Language:  compliance.PolicyNative,
+		Framework: "HIPAA",
+		ControlID: "164.312(a)",
+		Severity:  compliance.SeverityCritical,
 		NativeCheck: func(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 			return &compliance.ControlCheckResult{
 				ControlID: "164.312(a)",
@@ -837,8 +837,8 @@ allow {
 
 	// Both conditions match
 	input := compliance.PolicyInput{
-		Config:   map[string]any{"tier": "enterprise"},
-		Request:  map[string]any{"authenticated": true},
+		Config:  map[string]any{"tier": "enterprise"},
+		Request: map[string]any{"authenticated": true},
 	}
 	result, err := engine.Evaluate(context.Background(), "nested-001", input)
 	require.NoError(t, err)
@@ -1062,8 +1062,8 @@ func TestEvaluateDefaultPolicies(t *testing.T) {
 
 	// Evaluate AG-POL-001 with authenticated request
 	input := compliance.PolicyInput{
-		Config:   map[string]any{"tier": "professional"},
-		Request:  map[string]any{"authenticated": true},
+		Config:  map[string]any{"tier": "professional"},
+		Request: map[string]any{"authenticated": true},
 	}
 	result, err := engine.Evaluate(context.Background(), "AG-POL-001", input)
 	require.NoError(t, err)
@@ -1071,8 +1071,8 @@ func TestEvaluateDefaultPolicies(t *testing.T) {
 
 	// Evaluate AG-POL-001 with unauthenticated request on professional tier
 	input2 := compliance.PolicyInput{
-		Config:   map[string]any{"tier": "professional"},
-		Request:  map[string]any{"authenticated": false},
+		Config:  map[string]any{"tier": "professional"},
+		Request: map[string]any{"authenticated": false},
 	}
 	result2, err := engine.Evaluate(context.Background(), "AG-POL-001", input2)
 	require.NoError(t, err)

@@ -42,9 +42,9 @@ const RegressionVersion = "3.6.0"
 // fail-on for new unenforced frameworks and missing controls.
 func DefaultRegressionThreshold() *RegressionThreshold {
 	return &RegressionThreshold{
-		MinScoreDelta:        5.0,
+		MinScoreDelta:         5.0,
 		MinCompliancePctDelta: 5.0,
-		FailOnNewUnenforced:  true,
+		FailOnNewUnenforced:   true,
 		FailOnMissingControls: true,
 	}
 }
@@ -200,7 +200,7 @@ func (g *RegressionGate) SnapshotBaseline(report *ScanReport) *BaselineSnapshot 
 			Score:             fw.Score,
 			CompliancePct:     fw.CompliancePct,
 			ControlsTotal:     fw.ControlsTotal,
-			ControlsEnforced: fw.ControlsEnforced,
+			ControlsEnforced:  fw.ControlsEnforced,
 			Enforced:          fw.Enforced,
 			ReasonEnforced:    fw.ReasonEnforced,
 			ReasonNotEnforced: fw.ReasonNotEnforced,

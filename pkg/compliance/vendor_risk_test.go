@@ -181,7 +181,7 @@ func TestGenerateRecommendations(t *testing.T) {
 	_ = va.AssessDimension(compliance.DimSecurityPosture, 75, "", nil)
 	_ = va.AssessDimension(compliance.DimCompliance, 80, "", nil)
 	_ = va.AssessDimension(compliance.DimAvailability, 90, "", nil)
-	_ = va.AssessDimension(compliance.DimTransparency, 65, "", nil) // below threshold
+	_ = va.AssessDimension(compliance.DimTransparency, 65, "", nil)  // below threshold
 	_ = va.AssessDimension(compliance.DimDataResidency, 50, "", nil) // below threshold
 	_ = va.AssessDimension(compliance.DimModelIntegrity, 72, "", nil)
 	_ = va.AssessDimension(compliance.DimIncidentResponse, 30, "", nil) // below threshold
@@ -307,10 +307,10 @@ func TestAddCertification(t *testing.T) {
 	va := compliance.NewVendorAssessment("TestVendor", compliance.VendorLLMProvider)
 
 	cert := compliance.Certification{
-		Name:      "SOC2 Type 2",
-		Status:    "active",
+		Name:       "SOC2 Type 2",
+		Status:     "active",
 		ValidUntil: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
-		Scope:     "Full platform",
+		Scope:      "Full platform",
 	}
 	va.AddCertification(cert)
 
@@ -344,7 +344,7 @@ func TestSetDataFlowRisk(t *testing.T) {
 		DataInTransit:     "encrypted",
 		DataAtRest:        "encrypted",
 		DataRetention:     "30 days",
-		DataResidency:      "US",
+		DataResidency:     "US",
 		ThirdPartySharing: true,
 		TrainingDataUse:   true,
 	}
@@ -484,7 +484,7 @@ func TestDataFlowRiskScoring(t *testing.T) {
 		DataInTransit:     "encrypted",
 		DataAtRest:        "unencrypted",
 		DataRetention:     "Indefinite",
-		DataResidency:      "US",
+		DataResidency:     "US",
 		ThirdPartySharing: true,
 		TrainingDataUse:   true,
 	})

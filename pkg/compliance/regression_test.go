@@ -17,15 +17,15 @@ import (
 // results. This is a test helper used throughout the regression tests.
 func sampleScanReport(frameworks []FrameworkScanResult, generatedAt time.Time) *ScanReport {
 	return &ScanReport{
-		CustomerTier:        tier.TierProfessional,
-		CustomerModules:     []string{"hipaa", "pci", "soc2", "iso42001"},
-		Frameworks:          frameworks,
-		OverallScore:        85.0,
+		CustomerTier:         tier.TierProfessional,
+		CustomerModules:      []string{"hipaa", "pci", "soc2", "iso42001"},
+		Frameworks:           frameworks,
+		OverallScore:         85.0,
 		OverallCompliancePct: 82.0,
-		GeneratedAt:         generatedAt,
-		ScanDurationMs:      123,
-		HasLicense:          true,
-		LicenseValid:        true,
+		GeneratedAt:          generatedAt,
+		ScanDurationMs:       123,
+		HasLicense:           true,
+		LicenseValid:         true,
 	}
 }
 
@@ -34,56 +34,56 @@ func sampleScanReport(frameworks []FrameworkScanResult, generatedAt time.Time) *
 func baselineFrameworks() []FrameworkScanResult {
 	return []FrameworkScanResult{
 		{
-			Framework:         "hipaa",
-			DisplayName:       "HIPAA",
-			Enforced:          true,
-			Module:            "hipaa",
-			Score:             85.0,
-			ControlsTotal:     20,
-			ControlsEnforced: 17,
-			CompliancePct:     85.0,
-			ReasonEnforced:    "module_owned",
+			Framework:           "hipaa",
+			DisplayName:         "HIPAA",
+			Enforced:            true,
+			Module:              "hipaa",
+			Score:               85.0,
+			ControlsTotal:       20,
+			ControlsEnforced:    17,
+			CompliancePct:       85.0,
+			ReasonEnforced:      "module_owned",
 			ImplementationReady: true,
-			LastScan:          time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+			LastScan:            time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
 		},
 		{
-			Framework:         "pci",
-			DisplayName:       "PCI-DSS",
-			Enforced:          true,
-			Module:            "pci",
-			Score:             78.0,
-			ControlsTotal:     25,
-			ControlsEnforced:  20,
-			CompliancePct:     80.0,
-			ReasonEnforced:    "module_owned",
+			Framework:           "pci",
+			DisplayName:         "PCI-DSS",
+			Enforced:            true,
+			Module:              "pci",
+			Score:               78.0,
+			ControlsTotal:       25,
+			ControlsEnforced:    20,
+			CompliancePct:       80.0,
+			ReasonEnforced:      "module_owned",
 			ImplementationReady: true,
-			LastScan:          time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+			LastScan:            time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
 		},
 		{
-			Framework:         "soc2",
-			DisplayName:       "SOC 2",
-			Enforced:          true,
-			Module:            "soc2",
-			Score:             90.0,
-			ControlsTotal:     30,
-			ControlsEnforced:  27,
-			CompliancePct:     90.0,
-			ReasonEnforced:    "module_owned",
+			Framework:           "soc2",
+			DisplayName:         "SOC 2",
+			Enforced:            true,
+			Module:              "soc2",
+			Score:               90.0,
+			ControlsTotal:       30,
+			ControlsEnforced:    27,
+			CompliancePct:       90.0,
+			ReasonEnforced:      "module_owned",
 			ImplementationReady: true,
-			LastScan:          time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+			LastScan:            time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
 		},
 		{
-			Framework:         "iso42001",
-			DisplayName:       "ISO 42001",
-			Enforced:          true,
-			Module:            "iso42001",
-			Score:             72.0,
-			ControlsTotal:     15,
-			ControlsEnforced:  11,
-			CompliancePct:     73.33,
-			ReasonEnforced:    "module_owned",
+			Framework:           "iso42001",
+			DisplayName:         "ISO 42001",
+			Enforced:            true,
+			Module:              "iso42001",
+			Score:               72.0,
+			ControlsTotal:       15,
+			ControlsEnforced:    11,
+			CompliancePct:       73.33,
+			ReasonEnforced:      "module_owned",
 			ImplementationReady: true,
-			LastScan:          time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+			LastScan:            time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
 		},
 	}
 }
@@ -113,9 +113,9 @@ func TestNewRegressionGate(t *testing.T) {
 
 	t.Run("with custom threshold", func(t *testing.T) {
 		custom := &RegressionThreshold{
-			MinScoreDelta:        10.0,
+			MinScoreDelta:         10.0,
 			MinCompliancePctDelta: 10.0,
-			FailOnNewUnenforced:  false,
+			FailOnNewUnenforced:   false,
 			FailOnMissingControls: false,
 		}
 		gate := NewRegressionGate(custom)
@@ -235,17 +235,17 @@ func TestCompare_ScoreDrop(t *testing.T) {
 	dropped := make([]FrameworkScanResult, len(bfs))
 	copy(dropped, bfs)
 	dropped[0] = FrameworkScanResult{
-		Framework:          "hipaa",
-		DisplayName:        "HIPAA",
-		Enforced:           true,
-		Module:             "hipaa",
-		Score:              79.0, // was 85
-		ControlsTotal:      20,
-		ControlsEnforced:   16, // was 17
-		CompliancePct:      80.0, // was 85
-		ReasonEnforced:     "module_owned",
+		Framework:           "hipaa",
+		DisplayName:         "HIPAA",
+		Enforced:            true,
+		Module:              "hipaa",
+		Score:               79.0, // was 85
+		ControlsTotal:       20,
+		ControlsEnforced:    16,   // was 17
+		CompliancePct:       80.0, // was 85
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -285,17 +285,17 @@ func TestCompare_ScoreDropCritical(t *testing.T) {
 	dropped := make([]FrameworkScanResult, len(bfs))
 	copy(dropped, bfs)
 	dropped[2] = FrameworkScanResult{
-		Framework:          "soc2",
-		DisplayName:        "SOC 2",
-		Enforced:           true,
-		Module:             "soc2",
-		Score:              75.0, // was 90
-		ControlsTotal:      30,
-		ControlsEnforced:   23, // was 27
-		CompliancePct:      76.67, // was 90
-		ReasonEnforced:     "module_owned",
+		Framework:           "soc2",
+		DisplayName:         "SOC 2",
+		Enforced:            true,
+		Module:              "soc2",
+		Score:               75.0, // was 90
+		ControlsTotal:       30,
+		ControlsEnforced:    23,    // was 27
+		CompliancePct:       76.67, // was 90
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -334,18 +334,18 @@ func TestCompare_NewUnenforcedFramework(t *testing.T) {
 	currentFWs := make([]FrameworkScanResult, len(bfs))
 	copy(currentFWs, bfs)
 	currentFWs[1] = FrameworkScanResult{
-		Framework:          "pci",
-		DisplayName:        "PCI-DSS",
-		Enforced:           false,
-		Module:             "pci",
-		Score:              0,
-		ControlsTotal:      25,
-		ControlsEnforced:   0,
-		CompliancePct:      0,
-		ReasonNotEnforced:  "module_not_owned",
-		MissingModules:     []string{"pci"},
+		Framework:           "pci",
+		DisplayName:         "PCI-DSS",
+		Enforced:            false,
+		Module:              "pci",
+		Score:               0,
+		ControlsTotal:       25,
+		ControlsEnforced:    0,
+		CompliancePct:       0,
+		ReasonNotEnforced:   "module_not_owned",
+		MissingModules:      []string{"pci"},
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(currentFWs, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -473,17 +473,17 @@ func TestCheckInCI_Fail(t *testing.T) {
 	dropped := make([]FrameworkScanResult, len(bfs))
 	copy(dropped, bfs)
 	dropped[0] = FrameworkScanResult{
-		Framework:          "hipaa",
-		DisplayName:        "HIPAA",
-		Enforced:           true,
-		Module:             "hipaa",
-		Score:              70.0, // was 85
-		ControlsTotal:      20,
-		ControlsEnforced:   14, // was 17
-		CompliancePct:      70.0, // was 85
-		ReasonEnforced:     "module_owned",
+		Framework:           "hipaa",
+		DisplayName:         "HIPAA",
+		Enforced:            true,
+		Module:              "hipaa",
+		Score:               70.0, // was 85
+		ControlsTotal:       20,
+		ControlsEnforced:    14,   // was 17
+		CompliancePct:       70.0, // was 85
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -579,9 +579,9 @@ func TestExportBaselineJSON(t *testing.T) {
 func TestThresholdMinScoreDelta(t *testing.T) {
 	// Use a threshold with a high MinScoreDelta so small drops are ignored
 	threshold := &RegressionThreshold{
-		MinScoreDelta:        15.0,
+		MinScoreDelta:         15.0,
 		MinCompliancePctDelta: 15.0,
-		FailOnNewUnenforced:  true,
+		FailOnNewUnenforced:   true,
 		FailOnMissingControls: true,
 	}
 	gate := NewRegressionGate(threshold)
@@ -595,17 +595,17 @@ func TestThresholdMinScoreDelta(t *testing.T) {
 	dropped := make([]FrameworkScanResult, len(bfs))
 	copy(dropped, bfs)
 	dropped[0] = FrameworkScanResult{
-		Framework:          "hipaa",
-		DisplayName:        "HIPAA",
-		Enforced:           true,
-		Module:             "hipaa",
-		Score:              79.0, // was 85, drop of 6%
-		ControlsTotal:      20,
-		ControlsEnforced:   17,
-		CompliancePct:      85.0,
-		ReasonEnforced:     "module_owned",
+		Framework:           "hipaa",
+		DisplayName:         "HIPAA",
+		Enforced:            true,
+		Module:              "hipaa",
+		Score:               79.0, // was 85, drop of 6%
+		ControlsTotal:       20,
+		ControlsEnforced:    17,
+		CompliancePct:       85.0,
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -620,17 +620,17 @@ func TestThresholdMinScoreDelta(t *testing.T) {
 
 	// Now drop by 20% — should be flagged
 	dropped[0] = FrameworkScanResult{
-		Framework:          "hipaa",
-		DisplayName:        "HIPAA",
-		Enforced:           true,
-		Module:             "hipaa",
-		Score:              65.0, // was 85, drop of 20%
-		ControlsTotal:      20,
-		ControlsEnforced:   13,
-		CompliancePct:      65.0, // was 85, drop of 20%
-		ReasonEnforced:     "module_owned",
+		Framework:           "hipaa",
+		DisplayName:         "HIPAA",
+		Enforced:            true,
+		Module:              "hipaa",
+		Score:               65.0, // was 85, drop of 20%
+		ControlsTotal:       20,
+		ControlsEnforced:    13,
+		CompliancePct:       65.0, // was 85, drop of 20%
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current2 := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -701,17 +701,17 @@ func TestCompare_MissingControls(t *testing.T) {
 	dropped := make([]FrameworkScanResult, len(bfs))
 	copy(dropped, bfs)
 	dropped[3] = FrameworkScanResult{
-		Framework:          "iso42001",
-		DisplayName:        "ISO 42001",
-		Enforced:           true,
-		Module:             "iso42001",
-		Score:              72.0, // same
-		ControlsTotal:      15,
-		ControlsEnforced:   8, // was 11
-		CompliancePct:      53.33, // was 73.33
-		ReasonEnforced:     "module_owned",
+		Framework:           "iso42001",
+		DisplayName:         "ISO 42001",
+		Enforced:            true,
+		Module:              "iso42001",
+		Score:               72.0, // same
+		ControlsTotal:       15,
+		ControlsEnforced:    8,     // was 11
+		CompliancePct:       53.33, // was 73.33
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))
@@ -738,9 +738,9 @@ func TestCompare_MissingControls(t *testing.T) {
 func TestCompare_DisabledMissingControlsCheck(t *testing.T) {
 	// Disable FailOnMissingControls — control drops should not be regressions
 	threshold := &RegressionThreshold{
-		MinScoreDelta:        5.0,
+		MinScoreDelta:         5.0,
 		MinCompliancePctDelta: 5.0,
-		FailOnNewUnenforced:  true,
+		FailOnNewUnenforced:   true,
 		FailOnMissingControls: false,
 	}
 	gate := NewRegressionGate(threshold)
@@ -754,17 +754,17 @@ func TestCompare_DisabledMissingControlsCheck(t *testing.T) {
 	dropped := make([]FrameworkScanResult, len(bfs))
 	copy(dropped, bfs)
 	dropped[3] = FrameworkScanResult{
-		Framework:          "iso42001",
-		DisplayName:        "ISO 42001",
-		Enforced:           true,
-		Module:             "iso42001",
-		Score:              72.0,
-		ControlsTotal:      15,
-		ControlsEnforced:   8, // was 11, but FailOnMissingControls is false
-		CompliancePct:      53.33, // still triggers compliancePct regression
-		ReasonEnforced:     "module_owned",
+		Framework:           "iso42001",
+		DisplayName:         "ISO 42001",
+		Enforced:            true,
+		Module:              "iso42001",
+		Score:               72.0,
+		ControlsTotal:       15,
+		ControlsEnforced:    8,     // was 11, but FailOnMissingControls is false
+		CompliancePct:       53.33, // still triggers compliancePct regression
+		ReasonEnforced:      "module_owned",
 		ImplementationReady: true,
-		LastScan:           time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		LastScan:            time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	current := sampleScanReport(dropped, time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC))

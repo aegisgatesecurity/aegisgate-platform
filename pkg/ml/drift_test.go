@@ -298,11 +298,11 @@ func TestBuildDistribution_Empty(t *testing.T) {
 func TestDriftResultString(t *testing.T) {
 	r := DriftResult{
 		Feature:      "input_length",
-		PSI:           0.15,
-		KLDivergence:  0.22,
-		Level:         DriftMinor,
-		BaselineN:     1000,
-		CurrentN:      500,
+		PSI:          0.15,
+		KLDivergence: 0.22,
+		Level:        DriftMinor,
+		BaselineN:    1000,
+		CurrentN:     500,
 	}
 	s := r.String()
 	if s == "" {

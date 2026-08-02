@@ -71,19 +71,19 @@ type CreateUserRequest struct {
 
 // ScanReport represents a compliance scan report.
 type ScanReport struct {
-	ID          string             `json:"id"`
-	Status      string             `json:"status"`
-	Framework   string             `json:"framework"`
-	Score       float64            `json:"score"`
-	Controls    []ControlResult    `json:"controls,omitempty"`
-	StartedAt   string             `json:"started_at,omitempty"`
-	CompletedAt string             `json:"completed_at,omitempty"`
+	ID          string          `json:"id"`
+	Status      string          `json:"status"`
+	Framework   string          `json:"framework"`
+	Score       float64         `json:"score"`
+	Controls    []ControlResult `json:"controls,omitempty"`
+	StartedAt   string          `json:"started_at,omitempty"`
+	CompletedAt string          `json:"completed_at,omitempty"`
 }
 
 // ControlResult represents a single compliance control check result.
 type ControlResult struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+	ID     string  `json:"id"`
+	Status string  `json:"status"`
 	Score  float64 `json:"score"`
 }
 
@@ -192,10 +192,10 @@ type ScanFinding struct {
 
 // GuardrailsResult represents a guardrails check result.
 type GuardrailsResult struct {
-	Allowed   bool              `json:"allowed"`
-	Reason    string            `json:"reason,omitempty"`
-	Rules     []string          `json:"rules,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Allowed  bool              `json:"allowed"`
+	Reason   string            `json:"reason,omitempty"`
+	Rules    []string          `json:"rules,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // =========================================================================
@@ -213,10 +213,10 @@ type AnalyticsUsage struct {
 
 // AnalyticsCost represents cost analytics.
 type AnalyticsCost struct {
-	Period       string  `json:"period"`
-	TotalCost    float64 `json:"total_cost"`
-	Currency     string  `json:"currency,omitempty"`
-	Breakdown    map[string]float64 `json:"breakdown,omitempty"`
+	Period    string             `json:"period"`
+	TotalCost float64            `json:"total_cost"`
+	Currency  string             `json:"currency,omitempty"`
+	Breakdown map[string]float64 `json:"breakdown,omitempty"`
 }
 
 // AnalyticsAnomalies represents detected analytics anomalies.
@@ -240,7 +240,7 @@ type AnalyticsDashboard struct {
 	Usage     AnalyticsUsage     `json:"usage"`
 	Cost      AnalyticsCost      `json:"cost"`
 	Anomalies AnalyticsAnomalies `json:"anomalies"`
-	UpdatedAt string            `json:"updated_at,omitempty"`
+	UpdatedAt string             `json:"updated_at,omitempty"`
 }
 
 // =========================================================================
@@ -249,10 +249,10 @@ type AnalyticsDashboard struct {
 
 // IOCManifest represents an IOC manifest.
 type IOCManifest struct {
-	ID        string   `json:"id"`
+	ID        string     `json:"id"`
 	Entries   []IOCEntry `json:"entries,omitempty"`
-	Version   string   `json:"version,omitempty"`
-	Timestamp string   `json:"timestamp,omitempty"`
+	Version   string     `json:"version,omitempty"`
+	Timestamp string     `json:"timestamp,omitempty"`
 }
 
 // IOCEntry represents a single IOC entry.
@@ -265,9 +265,9 @@ type IOCEntry struct {
 
 // IOCStatus represents the health status of the IOC system.
 type IOCStatus struct {
-	Status    string `json:"status"`
-	LastSync  string `json:"last_sync,omitempty"`
-	EntryCount int  `json:"entry_count"`
+	Status     string `json:"status"`
+	LastSync   string `json:"last_sync,omitempty"`
+	EntryCount int    `json:"entry_count"`
 }
 
 // =========================================================================
@@ -289,19 +289,19 @@ type SIEMStatus struct {
 // MLShadowMetrics represents shadow-mode ML performance metrics.
 // Mirrors pkg/ml.ShadowMetrics from the AegisGate platform.
 type MLShadowMetrics struct {
-	TruePositives  int     `json:"true_positives"`
-	TrueNegatives  int     `json:"true_negatives"`
-	FalsePositives int     `json:"false_positives"`
-	FalseNegatives int     `json:"false_negatives"`
-	Precision      float64 `json:"precision"`
-	Recall         float64 `json:"recall"`
-	F1Score        float64 `json:"f1_score"`
-	AUROC          float64 `json:"auroc"`
-	TotalPredictions int   `json:"total_predictions"`
-	Threshold      float64 `json:"threshold"`
-	ModelVersion   string  `json:"model_version"`
-	ShadowModeEnabled bool `json:"shadow_mode_enabled"`
-	Timestamp      string  `json:"timestamp,omitempty"`
+	TruePositives     int     `json:"true_positives"`
+	TrueNegatives     int     `json:"true_negatives"`
+	FalsePositives    int     `json:"false_positives"`
+	FalseNegatives    int     `json:"false_negatives"`
+	Precision         float64 `json:"precision"`
+	Recall            float64 `json:"recall"`
+	F1Score           float64 `json:"f1_score"`
+	AUROC             float64 `json:"auroc"`
+	TotalPredictions  int     `json:"total_predictions"`
+	Threshold         float64 `json:"threshold"`
+	ModelVersion      string  `json:"model_version"`
+	ShadowModeEnabled bool    `json:"shadow_mode_enabled"`
+	Timestamp         string  `json:"timestamp,omitempty"`
 }
 
 // =========================================================================
@@ -338,7 +338,7 @@ type Policy struct {
 	Enabled     bool              `json:"enabled"`
 	CreatedAt   string            `json:"created_at,omitempty"`
 	UpdatedAt   string            `json:"updated_at,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // PolicyRule represents a single rule within a policy.
@@ -356,10 +356,10 @@ type PolicyRule struct {
 
 // ClusterHealth represents cluster health status.
 type ClusterHealth struct {
-	Status       string                 `json:"status"`
-	Nodes        []ClusterNode          `json:"nodes,omitempty"`
-	Leader       string                 `json:"leader,omitempty"`
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	Status   string                 `json:"status"`
+	Nodes    []ClusterNode          `json:"nodes,omitempty"`
+	Leader   string                 `json:"leader,omitempty"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // ClusterNode represents a single cluster node.
@@ -417,12 +417,12 @@ type AIBOMRequest struct {
 
 // AIBOMResult represents an AI Bill of Materials.
 type AIBOMResult struct {
-	ID          string            `json:"id"`
-	ModelName   string            `json:"model_name"`
-	Version     string            `json:"version,omitempty"`
-	Components  []AIBOMComponent  `json:"components,omitempty"`
-	GeneratedAt string            `json:"generated_at,omitempty"`
-	Checksum    string            `json:"checksum,omitempty"`
+	ID          string           `json:"id"`
+	ModelName   string           `json:"model_name"`
+	Version     string           `json:"version,omitempty"`
+	Components  []AIBOMComponent `json:"components,omitempty"`
+	GeneratedAt string           `json:"generated_at,omitempty"`
+	Checksum    string           `json:"checksum,omitempty"`
 }
 
 // AIBOMComponent represents a single component in an AI-BOM.
@@ -439,17 +439,17 @@ type AIBOMComponent struct {
 
 // A2AIntentSignRequest is the payload for signing an A2A intent.
 type A2AIntentSignRequest struct {
-	Intent    string            `json:"intent"`
-	AgentID   string            `json:"agent_id"`
-	Targets   []string          `json:"targets,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Intent   string            `json:"intent"`
+	AgentID  string            `json:"agent_id"`
+	Targets  []string          `json:"targets,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // A2AIntentVerifyRequest is the payload for verifying an A2A intent.
 type A2AIntentVerifyRequest struct {
-	Intent     string `json:"intent"`
-	Signature  string `json:"signature"`
-	AgentID    string `json:"agent_id"`
+	Intent    string `json:"intent"`
+	Signature string `json:"signature"`
+	AgentID   string `json:"agent_id"`
 }
 
 // A2AIntentResult represents a signed or verified A2A intent.
@@ -519,9 +519,9 @@ type Incident struct {
 
 // IncidentTriage is the payload for triaging an incident.
 type IncidentTriage struct {
-	Priority  string `json:"priority"`
-	Assignee  string `json:"assignee,omitempty"`
-	Notes     string `json:"notes,omitempty"`
+	Priority string `json:"priority"`
+	Assignee string `json:"assignee,omitempty"`
+	Notes    string `json:"notes,omitempty"`
 }
 
 // IncidentResolve is the payload for resolving an incident.
@@ -536,10 +536,10 @@ type IncidentResolve struct {
 
 // EvaluatorRunRequest is the payload for running an evaluator.
 type EvaluatorRunRequest struct {
-	Target    string            `json:"target"`
-	PolicyID  string            `json:"policy_id,omitempty"`
-	Checks    []string          `json:"checks,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Target   string            `json:"target"`
+	PolicyID string            `json:"policy_id,omitempty"`
+	Checks   []string          `json:"checks,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // EvaluatorVerifyRequest is the payload for verifying an evaluator result.
@@ -602,17 +602,17 @@ type CertInfo struct {
 
 // LicenseStatus represents the current license status.
 type LicenseStatus struct {
-	Valid      bool   `json:"valid"`
-	Tier       string `json:"tier,omitempty"`
-	ExpiresAt  string `json:"expires_at,omitempty"`
+	Valid      bool     `json:"valid"`
+	Tier       string   `json:"tier,omitempty"`
+	ExpiresAt  string   `json:"expires_at,omitempty"`
 	Features   []string `json:"features,omitempty"`
-	CustomerID string `json:"customer_id,omitempty"`
+	CustomerID string   `json:"customer_id,omitempty"`
 }
 
 // TierInfo represents information about a license tier.
 type TierInfo struct {
-	Name     string   `json:"name"`
-	Features []string `json:"features,omitempty"`
+	Name     string         `json:"name"`
+	Features []string       `json:"features,omitempty"`
 	Limits   map[string]int `json:"limits,omitempty"`
 }
 
@@ -647,20 +647,20 @@ type TSAStatus struct {
 // =========================================================================
 
 type VendorProfile struct {
-	Name       string  `json:"name"`
-	Category   string  `json:"category"`
-	Score      float64 `json:"score"`
-	RiskLevel  string  `json:"risk_level"`
+	Name      string  `json:"name"`
+	Category  string  `json:"category"`
+	Score     float64 `json:"score"`
+	RiskLevel string  `json:"risk_level"`
 }
 
 type VendorAssessment struct {
-	ID             string            `json:"id"`
-	VendorName     string            `json:"vendor_name"`
-	Category       string            `json:"category"`
-	OverallScore   float64           `json:"overall_score"`
-	RiskLevel      string            `json:"risk_level"`
-	Dimensions     map[string]float64 `json:"dimensions"`
-	Recommendations []string          `json:"recommendations"`
+	ID              string             `json:"id"`
+	VendorName      string             `json:"vendor_name"`
+	Category        string             `json:"category"`
+	OverallScore    float64            `json:"overall_score"`
+	RiskLevel       string             `json:"risk_level"`
+	Dimensions      map[string]float64 `json:"dimensions"`
+	Recommendations []string           `json:"recommendations"`
 }
 
 type VendorRiskAssessRequest struct {
@@ -716,11 +716,11 @@ type EvidenceItem struct {
 }
 
 type EvidenceCollection struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	Framework   string          `json:"framework"`
-	Items       []EvidenceItem `json:"items"`
-	Status      string          `json:"status"`
+	ID        string         `json:"id"`
+	Name      string         `json:"name"`
+	Framework string         `json:"framework"`
+	Items     []EvidenceItem `json:"items"`
+	Status    string         `json:"status"`
 }
 
 type EvidenceCollectRequest struct {
@@ -740,14 +740,14 @@ type EvidenceVerifyRequest struct {
 
 type ABTestConfig struct {
 	ID                  string  `json:"id"`
-	Name                 string  `json:"name"`
-	ChampionModelPath    string  `json:"champion_model_path"`
-	ChallengerModelPath  string  `json:"challenger_model_path"`
-	ChampionVersion      string  `json:"champion_version"`
-	ChallengerVersion    string  `json:"challenger_version"`
-	TrafficSplitPct      float64 `json:"traffic_split_pct"`
-	MinSampleSize        int     `json:"min_sample_size"`
-	ConfidenceLevel      float64 `json:"confidence_level"`
+	Name                string  `json:"name"`
+	ChampionModelPath   string  `json:"champion_model_path"`
+	ChallengerModelPath string  `json:"challenger_model_path"`
+	ChampionVersion     string  `json:"champion_version"`
+	ChallengerVersion   string  `json:"challenger_version"`
+	TrafficSplitPct     float64 `json:"traffic_split_pct"`
+	MinSampleSize       int     `json:"min_sample_size"`
+	ConfidenceLevel     float64 `json:"confidence_level"`
 }
 
 type ABTestCreateRequest struct {
@@ -762,11 +762,11 @@ type ABTestCreateRequest struct {
 }
 
 type ABTestStatusResult struct {
-	ID                string      `json:"id"`
-	Status            string      `json:"status"`
+	ID                string         `json:"id"`
+	Status            string         `json:"status"`
 	ChampionMetrics   ABModelMetrics `json:"champion_metrics"`
 	ChallengerMetrics ABModelMetrics `json:"challenger_metrics"`
-	SampleSize        int         `json:"sample_size"`
+	SampleSize        int            `json:"sample_size"`
 }
 
 type ABModelMetrics struct {
@@ -783,11 +783,11 @@ type ABModelMetrics struct {
 }
 
 type ABTestResult struct {
-	TestID            string  `json:"test_id"`
-	Status            string  `json:"status"`
-	Winner            string  `json:"winner"`
-	ConfidencePValue  float64 `json:"confidence_p_value"`
-	Recommendation    string  `json:"recommendation"`
+	TestID           string  `json:"test_id"`
+	Status           string  `json:"status"`
+	Winner           string  `json:"winner"`
+	ConfidencePValue float64 `json:"confidence_p_value"`
+	Recommendation   string  `json:"recommendation"`
 }
 
 // =========================================================================
@@ -799,9 +799,9 @@ type EvasionDetectRequest struct {
 }
 
 type EvasionDetectResult struct {
-	Detected         bool              `json:"detected"`
-	Score            float64           `json:"score"`
-	MatchedPatterns  []EvasionPatternMatch `json:"matched_patterns"`
+	Detected        bool                  `json:"detected"`
+	Score           float64               `json:"score"`
+	MatchedPatterns []EvasionPatternMatch `json:"matched_patterns"`
 }
 
 type EvasionPatternMatch struct {

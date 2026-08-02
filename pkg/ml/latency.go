@@ -133,14 +133,14 @@ const (
 
 // LatencyOptimizer provides caching and fast-path optimizations for detection.
 type LatencyOptimizer struct {
-	mu              sync.RWMutex
-	cache           *lruCache
-	attackWords     []string
-	attackSet       map[string]bool   // precomputed set of attack words
-	transpositions  map[string]bool   // precomputed transpositions
-	vowelDeleted    map[string]bool   // precomputed vowel-deleted forms
-	reversed        map[string]bool   // precomputed reversed forms
-	stats           LatencyStats
+	mu             sync.RWMutex
+	cache          *lruCache
+	attackWords    []string
+	attackSet      map[string]bool // precomputed set of attack words
+	transpositions map[string]bool // precomputed transpositions
+	vowelDeleted   map[string]bool // precomputed vowel-deleted forms
+	reversed       map[string]bool // precomputed reversed forms
+	stats          LatencyStats
 }
 
 // LatencyStats tracks optimization statistics.

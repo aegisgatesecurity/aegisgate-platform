@@ -79,7 +79,7 @@ type DiffResult struct {
 	Field      string     `json:"field"`
 	OldValue   string     `json:"old_value"`
 	NewValue   string     `json:"new_value"`
-	ChangeType ChangeType  `json:"change_type"`
+	ChangeType ChangeType `json:"change_type"`
 }
 
 // AuditQuery defines filter parameters for querying audit entries.
@@ -102,12 +102,12 @@ type AuditQuery struct {
 
 // AuditStats provides summary statistics for the audit trail.
 type AuditStats struct {
-	TotalEntries  int              `json:"total_entries"`
-	ByFramework  map[string]int    `json:"by_framework"`
+	TotalEntries int                `json:"total_entries"`
+	ByFramework  map[string]int     `json:"by_framework"`
 	ByChangeType map[ChangeType]int `json:"by_change_type"`
-	ByAuthor     map[string]int    `json:"by_author"`
-	Earliest     time.Time         `json:"earliest"`
-	Latest       time.Time         `json:"latest"`
+	ByAuthor     map[string]int     `json:"by_author"`
+	Earliest     time.Time          `json:"earliest"`
+	Latest       time.Time          `json:"latest"`
 }
 
 // AuditTrail tracks changes to compliance patterns with full audit capability.
@@ -166,9 +166,9 @@ func (at *AuditTrail) RecordPatternChange(old, new *Pattern, author, reason stri
 
 	// Compare each field
 	type fieldCompare struct {
-		name    string
-		oldVal  string
-		newVal  string
+		name   string
+		oldVal string
+		newVal string
 	}
 
 	comparisons := []fieldCompare{
@@ -475,9 +475,9 @@ func (at *AuditTrail) Stats() AuditStats {
 
 	stats := AuditStats{
 		TotalEntries: len(at.entries),
-		ByFramework: make(map[string]int),
+		ByFramework:  make(map[string]int),
 		ByChangeType: make(map[ChangeType]int),
-		ByAuthor:    make(map[string]int),
+		ByAuthor:     make(map[string]int),
 	}
 
 	for _, e := range at.entries {

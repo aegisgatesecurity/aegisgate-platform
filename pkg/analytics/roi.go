@@ -58,11 +58,11 @@ type ROIInput struct {
 // ROIResult contains the calculated ROI metrics.
 type ROIResult struct {
 	MonthlyAttacksPrevented    int64   `json:"monthly_attacks_prevented"`
-	MonthlyAttacksDetected      int64   `json:"monthly_attacks_detected"`
-	MonthlyBreachesPrevented    int64   `json:"monthly_breaches_prevented"`
-	MonthlyFPInvestigations     int64   `json:"monthly_fp_investigations"`
-	MonthlyBreachCostAvoided    float64 `json:"monthly_breach_cost_avoided"`
-	MonthlyFPInvestigationCost  float64 `json:"monthly_fp_investigation_cost"`
+	MonthlyAttacksDetected     int64   `json:"monthly_attacks_detected"`
+	MonthlyBreachesPrevented   int64   `json:"monthly_breaches_prevented"`
+	MonthlyFPInvestigations    int64   `json:"monthly_fp_investigations"`
+	MonthlyBreachCostAvoided   float64 `json:"monthly_breach_cost_avoided"`
+	MonthlyFPInvestigationCost float64 `json:"monthly_fp_investigation_cost"`
 	MonthlyAnalystHoursSaved   float64 `json:"monthly_analyst_hours_saved"`
 	MonthlyTotalSavings        float64 `json:"monthly_total_savings"`
 	MonthlyTotalCost           float64 `json:"monthly_total_cost"`
@@ -77,18 +77,18 @@ type ROIResult struct {
 // and industry breach cost data.
 func NewDefaultROIInput() *ROIInput {
 	return &ROIInput{
-		MonthlyLLMCalls:          1_000_000,
-		AvgCostPerBreach:         50000,
-		DetectionRate:            0.788,
-		FalsePositiveRate:        0.0,
-		AvgFalsePositiveCost:     50,
-		MonthlyLicenseCost:       79,
-		InfrastructureCost:       0,
-		AnalystHoursPerIncident:  4,
-		AnalystHourlyCost:        75,
-		BaselineIncidentRate:     2.0,
-		MultiTurnDetectionRate:   0.70,
-		MultiTurnAttackFraction:  0.30,
+		MonthlyLLMCalls:         1_000_000,
+		AvgCostPerBreach:        50000,
+		DetectionRate:           0.788,
+		FalsePositiveRate:       0.0,
+		AvgFalsePositiveCost:    50,
+		MonthlyLicenseCost:      79,
+		InfrastructureCost:      0,
+		AnalystHoursPerIncident: 4,
+		AnalystHourlyCost:       75,
+		BaselineIncidentRate:    2.0,
+		MultiTurnDetectionRate:  0.70,
+		MultiTurnAttackFraction: 0.30,
 	}
 }
 
@@ -149,9 +149,9 @@ func CalculateROI(input *ROIInput) (*ROIResult, error) {
 	return &ROIResult{
 		MonthlyAttacksPrevented:    prevented,
 		MonthlyAttacksDetected:     detected,
-		MonthlyBreachesPrevented:    breachesPrevented,
+		MonthlyBreachesPrevented:   breachesPrevented,
 		MonthlyFPInvestigations:    fpInvestigations,
-		MonthlyBreachCostAvoided:    breachCostAvoided,
+		MonthlyBreachCostAvoided:   breachCostAvoided,
 		MonthlyFPInvestigationCost: fpCost,
 		MonthlyAnalystHoursSaved:   analystHoursSaved,
 		MonthlyTotalSavings:        totalSavings,
