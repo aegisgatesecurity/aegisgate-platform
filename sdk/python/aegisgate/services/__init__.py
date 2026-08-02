@@ -32,6 +32,11 @@ from aegisgate.services.sla import SLAService, AsyncSLAService
 from aegisgate.services.tsa import TSAService, AsyncTSAService
 from aegisgate.services.webhook import WebhookService, AsyncWebhookService
 from aegisgate.services.core import CoreService, AsyncCoreService
+from aegisgate.services.vendor_risk import VendorRiskService, AsyncVendorRiskService
+from aegisgate.services.policy_engine import PolicyEngineService, AsyncPolicyEngineService
+from aegisgate.services.evidence import EvidenceService, AsyncEvidenceService
+from aegisgate.services.ab_test import ABTestService, AsyncABTestService
+from aegisgate.services.evasion import EvasionService, AsyncEvasionService
 
 __all__ = [
     # Sync services
@@ -90,4 +95,15 @@ __all__ = [
     "AsyncTSAService",
     "AsyncWebhookService",
     "AsyncCoreService",
+    # New services
+    "VendorRiskService",
+    "AsyncVendorRiskService",
+    "PolicyEngineService",
+    "AsyncPolicyEngineService",
+    "EvidenceService",
+    "AsyncEvidenceService",
+    "ABTestService",
+    "AsyncABTestService",
+    "EvasionService",
+    "AsyncEvasionService",
 ]

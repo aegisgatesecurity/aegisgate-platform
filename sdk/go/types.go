@@ -641,3 +641,171 @@ type TSAStatus struct {
 	Certificate string `json:"certificate,omitempty"`
 	Status      string `json:"status"`
 }
+
+// =========================================================================
+// Vendor Risk Types
+// =========================================================================
+
+type VendorProfile struct {
+	Name       string  `json:"name"`
+	Category   string  `json:"category"`
+	Score      float64 `json:"score"`
+	RiskLevel  string  `json:"risk_level"`
+}
+
+type VendorAssessment struct {
+	ID             string            `json:"id"`
+	VendorName     string            `json:"vendor_name"`
+	Category       string            `json:"category"`
+	OverallScore   float64           `json:"overall_score"`
+	RiskLevel      string            `json:"risk_level"`
+	Dimensions     map[string]float64 `json:"dimensions"`
+	Recommendations []string          `json:"recommendations"`
+}
+
+type VendorRiskAssessRequest struct {
+	VendorName string `json:"vendor_name"`
+	Category   string `json:"category,omitempty"`
+}
+
+// =========================================================================
+// Policy Engine Types
+// =========================================================================
+
+type PolicyInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Framework   string `json:"framework"`
+	ControlID   string `json:"control_id"`
+	Language    string `json:"language"`
+	Description string `json:"description,omitempty"`
+}
+
+type PolicyEvaluateRequest struct {
+	Request     map[string]any `json:"request,omitempty"`
+	Config      map[string]any `json:"config,omitempty"`
+	ScanResult  map[string]any `json:"scan_result,omitempty"`
+	Environment map[string]any `json:"environment,omitempty"`
+	CustomData  map[string]any `json:"custom_data,omitempty"`
+}
+
+type PolicyEvaluateResult struct {
+	Results []PolicyResult `json:"results"`
+}
+
+type PolicyResult struct {
+	PolicyID string  `json:"policy_id"`
+	Allowed  bool    `json:"allowed"`
+	Reason   string  `json:"reason,omitempty"`
+	Score    float64 `json:"score"`
+}
+
+// =========================================================================
+// Evidence Types
+// =========================================================================
+
+type EvidenceItem struct {
+	ID          string            `json:"id"`
+	Type        string            `json:"type"`
+	Framework   string            `json:"framework"`
+	ControlID   string            `json:"control_id"`
+	Description string            `json:"description"`
+	Status      string            `json:"status"`
+	ContentHash string            `json:"content_hash"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+}
+
+type EvidenceCollection struct {
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Framework   string          `json:"framework"`
+	Items       []EvidenceItem `json:"items"`
+	Status      string          `json:"status"`
+}
+
+type EvidenceCollectRequest struct {
+	Framework string `json:"framework"`
+	ControlID string `json:"control_id,omitempty"`
+	Type      string `json:"type,omitempty"`
+}
+
+type EvidenceVerifyRequest struct {
+	ID         string `json:"id"`
+	VerifiedBy string `json:"verified_by"`
+}
+
+// =========================================================================
+// ML A/B Testing Types
+// =========================================================================
+
+type ABTestConfig struct {
+	ID                  string  `json:"id"`
+	Name                 string  `json:"name"`
+	ChampionModelPath    string  `json:"champion_model_path"`
+	ChallengerModelPath  string  `json:"challenger_model_path"`
+	ChampionVersion      string  `json:"champion_version"`
+	ChallengerVersion    string  `json:"challenger_version"`
+	TrafficSplitPct      float64 `json:"traffic_split_pct"`
+	MinSampleSize        int     `json:"min_sample_size"`
+	ConfidenceLevel      float64 `json:"confidence_level"`
+}
+
+type ABTestCreateRequest struct {
+	Name                string  `json:"name"`
+	ChampionModelPath   string  `json:"champion_model_path"`
+	ChallengerModelPath string  `json:"challenger_model_path"`
+	ChampionVersion     string  `json:"champion_version"`
+	ChallengerVersion   string  `json:"challenger_version"`
+	TrafficSplitPct     float64 `json:"traffic_split_pct"`
+	MinSampleSize       int     `json:"min_sample_size"`
+	ConfidenceLevel     float64 `json:"confidence_level"`
+}
+
+type ABTestStatusResult struct {
+	ID                string      `json:"id"`
+	Status            string      `json:"status"`
+	ChampionMetrics   ABModelMetrics `json:"champion_metrics"`
+	ChallengerMetrics ABModelMetrics `json:"challenger_metrics"`
+	SampleSize        int         `json:"sample_size"`
+}
+
+type ABModelMetrics struct {
+	ModelVersion     string  `json:"model_version"`
+	TotalPredictions int     `json:"total_predictions"`
+	TruePositives    int     `json:"true_positives"`
+	TrueNegatives    int     `json:"true_negatives"`
+	FalsePositives   int     `json:"false_positives"`
+	FalseNegatives   int     `json:"false_negatives"`
+	TPR              float64 `json:"tpr"`
+	FPR              float64 `json:"fpr"`
+	Precision        float64 `json:"precision"`
+	F1Score          float64 `json:"f1_score"`
+}
+
+type ABTestResult struct {
+	TestID            string  `json:"test_id"`
+	Status            string  `json:"status"`
+	Winner            string  `json:"winner"`
+	ConfidencePValue  float64 `json:"confidence_p_value"`
+	Recommendation    string  `json:"recommendation"`
+}
+
+// =========================================================================
+// Evasion Types
+// =========================================================================
+
+type EvasionDetectRequest struct {
+	Text string `json:"text"`
+}
+
+type EvasionDetectResult struct {
+	Detected         bool              `json:"detected"`
+	Score            float64           `json:"score"`
+	MatchedPatterns  []EvasionPatternMatch `json:"matched_patterns"`
+}
+
+type EvasionPatternMatch struct {
+	Name     string  `json:"name"`
+	Category string  `json:"category"`
+	Severity float64 `json:"severity"`
+}

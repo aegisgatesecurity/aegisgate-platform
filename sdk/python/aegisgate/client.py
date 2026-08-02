@@ -38,6 +38,11 @@ from aegisgate.services import (
     WebhookService, AsyncWebhookService,
     CoreService, AsyncCoreService,
 )
+from aegisgate.services.vendor_risk import VendorRiskService
+from aegisgate.services.policy_engine import PolicyEngineService
+from aegisgate.services.evidence import EvidenceService
+from aegisgate.services.ab_test import ABTestService
+from aegisgate.services.evasion import EvasionService
 
 
 class Client:
@@ -110,6 +115,11 @@ class Client:
         self._tsa = TSAService(self._connection)
         self._webhook = WebhookService(self._connection)
         self._core = CoreService(self._connection)
+        self._vendor_risk = VendorRiskService(self._connection)
+        self._policy_engine = PolicyEngineService(self._connection)
+        self._evidence = EvidenceService(self._connection)
+        self._ab_test = ABTestService(self._connection)
+        self._evasion = EvasionService(self._connection)
 
     @property
     def auth(self) -> AuthService:
@@ -246,6 +256,31 @@ class Client:
         """Access core service."""
         return self._core
 
+    @property
+    def vendor_risk(self) -> VendorRiskService:
+        """Access vendor risk assessment service."""
+        return self._vendor_risk
+
+    @property
+    def policy_engine(self) -> PolicyEngineService:
+        """Access policy engine (OPA/Rego) service."""
+        return self._policy_engine
+
+    @property
+    def evidence(self) -> EvidenceService:
+        """Access evidence collection service."""
+        return self._evidence
+
+    @property
+    def ab_test(self) -> ABTestService:
+        """Access ML A/B testing service."""
+        return self._ab_test
+
+    @property
+    def evasion(self) -> EvasionService:
+        """Access evasion resistance detection service."""
+        return self._evasion
+
     def set_token(self, token: str) -> None:
         """Set authentication token."""
         self._token = token
@@ -334,6 +369,11 @@ class AsyncClient:
         self._tsa = AsyncTSAService(self._connection)
         self._webhook = AsyncWebhookService(self._connection)
         self._core = AsyncCoreService(self._connection)
+        self._vendor_risk = VendorRiskService(self._connection)
+        self._policy_engine = PolicyEngineService(self._connection)
+        self._evidence = EvidenceService(self._connection)
+        self._ab_test = ABTestService(self._connection)
+        self._evasion = EvasionService(self._connection)
 
     @property
     def auth(self) -> AsyncAuthService: return self._auth
@@ -389,6 +429,21 @@ class AsyncClient:
     def webhook(self) -> AsyncWebhookService: return self._webhook
     @property
     def core(self) -> AsyncCoreService: return self._core
+
+    @property
+    def vendor_risk(self) -> VendorRiskService: return self._vendor_risk
+
+    @property
+    def policy_engine(self) -> PolicyEngineService: return self._policy_engine
+
+    @property
+    def evidence(self) -> EvidenceService: return self._evidence
+
+    @property
+    def ab_test(self) -> ABTestService: return self._ab_test
+
+    @property
+    def evasion(self) -> EvasionService: return self._evasion
 
     def set_token(self, token: str) -> None:
         self._token = token

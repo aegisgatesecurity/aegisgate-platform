@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Platform Go SDK — v3.6.0
+// AegisGate Platform Go SDK — v3.6.1
 // =========================================================================
 //
-// Package aegisgate provides a Go client SDK for the AegisGate v3.6.0
+// Package aegisgate provides a Go client SDK for the AegisGate v3.6.1
 // platform API. It offers typed access to all platform services including
 // authentication, compliance, trust scoring, scanning, guardrails, analytics,
 // IOC, SIEM, ML metrics, audit, policy, cluster, bridge, attestation, AI-BOM,
@@ -33,7 +33,7 @@ import (
 )
 
 // Version is the semantic version of this SDK.
-const Version = "3.6.0"
+const Version = "3.6.1"
 
 // Client is the top-level AegisGate API client. It holds the HTTP client,
 // configuration, and references to every service namespace.
@@ -69,6 +69,11 @@ type Client struct {
 	TSA          *TSAService
 	Health       *HealthService
 	Version      *VersionService
+	VendorRisk   *VendorRiskService
+	PolicyEngine *PolicyEngineService
+	Evidence     *EvidenceService
+	ABTest       *ABTestService
+	Evasion      *EvasionService
 }
 
 // NewClient creates a new AegisGate client from the provided configuration.
@@ -126,6 +131,11 @@ func NewClient(cfg *Config) (*Client, error) {
 	c.TSA = &TSAService{client: c}
 	c.Health = &HealthService{client: c}
 	c.Version = &VersionService{client: c}
+	c.VendorRisk = &VendorRiskService{client: c}
+	c.PolicyEngine = &PolicyEngineService{client: c}
+	c.Evidence = &EvidenceService{client: c}
+	c.ABTest = &ABTestService{client: c}
+	c.Evasion = &EvasionService{client: c}
 
 	return c, nil
 }
