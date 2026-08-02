@@ -872,6 +872,22 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-02", Title: "User Authentication"},
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-CS-001", Title: "BES Cyber System Categorization"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-CS-002", Title: "Impact Rating Assignment"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-SM-001", Title: "Security Management Controls"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-EP-001", Title: "Electronic Security Perimeter"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-PS-001", Title: "Physical Security Perimeter"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-PS-002", Title: "Transmission Station Security"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-SS-001", Title: "System Security Management"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-SS-002", Title: "Patch Management"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-IR-001", Title: "Incident Response and Reporting"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-IP-001", Title: "Information Protection"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-SC-001", Title: "Supply Chain Risk Management"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-AI-001", Title: "AI Model BES Data Protection"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-AI-002", Title: "AI Audit Trail for BES Operations"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-EP-001", Title: "Electronic Security Perimeter"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-AI-001", Title: "AI Model BES Data Protection"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-AI-002", Title: "AI Audit Trail for BES Operations"},
 		},
 	},
 
@@ -1043,6 +1059,8 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-ER-001", Title: "Education Records Access"},
 			{Framework: "sox", ControlID: "SOX-IC-002", Title: "Control Environment"},
 			{Framework: "sox", ControlID: "SOX-WP-002", Title: "Anonymous Reporting Mechanism"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-PT-002", Title: "Cyber Security Training"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-CM-001", Title: "Configuration Change Management"},
 		},
 	},
 
@@ -1080,6 +1098,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-03", Title: "Logical Access Control"},
 			{Framework: "tisax", ControlID: "TISAX-IS-05", Title: "Cryptography"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-RP-001", Title: "Recovery Planning"},
 		},
 	},
 
@@ -1114,6 +1133,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "sox", ControlID: "SOX-FR-001", Title: "Financial Statement Integrity"},
 			{Framework: "sox", ControlID: "SOX-FR-003", Title: "Audit Committee Oversight"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-SS-001", Title: "System Security Management"},
 		},
 	},
 
@@ -1201,6 +1221,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "tisax", ControlID: "TISAX-DP-07", Title: "Incident Handling"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "cjis", ControlID: "CJIS-AC-003", Title: "Audit and Accountability"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-EP-002", Title: "Electronic Access Monitoring"},
 		},
 	},
 
@@ -1231,6 +1252,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-01", Title: "Access Management Policy"},
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-SM-001", Title: "Security Management Controls"},
 		},
 	},
 
@@ -1298,6 +1320,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-DS-001", Title: "Administrative Data Safeguards"},
 			{Framework: "sox", ControlID: "SOX-IC-002", Title: "Control Environment"},
 			{Framework: "sox", ControlID: "SOX-WP-001", Title: "Whistleblower Protection (Section 806)"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-PT-001", Title: "Personnel Risk Assessment"},
 		},
 	},
 
@@ -1328,6 +1351,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-IM-01", Title: "Incident Management"},
 			{Framework: "tisax", ControlID: "TISAX-DP-07", Title: "Incident Handling"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-IR-001", Title: "Incident Response and Reporting"},
 		},
 	},
 
@@ -1365,6 +1389,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-03", Title: "Logical Access Control"},
 			{Framework: "tisax", ControlID: "TISAX-IS-05", Title: "Cryptography"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "nerc_cip", ControlID: "NERC-CIP-EP-002", Title: "Electronic Access Monitoring"},
 		},
 	},
 
@@ -1460,6 +1485,7 @@ var FrameworkName = map[string]string{
 	"ferpa": "FERPA (34 CFR Part 99)",
 	"sox":    "Sarbanes-Oxley Act (2002)",
 	"glba":   "Gramm-Leach-Bliley Act (1999)",
+	"nerc_cip": "NERC CIP Standards (v7)",
 }
 
 // MapByControlID returns all external framework controls that the

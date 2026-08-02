@@ -27,6 +27,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ccpa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ferpa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/glba"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nerc_cip"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/sox"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cjis"
@@ -299,6 +300,15 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("glba", len(controls))
 		}
 	}()
+	// NERC CIP (Critical Infrastructure Protection) (Professional tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := nerc_cip.NewNERCCIPModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("nerc_cip", len(controls))
+		}
+	}()
 
 	// Community frameworks (ATLAS, GDPR, OWASP LLM) use a different
 	// interface (common.Framework) that doesn't have Controls(). Their
@@ -355,6 +365,7 @@ func RegisterBuiltinFrameworksIntoRegistry(registry *Registry) {
 	registerIntoRegistry(registry, "ferpa", ferpa.NewFERPAModule())
 	registerIntoRegistry(registry, "sox", sox.NewSOXModule())
 	registerIntoRegistry(registry, "glba", glba.NewGLBAModule())
+	registerIntoRegistry(registry, "nerc_cip", nerc_cip.NewNERCCIPModule())
 }
 
 // registerIntoRegistry is a helper that safely registers a framework module
