@@ -50,6 +50,7 @@ const (
 	PlatformCloudWatch    Platform = "cloudwatch"
 	PlatformSecurityHub   Platform = "securityhub"
 	PlatformArcSight      Platform = "arcsight"
+	PlatformDatadog       Platform = "datadog"
 	PlatformSyslog        Platform = "syslog"
 	PlatformCustom        Platform = "custom"
 )
@@ -378,6 +379,12 @@ func DefaultPlatformConfig(platform Platform) PlatformConfig {
 		base.Format = FormatCEF
 	case PlatformSyslog:
 		base.Format = FormatSyslog
+	case PlatformDatadog:
+		base.Format = FormatJSON
+	case PlatformCloudWatch:
+		base.Format = FormatJSON
+	case PlatformSecurityHub:
+		base.Format = FormatJSON
 	}
 
 	return base

@@ -167,6 +167,12 @@ func (m *Manager) createClient(config PlatformConfig) (Client, error) {
 		return NewArcSightClient(config)
 	case PlatformSyslog:
 		return NewSyslogClient(config)
+	case PlatformDatadog:
+		return NewDatadogClient(config)
+	case PlatformCloudWatch:
+		return NewCloudWatchClient(config)
+	case PlatformSecurityHub:
+		return NewSecurityHubClient(config)
 	default:
 		return nil, NewError(config.Platform, "init", "unsupported platform", false, nil)
 	}

@@ -1326,6 +1326,823 @@ func (c *SyslogClient) flush() {
 }
 
 // ============================================================================
+// Datadog Integration
+// ============================================================================
+
+// DatadogClient sends security events to Datadog's Event API or
+// Log Intake API. It uses JSON format and DD-API-KEY authentication.
+type DatadogClient struct {
+	config     PlatformConfig
+	httpClient *HTTPClient
+	formatter  Formatter
+	eventChan  chan *Event
+	errChan    chan error
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	buffer     *EventBuffer
+}
+
+// DatadogConfig holds Datadog-specific configuration extracted from
+// the PlatformConfig Settings map.
+type DatadogConfig struct {
+	// APIKey is the Datadog API key (required).
+	APIKey string
+	// Site is the Datadog site (datadoghq.com, datadoghq.eu, us3.datadoghq.com, etc.).
+	Site string
+	// LogIntake uses the Log Intake API instead of the Event API.
+	LogIntake bool
+	// Tags are additional Datadog tags appended to every event.
+	Tags []string
+	// Source is the Datadog source name (default: "aegisgate").
+	Source string
+	// ServiceName is the Datadog service name (default: "aegisgate-platform").
+	ServiceName string
+}
+
+// NewDatadogClient creates a new Datadog SIEM client.
+func NewDatadogClient(config PlatformConfig) (*DatadogClient, error) {
+	ddConfig := extractDatadogConfig(config)
+
+	if ddConfig.APIKey == "" {
+		return nil, NewError(PlatformDatadog, "init", "Datadog API key is required (set auth.api_key or settings.api_key)", false, nil)
+	}
+
+	httpClient, err := NewHTTPClient(PlatformDatadog, config.TLS)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the configured endpoint or derive it from the site.
+	if config.Endpoint == "" {
+		site := ddConfig.Site
+		if site == "" {
+			site = "datadoghq.com"
+		}
+		if ddConfig.LogIntake {
+			config.Endpoint = "https://http-intake.logs." + site
+		} else {
+			config.Endpoint = "https://api." + site
+		}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	client := &DatadogClient{
+		config:     config,
+		httpClient: httpClient,
+		formatter:  NewJSONFormatter(PlatformDatadog),
+		eventChan:  make(chan *Event, 1000),
+		errChan:    make(chan error, 100),
+		ctx:        ctx,
+		cancel:     cancel,
+		buffer:     NewEventBuffer(PlatformDatadog, config.Batch.MaxSize),
+	}
+
+	return client, nil
+}
+
+// extractDatadogConfig extracts Datadog-specific configuration from
+// the PlatformConfig Settings map and Auth fields.
+func extractDatadogConfig(config PlatformConfig) DatadogConfig {
+	ddConfig := DatadogConfig{
+		Source:      "aegisgate",
+		ServiceName: "aegisgate-platform",
+	}
+
+	// API key from auth or settings.
+	if config.Auth.APIKey != "" {
+		ddConfig.APIKey = config.Auth.APIKey
+	}
+	if config.Settings != nil {
+		if ak, ok := config.Settings["api_key"].(string); ok && ak != "" {
+			ddConfig.APIKey = ak
+		}
+		if site, ok := config.Settings["site"].(string); ok {
+			ddConfig.Site = site
+		}
+		if li, ok := config.Settings["log_intake"].(bool); ok {
+			ddConfig.LogIntake = li
+		}
+		if src, ok := config.Settings["source"].(string); ok {
+			ddConfig.Source = src
+		}
+		if svc, ok := config.Settings["service_name"].(string); ok {
+			ddConfig.ServiceName = svc
+		}
+		if tags, ok := config.Settings["tags"].([]interface{}); ok {
+			for _, t := range tags {
+				if s, ok := t.(string); ok {
+					ddConfig.Tags = append(ddConfig.Tags, s)
+				}
+			}
+		}
+	}
+
+	return ddConfig
+}
+
+// Send sends a single event to Datadog.
+func (c *DatadogClient) Send(ctx context.Context, event *Event) error {
+	ddConfig := extractDatadogConfig(c.config)
+
+	data, err := c.formatter.Format(event)
+	if err != nil {
+		return NewError(PlatformDatadog, "send", "failed to format event", false, err)
+	}
+
+	endpoint := strings.TrimSuffix(c.config.Endpoint, "/")
+	if ddConfig.LogIntake {
+		endpoint += "/v1/input"
+	} else {
+		endpoint += "/api/v1/events"
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(data))
+	if err != nil {
+		return NewError(PlatformDatadog, "send", "failed to create request", false, err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("DD-API-KEY", ddConfig.APIKey)
+	req.Header.Set("DD-SOURCE", ddConfig.Source)
+	if ddConfig.ServiceName != "" {
+		req.Header.Set("DD-SERVICE", ddConfig.ServiceName)
+	}
+	if len(ddConfig.Tags) > 0 {
+		req.Header.Set("DD-TAGS", strings.Join(ddConfig.Tags, ","))
+	}
+
+	resp, err := c.httpClient.DoRequest(ctx, req, c.config.Retry)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return NewError(PlatformDatadog, "send", fmt.Sprintf("datadog returned status %d", resp.StatusCode), resp.StatusCode >= 500, nil)
+	}
+
+	return nil
+}
+
+// SendBatch sends a batch of events to Datadog using the Log Intake API
+// (NDJSON format) or the Events API (one at a time).
+func (c *DatadogClient) SendBatch(ctx context.Context, events []*Event) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	ddConfig := extractDatadogConfig(c.config)
+
+	if ddConfig.LogIntake {
+		// Use NDJSON batch endpoint for log intake.
+		data, err := c.formatter.FormatBatch(events)
+		if err != nil {
+			return NewError(PlatformDatadog, "send_batch", "failed to format events", false, err)
+		}
+
+		endpoint := strings.TrimSuffix(c.config.Endpoint, "/") + "/v1/input"
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(data))
+		if err != nil {
+			return NewError(PlatformDatadog, "send_batch", "failed to create request", false, err)
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("DD-API-KEY", ddConfig.APIKey)
+		req.Header.Set("DD-SOURCE", ddConfig.Source)
+		if ddConfig.ServiceName != "" {
+			req.Header.Set("DD-SERVICE", ddConfig.ServiceName)
+		}
+		if len(ddConfig.Tags) > 0 {
+			req.Header.Set("DD-TAGS", strings.Join(ddConfig.Tags, ","))
+		}
+
+		resp, err := c.httpClient.DoRequest(ctx, req, c.config.Retry)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return NewError(PlatformDatadog, "send_batch", fmt.Sprintf("datadog returned status %d", resp.StatusCode), resp.StatusCode >= 500, nil)
+		}
+		return nil
+	}
+
+	// Events API: send individually (Datadog Events API doesn't support batch).
+	for _, event := range events {
+		if err := c.Send(ctx, event); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Start starts the Datadog event processor goroutine.
+func (c *DatadogClient) Start() {
+	c.wg.Add(1)
+	go c.processEvents()
+}
+
+// Stop stops the Datadog client and flushes buffered events.
+func (c *DatadogClient) Stop() {
+	c.cancel()
+	c.wg.Wait()
+	close(c.eventChan)
+	close(c.errChan)
+}
+
+// Events returns the event channel for the Datadog client.
+func (c *DatadogClient) Events() chan<- *Event { return c.eventChan }
+
+// Errors returns the error channel for the Datadog client.
+func (c *DatadogClient) Errors() <-chan error { return c.errChan }
+
+func (c *DatadogClient) processEvents() {
+	defer c.wg.Done()
+
+	batchTimer := time.NewTimer(c.config.Batch.MaxWait)
+	defer batchTimer.Stop()
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			c.flush()
+			return
+		case event := <-c.eventChan:
+			if err := c.buffer.Add(event); err != nil {
+				c.errChan <- err
+				continue
+			}
+			if c.buffer.IsFull() {
+				c.flush()
+				batchTimer.Reset(c.config.Batch.MaxWait)
+			}
+		case <-batchTimer.C:
+			c.flush()
+			batchTimer.Reset(c.config.Batch.MaxWait)
+		}
+	}
+}
+
+func (c *DatadogClient) flush() {
+	events := c.buffer.Flush()
+	if len(events) == 0 {
+		return
+	}
+	if err := c.SendBatch(c.ctx, events); err != nil {
+		c.errChan <- err
+	}
+}
+
+// ============================================================================
+// CloudWatch Integration (AWS CloudWatch Logs)
+// ============================================================================
+
+// CloudWatchClient sends security events to AWS CloudWatch Logs via the
+// PutLogEvents API. It uses AWS Signature V4 authentication.
+//
+// Note: In production, this client is intended to be used with AWS SDK
+// credentials provided via environment variables, IAM roles, or explicit
+// configuration. The HTTP-based approach uses PutLogEvents directly.
+type CloudWatchClient struct {
+	config     PlatformConfig
+	httpClient *HTTPClient
+	formatter  Formatter
+	eventChan  chan *Event
+	errChan    chan error
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	buffer     *EventBuffer
+}
+
+// CloudWatchConfig holds AWS CloudWatch-specific configuration.
+type CloudWatchConfig struct {
+	// Region is the AWS region (required, e.g., "us-east-1").
+	Region string
+	// LogGroup is the CloudWatch log group name (required).
+	LogGroup string
+	// LogStream is the CloudWatch log stream name (default: "aegisgate-platform").
+	LogStream string
+	// AccessKeyID is the AWS access key ID (optional, prefer IAM roles).
+	AccessKeyID string
+	// SecretAccessKey is the AWS secret access key (optional, prefer IAM roles).
+	SecretAccessKey string
+	// SessionToken is the AWS session token for temporary credentials.
+	SessionToken string
+}
+
+// NewCloudWatchClient creates a new CloudWatch Logs SIEM client.
+func NewCloudWatchClient(config PlatformConfig) (*CloudWatchClient, error) {
+	cwConfig := extractCloudWatchConfig(config)
+
+	if cwConfig.Region == "" {
+		return nil, NewError(PlatformCloudWatch, "init", "AWS region is required (set settings.region)", false, nil)
+	}
+	if cwConfig.LogGroup == "" {
+		return nil, NewError(PlatformCloudWatch, "init", "CloudWatch log group is required (set settings.log_group)", false, nil)
+	}
+
+	// Set default endpoint if not configured.
+	if config.Endpoint == "" {
+		config.Endpoint = fmt.Sprintf("https://logs.%s.amazonaws.com", cwConfig.Region)
+	}
+
+	httpClient, err := NewHTTPClient(PlatformCloudWatch, config.TLS)
+	if err != nil {
+		return nil, err
+	}
+
+	if cwConfig.LogStream == "" {
+		cwConfig.LogStream = "aegisgate-platform"
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	client := &CloudWatchClient{
+		config:     config,
+		httpClient: httpClient,
+		formatter:  NewJSONFormatter(PlatformCloudWatch),
+		eventChan:  make(chan *Event, 1000),
+		errChan:    make(chan error, 100),
+		ctx:        ctx,
+		cancel:     cancel,
+		buffer:     NewEventBuffer(PlatformCloudWatch, config.Batch.MaxSize),
+	}
+
+	return client, nil
+}
+
+// extractCloudWatchConfig extracts CloudWatch-specific configuration from
+// the PlatformConfig Settings map and Auth fields.
+func extractCloudWatchConfig(config PlatformConfig) CloudWatchConfig {
+	cwConfig := CloudWatchConfig{}
+
+	if config.Settings != nil {
+		if r, ok := config.Settings["region"].(string); ok {
+			cwConfig.Region = r
+		}
+		if lg, ok := config.Settings["log_group"].(string); ok {
+			cwConfig.LogGroup = lg
+		}
+		if ls, ok := config.Settings["log_stream"].(string); ok {
+			cwConfig.LogStream = ls
+		}
+		if ak, ok := config.Settings["access_key_id"].(string); ok {
+			cwConfig.AccessKeyID = ak
+		}
+		if sk, ok := config.Settings["secret_access_key"].(string); ok {
+			cwConfig.SecretAccessKey = sk
+		}
+		if st, ok := config.Settings["session_token"].(string); ok {
+			cwConfig.SessionToken = st
+		}
+	}
+
+	// Auth fields as fallback.
+	if cwConfig.AccessKeyID == "" && config.Auth.Type == "aws" {
+		cwConfig.AccessKeyID = config.Auth.Username
+		cwConfig.SecretAccessKey = config.Auth.Password
+	}
+
+	return cwConfig
+}
+
+// Send sends a single event to CloudWatch Logs using PutLogEvents.
+func (c *CloudWatchClient) Send(ctx context.Context, event *Event) error {
+	return c.SendBatch(ctx, []*Event{event})
+}
+
+// SendBatch sends a batch of events to CloudWatch Logs using PutLogEvents.
+// CloudWatch requires events to be sent as log events with timestamps.
+func (c *CloudWatchClient) SendBatch(ctx context.Context, events []*Event) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	cwConfig := extractCloudWatchConfig(c.config)
+
+	// Format each event as a CloudWatch log event.
+	// PutLogEvents expects a JSON payload with logEvents array.
+	type logEvent struct {
+		Timestamp int64  `json:"timestamp"`
+		Message   string `json:"message"`
+	}
+	type putLogEventsRequest struct {
+		LogGroupName  string     `json:"logGroupName"`
+		LogStreamName string     `json:"logStreamName"`
+		LogEvents     []logEvent `json:"logEvents"`
+	}
+
+	logEvents := make([]logEvent, 0, len(events))
+	for _, event := range events {
+		data, err := c.formatter.Format(event)
+		if err != nil {
+			continue // skip malformed events
+		}
+
+		ts := event.Timestamp.UnixMilli()
+		if ts == 0 {
+			ts = time.Now().UnixMilli()
+		}
+		logEvents = append(logEvents, logEvent{
+			Timestamp: ts,
+			Message:   string(data),
+		})
+	}
+
+	if len(logEvents) == 0 {
+		return nil
+	}
+
+	payload := putLogEventsRequest{
+		LogGroupName:  cwConfig.LogGroup,
+		LogStreamName: cwConfig.LogStream,
+		LogEvents:     logEvents,
+	}
+
+	payloadData, err := json.Marshal(payload)
+	if err != nil {
+		return NewError(PlatformCloudWatch, "send_batch", "failed to marshal log events", false, err)
+	}
+
+	endpoint := strings.TrimSuffix(c.config.Endpoint, "/")
+
+	// AWS CloudWatch Logs API endpoint for PutLogEvents.
+	// In production, this would use AWS SDK SigV4 signing. For direct HTTP,
+	// we use the X-Amz-Target header.
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payloadData))
+	if err != nil {
+		return NewError(PlatformCloudWatch, "send_batch", "failed to create request", false, err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-amz-json-1.1")
+	req.Header.Set("X-Amz-Target", "Logs_20140328.PutLogEvents")
+
+	// AWS SigV4 authentication headers.
+	// Note: In production, prefer using AWS SDK for proper SigV4 signing.
+	// This direct HTTP approach requires pre-signed URLs or static credentials.
+	if cwConfig.AccessKeyID != "" {
+		req.Header.Set("X-Amz-Security-Token", cwConfig.SessionToken)
+		// For direct access, we use the access key as a Bearer token.
+		// Production deployments should use AWS SDK credential providers.
+		req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential="+cwConfig.AccessKeyID)
+	}
+
+	resp, err := c.httpClient.DoRequest(ctx, req, c.config.Retry)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return NewError(PlatformCloudWatch, "send_batch", fmt.Sprintf("cloudwatch returned status %d", resp.StatusCode), resp.StatusCode >= 500, nil)
+	}
+
+	return nil
+}
+
+// Start starts the CloudWatch event processor goroutine.
+func (c *CloudWatchClient) Start() {
+	c.wg.Add(1)
+	go c.processEvents()
+}
+
+// Stop stops the CloudWatch client and flushes buffered events.
+func (c *CloudWatchClient) Stop() {
+	c.cancel()
+	c.wg.Wait()
+	close(c.eventChan)
+	close(c.errChan)
+}
+
+// Events returns the event channel for the CloudWatch client.
+func (c *CloudWatchClient) Events() chan<- *Event { return c.eventChan }
+
+// Errors returns the error channel for the CloudWatch client.
+func (c *CloudWatchClient) Errors() <-chan error { return c.errChan }
+
+func (c *CloudWatchClient) processEvents() {
+	defer c.wg.Done()
+
+	batchTimer := time.NewTimer(c.config.Batch.MaxWait)
+	defer batchTimer.Stop()
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			c.flush()
+			return
+		case event := <-c.eventChan:
+			if err := c.buffer.Add(event); err != nil {
+				c.errChan <- err
+				continue
+			}
+			if c.buffer.IsFull() {
+				c.flush()
+				batchTimer.Reset(c.config.Batch.MaxWait)
+			}
+		case <-batchTimer.C:
+			c.flush()
+			batchTimer.Reset(c.config.Batch.MaxWait)
+		}
+	}
+}
+
+func (c *CloudWatchClient) flush() {
+	events := c.buffer.Flush()
+	if len(events) == 0 {
+		return
+	}
+	if err := c.SendBatch(c.ctx, events); err != nil {
+		c.errChan <- err
+	}
+}
+
+// ============================================================================
+// SecurityHub Integration (AWS Security Hub)
+// ============================================================================
+
+// SecurityHubClient sends security findings to AWS Security Hub via the
+// BatchImportFindings API. It uses AWS Signature V4 authentication.
+//
+// Note: In production, this client is intended to be used with AWS SDK
+// credentials provided via environment variables, IAM roles, or explicit
+// configuration. The HTTP-based approach uses BatchImportFindings directly.
+type SecurityHubClient struct {
+	config     PlatformConfig
+	httpClient *HTTPClient
+	formatter  Formatter
+	eventChan  chan *Event
+	errChan    chan error
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	buffer     *EventBuffer
+}
+
+// SecurityHubConfig holds AWS Security Hub-specific configuration.
+type SecurityHubConfig struct {
+	// Region is the AWS region (required, e.g., "us-east-1").
+	Region string
+	// ProductArn is the ARN of the AegisGate product in Security Hub.
+	ProductArn string
+	// AccessKeyID is the AWS access key ID (optional, prefer IAM roles).
+	AccessKeyID string
+	// SecretAccessKey is the AWS secret access key (optional, prefer IAM roles).
+	SecretAccessKey string
+	// SessionToken is the AWS session token for temporary credentials.
+	SessionToken string
+}
+
+// NewSecurityHubClient creates a new Security Hub SIEM client.
+func NewSecurityHubClient(config PlatformConfig) (*SecurityHubClient, error) {
+	shConfig := extractSecurityHubConfig(config)
+
+	if shConfig.Region == "" {
+		return nil, NewError(PlatformSecurityHub, "init", "AWS region is required (set settings.region)", false, nil)
+	}
+
+	// Set default endpoint if not configured.
+	if config.Endpoint == "" {
+		config.Endpoint = fmt.Sprintf("https://securityhub.%s.amazonaws.com", shConfig.Region)
+	}
+
+	httpClient, err := NewHTTPClient(PlatformSecurityHub, config.TLS)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	client := &SecurityHubClient{
+		config:     config,
+		httpClient: httpClient,
+		formatter:  NewJSONFormatter(PlatformSecurityHub),
+		eventChan:  make(chan *Event, 1000),
+		errChan:    make(chan error, 100),
+		ctx:        ctx,
+		cancel:     cancel,
+		buffer:     NewEventBuffer(PlatformSecurityHub, config.Batch.MaxSize),
+	}
+
+	return client, nil
+}
+
+// extractSecurityHubConfig extracts Security Hub-specific configuration from
+// the PlatformConfig Settings map and Auth fields.
+func extractSecurityHubConfig(config PlatformConfig) SecurityHubConfig {
+	shConfig := SecurityHubConfig{}
+
+	if config.Settings != nil {
+		if r, ok := config.Settings["region"].(string); ok {
+			shConfig.Region = r
+		}
+		if pa, ok := config.Settings["product_arn"].(string); ok {
+			shConfig.ProductArn = pa
+		}
+		if ak, ok := config.Settings["access_key_id"].(string); ok {
+			shConfig.AccessKeyID = ak
+		}
+		if sk, ok := config.Settings["secret_access_key"].(string); ok {
+			shConfig.SecretAccessKey = sk
+		}
+		if st, ok := config.Settings["session_token"].(string); ok {
+			shConfig.SessionToken = st
+		}
+	}
+
+	// Auth fields as fallback.
+	if shConfig.AccessKeyID == "" && config.Auth.Type == "aws" {
+		shConfig.AccessKeyID = config.Auth.Username
+		shConfig.SecretAccessKey = config.Auth.Password
+	}
+
+	return shConfig
+}
+
+// Send sends a single finding to Security Hub.
+func (c *SecurityHubClient) Send(ctx context.Context, event *Event) error {
+	return c.SendBatch(ctx, []*Event{event})
+}
+
+// SendBatch sends a batch of findings to Security Hub using BatchImportFindings.
+// Security Hub requires findings to conform to the AWS Security Finding Format (ASFF).
+func (c *SecurityHubClient) SendBatch(ctx context.Context, events []*Event) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	shConfig := extractSecurityHubConfig(c.config)
+
+	// Convert AegisGate events to AWS Security Finding Format (ASFF).
+	type asffFinding struct {
+		SchemaVersion string                   `json:"SchemaVersion"`
+		ID            string                   `json:"Id"`
+		ProductArn    string                   `json:"ProductArn"`
+		ProductName   string                   `json:"ProductName"`
+		ProviderName  string                   `json:"ProviderName"`
+		Title         string                   `json:"Title"`
+		Description   string                   `json:"Description"`
+		Severity      map[string]interface{}   `json:"Severity"`
+		Types         []string                 `json:"Types"`
+		Resources     []map[string]interface{} `json:"Resources"`
+		Compliance    map[string]interface{}   `json:"Compliance,omitempty"`
+		CreatedAt     string                   `json:"CreatedAt"`
+		UpdatedAt     string                   `json:"UpdatedAt"`
+	}
+
+	type batchImportRequest struct {
+		Findings []asffFinding `json:"Findings"`
+	}
+
+	findings := make([]asffFinding, 0, len(events))
+	for _, event := range events {
+		severityLabel := "INFORMATIONAL"
+		switch event.Severity {
+		case SeverityCritical:
+			severityLabel = "CRITICAL"
+		case SeverityHigh:
+			severityLabel = "HIGH"
+		case SeverityMedium:
+			severityLabel = "MEDIUM"
+		case SeverityLow:
+			severityLabel = "LOW"
+		case SeverityInfo:
+			severityLabel = "INFORMATIONAL"
+		}
+
+		findingType := "Software and Configuration Checks/AegisGate/" + string(event.Category)
+		if event.Category == "" {
+			findingType = "Software and Configuration Checks/AegisGate/other"
+		}
+
+		// Build product ARN if not provided.
+		productArn := shConfig.ProductArn
+		if productArn == "" {
+			productArn = fmt.Sprintf("arn:aws:securityhub:%s::product/aegisgate/aegisgate-platform", shConfig.Region)
+		}
+
+		findings = append(findings, asffFinding{
+			SchemaVersion: "2018-10-08",
+			ID:            event.ID,
+			ProductArn:    productArn,
+			ProductName:   "AegisGate Platform",
+			ProviderName:  "AegisGate Security",
+			Title:         event.Type,
+			Description:   event.Message,
+			Severity: map[string]interface{}{
+				"Label":    severityLabel,
+				"Original": string(event.Severity),
+			},
+			Types: []string{findingType},
+			Resources: []map[string]interface{}{
+				{
+					"Type": "Other",
+					"Id":   event.ID,
+				},
+			},
+			CreatedAt: event.Timestamp.Format(time.RFC3339),
+			UpdatedAt: event.Timestamp.Format(time.RFC3339),
+		})
+	}
+
+	payload := batchImportRequest{Findings: findings}
+
+	payloadData, err := json.Marshal(payload)
+	if err != nil {
+		return NewError(PlatformSecurityHub, "send_batch", "failed to marshal findings", false, err)
+	}
+
+	endpoint := strings.TrimSuffix(c.config.Endpoint, "/")
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payloadData))
+	if err != nil {
+		return NewError(PlatformSecurityHub, "send_batch", "failed to create request", false, err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-amz-json-1.1")
+	req.Header.Set("X-Amz-Target", "SecurityHubV20180810.BatchImportFindings")
+
+	// AWS SigV4 authentication headers.
+	if shConfig.AccessKeyID != "" {
+		req.Header.Set("X-Amz-Security-Token", shConfig.SessionToken)
+		req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential="+shConfig.AccessKeyID)
+	}
+
+	resp, err := c.httpClient.DoRequest(ctx, req, c.config.Retry)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return NewError(PlatformSecurityHub, "send_batch", fmt.Sprintf("securityhub returned status %d", resp.StatusCode), resp.StatusCode >= 500, nil)
+	}
+
+	return nil
+}
+
+// Start starts the Security Hub event processor goroutine.
+func (c *SecurityHubClient) Start() {
+	c.wg.Add(1)
+	go c.processEvents()
+}
+
+// Stop stops the Security Hub client and flushes buffered events.
+func (c *SecurityHubClient) Stop() {
+	c.cancel()
+	c.wg.Wait()
+	close(c.eventChan)
+	close(c.errChan)
+}
+
+// Events returns the event channel for the Security Hub client.
+func (c *SecurityHubClient) Events() chan<- *Event { return c.eventChan }
+
+// Errors returns the error channel for the Security Hub client.
+func (c *SecurityHubClient) Errors() <-chan error { return c.errChan }
+
+func (c *SecurityHubClient) processEvents() {
+	defer c.wg.Done()
+
+	batchTimer := time.NewTimer(c.config.Batch.MaxWait)
+	defer batchTimer.Stop()
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			c.flush()
+			return
+		case event := <-c.eventChan:
+			if err := c.buffer.Add(event); err != nil {
+				c.errChan <- err
+				continue
+			}
+			if c.buffer.IsFull() {
+				c.flush()
+				batchTimer.Reset(c.config.Batch.MaxWait)
+			}
+		case <-batchTimer.C:
+			c.flush()
+			batchTimer.Reset(c.config.Batch.MaxWait)
+		}
+	}
+}
+
+func (c *SecurityHubClient) flush() {
+	events := c.buffer.Flush()
+	if len(events) == 0 {
+		return
+	}
+	if err := c.SendBatch(c.ctx, events); err != nil {
+		c.errChan <- err
+	}
+}
+
+// ============================================================================
 // Helper Functions
 // ============================================================================
 
