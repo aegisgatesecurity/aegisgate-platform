@@ -1126,3 +1126,289 @@ func TestATLASPlaybooksExist(t *testing.T) {
 		t.Errorf("DefaultPlaybooks contains %d ATLAS playbooks; want 10", found)
 	}
 }
+
+// =====================================================================
+// executeNotify (55.6% → 100%)
+// =====================================================================
+
+func TestExecutePlaybook_Notify(t *testing.T) {
+	is := NewInMemoryIncidentStore()
+	ps := NewInMemoryPlaybookStore()
+	rs := NewInMemoryDetectionRuleStore()
+	engine := NewEngine(is, ps, rs)
+
+	var notifyCalled bool
+	engine.SetCallbacks(ActionCallbacks{
+		OnNotify: func(ctx context.Context, inc *Incident, recipients []string) error {
+			notifyCalled = true
+			if len(recipients) == 0 {
+				t.Error("expected at least one recipient")
+			}
+			return nil
+		},
+	})
+
+	pb := &Playbook{
+		ID:          "pb_notify",
+		Name:        "Notify Test",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Notify SOC", Action: "notify", Parameters: map[string]string{"recipients": "soc@example.com"}}},
+		AutoExecute: true,
+	}
+	if err := ps.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	inc := NewIncident("Test Notify", "desc", SeverityHigh, SourceSOC)
+	inc.Assignee = "admin@example.com"
+	if err := is.CreateIncident(context.Background(), inc); err != nil {
+		t.Fatalf("CreateIncident: %v", err)
+	}
+
+	if _, err := engine.ExecutePlaybook(context.Background(), inc.ID, pb.ID); err != nil {
+		t.Fatalf("ExecutePlaybook: %v", err)
+	}
+	if !notifyCalled {
+		t.Error("OnNotify callback should have been called")
+	}
+}
+
+func TestExecutePlaybook_Notify_NoCallback(t *testing.T) {
+	is := NewInMemoryIncidentStore()
+	ps := NewInMemoryPlaybookStore()
+	rs := NewInMemoryDetectionRuleStore()
+	engine := NewEngine(is, ps, rs)
+	// No OnNotify callback set — should log and succeed.
+
+	pb := &Playbook{
+		ID:          "pb_notify_nocallback",
+		Name:        "Notify No Callback",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Notify SOC", Action: "notify"}},
+		AutoExecute: true,
+	}
+	if err := ps.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	inc := NewIncident("Test Notify NoCallback", "desc", SeverityHigh, SourceSOC)
+	if err := is.CreateIncident(context.Background(), inc); err != nil {
+		t.Fatalf("CreateIncident: %v", err)
+	}
+
+	if _, err := engine.ExecutePlaybook(context.Background(), inc.ID, pb.ID); err != nil {
+		t.Fatalf("ExecutePlaybook: %v", err)
+	}
+}
+
+// =====================================================================
+// executeBlockAgent (50% → 100%)
+// =====================================================================
+
+func TestExecutePlaybook_BlockAgent(t *testing.T) {
+	is := NewInMemoryIncidentStore()
+	ps := NewInMemoryPlaybookStore()
+	rs := NewInMemoryDetectionRuleStore()
+	engine := NewEngine(is, ps, rs)
+
+	var blockCalled bool
+	engine.SetCallbacks(ActionCallbacks{
+		OnBlockAgent: func(ctx context.Context, agentID, sessionID string) error {
+			blockCalled = true
+			if agentID != "agent-42" {
+				t.Errorf("agentID = %q; want %q", agentID, "agent-42")
+			}
+			return nil
+		},
+	})
+
+	pb := &Playbook{
+		ID:          "pb_block",
+		Name:        "Block Agent",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Block Agent", Action: "block_agent"}},
+		AutoExecute: true,
+	}
+	if err := ps.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	inc := NewIncident("Test Block", "desc", SeverityCritical, SourceCorrelation)
+	inc.AgentID = "agent-42"
+	inc.SessionID = "session-99"
+	if err := is.CreateIncident(context.Background(), inc); err != nil {
+		t.Fatalf("CreateIncident: %v", err)
+	}
+
+	if _, err := engine.ExecutePlaybook(context.Background(), inc.ID, pb.ID); err != nil {
+		t.Fatalf("ExecutePlaybook: %v", err)
+	}
+	if !blockCalled {
+		t.Error("OnBlockAgent callback should have been called")
+	}
+}
+
+func TestExecutePlaybook_BlockAgent_NoCallback(t *testing.T) {
+	is := NewInMemoryIncidentStore()
+	ps := NewInMemoryPlaybookStore()
+	rs := NewInMemoryDetectionRuleStore()
+	engine := NewEngine(is, ps, rs)
+	// No OnBlockAgent callback — should log and succeed.
+
+	pb := &Playbook{
+		ID:          "pb_block_nocallback",
+		Name:        "Block Agent No Callback",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Block Agent", Action: "block_agent"}},
+		AutoExecute: true,
+	}
+	if err := ps.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	inc := NewIncident("Test Block NoCallback", "desc", SeverityCritical, SourceCorrelation)
+	inc.AgentID = "agent-42"
+	if err := is.CreateIncident(context.Background(), inc); err != nil {
+		t.Fatalf("CreateIncident: %v", err)
+	}
+
+	if _, err := engine.ExecutePlaybook(context.Background(), inc.ID, pb.ID); err != nil {
+		t.Fatalf("ExecutePlaybook: %v", err)
+	}
+}
+
+// =====================================================================
+// executeCollectEvidence (50% → 100%)
+// =====================================================================
+
+func TestExecutePlaybook_CollectEvidence(t *testing.T) {
+	is := NewInMemoryIncidentStore()
+	ps := NewInMemoryPlaybookStore()
+	rs := NewInMemoryDetectionRuleStore()
+	engine := NewEngine(is, ps, rs)
+
+	var collectCalled bool
+	engine.SetCallbacks(ActionCallbacks{
+		OnCollectEvidence: func(ctx context.Context, inc *Incident) error {
+			collectCalled = true
+			return nil
+		},
+	})
+
+	pb := &Playbook{
+		ID:          "pb_collect",
+		Name:        "Collect Evidence",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Collect Evidence", Action: "collect_evidence"}},
+		AutoExecute: true,
+	}
+	if err := ps.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	inc := NewIncident("Test Collect", "desc", SeverityHigh, SourceSOC)
+	if err := is.CreateIncident(context.Background(), inc); err != nil {
+		t.Fatalf("CreateIncident: %v", err)
+	}
+
+	if _, err := engine.ExecutePlaybook(context.Background(), inc.ID, pb.ID); err != nil {
+		t.Fatalf("ExecutePlaybook: %v", err)
+	}
+	if !collectCalled {
+		t.Error("OnCollectEvidence callback should have been called")
+	}
+}
+
+func TestExecutePlaybook_CollectEvidence_NoCallback(t *testing.T) {
+	is := NewInMemoryIncidentStore()
+	ps := NewInMemoryPlaybookStore()
+	rs := NewInMemoryDetectionRuleStore()
+	engine := NewEngine(is, ps, rs)
+	// No OnCollectEvidence callback — should log and succeed.
+
+	pb := &Playbook{
+		ID:          "pb_collect_nocallback",
+		Name:        "Collect Evidence No Callback",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Collect Evidence", Action: "collect_evidence"}},
+		AutoExecute: true,
+	}
+	if err := ps.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	inc := NewIncident("Test Collect NoCallback", "desc", SeverityHigh, SourceSOC)
+	if err := is.CreateIncident(context.Background(), inc); err != nil {
+		t.Fatalf("CreateIncident: %v", err)
+	}
+
+	if _, err := engine.ExecutePlaybook(context.Background(), inc.ID, pb.ID); err != nil {
+		t.Fatalf("ExecutePlaybook: %v", err)
+	}
+}
+
+// =====================================================================
+// InMemoryPlaybookStore.UpdatePlaybook (70% → 100%)
+// =====================================================================
+
+func TestInMemoryPlaybookStore_UpdatePlaybook_Success(t *testing.T) {
+	store := NewInMemoryPlaybookStore()
+	ctx := context.Background()
+
+	pb := &Playbook{
+		ID:          "pb_update_test",
+		Name:        "Original Name",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Step 1", Action: "notify"}},
+		AutoExecute: true,
+	}
+	if err := store.CreatePlaybook(ctx, pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	updated := &Playbook{
+		ID:          "pb_update_test",
+		Name:        "Updated Name",
+		Steps:       []*PlaybookStep{{ID: "s1", Name: "Step 1", Action: "notify"}, {ID: "s2", Name: "Step 2", Action: "block_agent"}},
+		AutoExecute: false,
+	}
+	if err := store.UpdatePlaybook(ctx, updated); err != nil {
+		t.Fatalf("UpdatePlaybook: %v", err)
+	}
+
+	got, err := store.GetPlaybook(ctx, "pb_update_test")
+	if err != nil {
+		t.Fatalf("GetPlaybook: %v", err)
+	}
+	if got.Name != "Updated Name" {
+		t.Errorf("Name = %q; want %q", got.Name, "Updated Name")
+	}
+	if got.AutoExecute != false {
+		t.Errorf("AutoExecute = %v; want false", got.AutoExecute)
+	}
+	if len(got.Steps) != 2 {
+		t.Errorf("len(Steps) = %d; want 2", len(got.Steps))
+	}
+}
+
+func TestInMemoryPlaybookStore_UpdatePlaybook_Nil(t *testing.T) {
+	store := NewInMemoryPlaybookStore()
+	ctx := context.Background()
+
+	if err := store.UpdatePlaybook(ctx, nil); err == nil {
+		t.Error("UpdatePlaybook(nil) should return an error")
+	}
+}
+
+func TestInMemoryPlaybookStore_UpdatePlaybook_EmptyID(t *testing.T) {
+	store := NewInMemoryPlaybookStore()
+	ctx := context.Background()
+
+	pb := &Playbook{Name: "No ID"}
+	if err := store.UpdatePlaybook(ctx, pb); err == nil {
+		t.Error("UpdatePlaybook with empty ID should return an error")
+	}
+}
+
+func TestInMemoryPlaybookStore_UpdatePlaybook_NotFound(t *testing.T) {
+	store := NewInMemoryPlaybookStore()
+	ctx := context.Background()
+
+	pb := &Playbook{ID: "nonexistent", Name: "Ghost"}
+	if err := store.UpdatePlaybook(ctx, pb); err == nil {
+		t.Error("UpdatePlaybook with nonexistent ID should return an error")
+	}
+}
