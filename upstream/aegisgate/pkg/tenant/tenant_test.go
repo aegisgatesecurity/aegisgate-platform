@@ -192,3 +192,98 @@ func TestTenantComplianceDefaults(t *testing.T) {
 		t.Error("should require encryption by default")
 	}
 }
+
+// TestSearchTenants_BugFix verifies that SearchTenants matches by name
+// or domain substring without the SQL-LIKE percent-wrapping bug.
+func TestSearchTenants_BugFix(t *testing.T) {
+	tmpDir := t.TempDir()
+	fs, err := NewFileStorage(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to create file storage: %v", err)
+	}
+
+	// Create tenants with distinct names and domains
+	if _, err := fs.CreateTenant("t1", "Acme Corp", "acme.com", tmpDir); err != nil {
+		t.Fatalf("create t1: %v", err)
+	}
+	if _, err := fs.CreateTenant("t2", "Beta Industries", "beta.io", tmpDir); err != nil {
+		t.Fatalf("create t2: %v", err)
+	}
+	if _, err := fs.CreateTenant("t3", "Acme Labs", "acmelabs.org", tmpDir); err != nil {
+		t.Fatalf("create t3: %v", err)
+	}
+
+	// Search for "acme" should match "Acme Corp" and "Acme Labs" by name
+	results := fs.SearchTenants("acme")
+	if len(results) != 2 {
+		t.Errorf("expected 2 results for 'acme', got %d", len(results))
+	}
+
+	// Search for "beta" should match "Beta Industries" by name
+	results = fs.SearchTenants("beta")
+	if len(results) != 1 {
+		t.Errorf("expected 1 result for 'beta', got %d", len(results))
+	}
+
+	// Search for "acme.com" should match by domain
+	results = fs.SearchTenants("acme.com")
+	if len(results) != 1 {
+		t.Errorf("expected 1 result for 'acme.com', got %d", len(results))
+	}
+
+	// Search for "xyz" should return 0 results
+	results = fs.SearchTenants("xyz")
+	if len(results) != 0 {
+		t.Errorf("expected 0 results for 'xyz', got %d", len(results))
+	}
+}
+
+// TestFileStorage_LoadAllReinitializesResources verifies that tenants loaded
+// from disk have their runtime resources (auditLog, rateLimiter, circuitBreaker)
+// re-initialized, not left nil.
+func TestFileStorage_LoadAllReinitializesResources(t *testing.T) {
+	tmpDir := t.TempDir()
+	fs, err := NewFileStorage(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to create file storage: %v", err)
+	}
+
+	// Create a tenant — this initializes resources
+	tenant, err := fs.CreateTenant("t-load", "Load Test", "load.com", tmpDir)
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+
+	// Verify resources are initialized
+	if tenant.GetAuditLog() == nil {
+		t.Error("auditLog should be initialized after CreateTenant")
+	}
+	if tenant.GetRateLimiter() == nil {
+		t.Error("rateLimiter should be initialized after CreateTenant")
+	}
+	if tenant.GetCircuitBreaker() == nil {
+		t.Error("circuitBreaker should be initialized after CreateTenant")
+	}
+
+	// Simulate a restart by creating a new FileStorage from the same directory
+	fs2, err := NewFileStorage(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to create second file storage: %v", err)
+	}
+
+	// The loaded tenant must have resources re-initialized
+	loaded, err := fs2.GetTenant("t-load")
+	if err != nil {
+		t.Fatalf("get tenant: %v", err)
+	}
+
+	if loaded.GetAuditLog() == nil {
+		t.Error("auditLog should be re-initialized after loadAll")
+	}
+	if loaded.GetRateLimiter() == nil {
+		t.Error("rateLimiter should be re-initialized after loadAll")
+	}
+	if loaded.GetCircuitBreaker() == nil {
+		t.Error("circuitBreaker should be re-initialized after loadAll")
+	}
+}

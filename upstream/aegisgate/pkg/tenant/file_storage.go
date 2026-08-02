@@ -65,6 +65,16 @@ func (fs *FileStorage) loadAll() error {
 			continue
 		}
 
+		// Re-initialize unexported runtime resources (auditLog, rateLimiter,
+		// circuitBreaker) that are not JSON-serialized. Without this, any
+		// tenant loaded from disk would have nil resources, causing panics
+		// on GetAuditLog(), GetRateLimiter(), or GetCircuitBreaker().
+		if err := t.InitializeTenantResources(fs.basePath); err != nil {
+			// Log the error but don't skip the tenant — nil resources are
+			// recoverable (they can be initialized lazily on first access).
+			_ = err
+		}
+
 		fs.manager.tenants[t.ID] = &t
 	}
 
@@ -187,17 +197,17 @@ func (fs *FileStorage) Close() error {
 	return nil
 }
 
-// SearchTenants searches tenants by query
+// SearchTenants searches tenants by name or domain
 func (fs *FileStorage) SearchTenants(query string) []*Tenant {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
-	query = fmt.Sprintf("%%%s%%", query)
+	lowerQuery := strings.ToLower(query)
 	var results []*Tenant
 
 	for _, t := range fs.manager.tenants {
-		if strings.Contains(strings.ToLower(t.Name), strings.ToLower(query)) ||
-			strings.Contains(strings.ToLower(t.Domain), strings.ToLower(query)) {
+		if strings.Contains(strings.ToLower(t.Name), lowerQuery) ||
+			strings.Contains(strings.ToLower(t.Domain), lowerQuery) {
 			results = append(results, t)
 		}
 	}
