@@ -629,6 +629,43 @@ func (r *Reporter) executeReport(report *Report, req ReportRequest) {
 	r.workerPool <- struct{}{}
 	defer func() { <-r.workerPool }()
 
+	// Apply template defaults if TemplateID is specified
+	if req.TemplateID != "" {
+		tmpl, err := r.GetTemplate(req.TemplateID)
+		if err == nil && tmpl != nil {
+			// Apply template defaults to request
+			if req.Format == "" {
+				req.Format = tmpl.DefaultFormat
+			}
+			if req.Type == "" {
+				req.Type = tmpl.ReportType
+			}
+			// Merge template filters with request filters (request takes precedence)
+			if tmpl.DefaultFilters.Keyword != "" && req.Filters.Keyword == "" {
+				req.Filters.Keyword = tmpl.DefaultFilters.Keyword
+			}
+			if len(tmpl.DefaultFilters.Patterns) > 0 && len(req.Filters.Patterns) == 0 {
+				req.Filters.Patterns = tmpl.DefaultFilters.Patterns
+			}
+			if len(tmpl.DefaultFilters.Categories) > 0 && len(req.Filters.Categories) == 0 {
+				req.Filters.Categories = tmpl.DefaultFilters.Categories
+			}
+			if len(tmpl.DefaultFilters.Sources) > 0 && len(req.Filters.Sources) == 0 {
+				req.Filters.Sources = tmpl.DefaultFilters.Sources
+			}
+			if tmpl.DefaultFilters.Severity != "" && req.Filters.Severity == "" {
+				req.Filters.Severity = tmpl.DefaultFilters.Severity
+			}
+			// Store CustomTemplate in report data for use by formatters
+			if tmpl.CustomTemplate != "" {
+				if req.Filters.Custom == nil {
+					req.Filters.Custom = make(map[string]interface{})
+				}
+				req.Filters.Custom["_custom_template"] = tmpl.CustomTemplate
+			}
+		}
+	}
+
 	// Update status
 	r.reportsMu.Lock()
 	report.Status = ReportStatusRunning
@@ -813,7 +850,8 @@ func flattenToCSV(writer *csv.Writer, prefix string, data interface{}) error {
 
 // generateHTML creates an HTML reader from a report.
 func (r *Reporter) generateHTML(report *Report) (io.Reader, error) {
-	const htmlTemplate = `<!DOCTYPE html>
+	// Default HTML template for reports
+	const defaultHTMLTemplate = `<!DOCTYPE html>
 <html>
 <head>
     <title>Report {{.ID}}</title>
@@ -847,7 +885,19 @@ func (r *Reporter) generateHTML(report *Report) (io.Reader, error) {
 </body>
 </html>`
 
-	tmpl, err := template.New("report").Parse(htmlTemplate)
+	// Check if a custom template was provided via ReportTemplate.CustomTemplate
+	templateSource := defaultHTMLTemplate
+	if report.Data != nil {
+		if dataMap, ok := report.Data.(map[string]interface{}); ok {
+			if customTmpl, ok := dataMap["_custom_template"].(string); ok && customTmpl != "" {
+				templateSource = customTmpl
+				// Remove the internal key from data before rendering
+				delete(dataMap, "_custom_template")
+			}
+		}
+	}
+
+	tmpl, err := template.New("report").Parse(templateSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse template: %w", err)
 	}
