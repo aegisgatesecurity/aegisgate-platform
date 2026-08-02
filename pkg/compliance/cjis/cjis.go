@@ -33,15 +33,15 @@ func NewCJISModule() *CJISModule {
 func (m *CJISModule) initCJIPatterns() {
 	// CJIS-defined CJI identifiers
 	m.cjiPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                  // SSN
-		regexp.MustCompile(`(?i)\d{2}-\d{6}`),                     // Case number (YY-XXXXXX)
-		regexp.MustCompile(`(?i)fbi\s*\d{8,10}`),                  // FBI number
-		regexp.MustCompile(`(?i)ncic\s*\d{8,12}`),                 // NCIC number
-		regexp.MustCompile(`(?i)ori\s*[A-Za-z0-9]{7,9}`),          // ORI number
-		regexp.MustCompile(`(?i)\d{2}[/-]\d{2}[/-]\d{4}`),        // Date of birth
-		regexp.MustCompile(`(?i)case\s*#\s*\d{2}-\d{6}`),          // Case number with prefix
-		regexp.MustCompile(`(?i)arrest\s*#\s*[A-Za-z0-9-]+`),      // Arrest number
-		regexp.MustCompile(`(?i)offender\s*id\s*[A-Za-z0-9-]+`),  // Offender ID
+		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                 // SSN
+		regexp.MustCompile(`(?i)\d{2}-\d{6}`),                   // Case number (YY-XXXXXX)
+		regexp.MustCompile(`(?i)fbi\s*\d{8,10}`),                // FBI number
+		regexp.MustCompile(`(?i)ncic\s*\d{8,12}`),               // NCIC number
+		regexp.MustCompile(`(?i)ori\s*[A-Za-z0-9]{7,9}`),        // ORI number
+		regexp.MustCompile(`(?i)\d{2}[/-]\d{2}[/-]\d{4}`),       // Date of birth
+		regexp.MustCompile(`(?i)case\s*#\s*\d{2}-\d{6}`),        // Case number with prefix
+		regexp.MustCompile(`(?i)arrest\s*#\s*[A-Za-z0-9-]+`),    // Arrest number
+		regexp.MustCompile(`(?i)offender\s*id\s*[A-Za-z0-9-]+`), // Offender ID
 	}
 }
 

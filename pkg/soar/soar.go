@@ -55,93 +55,93 @@ type AuthConfig struct {
 	TokenURL     string `json:"token_url"`     // oauth2
 	ClientID     string `json:"client_id"`     // oauth2
 	ClientSecret string `json:"client_secret"` // oauth2
-	HMACSecret   string `json:"hmac_secret"`  // HMAC-SHA256 signing
+	HMACSecret   string `json:"hmac_secret"`   // HMAC-SHA256 signing
 }
 
 // GlobalConfig holds settings that apply across all platforms.
 type GlobalConfig struct {
-	AppName        string        `json:"app_name"`
-	Environment    string        `json:"environment"`
-	MaxRetries     int           `json:"max_retries"`
-	RetryInterval  time.Duration `json:"retry_interval"`
+	AppName       string        `json:"app_name"`
+	Environment   string        `json:"environment"`
+	MaxRetries    int           `json:"max_retries"`
+	RetryInterval time.Duration `json:"retry_interval"`
 }
 
 // PlatformConfig holds per-platform connection settings.
 type PlatformConfig struct {
-	Platform Platform            `json:"platform"`
-	Enabled  bool                `json:"enabled"`
-	Endpoint string             `json:"endpoint"`
-	Auth     AuthConfig         `json:"auth"`
+	Platform Platform               `json:"platform"`
+	Enabled  bool                   `json:"enabled"`
+	Endpoint string                 `json:"endpoint"`
+	Auth     AuthConfig             `json:"auth"`
 	Settings map[string]interface{} `json:"settings"`
 }
 
 // Config is the top-level SOAR configuration.
 type Config struct {
 	Platforms []PlatformConfig `json:"platforms"`
-	Global    GlobalConfig      `json:"global"`
+	Global    GlobalConfig     `json:"global"`
 }
 
 // Incident is the core outbound alert sent to SOAR platforms.
 type Incident struct {
-	ID               string            `json:"id"`
-	Title            string            `json:"title"`
-	Description      string            `json:"description"`
-	Severity         Severity          `json:"severity"`
-	Status           IncidentStatus    `json:"status"`
-	Source           string            `json:"source"`      // always "aegisgate"
-	Timestamp        time.Time         `json:"timestamp"`
-	Framework        string            `json:"framework"`   // e.g. "hipaa", "cjis"
-	ControlID        string            `json:"control_id"`  // e.g. "CJIS-AC-001"
-	ControlName      string            `json:"control_name"`
-	Details          string            `json:"details"`
-	Remediation      string            `json:"remediation"`
-	AffectedSystems  []string          `json:"affected_systems"`
-	Labels           map[string]string  `json:"labels"`
-	DedupKey         string            `json:"dedup_key"` // PagerDuty deduplication
+	ID              string            `json:"id"`
+	Title           string            `json:"title"`
+	Description     string            `json:"description"`
+	Severity        Severity          `json:"severity"`
+	Status          IncidentStatus    `json:"status"`
+	Source          string            `json:"source"` // always "aegisgate"
+	Timestamp       time.Time         `json:"timestamp"`
+	Framework       string            `json:"framework"`  // e.g. "hipaa", "cjis"
+	ControlID       string            `json:"control_id"` // e.g. "CJIS-AC-001"
+	ControlName     string            `json:"control_name"`
+	Details         string            `json:"details"`
+	Remediation     string            `json:"remediation"`
+	AffectedSystems []string          `json:"affected_systems"`
+	Labels          map[string]string `json:"labels"`
+	DedupKey        string            `json:"dedup_key"` // PagerDuty deduplication
 }
 
 // DeliveryResult captures the outcome of a single platform delivery attempt.
 type DeliveryResult struct {
-	Platform   Platform   `json:"platform"`
-	IncidentID string     `json:"incident_id"`
-	HTTPStatus int        `json:"http_status"`
-	Error      error      `json:"error,omitempty"`
-	Timestamp  time.Time  `json:"timestamp"`
-	RetryCount int        `json:"retry_count"`
+	Platform   Platform  `json:"platform"`
+	IncidentID string    `json:"incident_id"`
+	HTTPStatus int       `json:"http_status"`
+	Error      error     `json:"error,omitempty"`
+	Timestamp  time.Time `json:"timestamp"`
+	RetryCount int       `json:"retry_count"`
 }
 
 // HealthStatus reports the operational state of the SOAR manager.
 type HealthStatus struct {
-	Healthy    bool              `json:"healthy"`
-	Started    bool              `json:"started"`
-	StartTime  time.Time         `json:"start_time"`
-	Uptime     time.Duration     `json:"uptime"`
-	Platforms  []PlatformHealth  `json:"platforms"`
+	Healthy   bool             `json:"healthy"`
+	Started   bool             `json:"started"`
+	StartTime time.Time        `json:"start_time"`
+	Uptime    time.Duration    `json:"uptime"`
+	Platforms []PlatformHealth `json:"platforms"`
 }
 
 // PlatformHealth reports the health of a single platform integration.
 type PlatformHealth struct {
-	Platform Platform `json:"platform"`
-	Enabled  bool     `json:"enabled"`
-	Endpoint string   `json:"endpoint"`
-	Healthy  bool     `json:"healthy"`
-	LastError string  `json:"last_error,omitempty"`
+	Platform  Platform `json:"platform"`
+	Enabled   bool     `json:"enabled"`
+	Endpoint  string   `json:"endpoint"`
+	Healthy   bool     `json:"healthy"`
+	LastError string   `json:"last_error,omitempty"`
 }
 
 // PlatformStats tracks delivery statistics for a single platform.
 type PlatformStats struct {
-	Sent     int        `json:"sent"`
-	Failed   int        `json:"failed"`
-	LastSent time.Time  `json:"last_sent"`
+	Sent      int       `json:"sent"`
+	Failed    int       `json:"failed"`
+	LastSent  time.Time `json:"last_sent"`
 	LastError string    `json:"last_error"`
 }
 
 // ManagerStats tracks aggregate delivery statistics.
 type ManagerStats struct {
-	TotalSent    int                       `json:"total_sent"`
-	TotalFailed  int                       `json:"total_failed"`
+	TotalSent     int                         `json:"total_sent"`
+	TotalFailed   int                         `json:"total_failed"`
 	PlatformStats map[Platform]*PlatformStats `json:"platform_stats"`
-	mu           sync.RWMutex
+	mu            sync.RWMutex
 }
 
 // Manager orchestrates outbound incident delivery to SOAR platforms.
@@ -439,24 +439,24 @@ func (m *Manager) sendPagerDuty(ctx context.Context, incident *Incident, cfg *Pl
 	}
 
 	payload := map[string]interface{}{
-		"routing_key":   routingKey,
-		"event_action":  eventAction,
-		"dedup_key":     incident.DedupKey,
+		"routing_key":  routingKey,
+		"event_action": eventAction,
+		"dedup_key":    incident.DedupKey,
 		"payload": map[string]interface{}{
-			"summary":  incident.Title,
+			"summary":   incident.Title,
 			"severity":  mapSeverityPagerDuty(incident.Severity),
 			"source":    "aegisgate",
 			"component": incident.ControlID,
 			"group":     incident.Framework,
 			"class":     "compliance_violation",
 			"custom_details": map[string]interface{}{
-				"control_id":        incident.ControlID,
-				"control_name":      incident.ControlName,
-				"framework":         incident.Framework,
-				"details":           incident.Details,
-				"remediation":       incident.Remediation,
-				"affected_systems":  incident.AffectedSystems,
-				"labels":            incident.Labels,
+				"control_id":       incident.ControlID,
+				"control_name":     incident.ControlName,
+				"framework":        incident.Framework,
+				"details":          incident.Details,
+				"remediation":      incident.Remediation,
+				"affected_systems": incident.AffectedSystems,
+				"labels":           incident.Labels,
 			},
 		},
 	}
@@ -528,9 +528,9 @@ func (m *Manager) sendJira(ctx context.Context, incident *Incident, cfg *Platfor
 
 	payload := map[string]interface{}{
 		"fields": map[string]interface{}{
-			"project":    map[string]string{"key": projectKey},
-			"issuetype":  map[string]string{"name": "Bug"},
-			"summary":    "[AegisGate] " + incident.Title,
+			"project":     map[string]string{"key": projectKey},
+			"issuetype":   map[string]string{"name": "Bug"},
+			"summary":     "[AegisGate] " + incident.Title,
 			"description": description,
 			"priority":    map[string]string{"name": mapSeverityJira(incident.Severity)},
 			"labels":      labels,
@@ -596,7 +596,7 @@ func (m *Manager) sendServiceNow(ctx context.Context, incident *Incident, cfg *P
 	}
 
 	payload := map[string]interface{}{
-		"short_description":  "[AegisGate] " + incident.Title,
+		"short_description": "[AegisGate] " + incident.Title,
 		"description":       description,
 		"severity":          mapSeverityServiceNow(incident.Severity),
 		"category":          "security",
@@ -655,20 +655,20 @@ func (m *Manager) sendServiceNow(ctx context.Context, incident *Incident, cfg *P
 
 func (m *Manager) sendCustom(ctx context.Context, incident *Incident, cfg *PlatformConfig) (*DeliveryResult, error) {
 	payload := map[string]interface{}{
-		"id":                incident.ID,
-		"title":             incident.Title,
-		"description":       incident.Description,
-		"severity":          string(incident.Severity),
-		"status":            string(incident.Status),
-		"source":            "aegisgate",
-		"timestamp":         incident.Timestamp.Format(time.RFC3339),
-		"framework":         incident.Framework,
-		"control_id":        incident.ControlID,
-		"control_name":      incident.ControlName,
-		"details":           incident.Details,
-		"remediation":       incident.Remediation,
-		"affected_systems":  incident.AffectedSystems,
-		"labels":            incident.Labels,
+		"id":               incident.ID,
+		"title":            incident.Title,
+		"description":      incident.Description,
+		"severity":         string(incident.Severity),
+		"status":           string(incident.Status),
+		"source":           "aegisgate",
+		"timestamp":        incident.Timestamp.Format(time.RFC3339),
+		"framework":        incident.Framework,
+		"control_id":       incident.ControlID,
+		"control_name":     incident.ControlName,
+		"details":          incident.Details,
+		"remediation":      incident.Remediation,
+		"affected_systems": incident.AffectedSystems,
+		"labels":           incident.Labels,
 	}
 
 	body, err := json.Marshal(payload)

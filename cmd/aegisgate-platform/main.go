@@ -46,7 +46,6 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/soar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -59,6 +58,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/security"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sla"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/soar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/trust"
@@ -804,14 +804,14 @@ func main() {
 				Enabled:  true,
 				Endpoint: p.Endpoint,
 				Auth: soar.AuthConfig{
-					Type:       p.Auth.Type,
-					APIKey:     p.Auth.APIKey,
-					Username:   p.Auth.Username,
-					Password:   p.Auth.Password,
-					TokenURL:   p.Auth.TokenURL,
-					ClientID:   p.Auth.ClientID,
+					Type:         p.Auth.Type,
+					APIKey:       p.Auth.APIKey,
+					Username:     p.Auth.Username,
+					Password:     p.Auth.Password,
+					TokenURL:     p.Auth.TokenURL,
+					ClientID:     p.Auth.ClientID,
 					ClientSecret: p.Auth.ClientSecret,
-					HMACSecret: p.Auth.HMACSecret,
+					HMACSecret:   p.Auth.HMACSecret,
 				},
 				Settings: p.Settings,
 			})

@@ -1481,10 +1481,10 @@ var FrameworkName = map[string]string{
 	"tisax":      "TISAX AL2",
 	"ccpa":       "CCPA/CPRA",
 	// v3.7.0 additions:
-	"cjis": "CJIS Security Policy v5.9.1",
-	"ferpa": "FERPA (34 CFR Part 99)",
-	"sox":    "Sarbanes-Oxley Act (2002)",
-	"glba":   "Gramm-Leach-Bliley Act (1999)",
+	"cjis":     "CJIS Security Policy v5.9.1",
+	"ferpa":    "FERPA (34 CFR Part 99)",
+	"sox":      "Sarbanes-Oxley Act (2002)",
+	"glba":     "Gramm-Leach-Bliley Act (1999)",
 	"nerc_cip": "NERC CIP Standards (v7)",
 }
 

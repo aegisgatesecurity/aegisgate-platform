@@ -320,14 +320,15 @@ type SOARPlatformConfig struct {
 // SOARAuthConfig holds authentication settings for SOAR webhooks.
 type SOARAuthConfig struct {
 	Type         string `yaml:"type"`          // "api_key", "basic", "oauth2", "hmac"
-	APIKey       string `yaml:"api_key"`        // env: AEGISGATE_SOAR_API_KEY
-	Username     string `yaml:"username"`       // For Jira basic auth
-	Password     string `yaml:"password"`       // For Jira basic auth
-	TokenURL      string `yaml:"token_url"`      // For OAuth2
+	APIKey       string `yaml:"api_key"`       // env: AEGISGATE_SOAR_API_KEY
+	Username     string `yaml:"username"`      // For Jira basic auth
+	Password     string `yaml:"password"`      // For Jira basic auth
+	TokenURL     string `yaml:"token_url"`     // For OAuth2
 	ClientID     string `yaml:"client_id"`     // For OAuth2
 	ClientSecret string `yaml:"client_secret"` // For OAuth2
 	HMACSecret   string `yaml:"hmac_secret"`   // For custom webhook HMAC signing
 }
+
 func DefaultConfig() *Config {
 	return &Config{
 		Platform: PlatformConfig{

@@ -40,11 +40,11 @@ func NewGLBAModule() *GLBAModule {
 // initNPIPatterns initializes patterns for detecting nonpublic personal information.
 func (m *GLBAModule) initNPIPatterns() {
 	m.npiPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                                          // SSN
-		regexp.MustCompile(`(?i)\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}`),                 // Credit card
-		regexp.MustCompile(`(?i)account\s*(?:number|#)?\s*[A-Za-z0-9]{6,20}`),             // Bank account
-		regexp.MustCompile(`(?i)credit\s*score\s*:?\s*\d{3}`),                            // Credit score
-		regexp.MustCompile(`(?i)nonpublic\s*personal|npi|financial\s*privacy`),            // GLBA marker
+		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                                // SSN
+		regexp.MustCompile(`(?i)\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}`),       // Credit card
+		regexp.MustCompile(`(?i)account\s*(?:number|#)?\s*[A-Za-z0-9]{6,20}`),  // Bank account
+		regexp.MustCompile(`(?i)credit\s*score\s*:?\s*\d{3}`),                  // Credit score
+		regexp.MustCompile(`(?i)nonpublic\s*personal|npi|financial\s*privacy`), // GLBA marker
 	}
 }
 
