@@ -49,8 +49,8 @@ COPY --from=builder /build/aegisgate-platform/ui/frontend /opt/aegisgate-platfor
 
 # Create writable data directories (audits, certs, logs)
 # /data is the single writable volume — everything else is read-only
-RUN mkdir -p /data/certs /data/audit /data/logs && \
-    chown -R appuser:appuser /data
+RUN mkdir -p /data/certs /data/audit /data/logs /app/certs && \
+    chown -R appuser:appuser /data /app/certs
 
 # Copy default Community tier config (embedded in binary, but also available on disk)
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
@@ -64,6 +64,9 @@ COPY --from=builder /build/aegisgate-platform/security.txt /var/www/html/.well-k
 
 # Declare /data as the persistence volume
 VOLUME ["/data"]
+
+# Set working directory so ./certs resolves to a writable location
+WORKDIR /app
 
 USER appuser
 
