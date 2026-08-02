@@ -26,6 +26,8 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ccpa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ferpa"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/glba"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/sox"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cjis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cmmcl2"
@@ -279,6 +281,24 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("ferpa", len(controls))
 		}
 	}()
+	// SOX (Sarbanes-Oxley Act) (Professional tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := sox.NewSOXModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("sox", len(controls))
+		}
+	}()
+	// GLBA (Gramm-Leach-Bliley Act) (Professional tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := glba.NewGLBAModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("glba", len(controls))
+		}
+	}()
 
 	// Community frameworks (ATLAS, GDPR, OWASP LLM) use a different
 	// interface (common.Framework) that doesn't have Controls(). Their
@@ -333,6 +353,8 @@ func RegisterBuiltinFrameworksIntoRegistry(registry *Registry) {
 	registerIntoRegistry(registry, "owasp_web", owasp_web.NewOWASPWebModule())
 	registerIntoRegistry(registry, "cjis", cjis.NewCJISModule())
 	registerIntoRegistry(registry, "ferpa", ferpa.NewFERPAModule())
+	registerIntoRegistry(registry, "sox", sox.NewSOXModule())
+	registerIntoRegistry(registry, "glba", glba.NewGLBAModule())
 }
 
 // registerIntoRegistry is a helper that safely registers a framework module

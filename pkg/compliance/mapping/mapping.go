@@ -117,6 +117,11 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-ER-003", Title: "Record Destruction Policy"},
 			{Framework: "ferpa", ControlID: "FERPA-DI-001", Title: "Directory Information Classification"},
 			{Framework: "ferpa", ControlID: "FERPA-AI-002", Title: "AI Training Data Consent"},
+			{Framework: "sox", ControlID: "SOX-DP-001", Title: "Records Retention (Section 802)"},
+			{Framework: "sox", ControlID: "SOX-DP-002", Title: "Data Integrity Controls"},
+			{Framework: "glba", ControlID: "GLBA-FP-001", Title: "Privacy Notice"},
+			{Framework: "glba", ControlID: "GLBA-FP-003", Title: "Information Sharing Safeguards"},
+			{Framework: "glba", ControlID: "GLBA-DP-003", Title: "Data Retention and Disposal"},
 		},
 	},
 
@@ -418,11 +423,15 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-AI-001", Title: "AI Model Student Data Protection"},
 			{Framework: "ferpa", ControlID: "FERPA-AI-002", Title: "AI Training Data Consent"},
 			{Framework: "ferpa", ControlID: "FERPA-AI-004", Title: "AI Bias Detection in Education"},
+			{Framework: "sox", ControlID: "SOX-AI-001", Title: "AI Model Financial Data Protection"},
+			{Framework: "sox", ControlID: "SOX-AI-002", Title: "AI Audit Trail for Financial Reports"},
+			{Framework: "glba", ControlID: "GLBA-AI-001", Title: "AI Model NPI Protection"},
+			{Framework: "glba", ControlID: "GLBA-AI-002", Title: "AI Audit Trail for Financial Privacy"},
 		},
 	},
 
 	// ================================================================
-	// Access Control family
+	// Access Control family"
 	// ================================================================
 	"AG-AUTH-RBAC-MFA": {
 		ID:          "AG-AUTH-RBAC-MFA",
@@ -503,6 +512,13 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-DS-003", Title: "Technical Data Safeguards"},
 			{Framework: "ferpa", ControlID: "FERPA-AI-003", Title: "AI Audit Trail for Education Records"},
 			{Framework: "ferpa", ControlID: "FERPA-DI-003", Title: "Disclosure Consent"},
+			{Framework: "sox", ControlID: "SOX-IC-001", Title: "Internal Control Assessment"},
+			{Framework: "sox", ControlID: "SOX-FR-002", Title: "Real-Time Disclosure (Section 409)"},
+			{Framework: "sox", ControlID: "SOX-DP-002", Title: "Data Integrity Controls"},
+			{Framework: "sox", ControlID: "SOX-IT-003", Title: "Backup and Recovery"},
+			{Framework: "glba", ControlID: "GLBA-PP-001", Title: "Pretexting Prevention"},
+			{Framework: "glba", ControlID: "GLBA-SG-001", Title: "Information Security Program"},
+			{Framework: "glba", ControlID: "GLBA-DP-003", Title: "Data Retention and Disposal"},
 		},
 	},
 
@@ -545,11 +561,13 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "cjis", ControlID: "CJIS-CR-002", Title: "Encryption in Transit"},
 			{Framework: "cjis", ControlID: "CJIS-CR-003", Title: "Key Management"},
 			{Framework: "ferpa", ControlID: "FERPA-DS-003", Title: "Technical Data Safeguards"},
+			{Framework: "glba", ControlID: "GLBA-DP-001", Title: "Encryption at Rest"},
+			{Framework: "glba", ControlID: "GLBA-DP-002", Title: "Encryption in Transit"},
 		},
 	},
 
 	// ================================================================
-	// Vulnerability Management family
+	// Vulnerability Management" family
 	// ================================================================
 	"AG-VULN-CI-SCANNING": {
 		ID:          "AG-VULN-CI-SCANNING",
@@ -672,11 +690,13 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-SC-28", Title: "Protection of Information at Rest"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SI-3", Title: "Malicious Code Protection"},
 			{Framework: "ferpa", ControlID: "FERPA-AI-001", Title: "AI Model Student Data Protection"},
+			{Framework: "sox", ControlID: "SOX-AI-001", Title: "AI Model Financial Data Protection"},
+			{Framework: "glba", ControlID: "GLBA-AI-001", Title: "AI Model NPI Protection"},
 		},
 	},
 
 	// ================================================================
-	// Configuration Management / Baseline family
+	// Configuration Management / Baseline family"
 	// ================================================================
 	"AG-CM-BASELINE-CONFIG": {
 		ID:          "AG-CM-BASELINE-CONFIG",
@@ -703,6 +723,11 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-ER-003", Title: "Record Destruction Policy"},
 			{Framework: "ferpa", ControlID: "FERPA-DI-001", Title: "Directory Information Classification"},
 			{Framework: "ferpa", ControlID: "FERPA-AI-002", Title: "AI Training Data Consent"},
+			{Framework: "sox", ControlID: "SOX-DP-001", Title: "Records Retention (Section 802)"},
+			{Framework: "sox", ControlID: "SOX-DP-002", Title: "Data Integrity Controls"},
+			{Framework: "glba", ControlID: "GLBA-FP-001", Title: "Privacy Notice"},
+			{Framework: "glba", ControlID: "GLBA-FP-003", Title: "Information Sharing Safeguards"},
+			{Framework: "glba", ControlID: "GLBA-DP-003", Title: "Data Retention and Disposal"},
 		},
 	},
 
@@ -808,6 +833,9 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "tisax", ControlID: "TISAX-IS-05", Title: "Cryptography"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "sox", ControlID: "SOX-IC-003", Title: "Risk Assessment Framework"},
+			{Framework: "glba", ControlID: "GLBA-SG-002", Title: "Risk Assessment"},
+			{Framework: "glba", ControlID: "GLBA-SG-004", Title: "Vendor Management"},
 			{Framework: "cjis", ControlID: "CJIS-PP-002", Title: "Mobile Device Security"},
 		},
 	},
@@ -1013,6 +1041,8 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "cjis", ControlID: "CJIS-PS-002", Title: "Security Awareness Training"},
 			{Framework: "ferpa", ControlID: "FERPA-ER-001", Title: "Education Records Access"},
+			{Framework: "sox", ControlID: "SOX-IC-002", Title: "Control Environment"},
+			{Framework: "sox", ControlID: "SOX-WP-002", Title: "Anonymous Reporting Mechanism"},
 		},
 	},
 
@@ -1082,6 +1112,8 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-02", Title: "User Authentication"},
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "sox", ControlID: "SOX-FR-001", Title: "Financial Statement Integrity"},
+			{Framework: "sox", ControlID: "SOX-FR-003", Title: "Audit Committee Oversight"},
 		},
 	},
 
@@ -1125,6 +1157,12 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ferpa", ControlID: "FERPA-DI-003", Title: "Disclosure Consent"},
 			{Framework: "ferpa", ControlID: "FERPA-CD-001", Title: "Authorized Disclosure"},
 			{Framework: "ferpa", ControlID: "FERPA-ER-002", Title: "Record Amendment Rights"},
+			{Framework: "sox", ControlID: "SOX-DP-003", Title: "Access Controls for Financial Systems"},
+			{Framework: "sox", ControlID: "SOX-IT-002", Title: "IT Security Controls"},
+			{Framework: "sox", ControlID: "SOX-IT-001", Title: "Change Management"},
+			{Framework: "glba", ControlID: "GLBA-SG-003", Title: "Access Controls"},
+			{Framework: "glba", ControlID: "GLBA-PP-002", Title: "Customer Authentication"},
+			{Framework: "glba", ControlID: "GLBA-FP-002", Title: "Opt-Out Rights"},
 		},
 	},
 
@@ -1258,6 +1296,8 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "cjis", ControlID: "CJIS-PS-001", Title: "Personnel Security Policy"},
 			{Framework: "ferpa", ControlID: "FERPA-DS-001", Title: "Administrative Data Safeguards"},
+			{Framework: "sox", ControlID: "SOX-IC-002", Title: "Control Environment"},
+			{Framework: "sox", ControlID: "SOX-WP-001", Title: "Whistleblower Protection (Section 806)"},
 		},
 	},
 
@@ -1418,6 +1458,8 @@ var FrameworkName = map[string]string{
 	// v3.7.0 additions:
 	"cjis": "CJIS Security Policy v5.9.1",
 	"ferpa": "FERPA (34 CFR Part 99)",
+	"sox":    "Sarbanes-Oxley Act (2002)",
+	"glba":   "Gramm-Leach-Bliley Act (1999)",
 }
 
 // MapByControlID returns all external framework controls that the
