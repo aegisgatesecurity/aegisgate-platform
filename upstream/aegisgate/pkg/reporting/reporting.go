@@ -42,12 +42,16 @@
 package reporting
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
+	"net/smtp"
 	"os"
 	"path/filepath"
 	"sort"
@@ -921,7 +925,10 @@ func (r *Reporter) executeSchedule(schedule ReportSchedule) {
 			if current.Status == ReportStatusCompleted || current.Status == ReportStatusFailed {
 				// Deliver if configured
 				if r.Delivery != nil && (len(schedule.Delivery.Email) > 0 || schedule.Delivery.WebhookURL != "") {
-					_ = r.Delivery.DeliverReport(current, schedule.Delivery)
+					if err := r.Delivery.DeliverReport(current, schedule.Delivery); err != nil {
+						// Log delivery failure but don't fail the report
+						_, _ = fmt.Fprintf(os.Stderr, "report delivery failed for %s: %v\n", current.ID, err)
+					}
 				}
 				return
 			}
@@ -1329,4 +1336,158 @@ type NoOpDelivery struct{}
 // DeliverReport implements DeliveryHandler with no operation.
 func (n *NoOpDelivery) DeliverReport(report *Report, config DeliveryConfig) error {
 	return nil
+}
+
+// ============================================================================
+// Built-in Delivery Handlers
+// ============================================================================
+
+// WebhookDelivery sends reports to a webhook endpoint via HTTP POST.
+// The report data is serialized as JSON in the request body.
+type WebhookDelivery struct {
+	// HTTPClient is the HTTP client to use for requests.
+	// If nil, http.DefaultClient is used.
+	HTTPClient interface {
+		Do(req interface{}) (interface{}, error)
+	}
+}
+
+// DeliverReport implements DeliveryHandler by sending the report as JSON
+// to the configured webhook URL.
+func (w *WebhookDelivery) DeliverReport(report *Report, config DeliveryConfig) error {
+	if config.WebhookURL == "" {
+		return fmt.Errorf("webhook URL is required")
+	}
+
+	// Serialize the report data
+	data, err := json.Marshal(report)
+	if err != nil {
+		return fmt.Errorf("failed to marshal report: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, config.WebhookURL, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("failed to create webhook request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "AegisGate-Reporting/1.0")
+	req.Header.Set("X-Report-ID", report.ID)
+	req.Header.Set("X-Report-Type", string(report.Type))
+
+	// Add custom headers
+	for k, v := range config.WebhookHeaders {
+		req.Header.Set(k, v)
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("webhook request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// EmailDelivery sends reports via email using SMTP.
+// It sends the report as a JSON attachment with a summary in the body.
+type EmailDelivery struct {
+	// SMTPHost is the SMTP server hostname.
+	SMTPHost string
+	// SMTPPort is the SMTP server port.
+	SMTPPort int
+	// SMTPUsername is the SMTP authentication username.
+	SMTPUsername string
+	// SMTPPassword is the SMTP authentication password.
+	SMTPPassword string
+	// FromAddress is the sender email address.
+	FromAddress string
+	// UseTLS enables STARTTLS for the SMTP connection.
+	UseTLS bool
+}
+
+// DeliverReport implements DeliveryHandler by sending the report via email.
+func (e *EmailDelivery) DeliverReport(report *Report, config DeliveryConfig) error {
+	if len(config.Email) == 0 {
+		return fmt.Errorf("no email recipients configured")
+	}
+
+	// Build a summary email body
+	subject := fmt.Sprintf("AegisGate Report: %s (%s)", report.ID, report.Type)
+	body := fmt.Sprintf("Report ID: %s\nType: %s\nStatus: %s\nCreated: %s\nCompleted: %s\n\nThis is an automated report from AegisGate Platform.",
+		report.ID,
+		report.Type,
+		report.Status,
+		report.Created.Format(time.RFC3339),
+		report.Completed.Format(time.RFC3339),
+	)
+
+	// Construct the email message in MIME format
+	var msg bytes.Buffer
+	fmt.Fprintf(&msg, "From: %s\r\n", e.FromAddress)
+	fmt.Fprintf(&msg, "To: %s\r\n", strings.Join(config.Email, ", "))
+	fmt.Fprintf(&msg, "Subject: %s\r\n", subject)
+	fmt.Fprintf(&msg, "MIME-Version: 1.0\r\n")
+	fmt.Fprintf(&msg, "Content-Type: text/plain; charset=utf-8\r\n\r\n")
+	msg.WriteString(body)
+
+	// Connect and send via SMTP
+	addr := fmt.Sprintf("%s:%d", e.SMTPHost, e.SMTPPort)
+	var client *smtp.Client
+	var err error
+
+	if e.SMTPHost == "" {
+		return fmt.Errorf("SMTP host is required")
+	}
+
+	client, err = smtp.Dial(addr)
+	if err != nil {
+		return fmt.Errorf("SMTP dial failed: %w", err)
+	}
+	defer client.Close()
+
+	// STARTTLS if configured
+	if e.UseTLS {
+		tlsConfig := &tls.Config{ServerName: e.SMTPHost}
+		if err := client.StartTLS(tlsConfig); err != nil {
+			return fmt.Errorf("SMTP STARTTLS failed: %w", err)
+		}
+	}
+
+	// Authenticate if credentials provided
+	if e.SMTPUsername != "" && e.SMTPPassword != "" {
+		auth := smtp.PlainAuth("", e.SMTPUsername, e.SMTPPassword, e.SMTPHost)
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("SMTP auth failed: %w", err)
+		}
+	}
+
+	// Send the email
+	if err := client.Mail(e.FromAddress); err != nil {
+		return fmt.Errorf("SMTP MAIL FROM failed: %w", err)
+	}
+	for _, rcpt := range config.Email {
+		if err := client.Rcpt(rcpt); err != nil {
+			return fmt.Errorf("SMTP RCPT TO failed for %s: %w", rcpt, err)
+		}
+	}
+
+	wc, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("SMTP DATA failed: %w", err)
+	}
+	if _, err := wc.Write(msg.Bytes()); err != nil {
+		return fmt.Errorf("SMTP write failed: %w", err)
+	}
+	if err := wc.Close(); err != nil {
+		return fmt.Errorf("SMTP close failed: %w", err)
+	}
+
+	return client.Quit()
 }
