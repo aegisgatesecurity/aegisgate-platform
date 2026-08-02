@@ -32,10 +32,10 @@ func NewFERPAModule() *FERPAModule {
 // initFERPAPatterns initializes patterns for detecting student PII in education records.
 func (m *FERPAModule) initFERPAPatterns() {
 	m.ferpaPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                              // SSN
+		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                             // SSN
 		regexp.MustCompile(`(?i)student\s*(?:id|#)\s*[A-Za-z0-9]{5,12}`),    // Student ID
 		regexp.MustCompile(`(?i)ferpa\s*(?:protected|record|confidential)`), // FERPA record marker
-		regexp.MustCompile(`(?i)education\s*record`),                         // Education record
+		regexp.MustCompile(`(?i)education\s*record`),                        // Education record
 		regexp.MustCompile(`(?i)opt\s*out|withhold\s*directory`),            // Directory info opt-out
 	}
 }

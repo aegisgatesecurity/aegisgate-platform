@@ -212,8 +212,8 @@ func TestSendIncident_PagerDuty(t *testing.T) {
 
 func TestPagerDuty_StatusMappings(t *testing.T) {
 	tests := []struct {
-		status       IncidentStatus
-		eventAction  string
+		status      IncidentStatus
+		eventAction string
 	}{
 		{StatusTriggered, "trigger"},
 		{StatusAcknowledged, "acknowledge"},

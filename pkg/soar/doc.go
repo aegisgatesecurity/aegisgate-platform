@@ -1,7 +1,7 @@
 // Package soar provides Security Orchestration, Automation, and Response
 // integration for the AegisGate Platform.
 //
-// SOAR vs SIEM
+// # SOAR vs SIEM
 //
 // This package is distinct from the SIEM package (pkg/siem/). The SIEM
 // package sends raw events TO logging and observability platforms such as
@@ -14,7 +14,7 @@
 //   - SIEM  →  "Log this event for analysis"
 //   - SOAR  →  "Alert this platform so action is taken"
 //
-// Supported Platforms
+// # Supported Platforms
 //
 // The package currently supports three outbound integration targets:
 //
@@ -33,19 +33,19 @@
 //   - Custom: Sends a generic JSON payload to any webhook endpoint, with
 //     optional HMAC-SHA256 signing for payload integrity verification.
 //
-// Severity Mapping
+// # Severity Mapping
 //
 // Internal severity levels map to platform-specific values:
 //
-//   AegisGate  |  PagerDuty  |  Jira      |  ServiceNow
-//   -----------|-------------|------------|------------
-//   critical   |  critical   |  Highest   |  1
-//   high       |  error      |  High      |  2
-//   medium     |  warning    |  Medium    |  3
-//   low        |  info       |  Low       |  4
-//   info       |  info       |  Lowest    |  4
+//	AegisGate  |  PagerDuty  |  Jira      |  ServiceNow
+//	-----------|-------------|------------|------------
+//	critical   |  critical   |  Highest   |  1
+//	high       |  error      |  High      |  2
+//	medium     |  warning    |  Medium    |  3
+//	low        |  info       |  Low       |  4
+//	info       |  info       |  Lowest    |  4
 //
-// Usage
+// # Usage
 //
 // Create a Manager with your platform configurations, start it, and send
 // incidents:

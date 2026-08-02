@@ -34,15 +34,15 @@ func NewNERCCIPModule() *NERCCIPModule {
 // initPatterns initializes regex patterns for BES (Bulk Electric System) data detection.
 func (m *NERCCIPModule) initPatterns() {
 	m.nercPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?i)\b\d{3}-\d{2}-\d{4}\b`),   // SSN pattern
-		regexp.MustCompile(`(?i)\bscada\b`),                   // SCADA systems
-		regexp.MustCompile(`(?i)\bbes\b.*\bcyber\b`),         // BES cyber references
-		regexp.MustCompile(`(?i)\bgrid\b.*\bcontrol\b`),       // Grid control systems
-		regexp.MustCompile(`(?i)\bsubstation\b`),               // Substation references
-		regexp.MustCompile(`(?i)\bnerc\b`),                     // NERC references
-		regexp.MustCompile(`(?i)\bcip[-_]\d{3}\b`),            // CIP-XXX standard refs
-		regexp.MustCompile(`(?i)\bbulk\s+electric\b`),         // Bulk electric system
-		regexp.MustCompile(`(?i)\btransmission\s+operator\b`),  // Transmission operator
+		regexp.MustCompile(`(?i)\b\d{3}-\d{2}-\d{4}\b`),         // SSN pattern
+		regexp.MustCompile(`(?i)\bscada\b`),                     // SCADA systems
+		regexp.MustCompile(`(?i)\bbes\b.*\bcyber\b`),            // BES cyber references
+		regexp.MustCompile(`(?i)\bgrid\b.*\bcontrol\b`),         // Grid control systems
+		regexp.MustCompile(`(?i)\bsubstation\b`),                // Substation references
+		regexp.MustCompile(`(?i)\bnerc\b`),                      // NERC references
+		regexp.MustCompile(`(?i)\bcip[-_]\d{3}\b`),              // CIP-XXX standard refs
+		regexp.MustCompile(`(?i)\bbulk\s+electric\b`),           // Bulk electric system
+		regexp.MustCompile(`(?i)\btransmission\s+operator\b`),   // Transmission operator
 		regexp.MustCompile(`(?i)\breliability\s+coordinator\b`), // Reliability coordinator
 	}
 }

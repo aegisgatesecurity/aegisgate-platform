@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
-
 )
 
 func TestNewNERCCIPModule(t *testing.T) {
@@ -799,4 +798,3 @@ func TestNERCCIPModuleProvisions(t *testing.T) {
 		t.Errorf("Expected 18 controls, got %d", len(controls))
 	}
 }
-

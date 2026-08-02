@@ -32,11 +32,11 @@ func NewSOXModule() *SOXModule {
 // initSOXPatterns initializes patterns for detecting financial data.
 func (m *SOXModule) initSOXPatterns() {
 	m.soxPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                                      // SSN
-		regexp.MustCompile(`(?i)\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}`),              // Credit card number
-		regexp.MustCompile(`(?i)(?:routing|aba)\s*\d{9}`),                              // ABA routing
-		regexp.MustCompile(`(?i)account\s*(?:number|#)?\s*[A-Za-z0-9]{6,20}`),           // Financial account
-		regexp.MustCompile(`(?i)sox\s*(?:compliant|control|section)`),                  // SOX marker
+		regexp.MustCompile(`\d{3}-\d{2}-\d{4}`),                               // SSN
+		regexp.MustCompile(`(?i)\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}`),      // Credit card number
+		regexp.MustCompile(`(?i)(?:routing|aba)\s*\d{9}`),                     // ABA routing
+		regexp.MustCompile(`(?i)account\s*(?:number|#)?\s*[A-Za-z0-9]{6,20}`), // Financial account
+		regexp.MustCompile(`(?i)sox\s*(?:compliant|control|section)`),         // SOX marker
 	}
 }
 
