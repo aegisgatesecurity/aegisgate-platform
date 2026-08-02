@@ -26,6 +26,7 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ccpa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cis"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cjis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cmmcl2"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/csa_star"
 	eu_ai_act "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/eu-ai-act"
@@ -259,6 +260,15 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("owasp_web", len(controls))
 		}
 	}()
+	// CJIS Security Policy v5.9.1 (Enterprise tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := cjis.NewCJISModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("cjis", len(controls))
+		}
+	}()
 
 	// Community frameworks (ATLAS, GDPR, OWASP LLM) use a different
 	// interface (common.Framework) that doesn't have Controls(). Their
@@ -311,6 +321,7 @@ func RegisterBuiltinFrameworksIntoRegistry(registry *Registry) {
 	registerIntoRegistry(registry, "csa_star", csa_star.NewCSASTARModule())
 	registerIntoRegistry(registry, "nist_ai_600_1", nist_ai_600_1.NewNISTAIGenAIProfileModule())
 	registerIntoRegistry(registry, "owasp_web", owasp_web.NewOWASPWebModule())
+	registerIntoRegistry(registry, "cjis", cjis.NewCJISModule())
 }
 
 // registerIntoRegistry is a helper that safely registers a framework module
