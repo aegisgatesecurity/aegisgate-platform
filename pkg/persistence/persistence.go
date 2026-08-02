@@ -190,7 +190,7 @@ func NewWithPostgres(platformTier tier.Tier, cfg Config, pgStore *ioc.PostgresSt
 		auditLog:         auditLog,
 		correlationStore: correlation.NewPostgresCorrelationStore(pgStore.Pool()),
 		attestationStore: attestation.NewPostgresAttestationStore(pgStore.Pool()),
-		incidentStore:    incident.NewInMemoryIncidentStore(), // v3.8: in-memory; PostgreSQL in v2.0
+		incidentStore:    incident.NewPostgresIncidentStore(pgStore.Pool()),
 		done:             make(chan struct{}),
 		usePostgres:      true,
 	}, nil
