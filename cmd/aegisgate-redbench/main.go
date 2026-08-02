@@ -30,12 +30,12 @@ import (
 
 // AttackChain represents a multi-turn adversarial test scenario.
 type AttackChain struct {
-	Name              string   `json:"name"`
-	Category          string   `json:"category"`
-	Description       string   `json:"description"`
-	Turns             []string `json:"turns"`
-	ExpectedDetections int     `json:"expected_detections"`
-	ATLASTechnique    string   `json:"atlas_technique,omitempty"`
+	Name               string   `json:"name"`
+	Category           string   `json:"category"`
+	Description        string   `json:"description"`
+	Turns              []string `json:"turns"`
+	ExpectedDetections int      `json:"expected_detections"`
+	ATLASTechnique     string   `json:"atlas_technique,omitempty"`
 }
 
 // ChainResult holds the result for a single attack chain.
@@ -50,14 +50,14 @@ type ChainResult struct {
 
 // BenchReport is the full output report.
 type BenchReport struct {
-	Timestamp      string        `json:"timestamp"`
-	Proxy          string        `json:"proxy"`
-	Model          string        `json:"model"`
+	Timestamp     string        `json:"timestamp"`
+	Proxy         string        `json:"proxy"`
+	Model         string        `json:"model"`
 	TotalChains   int           `json:"total_chains"`
-	Detected       int           `json:"detected"`
-	NotDetected    int           `json:"not_detected"`
-	DetectionRate  float64       `json:"detection_rate"`
-	Results        []ChainResult `json:"results"`
+	Detected      int           `json:"detected"`
+	NotDetected   int           `json:"not_detected"`
+	DetectionRate float64       `json:"detection_rate"`
+	Results       []ChainResult `json:"results"`
 }
 
 // DefaultAttackChains returns the 20 standard adversarial test scenarios.
