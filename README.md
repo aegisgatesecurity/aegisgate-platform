@@ -7,7 +7,7 @@
 [![Version](https://img.shields.io/badge/Version-v3.6.2-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.6.2)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-10831+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-11200+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-90.5%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![SIEM](https://img.shields.io/badge/SIEM-11_platforms-9333ea?logo=splunk)](upstream/aegisgate/pkg/siem/)
@@ -144,7 +144,7 @@ result, _ := guard.Scan(ctx, text)
 | **Trust API Attestation** | Cryptographic attestation generation and verification (RFC 3161 TSA) |
 | **SIEM 11/11 Platform Coverage** | Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, **Datadog**, **CloudWatch**, **SecurityHub** |
 | **SIEM Event Durability** | BufferConfig.Persist with JSON-lines file persistence and replay on startup |
-| **Incident PostgreSQL Backend** | Full PostgreSQL persistence for incidents, playbooks, and detection rules (8 stores, 7 migrations) |
+| **Incident PostgreSQL Backend** | Full PostgreSQL persistence for incidents, playbooks, and detection rules (7 stores, 7 migrations) |
 | **SSO Persistence** | PostgreSQL-backed OIDC session storage with TTL and ACR value mapping |
 | **Token Analytics** | Per-request token usage metrics wired into the request pipeline |
 | **PDF Export** | Questionnaire results export to formatted PDF with scoring and evidence citations |
@@ -231,7 +231,7 @@ pkg/
 ## Testing
 
 ```bash
-# Unit tests (101 packages)
+# Unit tests (102 packages)
 go test ./...
 
 # Integration tests (8 PostgreSQL packages, requires Docker)
