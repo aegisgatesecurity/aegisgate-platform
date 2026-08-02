@@ -1,0 +1,80 @@
+# =============================================================================
+# AegisGate Platform Docker Ignore
+# Excludes everything not needed for the production Docker build.
+# The Go source, upstream/ vendored deps, configs, and UI are kept.
+# =============================================================================
+
+# Build artifacts and binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+
+# Test and lab infrastructure
+testlab/
+testing/
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation and plans
+docs/
+plans/
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Data directories
+data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep upstream/ — it contains vendored Go deps needed at build time
+# (aegisguard and aegisgate-lens are Go module replacements)
+
+# Test infrastructure - HUGE (30GB+ k6 results)
+tests/
+testlab/
+testing/
+
+# Pre-built test binaries
+*.test
+bin/
+
+# Large binary artifacts in root
+aegisgate-platform
+persistence.test
+license.test
+ioc.test
+attestation.test
+rbac.test
+correlation.test
+sso.test
+admin-server
