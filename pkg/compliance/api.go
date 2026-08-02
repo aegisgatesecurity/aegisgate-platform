@@ -50,6 +50,10 @@ type API struct {
 	// auditTrail is the rule change audit trail. Optional;
 	// if nil, /audit-trail returns 404.
 	auditTrail *AuditTrail
+	// policyEngine is the OPA/Rego policy engine. Optional.
+	policyEngine *PolicyEngine
+	// evidenceCollector manages evidence collection. Optional.
+	evidenceCollector *EvidenceCollector
 }
 
 // NewAPI creates a new compliance HTTP API. Both scanner and mgr
@@ -63,6 +67,16 @@ func NewAPI(scanner *Scanner, mgr *license.Manager) *API {
 // /audit-trail endpoint is enabled.
 func (a *API) SetAuditTrail(at *AuditTrail) {
 	a.auditTrail = at
+}
+
+// SetPolicyEngine sets the OPA/Rego policy engine for the API.
+func (a *API) SetPolicyEngine(pe *PolicyEngine) {
+	a.policyEngine = pe
+}
+
+// SetEvidenceCollector sets the evidence collector for the API.
+func (a *API) SetEvidenceCollector(ec *EvidenceCollector) {
+	a.evidenceCollector = ec
 }
 
 // ServeHTTP implements http.Handler. Strips the
@@ -92,8 +106,30 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.serveIntegrity(w, r)
 	case "/audit-trail":
 		a.serveAuditTrail(w, r)
+	case "/vendor-risk":
+		a.serveVendorRisk(w, r)
+	case "/vendor-risk/assess":
+		a.serveVendorRiskAssess(w, r)
+	case "/policy-engine":
+		a.servePolicyEngine(w, r)
+	case "/policy-engine/evaluate":
+		a.servePolicyEngineEvaluate(w, r)
+	case "/evidence":
+		a.serveEvidence(w, r)
+	case "/evidence/collect":
+		a.serveEvidenceCollect(w, r)
+	case "/evidence/verify":
+		a.serveEvidenceVerify(w, r)
 	default:
-		http.NotFound(w, r)
+		if strings.HasPrefix(path, "/vendor-risk") {
+			a.serveVendorRisk(w, r)
+		} else if strings.HasPrefix(path, "/policy-engine") {
+			a.servePolicyEngine(w, r)
+		} else if strings.HasPrefix(path, "/evidence") {
+			a.serveEvidence(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
 	}
 }
 
@@ -368,6 +404,174 @@ func (a *API) serveAuditTrail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
+}
+
+// ---- /vendor-risk ----
+
+func (a *API) serveVendorRisk(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	profiles := PredefinedVendorProfiles()
+	vendors := make([]*VendorAssessment, 0, len(profiles))
+	for _, v := range profiles {
+		vendors = append(vendors, v)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"vendors": vendors,
+		"count":   len(vendors),
+	})
+}
+
+func (a *API) serveVendorRiskAssess(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		VendorName string `json:"vendor_name"`
+		Category   string `json:"category"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body: "+err.Error())
+		return
+	}
+	if req.VendorName == "" {
+		writeError(w, http.StatusBadRequest, "vendor_name is required")
+		return
+	}
+	category := VendorCategory(req.Category)
+	if category == "" {
+		category = VendorOther
+	}
+	assessment := NewVendorAssessment(req.VendorName, category)
+	writeJSON(w, http.StatusOK, assessment)
+}
+
+// ---- /policy-engine ----
+
+func (a *API) servePolicyEngine(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.policyEngine == nil {
+		writeError(w, http.StatusNotFound, "policy engine not configured")
+		return
+	}
+	framework := r.URL.Query().Get("framework")
+	policies := a.policyEngine.ListPolicies(PolicyFilter{Framework: framework})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"policies": policies,
+		"count":   len(policies),
+	})
+}
+
+func (a *API) servePolicyEngineEvaluate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.policyEngine == nil {
+		writeError(w, http.StatusNotFound, "policy engine not configured")
+		return
+	}
+	var input PolicyInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		// Allow empty body
+		input = PolicyInput{}
+	}
+	framework := r.URL.Query().Get("framework")
+	var results []*PolicyResult
+	var err error
+	if framework != "" {
+		results, err = a.policyEngine.EvaluateFramework(r.Context(), framework, input)
+	} else {
+		results, err = a.policyEngine.EvaluateAll(r.Context(), input)
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "evaluation failed: "+err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"results": results,
+		"count":   len(results),
+	})
+}
+
+// ---- /evidence ----
+
+func (a *API) serveEvidence(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.evidenceCollector == nil {
+		writeError(w, http.StatusNotFound, "evidence collector not configured")
+		return
+	}
+	filter := EvidenceFilter{
+		Framework: r.URL.Query().Get("framework"),
+		ControlID: r.URL.Query().Get("control_id"),
+		Type:      EvidenceType(r.URL.Query().Get("type")),
+		Status:    EvidenceStatus(r.URL.Query().Get("status")),
+	}
+	items := a.evidenceCollector.QueryEvidence(filter)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"evidence": items,
+		"count":    len(items),
+	})
+}
+
+func (a *API) serveEvidenceCollect(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.evidenceCollector == nil {
+		writeError(w, http.StatusNotFound, "evidence collector not configured")
+		return
+	}
+	var req struct {
+		Framework string `json:"framework"`
+		ControlID string `json:"control_id"`
+		Type      string `json:"type"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body: "+err.Error())
+		return
+	}
+	item, err := a.evidenceCollector.CollectEvidence(r.Context(), req.Framework, req.ControlID, EvidenceType(req.Type))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "collection failed: "+err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, item)
+}
+
+func (a *API) serveEvidenceVerify(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.evidenceCollector == nil {
+		writeError(w, http.StatusNotFound, "evidence collector not configured")
+		return
+	}
+	var req struct {
+		ID         string `json:"id"`
+		VerifiedBy string `json:"verified_by"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body: "+err.Error())
+		return
+	}
+	if err := a.evidenceCollector.VerifyEvidence(req.ID, req.VerifiedBy); err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"status": "verified", "id": req.ID})
 }
 
 // ---- helpers ----

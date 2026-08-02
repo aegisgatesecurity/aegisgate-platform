@@ -1,0 +1,64 @@
+# =========================================================================
+# AegisGate K8s Operator — Helm Values
+# =========================================================================
+
+# -- Number of operator replicas
+replicaCount: 1
+
+# -- Image configuration
+image:
+  repository: ghcr.io/aegisgatesecurity/aegisgate-operator
+  tag: "v3.6.1"
+  pullPolicy: IfNotPresent
+
+# -- Service account for operator RBAC
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# -- CRD installation
+crd:
+  install: true
+
+# -- RBAC configuration
+rbac:
+  create: true
+
+# -- Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# -- Container security context
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# -- Resource requests and limits
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# -- Watch namespace (empty = all namespaces)
+watchNamespace: ""
+
+# -- Resync period for controller
+resyncPeriod: 30s
+
+# -- Node selector
+nodeSelector: {}
+
+# -- Tolerations
+tolerations: []
+
+# -- Affinity rules
+affinity: {}

@@ -1,17 +1,16 @@
 apiVersion: v2
-name: aegisgate-platform
-description: AegisGate Security Platform — unified AI API security gateway (proxy + MCP + dashboard + cross-protocol evidence + federated IOC library)
+name: aegisgate-operator
+description: AegisGate Security Platform — Kubernetes Operator for automated deployment and lifecycle management
 type: application
-version: 1.7.0
+version: 0.1.0
 appVersion: "v3.6.1"
 home: https://github.com/aegisgatesecurity/aegisgate-platform
 keywords:
   - security
-  - proxy
-  - mcp
+  - operator
+  - kubernetes
   - ai
   - gateway
-  - rate-limiting
 maintainers:
   - name: AegisGate Security
     email: security@aegisgatesecurity.io

@@ -92,10 +92,10 @@ func (hc *HTTPClient) Do(ctx context.Context, method, url string, body, v interf
 		}
 
 		if resp.StatusCode >= 500 {
-			lastErr = &ErrorResponse{
+			lastErr = &APIError{
 				StatusCode: resp.StatusCode,
 				Message:    string(respBody),
-				Error:      http.StatusText(resp.StatusCode),
+				Err:         http.StatusText(resp.StatusCode),
 			}
 			continue // retry on server errors
 		}

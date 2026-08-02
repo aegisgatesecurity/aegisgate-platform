@@ -10,7 +10,11 @@
 
 package aegisgate
 
-import "context"
+import (
+	"context"
+	"net/url"
+	"strings"
+)
 
 // service is the common struct embedded by every service.
 type service struct {
@@ -598,5 +602,167 @@ type VersionService struct{ client *Client }
 func (s *VersionService) Get(ctx context.Context) (*VersionInfo, error) {
 	var resp VersionInfo
 	err := s.client.do(ctx, "GET", "/version", nil, &resp)
+	return &resp, err
+}
+
+// =========================================================================
+// Vendor Risk
+// =========================================================================
+
+// VendorRiskService handles vendor risk assessment endpoints.
+type VendorRiskService struct{ client *Client }
+
+// ListProfiles returns predefined vendor risk profiles.
+// GET /api/v1/compliance/vendor-risk
+func (s *VendorRiskService) ListProfiles(ctx context.Context) ([]VendorProfile, error) {
+	var profiles []VendorProfile
+	err := s.client.do(ctx, "GET", "/api/v1/compliance/vendor-risk", nil, &profiles)
+	return profiles, err
+}
+
+// GetProfile returns a specific vendor risk profile.
+// GET /api/v1/compliance/vendor-risk?vendor=<name>
+func (s *VendorRiskService) GetProfile(ctx context.Context, vendor string) (*VendorProfile, error) {
+	path := "/api/v1/compliance/vendor-risk?vendor=" + url.QueryEscape(vendor)
+	var profile VendorProfile
+	err := s.client.do(ctx, "GET", path, nil, &profile)
+	return &profile, err
+}
+
+// Assess creates a new vendor risk assessment.
+// POST /api/v1/compliance/vendor-risk/assess
+func (s *VendorRiskService) Assess(ctx context.Context, req *VendorRiskAssessRequest) (*VendorAssessment, error) {
+	var resp VendorAssessment
+	err := s.client.do(ctx, "POST", "/api/v1/compliance/vendor-risk/assess", req, &resp)
+	return &resp, err
+}
+
+// =========================================================================
+// Policy Engine (OPA/Rego)
+// =========================================================================
+
+// PolicyEngineService handles policy-as-code endpoints.
+type PolicyEngineService struct{ client *Client }
+
+// ListPolicies lists all policies or filters by framework.
+// GET /api/v1/compliance/policy-engine?framework=<framework>
+func (s *PolicyEngineService) ListPolicies(ctx context.Context, framework string) ([]PolicyInfo, error) {
+	path := "/api/v1/compliance/policy-engine"
+	if framework != "" {
+		path += "?framework=" + url.QueryEscape(framework)
+	}
+	var policies []PolicyInfo
+	err := s.client.do(ctx, "GET", path, nil, &policies)
+	return policies, err
+}
+
+// Evaluate evaluates all policies against input.
+// POST /api/v1/compliance/policy-engine/evaluate
+func (s *PolicyEngineService) Evaluate(ctx context.Context, req *PolicyEvaluateRequest) (*PolicyEvaluateResult, error) {
+	var resp PolicyEvaluateResult
+	err := s.client.do(ctx, "POST", "/api/v1/compliance/policy-engine/evaluate", req, &resp)
+	return &resp, err
+}
+
+// =========================================================================
+// Evidence Automation
+// =========================================================================
+
+// EvidenceService handles evidence collection endpoints.
+type EvidenceService struct{ client *Client }
+
+// ListEvidence lists evidence items with optional filters.
+// GET /api/v1/compliance/evidence?framework=<f>&control_id=<c>&type=<t>
+func (s *EvidenceService) ListEvidence(ctx context.Context, framework, controlID, evidenceType string) ([]EvidenceItem, error) {
+	path := "/api/v1/compliance/evidence"
+	params := []string{}
+	if framework != "" {
+		params = append(params, "framework="+url.QueryEscape(framework))
+	}
+	if controlID != "" {
+		params = append(params, "control_id="+url.QueryEscape(controlID))
+	}
+	if evidenceType != "" {
+		params = append(params, "type="+url.QueryEscape(evidenceType))
+	}
+	if len(params) > 0 {
+		path += "?" + strings.Join(params, "&")
+	}
+	var items []EvidenceItem
+	err := s.client.do(ctx, "GET", path, nil, &items)
+	return items, err
+}
+
+// Collect collects evidence for a framework.
+// POST /api/v1/compliance/evidence/collect
+func (s *EvidenceService) Collect(ctx context.Context, req *EvidenceCollectRequest) (*EvidenceCollection, error) {
+	var resp EvidenceCollection
+	err := s.client.do(ctx, "POST", "/api/v1/compliance/evidence/collect", req, &resp)
+	return &resp, err
+}
+
+// Verify verifies evidence by ID.
+// POST /api/v1/compliance/evidence/verify
+func (s *EvidenceService) Verify(ctx context.Context, req *EvidenceVerifyRequest) (*EvidenceItem, error) {
+	var resp EvidenceItem
+	err := s.client.do(ctx, "POST", "/api/v1/compliance/evidence/verify", req, &resp)
+	return &resp, err
+}
+
+// =========================================================================
+// ML A/B Testing
+// =========================================================================
+
+// ABTestService handles ML A/B testing endpoints.
+type ABTestService struct{ client *Client }
+
+// ListTests lists A/B tests, optionally filtered by status.
+// GET /api/v1/ml/ab-tests?status=<status>
+func (s *ABTestService) ListTests(ctx context.Context, status string) ([]ABTestConfig, error) {
+	path := "/api/v1/ml/ab-tests"
+	if status != "" {
+		path += "?status=" + url.QueryEscape(status)
+	}
+	var tests []ABTestConfig
+	err := s.client.do(ctx, "GET", path, nil, &tests)
+	return tests, err
+}
+
+// CreateTest creates a new A/B test.
+// POST /api/v1/ml/ab-tests
+func (s *ABTestService) CreateTest(ctx context.Context, req *ABTestCreateRequest) (*ABTestConfig, error) {
+	var resp ABTestConfig
+	err := s.client.do(ctx, "POST", "/api/v1/ml/ab-tests", req, &resp)
+	return &resp, err
+}
+
+// GetTestStatus returns the status and metrics of an A/B test.
+// GET /api/v1/ml/ab-tests/<id>
+func (s *ABTestService) GetTestStatus(ctx context.Context, id string) (*ABTestStatusResult, error) {
+	var resp ABTestStatusResult
+	err := s.client.do(ctx, "GET", "/api/v1/ml/ab-tests/"+url.PathEscape(id), nil, &resp)
+	return &resp, err
+}
+
+// EvaluateTest evaluates an A/B test and returns the result.
+// POST /api/v1/ml/ab-tests/<id>/evaluate
+func (s *ABTestService) EvaluateTest(ctx context.Context, id string) (*ABTestResult, error) {
+	var resp ABTestResult
+	err := s.client.do(ctx, "POST", "/api/v1/ml/ab-tests/"+url.PathEscape(id)+"/evaluate", nil, &resp)
+	return &resp, err
+}
+
+// =========================================================================
+// Evasion Resistance
+// =========================================================================
+
+// EvasionService handles evasion resistance detection endpoints.
+type EvasionService struct{ client *Client }
+
+// Detect detects evasion techniques in text.
+// POST /api/v1/ml/evasion/detect
+func (s *EvasionService) Detect(ctx context.Context, req *EvasionDetectRequest) (*EvasionDetectResult, error) {
+	var resp EvasionDetectResult
+	err := s.client.do(ctx, "POST", "/api/v1/ml/evasion/detect", req, &resp)
 	return &resp, err
 }

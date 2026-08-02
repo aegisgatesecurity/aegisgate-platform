@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -537,5 +538,140 @@ func TestAPI_AuditTrail_MethodNotAllowed(t *testing.T) {
 	w := doRequest(api, "POST", "/api/v1/compliance/audit-trail")
 	if w.Code != http.StatusMethodNotAllowed {
 		t.Errorf("expected 405, got %d", w.Code)
+	}
+}
+
+// ---- Vendor Risk API tests ----
+
+func TestAPI_VendorRisk_List(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/vendor-risk")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	m := parseJSON(t, w.Body.Bytes())
+	if m["count"] == nil {
+		t.Error("expected count field")
+	}
+}
+
+func TestAPI_VendorRisk_Assess(t *testing.T) {
+	api, _ := newTestAPI(t)
+	body := `{"vendor_name":"TestVendor","category":"llm_provider"}`
+	req := httptest.NewRequest("POST", "/api/v1/compliance/vendor-risk/assess", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	m := parseJSON(t, w.Body.Bytes())
+	if m["VendorName"] == nil && m["vendor_name"] == nil {
+		t.Error("expected vendor_name field")
+	}
+}
+
+func TestAPI_VendorRisk_Assess_MissingName(t *testing.T) {
+	api, _ := newTestAPI(t)
+	body := `{"category":"llm_provider"}`
+	req := httptest.NewRequest("POST", "/api/v1/compliance/vendor-risk/assess", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
+// ---- Policy Engine API tests ----
+
+func TestAPI_PolicyEngine_List(t *testing.T) {
+	api, _ := newTestAPI(t)
+	pe := NewPolicyEngine()
+	api.SetPolicyEngine(pe)
+	w := doRequest(api, "GET", "/api/v1/compliance/policy-engine")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAPI_PolicyEngine_NotConfigured(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/policy-engine")
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestAPI_PolicyEngine_Evaluate(t *testing.T) {
+	api, _ := newTestAPI(t)
+	pe := NewPolicyEngine()
+	for _, p := range DefaultPolicies() {
+		_ = pe.AddPolicy(p)
+	}
+	api.SetPolicyEngine(pe)
+	body := `{"config":{"tier":"community"},"request":{"authenticated":true}}`
+	req := httptest.NewRequest("POST", "/api/v1/compliance/policy-engine/evaluate", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// ---- Evidence API tests ----
+
+func TestAPI_Evidence_List(t *testing.T) {
+	api, _ := newTestAPI(t)
+	ec := NewEvidenceCollector()
+	api.SetEvidenceCollector(ec)
+	w := doRequest(api, "GET", "/api/v1/compliance/evidence")
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAPI_Evidence_NotConfigured(t *testing.T) {
+	api, _ := newTestAPI(t)
+	w := doRequest(api, "GET", "/api/v1/compliance/evidence")
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
+	}
+}
+
+func TestAPI_Evidence_Collect(t *testing.T) {
+	api, _ := newTestAPI(t)
+	ec := NewEvidenceCollector()
+	api.SetEvidenceCollector(ec)
+	body := `{"framework":"SOC2","control_id":"CC6.1","type":"scan_result"}`
+	req := httptest.NewRequest("POST", "/api/v1/compliance/evidence/collect", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAPI_Evidence_Verify(t *testing.T) {
+	api, _ := newTestAPI(t)
+	ec := NewEvidenceCollector()
+	item := &EvidenceItem{
+		ID:        "ev-test-1",
+		Type:      EvidenceScanResult,
+		Framework: "SOC2",
+		ControlID: "CC6.1",
+		Content:   []byte("test evidence"),
+	}
+	_ = ec.AddEvidence(item)
+	api.SetEvidenceCollector(ec)
+	body := `{"id":"ev-test-1","verified_by":"auditor@example.com"}`
+	req := httptest.NewRequest("POST", "/api/v1/compliance/evidence/verify", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	api.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 }
