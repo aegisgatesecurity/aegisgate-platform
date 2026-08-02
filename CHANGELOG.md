@@ -1,3 +1,40 @@
+## [3.6.2] - 2026-08-02 - Performance Validation, i18n Fix, Testlab Hardening 🔒
+
+> **v3.6.2** is a stability and performance release. It fixes pkg/i18n coverage (59.3% → 90.6%), hardens the Docker testlab, and delivers the first comprehensive performance benchmark suite for the platform. 102 packages, 10,831 tests, 0 failures.
+
+### Performance (v3.6.2 Benchmarks)
+
+- **Dashboard/API latency**: p95 = 2.87ms, p99 = 3.71ms (health endpoint, 200 VUs)
+- **Mixed API p99**: 46.97ms under 650 VUs
+- **Sustained throughput**: 15,645 RPS
+- **Break test**: 0% errors at 2,000 concurrent VUs, full recovery to baseline
+- **Proxy overhead**: 14.4ms p50 / 15.7ms p99 (ATLAS scanning + security headers)
+- **ATLAS adversarial detection**: 95% block rate, 0% false positives
+- **Proxy → LLM overhead**: 2.6% of total latency (15.7ms on ~600ms inference)
+- **First k6 benchmark suite**: health-check, quick-bench, benchmark-sprint10, api-stress, break-test-v2, rate-limit-verification
+- **First Python proxy benchmarks**: latency-overhead, proxy-overhead, load-test harness
+
+### Bug Fixes
+
+- **fix(i18n)**: Raise pkg/i18n test coverage from 59.3% to 90.6% — 27 new test cases covering Manager, Bundle, Locales, and plural rules
+- **fix(i18n)**: Fix nested message objects in he.json and hi.json — plurals were incorrectly nested under `messages` instead of top-level `plurals`
+- **fix(infra)**: Add WORKDIR /app and /app/certs to Dockerfile — container crashed with "mkdir ./certs: permission denied"
+- **fix(infra)**: Add `adduser` to Dockerfile.lensbackend — missing on debian:stable-slim
+- **fix(infra)**: Remap instance-2 ports (7080/7443/7081) to avoid Keycloak conflict on 9080
+- **fix(infra)**: Create .dockerignore — reduce build context from 17GB to ~50MB
+
+### Test Coverage
+
+- **pkg/i18n**: 59.3% → 90.6% (27 new tests, 2 locale data fixes)
+- **Total**: 102 packages, 10,831 tests, 0 failures, 0 race conditions
+
+### Testlab
+
+- **Docker Compose**: 7 services (AegisGate ×2, Keycloak, PostgreSQL, Redis, Mailpit, Lens Backend)
+- **AegisGate instance-1**: Now routes to local Ollama for proxy-throughput testing
+- **Health checks**: All 7 services healthy
+- **Instance-2**: Professional tier for cross-instance testing
+
 ## [3.6.1] - 2026-08-01 - Gap Closure, Operator, SDKs, v4 Foundation 🚀
 
 > **v3.6.1** closes all remaining P1–P3 gaps, adds the Kubernetes operator, completes the client SDKs, and establishes the v4 ML foundation. 95 packages, 10,683 tests, 515K LOC, 0 failures.

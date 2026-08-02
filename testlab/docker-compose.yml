@@ -77,6 +77,7 @@ services:
     image: testlab-aegisgate-test:local
     container_name: aegisgate-test-instance
     hostname: aegisgate-test
+    command: ["--proxy-port=8080", "--mcp-port=8081", "--dashboard-port=8443", "--embedded-mcp", "--tier=community", "--target=http://host.docker.internal:11434"]
     environment:
       AEGISGATE_TIER: developer
       AEGISGATE_UPSTREAM: "http://host.docker.internal:11434/v1"

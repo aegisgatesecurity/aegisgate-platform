@@ -4,7 +4,7 @@
 
 **Secure every AI interaction. Six pillars. One gateway. Zero external dependencies.**
 
-[![Version](https://img.shields.io/badge/Version-v3.6.1-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.6.1)
+[![Version](https://img.shields.io/badge/Version-v3.6.2-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.6.2)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-10683_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
@@ -33,7 +33,7 @@ Every AI interaction is an attack surface. Prompt injections leak secrets. MCP s
 
 AegisGate sits in front of all of it — one binary, zero dependencies, fail-closed by default.
 
-- **Sub-millisecond overhead.** 3.2ms p95 at 24K+ RPS. Your users won't notice it's there.
+- **Sub-4ms overhead.** 2.87ms p95 at 15K+ RPS with 0% errors at 2,000 VUs. Your users won't notice it's there.
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, RESPONSE, and Trust — no patchwork of point products.
