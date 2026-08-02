@@ -724,25 +724,41 @@ func (r *Reporter) generateJSON(report *Report) (io.Reader, error) {
 }
 
 // generateCSV creates a CSV reader from a report.
+// The output includes a metadata header section and a data section
+// that flattens the report's nested data into key-value rows.
 func (r *Reporter) generateCSV(report *Report) (io.Reader, error) {
 	var buf strings.Builder
 	writer := csv.NewWriter(&buf)
 
-	// Write headers
-	if err := writer.Write([]string{"Report ID", "Type", "Format", "Status", "Created", "Completed"}); err != nil {
+	// === Metadata section ===
+	if err := writer.Write([]string{"Section", "Key", "Value"}); err != nil {
 		return nil, err
 	}
 
-	// Write report info
-	row := []string{
-		report.ID,
-		string(report.Type),
-		string(report.Format),
-		string(report.Status),
-		report.Created.Format(time.RFC3339),
-		report.Completed.Format(time.RFC3339),
+	// Report metadata rows
+	metaRows := [][3]string{
+		{"metadata", "report_id", report.ID},
+		{"metadata", "type", string(report.Type)},
+		{"metadata", "format", string(report.Format)},
+		{"metadata", "status", string(report.Status)},
+		{"metadata", "created", report.Created.Format(time.RFC3339)},
+		{"metadata", "completed", report.Completed.Format(time.RFC3339)},
 	}
-	if err := writer.Write(row); err != nil {
+	for _, row := range metaRows {
+		if err := writer.Write(row[:]); err != nil {
+			return nil, err
+		}
+	}
+
+	// === Data section: flatten the report Data ===
+	if report.Data != nil {
+		if err := flattenToCSV(writer, "", report.Data); err != nil {
+			return nil, fmt.Errorf("failed to flatten report data: %w", err)
+		}
+	}
+
+	// Blank separator row
+	if err := writer.Write([]string{"", "", ""}); err != nil {
 		return nil, err
 	}
 
@@ -752,6 +768,43 @@ func (r *Reporter) generateCSV(report *Report) (io.Reader, error) {
 	}
 
 	return strings.NewReader(buf.String()), nil
+}
+
+// flattenToCSV recursively flattens a nested structure into CSV rows
+// with dot-separated key paths (e.g., "metrics.avgLatency").
+func flattenToCSV(writer *csv.Writer, prefix string, data interface{}) error {
+	switch v := data.(type) {
+	case map[string]interface{}:
+		for key, val := range v {
+			fullKey := key
+			if prefix != "" {
+				fullKey = prefix + "." + key
+			}
+			if err := flattenToCSV(writer, fullKey, val); err != nil {
+				return err
+			}
+		}
+	case []interface{}:
+		for i, val := range v {
+			fullKey := fmt.Sprintf("%s[%d]", prefix, i)
+			if err := flattenToCSV(writer, fullKey, val); err != nil {
+				return err
+			}
+		}
+	case []string:
+		for i, s := range v {
+			fullKey := fmt.Sprintf("%s[%d]", prefix, i)
+			if err := writer.Write([]string{"data", fullKey, s}); err != nil {
+				return err
+			}
+		}
+	default:
+		valStr := fmt.Sprintf("%v", v)
+		if err := writer.Write([]string{"data", prefix, valStr}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // generateHTML creates an HTML reader from a report.
