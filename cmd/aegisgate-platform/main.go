@@ -46,6 +46,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/soar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -156,6 +157,7 @@ var (
 	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS)")
 	lensEnabled       = flag.Bool("lens-enabled", false, "Enable the Lens telemetry backend on the proxy port (AEGISGATE_LENS_ENABLED)")
 	siemEnabled       = flag.Bool("siem-enabled", false, "Enable the SIEM dispatcher to forward audit events to external SIEM platforms (AEGISGATE_SIEM_ENABLED)")
+	soarEnabled       = flag.Bool("soar-enabled", false, "Enable SOAR outbound webhooks (PagerDuty, Jira, ServiceNow) for incident response (AEGISGATE_SOAR_ENABLED)")
 	lensBearerToken   = flag.String("lens-bearer-token", "", "Bearer token for Lens telemetry endpoints (AEGISGATE_LENS_BEARER_TOKEN)")
 	lensIOCStoreDir   = flag.String("lens-ioc-store-dir", "", "Directory for Lens IOC store persistence (default: <DataDir>/lens)")
 	tsaEnabled        = flag.Bool("tsa-enabled", false, "Enable RFC 3161 TSA timestamping for audit events (AEGISGATE_TSA_ENABLED)")
@@ -764,7 +766,64 @@ func main() {
 	}
 
 	// ============================================================
-	// Component 0a-2: RFC 3161 TSA Timestamping (audit integrity)
+	// Component 0a-4: SOAR Outbound Webhooks (v3.7.0)
+	// ============================================================
+	// Sends structured incident alerts to PagerDuty, Jira, and
+	// ServiceNow for automated incident response. Unlike SIEM
+	// (which forwards raw events to log platforms), SOAR creates
+	// actionable incidents that trigger playbooks, page on-call
+	// engineers, and create tickets.
+	//
+	// Feature gate: Professional+ tier (same as SIEM).
+	// Config: cfg.SOAR (in platformconfig.yaml)
+	var soarMgr *soar.Manager
+	soarEnabledFlag := *soarEnabled
+	if !soarEnabledFlag {
+		if v := os.Getenv("AEGISGATE_SOAR_ENABLED"); v == "true" || v == "1" || v == "yes" {
+			soarEnabledFlag = true
+		}
+	}
+	if cfg.SOAR.Enabled {
+		soarEnabledFlag = true
+	}
+	if soarEnabledFlag && tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
+		soarCfg := soar.Config{
+			Global: soar.GlobalConfig{
+				AppName:       cfg.SOAR.Source,
+				Environment:   cfg.Platform.Mode,
+				MaxRetries:    cfg.SOAR.MaxRetries,
+				RetryInterval: cfg.SOAR.RetryInterval,
+			},
+		}
+		for _, p := range cfg.SOAR.Platforms {
+			if !p.Enabled {
+				continue
+			}
+			soarCfg.Platforms = append(soarCfg.Platforms, soar.PlatformConfig{
+				Platform: soar.Platform(p.Platform),
+				Enabled:  true,
+				Endpoint: p.Endpoint,
+				Auth: soar.AuthConfig{
+					Type:       p.Auth.Type,
+					APIKey:     p.Auth.APIKey,
+					Username:   p.Auth.Username,
+					Password:   p.Auth.Password,
+					TokenURL:   p.Auth.TokenURL,
+					ClientID:   p.Auth.ClientID,
+					ClientSecret: p.Auth.ClientSecret,
+					HMACSecret: p.Auth.HMACSecret,
+				},
+				Settings: p.Settings,
+			})
+		}
+		soarMgr = soar.NewManager(soarCfg, nil)
+		soarMgr.Start()
+		log.Printf("SOAR manager: enabled (platforms=%d, source=%s)",
+			len(soarCfg.Platforms), cfg.SOAR.Source)
+		defer soarMgr.Stop()
+	} else if soarEnabledFlag {
+		log.Printf("⚠️  SOAR requires Professional+ tier (current: %s); SOAR disabled", platformTier)
+	}
 	// ============================================================
 	// When enabled, every audit event receives a cryptographic
 	// timestamp from an RFC 3161 Time Stamp Authority (DigiCert,

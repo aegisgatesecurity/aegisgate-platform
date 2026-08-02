@@ -69,6 +69,11 @@ type Config struct {
 
 	// SIEM integration configuration
 	SIEM SIEMConfig `yaml:"siem"`
+
+	// SOAR (Security Orchestration, Automation, and Response) outbound
+	// webhook configuration. Sends incident alerts to PagerDuty, Jira,
+	// and ServiceNow for automated incident response.
+	SOAR SOARConfig `yaml:"soar"`
 }
 
 // PlatformConfig holds platform-specific settings not in either upstream
@@ -271,7 +276,58 @@ type SIEMBatchConfig struct {
 	MaxWait string `yaml:"max_wait"` // e.g. "5s"
 }
 
-// DefaultConfig returns a fully-populated default configuration
+// SOARConfig holds SOAR outbound webhook settings. The SOAR manager
+// sends incident alerts to PagerDuty, Jira, and ServiceNow for
+// automated incident response. Unlike SIEM (which forwards raw events
+// to log platforms), SOAR creates actionable incidents that trigger
+// playbooks, page on-call engineers, and create tickets.
+type SOARConfig struct {
+	// Enabled controls whether the SOAR manager runs.
+	Enabled bool `yaml:"enabled"`
+
+	// Source identifies this AegisGate instance in SOAR alerts.
+	Source string `yaml:"source"`
+
+	// MaxRetries is the number of retry attempts for failed deliveries.
+	MaxRetries int `yaml:"max_retries"`
+
+	// RetryInterval is the delay between retry attempts.
+	RetryInterval time.Duration `yaml:"retry_interval"`
+
+	// Platforms is the list of configured SOAR platform outputs.
+	Platforms []SOARPlatformConfig `yaml:"platforms"`
+}
+
+// SOARPlatformConfig holds one SOAR platform output configuration.
+type SOARPlatformConfig struct {
+	// Platform type: "pagerduty", "jira", "servicenow", or "custom"
+	Platform string `yaml:"platform"`
+
+	// Enabled controls whether this platform is active.
+	Enabled bool `yaml:"enabled"`
+
+	// Endpoint is the target URL (e.g., PagerDuty Events API v2 URL).
+	Endpoint string `yaml:"endpoint"`
+
+	// Auth holds authentication settings for this platform.
+	Auth SOARAuthConfig `yaml:"auth"`
+
+	// Settings contains platform-specific settings (e.g., Jira project key,
+	// ServiceNow instance name, PagerDuty routing key).
+	Settings map[string]interface{} `yaml:"settings"`
+}
+
+// SOARAuthConfig holds authentication settings for SOAR webhooks.
+type SOARAuthConfig struct {
+	Type         string `yaml:"type"`          // "api_key", "basic", "oauth2", "hmac"
+	APIKey       string `yaml:"api_key"`        // env: AEGISGATE_SOAR_API_KEY
+	Username     string `yaml:"username"`       // For Jira basic auth
+	Password     string `yaml:"password"`       // For Jira basic auth
+	TokenURL      string `yaml:"token_url"`      // For OAuth2
+	ClientID     string `yaml:"client_id"`     // For OAuth2
+	ClientSecret string `yaml:"client_secret"` // For OAuth2
+	HMACSecret   string `yaml:"hmac_secret"`   // For custom webhook HMAC signing
+}
 func DefaultConfig() *Config {
 	return &Config{
 		Platform: PlatformConfig{
