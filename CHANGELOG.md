@@ -1,6 +1,6 @@
-## [3.6.2] - 2026-08-02 - Performance Validation, i18n Fix, Testlab Hardening 🔒
+## [3.6.2] - 2026-08-02 - Performance, Persistence, SIEM Coverage, Bug Fixes 🔒
 
-> **v3.6.2** is a stability and performance release. It fixes pkg/i18n coverage (59.3% → 90.6%), hardens the Docker testlab, optimizes the proxy hot path, and delivers the first comprehensive performance benchmark suite for the platform. 102 packages, 10,831 tests, 0 failures.
+> **v3.6.2** is a stability, performance, and completeness release. It fixes pkg/i18n coverage (59.3% → 90.6%), hardens the Docker testlab, optimizes the proxy hot path, delivers the first comprehensive performance benchmark suite, closes all remaining persistence gaps (Incident PostgreSQL, SIEM durability, reporting delivery), adds 3 SIEM integrations (Datadog, CloudWatch, SecurityHub → 11/11 platforms), and fixes 2 tenant-management bugs. 101 packages, 10,831+ tests, 0 failures, 0 race conditions.
 
 ### Performance (v3.6.2 Benchmarks)
 
@@ -43,6 +43,61 @@
 - **AegisGate instance-1**: Now routes to local Ollama for proxy-throughput testing
 - **Health checks**: All 7 services healthy
 - **Instance-2**: Professional tier for cross-instance testing
+
+### Persistence Gap Closure (P1)
+
+- **feat(incident): PostgreSQL backend** — `PostgresIncidentStore`, `PostgresPlaybookStore`, `PostgresDetectionRuleStore` implementing all three persistence interfaces (`IncidentStore`, `PlaybookStore`, `DetectionRuleStore`). JSONB for complex fields, indexed queries for status/severity/agent/session/tenant/time-window, tag containment via `@>`, playbook runs as separate rows with FK to incidents. 1,157 LOC. Wired into `persistence.NewWithPostgres()` replacing in-memory fallback for Professional/Enterprise tiers.
+- **feat(siem): BufferConfig.Persist** — SIEM event durability: JSON-lines file persistence with replay on startup. Events are persisted before distribution, ensuring zero loss on restart. `replayPersistedEvents()` re-queues on startup.
+- **feat(reporting): CSV data export** — Full recursive Section/Key/Value flattening with `flattenToCSV()`. Previously only output metadata headers.
+- **feat(reporting): Webhook + Email delivery** — `WebhookDelivery` (HTTP POST with configurable headers, 30s timeout) and `EmailDelivery` (SMTP with STARTTLS, PLAIN auth, MIME formatting). `DeliveryHandler` interface for extensible delivery.
+- **feat(reporting): Template execution** — `executeReport()` now looks up templates by `TemplateID`, applies defaults, and passes `CustomTemplate` through to `generateHTML()`. Previously stored but never consumed.
+
+### SIEM Integration (P2)
+
+- **feat(siem): Datadog client** — Events API (`/api/v1/events`) and Log Intake API (`/v1/input`), DD-API-KEY/DD-SOURCE/DD-SERVICE/DD-TAGS headers, configurable site (datadoghq.com, EU, etc.), NDJSON batch for log intake. `NewDatadogClient()`.
+- **feat(siem): CloudWatch Logs client** — `PutLogEvents` API with `X-Amz-Target: Logs_20140328.PutLogEvents`, configurable region/log group/log stream, JSON log event payloads with timestamps, AWS SigV4 credential support. `NewCloudWatchClient()`.
+- **feat(siem): Security Hub client** — `BatchImportFindings` API with `X-Amz-Target: SecurityHubV20180810.BatchImportFindings`, ASFF format (SchemaVersion, Severity mapping, category→finding-type mapping), configurable product ARN and region, AWS SigV4 credential support. `NewSecurityHubClient()`.
+- **SIEM platform coverage: 8/11 → 11/11** (Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, **Datadog**, **CloudWatch**, **SecurityHub**)
+
+### Bug Fixes
+
+- **fix(tenant): SearchTenants SQL LIKE bug** — `SearchTenants()` wrapped query in `%` chars for SQL LIKE but used `strings.Contains()` for matching, making search non-functional. Fixed to use `strings.ToLower()` direct comparison.
+- **fix(tenant): loadAll nil resources** — `FileStorage.loadAll()` unmarshaled JSON into `Tenant` structs but never called `InitializeTenantResources()`, leaving `auditLog`, `rateLimiter`, `circuitBreaker` nil after restart. Fixed by calling `InitializeTenantResources()` for each loaded tenant.
+- **fix(i18n)**: Raise pkg/i18n test coverage from 59.3% to 90.6% — 27 new test cases covering Manager, Bundle, Locales, and plural rules
+- **fix(i18n)**: Fix nested message objects in he.json and hi.json — plurals were incorrectly nested under `messages` instead of top-level `plurals`
+- **fix(infra)**: Add WORKDIR /app and /app/certs to Dockerfile — container crashed with "mkdir ./certs: permission denied"
+- **fix(infra)**: Add `adduser` to Dockerfile.lensbackend — missing on debian:stable-slim
+- **fix(infra)**: Remap instance-2 ports (7080/7443/7081) to avoid Keycloak conflict on 9080
+- **fix(infra)**: Create .dockerignore — reduce build context from 17GB to ~50MB
+
+### PostgreSQL Integrations (7 stores, 7 migrations)
+
+| Store | Package | Migration |
+|-------|---------|-----------|
+| IOC Store | `pkg/ioc/` | 001_initial.sql |
+| Audit/Persistence | `pkg/persistence/` | 002_audit.sql |
+| RBAC | `pkg/rbac/` | 004_multi_tenant.sql |
+| SSO Sessions | `pkg/sso/` | 003_sessions.sql |
+| License Cache | `pkg/license/` | (shared pool) |
+| Correlation | `pkg/correlation/` | 005_correlation.sql |
+| Attestation | `pkg/attestation/` | 006_attestation.sql |
+| **Incident** | **`pkg/incident/`** | **007_incident.sql** |
+
+### SIEM Platform Coverage (11/11)
+
+| Platform | Client | Auth | Format |
+|----------|--------|------|--------|
+| Splunk | `NewSplunkClient` | HEC token | JSON/CEF |
+| Elasticsearch | `NewElasticsearchClient` | API key | JSON |
+| QRadar | `NewQRadarClient` | SEC token/Basic | JSON/LEEF |
+| Azure Sentinel | `NewSentinelClient` | SharedKey HMAC | JSON |
+| SumoLogic | `NewSumoLogicClient` | HTTP source URL | JSON |
+| LogRhythm | `NewLogRhythmClient` | API key | JSON/CEF |
+| ArcSight | `NewArcSightClient` | Syslog TCP | CEF |
+| Syslog (RFC 5424) | `NewSyslogClient` | TLS/UDP | RFC 5424 |
+| **Datadog** | **`NewDatadogClient`** | **DD-API-KEY** | **JSON** |
+| **CloudWatch** | **`NewCloudWatchClient`** | **AWS SigV4** | **JSON** |
+| **SecurityHub** | **`NewSecurityHubClient`** | **AWS SigV4** | **ASFF** |
 
 ## [3.6.1] - 2026-08-01 - Gap Closure, Operator, SDKs, v4 Foundation 🚀
 
