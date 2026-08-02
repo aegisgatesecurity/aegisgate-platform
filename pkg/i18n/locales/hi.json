@@ -74,14 +74,6 @@
     "ui.status": "स्थिति",
     "ui.active": "सक्रिय",
     "ui.inactive": "निष्क्रिय",
-    "ui.requests_processed": {
-      "one": "एक अनुरोध संसाधित",
-      "other": "{{.Count}} अनुरोध संसाधित"
-    },
-    "errors.occurred": {
-      "one": "एक त्रुटि हुई",
-      "other": "{{.Count}} त्रुटियां हुईं"
-    },
     "compliance.api_not_configured": "अनुपालन API कॉन्फ़िगर नहीं है (स्कैनर या मैनेजर nil)",
     "compliance.scan_failed": "स्कैन विफल",
     "compliance.framework_required": "फ्रेमवर्क पैरामीटर आवश्यक",
@@ -270,5 +262,15 @@
   "compliance.nerc_cip.ai_bes_data_protection.non_compliant": "BES operational data patterns detected in AI model data",
   "compliance.nerc_cip.ai_audit_trail_bes": "AI audit trail for BES operations verified",
   "compliance.nerc_cip.ai_audit_trail_bes.partial": "Partial AI audit trail controls detected",
-  "compliance.nerc_cip.ai_audit_trail_bes.non_compliant": "AI audit trail controls not detected"
+  "compliance.nerc_cip.ai_audit_trail_bes.non_compliant": "AI audit trail controls not detected",
+  "plurals": {
+    "ui.requests_processed": {
+      "one": "एक अनुरोध संसाधित",
+      "other": "{{.Count}} अनुरोध संसाधित"
+    },
+    "errors.occurred": {
+      "one": "एक त्रुटि हुई",
+      "other": "{{.Count}} त्रुटियां हुईं"
+    }
+  }
 }

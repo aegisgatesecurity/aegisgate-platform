@@ -74,14 +74,6 @@
     "ui.status": "מצב",
     "ui.active": "פעיל",
     "ui.inactive": "לא פעיל",
-    "ui.requests_processed": {
-      "one": "בקשה אחת עובדה",
-      "other": "{{.Count}} בקשות עובדו"
-    },
-    "errors.occurred": {
-      "one": "שגיאה אחת התרחשה",
-      "other": "{{.Count}} שגיאות התרחשו"
-    },
     "compliance.api_not_configured": "API תאימות לא מוגדר (סורק או מנהל nil)",
     "compliance.scan_failed": "הסריקה נכשלה",
     "compliance.framework_required": "נדרש פרמטר מסגרת",
@@ -270,5 +262,15 @@
   "compliance.nerc_cip.ai_bes_data_protection.non_compliant": "BES operational data patterns detected in AI model data",
   "compliance.nerc_cip.ai_audit_trail_bes": "AI audit trail for BES operations verified",
   "compliance.nerc_cip.ai_audit_trail_bes.partial": "Partial AI audit trail controls detected",
-  "compliance.nerc_cip.ai_audit_trail_bes.non_compliant": "AI audit trail controls not detected"
+  "compliance.nerc_cip.ai_audit_trail_bes.non_compliant": "AI audit trail controls not detected",
+  "plurals": {
+    "ui.requests_processed": {
+      "one": "בקשה אחת עובדה",
+      "other": "{{.Count}} בקשות עובדו"
+    },
+    "errors.occurred": {
+      "one": "שגיאה אחת התרחשה",
+      "other": "{{.Count}} שגיאות התרחשו"
+    }
+  }
 }
