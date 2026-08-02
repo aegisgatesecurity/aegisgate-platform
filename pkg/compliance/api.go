@@ -464,7 +464,7 @@ func (a *API) servePolicyEngine(w http.ResponseWriter, r *http.Request) {
 	policies := a.policyEngine.ListPolicies(PolicyFilter{Framework: framework})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"policies": policies,
-		"count":   len(policies),
+		"count":    len(policies),
 	})
 }
 

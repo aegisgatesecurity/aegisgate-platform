@@ -113,12 +113,12 @@ type AdversarialTestResult struct {
 
 // AdversarialTestDetail records the result of testing a single input.
 type AdversarialTestDetail struct {
-	Input       string `json:"input"`
-	Perturbed   string `json:"perturbed"`
-	Method      string `json:"method"` // "fgsm", "pgd-step-N", "evasion-technique"
-	Detected    bool   `json:"detected"`
-	Score       float64 `json:"score,omitempty"`
-	Step        int    `json:"step,omitempty"`
+	Input     string  `json:"input"`
+	Perturbed string  `json:"perturbed"`
+	Method    string  `json:"method"` // "fgsm", "pgd-step-N", "evasion-technique"
+	Detected  bool    `json:"detected"`
+	Score     float64 `json:"score,omitempty"`
+	Step      int     `json:"step,omitempty"`
 }
 
 // Scanner is the interface required for adversarial testing.
@@ -234,8 +234,8 @@ func testPGD(scanner Scanner, inputs []string, config AdversarialTestConfig, rng
 // testEvasionTechniques tests known evasion techniques from ATLAS.
 func testEvasionTechniques(scanner Scanner, inputs []string, rng *rand.Rand, details *[]AdversarialTestDetail) (total, passed int) {
 	techniques := []struct {
-		name   string
-		apply  func(string, *rand.Rand) string
+		name  string
+		apply func(string, *rand.Rand) string
 	}{
 		{"unicode-homoglyph", applyHomoglyphSubstitution},
 		{"character-splitting", applyCharacterSplitting},

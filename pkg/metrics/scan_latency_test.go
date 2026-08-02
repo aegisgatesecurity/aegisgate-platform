@@ -65,11 +65,11 @@ func TestScanDurationBuckets(t *testing.T) {
 	// but we can at least confirm observations at different scales work.
 	durations := []time.Duration{
 		500 * time.Microsecond, // sub-bucket (0.5ms < 1ms bucket)
-		1 * time.Millisecond,    // exactly at first bucket
-		5 * time.Millisecond,    // middle bucket
-		50 * time.Millisecond,   // near top
-		100 * time.Millisecond,  // at top bucket
-		200 * time.Millisecond,  // above top bucket (still recorded)
+		1 * time.Millisecond,   // exactly at first bucket
+		5 * time.Millisecond,   // middle bucket
+		50 * time.Millisecond,  // near top
+		100 * time.Millisecond, // at top bucket
+		200 * time.Millisecond, // above top bucket (still recorded)
 	}
 
 	for _, d := range durations {

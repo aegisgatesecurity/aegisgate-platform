@@ -485,23 +485,23 @@ func (ec *EvidenceCollector) calculateCoverageLocked(framework string) float64 {
 // This uses well-known counts for standard frameworks.
 func frameworkControlCount(framework string) int {
 	controlCounts := map[string]int{
-		"SOC2":           64,
-		"ISO27001":       114,
-		"ISO42001":       38,
-		"NIST-800-171":   110,
-		"FedRAMP":        325,
-		"HIPAA":          55,
-		"PCI-DSS":        265,
-		"NIST-AI-RMF":    72,
-		"OWASP-LLM":      10,
-		"EU-AI-ACT":      82,
-		"CSA-STAR":       55,
-		"TISAX":          39,
-		"FIPS-140":       11,
-		"CMMC-L2":        17,
-		"CIS":            153,
-		"CCPA":           12,
-		"HITRUST":        135,
+		"SOC2":         64,
+		"ISO27001":     114,
+		"ISO42001":     38,
+		"NIST-800-171": 110,
+		"FedRAMP":      325,
+		"HIPAA":        55,
+		"PCI-DSS":      265,
+		"NIST-AI-RMF":  72,
+		"OWASP-LLM":    10,
+		"EU-AI-ACT":    82,
+		"CSA-STAR":     55,
+		"TISAX":        39,
+		"FIPS-140":     11,
+		"CMMC-L2":      17,
+		"CIS":          153,
+		"CCPA":         12,
+		"HITRUST":      135,
 	}
 
 	if count, ok := controlCounts[framework]; ok {
@@ -540,7 +540,7 @@ func exportCollectionJSON(collection *EvidenceCollection) ([]byte, error) {
 		Framework   string            `json:"framework"`
 		ControlID   string            `json:"control_id"`
 		Description string            `json:"description"`
-		CollectedAt  time.Time         `json:"collected_at"`
+		CollectedAt time.Time         `json:"collected_at"`
 		CollectedBy string            `json:"collected_by"`
 		ContentHash string            `json:"content_hash"`
 		Source      string            `json:"source"`
@@ -551,14 +551,14 @@ func exportCollectionJSON(collection *EvidenceCollection) ([]byte, error) {
 	}
 
 	type exportCollection struct {
-		ID          string        `json:"id"`
-		Name        string        `json:"name"`
-		Description string        `json:"description"`
-		Framework   string        `json:"framework"`
+		ID          string         `json:"id"`
+		Name        string         `json:"name"`
+		Description string         `json:"description"`
+		Framework   string         `json:"framework"`
 		Status      EvidenceStatus `json:"status"`
-		CreatedAt   time.Time     `json:"created_at"`
-		UpdatedAt   time.Time     `json:"updated_at"`
-		Items       []exportItem  `json:"items"`
+		CreatedAt   time.Time      `json:"created_at"`
+		UpdatedAt   time.Time      `json:"updated_at"`
+		Items       []exportItem   `json:"items"`
 	}
 
 	items := make([]exportItem, 0, len(collection.Items))
@@ -693,4 +693,3 @@ func VerifyContentHash(item *EvidenceItem) error {
 	}
 	return nil
 }
-

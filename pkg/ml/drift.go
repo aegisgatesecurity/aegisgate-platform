@@ -37,10 +37,10 @@ import (
 type DriftLevel string
 
 const (
-	DriftNone       DriftLevel = "none"       // PSI < 0.1
-	DriftMinor      DriftLevel = "minor"      // PSI 0.1-0.25
+	DriftNone        DriftLevel = "none"        // PSI < 0.1
+	DriftMinor       DriftLevel = "minor"       // PSI 0.1-0.25
 	DriftSignificant DriftLevel = "significant" // PSI 0.25-0.5
-	DriftMajor      DriftLevel = "major"       // PSI > 0.5
+	DriftMajor       DriftLevel = "major"       // PSI > 0.5
 )
 
 // DriftResult holds the drift analysis result for a single feature.
@@ -77,7 +77,7 @@ func DefaultDriftMonitorConfig() DriftMonitorConfig {
 		PSIThresholds: map[string]float64{
 			"minor":       0.1,
 			"significant": 0.25,
-			"major":        0.5,
+			"major":       0.5,
 		},
 	}
 }
@@ -106,7 +106,7 @@ type DriftMonitor struct {
 	config   DriftMonitorConfig
 	baseline map[string]*FeatureDistribution // feature -> baseline distribution
 	current  map[string]*FeatureDistribution // feature -> current distribution
-	history  []DriftResult                    // history of drift checks
+	history  []DriftResult                   // history of drift checks
 }
 
 // NewDriftMonitor creates a new drift monitor with the given config.
@@ -118,7 +118,7 @@ func NewDriftMonitor(config DriftMonitorConfig) *DriftMonitor {
 		config.PSIThresholds = map[string]float64{
 			"minor":       0.1,
 			"significant": 0.25,
-			"major":        0.5,
+			"major":       0.5,
 		}
 	}
 	return &DriftMonitor{
@@ -199,12 +199,12 @@ func (dm *DriftMonitor) CheckDrift() []DriftResult {
 
 		result := DriftResult{
 			Feature:      feature,
-			PSI:           psi,
-			KLDivergence:  klDiv,
-			Level:         level,
-			BaselineN:     baseline.Count,
-			CurrentN:      current.Count,
-			Timestamp:     time.Now().UTC().Format(time.RFC3339),
+			PSI:          psi,
+			KLDivergence: klDiv,
+			Level:        level,
+			BaselineN:    baseline.Count,
+			CurrentN:     current.Count,
+			Timestamp:    time.Now().UTC().Format(time.RFC3339),
 		}
 
 		results = append(results, result)
@@ -254,7 +254,7 @@ func (dm *DriftMonitor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"drift_results": results,
-		"timestamp":      time.Now().UTC().Format(time.RFC3339),
+		"timestamp":     time.Now().UTC().Format(time.RFC3339),
 	})
 }
 

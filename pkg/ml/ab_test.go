@@ -31,8 +31,8 @@ type ABTestStatus string
 const (
 	ABTestDraft     ABTestStatus = "draft"
 	ABTestRunning   ABTestStatus = "running"
-	ABTestCompleted  ABTestStatus = "completed"
-	ABTestCancelled  ABTestStatus = "cancelled"
+	ABTestCompleted ABTestStatus = "completed"
+	ABTestCancelled ABTestStatus = "cancelled"
 )
 
 // ABTestConfig defines an A/B test between two model versions.
@@ -55,10 +55,10 @@ type ABTestConfig struct {
 
 // ABTestThresholds define when to promote the challenger.
 type ABTestThresholds struct {
-	MaxFPRIncrease       float64
-	MinTPRImprovement    float64
+	MaxFPRIncrease        float64
+	MinTPRImprovement     float64
 	MaxLatencyIncreasePct float64
-	MaxDriftIncrease     float64
+	MaxDriftIncrease      float64
 }
 
 // ABTestResult holds the result of a completed A/B test.
@@ -102,16 +102,16 @@ type ABTestManager struct {
 
 // ABPrediction records a single prediction for A/B comparison.
 type ABPrediction struct {
-	TestID          string
-	InputHash       string
-	Timestamp       time.Time
-	ChampionScore   float64
-	ChallengerScore float64
-	ChampionThreat  bool
+	TestID           string
+	InputHash        string
+	Timestamp        time.Time
+	ChampionScore    float64
+	ChallengerScore  float64
+	ChampionThreat   bool
 	ChallengerThreat bool
-	GroundTruth     bool
-	RoutedTo        string
-	LatencyMs       float64
+	GroundTruth      bool
+	RoutedTo         string
+	LatencyMs        float64
 }
 
 // NewABTestManager creates a new A/B test manager.
@@ -189,9 +189,9 @@ func (m *ABTestManager) StartTest(id string) error {
 
 	// Create a running result placeholder.
 	m.results[id] = &ABTestResult{
-		TestID:   id,
-		Status:   ABTestRunning,
-		Winner:   "",
+		TestID: id,
+		Status: ABTestRunning,
+		Winner: "",
 	}
 	return nil
 }
@@ -325,9 +325,9 @@ func (m *ABTestManager) EvaluateTest(id string) (*ABTestResult, error) {
 	predictions, ok := m.predictions[id]
 	if !ok || len(predictions) < test.MinSampleSize {
 		return &ABTestResult{
-			TestID:   id,
-			Status:   ABTestDraft,
-			Winner:   "no_significant_difference",
+			TestID:         id,
+			Status:         ABTestDraft,
+			Winner:         "no_significant_difference",
 			Recommendation: fmt.Sprintf("Insufficient data: %d predictions, need %d", len(predictions), test.MinSampleSize),
 		}, nil
 	}
@@ -649,16 +649,16 @@ func generateABTestID() string {
 // DefaultABTestConfig returns sensible defaults for an A/B test configuration.
 func DefaultABTestConfig() ABTestConfig {
 	return ABTestConfig{
-		Name:              "Default A/B Test",
-		TrafficSplitPct:   10,
-		MinSampleSize:     1000,
-		ConfidenceLevel:   0.95,
-		Duration:          7 * 24 * time.Hour, // 7 days
+		Name:            "Default A/B Test",
+		TrafficSplitPct: 10,
+		MinSampleSize:   1000,
+		ConfidenceLevel: 0.95,
+		Duration:        7 * 24 * time.Hour, // 7 days
 		MetricThresholds: ABTestThresholds{
-			MaxFPRIncrease:       0.01,
-			MinTPRImprovement:    0.05,
+			MaxFPRIncrease:        0.01,
+			MinTPRImprovement:     0.05,
 			MaxLatencyIncreasePct: 10,
-			MaxDriftIncrease:     0.1,
+			MaxDriftIncrease:      0.1,
 		},
 	}
 }

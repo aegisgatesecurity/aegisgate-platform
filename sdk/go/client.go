@@ -38,8 +38,8 @@ const Version = "3.6.1"
 // Client is the top-level AegisGate API client. It holds the HTTP client,
 // configuration, and references to every service namespace.
 type Client struct {
-	cfg    *Config
-	http   *http.Client
+	cfg     *Config
+	http    *http.Client
 	baseURL string
 
 	// Services provide typed access to each AegisGate API surface.

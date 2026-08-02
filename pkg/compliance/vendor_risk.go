@@ -53,7 +53,7 @@ const (
 	DimDataPrivacy      AssessmentDimension = "data_privacy"
 	DimSecurityPosture  AssessmentDimension = "security_posture"
 	DimCompliance       AssessmentDimension = "compliance"
-	DimAvailability      AssessmentDimension = "availability"
+	DimAvailability     AssessmentDimension = "availability"
 	DimTransparency     AssessmentDimension = "transparency"
 	DimDataResidency    AssessmentDimension = "data_residency"
 	DimModelIntegrity   AssessmentDimension = "model_integrity"
@@ -62,7 +62,7 @@ const (
 
 // DimensionScore holds the score and evidence for a single risk dimension.
 type DimensionScore struct {
-	Score      float64  // 0-100
+	Score      float64 // 0-100
 	Evidence   string
 	Weaknesses []string
 	Status     string // "met", "partial", "not_met"
@@ -70,10 +70,10 @@ type DimensionScore struct {
 
 // Certification represents a vendor certification.
 type Certification struct {
-	Name      string
-	Status    string    // "active", "expired", "pending", "none"
+	Name       string
+	Status     string // "active", "expired", "pending", "none"
 	ValidUntil time.Time
-	Scope     string
+	Scope      string
 }
 
 // IncidentRecord represents a security incident involving the vendor.
@@ -88,12 +88,12 @@ type IncidentRecord struct {
 
 // DataFlowRisk describes how vendor handles data flows.
 type DataFlowRisk struct {
-	DataInTransit      string // "encrypted", "unencrypted"
-	DataAtRest         string // "encrypted", "unencrypted"
-	DataRetention      string
-	DataResidency      string
-	ThirdPartySharing  bool
-	TrainingDataUse    bool
+	DataInTransit     string // "encrypted", "unencrypted"
+	DataAtRest        string // "encrypted", "unencrypted"
+	DataRetention     string
+	DataResidency     string
+	ThirdPartySharing bool
+	TrainingDataUse   bool
 }
 
 // Recommendation is an actionable improvement suggestion.
@@ -159,8 +159,8 @@ func NewVendorAssessment(vendorName string, category VendorCategory) *VendorAsse
 		AssessedAt:     time.Now().UTC(),
 		Dimensions:     dims,
 		Certifications: []Certification{},
-		Incidents:       []IncidentRecord{},
-		FrameworkRefs:   make(map[string][]string),
+		Incidents:      []IncidentRecord{},
+		FrameworkRefs:  make(map[string][]string),
 	}
 }
 
@@ -266,9 +266,9 @@ func (va *VendorAssessment) GenerateRecommendations() []Recommendation {
 
 	// Dimension-specific recommendation templates
 	recTemplates := map[AssessmentDimension]struct {
-		desc       string
-		effort     string
-		fwRef      string
+		desc   string
+		effort string
+		fwRef  string
 	}{
 		DimDataPrivacy:      {"Implement comprehensive data privacy controls and DLP measures", "medium", "SOC2 CC6.1"},
 		DimSecurityPosture:  {"Strengthen security controls and vulnerability management", "high", "ISO 27001 A.13"},
@@ -320,12 +320,12 @@ func (va *VendorAssessment) GenerateRecommendations() []Recommendation {
 // MapToFrameworks maps assessment results to compliance framework control references.
 func (va *VendorAssessment) MapToFrameworks() map[string][]string {
 	refs := map[string][]string{
-		"SOC2":             {},
-		"ISO 27001":        {},
-		"NIST AI RMF":      {},
-		"EU AI Act":        {},
-		"HIPAA":            {},
-		"PCI DSS":          {},
+		"SOC2":        {},
+		"ISO 27001":   {},
+		"NIST AI RMF": {},
+		"EU AI Act":   {},
+		"HIPAA":       {},
+		"PCI DSS":     {},
 	}
 
 	// Dimension-to-framework mappings

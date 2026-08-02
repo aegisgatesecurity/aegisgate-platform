@@ -444,7 +444,6 @@ func TestNormalizeFrameworkName(t *testing.T) {
 	}
 }
 
-
 // ===== Audit Trail API Tests (v3.6.0) =====
 
 func TestAPI_AuditTrail_NoTrail(t *testing.T) {

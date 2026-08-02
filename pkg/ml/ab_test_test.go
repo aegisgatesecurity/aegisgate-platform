@@ -34,10 +34,10 @@ func TestCreateTest_Valid(t *testing.T) {
 		ConfidenceLevel:     0.95,
 		Duration:            7 * 24 * time.Hour,
 		MetricThresholds: ml.ABTestThresholds{
-			MaxFPRIncrease:       0.01,
-			MinTPRImprovement:    0.05,
+			MaxFPRIncrease:        0.01,
+			MinTPRImprovement:     0.05,
 			MaxLatencyIncreasePct: 10,
-			MaxDriftIncrease:     0.1,
+			MaxDriftIncrease:      0.1,
 		},
 	}
 
@@ -54,9 +54,9 @@ func TestCreateTest_InvalidTrafficSplit(t *testing.T) {
 	manager := ml.NewABTestManager()
 
 	tests := []struct {
-		name    string
-		split   float64
-		errMsg  string
+		name   string
+		split  float64
+		errMsg string
 	}{
 		{"zero split", 0, "traffic split must be between"},
 		{"negative split", -5, "traffic split must be between"},
@@ -89,8 +89,8 @@ func TestCreateTest_InvalidConfidence(t *testing.T) {
 	manager := ml.NewABTestManager()
 
 	tests := []struct {
-		name        string
-		confidence  float64
+		name       string
+		confidence float64
 	}{
 		{"too low", 0.5},
 		{"too high", 1.0},
@@ -177,15 +177,15 @@ func TestRecordPrediction(t *testing.T) {
 	require.NoError(t, err)
 
 	prediction := ml.ABPrediction{
-		TestID:          created.ID,
-		InputHash:       "abc123",
-		ChampionScore:   0.85,
-		ChallengerScore: 0.92,
-		ChampionThreat:  true,
+		TestID:           created.ID,
+		InputHash:        "abc123",
+		ChampionScore:    0.85,
+		ChallengerScore:  0.92,
+		ChampionThreat:   true,
 		ChallengerThreat: true,
-		GroundTruth:     true,
-		RoutedTo:        "champion",
-		LatencyMs:       2.5,
+		GroundTruth:      true,
+		RoutedTo:         "champion",
+		LatencyMs:        2.5,
 	}
 
 	err = manager.RecordPrediction(prediction)
@@ -205,15 +205,15 @@ func TestRecordPrediction_Routing(t *testing.T) {
 
 	// Record predictions with explicit routing.
 	championPred := ml.ABPrediction{
-		TestID:          created.ID,
-		InputHash:       "input1",
-		ChampionScore:   0.85,
-		ChallengerScore: 0.90,
-		ChampionThreat:  true,
+		TestID:           created.ID,
+		InputHash:        "input1",
+		ChampionScore:    0.85,
+		ChallengerScore:  0.90,
+		ChampionThreat:   true,
 		ChallengerThreat: true,
-		GroundTruth:     true,
-		RoutedTo:        "champion",
-		LatencyMs:       2.5,
+		GroundTruth:      true,
+		RoutedTo:         "champion",
+		LatencyMs:        2.5,
 	}
 
 	err = manager.RecordPrediction(championPred)
@@ -274,34 +274,34 @@ func TestGetTestMetrics(t *testing.T) {
 	// Record predictions with known outcomes.
 	predictions := []ml.ABPrediction{
 		{
-			TestID:          created.ID,
-			InputHash:       "input1",
-			ChampionScore:   0.85,
-			ChallengerScore: 0.92,
-			ChampionThreat:  true,
+			TestID:           created.ID,
+			InputHash:        "input1",
+			ChampionScore:    0.85,
+			ChallengerScore:  0.92,
+			ChampionThreat:   true,
 			ChallengerThreat: true,
-			GroundTruth:     true,
-			LatencyMs:       2.0,
+			GroundTruth:      true,
+			LatencyMs:        2.0,
 		},
 		{
-			TestID:          created.ID,
-			InputHash:       "input2",
-			ChampionScore:   0.30,
-			ChallengerScore: 0.25,
-			ChampionThreat:  false,
+			TestID:           created.ID,
+			InputHash:        "input2",
+			ChampionScore:    0.30,
+			ChallengerScore:  0.25,
+			ChampionThreat:   false,
 			ChallengerThreat: false,
-			GroundTruth:     false,
-			LatencyMs:       1.5,
+			GroundTruth:      false,
+			LatencyMs:        1.5,
 		},
 		{
-			TestID:          created.ID,
-			InputHash:       "input3",
-			ChampionScore:   0.70,
-			ChallengerScore: 0.88,
-			ChampionThreat:  false,
+			TestID:           created.ID,
+			InputHash:        "input3",
+			ChampionScore:    0.70,
+			ChallengerScore:  0.88,
+			ChampionThreat:   false,
 			ChallengerThreat: true,
-			GroundTruth:     true,
-			LatencyMs:       3.0,
+			GroundTruth:      true,
+			LatencyMs:        3.0,
 		},
 	}
 
@@ -345,10 +345,10 @@ func TestEvaluateTest_ChallengerWins(t *testing.T) {
 	config.MinSampleSize = 100
 	config.ConfidenceLevel = 0.90
 	config.MetricThresholds = ml.ABTestThresholds{
-		MaxFPRIncrease:       0.02,
-		MinTPRImprovement:    0.01,
+		MaxFPRIncrease:        0.02,
+		MinTPRImprovement:     0.01,
 		MaxLatencyIncreasePct: 50,
-		MaxDriftIncrease:     0.5,
+		MaxDriftIncrease:      0.5,
 	}
 	created, err := manager.CreateTest(config)
 	require.NoError(t, err)
@@ -360,18 +360,18 @@ func TestEvaluateTest_ChallengerWins(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		// Challenger catches all threats, champion misses some.
 		championThreat := i%10 != 0 // champion misses 10% of threats
-		challengerThreat := true     // challenger catches all
+		challengerThreat := true    // challenger catches all
 		groundTruth := true
 
 		prediction := ml.ABPrediction{
-			TestID:          created.ID,
-			InputHash:       "input",
-			ChampionScore:   0.7,
-			ChallengerScore: 0.95,
-			ChampionThreat:  championThreat,
+			TestID:           created.ID,
+			InputHash:        "input",
+			ChampionScore:    0.7,
+			ChallengerScore:  0.95,
+			ChampionThreat:   championThreat,
 			ChallengerThreat: challengerThreat,
-			GroundTruth:     groundTruth,
-			LatencyMs:       2.0,
+			GroundTruth:      groundTruth,
+			LatencyMs:        2.0,
 		}
 		err := manager.RecordPrediction(prediction)
 		require.NoError(t, err)
@@ -391,10 +391,10 @@ func TestEvaluateTest_ChampionRetains(t *testing.T) {
 	config.MinSampleSize = 100
 	config.ConfidenceLevel = 0.80
 	config.MetricThresholds = ml.ABTestThresholds{
-		MaxFPRIncrease:       0.005, // very strict FPR threshold
-		MinTPRImprovement:    0.05,
+		MaxFPRIncrease:        0.005, // very strict FPR threshold
+		MinTPRImprovement:     0.05,
 		MaxLatencyIncreasePct: 5,
-		MaxDriftIncrease:     0.05,
+		MaxDriftIncrease:      0.05,
 	}
 	created, err := manager.CreateTest(config)
 	require.NoError(t, err)
@@ -410,24 +410,24 @@ func TestEvaluateTest_ChampionRetains(t *testing.T) {
 		if i < 70 {
 			// 70 true threats
 			groundTruth = true
-			championThreat = i < 60  // 60/70 TPR
+			championThreat = i < 60   // 60/70 TPR
 			challengerThreat = i < 50 // 50/70 TPR (worse)
 		} else {
 			// 30 benign
 			groundTruth = false
-			championThreat = i < 71  // 1/30 FPR (better)
+			championThreat = i < 71   // 1/30 FPR (better)
 			challengerThreat = i < 80 // 10/30 FPR (worse)
 		}
 
 		prediction := ml.ABPrediction{
-			TestID:          created.ID,
-			InputHash:       "input",
-			ChampionScore:   0.7,
-			ChallengerScore: 0.75,
-			ChampionThreat:  championThreat,
+			TestID:           created.ID,
+			InputHash:        "input",
+			ChampionScore:    0.7,
+			ChallengerScore:  0.75,
+			ChampionThreat:   championThreat,
 			ChallengerThreat: challengerThreat,
-			GroundTruth:     groundTruth,
-			LatencyMs:       2.0,
+			GroundTruth:      groundTruth,
+			LatencyMs:        2.0,
 		}
 		err := manager.RecordPrediction(prediction)
 		require.NoError(t, err)
@@ -453,14 +453,14 @@ func TestEvaluateTest_NoSignificantDifference(t *testing.T) {
 	// Record only a few predictions (insufficient data).
 	for i := 0; i < 10; i++ {
 		prediction := ml.ABPrediction{
-			TestID:          created.ID,
-			InputHash:       "input",
-			ChampionScore:   0.7,
-			ChallengerScore: 0.75,
-			ChampionThreat:  true,
+			TestID:           created.ID,
+			InputHash:        "input",
+			ChampionScore:    0.7,
+			ChallengerScore:  0.75,
+			ChampionThreat:   true,
 			ChallengerThreat: true,
-			GroundTruth:     true,
-			LatencyMs:       2.0,
+			GroundTruth:      true,
+			LatencyMs:        2.0,
 		}
 		err := manager.RecordPrediction(prediction)
 		require.NoError(t, err)
@@ -510,14 +510,14 @@ func TestCancelTest_AlreadyCompleted(t *testing.T) {
 	// Add minimum predictions.
 	for i := 0; i < 3; i++ {
 		prediction := ml.ABPrediction{
-			TestID:          created.ID,
-			InputHash:       "input",
-			ChampionScore:   0.7,
-			ChallengerScore: 0.75,
-			ChampionThreat:  true,
+			TestID:           created.ID,
+			InputHash:        "input",
+			ChampionScore:    0.7,
+			ChallengerScore:  0.75,
+			ChampionThreat:   true,
 			ChallengerThreat: true,
-			GroundTruth:     true,
-			LatencyMs:       2.0,
+			GroundTruth:      true,
+			LatencyMs:        2.0,
 		}
 		err := manager.RecordPrediction(prediction)
 		require.NoError(t, err)
@@ -598,14 +598,14 @@ func TestGetResult(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		prediction := ml.ABPrediction{
-			TestID:          created.ID,
-			InputHash:       "input",
-			ChampionScore:   0.7,
-			ChallengerScore: 0.75,
-			ChampionThreat:  true,
+			TestID:           created.ID,
+			InputHash:        "input",
+			ChampionScore:    0.7,
+			ChallengerScore:  0.75,
+			ChampionThreat:   true,
 			ChallengerThreat: true,
-			GroundTruth:     true,
-			LatencyMs:       2.0,
+			GroundTruth:      true,
+			LatencyMs:        2.0,
 		}
 		err := manager.RecordPrediction(prediction)
 		require.NoError(t, err)
@@ -697,28 +697,28 @@ func TestABPrediction_Recording(t *testing.T) {
 
 	now := time.Now().UTC()
 	p1 := ml.ABPrediction{
-		TestID:          created.ID,
-		InputHash:       "hash1",
-		Timestamp:       now,
-		ChampionScore:   0.85,
-		ChallengerScore: 0.92,
-		ChampionThreat:  true,
+		TestID:           created.ID,
+		InputHash:        "hash1",
+		Timestamp:        now,
+		ChampionScore:    0.85,
+		ChallengerScore:  0.92,
+		ChampionThreat:   true,
 		ChallengerThreat: true,
-		GroundTruth:     true,
-		RoutedTo:        "champion",
-		LatencyMs:       2.5,
+		GroundTruth:      true,
+		RoutedTo:         "champion",
+		LatencyMs:        2.5,
 	}
 	p2 := ml.ABPrediction{
-		TestID:          created.ID,
-		InputHash:       "hash2",
-		Timestamp:       now.Add(time.Second),
-		ChampionScore:   0.30,
-		ChallengerScore: 0.25,
-		ChampionThreat:  false,
+		TestID:           created.ID,
+		InputHash:        "hash2",
+		Timestamp:        now.Add(time.Second),
+		ChampionScore:    0.30,
+		ChallengerScore:  0.25,
+		ChampionThreat:   false,
 		ChallengerThreat: false,
-		GroundTruth:     false,
-		RoutedTo:        "champion",
-		LatencyMs:       1.8,
+		GroundTruth:      false,
+		RoutedTo:         "champion",
+		LatencyMs:        1.8,
 	}
 
 	err = manager.RecordPrediction(p1)
@@ -760,10 +760,10 @@ func validABTestConfig() ml.ABTestConfig {
 		ConfidenceLevel:     0.95,
 		Duration:            7 * 24 * time.Hour,
 		MetricThresholds: ml.ABTestThresholds{
-			MaxFPRIncrease:       0.01,
-			MinTPRImprovement:    0.05,
+			MaxFPRIncrease:        0.01,
+			MinTPRImprovement:     0.05,
 			MaxLatencyIncreasePct: 10,
-			MaxDriftIncrease:     0.1,
+			MaxDriftIncrease:      0.1,
 		},
 	}
 }

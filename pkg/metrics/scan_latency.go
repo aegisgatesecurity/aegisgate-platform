@@ -25,9 +25,9 @@ import (
 
 // Scan latency histogram metric names.
 const (
-	MetricScanDuration         = "aegisgate_scan_duration_seconds"
-	MetricRegexScanDuration    = "aegisgate_regex_scan_duration_seconds"
-	MetricMLInferenceDuration  = "aegisgate_ml_inference_duration_seconds"
+	MetricScanDuration          = "aegisgate_scan_duration_seconds"
+	MetricRegexScanDuration     = "aegisgate_regex_scan_duration_seconds"
+	MetricMLInferenceDuration   = "aegisgate_ml_inference_duration_seconds"
 	MetricShadowPredictionTotal = "aegisgate_shadow_prediction_total"
 )
 
