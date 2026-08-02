@@ -193,6 +193,19 @@ jobs:
             # calibration, and normalizer core paths are fully tested.
             # Exempted until v4.0 ML sprint adds integration-level ML tests.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/ml"
+            # pkg/incident: 56% coverage. PostgresIncidentStore, PostgresPlaybookStore,
+            # and PostgresDetectionRuleStore (~1,154 LOC) require a running PostgreSQL
+            # instance. Input validation, nil/empty-ID guards, nullTime helper, Close
+            # semantics, metadata merge, and type serialization are fully tested. The
+            # SQL execution paths (INSERT, SELECT, UPDATE, DELETE with pgxpool) can
+            # only be tested via integration tests (//go:build integration).
+            # Exempted; same pattern as pkg/rbac, pkg/persistence, pkg/cluster.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
+            # pkg/testdb: 0% coverage. Ephemeral PostgreSQL test helper using
+            # testcontainers-go. Requires a running Docker daemon. Cannot be
+            # unit-tested without external infrastructure. Exempted; this is
+            # test infrastructure, not production code.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/testdb"
           )
           FAIL=0
           echo "## Per-Package Coverage Report" >> $GITHUB_STEP_SUMMARY
