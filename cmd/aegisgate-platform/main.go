@@ -45,6 +45,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -1514,6 +1515,19 @@ func main() {
 	complianceAPI.SetAuditTrail(auditTrail)
 
 	log.Printf("[COMPLIANCE] Policy engine, evidence collector, and audit trail wired into compliance API")
+
+	// Wire i18n into the compliance API (v3.6.1). The Manager loads
+	// all 12 embedded locales and provides per-request translation
+	// via Accept-Language header detection. When nil, the API falls
+	// back to English defaults.
+	i18nMgr, i18nErr := i18n.GetEmbeddedManager()
+	if i18nErr != nil {
+		log.Printf("[I18N] Warning: failed to initialize i18n manager (falling back to English): %v", i18nErr)
+	} else {
+		complianceAPI.SetI18N(i18nMgr)
+		loadedLocales := i18nMgr.GetLoadedLocales()
+		log.Printf("[I18N] Initialized with %d locales: %v", len(loadedLocales), loadedLocales)
+	}
 
 	dashMux.Handle("/api/v1/compliance/", complianceAPI)
 
