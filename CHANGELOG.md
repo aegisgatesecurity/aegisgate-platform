@@ -1,3 +1,57 @@
+## [3.6.1] - 2026-08-01 - Gap Closure, Operator, SDKs, v4 Foundation 🚀
+
+> **v3.6.1** closes all remaining P1–P3 gaps, adds the Kubernetes operator, completes the client SDKs, and establishes the v4 ML foundation. 95 packages, 10,683 tests, 515K LOC, 0 failures.
+
+### Gap Closure (P1–P3)
+
+- **feat(compliance): vendor risk assessment module** — 8-dimension scoring (privacy, security, compliance, availability, transparency, data residency, model integrity, incident response), 5 AI vendor profiles (OpenAI, Anthropic, Google DeepMind, Mistral, Cohere), SOC2/ISO27001/NIST AI RMF/EU AI Act/HIPAA/PCI framework mapping, vendor comparison (`pkg/compliance/vendor_risk.go`, 678 LOC)
+- **feat(compliance): policy-as-code (OPA/Rego)** — PolicyEngine with Rego parser, 7 default policies, evaluate/evaluateAll/evaluateFramework, bundling, export, native policy support (`pkg/compliance/policy_opa.go`, 1,073 LOC)
+- **feat(compliance): evidence collection automation** — EvidenceCollector with 9 evidence types, collector registration, verification, coverage calculation, JSON/CSV export, 4 default collectors (`pkg/compliance/evidence_automation.go`, 696 LOC)
+- **feat(ml): A/B testing for ML models** — ABTestManager with champion/challenger lifecycle, two-proportion z-test for statistical significance, threshold-based promotion (TPR, FPR, latency, drift) (`pkg/ml/ab_test.go`, 663 LOC)
+- **feat(compliance): regulatory change feed** — 10 seeded regulatory changes (EU AI Act enforcement dates, NIST AI RMF, ISO 42001, OWASP LLM Top 10 2025, etc.), queryable, exportable (`pkg/compliance/regfeed.go`, 343 LOC)
+- **feat(compliance): audit trail** — Rule change audit with version-based diffing, query/filter, JSON export (`pkg/compliance/audit_trail.go`, 575 LOC)
+- **feat(compliance): regression CI gate** — Baseline snapshots, configurable thresholds, CI exit codes (`pkg/compliance/regression.go`, 384 LOC)
+- **feat(metrics): MTTD/MTTR Prometheus metrics** — 4 histograms/counters for detection/response time and incident tracking (`pkg/metrics/mttd_mttr.go`, 108 LOC)
+- **feat(analytics): ROI calculator** — Blended detection rate, validation, payback period (`pkg/analytics/roi.go`, 189 LOC)
+
+### ML Pipeline (v4 Foundation)
+
+- **feat(ml): latency optimization** — LRU cache (10K entries), fast-path for short inputs, precomputed attack word variants for O(1) lookup, batch detection with goroutine pool (`pkg/ml/latency.go`, 435 LOC)
+- **feat(ml): evasion resistance** — 15 detection patterns across 5 categories (encoding, splitting, obfuscation, semantic, homoglyph), score capping, per-pattern statistics (`pkg/ml/evasion_resistance.go`, 303 LOC)
+- **feat(ml): adversarial robustness** — FGSM/PGD attack simulation, evasion probes (`pkg/ml/adversarial.go`, 396 LOC)
+- **feat(ml): data drift monitoring** — PSI, KL divergence, chi-squared drift detection (`pkg/ml/drift.go`, 491 LOC)
+- **feat(ml): calibration + shadow mode** — Threshold calibration, shadow prediction logging, FPR/TPR metrics (`pkg/ml/calibration.go`, 442 LOC)
+
+### Infrastructure
+
+- **feat(k8s): operator** — CRD (AegisGateDeployment), RBAC, reconciliation loop, Helm subchart, Dockerfile (`cmd/aegisgate-operator/main.go`, 585 LOC)
+- **feat(metrics): scan latency Prometheus histograms** — Per-framework, per-technique, per-severity bucket distributions (`pkg/metrics/scan_latency.go`, 101 LOC)
+- **feat(cli): red team bench CLI** — 24 attack chain scenarios, JSON output, verbose mode (`cmd/aegisgate-redbench/main.go`, 486 LOC)
+- **feat(ui): compliance dashboard** — 5-tab dashboard (Overview, Risk Map, Audit Trail, ML Metrics, Regression Gate) (`ui/frontend/compliance.html`, 250 LOC)
+
+### SDK Updates
+
+- **Go SDK** — 5 new services (VendorRisk, PolicyEngine, Evidence, ABTest, Evasion), 168 LOC new types, 168 LOC new methods
+- **Python SDK** — 5 new service modules (vendor_risk, policy_engine, evidence, ab_test, evasion), client.py updated with new properties
+
+### API Endpoints
+
+- `GET /vendor-risk` — List predefined vendor profiles
+- `POST /vendor-risk/assess` — Create vendor assessment
+- `GET /policy-engine` — List policies
+- `POST /policy-engine/evaluate` — Evaluate policies
+- `GET /evidence` — List evidence items
+- `POST /evidence/collect` — Collect evidence
+- `POST /evidence/verify` — Verify evidence
+
+### Metrics
+
+- **95/95** packages pass, **0** failures
+- **10,683** test functions
+- **515,624** total LOC (265,371 production + 250,253 test)
+- **90.5%** compliance coverage, **82.0%** ML coverage, **97.3%** metrics coverage, **100%** ATLAS coverage
+- **0** OPSEC failures, **0** race conditions
+
 ## [3.6.0] - 2026-08-01 - Security Hardening, ML Pipeline, ATLAS FPR Fix 🔒
 
 > **v3.6.0** is a hard version rebaseline: ATLAS false-positive rate eliminated (30.8%→0.0%), evasion-resistant detection normalization, ML pipeline foundation for v4, rule integrity verification, and 70% proxy overhead reduction. 15 commits, 55 packages passing, 0 race conditions.
