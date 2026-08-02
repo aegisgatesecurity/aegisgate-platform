@@ -187,12 +187,8 @@ jobs:
             # integration-test territory. Exempted; can be revisited when
             # integration test infrastructure supports gRPC.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
-            # pkg/ml: 73.6% coverage. ML threat detection pipeline (Char CNN-BiLSTM).
-            # Feature flag methods (IsEnabled, SetEnabled, IsShadowMode, SetShadowMode)
-            # are cold-start configuration not exercised in unit tests. Detector,
-            # calibration, and normalizer core paths are fully tested.
-            # Exempted until v4.0 ML sprint adds integration-level ML tests.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ml"
+            # pkg/ml: 82% coverage — above the 80% floor. Removed from exemptions
+            # 2026-08-02 after coverage gap closure (feature flags now tested).
             # pkg/incident: 56% coverage. PostgresIncidentStore, PostgresPlaybookStore,
             # and PostgresDetectionRuleStore (~1,154 LOC) require a running PostgreSQL
             # instance. Input validation, nil/empty-ID guards, nullTime helper, Close
