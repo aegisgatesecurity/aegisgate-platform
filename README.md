@@ -7,9 +7,10 @@
 [![Version](https://img.shields.io/badge/Version-v3.6.2-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v3.6.2)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.5-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-10683_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-10831+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-90.5%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
+[![SIEM](https://img.shields.io/badge/SIEM-11_platforms-9333ea?logo=splunk)](upstream/aegisgate/pkg/siem/)
 [![Lens](https://img.shields.io/badge/Lens-153_patterns-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
 [![CodeQL](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml)
 [![Security Policy](https://img.shields.io/badge/security-RFC%209116-blue.svg)](./SECURITY.md)
@@ -134,20 +135,26 @@ result, _ := guard.Scan(ctx, text)
 | HA clustering | ✅ Native | ⚠️ Enterprise add-on |
 | Open source (Apache 2.0) | ✅ | ❌ Proprietary |
 
-## v3.6.0 Highlights
+## v3.6.2 Highlights
 
 | Feature | Description |
 |---------|-------------|
 | **FedRAMP 151/170 Automated (88.8%)** | Compliance Engine v2: 69 controls promoted from manual/stub to real CheckFuncs. 19 remaining are customer-responsibility. |
 | **gRPC Service Layer** | 7 services, 50 RPCs with health checking, reflection, and TLS |
 | **Trust API Attestation** | Cryptographic attestation generation and verification (RFC 3161 TSA) |
-| **SIEM Promotion** | Real event forwarding to Splunk/Datadog/ELK (no longer a stub) |
+| **SIEM 11/11 Platform Coverage** | Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, **Datadog**, **CloudWatch**, **SecurityHub** |
+| **SIEM Event Durability** | BufferConfig.Persist with JSON-lines file persistence and replay on startup |
+| **Incident PostgreSQL Backend** | Full PostgreSQL persistence for incidents, playbooks, and detection rules (8 stores, 7 migrations) |
 | **SSO Persistence** | PostgreSQL-backed OIDC session storage with TTL and ACR value mapping |
 | **Token Analytics** | Per-request token usage metrics wired into the request pipeline |
 | **PDF Export** | Questionnaire results export to formatted PDF with scoring and evidence citations |
+| **Reporting Delivery** | Webhook (HTTP POST) and Email (SMTP+STARTTLS) delivery handlers |
+| **Reporting Templates** | Custom template execution with TemplateID lookup and HTML generation |
+| **CSV Data Export** | Full recursive Section/Key/Value flattening (was metadata-only headers) |
 | **153-Pattern Detection Engine** | Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns |
-| **PostgreSQL Persistence** | 6 integration test suites (107 tests) via testcontainers-go |
+| **PostgreSQL Persistence** | 8 integration test suites via testcontainers-go (IOC, audit, sessions, multi-tenant, correlation, attestation, RBAC, incident) |
 | **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
+| **Performance** | Zero-cost proxy (-2.8ms p99), 15K+ RPS sustained, ATLAS p99 10.7ms (81% improvement) |
 | **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
 
 ## 6 Pillars
@@ -211,6 +218,7 @@ pkg/
 ├── cve/                    # CVE-for-AI feed
 ├── detectors/              # 153-pattern detection engine
 ├── evaluator/              # Adversarial benchmark suite
+├── incident/               # Incident response (PostgreSQL + in-memory)
 ├── ioc/                    # IOC management
 ├── mcpserver/              # MCP guardrails
 ├── persistence/            # Storage backends (file + PostgreSQL)
@@ -223,11 +231,11 @@ pkg/
 ## Testing
 
 ```bash
-# Unit tests (99 packages)
+# Unit tests (101 packages)
 go test ./...
 
-# Integration tests (6 PostgreSQL packages, requires Docker)
-go test -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/... ./pkg/rbac/... \
+# Integration tests (8 PostgreSQL packages, requires Docker)
+go test -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/... ./pkg/rbac/... ./pkg/attestation/... ./pkg/correlation/... ./pkg/incident/... ./pkg/rbac/... \
   ./pkg/license/... ./pkg/correlation/... ./pkg/attestation/...
 
 # Coverage
