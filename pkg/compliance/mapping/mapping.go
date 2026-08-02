@@ -113,6 +113,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art10-001", Title: "Data governance requirements"},
 			{Framework: "gdpr", ControlID: "GDPR-5", Title: "Data minimization"},
 			{Framework: "fedramp", ControlID: "FedRAMP-MP-1", Title: "Media Protection Policy"},
+			{Framework: "cjis", ControlID: "CJIS-IM-001", Title: "Information Management Policy"},
 		},
 	},
 
@@ -139,6 +140,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "iso_42001", ControlID: "ISO42001-7.5", Title: "AI system documentation"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art14-001", Title: "Human oversight measures"},
 			{Framework: "gdpr", ControlID: "GDPR-13", Title: "Information to data subjects"},
+			{Framework: "cjis", ControlID: "CJIS-PS-002", Title: "Security Awareness Training"},
 		},
 	},
 
@@ -273,6 +275,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "owasp_web", ControlID: "OWASPWeb-A07", Title: "Identification and Authentication Failures"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art13-001", Title: "Transparency and provision of information"},
 			{Framework: "gdpr", ControlID: "GDPR-25", Title: "Data protection by design"},
+			{Framework: "cjis", ControlID: "CJIS-AC-002", Title: "Account Management"},
 		},
 	},
 
@@ -371,6 +374,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "nist_csf", ControlID: "PR.AC-2", Title: "Physical access control"},
 			{Framework: "fedramp", ControlID: "FedRAMP-AC-14", Title: "Permitted Actions Without Identification"},
 			{Framework: "fedramp", ControlID: "FedRAMP-PE-1", Title: "Physical and Environmental Protection Policy"},
+			{Framework: "cjis", ControlID: "CJIS-PP-001", Title: "Physical Protection Policy"},
 		},
 	},
 
@@ -446,6 +450,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-IA-5", Title: "Authenticator Management"},
 			{Framework: "fedramp", ControlID: "FedRAMP-IA-6", Title: "Authenticator Feedback"},
 			{Framework: "fedramp", ControlID: "FedRAMP-IA-8", Title: "Non-Organizational Users"},
+			{Framework: "cjis", ControlID: "CJIS-AC-001", Title: "Access Control Policy"},
 		},
 	},
 
@@ -479,6 +484,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-AU-12", Title: "Audit Generation"},
 			{Framework: "fedramp", ControlID: "FedRAMP-AU-16", Title: "Cross-Organization Audit Logging"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art12-001", Title: "Automatic Logging"},
+			{Framework: "cjis", ControlID: "CJIS-IM-003", Title: "Record Retention"},
 		},
 	},
 
@@ -516,6 +522,10 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-SC-28", Title: "Protection of Information at Rest"},
 			{Framework: "fedramp", ControlID: "FedRAMP-IA-7", Title: "Cryptographic Module Authentication"},
 			{Framework: "owasp_web", ControlID: "OWASPWeb-A02", Title: "Cryptographic Failures"},
+			{Framework: "cjis", ControlID: "CJIS-IM-002", Title: "Media Protection"},
+			{Framework: "cjis", ControlID: "CJIS-CR-001", Title: "Encryption at Rest"},
+			{Framework: "cjis", ControlID: "CJIS-CR-002", Title: "Encryption in Transit"},
+			{Framework: "cjis", ControlID: "CJIS-CR-003", Title: "Key Management"},
 		},
 	},
 
@@ -669,6 +679,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-CM-5", Title: "Access Restrictions for Change"},
 			{Framework: "fedramp", ControlID: "FedRAMP-CM-6", Title: "Configuration Settings"},
 			{Framework: "fedramp", ControlID: "FedRAMP-CM-8", Title: "System Component Information"},
+			{Framework: "cjis", ControlID: "CJIS-IM-001", Title: "Information Management Policy"},
 		},
 	},
 
@@ -728,6 +739,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-IR-8", Title: "Incident Response Plan"},
 			{Framework: "fedramp", ControlID: "FedRAMP-AU-6", Title: "Audit Review, Analysis, and Reporting"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SI-4", Title: "Information System Monitoring"},
+			{Framework: "cjis", ControlID: "CJIS-PS-003", Title: "Incident Response Training"},
 		},
 	},
 
@@ -772,6 +784,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "tisax", ControlID: "TISAX-IS-05", Title: "Cryptography"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "cjis", ControlID: "CJIS-PP-002", Title: "Mobile Device Security"},
 		},
 	},
 
@@ -974,6 +987,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-02", Title: "User Authentication"},
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "cjis", ControlID: "CJIS-PS-002", Title: "Security Awareness Training"},
 		},
 	},
 
@@ -1080,6 +1094,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-03", Title: "Logical Access Control"},
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "cjis", ControlID: "CJIS-AC-001", Title: "Access Control Policy"},
 		},
 	},
 
@@ -1117,6 +1132,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-02", Title: "User Authentication"},
 			{Framework: "tisax", ControlID: "TISAX-DP-07", Title: "Incident Handling"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "cjis", ControlID: "CJIS-AC-003", Title: "Audit and Accountability"},
 		},
 	},
 
@@ -1210,6 +1226,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "hitrust", ControlID: "HITRUST-AM-01", Title: "Access Management Policy"},
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
+			{Framework: "cjis", ControlID: "CJIS-PS-001", Title: "Personnel Security Policy"},
 		},
 	},
 
@@ -1367,6 +1384,8 @@ var FrameworkName = map[string]string{
 	"hitrust":    "HITRUST CSF v11.2",
 	"tisax":      "TISAX AL2",
 	"ccpa":       "CCPA/CPRA",
+	// v3.7.0 additions:
+	"cjis": "CJIS Security Policy v5.9.1",
 }
 
 // MapByControlID returns all external framework controls that the
