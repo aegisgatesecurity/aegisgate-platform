@@ -25,9 +25,10 @@ func TestRegisterBuiltinFrameworks_Idempotent(t *testing.T) {
 }
 
 func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
-	// Verify all registered frameworks have > 0 controls.
+	// Verify all 24 registered frameworks + 3 community frameworks have > 0 controls.
 	RegisterBuiltinFrameworks()
 	frameworks := map[string]int{
+		// v3.2.0 originals
 		"hipaa":     lookupControlCount("hipaa"),
 		"pci":       lookupControlCount("pci"),
 		"eu_ai_act": lookupControlCount("eu_ai_act"),
@@ -38,6 +39,27 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		"fips":      lookupControlCount("fips"),
 		"nist_csf":  lookupControlCount("nist_csf"),
 		"cis":       lookupControlCount("cis"),
+		// v3.4.0 Path B additions
+		"cmmcl2":     lookupControlCount("cmmcl2"),
+		"nist800171": lookupControlCount("nist800171"),
+		"hitrust":    lookupControlCount("hitrust"),
+		"tisax":      lookupControlCount("tisax"),
+		"ccpa":       lookupControlCount("ccpa"),
+		// v3.6.0 additions
+		"nist_ai_rmf":   lookupControlCount("nist_ai_rmf"),
+		"csa_star":      lookupControlCount("csa_star"),
+		"nist_ai_600_1": lookupControlCount("nist_ai_600_1"),
+		"owasp_web":     lookupControlCount("owasp_web"),
+		// v3.6.2 additions
+		"cjis":     lookupControlCount("cjis"),
+		"ferpa":    lookupControlCount("ferpa"),
+		"sox":      lookupControlCount("sox"),
+		"glba":     lookupControlCount("glba"),
+		"nerc_cip": lookupControlCount("nerc_cip"),
+		// Community frameworks (static counts)
+		"atlas": lookupControlCount("atlas"),
+		"gdpr":  lookupControlCount("gdpr"),
+		"owasp": lookupControlCount("owasp"),
 	}
 	for fw, count := range frameworks {
 		t.Logf("%s registered controls: %d", fw, count)
@@ -45,11 +67,29 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 			t.Errorf("%s control count should be > 0 after RegisterBuiltinFrameworks", fw)
 		}
 	}
+	// Verify total framework count (24 registered + 3 community = 27)
+	if got := len(frameworks); got != 27 {
+		t.Errorf("total framework count = %d, want 27", got)
+	}
 	// FedRAMP v3.6.0: 170 controls (151 automated CheckFuncs + 19 evidence-mapped).
-	// Removed 5 duplicate registrations (AT-2, AT-3, CA-2, CA-5, SI-1) that were
-	// overriding automated CheckFuncs with manual stubs.
 	if fedrampCount := frameworks["fedramp"]; fedrampCount != 170 {
 		t.Errorf("fedramp control count = %d, want 170", fedrampCount)
+	}
+	// v3.6.2 new frameworks: verify specific control counts
+	if cjisCount := frameworks["cjis"]; cjisCount != 16 {
+		t.Errorf("cjis control count = %d, want 16", cjisCount)
+	}
+	if ferpaCount := frameworks["ferpa"]; ferpaCount != 16 {
+		t.Errorf("ferpa control count = %d, want 16", ferpaCount)
+	}
+	if soxCount := frameworks["sox"]; soxCount != 16 {
+		t.Errorf("sox control count = %d, want 16", soxCount)
+	}
+	if glbaCount := frameworks["glba"]; glbaCount != 14 {
+		t.Errorf("glba control count = %d, want 14", glbaCount)
+	}
+	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 18 {
+		t.Errorf("nerc_cip control count = %d, want 18", nercCipCount)
 	}
 }
 
