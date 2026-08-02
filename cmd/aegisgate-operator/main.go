@@ -27,19 +27,19 @@ import (
 
 // AegisGateDeploymentSpec defines the desired state of AegisGateDeployment.
 type AegisGateDeploymentSpec struct {
-	Replicas       *int32                    `json:"replicas,omitempty"`
-	Image          string                    `json:"image"`
-	Tier           string                    `json:"tier,omitempty"`
-	ProxyPort      *int32                    `json:"proxyPort,omitempty"`
-	MCPPort        *int32                    `json:"mcpPort,omitempty"`
-	DashboardPort  *int32                    `json:"dashboardPort,omitempty"`
-	MLEnabled      *bool                     `json:"mlEnabled,omitempty"`
-	MLShadowMode   *bool                     `json:"mlShadowMode,omitempty"`
-	MLThreshold    *float64                  `json:"mlThreshold,omitempty"`
-	Resources      *ResourceRequirementsSpec  `json:"resources,omitempty"`
-	LicenseKeySecret string                  `json:"licenseKeySecret,omitempty"`
-	Persistence    *PersistenceSpec          `json:"persistence,omitempty"`
-	Compliance     *ComplianceSpec           `json:"compliance,omitempty"`
+	Replicas         *int32                    `json:"replicas,omitempty"`
+	Image            string                    `json:"image"`
+	Tier             string                    `json:"tier,omitempty"`
+	ProxyPort        *int32                    `json:"proxyPort,omitempty"`
+	MCPPort          *int32                    `json:"mcpPort,omitempty"`
+	DashboardPort    *int32                    `json:"dashboardPort,omitempty"`
+	MLEnabled        *bool                     `json:"mlEnabled,omitempty"`
+	MLShadowMode     *bool                     `json:"mlShadowMode,omitempty"`
+	MLThreshold      *float64                  `json:"mlThreshold,omitempty"`
+	Resources        *ResourceRequirementsSpec `json:"resources,omitempty"`
+	LicenseKeySecret string                    `json:"licenseKeySecret,omitempty"`
+	Persistence      *PersistenceSpec          `json:"persistence,omitempty"`
+	Compliance       *ComplianceSpec           `json:"compliance,omitempty"`
 }
 
 // ResourceRequirementsSpec mirrors K8s resource requirements.
@@ -62,8 +62,8 @@ type PersistenceSpec struct {
 
 // ComplianceSpec defines compliance configuration.
 type ComplianceSpec struct {
-	Frameworks    []string `json:"frameworks,omitempty"`
-	RegressionGate *bool   `json:"regressionGate,omitempty"`
+	Frameworks     []string `json:"frameworks,omitempty"`
+	RegressionGate *bool    `json:"regressionGate,omitempty"`
 }
 
 // AegisGateCondition describes a condition in the status.
@@ -358,7 +358,7 @@ func buildDeploymentUnstructured(name, ns string, spec AegisGateDeploymentSpec) 
 				"name":      name,
 				"namespace": ns,
 				"labels": map[string]interface{}{
-					"app":     "aegisgate",
+					"app":                          "aegisgate",
 					"app.kubernetes.io/managed-by": "aegisgate-operator",
 				},
 			},
@@ -394,7 +394,7 @@ func buildServiceUnstructured(name, ns string, spec AegisGateDeploymentSpec) *un
 				"name":      name,
 				"namespace": ns,
 				"labels": map[string]interface{}{
-					"app":     "aegisgate",
+					"app":                          "aegisgate",
 					"app.kubernetes.io/managed-by": "aegisgate-operator",
 				},
 			},
@@ -403,9 +403,9 @@ func buildServiceUnstructured(name, ns string, spec AegisGateDeploymentSpec) *un
 					"app": "aegisgate",
 				},
 				"ports": []interface{}{
-					map[string]interface{}{"name": "proxy",     "port": int64(*spec.ProxyPort),     "targetPort": int64(*spec.ProxyPort)},
-					map[string]interface{}{"name": "mcp",        "port": int64(*spec.MCPPort),       "targetPort": int64(*spec.MCPPort)},
-					map[string]interface{}{"name": "dashboard",  "port": int64(*spec.DashboardPort),  "targetPort": int64(*spec.DashboardPort)},
+					map[string]interface{}{"name": "proxy", "port": int64(*spec.ProxyPort), "targetPort": int64(*spec.ProxyPort)},
+					map[string]interface{}{"name": "mcp", "port": int64(*spec.MCPPort), "targetPort": int64(*spec.MCPPort)},
+					map[string]interface{}{"name": "dashboard", "port": int64(*spec.DashboardPort), "targetPort": int64(*spec.DashboardPort)},
 				},
 				"type": "ClusterIP",
 			},
@@ -419,11 +419,11 @@ func buildServiceUnstructured(name, ns string, spec AegisGateDeploymentSpec) *un
 // ---------------------------------------------------------------------------
 
 type dynamicKubeClient struct {
-	dynClient    dynamic.Interface
-	clientset    kubernetes.Interface
-	deployGVR    schema.GroupVersionResource
-	serviceGVR   schema.GroupVersionResource
-	crdGVR       schema.GroupVersionResource
+	dynClient  dynamic.Interface
+	clientset  kubernetes.Interface
+	deployGVR  schema.GroupVersionResource
+	serviceGVR schema.GroupVersionResource
+	crdGVR     schema.GroupVersionResource
 }
 
 func newDynamicKubeClient(dynClient dynamic.Interface, clientset kubernetes.Interface) *dynamicKubeClient {
@@ -484,7 +484,7 @@ func (d *dynamicKubeClient) UpdateCRDStatus(ctx context.Context, ns, name string
 
 // WatchConfig configures the controller watch loop.
 type WatchConfig struct {
-	Namespace   string
+	Namespace    string
 	ResyncPeriod time.Duration
 }
 
