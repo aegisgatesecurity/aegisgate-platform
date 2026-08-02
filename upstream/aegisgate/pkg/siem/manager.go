@@ -12,7 +12,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -39,6 +41,13 @@ type Manager struct {
 	eventChan chan *Event
 	errChan   chan error
 	stats     *ManagerStats
+
+	// Persistence: when BufferConfig.Persist is true, events are
+	// written to a JSON-lines file in PersistDir before distribution.
+	// On startup, any persisted events are re-queued for delivery.
+	persistFile    string
+	persistEnabled bool
+	persistMu      sync.Mutex
 }
 
 // Client is the interface for SIEM platform clients.
@@ -118,6 +127,22 @@ func NewManager(config Config) (*Manager, error) {
 
 		m.clients[platformCfg.Platform] = client
 		m.stats.PlatformStats[platformCfg.Platform] = &PlatformStats{}
+	}
+
+	// Configure persistence
+	if config.Buffer.Persist {
+		persistDir := config.Buffer.PersistDir
+		if persistDir == "" {
+			persistDir = filepath.Join(os.TempDir(), "aegisgate-siem")
+		}
+		if err := os.MkdirAll(persistDir, 0750); err != nil {
+			return nil, NewError(PlatformCustom, "init", "failed to create persist directory", false, err)
+		}
+		m.persistFile = filepath.Join(persistDir, "events.jsonl")
+		m.persistEnabled = true
+
+		// Replay any persisted events from a previous run
+		m.replayPersistedEvents()
 	}
 
 	return m, nil
@@ -352,6 +377,9 @@ func (m *Manager) processEvents() {
 
 // distributeEvent sends an event to all platform clients.
 func (m *Manager) distributeEvent(event *Event) {
+	// Persist event to disk before distribution (if enabled)
+	m.persistEvent(event)
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -407,6 +435,120 @@ func (m *Manager) collectErrors() {
 			}
 		}
 	}
+}
+
+// ============================================================================
+// Persistence: write events to disk for durability
+// ============================================================================
+
+// persistEvent writes an event to the JSON-lines persistence file.
+// This is called before distribution so that events survive process restarts.
+func (m *Manager) persistEvent(event *Event) {
+	if !m.persistEnabled {
+		return
+	}
+
+	m.persistMu.Lock()
+	defer m.persistMu.Unlock()
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("SIEM: failed to marshal event for persistence: %v", err)
+		return
+	}
+
+	f, err := os.OpenFile(m.persistFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
+	if err != nil {
+		log.Printf("SIEM: failed to open persist file: %v", err)
+		return
+	}
+	defer f.Close()
+
+	data = append(data, '\n')
+	if _, err := f.Write(data); err != nil {
+		log.Printf("SIEM: failed to write event to persist file: %v", err)
+	}
+}
+
+// replayPersistedEvents reads events from the persistence file and re-queues
+// them for delivery. Called during NewManager initialization.
+func (m *Manager) replayPersistedEvents() {
+	m.persistMu.Lock()
+	defer m.persistMu.Unlock()
+
+	data, err := os.ReadFile(m.persistFile)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("SIEM: failed to read persist file: %v", err)
+		}
+		return
+	}
+
+	if len(data) == 0 {
+		return
+	}
+
+	lines := 0
+	replayed := 0
+	for _, line := range splitLines(data) {
+		lines++
+		line = trimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		var event Event
+		if err := json.Unmarshal(line, &event); err != nil {
+			log.Printf("SIEM: failed to unmarshal persisted event: %v", err)
+			continue
+		}
+
+		// Re-queue the event (non-blocking; drop if channel is full)
+		select {
+		case m.eventChan <- &event:
+			replayed++
+		default:
+			// Channel full; event will be lost
+			log.Printf("SIEM: event channel full during replay, dropping event %s", event.ID)
+		}
+	}
+
+	// Truncate the file after successful replay
+	if replayed > 0 {
+		log.Printf("SIEM: replayed %d/%d persisted events", replayed, lines)
+	}
+	if err := os.Truncate(m.persistFile, 0); err != nil {
+		log.Printf("SIEM: failed to truncate persist file after replay: %v", err)
+	}
+}
+
+// splitLines splits byte data into lines without allocating strings.
+func splitLines(data []byte) [][]byte {
+	var lines [][]byte
+	start := 0
+	for i, b := range data {
+		if b == '\n' {
+			lines = append(lines, data[start:i])
+			start = i + 1
+		}
+	}
+	if start < len(data) {
+		lines = append(lines, data[start:])
+	}
+	return lines
+}
+
+// trimSpace trims leading and trailing whitespace from a byte slice.
+func trimSpace(data []byte) []byte {
+	start := 0
+	end := len(data)
+	for start < end && (data[start] == ' ' || data[start] == '\t' || data[start] == '\r') {
+		start++
+	}
+	for end > start && (data[end-1] == ' ' || data[end-1] == '\t' || data[end-1] == '\r') {
+		end--
+	}
+	return data[start:end]
 }
 
 // ============================================================================
