@@ -1,6 +1,6 @@
 ## [3.6.2] - 2026-08-02 - Performance, Persistence, SIEM Coverage, Bug Fixes 🔒
 
-> **v3.6.2** is a stability, performance, and completeness release. It fixes pkg/i18n coverage (59.3% → 90.6%), hardens the Docker testlab, optimizes the proxy hot path, delivers the first comprehensive performance benchmark suite, closes all remaining persistence gaps (Incident PostgreSQL, SIEM durability, reporting delivery), adds 3 SIEM integrations (Datadog, CloudWatch, SecurityHub → 11/11 platforms), and fixes 2 tenant-management bugs. 101 packages, 10,831+ tests, 0 failures, 0 race conditions.
+> **v3.6.2** is a stability, performance, and completeness release. It fixes pkg/i18n coverage (59.3% → 90.6%), hardens the Docker testlab, optimizes the proxy hot path, delivers the first comprehensive performance benchmark suite, closes all remaining persistence gaps (Incident PostgreSQL, SIEM durability, reporting delivery), adds 3 SIEM integrations (Datadog, CloudWatch, SecurityHub → 11/11 platforms), and fixes 2 tenant-management bugs. 102 packages, 11,200+ tests, 0 failures, 0 race conditions.
 
 ### Performance (v3.6.2 Benchmarks)
 
