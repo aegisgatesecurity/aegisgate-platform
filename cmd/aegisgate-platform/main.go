@@ -1498,6 +1498,23 @@ func main() {
 	compliance.RegisterBuiltinFrameworksIntoRegistry(complianceRegistry)
 	complianceScanner := compliance.NewScanner(complianceRegistry, &compliance.ScannerOpts{CacheTTL: 5 * time.Minute})
 	complianceAPI := compliance.NewAPI(complianceScanner, licenseMgr)
+
+	// Wire v3.6.1 compliance sub-engines (policy engine, evidence
+	// collector, audit trail). These are optional components — the
+	// API serves 503/404 when they are nil — so we construct and
+	// inject them here to activate /policy-engine, /evidence/collect,
+	// /evidence/verify, and /audit-trail endpoints.
+	policyEngine := compliance.NewPolicyEngine()
+	complianceAPI.SetPolicyEngine(policyEngine)
+
+	evidenceCollector := compliance.NewEvidenceCollector()
+	complianceAPI.SetEvidenceCollector(evidenceCollector)
+
+	auditTrail := compliance.NewAuditTrail()
+	complianceAPI.SetAuditTrail(auditTrail)
+
+	log.Printf("[COMPLIANCE] Policy engine, evidence collector, and audit trail wired into compliance API")
+
 	dashMux.Handle("/api/v1/compliance/", complianceAPI)
 
 	// Evidence Package API (v3.3.0+ Track 2). Constructed from the live
