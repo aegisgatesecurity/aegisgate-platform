@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Package soar provides Security Orchestration, Automation, and Response
 // integration for the AegisGate Platform.
 //
