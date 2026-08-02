@@ -114,6 +114,9 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "gdpr", ControlID: "GDPR-5", Title: "Data minimization"},
 			{Framework: "fedramp", ControlID: "FedRAMP-MP-1", Title: "Media Protection Policy"},
 			{Framework: "cjis", ControlID: "CJIS-IM-001", Title: "Information Management Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-003", Title: "Record Destruction Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-001", Title: "Directory Information Classification"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-002", Title: "AI Training Data Consent"},
 		},
 	},
 
@@ -141,6 +144,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art14-001", Title: "Human oversight measures"},
 			{Framework: "gdpr", ControlID: "GDPR-13", Title: "Information to data subjects"},
 			{Framework: "cjis", ControlID: "CJIS-PS-002", Title: "Security Awareness Training"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-001", Title: "Education Records Access"},
 		},
 	},
 
@@ -276,6 +280,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art13-001", Title: "Transparency and provision of information"},
 			{Framework: "gdpr", ControlID: "GDPR-25", Title: "Data protection by design"},
 			{Framework: "cjis", ControlID: "CJIS-AC-002", Title: "Account Management"},
+			{Framework: "ferpa", ControlID: "FERPA-DS-001", Title: "Administrative Data Safeguards"},
 		},
 	},
 
@@ -375,6 +380,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-AC-14", Title: "Permitted Actions Without Identification"},
 			{Framework: "fedramp", ControlID: "FedRAMP-PE-1", Title: "Physical and Environmental Protection Policy"},
 			{Framework: "cjis", ControlID: "CJIS-PP-001", Title: "Physical Protection Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-DS-002", Title: "Physical Data Safeguards"},
 		},
 	},
 
@@ -409,6 +415,9 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-AI-003", Title: "Real-time remote biometric identification"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art12-001", Title: "Record-keeping requirements"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art15-007", Title: "Cybersecurity requirements"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-001", Title: "AI Model Student Data Protection"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-002", Title: "AI Training Data Consent"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-004", Title: "AI Bias Detection in Education"},
 		},
 	},
 
@@ -451,6 +460,10 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-IA-6", Title: "Authenticator Feedback"},
 			{Framework: "fedramp", ControlID: "FedRAMP-IA-8", Title: "Non-Organizational Users"},
 			{Framework: "cjis", ControlID: "CJIS-AC-001", Title: "Access Control Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-001", Title: "Education Records Access"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-002", Title: "Opt-Out Mechanism"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-003", Title: "Disclosure Consent"},
+			{Framework: "ferpa", ControlID: "FERPA-CD-001", Title: "Authorized Disclosure"},
 		},
 	},
 
@@ -485,6 +498,11 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-AU-16", Title: "Cross-Organization Audit Logging"},
 			{Framework: "eu_ai_act", ControlID: "EUAIAct-Art12-001", Title: "Automatic Logging"},
 			{Framework: "cjis", ControlID: "CJIS-IM-003", Title: "Record Retention"},
+			{Framework: "ferpa", ControlID: "FERPA-CD-003", Title: "Law Enforcement Unit Records"},
+			{Framework: "ferpa", ControlID: "FERPA-CD-001", Title: "Authorized Disclosure"},
+			{Framework: "ferpa", ControlID: "FERPA-DS-003", Title: "Technical Data Safeguards"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-003", Title: "AI Audit Trail for Education Records"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-003", Title: "Disclosure Consent"},
 		},
 	},
 
@@ -526,6 +544,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "cjis", ControlID: "CJIS-CR-001", Title: "Encryption at Rest"},
 			{Framework: "cjis", ControlID: "CJIS-CR-002", Title: "Encryption in Transit"},
 			{Framework: "cjis", ControlID: "CJIS-CR-003", Title: "Key Management"},
+			{Framework: "ferpa", ControlID: "FERPA-DS-003", Title: "Technical Data Safeguards"},
 		},
 	},
 
@@ -652,6 +671,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-SI-8", Title: "Spam Protection"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SC-28", Title: "Protection of Information at Rest"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SI-3", Title: "Malicious Code Protection"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-001", Title: "AI Model Student Data Protection"},
 		},
 	},
 
@@ -680,6 +700,9 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-CM-6", Title: "Configuration Settings"},
 			{Framework: "fedramp", ControlID: "FedRAMP-CM-8", Title: "System Component Information"},
 			{Framework: "cjis", ControlID: "CJIS-IM-001", Title: "Information Management Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-003", Title: "Record Destruction Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-001", Title: "Directory Information Classification"},
+			{Framework: "ferpa", ControlID: "FERPA-AI-002", Title: "AI Training Data Consent"},
 		},
 	},
 
@@ -740,6 +763,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "fedramp", ControlID: "FedRAMP-AU-6", Title: "Audit Review, Analysis, and Reporting"},
 			{Framework: "fedramp", ControlID: "FedRAMP-SI-4", Title: "Information System Monitoring"},
 			{Framework: "cjis", ControlID: "CJIS-PS-003", Title: "Incident Response Training"},
+			{Framework: "ferpa", ControlID: "FERPA-CD-002", Title: "Health/Safety Exception"},
 		},
 	},
 
@@ -988,6 +1012,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "cjis", ControlID: "CJIS-PS-002", Title: "Security Awareness Training"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-001", Title: "Education Records Access"},
 		},
 	},
 
@@ -1095,6 +1120,11 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "cjis", ControlID: "CJIS-AC-001", Title: "Access Control Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-001", Title: "Education Records Access"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-002", Title: "Opt-Out Mechanism"},
+			{Framework: "ferpa", ControlID: "FERPA-DI-003", Title: "Disclosure Consent"},
+			{Framework: "ferpa", ControlID: "FERPA-CD-001", Title: "Authorized Disclosure"},
+			{Framework: "ferpa", ControlID: "FERPA-ER-002", Title: "Record Amendment Rights"},
 		},
 	},
 
@@ -1227,6 +1257,7 @@ var Mapping = map[string]AegisGateControl{
 			{Framework: "tisax", ControlID: "TISAX-IS-04", Title: "Access Control"},
 			{Framework: "ccpa", ControlID: "CCPA-OS-01", Title: "Right to Opt-Out"},
 			{Framework: "cjis", ControlID: "CJIS-PS-001", Title: "Personnel Security Policy"},
+			{Framework: "ferpa", ControlID: "FERPA-DS-001", Title: "Administrative Data Safeguards"},
 		},
 	},
 
@@ -1386,6 +1417,7 @@ var FrameworkName = map[string]string{
 	"ccpa":       "CCPA/CPRA",
 	// v3.7.0 additions:
 	"cjis": "CJIS Security Policy v5.9.1",
+	"ferpa": "FERPA (34 CFR Part 99)",
 }
 
 // MapByControlID returns all external framework controls that the

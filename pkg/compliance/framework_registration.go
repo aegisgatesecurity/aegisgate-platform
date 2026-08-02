@@ -25,6 +25,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/core"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ccpa"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ferpa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cjis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cmmcl2"
@@ -269,6 +270,15 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("cjis", len(controls))
 		}
 	}()
+	// FERPA (34 CFR Part 99) (Professional tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := ferpa.NewFERPAModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("ferpa", len(controls))
+		}
+	}()
 
 	// Community frameworks (ATLAS, GDPR, OWASP LLM) use a different
 	// interface (common.Framework) that doesn't have Controls(). Their
@@ -322,6 +332,7 @@ func RegisterBuiltinFrameworksIntoRegistry(registry *Registry) {
 	registerIntoRegistry(registry, "nist_ai_600_1", nist_ai_600_1.NewNISTAIGenAIProfileModule())
 	registerIntoRegistry(registry, "owasp_web", owasp_web.NewOWASPWebModule())
 	registerIntoRegistry(registry, "cjis", cjis.NewCJISModule())
+	registerIntoRegistry(registry, "ferpa", ferpa.NewFERPAModule())
 }
 
 // registerIntoRegistry is a helper that safely registers a framework module
