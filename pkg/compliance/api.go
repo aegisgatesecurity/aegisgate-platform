@@ -37,6 +37,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 )
 
@@ -54,6 +55,9 @@ type API struct {
 	policyEngine *PolicyEngine
 	// evidenceCollector manages evidence collection. Optional.
 	evidenceCollector *EvidenceCollector
+	// i18nMgr provides internationalization support. Optional;
+	// if nil, all responses use English defaults.
+	i18nMgr *i18n.Manager
 }
 
 // NewAPI creates a new compliance HTTP API. Both scanner and mgr
@@ -77,6 +81,62 @@ func (a *API) SetPolicyEngine(pe *PolicyEngine) {
 // SetEvidenceCollector sets the evidence collector for the API.
 func (a *API) SetEvidenceCollector(ec *EvidenceCollector) {
 	a.evidenceCollector = ec
+}
+
+// SetI18N sets the internationalization manager for the API.
+// When set, the API detects the caller's preferred language from
+// the Accept-Language header and translates response messages
+// accordingly. If nil, all responses use English defaults.
+func (a *API) SetI18N(mgr *i18n.Manager) {
+	a.i18nMgr = mgr
+}
+
+// localeFromRequest detects the preferred locale from the
+// Accept-Language header. Returns the default locale if the
+// header is absent or no supported locale matches.
+func (a *API) localeFromRequest(r *http.Request) i18n.Locale {
+	if a.i18nMgr == nil {
+		return i18n.DefaultLocale
+	}
+	// Parse Accept-Language: en-US,en;q=0.9,fr;q=0.8
+	header := r.Header.Get("Accept-Language")
+	if header == "" {
+		return i18n.DefaultLocale
+	}
+	// Try each language tag in quality order
+	parts := strings.Split(header, ",")
+	for _, part := range parts {
+		// Strip quality value (;q=0.9)
+		tag := strings.TrimSpace(strings.Split(part, ";")[0])
+		// Normalize: take primary subtag (en-US -> en)
+		primary := strings.ToLower(strings.Split(tag, "-")[0])
+		locale := i18n.ParseLocale(primary)
+		if a.i18nMgr.HasLocale(locale) {
+			return locale
+		}
+	}
+	return i18n.DefaultLocale
+}
+
+// t translates a message key using the locale from the request.
+// Falls back to the key itself if i18n is not configured or the
+// key is not found in any loaded locale.
+func (a *API) t(r *http.Request, key string) string {
+	if a.i18nMgr == nil {
+		return key
+	}
+	locale := a.localeFromRequest(r)
+	return a.i18nMgr.TLocale(locale, key)
+}
+
+// tWith translates a message key with template variables using
+// the locale from the request.
+func (a *API) tWith(r *http.Request, key string, vars map[string]interface{}) string {
+	if a.i18nMgr == nil {
+		return key
+	}
+	locale := a.localeFromRequest(r)
+	return a.i18nMgr.TLocaleWith(locale, key, vars)
 }
 
 // ServeHTTP implements http.Handler. Strips the
