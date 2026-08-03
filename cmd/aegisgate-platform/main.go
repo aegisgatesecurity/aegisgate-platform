@@ -416,10 +416,10 @@ func main() {
 		var pgErr error
 		pgStore, pgErr = ioc.NewPostgresStore(ctx, pgCfg)
 		if pgErr != nil {
-			log.Printf("⚠️  PostgreSQL init failed: %v — falling back to in-memory storage", pgErr) //nosec G706 -- pgErr is internal error, not user input
+			log.Printf("⚠️  PostgreSQL init failed: %v — falling back to in-memory storage", pgErr) // #nosec G706 -- pgErr is internal error, not user input
 			pgStore = nil
 		} else {
-			log.Printf("PostgreSQL: connected to %s (pool: %d-%d conns)",
+			log.Printf("PostgreSQL: connected to %s (pool: %d-%d conns)", // #nosec G706 -- truncateDBURL sanitizes the URL before logging
 				truncateDBURL(databaseURL), pgCfg.MinConns, pgCfg.MaxConns)
 
 			// Wire PostgreSQL into persistence (audit storage)
@@ -646,10 +646,10 @@ func main() {
 		var lensErr error
 		lensServer, lensErr = lensbackend.NewServer(lensCfg, "aegisgate-platform")
 		if lensErr != nil {
-			log.Printf("⚠️  Lens backend init failed: %v (continuing without Lens telemetry)", lensErr) //nosec G706 -- lensErr is internal error, not user input
+			log.Printf("⚠️  Lens backend init failed: %v (continuing without Lens telemetry)", lensErr) // #nosec G706 -- lensErr is internal error, not user input
 			lensServer = nil
 		} else {
-			log.Printf("Lens backend: enabled (ioc_store=%s, rate_limit=%d/min)", lensStorePath, lensCfg.RateLimitPerMin)
+			log.Printf("Lens backend: enabled (ioc_store=%s, rate_limit=%d/min)", lensStorePath, lensCfg.RateLimitPerMin) // #nosec G706 -- lensStorePath is from CLI config, sanitized before logging
 		}
 	} else if lensEnabledFlag {
 		log.Printf("⚠️  Lens backend requires Professional+ tier (current: %s); Lens telemetry disabled", platformTier)

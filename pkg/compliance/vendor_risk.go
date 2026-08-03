@@ -169,7 +169,7 @@ func sanitizeID(s string) string {
 	var out []byte
 	for _, c := range s {
 		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') {
-			out = append(out, byte(c))
+			out = append(out, byte(c)) // #nosec G115 -- rune is alphanumeric (a-z, A-Z, 0-9), always fits in byte
 		}
 	}
 	if len(out) == 0 {

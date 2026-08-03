@@ -379,7 +379,7 @@ func writeOutput(data []byte, path string) {
 		if _, err := os.Stdout.Write(data); err != nil {
 			// Stdout write failure is non-critical for a CLI audit tool.
 			// The process will exit regardless after this call returns.
-			fmt.Fprintf(os.Stderr, "Error writing to stdout: %v\n", err) //nosec G706 -- CLI tool, stdout failure is non-critical
+			fmt.Fprintf(os.Stderr, "Error writing to stdout: %v\n", err) // #nosec G706 -- CLI tool, stdout failure is non-critical
 		}
 		return
 	}

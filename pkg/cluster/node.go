@@ -40,7 +40,7 @@ func InitNode(version, tier string) {
 		nodeID := os.Getenv("AEGISGATE_NODE_ID")
 		if nodeID == "" {
 			b := make([]byte, 8)
-			rand.Read(b) //nosec G404 -- not cryptographic, just unique
+			rand.Read(b) // #nosec G404 -- not cryptographic, just unique
 			nodeID = hex.EncodeToString(b)
 		}
 		hostname, _ := os.Hostname()

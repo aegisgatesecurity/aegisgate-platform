@@ -128,6 +128,7 @@ const (
 	CategoryPIIEmailIntl             Category = "pii_email_intl"
 
 	// Secrets categories (45)
+	//gosec:disable G101 -- Category constants are classifier labels, not credentials (see block comment at top of file).
 	CategorySecretAPIKey             Category = "secret_api_key"
 	CategorySecretAWSKey             Category = "secret_aws_key"
 	CategorySecretGitHubToken        Category = "secret_github_token"
@@ -174,6 +175,7 @@ const (
 	CategorySecretVercelKey          Category = "secret_vercel_key"
 	CategorySecretGroqKey            Category = "secret_groq_key"
 	CategorySecretReplicateKey       Category = "secret_replicate_key"
+	//gosec:enable G101
 
 	// XSS categories (11)
 	CategoryXSSJavaScriptDataURL Category = "xss_javascript_data_url"

@@ -72,7 +72,7 @@ func ClusterHealthHandler(node *NodeInfo, clusterMode string, localHealth map[st
 			// Encoding errors are logged but do not fail the request.
 			// The response has already started writing, so we cannot
 			// change the status code. This is a best-effort handler.
-			_ = err //nosec G706 -- health endpoint, encoding failure is non-critical
+			_ = err // #nosec G706 -- health endpoint, encoding failure is non-critical
 		}
 	}
 }

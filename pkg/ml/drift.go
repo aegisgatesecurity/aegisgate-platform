@@ -253,7 +253,7 @@ func (dm *DriftMonitor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	results := dm.CheckDrift()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"drift_results": results,
+		"drift_results": results, // #nosec G104 -- JSON encode error response; client disconnected is non-fatal
 		"timestamp":     time.Now().UTC().Format(time.RFC3339),
 	})
 }

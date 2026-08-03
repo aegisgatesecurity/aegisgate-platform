@@ -204,7 +204,7 @@ func (m *Manager) LoadLocaleFile(locale Locale, path string) error {
 	if strings.Contains(cleanPath, "..") {
 		return fmt.Errorf("i18n: path traversal not allowed: %s", cleanPath)
 	}
-	data, err := os.ReadFile(cleanPath) //nosec G304 -- path validated above
+	data, err := os.ReadFile(cleanPath) // #nosec G304 -- path validated above
 	if err != nil {
 		return fmt.Errorf("failed to read locale file: %w", err)
 	}

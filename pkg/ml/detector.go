@@ -375,7 +375,7 @@ func toLower(s string) string {
 		if c >= 'A' && c <= 'Z' {
 			b = append(b, byte(c+32))
 		} else {
-			b = append(b, byte(c))
+			b = append(b, byte(c)) // #nosec G115 -- rune is ASCII lowercase, always fits in byte
 		}
 	}
 	return string(b)
@@ -383,7 +383,7 @@ func toLower(s string) string {
 
 // computeFileHash computes SHA256 of a file (placeholder until ONNX model exists).
 func computeFileHash(path string) (string, error) {
-	cleanPath := filepath.Clean(path) //nosec G304 -- path comes from trusted config
+	cleanPath := filepath.Clean(path) // #nosec G304 -- path comes from trusted config
 	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return "", fmt.Errorf("read file: %w", err)

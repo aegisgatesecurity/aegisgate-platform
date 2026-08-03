@@ -186,7 +186,7 @@ func runBenchmarkRun(args []string) int {
 			fmt.Fprintf(os.Stderr, "benchmark run: report: %v\n", err)
 			return 1
 		}
-		if err := os.WriteFile(outFile, data, 0o600); err != nil { //nosec G703 -- outFile is a CLI flag, not user input from HTTP
+		if err := os.WriteFile(outFile, data, 0o600); err != nil { // #nosec G703 -- outFile is a CLI flag, not user input from HTTP
 			fmt.Fprintf(os.Stderr, "benchmark run: write %s: %v\n", outFile, err)
 			return 1
 		}
