@@ -23,9 +23,9 @@
 package ml
 
 import (
-	"path/filepath"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 )
 

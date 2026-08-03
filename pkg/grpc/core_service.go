@@ -118,7 +118,7 @@ func (s *CoreService) GetMetrics(ctx context.Context, req *GetMetricsRequest) (*
 	return &GetMetricsResponse{
 		TotalRequests:     stats.TotalRequests,
 		BlockedRequests:   stats.BlockedRequests,
-		ActiveUsers:       int32(stats.ActiveUsers), //nosec G115 -- bounded by protobuf int32 range
+		ActiveUsers:       int32(stats.ActiveUsers),       //nosec G115 -- bounded by protobuf int32 range
 		ActiveConnections: int32(stats.ActiveConnections), //nosec G115 -- bounded by protobuf int32 range
 		Uptime:            stats.Uptime,
 	}, nil
