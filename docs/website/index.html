@@ -142,13 +142,13 @@
             color: #999;
         }
         .test-mode-banner {
-            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
             color: white;
             text-align: center;
             padding: 20px;
             font-weight: 600;
             font-size: 1.1rem;
-            border-bottom: 3px solid #c05621;
+            border-bottom: 3px solid #276749;
         }
         .test-mode-banner code {
             background: rgba(0,0,0,0.2);
@@ -173,7 +173,7 @@
 </head>
 <body>
     <div class="test-mode-banner">
-        🟢 <strong>v3.4.3 — Security Hardened</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v3.4.3</code>.
+        🟢 <strong>v3.6.2 — PostgreSQL Persistence, 24 Compliance Frameworks, 11,200+ Tests</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v3.6.2</code>.
     </div>
     <header>
         <div class="container">
@@ -199,12 +199,12 @@
                     <p>Average Latency</p>
                 </div>
                 <div class="metric">
-                    <h3>14MB</h3>
-                    <p>Docker Image Size</p>
+                    <h3>11,200+</h3>
+                    <p>Tests Passing</p>
                 </div>
                 <div class="metric">
-                    <h3>2,454</h3>
-                    <p>Tests Passing</p>
+                    <h3>102</h3>
+                    <p>Packages Covered</p>
                 </div>
                 <div class="metric">
                     <h3>0</h3>
@@ -223,8 +223,8 @@
                     <p>One binary runs HTTP proxy (8080), MCP server (8081), and dashboard (8443). No separate deployments. No configuration drift.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>🔒 15+ Compliance Frameworks <span class="new-badge">v3.4.3</span></h3>
-                    <p><strong>Free:</strong> MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10 (Community tier, always on). <strong>Billable modules:</strong> HIPAA, PCI-DSS, SOC 2, ISO 42001, ISO 27001, NIST 800-171, HITRUST, TISAX, CMMC L2, FedRAMP (150 controls 🆕), FIPS 140-2/140-3, and EU AI Act (82 controls). All gated via the Compliance Scan Engine.</p>
+                    <h3>🔒 24 Compliance Frameworks <span class="new-badge">v3.6</span></h3>
+                    <p><strong>Free:</strong> MITRE ATLAS, NIST AI RMF, OWASP LLM Top 10 (Community tier, always on). <strong>Billable modules:</strong> HIPAA, PCI-DSS, SOC 2, ISO 42001, ISO 27001, NIST 800-171, HITRUST, TISAX, CMMC L2, FedRAMP, FIPS 140-2/140-3, EU AI Act, CJIS, and more. All gated via the Compliance Scan Engine.</p>
                 </div>
                 <div class="feature-card">
                     <h3>⚡ Lightning Performance</h3>
@@ -240,7 +240,7 @@
                 </div>
                 <div class="feature-card">
                     <h3>🏢 Production Ready</h3>
-                    <p>87.4% test coverage. Docker + Kubernetes ready. Health checks. Graceful shutdown. 24/7 ready.</p>
+                    <p>87%+ test coverage across 102 packages. Docker + Kubernetes ready. Health checks. Graceful shutdown. 24/7 ready.</p>
                 </div>
             </div>
         </div>
@@ -249,7 +249,7 @@
 
     <section class="features" style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
         <div class="container">
-            <h2>🆕 v3.4.3: Security Hardened, HA Clustering, 153-Pattern Detection</h2>
+            <h2>🆕 v3.6.2: PostgreSQL Persistence, 24 Frameworks, SIEM Integration</h2>
             <div style="max-width: 800px; margin: 0 auto; text-align: center; margin-bottom: 40px;">
                 <p style="font-size: 1.2rem; color: #4a5568;">
                     AegisGate is the first AI security gateway with <strong>full EU AI Act (Regulation 2024/1689) coverage</strong>.
@@ -260,24 +260,24 @@
                     <a href="https://aegisgatesecurity.io/pricing" style="color: #667eea;">💳 See pricing</a> &nbsp;|&nbsp;
                     <a href="https://github.com/aegisgatesecurity/aegisgate-platform" style="color: #667eea;">📦 View on GitHub</a>
                 </p>
-                <p style="font-size: 1rem; color: #718096; margin-top: 10px;">v3.4.3 hardens all authenticated endpoints, restricts metrics to localhost, and removes unsafe-eval from CSP. 26/27 red team tests pass.</p>
+                <p style="font-size: 1rem; color: #718096; margin-top: 10px;">v3.6.2 adds PostgreSQL persistence for audit/compliance/incident data, SIEM integration (CEF/Syslog/JSON), 12-locale i18n, CJIS framework, and 0 gosec findings.</p>
             </div>
             <div class="feature-grid" style="margin-top: 20px;">
                 <div class="feature-card">
-                    <h3>153 Detection Patterns</h3>
-                    <p>Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns. All wired into the 7-stage ResponseGuard pipeline with per-category severity and confidence.</p>
+                    <h3>157 Detection Patterns</h3>
+                    <p>Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35+9 compliance patterns. All wired into the 7-stage ResponseGuard pipeline with per-category severity and confidence.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>150 FedRAMP Controls</h3>
-                    <p>NIST 800-53 Moderate baseline across 18 families. Cross-framework traceability via hub-and-spoke model. Fuzz tests and performance benchmarks included.</p>
+                    <h3>24 Compliance Frameworks</h3>
+                    <p>966+ cross-framework references. FedRAMP (150 controls), CJIS, EU AI Act (82 controls), HIPAA, PCI-DSS, SOC 2, ISO 42001, ISO 27001, NIST 800-171, HITRUST, TISAX, CMMC L2, and more.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>6 PostgreSQL Suites</h3>
-                    <p>107 integration tests across IOC, persistence, RBAC, license, correlation, and attestation packages. testcontainers-go with ephemeral PostgreSQL 16. 4 production bugs found and fixed.</p>
+                    <h3>PostgreSQL Persistence</h3>
+                    <p>6 PostgreSQL stores for audit, compliance, incidents, attestation, correlation, and license data. 107 integration tests. PostgreSQL 16 with ephemeral testcontainers.</p>
                 </div>
                 <div class="feature-card">
-                    <h3>HA Clustering</h3>
-                    <p>Multi-node deployments with distributed rate limiting, instance identity headers, and cluster health monitoring. Professional+ tier.</p>
+                    <h3>12-Locale i18n</h3>
+                    <p>Full internationalization: en, es, fr, de, pt, ja, ko, zh, ar, hi, ru, and it. CJIS compliance terms included across all locales.</p>
                 </div>
             </div>
         </div>
@@ -294,13 +294,13 @@
   -p 8081:8081 \
   -p 8443:8443 \
   -v $(pwd)/data:/data \
-  aegisgatesecurity/aegisgate-platform:latest \
+  aegisgatesecurity/aegisgate-platform:v3.6.2 \
   --embedded-mcp --tier=community</code>
             </div>
 
             <h3>One-Line Install</h3>
             <div class="code-block">
-                <code>docker run -d -p 8443:8443 ghcr.io/aegisgatesecurity/aegisgate-platform:latest</code>
+                <code>docker run -d -p 8443:8443 ghcr.io/aegisgatesecurity/aegisgate-platform:v3.6.2</code>
             </div>
 
             <h3>Verify</h3>
