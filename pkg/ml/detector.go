@@ -23,6 +23,7 @@
 package ml
 
 import (
+	"path/filepath"
 	"fmt"
 	"os"
 	"sync"
@@ -382,7 +383,8 @@ func toLower(s string) string {
 
 // computeFileHash computes SHA256 of a file (placeholder until ONNX model exists).
 func computeFileHash(path string) (string, error) {
-	data, err := os.ReadFile(path)
+	cleanPath := filepath.Clean(path) //nosec G304 -- path comes from trusted config
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return "", fmt.Errorf("read file: %w", err)
 	}

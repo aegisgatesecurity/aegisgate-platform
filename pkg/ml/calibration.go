@@ -132,12 +132,12 @@ func (cm *CalibrationManager) FlushShadowLog() error {
 	// Ensure directory exists
 	dir := filepath.Dir(cm.logPath)
 	if dir != "." && dir != "" {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("create log directory: %w", err)
 		}
 	}
 
-	f, err := os.OpenFile(cm.logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(cm.logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("open shadow log: %w", err)
 	}

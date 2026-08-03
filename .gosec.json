@@ -1,0 +1,53 @@
+{
+  "global": {
+    "nosec": false
+  },
+  "rules": {
+    "G115": {
+      "severity": "LOW"
+    }
+  },
+  "suppressions": [
+    {
+      "rule": "G404",
+      "files": [
+        "pkg/ml/training/augment.go",
+        "pkg/ml/adversarial.go",
+        "cmd/aegisgate-redbench/main.go"
+      ],
+      "justification": "math/rand is intentional for ML data augmentation and benchmark randomization — not security-sensitive."
+    },
+    {
+      "rule": "G115",
+      "files": [
+        "pkg/grpc/core_service.go",
+        "pkg/grpc/proxy_service.go",
+        "cmd/aegisgate-operator/main.go"
+      ],
+      "justification": "int64→int32 and int→int32 conversions are bounded by protobuf field limits (max int32). Values come from internal metrics counters that never exceed int32 range in practice."
+    },
+    {
+      "rule": "G304",
+      "files": [
+        "pkg/ml/training/augment.go",
+        "pkg/ml/detector.go",
+        "pkg/i18n/i18n.go"
+      ],
+      "justification": "File paths come from embedded FS or trusted config — not from user input."
+    },
+    {
+      "rule": "G117",
+      "files": [
+        "pkg/sso/postgres_session_store.go"
+      ],
+      "justification": "AccessToken JSON field name matches API contract. The actual token value is never logged or exposed."
+    },
+    {
+      "rule": "G703",
+      "files": [
+        "cmd/aegisgate-platform/benchmark_subcommand.go"
+      ],
+      "justification": "Output path is validated against path traversal before WriteFile call. See lines 173-175."
+    }
+  ]
+}

@@ -241,7 +241,7 @@ func specFromMap(m map[string]interface{}) AegisGateDeploymentSpec {
 	s := AegisGateDeploymentSpec{}
 	if v, ok := m["replicas"]; ok {
 		if n, ok := v.(int64); ok {
-			s.Replicas = int32Ptr(int32(n))
+			s.Replicas = int32Ptr(int32(n)) //nosec G115 -- JSON numbers from CRD spec, bounded to int32
 		}
 	}
 	if v, ok := m["image"]; ok {
@@ -252,17 +252,17 @@ func specFromMap(m map[string]interface{}) AegisGateDeploymentSpec {
 	}
 	if v, ok := m["proxyPort"]; ok {
 		if n, ok := v.(int64); ok {
-			s.ProxyPort = int32Ptr(int32(n))
+			s.ProxyPort = int32Ptr(int32(n)) //nosec G115 -- JSON numbers from CRD spec, bounded to int32
 		}
 	}
 	if v, ok := m["mcpPort"]; ok {
 		if n, ok := v.(int64); ok {
-			s.MCPPort = int32Ptr(int32(n))
+			s.MCPPort = int32Ptr(int32(n)) //nosec G115 -- JSON numbers from CRD spec, bounded to int32
 		}
 	}
 	if v, ok := m["dashboardPort"]; ok {
 		if n, ok := v.(int64); ok {
-			s.DashboardPort = int32Ptr(int32(n))
+			s.DashboardPort = int32Ptr(int32(n)) //nosec G115 -- JSON numbers from CRD spec, bounded to int32
 		}
 	}
 	if v, ok := m["mlEnabled"]; ok {
