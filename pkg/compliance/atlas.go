@@ -753,7 +753,7 @@ func (f *ATLASFramework) PatternIntegrity() PatternIntegrityResult {
 		return pairs[i].ID < pairs[j].ID
 	})
 
-	h := sha256.New()
+	h := sha256.New() // codeql[go/weak-sensitive-data-hashing] -- SHA256 is used for pattern integrity verification (hashing regex IDs and pattern strings to detect rule tampering), NOT for password hashing. No passwords or credentials are hashed here.
 	for _, pair := range pairs {
 		h.Write([]byte(pair.ID))
 		h.Write([]byte(pair.Regex))
