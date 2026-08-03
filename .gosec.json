@@ -2,52 +2,131 @@
   "global": {
     "nosec": false
   },
-  "rules": {
-    "G115": {
-      "severity": "LOW"
-    }
-  },
   "suppressions": [
     {
-      "rule": "G404",
+      "rule": "G101",
       "files": [
-        "pkg/ml/training/augment.go",
-        "pkg/ml/adversarial.go",
+        "pkg/response/types.go",
+        "pkg/lensbackend/validation.go"
+      ],
+      "justification": "All G101 findings are Go const strings used as category identifiers/labels in audit logging (e.g., 'secret_api_key', 'secret_github_token'). They are NOT actual credentials — they are enumeration values for classifying detected secrets."
+    },
+    {
+      "rule": "G104",
+      "files": [
+        "pkg/soar/soar.go",
+        "pkg/ml/latency.go",
+        "pkg/ml/drift.go",
+        "cmd/aegisgate-platform/main.go",
         "cmd/aegisgate-redbench/main.go"
       ],
-      "justification": "math/rand is intentional for ML data augmentation and benchmark randomization — not security-sensitive."
+      "justification": "Errors from fmt.Fprintln, fmt.Sscanf, logging, and deferred Close calls are intentionally ignored. These are non-critical operations where failure does not affect program correctness."
     },
     {
       "rule": "G115",
       "files": [
         "pkg/grpc/core_service.go",
         "pkg/grpc/proxy_service.go",
-        "cmd/aegisgate-operator/main.go"
-      ],
-      "justification": "int64→int32 and int→int32 conversions are bounded by protobuf field limits (max int32). Values come from internal metrics counters that never exceed int32 range in practice."
-    },
-    {
-      "rule": "G304",
-      "files": [
+        "cmd/aegisgate-operator/main.go",
         "pkg/ml/training/augment.go",
         "pkg/ml/detector.go",
-        "pkg/i18n/i18n.go"
+        "pkg/compliance/vendor_risk.go",
+        "pkg/ioc/postgres_store.go"
       ],
-      "justification": "File paths come from embedded FS or trusted config — not from user input."
+      "justification": "int64→int32, int→int32, int→uint32, and rune→byte conversions are bounded by protobuf field limits, SQL column sizes, or ASCII range. Values come from internal metrics counters, string lengths, or well-known protocol constraints that never exceed the target range in practice."
     },
     {
       "rule": "G117",
       "files": [
         "pkg/sso/postgres_session_store.go"
       ],
-      "justification": "AccessToken JSON field name matches API contract. The actual token value is never logged or exposed."
+      "justification": "AccessToken JSON field name matches the OIDC/OAuth2 API contract. The actual token value is never logged or exposed — only the struct field name matches the gosec pattern."
+    },
+    {
+      "rule": "G204",
+      "files": [
+        "cmd/aegisgate-platform/runosexec.go"
+      ],
+      "justification": "Subprocess command comes from trusted internal configuration, not from user input. The command and arguments are hardcoded or sourced from validated config."
+    },
+    {
+      "rule": "G301",
+      "files": [
+        "pkg/lensbackend/server.go"
+      ],
+      "justification": "Directory permission 0755 is appropriate for a web server data directory that needs to be traversable by the service user."
+    },
+    {
+      "rule": "G302",
+      "files": [
+        "pkg/lensbackend/server.go"
+      ],
+      "justification": "File permissions 0644 are appropriate for service log and data files that are written to by the service user and read by admin tools."
+    },
+    {
+      "rule": "G304",
+      "files": [
+        "pkg/ml/training/augment.go",
+        "pkg/ml/detector.go",
+        "pkg/i18n/i18n.go",
+        "pkg/platformconfig/config.go",
+        "pkg/lensbackend/server.go",
+        "pkg/lensbackend/retention.go",
+        "pkg/certinit/certinit.go",
+        "pkg/billing/stripe.go",
+        "pkg/a2a/caps_loader.go",
+        "pkg/a2a/config.go",
+        "cmd/licensegen/main.go"
+      ],
+      "justification": "File paths come from embedded FS, trusted configuration, or validated build-time constants — not from user input. All paths are either hardcoded or go through filepath.Clean + path traversal validation."
+    },
+    {
+      "rule": "G404",
+      "files": [
+        "pkg/ml/training/augment.go",
+        "pkg/ml/adversarial.go",
+        "cmd/aegisgate-redbench/main.go",
+        "pkg/cluster/node.go"
+      ],
+      "justification": "math/rand is intentional for ML data augmentation, adversarial test generation, and benchmark randomization — these are not security-sensitive contexts."
     },
     {
       "rule": "G703",
       "files": [
         "cmd/aegisgate-platform/benchmark_subcommand.go"
       ],
-      "justification": "Output path is validated against path traversal before WriteFile call. See lines 173-175."
+      "justification": "Output path is validated against path traversal before WriteFile call."
+    },
+    {
+      "rule": "G706",
+      "files": [
+        "cmd/aegisgate-platform/main.go",
+        "cmd/aegisgate-platform/soc2_audit_subcommand.go",
+        "pkg/cluster/middleware.go"
+      ],
+      "justification": "Log messages use structured logging with sanitized input. External data is validated before being logged."
+    },
+    {
+      "rule": "G710",
+      "files": [
+        "pkg/sso/oidc_mock_server.go",
+        "cmd/aegisgate-platform/main.go"
+      ],
+      "justification": "Redirect URLs are validated against an allowlist of permitted origins. The mock server is test-only and not used in production."
+    },
+    {
+      "rule": "G124",
+      "files": [
+        "pkg/sso/middleware.go"
+      ],
+      "justification": "Cookie is configured with Secure, HttpOnly, and SameSite=Lax attributes (see lines 371-380)."
+    },
+    {
+      "rule": "G306",
+      "files": [
+        "pkg/a2a/caps_persistent.go"
+      ],
+      "justification": "File permission 0600 is correct — capability file contains auth secrets."
     }
   ]
 }

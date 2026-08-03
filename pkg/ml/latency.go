@@ -409,7 +409,7 @@ func optimizedDetectWithSets(td *ThreatDetector, optimizer *LatencyOptimizer, te
 // hashInput produces a uint64 hash for cache lookups.
 func hashInput(text string) uint64 {
 	h := fnv.New64a()
-	h.Write([]byte(text))
+	h.Write([]byte(text)) // #nosec G104 -- fnv.Write never returns an error; return value always nil
 	return h.Sum64()
 }
 

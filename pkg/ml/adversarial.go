@@ -151,7 +151,7 @@ func TestAdversarialRobustness(scanner Scanner, config AdversarialTestConfig) (*
 		return nil, fmt.Errorf("scanner is nil")
 	}
 
-	rng := rand.New(rand.NewSource(config.RandomSeed))
+	rng := rand.New(rand.NewSource(config.RandomSeed)) // #nosec G404 -- math/rand intentional for adversarial test randomization
 	result := &AdversarialTestResult{
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}

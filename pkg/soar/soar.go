@@ -772,8 +772,8 @@ func (m *Manager) doRequest(ctx context.Context, method, url string, body []byte
 
 		// Retry on server errors (5xx)
 		if resp.StatusCode >= 500 {
-			respBody, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			respBody, _ := io.ReadAll(resp.Body) // #nosec G104 -- response body read after error check; error intentionally discarded
+			resp.Body.Close()                    // #nosec G104 -- response body close; error is non-fatal in error handler path
 			lastErr = fmt.Errorf("server error: HTTP %d", resp.StatusCode)
 			_ = respBody
 			continue

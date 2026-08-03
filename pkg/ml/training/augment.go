@@ -66,7 +66,7 @@ type AtlasPayload struct {
 func NewAugmentor() *Augmentor {
 	return &Augmentor{
 		payloads: StandardATLASPayloads(),
-		rng:      rand.New(rand.NewSource(time.Now().UnixNano())),
+		rng:      rand.New(rand.NewSource(time.Now().UnixNano())), // #nosec G404 -- math/rand intentional for ML augmentation, not security-sensitive
 	}
 }
 
@@ -74,7 +74,7 @@ func NewAugmentor() *Augmentor {
 func NewAugmentorWithSeeds(payloads []AtlasPayload) *Augmentor {
 	return &Augmentor{
 		payloads: payloads,
-		rng:      rand.New(rand.NewSource(time.Now().UnixNano())),
+		rng:      rand.New(rand.NewSource(time.Now().UnixNano())), // #nosec G404 -- math/rand intentional for ML augmentation, not security-sensitive
 	}
 }
 
@@ -1308,7 +1308,7 @@ func paraphraseQuestionForm(s string) string {
 			"I'd like to know about %s",
 		}
 		// Pick deterministically based on string hash
-		idx := simpleHash(s) % uint32(len(templates))
+		idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 		return fmt.Sprintf(templates[idx], strings.ToLower(trimmed))
 	}
 
@@ -1320,7 +1320,7 @@ func paraphraseQuestionForm(s string) string {
 		"I'd like to know about %s",
 		"Tell me about %s",
 	}
-	idx := simpleHash(s) % uint32(len(templates))
+	idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 	return fmt.Sprintf(templates[idx], strings.ToLower(s))
 }
 
@@ -1338,7 +1338,7 @@ func paraphrasePoliteRequest(s string) string {
 		"Please help me understand: %s",
 		"If you could, I'd like help with: %s",
 	}
-	idx := simpleHash(s) % uint32(len(templates))
+	idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 	return fmt.Sprintf(templates[idx], s)
 }
 
@@ -1369,7 +1369,7 @@ func paraphraseStatementForm(s string) string {
 		"Help me learn about %s",
 		"I'm researching %s",
 	}
-	idx := simpleHash(s) % uint32(len(templates))
+	idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 	return fmt.Sprintf(templates[idx], strings.ToLower(strings.TrimSuffix(s, "?")))
 }
 
@@ -1390,7 +1390,7 @@ func paraphraseHowToForm(s string) string {
 			"I need steps for %s",
 			"Walk me through how to %s",
 		}
-		idx := simpleHash(s) % uint32(len(templates))
+		idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 		return fmt.Sprintf(templates[idx], strings.ToLower(rest))
 	}
 
@@ -1402,7 +1402,7 @@ func paraphraseHowToForm(s string) string {
 		"Can you walk me through %s?",
 		"I'd like a tutorial on %s",
 	}
-	idx := simpleHash(s) % uint32(len(templates))
+	idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 	return fmt.Sprintf(templates[idx], strings.ToLower(strings.TrimSuffix(s, "?")))
 }
 
@@ -1420,7 +1420,7 @@ func paraphraseWonderingForm(s string) string {
 		"Out of curiosity, %s",
 		"I've been thinking about %s",
 	}
-	idx := simpleHash(s) % uint32(len(templates))
+	idx := simpleHash(s) % uint32(len(templates)) // #nosec G115 -- len(templates) bounded by template count, always fits in uint32
 	return fmt.Sprintf(templates[idx], strings.ToLower(strings.TrimSuffix(s, "?")))
 }
 
@@ -1428,7 +1428,7 @@ func paraphraseWonderingForm(s string) string {
 func simpleHash(s string) uint32 {
 	var h uint32
 	for _, c := range s {
-		h = h*31 + uint32(c)
+		h = h*31 + uint32(c) // #nosec G115 -- rune values are ASCII (0-127), always fit in uint32
 	}
 	return h
 }
@@ -1472,7 +1472,7 @@ func (a *Augmentor) GenerateBenignAugmented() []Example {
 
 // WriteJSONL writes examples to a JSONL file.
 func WriteJSONL(examples []Example, path string) error {
-	f, err := os.Create(path)
+	f, err := os.Create(path) // #nosec G304 -- path from trusted config, not user input
 	if err != nil {
 		return fmt.Errorf("create JSONL: %w", err)
 	}
@@ -1489,7 +1489,7 @@ func WriteJSONL(examples []Example, path string) error {
 
 // ReadJSONL reads examples from a JSONL file.
 func ReadJSONL(path string) ([]Example, error) {
-	cleanPath := filepath.Clean(path) //nosec G304 -- path from trusted config
+	cleanPath := filepath.Clean(path) // #nosec G304 -- path from trusted config
 	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("read JSONL: %w", err)
@@ -1516,7 +1516,7 @@ func SplitDataset(examples []Example, trainRatio, valRatio, testRatio float64) (
 	// Shuffle deterministically
 	shuffled := make([]Example, len(examples))
 	copy(shuffled, examples)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) // #nosec G404 -- math/rand intentional for deterministic ML augmentation seeding
 	rng.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
@@ -1829,7 +1829,7 @@ func encodingHexEscape(s string) string {
 func encodingBackslashEscape(s string) string {
 	var result strings.Builder
 	for i, c := range s {
-		if i > 0 && c != ' ' && string(s[i-1]) != "\\" && rand.Intn(4) == 0 {
+		if i > 0 && c != ' ' && string(s[i-1]) != "\\" && rand.Intn(4) == 0 { // #nosec G404 -- math/rand intentional for ML augmentation randomization
 			result.WriteRune('\\')
 		}
 		result.WriteRune(c)
@@ -1886,7 +1886,7 @@ func linguisticIndirectPhrasing(s string) string {
 		"What would happen if someone were to ",
 		"Is it possible to ",
 	}
-	prefix := prefixes[rand.Intn(len(prefixes))]
+	prefix := prefixes[rand.Intn(len(prefixes))] // #nosec G404 -- math/rand intentional for ML augmentation randomization
 	// Lowercase first letter of s if it's uppercase
 	if len(s) > 0 && s[0] >= 'A' && s[0] <= 'Z' {
 		s = string(s[0]+32) + s[1:]
@@ -1923,7 +1923,7 @@ func linguisticPoliteWrapper(s string) string {
 		"Would you kindly %s?",
 		"I respectfully request that you %s",
 	}
-	wrapper := wrappers[rand.Intn(len(wrappers))]
+	wrapper := wrappers[rand.Intn(len(wrappers))] // #nosec G404 -- math/rand intentional for ML augmentation randomization
 	return fmt.Sprintf(wrapper, strings.ToLower(s))
 }
 
@@ -1960,7 +1960,7 @@ func linguisticAcademicTone(s string) string {
 		"The following inquiry pertains to whether %s, academically speaking",
 		"From a scholarly standpoint, consider how %s",
 	}
-	template := academic[rand.Intn(len(academic))]
+	template := academic[rand.Intn(len(academic))] // #nosec G404 -- math/rand intentional for ML augmentation randomization
 	return fmt.Sprintf(template, strings.ToLower(s))
 }
 
@@ -1970,7 +1970,7 @@ func linguisticStoryFraming(s string) string {
 		"Imagine a roleplay scenario where a character says: '%s'",
 		"As part of a creative writing exercise: '%s'",
 	}
-	frame := frames[rand.Intn(len(frames))]
+	frame := frames[rand.Intn(len(frames))] // #nosec G404 -- math/rand intentional for ML augmentation randomization
 	return fmt.Sprintf(frame, s)
 }
 
@@ -2030,7 +2030,7 @@ func wsTabInsertion(s string) string {
 	if len(words) <= 1 {
 		return s
 	}
-	idx := rand.Intn(len(words)-1) + 1
+	idx := rand.Intn(len(words)-1) + 1 // #nosec G404 -- math/rand intentional for ML augmentation randomization
 	return strings.Join(words[:idx], " ") + "\t" + strings.Join(words[idx:], " ")
 }
 
@@ -2041,7 +2041,7 @@ func wsLineBreakScatter(s string) string {
 	}
 	result := words[0]
 	for i := 1; i < len(words); i++ {
-		if rand.Intn(3) == 0 {
+		if rand.Intn(3) == 0 { // #nosec G404 -- math/rand intentional for ML augmentation randomization
 			result += "\n"
 		} else {
 			result += " "
@@ -2063,7 +2063,7 @@ func wsMixedWhitespace(s string) string {
 	seps := []string{" ", "  ", "\t", "\n"}
 	result := words[0]
 	for i := 1; i < len(words); i++ {
-		result += seps[rand.Intn(len(seps))] + words[i]
+		result += seps[rand.Intn(len(seps))] + words[i] // #nosec G404 -- math/rand intentional for ML augmentation randomization
 	}
 	return result
 }

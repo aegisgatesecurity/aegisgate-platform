@@ -359,7 +359,7 @@ func main() {
 				detected++
 			}
 			// Small delay to avoid overwhelming the proxy
-			time.Sleep(time.Duration(100+rand.Intn(200)) * time.Millisecond)
+			time.Sleep(time.Duration(100+rand.Intn(200)) * time.Millisecond) // #nosec G404 -- math/rand intentional for benchmark jitter, not security-sensitive
 		}
 
 		result.Detected = detected
@@ -400,7 +400,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error marshaling report: %v\n", err)
 			os.Exit(1)
 		}
-		if err := os.WriteFile(outputFile, data, 0600); err != nil { //nosec G306
+		if err := os.WriteFile(outputFile, data, 0600); err != nil { // #nosec G306
 			fmt.Fprintf(os.Stderr, "Error writing report: %v\n", err)
 			os.Exit(1)
 		}
@@ -481,6 +481,6 @@ func hasFlag(name string) bool {
 
 func atoi(s string) int {
 	var n int
-	fmt.Sscanf(s, "%d", &n)
+	fmt.Sscanf(s, "%d", &n) // #nosec G104 -- atoi helper; Sscanf error means s is not a number, returning 0 is acceptable
 	return n
 }
