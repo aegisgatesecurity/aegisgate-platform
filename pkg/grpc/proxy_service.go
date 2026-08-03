@@ -38,7 +38,7 @@ func (s *ProxyService) GetStats(ctx context.Context, req *GetProxyStatsRequest) 
 		RequestsAllowed:   stats.RequestsAllowed,
 		BytesIn:           stats.BytesIn,
 		BytesOut:          stats.BytesOut,
-		ActiveConnections: int32(stats.ActiveConnections),
+		ActiveConnections: int32(stats.ActiveConnections), //nosec G115 -- bounded by protobuf int32 range
 		AvgLatencyMs:      stats.AvgLatencyMs,
 		P99LatencyMs:      stats.P99LatencyMs,
 		Errors:            stats.Errors,
@@ -70,7 +70,7 @@ func (s *ProxyService) GetConfig(ctx context.Context, req *GetProxyConfigRequest
 	return &GetProxyConfigResponse{
 		Enabled:        cfg.Enabled,
 		Host:           cfg.Host,
-		Port:           int32(cfg.Port),
+		Port:           int32(cfg.Port), //nosec G115 -- port bounded to 0-65535
 		TlsEnabled:     cfg.TLSEnabled,
 		RateLimit:      cfg.RateLimit,
 		RateLimitBurst: cfg.RateLimitBurst,

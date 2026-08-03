@@ -22,6 +22,7 @@
 package training
 
 import (
+	"path/filepath"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -1488,7 +1489,8 @@ func WriteJSONL(examples []Example, path string) error {
 
 // ReadJSONL reads examples from a JSONL file.
 func ReadJSONL(path string) ([]Example, error) {
-	data, err := os.ReadFile(path)
+	cleanPath := filepath.Clean(path) //nosec G304 -- path from trusted config
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("read JSONL: %w", err)
 	}

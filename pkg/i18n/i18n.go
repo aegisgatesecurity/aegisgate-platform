@@ -199,7 +199,12 @@ func (m *Manager) loadFromDirectory(dir string) error {
 
 // LoadLocaleFile loads a locale from a JSON file
 func (m *Manager) LoadLocaleFile(locale Locale, path string) error {
-	data, err := os.ReadFile(path)
+	// Validate path to prevent directory traversal (gosec G304).
+	cleanPath := filepath.Clean(path)
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("i18n: path traversal not allowed: %s", cleanPath)
+	}
+	data, err := os.ReadFile(cleanPath) //nosec G304 -- path validated above
 	if err != nil {
 		return fmt.Errorf("failed to read locale file: %w", err)
 	}

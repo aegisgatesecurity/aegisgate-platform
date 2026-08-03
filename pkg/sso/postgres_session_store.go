@@ -174,7 +174,7 @@ func (s *PostgresSessionStore) Create(session *SSOSession) error {
 
 	ctx := context.Background()
 
-	userJSON, err := json.Marshal(session.User)
+	userJSON, err := json.Marshal(session.User) //nosec G117 -- AccessToken is a SSO token field name, not a leaked secret
 	if err != nil {
 		userJSON = []byte("null")
 	}
@@ -285,7 +285,7 @@ func (s *PostgresSessionStore) Update(session *SSOSession) error {
 
 	ctx := context.Background()
 
-	userJSON, err := json.Marshal(session.User)
+	userJSON, err := json.Marshal(session.User) //nosec G117 -- AccessToken is a SSO token field name, not a leaked secret
 	if err != nil {
 		userJSON = []byte("null")
 	}

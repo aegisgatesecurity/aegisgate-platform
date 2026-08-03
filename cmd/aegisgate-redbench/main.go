@@ -400,7 +400,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error marshaling report: %v\n", err)
 			os.Exit(1)
 		}
-		if err := os.WriteFile(outputFile, data, 0644); err != nil {
+		if err := os.WriteFile(outputFile, data, 0600); err != nil { //nosec G306
 			fmt.Fprintf(os.Stderr, "Error writing report: %v\n", err)
 			os.Exit(1)
 		}
