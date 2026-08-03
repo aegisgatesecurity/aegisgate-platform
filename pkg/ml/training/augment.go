@@ -22,12 +22,12 @@
 package training
 
 import (
-	"path/filepath"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
