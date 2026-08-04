@@ -1,0 +1,65 @@
+{
+  "model_name": "threat_cnn_bilstm",
+  "version": "1.0.0",
+  "architecture": "CharCNN-BiLSTM-Attention",
+  "description": "Character-level CNN-BiLSTM with Attention for adversarial prompt detection",
+  "task": "binary_classification",
+  "input_spec": {
+    "name": "input",
+    "shape": [
+      "batch_size",
+      128
+    ],
+    "dtype": "int32",
+    "description": "ASCII character IDs (0-127), PAD=0, UNK=1"
+  },
+  "output_spec": {
+    "name": "threat_score",
+    "shape": [
+      "batch_size"
+    ],
+    "dtype": "float32",
+    "description": "Sigmoid probability of adversarial content [0, 1]"
+  },
+  "model_info": {
+    "architecture": "CharCNN-BiLSTM-Attention",
+    "vocab_size": 128,
+    "embedding_dim": 64,
+    "conv_filters": 256,
+    "conv_kernels": [
+      3,
+      5,
+      7
+    ],
+    "lstm_hidden": 128,
+    "lstm_output": 256,
+    "dense_hidden": 64,
+    "dropout_rate": 0.3,
+    "max_seq_len": 128,
+    "total_parameters": 1587842,
+    "estimated_onnx_size_kb": 6202
+  },
+  "sha256": "3942c6640a8df7084700c29e18b3eb4ad1f8b3c8afab20e44751fc6e70721f83",
+  "file_size_bytes": 6365347,
+  "file_size_human": "6216.2 KB",
+  "onnx_opset_version": 18,
+  "export_timestamp": 1785886516.500861,
+  "integration": {
+    "go_package": "pkg/ml",
+    "normalizer": "pkg/ml/normalizer.go",
+    "detector": "pkg/ml/detector.go",
+    "calibration": "pkg/ml/calibration.go",
+    "model_path": "pkg/ml/models/threat_cnn_bilstm.onnx",
+    "feature_flags": {
+      "ml_threat_detection_enabled": false,
+      "ml_shadow_mode": true
+    }
+  },
+  "deployment": {
+    "cold_start": true,
+    "default_threshold": 0.7,
+    "fpr_requirement": "0%",
+    "detection_requirement": ">95% on gap variants",
+    "shadow_mode_days": 7
+  }
+}

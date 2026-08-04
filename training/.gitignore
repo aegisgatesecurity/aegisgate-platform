@@ -1,0 +1,11 @@
+# Training artifacts (regenerated from Go pipeline + train.py)
+*.pt
+data/
+checkpoints/
+
+# Keep source files and the ONNX model
+!model.py
+!train.py
+!export_onnx.py
+!README.md__pycache__/
+*.pyc
