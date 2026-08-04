@@ -23,10 +23,15 @@
 package ml
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
+
+	onnxruntime "github.com/yalue/onnxruntime_go"
 )
 
 // ThreatDetector performs neural network-based threat detection.
@@ -35,8 +40,14 @@ type ThreatDetector struct {
 	config     DetectorConfig
 	normalizer *CharNormalizer
 	calibrator *CalibrationManager
-	loaded     bool
-	modelHash  string
+
+	// ONNX session (nil when model not loaded)
+	session    *onnxruntime.AdvancedSession
+	inputTensor  *onnxruntime.Tensor[int32]
+	outputTensor *onnxruntime.Tensor[float32]
+
+	loaded    bool
+	modelHash string
 }
 
 // NewThreatDetector creates a new threat detector with the given config.
@@ -155,22 +166,41 @@ func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 }
 
 // inference runs the ONNX model on the encoded input.
-// Currently uses a heuristic fallback until the ONNX model is trained.
-// When the model is ready, this will be replaced with onnxruntime-go inference.
+// Falls back to heuristic scoring when no model is loaded.
 func (td *ThreatDetector) inference(encoded []int32) float64 {
-	if !td.loaded {
+	if !td.loaded || td.session == nil {
 		// No model loaded — use heuristic fallback
 		return td.heuristicScore(encoded)
 	}
 
-	// TODO: Replace with onnxruntime-go inference when model is trained:
-	//
-	//   session := td.session  // *onnxruntime.Session
-	//   input := onnxruntime.NewTensor(encoded)
-	//   output := session.Run(input)
-	//   return float64(output[0])  // Sigmoid output [0, 1]
-	//
-	// For now, fall back to heuristic
+	// Copy encoded input into the pre-allocated input tensor
+	inputData := td.inputTensor.GetData()
+	copy(inputData, encoded)
+
+	// Run ONNX inference
+	err := td.session.Run()
+	if err != nil {
+		// On inference error, fall back to heuristic
+		_ = err // Log in production; fall back gracefully
+		return td.heuristicScore(encoded)
+	}
+
+	// Extract the threat score from the output tensor
+	// Output shape may be [1] or [1,1] — take the first element
+	outputData := td.outputTensor.GetData()
+	if len(outputData) >= 1 {
+		score := float64(outputData[0])
+		// Clamp to [0, 1] range (sigmoid output should already be in range)
+		if score < 0 {
+			score = 0
+		}
+		if score > 1 {
+			score = 1
+		}
+		return score
+	}
+
+	// Fallback if output is unexpected
 	return td.heuristicScore(encoded)
 }
 
@@ -187,14 +217,12 @@ func (td *ThreatDetector) heuristicScore(encoded []int32) float64 {
 	score := 0.0
 
 	// Heuristic 1: Check for transposition patterns
-	// (Adjacent character swaps like "byapss" instead of "bypass")
 	attackWords := []string{"ignore", "bypass", "override", "inject", "admin",
 		"system", "prompt", "hack", "exploit", "reveal", "extract", "steal",
 		"disable", "delete", "remove", "access", "forge", "escalate", "poison", "corrupt"}
 
 	textLower := toLower(text)
 	for _, word := range attackWords {
-		// Check if text contains a 1-character transposition of an attack word
 		if isTransposition(textLower, word) {
 			score += 0.4
 		}
@@ -222,39 +250,97 @@ func (td *ThreatDetector) heuristicScore(encoded []int32) float64 {
 	return score
 }
 
-// LoadModel loads the ONNX model from disk.
-// Currently a no-op until the model is trained.
+// LoadModel loads the ONNX model from disk and initializes the inference session.
 func (td *ThreatDetector) LoadModel(path string) error {
 	td.mu.Lock()
 	defer td.mu.Unlock()
 
 	// Check that the model file exists
-	if _, err := os.Stat(path); err != nil {
+	cleanPath := filepath.Clean(path) // #nosec G304 -- path comes from trusted config
+	if _, err := os.Stat(cleanPath); err != nil {
 		return fmt.Errorf("model file not found: %w", err)
 	}
 
-	// TODO: Replace with onnxruntime-go session creation:
-	//
-	//   session, err := onnxruntime.NewSession(path)
-	//   if err != nil {
-	//       return fmt.Errorf("create ONNX session: %w", err)
-	//   }
-	//   td.session = session
-	//
+	// Set ONNX Runtime shared library path if configured
+	if td.config.ONNXRuntimeLibPath != "" {
+		onnxruntime.SetSharedLibraryPath(td.config.ONNXRuntimeLibPath)
+	}
+
+	// Initialize ONNX Runtime environment (idempotent)
+	if !onnxruntime.IsInitialized() {
+		if err := onnxruntime.InitializeEnvironment(); err != nil {
+			return fmt.Errorf("initialize onnxruntime: %w", err)
+		}
+	}
 
 	// Compute SHA256 hash for model versioning
-	hash, err := computeFileHash(path)
+	hash, err := computeFileHash(cleanPath)
 	if err != nil {
 		return fmt.Errorf("compute model hash: %w", err)
 	}
 
+	// Clean up any existing session
+	if td.session != nil {
+		td.session.Destroy()
+		td.session = nil
+	}
+	if td.inputTensor != nil {
+		td.inputTensor.Destroy()
+		td.inputTensor = nil
+	}
+	if td.outputTensor != nil {
+		td.outputTensor.Destroy()
+		td.outputTensor = nil
+	}
+
+	// Create input tensor: [1, 128] int32
+	inputShape := onnxruntime.Shape{1, int64(MaxSeqLen)}
+	inputData := make([]int32, MaxSeqLen) // Zero-initialized = padding
+	inputTensor, err := onnxruntime.NewTensor[int32](inputShape, inputData)
+	if err != nil {
+		return fmt.Errorf("create input tensor: %w", err)
+	}
+	td.inputTensor = inputTensor
+
+	// Create output tensor: [1, 1] float32 (sigmoid threat score)
+	// Model output shape is [batch_size, 1] with dynamic batch
+	outputShape := onnxruntime.Shape{1, 1}
+	outputData := make([]float32, 1)
+	outputTensor, err := onnxruntime.NewTensor[float32](outputShape, outputData)
+	if err != nil {
+		td.inputTensor.Destroy()
+		td.inputTensor = nil
+		return fmt.Errorf("create output tensor: %w", err)
+	}
+	td.outputTensor = outputTensor
+
+	// Create ONNX session
+	inputNames := []string{"input"}
+	outputNames := []string{"threat_score"}
+	session, err := onnxruntime.NewAdvancedSession(
+		cleanPath,
+		inputNames,
+		outputNames,
+		[]onnxruntime.Value{td.inputTensor},
+		[]onnxruntime.Value{td.outputTensor},
+		nil, // default session options
+	)
+	if err != nil {
+		td.inputTensor.Destroy()
+		td.inputTensor = nil
+		td.outputTensor.Destroy()
+		td.outputTensor = nil
+		return fmt.Errorf("create ONNX session: %w", err)
+	}
+
+	td.session = session
 	td.modelHash = hash
 	td.loaded = true
 
 	return nil
 }
 
-// Close cleans up the ONNX session.
+// Close cleans up the ONNX session and tensors.
 func (td *ThreatDetector) Close() error {
 	td.mu.Lock()
 	defer td.mu.Unlock()
@@ -263,15 +349,31 @@ func (td *ThreatDetector) Close() error {
 		return nil
 	}
 
-	// TODO: Replace with onnxruntime-go session cleanup:
-	//
-	//   if td.session != nil {
-	//       return td.session.Close()
-	//   }
-	//
+	var firstErr error
+
+	if td.session != nil {
+		if err := td.session.Destroy(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		td.session = nil
+	}
+
+	if td.inputTensor != nil {
+		if err := td.inputTensor.Destroy(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		td.inputTensor = nil
+	}
+
+	if td.outputTensor != nil {
+		if err := td.outputTensor.Destroy(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+		td.outputTensor = nil
+	}
 
 	td.loaded = false
-	return nil
+	return firstErr
 }
 
 // GetCalibrator returns the calibration manager for external configuration.
@@ -280,7 +382,6 @@ func (td *ThreatDetector) GetCalibrator() *CalibrationManager {
 }
 
 // IsEnabled returns whether the neural threat detector is enabled.
-// When disabled, Detect() returns zero-score results immediately.
 func (td *ThreatDetector) IsEnabled() bool {
 	td.mu.RLock()
 	defer td.mu.RUnlock()
@@ -381,20 +482,24 @@ func toLower(s string) string {
 	return string(b)
 }
 
-// computeFileHash computes SHA256 of a file (placeholder until ONNX model exists).
+// computeFileHash computes SHA256 of a file for model versioning.
 func computeFileHash(path string) (string, error) {
 	cleanPath := filepath.Clean(path) // #nosec G304 -- path comes from trusted config
 	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return "", fmt.Errorf("read file: %w", err)
 	}
-	// Simple hash for now — will use crypto/sha256 when model is real
-	return fmt.Sprintf("sha256:%x", data[:min(len(data), 32)]), nil
+	hash := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(hash[:]), nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+// measureInferenceLatency measures a single inference call duration.
+// Returns latency in milliseconds.
+func measureInferenceLatency(td *ThreatDetector) (float64, error) {
+	// Use a benign test input
+	encoded := td.normalizer.Encode("What is the weather today?")
+	start := time.Now()
+	td.inference(encoded)
+	elapsed := time.Since(start)
+	return float64(elapsed.Microseconds()) / 1000.0, nil // ms
 }
