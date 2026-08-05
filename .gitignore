@@ -1,5 +1,9 @@
 # Build outputs
 bin/
+
+# Compiled dev tool binaries (built from source via Makefile)
+cmd/licensegen/licensegen
+cmd/test-email/test-email
 # Generated code (was: gen/main_sso_integration.py, deleted D23)
 gen/
 dist/
