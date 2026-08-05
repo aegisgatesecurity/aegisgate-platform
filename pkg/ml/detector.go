@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Platform - ML Threat Detector (ONNX Runtime)
+// AegisGate Platform - ML Threat Detector (Core Logic)
 // =========================================================================
 //
-// ThreatDetector loads an ONNX model and performs inference on text input.
-// It uses onnxruntime-go for native Go inference — no Python runtime needed.
+// ThreatDetector performs neural network-based threat detection.
+// It uses onnxruntime-go for native Go inference when CGO is enabled,
+// and falls back to heuristic-only detection when CGO is disabled.
 //
 // The detector is designed as a SUPPLEMENTARY layer:
 // - It only runs when regex doesn't trigger
@@ -18,6 +19,10 @@
 //   3. 7-day shadow validation
 //   4. Enable blocking after validation
 //
+// Build tags:
+//   - CGO_ENABLED=1: Full ONNX inference (detector_onnx.go)
+//   - CGO_ENABLED=0: Heuristic-only fallback (detector_noonnx.go)
+//
 // =========================================================================
 
 package ml
@@ -30,6 +35,9 @@ import (
 )
 
 // ThreatDetector performs neural network-based threat detection.
+// ONNX session fields are defined in build-tag-specific files:
+//   - detector_onnx.go  (CGO enabled: typed *onnxruntime fields)
+//   - detector_noonnx.go (CGO disabled: no ONNX fields)
 type ThreatDetector struct {
 	mu         sync.RWMutex
 	config     DetectorConfig
@@ -37,6 +45,7 @@ type ThreatDetector struct {
 	calibrator *CalibrationManager
 	loaded     bool
 	modelHash  string
+	onnx       *onnxFields // ONNX session (nil when CGO disabled)
 }
 
 // NewThreatDetector creates a new threat detector with the given config.
@@ -49,21 +58,22 @@ func NewThreatDetector(cfg DetectorConfig) *ThreatDetector {
 		cfg.Timeout = 10
 	}
 
-	return &ThreatDetector{
+	td := &ThreatDetector{
 		config:     cfg,
 		normalizer: NewCharNormalizer(),
 		calibrator: NewCalibrationManager(cfg),
 		loaded:     false,
+		onnx:       newOnnxFields(),
 	}
+
+	return td
 }
 
 // Detect analyzes text for threats and returns a ThreatScore.
-// If the detector is disabled, returns a zero-score result immediately.
 func (td *ThreatDetector) Detect(text string) ThreatScore {
 	td.mu.RLock()
 	defer td.mu.RUnlock()
 
-	// If detector is disabled, return immediately
 	if !td.config.Enabled && !td.config.ShadowMode {
 		return ThreatScore{
 			Score:        0,
@@ -74,13 +84,8 @@ func (td *ThreatDetector) Detect(text string) ThreatScore {
 		}
 	}
 
-	// Preprocess input
 	encoded := td.normalizer.Encode(text)
-
-	// Run inference
 	score := td.inference(encoded)
-
-	// Check against calibrated threshold
 	isThreat := score >= td.config.Threshold
 
 	result := ThreatScore{
@@ -91,17 +96,15 @@ func (td *ThreatDetector) Detect(text string) ThreatScore {
 		ModelVersion: td.modelHash,
 	}
 
-	// In shadow mode, log but don't block
 	if td.config.ShadowMode {
 		td.calibrator.LogShadowPrediction(text, score, "original", td.modelHash)
-		result.IsThreat = false // Never block in shadow mode
+		result.IsThreat = false
 	}
 
 	return result
 }
 
 // DetectAll runs detection on all normalization variants.
-// Returns the highest score and whether any variant was above threshold.
 func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 	var bestScore float64
 	var bestVariant string
@@ -122,20 +125,16 @@ func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 	for _, v := range variants {
 		encoded := td.normalizer.Encode(v)
 		score := td.inference(encoded)
-
 		if score > bestScore {
 			bestScore = score
 			bestVariant = v
 		}
-
-		// Short-circuit if we find a clear threat
 		if score >= td.config.Threshold {
 			break
 		}
 	}
 
-	_ = bestVariant // Track which variant triggered (for debugging)
-
+	_ = bestVariant
 	isThreat := bestScore >= td.config.Threshold
 
 	result := ThreatScore{
@@ -148,113 +147,74 @@ func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 
 	if td.config.ShadowMode {
 		td.calibrator.LogShadowPrediction(variants[0], bestScore, "multi_variant", td.modelHash)
-		result.IsThreat = false // Never block in shadow mode
+		result.IsThreat = false
 	}
 
 	return result
 }
 
 // inference runs the ONNX model on the encoded input.
-// Currently uses a heuristic fallback until the ONNX model is trained.
-// When the model is ready, this will be replaced with onnxruntime-go inference.
+// Falls back to heuristic scoring when no model is loaded or CGO is disabled.
 func (td *ThreatDetector) inference(encoded []int32) float64 {
-	if !td.loaded {
-		// No model loaded — use heuristic fallback
-		return td.heuristicScore(encoded)
+	// Try ONNX inference first (only available with CGO)
+	if td.loaded {
+		if score, ok := td.inferenceONNX(encoded); ok {
+			return score
+		}
 	}
-
-	// TODO: Replace with onnxruntime-go inference when model is trained:
-	//
-	//   session := td.session  // *onnxruntime.Session
-	//   input := onnxruntime.NewTensor(encoded)
-	//   output := session.Run(input)
-	//   return float64(output[0])  // Sigmoid output [0, 1]
-	//
-	// For now, fall back to heuristic
 	return td.heuristicScore(encoded)
 }
 
 // heuristicScore provides a rule-based fallback when no ONNX model is loaded.
-// This catches the most common evasion patterns that regex misses.
-// NOT a replacement for the neural network — just a stopgap.
 func (td *ThreatDetector) heuristicScore(encoded []int32) float64 {
-	// Reconstruct text from encoded input
 	text := td.normalizer.Decode(encoded)
 	if len(text) == 0 {
 		return 0
 	}
 
 	score := 0.0
-
-	// Heuristic 1: Check for transposition patterns
-	// (Adjacent character swaps like "byapss" instead of "bypass")
 	attackWords := []string{"ignore", "bypass", "override", "inject", "admin",
 		"system", "prompt", "hack", "exploit", "reveal", "extract", "steal",
 		"disable", "delete", "remove", "access", "forge", "escalate", "poison", "corrupt"}
 
 	textLower := toLower(text)
 	for _, word := range attackWords {
-		// Check if text contains a 1-character transposition of an attack word
 		if isTransposition(textLower, word) {
 			score += 0.4
 		}
 	}
-
-	// Heuristic 2: Check for vowel-deleted attack words
 	for _, word := range attackWords {
 		if isVowelDeleted(textLower, word) {
 			score += 0.3
 		}
 	}
-
-	// Heuristic 3: Check for reversed attack words
 	for _, word := range attackWords {
 		if containsReversed(textLower, word) {
 			score += 0.3
 		}
 	}
 
-	// Cap at 0.9 (never 1.0 from heuristics — reserve 1.0 for the model)
 	if score > 0.9 {
 		score = 0.9
 	}
-
 	return score
 }
 
 // LoadModel loads the ONNX model from disk.
-// Currently a no-op until the model is trained.
+// When CGO is disabled, falls back to heuristic-only mode.
 func (td *ThreatDetector) LoadModel(path string) error {
 	td.mu.Lock()
 	defer td.mu.Unlock()
 
-	// Check that the model file exists
-	if _, err := os.Stat(path); err != nil {
+	cleanPath := filepath.Clean(path) // #nosec G304
+	if _, err := os.Stat(cleanPath); err != nil {
 		return fmt.Errorf("model file not found: %w", err)
 	}
 
-	// TODO: Replace with onnxruntime-go session creation:
-	//
-	//   session, err := onnxruntime.NewSession(path)
-	//   if err != nil {
-	//       return fmt.Errorf("create ONNX session: %w", err)
-	//   }
-	//   td.session = session
-	//
-
-	// Compute SHA256 hash for model versioning
-	hash, err := computeFileHash(path)
-	if err != nil {
-		return fmt.Errorf("compute model hash: %w", err)
-	}
-
-	td.modelHash = hash
-	td.loaded = true
-
-	return nil
+	return td.loadModelONNX(cleanPath)
 }
 
-// Close cleans up the ONNX session.
+// Close cleans up the ONNX session and tensors.
 func (td *ThreatDetector) Close() error {
 	td.mu.Lock()
 	defer td.mu.Unlock()
@@ -263,24 +223,16 @@ func (td *ThreatDetector) Close() error {
 		return nil
 	}
 
-	// TODO: Replace with onnxruntime-go session cleanup:
-	//
-	//   if td.session != nil {
-	//       return td.session.Close()
-	//   }
-	//
-
 	td.loaded = false
-	return nil
+	return td.closeONNX()
 }
 
-// GetCalibrator returns the calibration manager for external configuration.
+// GetCalibrator returns the calibration manager.
 func (td *ThreatDetector) GetCalibrator() *CalibrationManager {
 	return td.calibrator
 }
 
 // IsEnabled returns whether the neural threat detector is enabled.
-// When disabled, Detect() returns zero-score results immediately.
 func (td *ThreatDetector) IsEnabled() bool {
 	td.mu.RLock()
 	defer td.mu.RUnlock()
@@ -307,7 +259,6 @@ func (td *ThreatDetector) GetStats() map[string]interface{} {
 // Helper functions
 // =====================================================================
 
-// isTransposition checks if text contains a 1-character transposition of word.
 func isTransposition(text, word string) bool {
 	if len(word) < 4 {
 		return false
@@ -321,7 +272,6 @@ func isTransposition(text, word string) bool {
 	return false
 }
 
-// isVowelDeleted checks if text contains word with vowels removed.
 func isVowelDeleted(text, word string) bool {
 	vowels := "aeiou"
 	vowelDeleted := ""
@@ -336,7 +286,6 @@ func isVowelDeleted(text, word string) bool {
 	return false
 }
 
-// containsReversed checks if text contains the reversed form of word.
 func containsReversed(text, word string) bool {
 	reversed := reverse(word)
 	if len(reversed) >= 4 && contains(text, reversed) {
@@ -345,7 +294,6 @@ func containsReversed(text, word string) bool {
 	return false
 }
 
-// reverse returns the reversed string.
 func reverse(s string) string {
 	runes := []rune(s)
 	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
@@ -354,7 +302,6 @@ func reverse(s string) string {
 	return string(runes)
 }
 
-// contains checks if s contains substr (case-sensitive).
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchString(s, substr)
 }
@@ -368,33 +315,14 @@ func searchString(s, substr string) bool {
 	return false
 }
 
-// toLower converts string to lowercase.
 func toLower(s string) string {
 	var b []byte
 	for _, c := range s {
 		if c >= 'A' && c <= 'Z' {
 			b = append(b, byte(c+32))
 		} else {
-			b = append(b, byte(c)) // #nosec G115 -- rune is ASCII lowercase, always fits in byte
+			b = append(b, byte(c)) // #nosec G115
 		}
 	}
 	return string(b)
-}
-
-// computeFileHash computes SHA256 of a file (placeholder until ONNX model exists).
-func computeFileHash(path string) (string, error) {
-	cleanPath := filepath.Clean(path) // #nosec G304 -- path comes from trusted config
-	data, err := os.ReadFile(cleanPath)
-	if err != nil {
-		return "", fmt.Errorf("read file: %w", err)
-	}
-	// Simple hash for now — will use crypto/sha256 when model is real
-	return fmt.Sprintf("sha256:%x", data[:min(len(data), 32)]), nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

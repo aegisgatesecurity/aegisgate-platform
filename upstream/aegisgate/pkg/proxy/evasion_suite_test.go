@@ -26,6 +26,8 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 	"github.com/aegisgatesecurity/aegisgate/pkg/scanner"
+
+	platformml "github.com/aegisgatesecurity/aegisgate-platform/pkg/ml"
 )
 
 // =====================================================================
@@ -895,16 +897,52 @@ type evasionDetector struct {
 	scanner *scanner.Scanner
 	atlas   *compliance.ATLASFramework
 	ml      *ml.CombinedDetector
+	neural  *platformml.ThreatDetector // ONNX-backed neural detector (v4.0)
 }
 
 func newEvasionDetector() *evasionDetector {
 	cfg := scanner.DefaultConfig()
 	cfg.LogFindings = false // Suppress noisy logs during testing
 	s := scanner.New(cfg)
+
+	combined := ml.NewCombinedDetector(70)
+
+	// Load ONNX neural detector if available
+	// Auto-discovery: ONNXRuntimeLibPath and model path are resolved
+	// automatically by LoadModel → discoverONNXRuntimeLib.
+	// Set ONNXRUNTIME_SHARED_LIBRARY_PATH or AEGISGATE_ML_MODEL_PATH
+	// env vars to override the defaults.
+	var neural *platformml.ThreatDetector
+	neuralCfg := platformml.DefaultDetectorConfig()
+	neuralCfg.Enabled = true
+	neuralCfg.ShadowMode = false // Active mode for evasion testing
+	neuralCfg.Threshold = 0.5    // Standard threshold
+
+	// Use env var if set, otherwise auto-discover from well-known paths
+	if libPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH"); libPath != "" {
+		neuralCfg.ONNXRuntimeLibPath = libPath
+	}
+
+	neural = platformml.NewThreatDetector(neuralCfg)
+	modelPath := os.Getenv("AEGISGATE_ML_MODEL_PATH")
+	if modelPath == "" {
+		modelPath = filepath.Join("..", "..", "pkg", "ml", "models", "threat_cnn_bilstm.onnx")
+		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
+			modelPath = "pkg/ml/models/threat_cnn_bilstm.onnx"
+		}
+	}
+	if err := neural.LoadModel(modelPath); err != nil {
+		// ONNX model not available — heuristic fallback will be used
+		neural = nil
+	} else {
+		combined.SetThreatDetector(neural)
+	}
+
 	return &evasionDetector{
 		scanner: s,
 		atlas:   compliance.GetAtlas(),
-		ml:      ml.NewCombinedDetector(70),
+		ml:      combined,
+		neural:  neural,
 	}
 }
 
