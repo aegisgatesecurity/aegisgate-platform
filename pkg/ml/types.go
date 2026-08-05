@@ -60,6 +60,10 @@ type DetectorConfig struct {
 	// Timeout is the maximum time for a single inference in milliseconds.
 	// Default: 10ms.
 	Timeout int
+
+	// ONNXRuntimeLibPath is the path to the onnxruntime shared library.
+	// If empty, defaults to "onnxruntime.so" (or set via ONNXRUNTIME_SHARED_LIBRARY_PATH env).
+	ONNXRuntimeLibPath string
 }
 
 // DefaultDetectorConfig returns sensible defaults.

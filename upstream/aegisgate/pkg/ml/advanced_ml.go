@@ -25,6 +25,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	platformml "github.com/aegisgatesecurity/aegisgate-platform/pkg/ml"
 )
 
 // PromptInjectionDetector detects potential prompt injection attacks
@@ -1347,6 +1349,7 @@ type CombinedDetector struct {
 	TokenSmuggling      *TokenSmugglingDetector
 	UnicodeAttack       *UnicodeAttackDetector
 	ContextManipulation *ContextManipulationDetector
+	ThreatDetector      *platformml.ThreatDetector // ONNX-backed neural detector (v4.0)
 }
 
 // NewCombinedDetector creates a new combined detector with all sub-detectors
@@ -1359,6 +1362,12 @@ func NewCombinedDetector(sensitivity int) *CombinedDetector {
 	}
 }
 
+// SetThreatDetector sets the ONNX-backed neural threat detector.
+// This is called separately because it requires loading a model file.
+func (cd *CombinedDetector) SetThreatDetector(td *platformml.ThreatDetector) {
+	cd.ThreatDetector = td
+}
+
 // CombinedResult represents the combined detection result
 type CombinedResult struct {
 	IsThreat             bool
@@ -1367,6 +1376,7 @@ type CombinedResult struct {
 	TokenSmugglingScore  float64
 	UnicodeAttackScore   float64
 	ContextScore         float64
+	NeuralScore          float64 // ONNX ThreatDetector score [0, 1]
 	AllMatchedPatterns   []string
 	HighestSeverity      int
 }
@@ -1409,14 +1419,36 @@ func (cd *CombinedDetector) Detect(content string) *CombinedResult {
 	}
 	result.HighestSeverity = highestSeverity
 
-	// Calculate weighted total score
-	result.TotalScore = (promptResult.Score * 0.35) +
-		(tokenResult.Score * 0.25) +
-		(unicodeResult.Score * 0.20) +
-		(contextResult.Score * 0.20)
+	// ONNX ThreatDetector (supplementary layer — catches evasion gaps)
+	if cd.ThreatDetector != nil {
+		neuralResult := cd.ThreatDetector.Detect(content)
+		result.NeuralScore = neuralResult.Score
+		// Neural detector never overrides other layers — only supplements
+		// It catches evasion patterns (transposition, vowel deletion, word reversal)
+		// that regex and ATLAS miss
+		if neuralResult.IsThreat {
+			result.IsThreat = true
+			result.AllMatchedPatterns = append(result.AllMatchedPatterns, "neural:"+neuralResult.Variant)
+		}
+	}
+
+	// Calculate weighted total score (including neural if present)
+	if result.NeuralScore > 0 {
+		result.TotalScore = (promptResult.Score * 0.30) +
+			(tokenResult.Score * 0.20) +
+			(unicodeResult.Score * 0.15) +
+			(contextResult.Score * 0.15) +
+			(result.NeuralScore * 100 * 0.20) // Neural score is [0,1], scale to [0,100]
+	} else {
+		result.TotalScore = (promptResult.Score * 0.35) +
+			(tokenResult.Score * 0.25) +
+			(unicodeResult.Score * 0.20) +
+			(contextResult.Score * 0.20)
+	}
 
 	// Determine if threat
-	result.IsThreat = promptResult.IsInjection ||
+	result.IsThreat = result.IsThreat ||
+		promptResult.IsInjection ||
 		tokenResult.IsSmuggling ||
 		unicodeResult.IsAttack ||
 		contextResult.IsManipulation ||
@@ -1465,14 +1497,36 @@ func (cd *CombinedDetector) DetectFast(content string) *CombinedResult {
 	}
 	result.HighestSeverity = highestSeverity
 
-	// Calculate weighted total score
-	result.TotalScore = (promptResult.Score * 0.35) +
-		(tokenResult.Score * 0.25) +
-		(unicodeResult.Score * 0.20) +
-		(contextResult.Score * 0.20)
+	// ONNX ThreatDetector (supplementary layer — catches evasion gaps)
+	if cd.ThreatDetector != nil {
+		neuralResult := cd.ThreatDetector.Detect(content)
+		result.NeuralScore = neuralResult.Score
+		// Neural detector never overrides other layers — only supplements
+		// It catches evasion patterns (transposition, vowel deletion, word reversal)
+		// that regex and ATLAS miss
+		if neuralResult.IsThreat {
+			result.IsThreat = true
+			result.AllMatchedPatterns = append(result.AllMatchedPatterns, "neural:"+neuralResult.Variant)
+		}
+	}
+
+	// Calculate weighted total score (including neural if present)
+	if result.NeuralScore > 0 {
+		result.TotalScore = (promptResult.Score * 0.30) +
+			(tokenResult.Score * 0.20) +
+			(unicodeResult.Score * 0.15) +
+			(contextResult.Score * 0.15) +
+			(result.NeuralScore * 100 * 0.20) // Neural score is [0,1], scale to [0,100]
+	} else {
+		result.TotalScore = (promptResult.Score * 0.35) +
+			(tokenResult.Score * 0.25) +
+			(unicodeResult.Score * 0.20) +
+			(contextResult.Score * 0.20)
+	}
 
 	// Determine if threat
-	result.IsThreat = promptResult.IsInjection ||
+	result.IsThreat = result.IsThreat ||
+		promptResult.IsInjection ||
 		tokenResult.IsSmuggling ||
 		unicodeResult.IsAttack ||
 		contextResult.IsManipulation ||

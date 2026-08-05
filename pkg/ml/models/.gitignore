@@ -1,0 +1,2 @@
+# Model files - keep the ONNX model, ignore checkpoints
+*.pt
