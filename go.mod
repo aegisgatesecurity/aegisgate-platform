@@ -30,7 +30,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
 	github.com/yalue/onnxruntime_go v1.27.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/time v0.11.0
+	golang.org/x/time v0.15.0
 	google.golang.org/grpc v1.82.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.28.3
