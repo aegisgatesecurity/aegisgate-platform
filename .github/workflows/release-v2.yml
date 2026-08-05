@@ -48,6 +48,23 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Install ONNX Runtime (Linux x64)
+        run: |
+          # Install ONNX Runtime v1.27.0 for CGO compilation.
+          # onnxruntime_go v1.27.0 requires ORT API version 27.
+          ORT_VERSION="1.27.0"
+          wget -qO /tmp/ort.tgz "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-linux-x64-${ORT_VERSION}.tgz"
+          tar -xzf /tmp/ort.tgz -C /tmp
+          sudo cp /tmp/onnxruntime-linux-x64-${ORT_VERSION}/include/onnxruntime/core/session/onnxruntime_c_api.h /usr/local/include/
+          sudo cp /tmp/onnxruntime-linux-x64-${ORT_VERSION}/include/onnxruntime/core/session/onnxruntime_cxx_api.h /usr/local/include/
+          sudo cp /tmp/onnxruntime-linux-x64-${ORT_VERSION}/include/onnxruntime/core/session/onnxruntime_env.h /usr/local/include/
+          sudo cp /tmp/onnxruntime-linux-x64-${ORT_VERSION}/lib/libonnxruntime.so.${ORT_VERSION} /usr/local/lib/
+          sudo ln -sf /usr/local/lib/libonnxruntime.so.${ORT_VERSION} /usr/local/lib/libonnxruntime.so.1
+          sudo ln -sf /usr/local/lib/libonnxruntime.so.1 /usr/local/lib/libonnxruntime.so
+          sudo ldconfig
+          rm -rf /tmp/ort.tgz /tmp/onnxruntime-linux-x64-${ORT_VERSION}
+          echo "ONNX Runtime v${ORT_VERSION} installed"
+
       - name: Determine version
         id: version
         run: |
@@ -64,6 +81,7 @@ jobs:
           mkdir -p dist
           # v4.0.0: CGO_ENABLED=1 required for ONNX Runtime neural threat detection.
           # The onnxruntime_go library uses CGO to call the ONNX Runtime C API.
+          # ONNX Runtime v1.27.0 was installed in the previous step for CGO headers.
           # The standalone binary includes heuristic-only fallback when onnxruntime
           # is not available, but CGO is required for the full ML pipeline.
           CGO_ENABLED=1 go build \

@@ -32,9 +32,9 @@ func newOnnxFields() *onnxFields {
 // Searched in order; first match wins. Overridden by ONNXRuntimeLibPath config
 // or ONNXRUNTIME_SHARED_LIBRARY_PATH env var.
 var onnxRuntimeSearchPaths = []string{
-	"/usr/lib/libonnxruntime.so",
-	"/usr/local/lib/libonnxruntime.so",
-	"/usr/lib/x86_64-linux-gnu/libonnxruntime.so",
+	"/usr/local/lib/libonnxruntime.so",   // Docker container (v4.0.0+)
+	"/usr/lib/libonnxruntime.so",          // Alpine package
+	"/usr/lib/x86_64-linux-gnu/libonnxruntime.so", // Debian/Ubuntu
 }
 
 // discoverONNXRuntimeLib finds the onnxruntime shared library by searching:

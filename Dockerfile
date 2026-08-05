@@ -12,8 +12,8 @@
 # v4.0.0: CGO_ENABLED=1 build with ONNX Runtime for neural threat detection.
 # The Char CNN-BiLSTM model (6.2MB) ships inside the container at
 # /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx and is auto-discovered
-# by the ThreatDetector at startup. The onnxruntime shared library is installed
-# via Alpine package manager for reproducibility.
+# by the ThreatDetector at startup. ONNX Runtime v1.27.0 is bundled from the
+# official Microsoft release (matching the onnxruntime_go v1.27.0 binding).
 #
 # Hardening (v3.3.1+):
 #   - Both base images are pinned to a SHA256 digest for reproducible builds.
@@ -26,18 +26,33 @@
 # Update digest when bumping the Go version. Digest source: docker pull golang:1.26.5-alpine
 FROM golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS builder
 
-# CGO dependencies: gcc + musl for static linking, onnxruntime-dev for headers
+# CGO dependencies: gcc + musl for CGO compilation.
+# ONNX Runtime headers come from the bundled release tarball (see
+# ONNX_RUNTIME_URL below), not from Alpine packages, to ensure version
+# alignment between the C library and the Go binding.
 RUN apk add --no-cache git ca-certificates gcc musl-dev
 
-# Install ONNX Runtime shared library + headers in builder stage.
-# onnxruntime-dev provides the C header (onnxruntime_c_api.h) needed by
-# onnxruntime_go's CGO bindings. The shared library is also needed at
-# build time for linking, and at runtime for dlopen.
+# Install ONNX Runtime v1.27.0 from official Microsoft release.
+# onnxruntime_go v1.27.0 requires ORT API version 27, which is provided by
+# onnxruntime v1.27.0. Alpine's package (v1.23.0) is too old and causes
+# "API version not available" errors at runtime.
 #
-# We install from the onnxruntime Alpine package. If a newer version is
-# needed, download the release from https://github.com/microsoft/onnxruntime/releases
-# and COPY it in instead.
-RUN apk add --no-cache onnxruntime-dev
+# The release tarball includes: include/ headers for CGO, lib/ shared libraries
+# for runtime. We extract the entire lib/ directory (which includes the .so,
+# .so.1, and .so.1.27.0 symlinks) and include/ headers for CGO compilation.
+ARG ONNX_RUNTIME_VERSION=1.27.0
+ARG ONNX_RUNTIME_URL=https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_RUNTIME_VERSION}/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}.tgz
+RUN wget -qO /tmp/ort.tgz ${ONNX_RUNTIME_URL} && \
+    tar -xzf /tmp/ort.tgz -C /tmp && \
+    mkdir -p /usr/local/include/onnxruntime/core/session && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/include/onnxruntime_c_api.h /usr/local/include/onnxruntime/core/session/ && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/include/onnxruntime_cxx_api.h /usr/local/include/onnxruntime/core/session/ && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/include/onnxruntime_cxx_inline.h /usr/local/include/onnxruntime/core/session/ && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/include/onnxruntime_env_config_keys.h /usr/local/include/onnxruntime/core/session/ && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/include/onnxruntime_float16.h /usr/local/include/onnxruntime/core/session/ && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/lib/libonnxruntime.so* /usr/local/lib/ && \
+    cp /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}/lib/libonnxruntime_providers_shared.so /usr/local/lib/ && \
+    rm -rf /tmp/ort.tgz /tmp/onnxruntime-linux-x64-${ONNX_RUNTIME_VERSION}
 
 WORKDIR /build
 
@@ -61,15 +76,19 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
 # Digest source: docker pull alpine:latest (as of 2026-07-19: alpine 3.23)
 FROM alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 
-# Install runtime dependencies: ca-certificates (TLS), wget (healthcheck),
-# and onnxruntime (ML inference for threat detection).
-# Alpine's onnxruntime package installs libonnxruntime.so.1 → libonnxruntime.so.1.23.0.
-# The onnxruntime_go library looks for "onnxruntime.so" by default via dlopen, so we
-# create a symlink at /usr/lib/libonnxruntime.so for auto-discovery.
-RUN apk add --no-cache ca-certificates wget onnxruntime && \
-    ln -sf /usr/lib/libonnxruntime.so.1 /usr/lib/libonnxruntime.so && \
+# Install runtime dependencies: ca-certificates (TLS), wget (healthcheck).
+# ONNX Runtime v1.27.0 is copied from the builder stage (not from Alpine packages)
+# to ensure version alignment with onnxruntime_go v1.27.0.
+RUN apk add --no-cache ca-certificates wget && \
     apk upgrade --no-cache libssl3 libcrypto3 && \
     adduser -D -g '' appuser
+
+# Copy ONNX Runtime shared libraries from builder.
+# onnxruntime_go uses dlopen to load the library at runtime.
+# The symlink chain: libonnxruntime.so → libonnxruntime.so.1 → libonnxruntime.so.1.27.0
+# matches the discoverONNXRuntimeLib() search path in detector_onnx_methods.go.
+COPY --from=builder /usr/local/lib/libonnxruntime.so* /usr/local/lib/
+COPY --from=builder /usr/local/lib/libonnxruntime_providers_shared.so /usr/local/lib/
 
 # Copy binary and UI assets
 COPY --from=builder /aegisgate-platform /usr/local/bin/aegisgate-platform
