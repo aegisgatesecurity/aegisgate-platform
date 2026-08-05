@@ -908,12 +908,20 @@ func newEvasionDetector() *evasionDetector {
 	combined := ml.NewCombinedDetector(70)
 
 	// Load ONNX neural detector if available
+	// Auto-discovery: ONNXRuntimeLibPath and model path are resolved
+	// automatically by LoadModel → discoverONNXRuntimeLib.
+	// Set ONNXRUNTIME_SHARED_LIBRARY_PATH or AEGISGATE_ML_MODEL_PATH
+	// env vars to override the defaults.
 	var neural *platformml.ThreatDetector
 	neuralCfg := platformml.DefaultDetectorConfig()
 	neuralCfg.Enabled = true
 	neuralCfg.ShadowMode = false // Active mode for evasion testing
 	neuralCfg.Threshold = 0.5    // Standard threshold
-	neuralCfg.ONNXRuntimeLibPath = os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH")
+
+	// Use env var if set, otherwise auto-discover from well-known paths
+	if libPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH"); libPath != "" {
+		neuralCfg.ONNXRuntimeLibPath = libPath
+	}
 
 	neural = platformml.NewThreatDetector(neuralCfg)
 	modelPath := os.Getenv("AEGISGATE_ML_MODEL_PATH")

@@ -27,10 +27,67 @@ func newOnnxFields() *onnxFields {
 	return &onnxFields{}
 }
 
+// onnxRuntimeSearchPaths lists common locations for the onnxruntime shared library.
+// Searched in order; first match wins. Overridden by ONNXRuntimeLibPath config
+// or ONNXRUNTIME_SHARED_LIBRARY_PATH env var.
+var onnxRuntimeSearchPaths = []string{
+	"/usr/lib/libonnxruntime.so",
+	"/usr/local/lib/libonnxruntime.so",
+	"/usr/lib/x86_64-linux-gnu/libonnxruntime.so",
+}
+
+// discoverONNXRuntimeLib finds the onnxruntime shared library by searching:
+//  1. Config-specified path (ONNXRuntimeLibPath)
+//  2. Environment variable (ONNXRUNTIME_SHARED_LIBRARY_PATH)
+//  3. Well-known venv paths (relative to GOPATH/HomeDir)
+//  4. System library paths
+//
+// Returns empty string if not found (onnxruntime will use its default search).
+func discoverONNXRuntimeLib(configPath string) string {
+	// 1. Explicit config path takes priority
+	if configPath != "" {
+		if _, err := os.Stat(configPath); err == nil {
+			return configPath
+		}
+	}
+
+	// 2. Environment variable
+	if envPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH"); envPath != "" {
+		if _, err := os.Stat(envPath); err == nil {
+			return envPath
+		}
+	}
+
+	// 3. Common venv paths relative to home directory
+	homeDir, _ := os.UserHomeDir()
+	if homeDir != "" {
+		venvPaths := []string{
+			filepath.Join(homeDir, "Desktop", "AegisGate", ".venv", "lib", "python3.12", "site-packages", "onnxruntime", "capi", "libonnxruntime.so.1.27.0"),
+			filepath.Join(homeDir, ".local", "lib", "onnxruntime", "libonnxruntime.so"),
+		}
+		for _, p := range venvPaths {
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	}
+
+	// 4. System library paths
+	for _, p := range onnxRuntimeSearchPaths {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+
+	return "" // Let onnxruntime use its default search
+}
+
 // loadModelONNX loads the ONNX model and creates an inference session.
 func (td *ThreatDetector) loadModelONNX(path string) error {
-	if td.config.ONNXRuntimeLibPath != "" {
-		onnxruntime.SetSharedLibraryPath(td.config.ONNXRuntimeLibPath)
+	// Auto-discover onnxruntime shared library if not explicitly configured
+	libPath := discoverONNXRuntimeLib(td.config.ONNXRuntimeLibPath)
+	if libPath != "" {
+		onnxruntime.SetSharedLibraryPath(libPath)
 	}
 
 	if !onnxruntime.IsInitialized() {
@@ -63,7 +120,7 @@ func (td *ThreatDetector) loadModelONNX(path string) error {
 		path,
 		[]string{"input"},
 		[]string{"threat_score"},
-		[]onnxruntime.Value{inputTensor, outputTensor},
+		[]onnxruntime.Value{inputTensor},
 		[]onnxruntime.Value{outputTensor},
 		nil,
 	)

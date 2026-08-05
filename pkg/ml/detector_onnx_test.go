@@ -8,32 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	onnxruntime "github.com/yalue/onnxruntime_go"
 )
 
 func TestThreatDetector_LoadONNXModel(t *testing.T) {
 	// Skip if ONNX model file doesn't exist
-	modelPath := filepath.Join("..", "..", "pkg", "ml", "models", "threat_cnn_bilstm.onnx")
-	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-		modelPath = "pkg/ml/models/threat_cnn_bilstm.onnx"
-		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-			t.Skip("ONNX model file not found, skipping ONNX inference test")
-		}
+	modelPath := findModelPath(t)
+	if modelPath == "" {
+		return // skipped
 	}
-
-	// Set ONNX Runtime shared library path
-	onnxLibPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH")
-	if onnxLibPath == "" {
-		venvPath := filepath.Join(os.Getenv("HOME"), "Desktop", "AegisGate", ".venv", "lib", "python3.12", "site-packages", "onnxruntime", "capi", "libonnxruntime.so.1.27.0")
-		if _, err := os.Stat(venvPath); err == nil {
-			onnxLibPath = venvPath
-		}
-	}
-	if onnxLibPath == "" {
-		t.Skip("ONNX Runtime shared library not found. Set ONNXRUNTIME_SHARED_LIBRARY_PATH to run this test.")
-	}
-	onnxruntime.SetSharedLibraryPath(onnxLibPath)
 
 	cfg := DetectorConfig{
 		Enabled:            true,
@@ -42,7 +24,7 @@ func TestThreatDetector_LoadONNXModel(t *testing.T) {
 		ModelPath:          modelPath,
 		MaxSequenceLength:  128,
 		Timeout:            100,
-		ONNXRuntimeLibPath: onnxLibPath,
+		ONNXRuntimeLibPath: discoverONNXRuntimeLib(""),
 	}
 	td := NewThreatDetector(cfg)
 
@@ -120,25 +102,10 @@ func TestThreatDetector_LoadONNXModel(t *testing.T) {
 }
 
 func TestThreatDetector_LatencyBenchmark(t *testing.T) {
-	modelPath := filepath.Join("..", "..", "pkg", "ml", "models", "threat_cnn_bilstm.onnx")
-	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-		modelPath = "pkg/ml/models/threat_cnn_bilstm.onnx"
-		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-			t.Skip("ONNX model file not found, skipping latency benchmark")
-		}
+	modelPath := findModelPath(t)
+	if modelPath == "" {
+		return // skipped
 	}
-
-	onnxLibPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH")
-	if onnxLibPath == "" {
-		venvPath := filepath.Join(os.Getenv("HOME"), "Desktop", "AegisGate", ".venv", "lib", "python3.12", "site-packages", "onnxruntime", "capi", "libonnxruntime.so.1.27.0")
-		if _, err := os.Stat(venvPath); err == nil {
-			onnxLibPath = venvPath
-		}
-	}
-	if onnxLibPath == "" {
-		t.Skip("ONNX Runtime shared library not found. Set ONNXRUNTIME_SHARED_LIBRARY_PATH to run this test.")
-	}
-	onnxruntime.SetSharedLibraryPath(onnxLibPath)
 
 	cfg := DetectorConfig{
 		Enabled:            true,
@@ -147,7 +114,7 @@ func TestThreatDetector_LatencyBenchmark(t *testing.T) {
 		ModelPath:          modelPath,
 		MaxSequenceLength:  128,
 		Timeout:            100,
-		ONNXRuntimeLibPath: onnxLibPath,
+		ONNXRuntimeLibPath: discoverONNXRuntimeLib(""),
 	}
 	td := NewThreatDetector(cfg)
 
@@ -196,4 +163,24 @@ func TestThreatDetector_LatencyBenchmark(t *testing.T) {
 	} else {
 		t.Logf("PASS: Average latency %.3fms is within 1ms target", avgLat)
 	}
+}
+
+// findModelPath locates the ONNX model file, skipping the test if not found.
+func findModelPath(t testing.TB) string {
+	t.Helper()
+	candidates := []string{
+		filepath.Join("..", "..", "pkg", "ml", "models", "threat_cnn_bilstm.onnx"),
+		"pkg/ml/models/threat_cnn_bilstm.onnx",
+	}
+	// Also check AEGISGATE_ML_MODEL_PATH env var
+	if envPath := os.Getenv("AEGISGATE_ML_MODEL_PATH"); envPath != "" {
+		candidates = append([]string{envPath}, candidates...)
+	}
+	for _, p := range candidates {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	t.Skip("ONNX model file not found. Set AEGISGATE_ML_MODEL_PATH or run from repo root.")
+	return ""
 }
