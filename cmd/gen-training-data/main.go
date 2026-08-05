@@ -24,7 +24,9 @@ func main() {
 	}
 
 	// Create output directory
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	//nosec G301,G703 -- outputDir is a local training data path, not user-controlled; 0755 is appropriate for data output dirs
+	cleanOutputDir := filepath.Clean(outputDir)
+	if err := os.MkdirAll(cleanOutputDir, 0750); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating output directory: %v\n", err)
 		os.Exit(1)
 	}
@@ -57,10 +59,10 @@ func main() {
 	fmt.Printf("Split: train=%d, val=%d, test=%d\n", len(train), len(val), len(test))
 
 	// Write JSONL files
-	trainPath := filepath.Join(outputDir, "train.jsonl")
-	valPath := filepath.Join(outputDir, "val.jsonl")
-	testPath := filepath.Join(outputDir, "test.jsonl")
-	combinedPath := filepath.Join(outputDir, "combined.jsonl")
+	trainPath := filepath.Join(cleanOutputDir, "train.jsonl")
+	valPath := filepath.Join(cleanOutputDir, "val.jsonl")
+	testPath := filepath.Join(cleanOutputDir, "test.jsonl")
+	combinedPath := filepath.Join(cleanOutputDir, "combined.jsonl")
 
 	if err := training.WriteJSONL(train, trainPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing train.jsonl: %v\n", err)

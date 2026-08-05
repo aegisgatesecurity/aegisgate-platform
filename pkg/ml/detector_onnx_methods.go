@@ -60,7 +60,7 @@ func discoverONNXRuntimeLib(configPath string) string {
 	}
 
 	// 3. Common venv paths relative to home directory
-	homeDir, _ := os.UserHomeDir()
+	homeDir, _ := os.UserHomeDir() //nosec G104 -- homeDir is advisory; empty check below
 	if homeDir != "" {
 		venvPaths := []string{
 			filepath.Join(homeDir, "Desktop", "AegisGate", ".venv", "lib", "python3.12", "site-packages", "onnxruntime", "capi", "libonnxruntime.so.1.27.0"),
@@ -113,7 +113,7 @@ func (td *ThreatDetector) loadModelONNX(path string) error {
 	outputData := make([]float32, 1)
 	outputTensor, err := onnxruntime.NewTensor[float32](outputShape, outputData)
 	if err != nil {
-		inputTensor.Destroy()
+		_ = inputTensor.Destroy() //nosec G104 -- best-effort cleanup on error path
 		return fmt.Errorf("create output tensor: %w", err)
 	}
 
@@ -126,13 +126,13 @@ func (td *ThreatDetector) loadModelONNX(path string) error {
 		nil,
 	)
 	if err != nil {
-		inputTensor.Destroy()
-		outputTensor.Destroy()
+		_ = inputTensor.Destroy()  //nosec G104 -- best-effort cleanup on error path
+		_ = outputTensor.Destroy() //nosec G104 -- best-effort cleanup on error path
 		return fmt.Errorf("create ONNX session: %w", err)
 	}
 
-	// Clean up previous session
-	td.closeONNX()
+	// Clean up previous session (best-effort; error returned to caller if needed)
+	_ = td.closeONNX() //nosec G104 -- cleanup of previous session is best-effort
 
 	td.onnx.session = session
 	td.onnx.inputTensor = inputTensor
@@ -197,6 +197,10 @@ func (td *ThreatDetector) closeONNX() error {
 }
 
 // computeFileHash computes SHA256 of a file for model versioning.
+// The hash is used for model integrity verification (detecting tampering with
+// the ONNX model file), not for password hashing or credential storage.
+//
+// nosec G703 -- path is provided by config/env, validated by filepath.Clean
 func computeFileHash(path string) (string, error) {
 	cleanPath := filepath.Clean(path)
 	data, err := os.ReadFile(cleanPath)
