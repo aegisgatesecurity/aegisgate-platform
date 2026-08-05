@@ -12,8 +12,8 @@ metadata:
   namespace: aegisgate
   labels:
     app.kubernetes.io/name: aegisgate-platform
-    # Updated 2026-07-24: aligned to v3.6.0 (security hardening release).
-    app.kubernetes.io/version: "3.5.0"
+    # Updated 2026-08-05: aligned to v4.0.0 (ML threat detection release).
+    app.kubernetes.io/version: "4.0.0"
 spec:
   replicas: 1
   selector:
@@ -28,7 +28,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: aegisgate-platform
-        app.kubernetes.io/version: "3.5.0"
+        app.kubernetes.io/version: "4.0.0"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8443"
@@ -48,7 +48,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: aegisgate-platform
-          image: ghcr.io/aegisgatesecurity/aegisgate-platform:3.5.0
+          image: ghcr.io/aegisgatesecurity/aegisgate-platform:4.0.0
           imagePullPolicy: IfNotPresent
           args:
             - "--proxy-port=8080"
@@ -63,6 +63,11 @@ spec:
           env:
             - name: AEGISGATE_DATA_DIR
               value: /data
+            # ML threat detection (v4.0.0): ONNX model path inside container.
+            # The model file is at /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
+            # and libonnxruntime.so is installed via the Alpine package manager.
+            - name: AEGISGATE_ML_MODEL_PATH
+              value: /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
             # Removed 2026-07-20 (audit Finding #2): TIER=community is the
             # same deprecated path. Tier is license-derived; setting TIER
             # does not change behavior since D0.

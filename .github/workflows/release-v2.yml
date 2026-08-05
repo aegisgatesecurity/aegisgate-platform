@@ -62,7 +62,11 @@ jobs:
           BUILD_DATE: ${{ github.event.created_at }}
         run: |
           mkdir -p dist
-          CGO_ENABLED=0 go build \
+          # v4.0.0: CGO_ENABLED=1 required for ONNX Runtime neural threat detection.
+          # The onnxruntime_go library uses CGO to call the ONNX Runtime C API.
+          # The standalone binary includes heuristic-only fallback when onnxruntime
+          # is not available, but CGO is required for the full ML pipeline.
+          CGO_ENABLED=1 go build \
             -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT:0:8} -X main.buildDate=${BUILD_DATE}" \
             -o dist/aegisgate-platform \
             ./cmd/aegisgate-platform/

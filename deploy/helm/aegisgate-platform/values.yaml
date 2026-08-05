@@ -16,7 +16,7 @@
 # -- Image configuration
 image:
   repository: ghcr.io/aegisgatesecurity/aegisgate-platform
-  tag: "v3.6.1"
+  tag: "v4.0.0"
   pullPolicy: IfNotPresent
   # pullSecrets: []
 
@@ -116,6 +116,10 @@ persistence:
 # -- Environment variable overrides (applied to all containers)
 env:
   AEGISGATE_DATA_DIR: /data
+  # ML threat detection (v4.0.0): ONNX model path inside container.
+  # The model ships at /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
+  # and libonnxruntime.so is installed via Alpine package manager.
+  AEGISGATE_ML_MODEL_PATH: /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
   # OPENAI_API_KEY: ""         # Set via secrets below
   # AEGISGATE_LICENSE_KEY: ""  # Set via secrets below
 
