@@ -35,7 +35,7 @@ Every AI interaction is an attack surface. Prompt injections leak secrets. MCP s
 
 AegisGate sits in front of all of it — one binary, zero dependencies, fail-closed by default.
 
-- **Zero-cost proxy.** -2.8ms p99 overhead (faster than direct). Blocked requests resolve in 7.2ms p50. 15K+ RPS with 0% errors at 2,000 VUs.
+- **Zero-cost proxy.** -2.8ms p99 overhead (faster than direct). Blocked requests resolve in 7.2ms p50. 23,578 RPS with 0% errors at 5,000 VUs.
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, RESPONSE, and Trust — no patchwork of point products.
@@ -131,7 +131,7 @@ result, _ := guard.Scan(ctx, text)
 | Cryptographic attestation | ✅ Native | ❌ Not available |
 | Self-hosted, zero dependencies | ✅ Single binary | ❌ Requires external services |
 | Fail-closed by default | ✅ | ⚠️ Often fail-open |
-| 15+ compliance frameworks | ✅ | ⚠️ 3–5 typical |
+| 27 compliance frameworks | ✅ | ⚠️ 3–5 typical |
 | PostgreSQL + file persistence | ✅ | ⚠️ Cloud-locked |
 | HA clustering | ✅ Native | ⚠️ Enterprise add-on |
 | Open source (Apache 2.0) | ✅ | ❌ Proprietary |
@@ -177,15 +177,29 @@ result, _ := guard.Scan(ctx, text)
 | FedRAMP (NIST 800-53) | 170 (151 automated) | `pkg/compliance/fedramp/` |
 | SOC 2 Type II | 5 | `pkg/compliance/soc2/` |
 | ISO 27001 | 14 | `pkg/compliance/iso27001/` |
+| ISO 42001 | 8 | `pkg/compliance/iso42001/` |
 | HITRUST CSF | 6 | `pkg/compliance/hitrust/` |
 | TISAX | 7 | `pkg/compliance/tisax/` |
 | CMMC Level 2 | 14 | `pkg/compliance/cmmcl2/` |
 | NIST 800-171 | 14 | `pkg/compliance/nist800171/` |
-| FIPS 140-2 | 11 | `pkg/compliance/fips/` |
+| FIPS 140-2/3 | 11 | `pkg/compliance/fips/` |
 | NIST AI RMF | 8 | `pkg/compliance/nist_ai_rmf/` |
-| CCPA | 7 | `pkg/compliance/ccpa/` |
+| NIST AI 600-1 | 12 | `pkg/compliance/nist_ai_600_1/` |
+| NIST CSF 2.0 | 6 | `pkg/compliance/nist_csf/` |
+| CIS Controls v8 | 15 | `pkg/compliance/cis/` |
+| CSA STAR Level 1 | 16 | `pkg/compliance/csa_star/` |
+| CCPA/CPRA | 7 | `pkg/compliance/ccpa/` |
 | HIPAA | 11 | `pkg/compliance/hipaa/` |
 | PCI-DSS | 12 | `pkg/compliance/pci/` |
+| SOX | 6 | `pkg/compliance/sox/` |
+| GLBA | 6 | `pkg/compliance/glba/` |
+| FERPA | 5 | `pkg/compliance/ferpa/` |
+| CJIS | 8 | `pkg/compliance/cjis/` |
+| NERC CIP | 14 | `pkg/compliance/nerc_cip/` |
+| GDPR | 6 | `pkg/compliance/community/gdpr/` |
+| OWASP LLM Top 10 | 10 | `pkg/compliance/community/owasp/` |
+| MITRE ATLAS | 66 | `pkg/compliance/community/atlas/` |
+| OWASP Web Top 10 | 10 | `pkg/compliance/owasp_web/` |
 
 ## Quick Start
 
@@ -213,7 +227,7 @@ pkg/
 ├── acp/                    # Agent Capability Policy
 ├── attestation/            # Cryptographic envelope (Sign/Verify/VerifyWithKey/VerifyOnline)
 ├── audit/soc2/             # SOC 2 evidence collection
-├── compliance/             # 15+ framework modules
+├── compliance/             # 27 framework modules
 ├── cluster/                # HA clustering & distributed rate limiting
 ├── correlation/            # Event correlation engine
 ├── cve/                    # CVE-for-AI feed
