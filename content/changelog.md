@@ -77,7 +77,7 @@
 > **v3.4.3** fixes critical auth bypass issues found during pre-ship adversarial
 > testing. 5 endpoints were accessible without authentication; all are now
 > wrapped with `RequireAuth()`. `/metrics` is restricted to localhost. CSP
-> is hardened (`unsafe-eval` removed). 26/27 red team tests pass.
+> is hardened (`unsafe-eval` removed). 26/27 manual red team tests pass (superseded by automated 2,600-test evasion suite in v4.0.0: 100/100 with ML).
 
 ### Security Fixes
 

@@ -40,14 +40,18 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, RESPONSE, and Trust — no patchwork of point products.
 - **153 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
-- **Red-team hardened.** 26/27 adversarial tests pass. TRACE methods rejected. All security headers present. No `unsafe-eval` in CSP.
+- **Red-team hardened.** 100/100 evasion resistance with ML, 88.5/100 rules-only (2,600-test suite). 25 adversarial attack chain scenarios. 29 automated security tests. TRACE/TRACK rejected. All security headers present. No `unsafe-eval` in CSP.
 
 ## Security Posture
 
 | Metric | Value |
 |--------|-------|
 | CVEs | **0** |
-| Red team tests passed | **26 / 27** |
+| Evasion resistance (with ML) | **100 / 100** |
+| Evasion resistance (rules-only) | **88.5 / 100** |
+| Evasion test suite | **2,600 tests** |
+| Adversarial attack chains | **25 scenarios** |
+| Automated security tests | **29** |
 | Fail-closed by default | ✅ |
 | TRACE/CONNECT/TRACK blocked | ✅ |
 | Security headers (CSP, CORP, COEP, COOP, HSTS) | ✅ |
@@ -156,7 +160,7 @@ result, _ := guard.Scan(ctx, text)
 | **PostgreSQL Persistence** | 8 integration test suites via testcontainers-go (IOC, audit, sessions, multi-tenant, correlation, attestation, RBAC, incident) |
 | **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
 | **Performance** | Zero-cost proxy (-2.8ms p99), 15K+ RPS sustained, ATLAS p99 10.7ms (81% improvement) |
-| **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
+| **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 100/100 evasion resistance with ML (2,600-test suite), 25 attack chains |
 
 ## 6 Pillars
 
