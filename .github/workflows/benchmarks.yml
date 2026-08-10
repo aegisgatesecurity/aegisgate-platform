@@ -68,9 +68,14 @@ jobs:
           FAIL=0
           RESULTS_FILE="benchmark-results.txt"
 
-          # Run benchmarks across all packages
+          # Run benchmarks across packages with actual benchmark functions.
+          # Scoped to packages with benchmarks to stay within the 30m timeout.
+          # Previous runs with ./pkg/... (all packages) exceeded 30m on Go 1.26.5.
           go test -bench=. -benchmem -benchtime=${BENCH_TIMEOUT} -count=${BENCH_COUNT} \
-            -timeout=25m ./pkg/... 2>&1 | tee ${RESULTS_FILE}
+            -timeout=25m \
+            ./pkg/compliance/... ./pkg/response/... ./pkg/evaluator/... \
+            ./pkg/soc/... ./pkg/incident/... ./pkg/i18n/... ./pkg/anomaly/... \
+            ./pkg/ioc/... ./pkg/auth/... 2>&1 | tee ${RESULTS_FILE}
 
           # Parse results and check thresholds
           echo "" >> $GITHUB_STEP_SUMMARY
