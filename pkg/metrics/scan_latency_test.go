@@ -46,7 +46,7 @@ func TestMetricNames(t *testing.T) {
 		constant string
 		want     string
 	}{
-		{"scan_duration", MetricScanDuration, "aegisgate_scan_duration_seconds"},
+		{"scan_duration", MetricScanDuration, "aegisgate_platform_scan_duration_seconds"},
 		{"regex_scan_duration", MetricRegexScanDuration, "aegisgate_regex_scan_duration_seconds"},
 		{"ml_inference_duration", MetricMLInferenceDuration, "aegisgate_ml_inference_duration_seconds"},
 		{"shadow_prediction_total", MetricShadowPredictionTotal, "aegisgate_shadow_prediction_total"},
