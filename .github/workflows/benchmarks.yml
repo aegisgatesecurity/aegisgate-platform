@@ -57,8 +57,8 @@ jobs:
 
       - name: Run Benchmarks
         env:
-          BENCH_TIMEOUT: ${{ github.event.inputs.bench_timeout || '30s' }}
-          BENCH_COUNT: ${{ github.event.inputs.bench_count || '5' }}
+          BENCH_TIMEOUT: ${{ github.event.inputs.bench_timeout || '3s' }}
+          BENCH_COUNT: ${{ github.event.inputs.bench_count || '3' }}
         run: |
           echo "## Performance Benchmark Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
