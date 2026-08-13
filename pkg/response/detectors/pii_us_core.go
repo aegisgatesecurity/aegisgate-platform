@@ -104,6 +104,78 @@ var PIIUSCorePatterns = []PatternDef{
 		Regex:       `(?i)\b(?:SSN|Social\s+Security)\s+(?:last|final)\s+(?:4|four)\s*(?:[:=#]|is|was|are|of|equals)?\s*[0-9]{4}\b`,
 		Description: "SSN last-4 digits (requires keyword context)",
 	},
+	// CPT (Current Procedural Terminology) - Healthcare billing codes
+	{
+		Name:        "pii_cpt_code",
+		Severity:    SeverityMedium,
+		Regex:       `\b[0-9]{5}\b`,
+		Description: "CPT medical billing code (5-digit numeric)",
+	},
+	{
+		Name:        "pii_cpt_code_label",
+		Severity:    SeverityHigh,
+		Regex:       `(?i)\b(?:CPT|procedure\s+code)\s*[:=]?\s*[0-9]{5}\b`,
+		Description: "CPT code with label",
+	},
+	// HCPCS (Healthcare Common Procedure Coding System) - Level II codes
+	{
+		Name:        "pii_hcpcs_level2",
+		Severity:    SeverityMedium,
+		Regex:       `\b[A-Z][0-9]{4}\b`,
+		Description: "HCPCS Level II code (1 letter + 4 digits)",
+	},
+	{
+		Name:        "pii_hcpcs_level2_label",
+		Severity:    SeverityHigh,
+		Regex:       `(?i)\b(?:HCPCS|healthcare\s+procedure\s+code)\s*[:=]?\s*[A-Z][0-9]{4}\b`,
+		Description: "HCPCS code with label",
+	},
+	// HCPCS Level III (local codes, less common but still valid)
+	{
+		Name:        "pii_hcpcs_level3",
+		Severity:    SeverityLow,
+		Regex:       `\b[A-Z][0-9]{4}[A-Z]\b`,
+		Description: "HCPCS Level III code (1 letter + 4 digits + 1 letter)",
+	},
+	// CPT Category II (performance measurement, 4 digits + F)
+	{
+		Name:        "pii_cpt_cat2",
+		Severity:    SeverityLow,
+		Regex:       `\b[0-9]{4}F\b`,
+		Description: "CPT Category II code (4 digits + F suffix)",
+	},
+	// CPT Category III (emerging technology, 4 digits + T)
+	{
+		Name:        "pii_cpt_cat3",
+		Severity:    SeverityLow,
+		Regex:       `\b[0-9]{4}T\b`,
+		Description: "CPT Category III code (4 digits + T suffix)",
+	},
+	// Common CPT ranges for specific services (high-value fraud indicators)
+	{
+		Name:        "pii_cpt_evaluation",
+		Severity:    SeverityMedium,
+		Regex:       `\b9(?:920[34]|921[1-5]|930[0-5]|940[1-4])\b`,
+		Description: "CPT evaluation/management codes (office visits)",
+	},
+	{
+		Name:        "pii_cpt_lab",
+		Severity:    SeverityMedium,
+		Regex:       `\b8(?:0053|1000|2000|3000|4000|5000|6000|7000|8000)\b`,
+		Description: "CPT laboratory/pathology codes",
+	},
+	{
+		Name:        "pii_cpt_radiology",
+		Severity:    SeverityMedium,
+		Regex:       `\b7(?:0000|1000|2000|3000|4000|5000|6000|7000|8000)\b`,
+		Description: "CPT radiology codes (X-ray, CT, MRI)",
+	},
+	{
+		Name:        "pii_cpt_surgery",
+		Severity:    SeverityHigh,
+		Regex:       `\b(?:10004|20000|30000|40000|50000|60000)\b`,
+		Description: "CPT surgery codes (high-value procedures)",
+	},
 }
 
 // CompiledPIIUSCorePatterns holds pre-compiled US core PII regex patterns.

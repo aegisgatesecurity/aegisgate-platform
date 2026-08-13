@@ -66,6 +66,24 @@ var PIIFinancialPatterns = []PatternDef{
 		Regex:       `(?i)(?:Cashapp|cashapp|cash\s*app)\s*(?:username|handle)?\s*[:=]?\s*(\$?[a-zA-Z][a-zA-Z0-9._\-]{1,20})`,
 		Description: "Cash App username",
 	},
+	{
+		Name:        "pii_banking_swift_bic",
+		Severity:    SeverityHigh,
+		Regex:       `(?i)(?:SWIFT|BIC|bank\s*identifier\s*code)\s*(?:code|identifier)?\s*[:=]?\s*([A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)`,
+		Description: "SWIFT/BIC bank code (8-11 characters: AAAABBBBXXX)",
+	},
+	{
+		Name:        "pii_banking_swift_8",
+		Severity:    SeverityHigh,
+		Regex:       `\b([A-Z]{4}[A-Z]{2}[0-9]{2})\b`,
+		Description: "SWIFT/BIC 8-character code (bank + country + location)",
+	},
+	{
+		Name:        "pii_banking_swift_11",
+		Severity:    SeverityHigh,
+		Regex:       `\b([A-Z]{4}[A-Z]{2}[0-9]{2}[A-Z0-9]{3})\b`,
+		Description: "SWIFT/BIC 11-character code (includes branch code)",
+	},
 }
 
 // CompiledPIIFinancialPatterns holds pre-compiled financial PII regex patterns.

@@ -467,6 +467,7 @@ func TestDetectAllWithResults(t *testing.T) {
 
 func TestPatternCountParity(t *testing.T) {
 	// Verify that Go ports have the same number of patterns as Lens
+	// Note: Platform includes additional patterns for SOC relevance (SWIFT/BIC, CPT/HCPCS, OT protocols)
 	tests := []struct {
 		name     string
 		count    int
@@ -474,11 +475,12 @@ func TestPatternCountParity(t *testing.T) {
 	}{
 		{"secrets", len(SecretsPatterns), 45},
 		{"xss", len(XSSPatterns), 12},
-		{"pii-us-core", len(PIIUSCorePatterns), 15},
+		{"pii-us-core", len(PIIUSCorePatterns), 26}, // 15 base + 11 CPT/HCPCS
 		{"pii-us-extended", len(PIIUSExtendedPatterns), 13},
-		{"pii-financial", len(PIIFinancialPatterns), 9},
+		{"pii-financial", len(PIIFinancialPatterns), 12}, // 9 base + 3 SWIFT/BIC
 		{"pii-international", len(PIIInternationalPatterns), 24},
 		{"compliance", len(CompliancePatterns), 35},
+		{"ot-protocols", len(OTProtocolPatterns), 9}, // NEW: OT/ICS protocols
 	}
 
 	total := 0
@@ -488,8 +490,8 @@ func TestPatternCountParity(t *testing.T) {
 			t.Errorf("%s: expected %d patterns, got %d", tt.name, tt.expected, tt.count)
 		}
 	}
-	if total != 153 {
-		t.Errorf("expected 153 total patterns, got %d", total)
+	if total != 176 {
+		t.Errorf("expected 176 total patterns, got %d", total)
 	}
 }
 
