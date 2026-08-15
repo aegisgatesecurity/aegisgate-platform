@@ -41,14 +41,14 @@ type ModuleRequirement struct {
 // All compliance tier decisions flow through this table.
 //
 // Tier mapping:
-//   - Community (free):  CCPA, NIST AI RMF, OWASP Web (3 modules)
+//   - Community (free):  CCPA, NIST AI RMF, OWASP Web, ATLAS, GDPR, OWASP LLM,
+//                        CIS, NIST CSF, CSA STAR, NIST AI 600-1 (10 modules)
 //   - Developer+:        HIPAA, PCI, SOC 2, ISO 27001 (4 modules)
 //   - Professional+:     ISO 42001, FedRAMP, FIPS, EU AI Act, CMMC L2,
 //                        NIST 800-171, Trust, SOX, GLBA, NERC CIP, CJIS,
-//                        NIST CSF, CIS, CSA STAR, FERPA, NIST AI 600-1,
-//                        HITECH, FFIEC, TSA SD, ISO 21434 (20 modules)
+//                        HITECH, FFIEC, TSA SD, ISO 21434 (16 modules)
 //   - Enterprise+:       HITRUST, TISAX (2 modules)
-//   - Free (community-registered, not in gating): ATLAS, GDPR, OWASP LLM
+//   Total: 32 modules (31 compliance frameworks + 1 Trust pillar)
 var moduleRequirements = map[string]ModuleRequirement{
 	license.ModuleHIPAA: {
 		Module:            license.ModuleHIPAA,
@@ -212,29 +212,29 @@ var moduleRequirements = map[string]ModuleRequirement{
 	license.ModuleCSASTAR: {
 		Module:            license.ModuleCSASTAR,
 		DisplayName:       "CSA STAR",
-		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900, // $79/mo
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/csa_star/ exists
 	},
 	license.ModuleNISTCSF: {
 		Module:            license.ModuleNISTCSF,
 		DisplayName:       "NIST Cybersecurity Framework",
-		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     9900, // $99/mo
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/nist_csf/ exists
 	},
 	license.ModuleCIS: {
 		Module:            license.ModuleCIS,
 		DisplayName:       "CIS Critical Security Controls",
-		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     9900, // $99/mo
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/cis/ exists
 	},
 	license.ModuleNISTAI600: {
 		Module:            license.ModuleNISTAI600,
 		DisplayName:       "NIST AI 600-1",
-		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900, // $79/mo
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/nist_ai_600_1/ exists
 	},
 	license.ModuleOWASPWeb: {
@@ -243,6 +243,27 @@ var moduleRequirements = map[string]ModuleRequirement{
 		RequiredTier:      tierpkg.TierCommunity,
 		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/owasp_web/ exists
+	},
+	license.ModuleATLAS: {
+		Module:            license.ModuleATLAS,
+		DisplayName:       "MITRE ATLAS",
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
+		HasImplementation: true, // pkg/compliance/atlas.go exists
+	},
+	license.ModuleGDPR: {
+		Module:            license.ModuleGDPR,
+		DisplayName:       "GDPR",
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
+		HasImplementation: true, // pkg/compliance/community/gdpr/ exists
+	},
+	license.ModuleOWASP: {
+		Module:            license.ModuleOWASP,
+		DisplayName:       "OWASP LLM Top 10",
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
+		HasImplementation: true, // pkg/compliance/owasp.go exists
 	},
 	// v4.2.0: New frameworks — built and integrated with cross-framework mapping.
 	license.ModuleHITECH: {
@@ -370,6 +391,21 @@ func EvaluateGating(framework string, lic *license.ValidationResult) GatingDecis
 			Enforced:  false,
 			Framework: framework,
 			Reason:    ReasonUnknownFramework,
+		}
+	}
+
+	// Community tier frameworks are always enforced, regardless of
+	// license status. They are free/open-source and part of the
+	// Community tier mandate.
+	if req.RequiredTier == tierpkg.TierCommunity {
+		return GatingDecision{
+			Enforced:          true,
+			Framework:         framework,
+			RequiredTier:      tierpkg.TierCommunity,
+			LicenseTier:       tierpkg.TierCommunity,
+			ModuleOwned:       true,
+			Reason:            ReasonEnforced,
+			HasImplementation: req.HasImplementation,
 		}
 	}
 

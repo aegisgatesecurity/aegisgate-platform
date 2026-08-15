@@ -97,9 +97,9 @@ func TestMCPTierAwareCompliance_PremiumFrameworks_Community(t *testing.T) {
 	}
 
 	// Premium frameworks should NOT be enabled for Community tier
+	// Note: GDPR is now Community tier (free), so it's NOT in this list
 	premiumFrameworks := []Framework{
 		FrameworkSOC2,
-		FrameworkGDPR,
 		FrameworkHIPAA,
 		FrameworkPCIDSS,
 		FrameworkISO27001,
@@ -150,18 +150,19 @@ func TestMCPTierAwareCompliance_FilterFindingsByTier(t *testing.T) {
 	findings := []Finding{
 		{Framework: FrameworkATLAS, Severity: SeverityHigh},
 		{Framework: FrameworkNIST1500, Severity: SeverityMedium},
-		{Framework: FrameworkSOC2, Severity: SeverityHigh},     // Premium - should be filtered for Community
-		{Framework: FrameworkGDPR, Severity: SeverityCritical}, // Premium - should be filtered for Community
+		{Framework: FrameworkSOC2, Severity: SeverityHigh},      // Premium - should be filtered for Community
+		{Framework: FrameworkISO42001, Severity: SeverityCritical}, // Premium - should be filtered for Community
 	}
 
-	// Community tier should filter out SOC2 and GDPR findings
+	// Community tier should filter out SOC2 and ISO42001 findings
+	// ATLAS, NIST1500, and GDPR are all Community tier and should pass through
 	filtered := adapter.filterFindingsByTier(findings, tier.TierCommunity)
 	if len(filtered) != 2 {
 		t.Errorf("Community tier should filter to 2 findings, got %d", len(filtered))
 	}
 
 	for _, f := range filtered {
-		if f.Framework == FrameworkSOC2 || f.Framework == FrameworkGDPR {
+		if f.Framework == FrameworkSOC2 || f.Framework == FrameworkISO42001 {
 			t.Errorf("Community tier should NOT have findings from %s", f.Framework)
 		}
 	}

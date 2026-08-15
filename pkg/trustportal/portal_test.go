@@ -428,9 +428,9 @@ func TestBuildPostureSnapshot(t *testing.T) {
 // coverage floor requires this to be tested in pkg/, not cmd/.
 func TestBuildFrameworksSnapshot(t *testing.T) {
 	snap := BuildFrameworksSnapshot()
-	// v4.2.0: 29 modules total (was 14)
-	if snap.TotalCount != 29 {
-		t.Errorf("total_count = %d, want 29 (v4.2.0 unified)", snap.TotalCount)
+	// v4.2.0: 32 modules total (31 compliance frameworks + 1 Trust pillar)
+	if snap.TotalCount != 32 {
+		t.Errorf("total_count = %d, want 32 (v4.2.0: 31 frameworks + 1 Trust)", snap.TotalCount)
 	}
 	if snap.Tier1Count < 20 {
 		t.Errorf("tier1_count = %d, want at least 20 (Professional+ frameworks)", snap.Tier1Count)

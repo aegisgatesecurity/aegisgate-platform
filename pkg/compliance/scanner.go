@@ -219,15 +219,10 @@ func (s *Scanner) Scan(ctx context.Context, lic *license.ValidationResult) (*Sca
 		s.mu.RUnlock()
 	}
 
-	// Walk the locked module requirements (all billable modules).
+	// Walk the locked module requirements (all modules, including
+	// Community tier free frameworks which are always enforced).
 	for _, modReq := range AllModuleRequirements() {
 		result := s.scanModule(ctx, modReq, lic)
-		rpt.Frameworks = append(rpt.Frameworks, result)
-	}
-
-	// Add the 3 free frameworks (ATLAS, NIST AI RMF, OWASP).
-	for _, fw := range freeFrameworks {
-		result := s.scanFreeFramework(ctx, fw, lic)
 		rpt.Frameworks = append(rpt.Frameworks, result)
 	}
 
@@ -264,16 +259,6 @@ func (s *Scanner) ScanFramework(ctx context.Context, lic *license.ValidationResu
 			return &result, nil, nil
 		}
 	}
-	for _, fw := range freeFrameworks {
-		if fw == framework {
-			result := s.scanFreeFramework(ctx, fw, lic)
-			if result.Enforced {
-				assessment, _ := s.runAssessment(ctx, framework)
-				return &result, assessment, nil
-			}
-			return &result, nil, nil
-		}
-	}
 	return nil, nil, fmt.Errorf("%w: %q", ErrUnknownFramework, framework)
 }
 
@@ -298,7 +283,13 @@ func (s *Scanner) scanModule(ctx context.Context, modReq ModuleRequirement, lic 
 	// are implemented.
 	result.Score, result.ControlsTotal, result.ControlsEnforced = s.scoreFramework(ctx, modReq.Module, modReq.Module)
 	if result.Enforced {
-		result.ReasonEnforced = string(decision.Reason)
+		// Community tier modules are free frameworks — use the
+		// "framework_free" reason for consistency.
+		if modReq.RequiredTier == tier.TierCommunity {
+			result.ReasonEnforced = "framework_free"
+		} else {
+			result.ReasonEnforced = string(decision.Reason)
+		}
 		if result.ControlsTotal > 0 {
 			result.CompliancePct = float64(result.ControlsEnforced) / float64(result.ControlsTotal) * 100
 		}
@@ -308,24 +299,6 @@ func (s *Scanner) scanModule(ctx context.Context, modReq ModuleRequirement, lic 
 		if !decision.Enforced && modReq.HasImplementation {
 			result.MissingModules = []string{modReq.Module}
 		}
-	}
-	return result
-}
-
-// scanFreeFramework computes the FrameworkScanResult for a free framework
-// (ATLAS, NIST AI RMF, OWASP) which is enforced for every tier.
-func (s *Scanner) scanFreeFramework(ctx context.Context, framework string, lic *license.ValidationResult) FrameworkScanResult {
-	result := FrameworkScanResult{
-		Framework:           framework,
-		DisplayName:         displayNameForFree(framework),
-		LastScan:            time.Now().UTC(),
-		Enforced:            true,
-		ReasonEnforced:      "framework_free",
-		ImplementationReady: true,
-	}
-	result.Score, result.ControlsTotal, result.ControlsEnforced = s.scoreFramework(ctx, framework, "")
-	if result.ControlsTotal > 0 {
-		result.CompliancePct = float64(result.ControlsEnforced) / float64(result.ControlsTotal) * 100
 	}
 	return result
 }
@@ -438,48 +411,6 @@ func formatUpgradeHint(d GatingDecision) string {
 		return "Unknown compliance framework"
 	}
 	return string(d.Reason)
-}
-
-// freeFrameworks are the frameworks available to every customer
-// regardless of paid tier or module ownership. These are part of
-// the Community tier mandate and the platform's open-source commitment.
-var freeFrameworks = []string{
-	"atlas",         // MITRE ATLAS — 24 technique patterns
-	"nist_ai_rmf",   // NIST AI RMF 1.0 — 20 controls
-	"owasp",         // OWASP LLM Top 10 — 10 risk categories
-	"cis",           // CIS Critical Security Controls v8 — 15 controls
-	"nist_csf",      // NIST CSF 2.0 — 6 core functions
-	"owasp_web",     // OWASP Top 10 Web Application Security — 10 categories
-	"csa_star",      // CSA STAR Level 1 — 16 CCM domains
-	"nist_ai_600_1", // NIST AI 600-1 GenAI Profile — 12 categories
-	"ccpa",          // CCPA/CPRA — 12 controls
-	"gdpr",          // GDPR — 6 core requirements
-}
-
-func displayNameForFree(framework string) string {
-	switch framework {
-	case "atlas":
-		return "MITRE ATLAS"
-	case "nist_ai_rmf":
-		return "NIST AI RMF"
-	case "owasp":
-		return "OWASP LLM Top 10"
-	case "cis":
-		return "CIS v8"
-	case "nist_csf":
-		return "NIST CSF 2.0"
-	case "owasp_web":
-		return "OWASP Top 10 Web"
-	case "csa_star":
-		return "CSA STAR"
-	case "nist_ai_600_1":
-		return "NIST AI 600-1"
-	case "ccpa":
-		return "CCPA/CPRA"
-	case "gdpr":
-		return "GDPR"
-	}
-	return framework
 }
 
 // JSON returns the report as a JSON-encoded byte slice. Convenience

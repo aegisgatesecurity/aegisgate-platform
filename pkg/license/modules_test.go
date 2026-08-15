@@ -48,7 +48,7 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{"HIPAA", false},    // wrong case
 		{"hipaa ", false},   // trailing space
 		{" hipaa", false},   // leading space
-		{"gdpr", false},     // GDPR is a feature constant in tier.go but not a billable module
+		{"gdpr", true},      // v4.2.0: GDPR is now a Community-tier module (free)
 		{"iso27001", true},  // v4.2.0: ISO 27001 is now a billable module
 		{"soc2_type2", false},
 	}
@@ -189,8 +189,9 @@ func TestModules_EmptyAndInvalid(t *testing.T) {
 }
 
 func TestAllModules_Count(t *testing.T) {
-	// v4.2.0: 29 billable modules (including 2 free Community tier: CCPA, NIST AI RMF)
-	if len(AllModules) != 29 {
-		t.Errorf("AllModules has %d items, want 29 (v4.2.0 unified)", len(AllModules))
+	// v4.2.0: 32 modules (31 compliance frameworks + 1 Trust pillar)
+	// Community tier free modules: CCPA, NIST AI RMF, ATLAS, GDPR, OWASP LLM, OWASP Web
+	if len(AllModules) != 32 {
+		t.Errorf("AllModules has %d items, want 32 (v4.2.0: 31 frameworks + 1 Trust)", len(AllModules))
 	}
 }

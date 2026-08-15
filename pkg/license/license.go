@@ -103,6 +103,9 @@ const (
 	ModuleTISAX      = "tisax"       // v3.6.0 M3: TISAX AL2
 	ModuleCCPA       = "ccpa"        // v3.6.0 M3: CCPA/CPRA (Community tier)
 	ModuleNISTAIRMF  = "nist_ai_rmf" // v3.7.0: NIST AI RMF 1.0 (Community tier, free)
+	ModuleATLAS      = "atlas"       // MITRE ATLAS (Community tier, free)
+	ModuleGDPR       = "gdpr"        // GDPR (Community tier, free)
+	ModuleOWASP      = "owasp"       // OWASP LLM Top 10 (Community tier, free)
 	ModuleTrust      = "trust"       // Trust Framework (built, Professional+)
 	ModuleISO27001   = "iso27001"    // ISO 27001 (built, Developer+)
 
@@ -171,6 +174,14 @@ var AllModules = []string{
 	// Community tier (free, not billable but registered for validation)
 	ModuleCCPA,
 	ModuleNISTAIRMF,
+	ModuleATLAS,
+	ModuleGDPR,
+	ModuleOWASP,
+	ModuleOWASPWeb,
+	ModuleCIS,
+	ModuleNISTCSF,
+	ModuleCSASTAR,
+	ModuleNISTAI600,
 
 	// Developer tier
 	ModuleHIPAA,
@@ -190,12 +201,7 @@ var AllModules = []string{
 	ModuleGLBA,
 	ModuleNERCCIP,
 	ModuleCJIS,
-	ModuleNISTCSF,
-	ModuleCIS,
-	ModuleCSASTAR,
 	ModuleFERPA,
-	ModuleNISTAI600,
-	ModuleOWASPWeb,
 	ModuleHITECH,
 	ModuleFFIEC,
 	ModuleTSASD,

@@ -253,16 +253,15 @@ func DefaultMCPComplianceConfig() *Config {
 // It is populated at init() time from AllModuleRequirements().
 var FrameworkTierRestriction = map[Framework]tier.Tier{}
 
-// communityFrameworks are always free (built-in, not purchaseable modules).
+// FrameworkNIST1500 is a community framework with a Framework constant but no
+// gating.go entry (it's detected but not a module). It stays Community tier.
 var communityFrameworks = map[Framework]bool{
-	FrameworkATLAS:    true,
 	FrameworkNIST1500: true,
-	FrameworkOWASP:    true,
 }
 
 // frameworkNameMap maps gating.go module names to compliance Framework constants.
 // Only frameworks with a corresponding Framework constant in compliance.go
-// are mapped here. The other 22 modules are enforced via gating.go's module
+// are mapped here. The other 24 modules are enforced via gating.go's module
 // ownership check, not through this runtime tier restriction map.
 var frameworkNameMap = map[string]Framework{
 	"hipaa":    FrameworkHIPAA,
@@ -271,6 +270,8 @@ var frameworkNameMap = map[string]Framework{
 	"iso27001": FrameworkISO27001,
 	"iso42001": FrameworkISO42001,
 	"gdpr":     FrameworkGDPR,
+	"atlas":    FrameworkATLAS,
+	"owasp":    FrameworkOWASP,
 }
 
 func init() {

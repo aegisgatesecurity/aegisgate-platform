@@ -66,7 +66,9 @@ func TestScanner_Scan_CommunityNoModules(t *testing.T) {
 	if len(rpt.CustomerModules) != 0 {
 		t.Errorf("CustomerModules = %v, want empty", rpt.CustomerModules)
 	}
-	// All 3 free frameworks should be Enforced.
+	// All Community tier (free) frameworks should be Enforced.
+	// v4.2.0: 10 Community tier frameworks (CCPA, NIST AI RMF, ATLAS, GDPR,
+	// OWASP LLM, OWASP Web, CIS, NIST CSF, CSA STAR, NIST AI 600-1)
 	freeCount := 0
 	for _, f := range rpt.Frameworks {
 		if f.Enforced && f.ReasonEnforced == "framework_free" {
@@ -76,10 +78,14 @@ func TestScanner_Scan_CommunityNoModules(t *testing.T) {
 	if freeCount != 10 {
 		t.Errorf("free frameworks enforced = %d, want 10", freeCount)
 	}
-	// No billable modules should be enforced.
+	// No non-Community (billable) modules should be enforced.
 	for _, f := range rpt.Frameworks {
-		if f.Module != "" && f.Enforced {
-			t.Errorf("module %s enforced for community, want not enforced", f.Module)
+		if f.Module == "" || !f.Enforced {
+			continue
+		}
+		req, known := RequiredTierForModule(f.Module)
+		if known && req != tier.TierCommunity {
+			t.Errorf("billable module %s enforced for community, want not enforced", f.Module)
 		}
 	}
 }
@@ -128,11 +134,15 @@ func TestScanner_Scan_ProfessionalWithAllModules(t *testing.T) {
 	enforcedModules := 0
 	for _, f := range rpt.Frameworks {
 		if f.Enforced && f.Module != "" {
-			enforcedModules++
+			// Count only billable (non-Community) modules
+			req, known := RequiredTierForModule(f.Module)
+			if known && req != tier.TierCommunity {
+				enforcedModules++
+			}
 		}
 	}
 	if enforcedModules != 6 {
-		t.Errorf("enforced modules = %d, want 6", enforcedModules)
+		t.Errorf("enforced billable modules = %d, want 6", enforcedModules)
 	}
 	// All 6 modules should be enforced; free frameworks also enforced.
 	// Score is 0 in this test because no frameworks are wired to the
@@ -407,27 +417,31 @@ func TestFormatUpgradeHint(t *testing.T) {
 	}
 }
 
-func TestDisplayNameForFree(t *testing.T) {
+func TestDisplayNameForCommunityFrameworks(t *testing.T) {
+	// v4.2.0: Display names come from gating.go's ModuleRequirement.DisplayName
 	cases := []struct {
 		input string
 		want  string
 	}{
-		{"atlas", "MITRE ATLAS"},
-		{"nist_ai_rmf", "NIST AI RMF"},
-		{"owasp", "OWASP LLM Top 10"},
-		{"cis", "CIS v8"},
-		{"nist_csf", "NIST CSF 2.0"},
-		{"owasp_web", "OWASP Top 10 Web"},
-		{"csa_star", "CSA STAR"},
-		{"nist_ai_600_1", "NIST AI 600-1"},
-		{"ccpa", "CCPA/CPRA"},
-		{"gdpr", "GDPR"},
-		{"unknown", "unknown"},
+		{license.ModuleATLAS, "MITRE ATLAS"},
+		{license.ModuleNISTAIRMF, "NIST AI RMF 1.0"},
+		{license.ModuleOWASP, "OWASP LLM Top 10"},
+		{license.ModuleCIS, "CIS Critical Security Controls"},
+		{license.ModuleNISTCSF, "NIST Cybersecurity Framework"},
+		{license.ModuleOWASPWeb, "OWASP Web Top 10"},
+		{license.ModuleCSASTAR, "CSA STAR"},
+		{license.ModuleNISTAI600, "NIST AI 600-1"},
+		{license.ModuleCCPA, "CCPA/CPRA"},
+		{license.ModuleGDPR, "GDPR"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.input, func(t *testing.T) {
-			if got := displayNameForFree(tc.input); got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
+			req, ok := GetModuleRequirement(tc.input)
+			if !ok {
+				t.Fatalf("module %q not found in gating.go", tc.input)
+			}
+			if req.DisplayName != tc.want {
+				t.Errorf("DisplayName = %q, want %q", req.DisplayName, tc.want)
 			}
 		})
 	}

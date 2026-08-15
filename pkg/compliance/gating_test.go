@@ -63,8 +63,8 @@ func TestRequiredTierForModule_ProModules(t *testing.T) {
 }
 
 func TestRequiredTierForModule_Unknown(t *testing.T) {
-	// v4.2.0: iso27001 is now a known module, removed from unknown list
-	cases := []string{"", "unknown", "hippa", "HIPAA", "gdpr"}
+	// v4.2.0: iso27001 and gdpr are now known modules, removed from unknown list
+	cases := []string{"", "unknown", "hippa", "HIPAA"}
 	for _, m := range cases {
 		t.Run("unknown_"+m, func(t *testing.T) {
 			_, ok := RequiredTierForModule(m)
@@ -138,10 +138,19 @@ func TestIsFrameworkEnforced_ModuleNotOwned(t *testing.T) {
 
 func TestIsFrameworkEnforced_InvalidLicense(t *testing.T) {
 	// Invalid license, even with all modules listed.
+	// Community tier modules are always enforced (free frameworks).
 	result := makeResult(tierpkg.TierEnterprise, license.AllModules, false)
 
 	for _, m := range license.AllModules {
 		t.Run(m, func(t *testing.T) {
+			req, known := RequiredTierForModule(m)
+			if known && req == tierpkg.TierCommunity {
+				// Community tier frameworks are always enforced
+				if !IsFrameworkEnforced(m, result) {
+					t.Errorf("%s (Community tier) should be enforced even with invalid license", m)
+				}
+				return
+			}
 			if IsFrameworkEnforced(m, result) {
 				t.Errorf("%s with invalid license should NOT be enforced", m)
 			}
@@ -150,8 +159,16 @@ func TestIsFrameworkEnforced_InvalidLicense(t *testing.T) {
 }
 
 func TestIsFrameworkEnforced_NilLicense(t *testing.T) {
+	// Community tier modules are always enforced (free frameworks).
 	for _, m := range license.AllModules {
 		t.Run(m, func(t *testing.T) {
+			req, known := RequiredTierForModule(m)
+			if known && req == tierpkg.TierCommunity {
+				if !IsFrameworkEnforced(m, nil) {
+					t.Errorf("%s (Community tier) should be enforced even with nil license", m)
+				}
+				return
+			}
 			if IsFrameworkEnforced(m, nil) {
 				t.Errorf("%s with nil license should NOT be enforced", m)
 			}
@@ -490,9 +507,9 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 }
 
 func TestModuleRequirementCount(t *testing.T) {
-	// v4.2.0: 31 modules total (3 Community free + 4 Developer + 20 Professional + 2 Enterprise + 2 reserved-free).
-	// Note: ISO 27001 added as new module constant, plus 10 previously orphaned + 4 new frameworks.
-	if got := ModuleRequirementCount(); got != 29 {
-		t.Errorf("ModuleRequirementCount = %d, want 29 (v4.2.0 unified: 27 built + 4 new - 2 free)", got)
+	// v4.2.0: 32 modules total (6 Community free + 4 Developer + 20 Professional + 2 Enterprise).
+	// 32 = 31 compliance frameworks + 1 Trust pillar.
+	if got := ModuleRequirementCount(); got != 32 {
+		t.Errorf("ModuleRequirementCount = %d, want 32 (v4.2.0 unified: 31 frameworks + 1 Trust)", got)
 	}
 }
