@@ -629,13 +629,15 @@ func TestUsesPostgres_ConcurrentReads(t *testing.T) {
 // =============================================================================
 
 func TestIsValidBundle_AllBundlesConsistent(t *testing.T) {
-	// Verify AllBundles matches the individual constants
+	// v4.2.0: Verify AllBundles matches the individual constants (7 bundles)
 	expected := map[string]bool{
-		BundleHealthcare:    true,
-		BundleDefense:       true,
-		BundleFinance:       true,
-		BundleManufacturing: true,
-		BundlePrivacy:       true,
+		BundleHealthcare:   true,
+		BundleDefense:      true,
+		BundleFinance:      true,
+		BundleEnergy:       true,
+		BundlePrivacy:      true,
+		BundleSaaSB2B:      true,
+		BundleEUCompliance: true,
 	}
 	for _, b := range AllBundles {
 		if !expected[b] {

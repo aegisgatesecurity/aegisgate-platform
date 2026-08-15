@@ -103,7 +103,27 @@ const (
 	ModuleTISAX      = "tisax"       // v3.6.0 M3: TISAX AL2
 	ModuleCCPA       = "ccpa"        // v3.6.0 M3: CCPA/CPRA (Community tier)
 	ModuleNISTAIRMF  = "nist_ai_rmf" // v3.7.0: NIST AI RMF 1.0 (Community tier, free)
-	ModuleTrust      = "trust"       // reserved for future use
+	ModuleTrust      = "trust"       // Trust Framework (built, Professional+)
+	ModuleISO27001   = "iso27001"    // ISO 27001 (built, Developer+)
+
+	// v4.2.0: Previously orphaned frameworks (built but not billable).
+	// Now registered in gating.go with tier gates and pricing.
+	ModuleSOX        = "sox"          // Sarbanes-Oxley Act
+	ModuleGLBA       = "glba"         // Gramm-Leach-Bliley Act
+	ModuleCJIS       = "cjis"         // Criminal Justice Information Services
+	ModuleNERCCIP    = "nerc_cip"     // NERC Critical Infrastructure Protection
+	ModuleFERPA      = "ferpa"        // Family Educational Rights & Privacy Act
+	ModuleCSASTAR    = "csa_star"     // CSA STAR Attestation
+	ModuleNISTCSF    = "nist_csf"     // NIST Cybersecurity Framework
+	ModuleCIS        = "cis"          // CIS Critical Security Controls
+	ModuleNISTAI600  = "nist_ai_600_1" // NIST AI 600-1
+	ModuleOWASPWeb   = "owasp_web"    // OWASP Web Top 10
+
+	// v4.2.0: New frameworks — built and integrated with cross-framework mapping.
+	ModuleHITECH     = "hitech"       // HITECH Act (extends HIPAA)
+	ModuleFFIEC      = "ffiec"        // FFIEC Banking Guidance
+	ModuleTSASD      = "tsa_sd"       // TSA Security Directive (pipeline)
+	ModuleISO21434   = "iso21434"     // ISO 21434 (automotive cybersecurity)
 )
 
 // ---------------------------------------------------------------------------
@@ -115,20 +135,24 @@ const (
 // ---------------------------------------------------------------------------
 
 const (
-	BundleHealthcare    = "healthcare"    // HIPAA + HITRUST CSF
-	BundleDefense       = "defense"       // CMMC L2 + NIST 800-171 + FedRAMP
-	BundleFinance       = "finance"       // PCI-DSS + SOC 2 + ISO 27001
-	BundleManufacturing = "manufacturing" // TISAX + ISO 27001 + ISO 42001
-	BundlePrivacy       = "privacy"       // GDPR + CCPA + ISO 27001
+	BundleHealthcare    = "healthcare"     // HIPAA + HITECH + HITRUST
+	BundleDefense       = "defense"        // CMMC L2 + NIST 800-171 + FedRAMP + CJIS + TSA SD
+	BundleFinance       = "finance"        // PCI + SOC 2 + ISO 27001 + GLBA + SOX + FFIEC
+	BundleEnergy        = "energy"         // NERC CIP + TSA SD + FIPS (revised from Manufacturing)
+	BundlePrivacy       = "privacy"        // GDPR + CCPA + ISO 27001
+	BundleSaaSB2B       = "saas_b2b"       // SOC 2 + ISO 27001 + ISO 42001 (NEW)
+	BundleEUCompliance  = "eu_compliance"  // EU AI Act + GDPR + ISO 42001 (NEW)
 )
 
 // AllBundles is the canonical list of bundle IDs, in display order.
 var AllBundles = []string{
 	BundlePrivacy,
+	BundleSaaSB2B,
 	BundleFinance,
 	BundleHealthcare,
+	BundleEUCompliance,
+	BundleEnergy,
 	BundleDefense,
-	BundleManufacturing,
 }
 
 // IsValidBundle returns true if the given bundle ID is a known accelerator.
@@ -144,19 +168,42 @@ func IsValidBundle(name string) bool {
 // AllModules is the canonical list of billable module names, in display order.
 // Used for validation when parsing Stripe webhook payloads.
 var AllModules = []string{
+	// Community tier (free, not billable but registered for validation)
+	ModuleCCPA,
+	ModuleNISTAIRMF,
+
+	// Developer tier
 	ModuleHIPAA,
 	ModulePCI,
 	ModuleSOC2,
+	ModuleISO27001,
+
+	// Professional tier
 	ModuleISO42001,
 	ModuleFedRAMP,
 	ModuleFIPS,
 	ModuleEUAIAct,
 	ModuleCMMCL2,
 	ModuleNIST800171,
+	ModuleTrust,
+	ModuleSOX,
+	ModuleGLBA,
+	ModuleNERCCIP,
+	ModuleCJIS,
+	ModuleNISTCSF,
+	ModuleCIS,
+	ModuleCSASTAR,
+	ModuleFERPA,
+	ModuleNISTAI600,
+	ModuleOWASPWeb,
+	ModuleHITECH,
+	ModuleFFIEC,
+	ModuleTSASD,
+	ModuleISO21434,
+
+	// Enterprise tier
 	ModuleHITRUST,
 	ModuleTISAX,
-	ModuleCCPA,      // v3.6.0 M3: Community tier, not billable
-	ModuleNISTAIRMF, // v3.7.0: Community tier, free
 }
 
 // IsValidModule returns true if the given module name is a known billable module.
@@ -167,8 +214,7 @@ func IsValidModule(name string) bool {
 			return true
 		}
 	}
-	// Trust is reserved but not yet billable; reject for now.
-	return name == ModuleTrust
+	return false
 }
 
 // ValidationResult contains the outcome of license validation

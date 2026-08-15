@@ -38,47 +38,33 @@ import (
 // extra cost in the given tier. These are built into the platform — you
 // don't need an accelerator or per-module purchase to access them.
 //
-// Community:    5 frameworks (privacy + AI safety basics)
-// Developer:    +2 frameworks (SOC 2, ISO 27001 — audit-ready essentials)
-// Professional: +8 frameworks (the deep compliance bench)
-// Enterprise:   +3 frameworks (regulated-industry heavyweights)
+// v4.2.0: This function now DERIVES from gating.go (single source of truth).
+// It queries AllModuleRequirements() and filters by tier. Manual list
+// maintenance is eliminated.
+//
+// Community:    3 billable frameworks (free) + 3 community-registered
+// Developer:    +4 frameworks (HIPAA, PCI, SOC 2, ISO 27001)
+// Professional: +20 frameworks (the deep compliance bench)
+// Enterprise:   +2 frameworks (HITRUST, TISAX)
 func TierIncludedFrameworks(t tierpkg.Tier) []string {
-	switch t {
-	case tierpkg.TierCommunity:
-		return []string{
-			license.ModuleCCPA,
-			license.ModuleNISTAIRMF,
-			"gdpr",
-			"owasp_llm",
-			"owasp_web",
-			"atlas",
-		}
-	case tierpkg.TierDeveloper:
-		return append(TierIncludedFrameworks(tierpkg.TierCommunity),
-			license.ModuleSOC2,
-			license.ModuleISO42001,
-		)
-	case tierpkg.TierProfessional:
-		return append(TierIncludedFrameworks(tierpkg.TierDeveloper),
-			license.ModuleHIPAA,
-			license.ModulePCI,
-			license.ModuleISO42001, // already in Developer; idempotent
-			license.ModuleFIPS,
-			license.ModuleEUAIAct,
-			"nist_csf",
-			"cis",
-			license.ModuleCMMCL2,
-			license.ModuleNIST800171,
-		)
-	case tierpkg.TierEnterprise:
-		return append(TierIncludedFrameworks(tierpkg.TierProfessional),
-			license.ModuleFedRAMP,
-			license.ModuleHITRUST,
-			license.ModuleTISAX,
-		)
-	default:
-		return TierIncludedFrameworks(tierpkg.TierCommunity)
+	// Community frameworks that are always free (registered in compliance.go
+	// but not in gating.go — they're built-in, not purchaseable modules).
+	communityBuiltIn := []string{
+		"gdpr",
+		"owasp_llm",
+		"atlas",
 	}
+
+	// Derive billable frameworks from gating.go (single source of truth).
+	var result []string
+	result = append(result, communityBuiltIn...)
+
+	for _, req := range AllModuleRequirements() {
+		if t >= req.RequiredTier {
+			result = append(result, req.Module)
+		}
+	}
+	return result
 }
 
 // IsFrameworkIncludedInTier returns true if the framework is included in
@@ -133,81 +119,117 @@ type VerticalBundle struct {
 }
 
 // verticalBundles is the canonical table of all accelerator bundles.
-// Source of truth: aegisgate-pricing-decisions-locked-2026-06-04.
+// v4.2.0: 7 bundles per pricing unification plan.
 var verticalBundles = map[string]VerticalBundle{
-	"healthcare": {
-		ID:          "healthcare",
-		DisplayName: "Healthcare Accelerator",
-		Description: "HIPAA + HITRUST CSF — everything a healthcare org needs for compliance and certification.",
-		Frameworks: []string{
-			license.ModuleHIPAA,
-			license.ModuleHITRUST,
-		},
-		RequiredTier:         tierpkg.TierEnterprise, // HITRUST requires Enterprise
-		BundlePriceCents:     59900,                  // $599/mo
-		IndividualPriceCents: 89800,                  // $99 + $799 = $898/mo individually
-		DiscountPercent:      33,
-		Industries:           []string{"healthcare", "medical", "pharma", "biotech"},
-	},
-	"defense": {
-		ID:          "defense",
-		DisplayName: "Defense Accelerator",
-		Description: "CMMC L2 + NIST 800-171 + FedRAMP — the DoD contractor compliance stack.",
-		Frameworks: []string{
-			license.ModuleCMMCL2,
-			license.ModuleNIST800171,
-			license.ModuleFedRAMP,
-		},
-		RequiredTier:         tierpkg.TierProfessional,
-		BundlePriceCents:     89900,  // $899/mo
-		IndividualPriceCents: 139700, // $499 + $399 + $499 = $1,397/mo
-		DiscountPercent:      36,
-		Industries:           []string{"defense", "aerospace", "government", "contracting", "dod"},
-	},
-	"finance": {
-		ID:          "finance",
-		DisplayName: "Financial Services Accelerator",
-		Description: "PCI-DSS + SOC 2 + ISO 27001 — the essential trio for fintech and banking.",
-		Frameworks: []string{
-			license.ModulePCI,
-			license.ModuleSOC2,
-			"iso27001",
-		},
-		RequiredTier:         tierpkg.TierDeveloper,
-		BundlePriceCents:     24900, // $249/mo
-		IndividualPriceCents: 32700, // $99 + $149 + $79 = $327/mo
-		DiscountPercent:      24,
-		Industries:           []string{"finance", "fintech", "banking", "insurance", "payments"},
-	},
-	"manufacturing": {
-		ID:          "manufacturing",
-		DisplayName: "Manufacturing & Automotive Accelerator",
-		Description: "TISAX + ISO 27001 + ISO 42001 — the European industrial compliance standard.",
-		Frameworks: []string{
-			license.ModuleTISAX,
-			"iso27001",
-			license.ModuleISO42001,
-		},
-		RequiredTier:         tierpkg.TierEnterprise, // TISAX requires Enterprise
-		BundlePriceCents:     49900,                  // $499/mo
-		IndividualPriceCents: 75700,                  // $599 + $79 + $79 = $757/mo
-		DiscountPercent:      34,
-		Industries:           []string{"manufacturing", "automotive", "supply_chain", "industry"},
-	},
 	"privacy": {
 		ID:          "privacy",
-		DisplayName: "Privacy Pro Accelerator",
+		DisplayName: "Privacy & Data Protection Accelerator",
 		Description: "GDPR + CCPA + ISO 27001 — privacy-first compliance for any org handling personal data.",
 		Frameworks: []string{
 			"gdpr",
 			license.ModuleCCPA,
-			"iso27001",
+			license.ModuleISO27001,
 		},
-		RequiredTier:         tierpkg.TierCommunity, // Privacy is for everyone
-		BundlePriceCents:     4900,                  // $49/mo
-		IndividualPriceCents: 7900,                  // $0 + $0 + $79 = $79/mo (GDPR + CCPA free, ISO 27001 $79)
-		DiscountPercent:      38,
+		RequiredTier:         tierpkg.TierDeveloper, // Privacy is for everyone
+		BundlePriceCents:     14900,                 // $149/mo (includes GDPR full compliance + enhanced reporting)
+		IndividualPriceCents: 15800,                  // GDPR $0 + CCPA $0 + ISO 27001 $79 + privacy premium $79 = $158
+		DiscountPercent:      6,
 		Industries:           []string{"privacy", "saas", "ecommerce", "adtech", "data"},
+	},
+	"saas_b2b": {
+		ID:          "saas_b2b",
+		DisplayName: "SaaS / B2B Technology Accelerator",
+		Description: "SOC 2 + ISO 27001 + ISO 42001 — the essential stack for B2B SaaS companies selling to enterprise.",
+		Frameworks: []string{
+			license.ModuleSOC2,
+			license.ModuleISO27001,
+			license.ModuleISO42001,
+		},
+		RequiredTier:         tierpkg.TierDeveloper,
+		BundlePriceCents:     19900, // $199/mo
+		IndividualPriceCents: 30700, // $149 + $79 + $79 = $307/mo
+		DiscountPercent:      35,
+		Industries:           []string{"saas", "technology", "startup", "b2b", "software"},
+	},
+	"finance": {
+		ID:          "finance",
+		DisplayName: "Financial Services Accelerator",
+		Description: "PCI-DSS + SOC 2 + ISO 27001 + GLBA + SOX + FFIEC — the complete banking and fintech compliance stack.",
+		Frameworks: []string{
+			license.ModulePCI,
+			license.ModuleSOC2,
+			license.ModuleISO27001,
+			license.ModuleGLBA,
+			license.ModuleSOX,
+			license.ModuleFFIEC,
+		},
+		RequiredTier:         tierpkg.TierDeveloper,
+		BundlePriceCents:     24900, // $249/mo
+		IndividualPriceCents: 92500, // $99 + $149 + $79 + $149 + $199 + $299 = $925/mo
+		DiscountPercent:      73,
+		Industries:           []string{"finance", "fintech", "banking", "insurance", "payments"},
+	},
+	"healthcare": {
+		ID:          "healthcare",
+		DisplayName: "Healthcare Accelerator",
+		Description: "HIPAA + HITECH + HITRUST CSF — everything a healthcare org needs for compliance and certification.",
+		Frameworks: []string{
+			license.ModuleHIPAA,
+			license.ModuleHITECH,
+			license.ModuleHITRUST,
+		},
+		RequiredTier:         tierpkg.TierDeveloper, // HIPAA is Developer+, HITECH is Pro+ (bundled at Dev tier)
+		BundlePriceCents:     14900,                 // $149/mo
+		IndividualPriceCents: 109700,                // $99 + $199 + $799 = $1,097/mo individually
+		DiscountPercent:      86,
+		Industries:           []string{"healthcare", "medical", "pharma", "biotech", "hospital"},
+	},
+	"eu_compliance": {
+		ID:          "eu_compliance",
+		DisplayName: "EU Compliance Accelerator",
+		Description: "EU AI Act + GDPR + ISO 42001 — compliance for any organization operating in the European Union.",
+		Frameworks: []string{
+			license.ModuleEUAIAct,
+			"gdpr",
+			license.ModuleISO42001,
+		},
+		RequiredTier:         tierpkg.TierProfessional,
+		BundlePriceCents:     14900, // $149/mo
+		IndividualPriceCents: 17800, // $99 + $0 + $79 = $178/mo
+		DiscountPercent:      16,
+		Industries:           []string{"eu", "europe", "privacy", "ai_governance"},
+	},
+	"energy": {
+		ID:          "energy",
+		DisplayName: "Energy & Critical Infrastructure Accelerator",
+		Description: "NERC CIP + TSA SD + FIPS — compliance for utilities, energy, and critical infrastructure operators.",
+		Frameworks: []string{
+			license.ModuleNERCCIP,
+			license.ModuleTSASD,
+			license.ModuleFIPS,
+		},
+		RequiredTier:         tierpkg.TierProfessional,
+		BundlePriceCents:     24900, // $249/mo
+		IndividualPriceCents: 84700, // $299 + $249 + $299 = $847/mo
+		DiscountPercent:      71,
+		Industries:           []string{"energy", "utilities", "oil_gas", "pipeline", "critical_infrastructure", "power"},
+	},
+	"defense": {
+		ID:          "defense",
+		DisplayName: "Defense & Government Accelerator",
+		Description: "CMMC L2 + NIST 800-171 + FedRAMP + CJIS + TSA SD — the complete DoD and government contractor compliance stack.",
+		Frameworks: []string{
+			license.ModuleCMMCL2,
+			license.ModuleNIST800171,
+			license.ModuleFedRAMP,
+			license.ModuleCJIS,
+			license.ModuleTSASD,
+		},
+		RequiredTier:         tierpkg.TierProfessional,
+		BundlePriceCents:     89900,  // $899/mo
+		IndividualPriceCents: 184500, // $499 + $399 + $499 + $299 + $249 = $1,845/mo
+		DiscountPercent:      51,
+		Industries:           []string{"defense", "aerospace", "government", "contracting", "dod", "law_enforcement"},
 	},
 }
 

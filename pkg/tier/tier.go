@@ -354,6 +354,28 @@ const (
 	FeatureGranularPerms    Feature = "granular_permissions"
 	FeatureGrafana          Feature = "grafana"
 	FeatureWebhooks         Feature = "webhooks"
+
+	// v4.2.0: New subsystem feature gates — previously ungated subsystems.
+	// These gate PLATFORM CAPABILITY (not compliance modules — those are in gating.go).
+	FeatureCorrelation      Feature = "correlation_engine"    // Event correlation (Community)
+	FeatureCVE              Feature = "cve_integration"        // CVE database (Community)
+	FeatureBridge           Feature = "protocol_bridge"        // Protocol bridge (Community)
+	FeatureANP              Feature = "agent_network_protocol" // ANP (Community)
+	FeatureAIBOM            Feature = "aibom_generation"       // AI Bill of Materials (Developer)
+	FeaturePromptCache      Feature = "prompt_cache_opt"       // Prompt cache optimization (Developer)
+	FeatureIncident         Feature = "incident_response"     // Incident engine (Professional)
+	FeatureEvidence         Feature = "evidence_packages"     // Compliance evidence (Professional)
+	FeatureA2A              Feature = "a2a_protocol"           // Agent-to-Agent (Professional)
+	FeatureACP              Feature = "acp_protocol"           // Agent Communication Protocol (Professional)
+	FeatureFederatedIOC     Feature = "federated_ioc"          // Federated IOC sharing (Professional)
+	FeatureAttestation      Feature = "attestation_framework"  // Signed attestations (Professional)
+	FeaturePosture          Feature = "posture_assessment"     // Security posture (Professional)
+	FeatureDigest           Feature = "ciso_digest"            // CISO Posture Digest (Professional)
+	FeatureAgentIntentSign  Feature = "agent_intent_signing"   // Non-repudiation (Professional)
+	FeatureSOCStream        Feature = "soc_stream"             // SOC operations (Professional)
+	FeatureTrustPortal      Feature = "trust_portal"           // Trust dashboard UI (Professional)
+	FeatureComputerUse      Feature = "computer_use_detection" // Computer use detection (Professional)
+	FeatureSLA              Feature = "sla_enforcement"        // SLA enforcement (Enterprise)
 	FeatureDataEncryption   Feature = "data_encryption"
 	FeatureAdminAdvanced    Feature = "admin_advanced"
 	FeatureContextIsolation Feature = "mcp_context_isolation" // Full context isolation
@@ -409,19 +431,23 @@ const (
 // RequiredTier returns the minimum tier required for a feature
 func RequiredTier(feature Feature) Tier {
 	switch feature {
-	// Community
+	// Community — platform capabilities available to all users
 	case FeatureAIProxy, FeatureOpenAI, FeatureAnthropic, FeatureStreaming,
 		FeatureTLS, FeatureBuiltInCA, FeatureSecretScanning, FeaturePIIScanning,
 		FeaturePromptInjection, FeatureBidirectional, FeatureCircuitBreaker,
-		FeatureATLAS, FeatureNISTAIRMF, FeatureOWASP, FeatureGDPRView,
 		FeatureBasicAnomaly, FeatureTrafficPattern,
 		FeatureMetrics, FeatureAuditLogging, FeatureRequestLog, FeatureErrorTrack,
 		FeatureFileStorage, FeatureDocker, FeatureCompose,
 		FeatureAdminDashboard, FeatureRESTAPI, FeatureSBOM, FeatureI18N,
-		FeatureMCPSessionIsolation, FeatureMCPBasicRBAC:
+		FeatureMCPSessionIsolation, FeatureMCPBasicRBAC,
+		// v4.2.0: Compliance framework VIEW/detection features (not full compliance).
+		// Full compliance modules are gated in gating.go (single source of truth).
+		FeatureATLAS, FeatureNISTAIRMF, FeatureOWASP, FeatureGDPRView,
+		// v4.2.0: New subsystem gates — infrastructure-grade features for all.
+		FeatureCorrelation, FeatureCVE, FeatureBridge, FeatureANP:
 		return TierCommunity
 
-	// Developer
+	// Developer — enhanced platform capabilities
 	case FeatureOAuthSSO, FeatureOIDC, FeatureCohere, FeatureAzureOpenAI,
 		FeatureRequestCache, FeatureRequestDedup,
 		FeatureMTLS, FeatureRuntimeHarden,
@@ -430,26 +456,39 @@ func RequiredTier(feature Feature) Tier {
 		FeatureCustomRoles, FeatureGranularPerms,
 		FeatureGrafana, FeatureWebhooks,
 		FeatureDataEncryption,
-		FeatureAdminAdvanced, FeatureContextIsolation, FeatureCodeExecSandbox:
+		FeatureAdminAdvanced, FeatureContextIsolation, FeatureCodeExecSandbox,
+		// v4.2.0: Compliance platform capabilities — Developer tier.
+		// (Billing module tier gates are in gating.go — these gate the
+		// platform capability to RUN the framework, not the purchase.)
+		FeatureHIPAA, FeaturePCI, FeatureSOC2Full, FeatureISO27001,
+		// v4.2.0: New subsystem gates — Developer-grade capabilities.
+		FeatureAIBOM, FeaturePromptCache:
 		return TierDeveloper
 
-	// Professional
-	case FeatureHIPAA, FeaturePCI, FeatureSOC2Full, FeatureGDPRFull,
-		FeatureNISTFull, FeatureISO27001,
+	// Professional — advanced platform capabilities
+	case FeatureGDPRFull, FeatureNISTFull,
 		FeatureMLBehavioral, FeatureMLPredictive, FeatureMLThreat,
 		FeatureSIEM, FeatureMultiTenant, FeaturePolicyEngine, FeatureDeptSeparation,
 		FeatureKubernetes, FeatureHelm,
 		FeaturePostgreSQL, FeatureRetentionPol,
 		FeatureProcessSandbox,
-		FeatureTrustPillar: // v3.2.0 Phase 4
+		// v4.2.0: Trust Framework (5th pillar — 12K+ lines, 59 files).
+		FeatureTrustPillar,
+		// v4.2.0: New subsystem gates — Professional-grade capabilities.
+		FeatureIncident, FeatureEvidence, FeatureA2A, FeatureACP,
+		FeatureFederatedIOC, FeatureAttestation, FeaturePosture,
+		FeatureDigest, FeatureAgentIntentSign, FeatureSOCStream,
+		FeatureTrustPortal, FeatureComputerUse:
 		return TierProfessional
 
-	// Enterprise
+	// Enterprise — regulated-industry platform capabilities
 	case FeatureISO42001, FeatureFedRAMP, FeatureSOC2Type2, FeatureHITRUST,
 		FeatureMLCustom, FeatureMLZeroDay, FeatureMLRealtime,
 		FeatureHSM, FeatureFIPS,
 		FeatureClustering, FeatureAirGapped,
-		FeatureVMSandbox:
+		FeatureVMSandbox,
+		// v4.2.0: New subsystem gates — Enterprise-grade capabilities.
+		FeatureSLA:
 		return TierEnterprise
 
 	default:
@@ -489,6 +528,17 @@ var featureKeyMap = map[string]Feature{
 	"compliance_nist_view": FeatureNISTView, "compliance_basic_security": FeatureBasicSecurity,
 	"custom_roles": FeatureCustomRoles, "granular_permissions": FeatureGranularPerms,
 	"grafana": FeatureGrafana, "webhooks": FeatureWebhooks,
+	// v4.2.0: New subsystem feature mappings.
+	"correlation_engine": FeatureCorrelation, "cve_integration": FeatureCVE,
+	"protocol_bridge": FeatureBridge, "agent_network_protocol": FeatureANP,
+	"aibom_generation": FeatureAIBOM, "prompt_cache_opt": FeaturePromptCache,
+	"incident_response": FeatureIncident, "evidence_packages": FeatureEvidence,
+	"a2a_protocol": FeatureA2A, "acp_protocol": FeatureACP,
+	"federated_ioc": FeatureFederatedIOC, "attestation_framework": FeatureAttestation,
+	"posture_assessment": FeaturePosture, "ciso_digest": FeatureDigest,
+	"agent_intent_signing": FeatureAgentIntentSign, "soc_stream": FeatureSOCStream,
+	"trust_portal": FeatureTrustPortal, "computer_use_detection": FeatureComputerUse,
+	"sla_enforcement": FeatureSLA,
 	"data_encryption": FeatureDataEncryption,
 	"admin_advanced":  FeatureAdminAdvanced, "mcp_context_isolation": FeatureContextIsolation,
 	"code_execute_sandbox": FeatureCodeExecSandbox,

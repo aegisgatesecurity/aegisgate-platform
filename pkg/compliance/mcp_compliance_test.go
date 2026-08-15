@@ -263,15 +263,15 @@ func TestMCPTierAwareCompliance_GenerateReport(t *testing.T) {
 // ============================================================================
 
 func TestIsEnterpriseOnly(t *testing.T) {
+	// v4.2.0: FrameworkTierRestriction is now derived from gating.go.
+	// Only frameworks with Enterprise tier in gating.go should be Enterprise-only.
 	tests := []struct {
 		framework Framework
 		expected  bool
 	}{
-		{FrameworkISO42001, true},
 		{FrameworkATLAS, false},
 		{FrameworkNIST1500, false},
 		{FrameworkOWASP, false},
-		{FrameworkSOC2, false},
 	}
 
 	for _, tc := range tests {
@@ -328,17 +328,18 @@ func TestMCPSessionCompliance_Check(t *testing.T) {
 // ============================================================================
 
 func TestFrameworkTierRestriction_Constants(t *testing.T) {
-	// Verify the restriction map is properly configured
+	// v4.2.0: FrameworkTierRestriction is now derived from gating.go (single source of truth).
+	// Only frameworks with a mapping in frameworkNameMap get populated from gating.go.
+	// Community frameworks (ATLAS, NIST1500, OWASP) are always Community tier.
 	expectedRestrictions := map[Framework]tier.Tier{
 		FrameworkATLAS:    tier.TierCommunity,
 		FrameworkNIST1500: tier.TierCommunity,
 		FrameworkOWASP:    tier.TierCommunity,
-		FrameworkHIPAA:    tier.TierDeveloper,
-		FrameworkPCIDSS:   tier.TierDeveloper,
-		FrameworkSOC2:     tier.TierProfessional,
-		FrameworkGDPR:     tier.TierProfessional,
-		FrameworkISO27001: tier.TierProfessional,
-		FrameworkISO42001: tier.TierEnterprise,
+		FrameworkHIPAA:    tier.TierDeveloper,    // gating.go: HIPAA = Developer
+		FrameworkPCIDSS:   tier.TierDeveloper,    // gating.go: PCI = Developer
+		FrameworkSOC2:     tier.TierDeveloper,    // gating.go: SOC2 = Developer
+		FrameworkISO27001: tier.TierDeveloper,    // gating.go: ISO27001 = Developer
+		FrameworkISO42001: tier.TierProfessional, // gating.go: ISO42001 = Professional
 	}
 
 	for fw, expectedTier := range expectedRestrictions {

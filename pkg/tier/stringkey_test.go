@@ -95,7 +95,8 @@ func TestTierHasFeatureKey_ProfessionalFeatures(t *testing.T) {
 		{TierProfessional, "mcp_process_sandbox", true},
 		// Lower tiers blocked
 		{TierCommunity, "compliance_hipaa", false},
-		{TierDeveloper, "compliance_hipaa", false},
+		// v4.2.0: HIPAA is now Developer tier
+		{TierDeveloper, "compliance_hipaa", true},
 		{TierDeveloper, "multi_tenant", false},
 		// Enterprise also has access
 		{TierEnterprise, "compliance_hipaa", true},
@@ -373,7 +374,8 @@ func TestFeatureForKey_ConsistencyWithRequiredTier(t *testing.T) {
 		}
 	}
 
-	someProKeys := []string{"compliance_hipaa", "multi_tenant"}
+	// v4.2.0: HIPAA moved to Developer tier, so only multi_tenant is Professional now.
+	someProKeys := []string{"multi_tenant"}
 	for _, key := range someProKeys {
 		f, ok := FeatureForKey(key)
 		if !ok {

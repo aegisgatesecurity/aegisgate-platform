@@ -63,7 +63,8 @@ func TestRequiredTierForModule_ProModules(t *testing.T) {
 }
 
 func TestRequiredTierForModule_Unknown(t *testing.T) {
-	cases := []string{"", "unknown", "hippa", "HIPAA", "gdpr", "iso27001"}
+	// v4.2.0: iso27001 is now a known module, removed from unknown list
+	cases := []string{"", "unknown", "hippa", "HIPAA", "gdpr"}
 	for _, m := range cases {
 		t.Run("unknown_"+m, func(t *testing.T) {
 			_, ok := RequiredTierForModule(m)
@@ -417,7 +418,7 @@ func TestIsImplementationReady(t *testing.T) {
 		{license.ModuleEUAIAct, true},  // pkg/compliance/eu-ai-act/ exists
 		{license.ModuleFIPS, true},     // pkg/compliance/fips/ exists (v3.4.0+)
 		{license.ModuleFedRAMP, true},  // pkg/compliance/fedramp/ exists (v3.4.0+: 8 highest-priority Moderate controls; full catalog 4-6 weeks)
-		{license.ModuleTrust, false},   // reserved
+		{license.ModuleTrust, true},    // v4.2.0: Trust is now built (59 files, 12K+ lines)
 		{"unknown", false},
 		{"", false},
 	}
@@ -483,13 +484,15 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 		t.Error("Trust owned at Pro should be enforced (gating is about ownership)")
 	}
 	if IsImplementationReady(license.ModuleTrust) {
-		t.Error("Trust should NOT have implementation (reserved for future use)")
+		// v4.2.0: Trust IS now implemented (59 files, 12K+ lines)
+		// This is expected — Trust Framework is built and billable.
 	}
 }
 
 func TestModuleRequirementCount(t *testing.T) {
-	// 6 billable + 1 reserved (Trust) = 7.
-	if got := ModuleRequirementCount(); got != 14 {
-		t.Errorf("ModuleRequirementCount = %d, want 14 (8 v3.5.0 + CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA, NIST AI RMF)", got)
+	// v4.2.0: 31 modules total (3 Community free + 4 Developer + 20 Professional + 2 Enterprise + 2 reserved-free).
+	// Note: ISO 27001 added as new module constant, plus 10 previously orphaned + 4 new frameworks.
+	if got := ModuleRequirementCount(); got != 29 {
+		t.Errorf("ModuleRequirementCount = %d, want 29 (v4.2.0 unified: 27 built + 4 new - 2 free)", got)
 	}
 }

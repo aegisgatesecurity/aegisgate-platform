@@ -248,17 +248,42 @@ func DefaultMCPComplianceConfig() *Config {
 // Tier Restrictions Constants
 // ============================================================================
 
-// FrameworkTierRestriction documents which tier can access each framework
-var FrameworkTierRestriction = map[Framework]tier.Tier{
-	FrameworkATLAS:    tier.TierCommunity,    // Mandated for all
-	FrameworkNIST1500: tier.TierCommunity,    // Mandated for all
-	FrameworkOWASP:    tier.TierCommunity,    // Security baseline
-	FrameworkHIPAA:    tier.TierDeveloper,    // Premium
-	FrameworkPCIDSS:   tier.TierDeveloper,    // Premium
-	FrameworkSOC2:     tier.TierProfessional, // Premium
-	FrameworkGDPR:     tier.TierProfessional, // Premium
-	FrameworkISO27001: tier.TierProfessional, // Premium
-	FrameworkISO42001: tier.TierEnterprise,   // Premium
+// FrameworkTierRestriction documents which tier can access each framework.
+// v4.2.0: This map is now DERIVED from gating.go (single source of truth).
+// It is populated at init() time from AllModuleRequirements().
+var FrameworkTierRestriction = map[Framework]tier.Tier{}
+
+// communityFrameworks are always free (built-in, not purchaseable modules).
+var communityFrameworks = map[Framework]bool{
+	FrameworkATLAS:    true,
+	FrameworkNIST1500: true,
+	FrameworkOWASP:    true,
+}
+
+// frameworkNameMap maps gating.go module names to compliance Framework constants.
+// Only frameworks with a corresponding Framework constant in compliance.go
+// are mapped here. The other 22 modules are enforced via gating.go's module
+// ownership check, not through this runtime tier restriction map.
+var frameworkNameMap = map[string]Framework{
+	"hipaa":    FrameworkHIPAA,
+	"pci":      FrameworkPCIDSS,
+	"soc2":     FrameworkSOC2,
+	"iso27001": FrameworkISO27001,
+	"iso42001": FrameworkISO42001,
+	"gdpr":     FrameworkGDPR,
+}
+
+func init() {
+	// Populate FrameworkTierRestriction from gating.go (single source of truth).
+	for _, req := range AllModuleRequirements() {
+		if fw, ok := frameworkNameMap[req.Module]; ok {
+			FrameworkTierRestriction[fw] = req.RequiredTier
+		}
+	}
+	// Ensure community frameworks are always Community tier.
+	for fw := range communityFrameworks {
+		FrameworkTierRestriction[fw] = tier.TierCommunity
+	}
 }
 
 // IsEnterpriseOnly checks if a framework is Enterprise-only

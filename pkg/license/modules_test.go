@@ -49,7 +49,7 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{"hipaa ", false},   // trailing space
 		{" hipaa", false},   // leading space
 		{"gdpr", false},     // GDPR is a feature constant in tier.go but not a billable module
-		{"iso27001", false}, // ISO 27001 is a feature constant but not a billable module
+		{"iso27001", true},  // v4.2.0: ISO 27001 is now a billable module
 		{"soc2_type2", false},
 	}
 	for _, tc := range cases {
@@ -189,11 +189,8 @@ func TestModules_EmptyAndInvalid(t *testing.T) {
 }
 
 func TestAllModules_Count(t *testing.T) {
-	// 7 billable modules (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS, EU AI Act) + 1 reserved (Trust) = 8 total
-	// defined in license.go, but AllModules slice only contains the 7 billable ones (Trust is in IsValidModule
-	// only as a reserved future item, not in the billable list).
-	// This test pins the contract so accidental additions/removals are noticed.
-	if len(AllModules) != 13 {
-		t.Errorf("AllModules has %d items, want 13 (HIPAA, PCI, SOC2, ISO42001, FedRAMP, FIPS, EU AI Act, CMMC L2, NIST 800-171, HITRUST, TISAX, CCPA, NIST AI RMF)", len(AllModules))
+	// v4.2.0: 29 billable modules (including 2 free Community tier: CCPA, NIST AI RMF)
+	if len(AllModules) != 29 {
+		t.Errorf("AllModules has %d items, want 29 (v4.2.0 unified)", len(AllModules))
 	}
 }

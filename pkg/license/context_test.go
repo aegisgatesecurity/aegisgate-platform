@@ -137,7 +137,7 @@ func TestTierHasFeatureKey(t *testing.T) {
 		{tier.TierCommunity, "compliance_hipaa", false},
 		{tier.TierDeveloper, "ai_proxy", true},
 		{tier.TierDeveloper, "mtls", true},
-		{tier.TierDeveloper, "compliance_hipaa", false},
+		{tier.TierDeveloper, "compliance_hipaa", true}, // v4.2.0: HIPAA is now Developer tier
 		{tier.TierProfessional, "compliance_hipaa", true},
 		{tier.TierProfessional, "hsm_integration", false},
 		{tier.TierEnterprise, "hsm_integration", true},

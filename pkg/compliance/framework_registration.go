@@ -32,12 +32,15 @@ import (
 	eu_ai_act "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/eu-ai-act"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fedramp"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ferpa"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/ffiec"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fips"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/glba"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/hipaa"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/hitrust"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/hitech"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso27001"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso42001"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso21434"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nerc_cip"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist800171"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist_ai_600_1"
@@ -48,6 +51,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/soc2"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/sox"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/tisax"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/tsa_sd"
 )
 
 // controlCountCache caches the number of registered controls
@@ -309,6 +313,42 @@ func RegisterBuiltinFrameworks() {
 			registerFrameworkControls("nerc_cip", len(controls))
 		}
 	}()
+	// v4.2.0: HITECH Act (Professional tier) — extends HIPAA with breach notification + audit
+	func() {
+		defer func() { _ = recover() }()
+		mod := hitech.NewHITECHModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("hitech", len(controls))
+		}
+	}()
+	// v4.2.0: FFIEC Banking Guidance (Professional tier)
+	func() {
+		defer func() { _ = recover() }()
+		mod := ffiec.NewFFIECModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("ffiec", len(controls))
+		}
+	}()
+	// v4.2.0: TSA Security Directive (Professional tier) — pipeline/transportation
+	func() {
+		defer func() { _ = recover() }()
+		mod := tsa_sd.NewTSASDModule()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("tsa_sd", len(controls))
+		}
+	}()
+	// v4.2.0: ISO 21434 (Professional tier) — automotive cybersecurity
+	func() {
+		defer func() { _ = recover() }()
+		mod := iso21434.NewISO21434Module()
+		if mod != nil {
+			controls := mod.Controls()
+			registerFrameworkControls("iso21434", len(controls))
+		}
+	}()
 
 	// Community frameworks (ATLAS, GDPR, OWASP LLM) use a different
 	// interface (common.Framework) that doesn't have Controls(). Their
@@ -366,6 +406,11 @@ func RegisterBuiltinFrameworksIntoRegistry(registry *Registry) {
 	registerIntoRegistry(registry, "sox", sox.NewSOXModule())
 	registerIntoRegistry(registry, "glba", glba.NewGLBAModule())
 	registerIntoRegistry(registry, "nerc_cip", nerc_cip.NewNERCCIPModule())
+	// v4.2.0: New frameworks
+	registerIntoRegistry(registry, "hitech", hitech.NewHITECHModule())
+	registerIntoRegistry(registry, "ffiec", ffiec.NewFFIECModule())
+	registerIntoRegistry(registry, "tsa_sd", tsa_sd.NewTSASDModule())
+	registerIntoRegistry(registry, "iso21434", iso21434.NewISO21434Module())
 }
 
 // registerIntoRegistry is a helper that safely registers a framework module

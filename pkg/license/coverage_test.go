@@ -177,9 +177,10 @@ func TestIsFeatureLicensed_ProfessionalFeatureWithDeveloperLicense(t *testing.T)
 		t.Fatalf("expected valid result, got: %v", result.Error)
 	}
 
-	// Professional feature (HIPAA) should NOT be licensed for Developer tier
-	if mgr.IsFeatureLicensed(&result, tier.FeatureHIPAA) {
-		t.Error("IsFeatureLicensed should return false for professional feature with developer license")
+	// Professional feature (multi_tenant) should NOT be licensed for Developer tier
+	// v4.2.0: HIPAA moved to Developer tier, using multi_tenant as Professional test
+	if mgr.IsFeatureLicensed(&result, tier.FeatureMultiTenant) {
+		t.Error("IsFeatureLicensed should return false for professional feature (multi_tenant) with developer license")
 	}
 }
 

@@ -33,15 +33,22 @@ type ModuleRequirement struct {
 }
 
 // moduleRequirements is the canonical table mapping module name to its
-// requirement. v3.2.0 Phase 1: 6 billable modules.
+// requirement. This is the SINGLE SOURCE OF TRUTH for all compliance
+// module tier/pricing decisions. Other files (bundle.go, mcp_compliance.go,
+// tier.go) DERIVE from this table — they do not maintain their own lists.
 //
-// Source of truth: aegisgate-pricing-decisions-locked-2026-06-04 and
-// aegisgate-v3.2.0-locked-decisions (Q1, Q2, Q3, Q4, Q6).
+// v4.2.0: Unified to 31 modules (27 previously built + 4 new frameworks).
+// All compliance tier decisions flow through this table.
 //
-// Tier mapping (from the locked pricing table):
-//   - HIPAA, PCI, SOC 2       -> Developer+  (3 modules)
-//   - ISO 42001, FedRAMP, FIPS -> Professional+ (3 modules)
-//   - Trust                    -> reserved, not yet billable (Phase 4)
+// Tier mapping:
+//   - Community (free):  CCPA, NIST AI RMF, OWASP Web (3 modules)
+//   - Developer+:        HIPAA, PCI, SOC 2, ISO 27001 (4 modules)
+//   - Professional+:     ISO 42001, FedRAMP, FIPS, EU AI Act, CMMC L2,
+//                        NIST 800-171, Trust, SOX, GLBA, NERC CIP, CJIS,
+//                        NIST CSF, CIS, CSA STAR, FERPA, NIST AI 600-1,
+//                        HITECH, FFIEC, TSA SD, ISO 21434 (20 modules)
+//   - Enterprise+:       HITRUST, TISAX (2 modules)
+//   - Free (community-registered, not in gating): ATLAS, GDPR, OWASP LLM
 var moduleRequirements = map[string]ModuleRequirement{
 	license.ModuleHIPAA: {
 		Module:            license.ModuleHIPAA,
@@ -147,16 +154,124 @@ var moduleRequirements = map[string]ModuleRequirement{
 		MinPriceCents:     0,    // Community tier, no add-on cost
 		HasImplementation: true, // pkg/compliance/nist_ai_rmf/ (20 controls: 15 automated + 5 evidence-mapped)
 	},
-	// ModuleTrust is reserved for the future Trust Framework module
-	// (Phase 4). Not yet billable; listing it here as a placeholder so
-	// future code that checks for "trust" doesn't get a confusing "module
-	// not found" error.
+	// Trust Framework (v4.2.0: now built and billable, not reserved).
+	// 12,270 lines across 59 files — 5th architectural pillar.
+	// Trust scoring, signed attestations, capability contracts, agent identity.
 	license.ModuleTrust: {
 		Module:            license.ModuleTrust,
-		DisplayName:       "Trust Framework (reserved)",
+		DisplayName:       "Trust Framework",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     9900,  // $99/mo (per pricing table, future)
-		HasImplementation: false, // not yet
+		MinPriceCents:     9900,  // $99/mo
+		HasImplementation: true,  // pkg/trust/ — fully built
+	},
+	// v4.2.0: ISO 27001 (previously built but not billable — now registered).
+	license.ModuleISO27001: {
+		Module:            license.ModuleISO27001,
+		DisplayName:       "ISO 27001",
+		RequiredTier:      tierpkg.TierDeveloper,
+		MinPriceCents:     7900, // $79/mo
+		HasImplementation: true, // pkg/compliance/iso27001/ exists
+	},
+	// v4.2.0: Previously orphaned frameworks — built but not billable.
+	// Now registered with tier gates and pricing.
+	license.ModuleSOX: {
+		Module:            license.ModuleSOX,
+		DisplayName:       "SOX (Sarbanes-Oxley)",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     19900, // $199/mo
+		HasImplementation: true,  // pkg/compliance/sox/ exists
+	},
+	license.ModuleGLBA: {
+		Module:            license.ModuleGLBA,
+		DisplayName:       "GLBA (Gramm-Leach-Bliley)",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     14900, // $149/mo
+		HasImplementation: true,  // pkg/compliance/glba/ exists
+	},
+	license.ModuleCJIS: {
+		Module:            license.ModuleCJIS,
+		DisplayName:       "CJIS Security Policy",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     29900, // $299/mo
+		HasImplementation: true,  // pkg/compliance/cjis/ exists
+	},
+	license.ModuleNERCCIP: {
+		Module:            license.ModuleNERCCIP,
+		DisplayName:       "NERC CIP",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     29900, // $299/mo
+		HasImplementation: true,  // pkg/compliance/nerc_cip/ exists
+	},
+	license.ModuleFERPA: {
+		Module:            license.ModuleFERPA,
+		DisplayName:       "FERPA",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     7900, // $79/mo
+		HasImplementation: true, // pkg/compliance/ferpa/ exists
+	},
+	license.ModuleCSASTAR: {
+		Module:            license.ModuleCSASTAR,
+		DisplayName:       "CSA STAR",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     7900, // $79/mo
+		HasImplementation: true, // pkg/compliance/csa_star/ exists
+	},
+	license.ModuleNISTCSF: {
+		Module:            license.ModuleNISTCSF,
+		DisplayName:       "NIST Cybersecurity Framework",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     9900, // $99/mo
+		HasImplementation: true, // pkg/compliance/nist_csf/ exists
+	},
+	license.ModuleCIS: {
+		Module:            license.ModuleCIS,
+		DisplayName:       "CIS Critical Security Controls",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     9900, // $99/mo
+		HasImplementation: true, // pkg/compliance/cis/ exists
+	},
+	license.ModuleNISTAI600: {
+		Module:            license.ModuleNISTAI600,
+		DisplayName:       "NIST AI 600-1",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     7900, // $79/mo
+		HasImplementation: true, // pkg/compliance/nist_ai_600_1/ exists
+	},
+	license.ModuleOWASPWeb: {
+		Module:            license.ModuleOWASPWeb,
+		DisplayName:       "OWASP Web Top 10",
+		RequiredTier:      tierpkg.TierCommunity,
+		MinPriceCents:     0,    // Community tier, free
+		HasImplementation: true, // pkg/compliance/owasp_web/ exists
+	},
+	// v4.2.0: New frameworks — built and integrated with cross-framework mapping.
+	license.ModuleHITECH: {
+		Module:            license.ModuleHITECH,
+		DisplayName:       "HITECH Act",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     19900, // $199/mo
+		HasImplementation: true,  // pkg/compliance/hitech/ (new)
+	},
+	license.ModuleFFIEC: {
+		Module:            license.ModuleFFIEC,
+		DisplayName:       "FFIEC Banking Guidance",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     29900, // $299/mo
+		HasImplementation: true,  // pkg/compliance/ffiec/ (new)
+	},
+	license.ModuleTSASD: {
+		Module:            license.ModuleTSASD,
+		DisplayName:       "TSA Security Directive",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     24900, // $249/mo
+		HasImplementation: true,  // pkg/compliance/tsa_sd/ (new)
+	},
+	license.ModuleISO21434: {
+		Module:            license.ModuleISO21434,
+		DisplayName:       "ISO 21434 (Automotive)",
+		RequiredTier:      tierpkg.TierProfessional,
+		MinPriceCents:     29900, // $299/mo
+		HasImplementation: true,  // pkg/compliance/iso21434/ (new)
 	},
 }
 

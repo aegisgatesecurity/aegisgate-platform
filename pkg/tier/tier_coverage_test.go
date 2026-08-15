@@ -313,8 +313,8 @@ func TestHasFeatureCrossTier(t *testing.T) {
 		}
 	}
 
-	// Professional-only features
-	proFeatures := []Feature{FeatureHIPAA, FeaturePCI, FeatureKubernetes}
+	// Professional-only features (v4.2.0: HIPAA/PCI moved to Developer)
+	proFeatures := []Feature{FeatureKubernetes}
 	for _, f := range proFeatures {
 		if HasFeature(TierDeveloper, f) {
 			t.Errorf("HasFeature(Developer, %s) = true, want false", f)
