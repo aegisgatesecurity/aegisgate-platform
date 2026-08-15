@@ -67,16 +67,16 @@ func TestScanner_Scan_CommunityNoModules(t *testing.T) {
 		t.Errorf("CustomerModules = %v, want empty", rpt.CustomerModules)
 	}
 	// All Community tier (free) frameworks should be Enforced.
-	// v4.2.0: 10 Community tier frameworks (CCPA, NIST AI RMF, ATLAS, GDPR,
-	// OWASP LLM, OWASP Web, CIS, NIST CSF, CSA STAR, NIST AI 600-1)
+	// v4.2.0: 4 Community tier frameworks (OWASP LLM, OWASP Web, ATLAS, NIST AI RMF)
+	// 
 	freeCount := 0
 	for _, f := range rpt.Frameworks {
 		if f.Enforced && f.ReasonEnforced == "framework_free" {
 			freeCount++
 		}
 	}
-	if freeCount != 10 {
-		t.Errorf("free frameworks enforced = %d, want 10", freeCount)
+	if freeCount != 4 {
+		t.Errorf("free frameworks enforced = %d, want 4", freeCount)
 	}
 	// No non-Community (billable) modules should be enforced.
 	for _, f := range rpt.Frameworks {
@@ -141,8 +141,8 @@ func TestScanner_Scan_ProfessionalWithAllModules(t *testing.T) {
 			}
 		}
 	}
-	if enforcedModules != 6 {
-		t.Errorf("enforced billable modules = %d, want 6", enforcedModules)
+	if enforcedModules != 5 {
+		t.Errorf("enforced billable modules = %d, want 5", enforcedModules)
 	}
 	// All 6 modules should be enforced; free frameworks also enforced.
 	// Score is 0 in this test because no frameworks are wired to the
@@ -287,28 +287,33 @@ func TestScanner_Scan_ScanDurationSet(t *testing.T) {
 
 func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 	s := NewScanner(nil, nil)
-	rpt, _ := s.Scan(context.Background(), buildValidationResult(t, "professional", []string{"hipaa", "pci", "soc2", "iso42001", "fedramp", "fips", "eu_ai_act", "cmmcl2", "nist800171", "hitrust", "tisax", "ccpa"}))
-	// v4.2.0: 31 registered modules + 3 community free (atlas, gdpr, owasp_llm) = 34 frameworks.
-	// The scanner discovers all modules from gating.go + community built-ins.
-	if len(rpt.Frameworks) < 31 {
-		t.Errorf("Frameworks count = %d, want at least 31", len(rpt.Frameworks))
+	// Professional tier with all Professional-tier modules owned
+	rpt, _ := s.Scan(context.Background(), buildValidationResult(t, "professional", []string{
+		"hipaa", "pci", "soc2", "iso27001", "ccpa", "gdpr",
+		"iso42001", "fips", "eu_ai_act", "sox", "glba",
+		"cjis", "nerc_cip", "ferpa", "hitech", "ffiec",
+		"tsa_sd", "iso21434", "cis", "nist_csf", "csa_star", "nist_ai_600_1",
+	}))
+	// v4.2.0: 31 compliance frameworks in gating.go (Trust is in tier.go).
+	// Professional tier includes 4 Community + 6 Developer + 16 Professional = 26 frameworks.
+	if len(rpt.Frameworks) < 26 {
+		t.Errorf("Frameworks count = %d, want at least 26 (Professional tier)", len(rpt.Frameworks))
 	}
-	// Verify key modules are present.
+	// Verify key Professional-tier modules are present and enforced.
 	expected := map[string]bool{
 		"hipaa": true, "pci": true, "soc2": true,
-		"iso42001": true, "fedramp": true, "fips": true,
-		"eu_ai_act": true, "trust": true,
-		"cmmcl2": true, "nist800171": true, "hitrust": true,
-		"tisax": true, "ccpa": true, "nist_ai_rmf": true,
+		"iso42001": true, "fips": true,
+		"eu_ai_act": true,
+		"ccpa": true, "gdpr": true, "iso27001": true, "nist_ai_rmf": true,
 		"sox": true, "glba": true, "cjis": true, "nerc_cip": true,
 	}
 	for _, f := range rpt.Frameworks {
-		if f.Module != "" {
+		if f.Module != "" && f.Enforced {
 			delete(expected, f.Module)
 		}
 	}
 	if len(expected) > 0 {
-		t.Errorf("missing modules: %v", expected)
+		t.Errorf("missing enforced modules: %v", expected)
 	}
 }
 

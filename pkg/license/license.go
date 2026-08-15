@@ -171,32 +171,28 @@ func IsValidBundle(name string) bool {
 // AllModules is the canonical list of billable module names, in display order.
 // Used for validation when parsing Stripe webhook payloads.
 var AllModules = []string{
-	// Community tier (free, not billable but registered for validation)
-	ModuleCCPA,
-	ModuleNISTAIRMF,
-	ModuleATLAS,
-	ModuleGDPR,
+	// Community tier (free: AI-focused, our differentiator)
 	ModuleOWASP,
 	ModuleOWASPWeb,
-	ModuleCIS,
-	ModuleNISTCSF,
-	ModuleCSASTAR,
-	ModuleNISTAI600,
+	ModuleATLAS,
+	ModuleNISTAIRMF,
 
-	// Developer tier
+	// Developer tier ($79/mo: table-stakes regulatory)
 	ModuleHIPAA,
 	ModulePCI,
 	ModuleSOC2,
 	ModuleISO27001,
+	ModuleCCPA,
+	ModuleGDPR,
 
-	// Professional tier
+	// Professional tier ($499/mo: industry-specific + SOC workflow)
 	ModuleISO42001,
-	ModuleFedRAMP,
-	ModuleFIPS,
 	ModuleEUAIAct,
-	ModuleCMMCL2,
-	ModuleNIST800171,
-	ModuleTrust,
+	ModuleFIPS,
+	ModuleCIS,
+	ModuleNISTCSF,
+	ModuleCSASTAR,
+	ModuleNISTAI600,
 	ModuleSOX,
 	ModuleGLBA,
 	ModuleNERCCIP,
@@ -207,11 +203,13 @@ var AllModules = []string{
 	ModuleTSASD,
 	ModuleISO21434,
 
-	// Enterprise tier
+	// Enterprise tier ($2,000+/mo: heavy certification)
+	ModuleFedRAMP,
+	ModuleCMMCL2,
+	ModuleNIST800171,
 	ModuleHITRUST,
 	ModuleTISAX,
 }
-
 // IsValidModule returns true if the given module name is a known billable module.
 // Unknown module names (typos, old format, etc.) are rejected.
 func IsValidModule(name string) bool {

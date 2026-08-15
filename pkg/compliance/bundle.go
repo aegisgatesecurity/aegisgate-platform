@@ -42,22 +42,15 @@ import (
 // It queries AllModuleRequirements() and filters by tier. Manual list
 // maintenance is eliminated.
 //
-// Community:    3 billable frameworks (free) + 3 community-registered
-// Developer:    +4 frameworks (HIPAA, PCI, SOC 2, ISO 27001)
-// Professional: +20 frameworks (the deep compliance bench)
-// Enterprise:   +2 frameworks (HITRUST, TISAX)
+// Community:    4 frameworks (OWASP LLM, OWASP Web, ATLAS, NIST AI RMF)
+// Developer:    +6 frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR)
+// Professional: +16 frameworks (industry-specific + security foundations)
+// Enterprise:   +5 frameworks (FedRAMP, CMMC L2, NIST 800-171, HITRUST, TISAX)
 func TierIncludedFrameworks(t tierpkg.Tier) []string {
-	// Community frameworks that are always free (registered in compliance.go
-	// but not in gating.go — they're built-in, not purchaseable modules).
-	communityBuiltIn := []string{
-		"gdpr",
-		"owasp_llm",
-		"atlas",
-	}
-
-	// Derive billable frameworks from gating.go (single source of truth).
+	// v4.2.0: All frameworks are in gating.go (single source of truth).
+	// No more communityBuiltIn list — Community tier frameworks are in
+	// gating.go with RequiredTier: TierCommunity.
 	var result []string
-	result = append(result, communityBuiltIn...)
 
 	for _, req := range AllModuleRequirements() {
 		if t >= req.RequiredTier {
@@ -126,14 +119,14 @@ var verticalBundles = map[string]VerticalBundle{
 		DisplayName: "Privacy & Data Protection Accelerator",
 		Description: "GDPR + CCPA + ISO 27001 — privacy-first compliance for any org handling personal data.",
 		Frameworks: []string{
-			"gdpr",
+			license.ModuleGDPR,
 			license.ModuleCCPA,
 			license.ModuleISO27001,
 		},
-		RequiredTier:         tierpkg.TierDeveloper, // Privacy is for everyone
-		BundlePriceCents:     14900,                 // $149/mo (includes GDPR full compliance + enhanced reporting)
-		IndividualPriceCents: 15800,                  // GDPR $0 + CCPA $0 + ISO 27001 $79 + privacy premium $79 = $158
-		DiscountPercent:      6,
+		RequiredTier:         tierpkg.TierDeveloper,
+		BundlePriceCents:     14900, // $149/mo
+		IndividualPriceCents: 44700, // $149 + $149 + $149 = $447/mo
+		DiscountPercent:      67,
 		Industries:           []string{"privacy", "saas", "ecommerce", "adtech", "data"},
 	},
 	"saas_b2b": {
@@ -147,8 +140,8 @@ var verticalBundles = map[string]VerticalBundle{
 		},
 		RequiredTier:         tierpkg.TierDeveloper,
 		BundlePriceCents:     19900, // $199/mo
-		IndividualPriceCents: 30700, // $149 + $79 + $79 = $307/mo
-		DiscountPercent:      35,
+		IndividualPriceCents: 49700, // $149 + $149 + $199 = $497/mo
+		DiscountPercent:      60,
 		Industries:           []string{"saas", "technology", "startup", "b2b", "software"},
 	},
 	"finance": {
@@ -165,8 +158,8 @@ var verticalBundles = map[string]VerticalBundle{
 		},
 		RequiredTier:         tierpkg.TierDeveloper,
 		BundlePriceCents:     24900, // $249/mo
-		IndividualPriceCents: 92500, // $99 + $149 + $79 + $149 + $199 + $299 = $925/mo
-		DiscountPercent:      73,
+		IndividualPriceCents: 104400, // $149 + $149 + $149 + $199 + $199 + $199 = $1,044/mo
+		DiscountPercent:      76,
 		Industries:           []string{"finance", "fintech", "banking", "insurance", "payments"},
 	},
 	"healthcare": {
@@ -178,10 +171,10 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleHITECH,
 			license.ModuleHITRUST,
 		},
-		RequiredTier:         tierpkg.TierDeveloper, // HIPAA is Developer+, HITECH is Pro+ (bundled at Dev tier)
-		BundlePriceCents:     14900,                 // $149/mo
-		IndividualPriceCents: 109700,                // $99 + $199 + $799 = $1,097/mo individually
-		DiscountPercent:      86,
+		RequiredTier:         tierpkg.TierDeveloper,
+		BundlePriceCents:     19900, // $199/mo
+		IndividualPriceCents: 84700, // $149 + $199 + $499 = $847/mo
+		DiscountPercent:      77,
 		Industries:           []string{"healthcare", "medical", "pharma", "biotech", "hospital"},
 	},
 	"eu_compliance": {
@@ -190,13 +183,13 @@ var verticalBundles = map[string]VerticalBundle{
 		Description: "EU AI Act + GDPR + ISO 42001 — compliance for any organization operating in the European Union.",
 		Frameworks: []string{
 			license.ModuleEUAIAct,
-			"gdpr",
+			license.ModuleGDPR,
 			license.ModuleISO42001,
 		},
-		RequiredTier:         tierpkg.TierProfessional,
+		RequiredTier:         tierpkg.TierDeveloper, // Available at Developer — EU startups need this
 		BundlePriceCents:     14900, // $149/mo
-		IndividualPriceCents: 17800, // $99 + $0 + $79 = $178/mo
-		DiscountPercent:      16,
+		IndividualPriceCents: 54700, // $199 + $149 + $199 = $547/mo
+		DiscountPercent:      73,
 		Industries:           []string{"eu", "europe", "privacy", "ai_governance"},
 	},
 	"energy": {
@@ -209,9 +202,9 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleFIPS,
 		},
 		RequiredTier:         tierpkg.TierProfessional,
-		BundlePriceCents:     24900, // $249/mo
-		IndividualPriceCents: 84700, // $299 + $249 + $299 = $847/mo
-		DiscountPercent:      71,
+		BundlePriceCents:     29900, // $299/mo
+		IndividualPriceCents: 59700, // $199 + $199 + $199 = $597/mo
+		DiscountPercent:      50,
 		Industries:           []string{"energy", "utilities", "oil_gas", "pipeline", "critical_infrastructure", "power"},
 	},
 	"defense": {
@@ -225,10 +218,10 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleCJIS,
 			license.ModuleTSASD,
 		},
-		RequiredTier:         tierpkg.TierProfessional,
-		BundlePriceCents:     89900,  // $899/mo
-		IndividualPriceCents: 184500, // $499 + $399 + $499 + $299 + $249 = $1,845/mo
-		DiscountPercent:      51,
+		RequiredTier:         tierpkg.TierEnterprise, // Contains Enterprise-tier frameworks
+		BundlePriceCents:     119900, // $1,199/mo
+		IndividualPriceCents: 189500, // $499 + $499 + $499 + $199 + $199 = $1,895/mo
+		DiscountPercent:      37,
 		Industries:           []string{"defense", "aerospace", "government", "contracting", "dod", "law_enforcement"},
 	},
 }

@@ -996,8 +996,8 @@ func TestIsValidModule_KnownModules(t *testing.T) {
 
 func TestIsValidModule_Trust(t *testing.T) {
 	// Trust is reserved but accepted by IsValidModule
-	if !IsValidModule(ModuleTrust) {
-		t.Error("IsValidModule(trust) should return true")
+	if IsValidModule(ModuleTrust) {
+		t.Error("IsValidModule(trust) should return false (Trust is in tier.go, not license modules)")
 	}
 }
 

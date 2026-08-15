@@ -47,8 +47,8 @@ func TestRequiredTierForModule_DevModules(t *testing.T) {
 }
 
 func TestRequiredTierForModule_ProModules(t *testing.T) {
-	// ISO 42001, FedRAMP, FIPS require Professional+ per the locked pricing table.
-	proModules := []string{license.ModuleISO42001, license.ModuleFedRAMP, license.ModuleFIPS}
+	// v4.2.0: ISO 42001, FIPS require Professional+. FedRAMP moved to Enterprise.
+	proModules := []string{license.ModuleISO42001, license.ModuleFIPS}
 	for _, m := range proModules {
 		t.Run(m, func(t *testing.T) {
 			required, ok := RequiredTierForModule(m)
@@ -89,9 +89,9 @@ func TestTierMeetsRequirement(t *testing.T) {
 		{license.ModuleHIPAA, tierpkg.TierProfessional, true},
 		{license.ModuleHIPAA, tierpkg.TierEnterprise, true},
 
-		// FedRAMP at Pro: should fail at Dev, meet at Pro, Ent
+		// FedRAMP at Enterprise: should fail at Dev, Pro; meet at Ent
 		{license.ModuleFedRAMP, tierpkg.TierDeveloper, false},
-		{license.ModuleFedRAMP, tierpkg.TierProfessional, true},
+		{license.ModuleFedRAMP, tierpkg.TierProfessional, false},
 		{license.ModuleFedRAMP, tierpkg.TierEnterprise, true},
 
 		// Unknown module: always false
@@ -257,13 +257,6 @@ func TestEvaluateGating_ReasonCodes(t *testing.T) {
 			wantReason:   ReasonUnknownFramework,
 		},
 		{
-			name:         "trust_owned_but_no_implementation",
-			framework:    license.ModuleTrust,
-			result:       makeResult(tierpkg.TierProfessional, []string{license.ModuleTrust}, true),
-			wantEnforced: true, // gate is about ownership, not implementation
-			wantReason:   ReasonEnforced,
-		},
-		{
 			name:         "invalid_license_nil",
 			framework:    license.ModuleHIPAA,
 			result:       nil,
@@ -376,8 +369,8 @@ func TestGetModuleRequirement_Known(t *testing.T) {
 	if r.DisplayName != "HIPAA" {
 		t.Errorf("DisplayName = %q, want HIPAA", r.DisplayName)
 	}
-	if r.MinPriceCents != 9900 {
-		t.Errorf("MinPriceCents = %d, want 9900 ($99)", r.MinPriceCents)
+	if r.MinPriceCents != 14900 {
+		t.Errorf("MinPriceCents = %d, want 14900 ($149)", r.MinPriceCents)
 	}
 }
 
@@ -399,12 +392,12 @@ func TestPricingTable_LockedDecisions(t *testing.T) {
 		minPriceUSD int
 	}
 	cases := []tc{
-		{license.ModuleHIPAA, 99},
-		{license.ModulePCI, 99},
+		{license.ModuleHIPAA, 149},
+		{license.ModulePCI, 149},
 		{license.ModuleSOC2, 149},
-		{license.ModuleISO42001, 79},
+		{license.ModuleISO42001, 199},
 		{license.ModuleFedRAMP, 499},
-		{license.ModuleFIPS, 299},
+		{license.ModuleFIPS, 199},
 	}
 	for _, c := range cases {
 		t.Run(c.module, func(t *testing.T) {
@@ -435,7 +428,7 @@ func TestIsImplementationReady(t *testing.T) {
 		{license.ModuleEUAIAct, true},  // pkg/compliance/eu-ai-act/ exists
 		{license.ModuleFIPS, true},     // pkg/compliance/fips/ exists (v3.4.0+)
 		{license.ModuleFedRAMP, true},  // pkg/compliance/fedramp/ exists (v3.4.0+: 8 highest-priority Moderate controls; full catalog 4-6 weeks)
-		{license.ModuleTrust, true},    // v4.2.0: Trust is now built (59 files, 12K+ lines)
+	
 		{"unknown", false},
 		{"", false},
 	}
@@ -470,13 +463,10 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 		t.Error("SOC 2 should have implementation (pkg/compliance/soc2/ exists since v3.4.0+)")
 	}
 
-	// FedRAMP (v3.4.0+): has implementation. 8 of 8 highest-priority
-	// Moderate controls are functional; full ~323 Moderate catalog
-	// would be 4-6 weeks. Owned at Pro tier, IsFrameworkEnforced=true
-	// AND IsImplementationReady=true. This is the "fully shipped" case.
-	fedrampOwned := makeResult(tierpkg.TierProfessional, []string{license.ModuleFedRAMP}, true)
+	// FedRAMP (v4.2.0): now Enterprise tier. Owned at Enterprise, not Pro.
+	fedrampOwned := makeResult(tierpkg.TierEnterprise, []string{license.ModuleFedRAMP}, true)
 	if !IsFrameworkEnforced(license.ModuleFedRAMP, fedrampOwned) {
-		t.Error("FedRAMP owned at Pro should be enforced (gating is about ownership)")
+		t.Error("FedRAMP owned at Enterprise should be enforced (gating is about ownership)")
 	}
 	if !IsImplementationReady(license.ModuleFedRAMP) {
 		t.Error("FedRAMP should have implementation (pkg/compliance/fedramp/ exists since v3.4.0+)")
@@ -492,24 +482,15 @@ func TestIsImplementationReady_OrthogonalToEnforcement(t *testing.T) {
 		t.Error("FIPS 140 should have implementation (pkg/compliance/fips/ exists since v3.4.0+)")
 	}
 
-	// Trust: no implementation (reserved for future use per
-	// plans/DEFERRED-ITEMS.md). The orthogonal-axis example: if owned,
-	// IsFrameworkEnforced=true (gating is about ownership) BUT
-	// IsImplementationReady=false.
-	trustOwned := makeResult(tierpkg.TierProfessional, []string{license.ModuleTrust}, true)
-	if !IsFrameworkEnforced(license.ModuleTrust, trustOwned) {
-		t.Error("Trust owned at Pro should be enforced (gating is about ownership)")
-	}
-	if IsImplementationReady(license.ModuleTrust) {
-		// v4.2.0: Trust IS now implemented (59 files, 12K+ lines)
-		// This is expected — Trust Framework is built and billable.
-	}
+	// Trust is no longer in gating.go (it's a platform feature in tier.go).
+	// The orthogonal-axis test for Trust has been removed since Trust is
+	// gated by FeatureTrustPillar in tier.go, not by moduleRequirements.
 }
 
 func TestModuleRequirementCount(t *testing.T) {
-	// v4.2.0: 32 modules total (6 Community free + 4 Developer + 20 Professional + 2 Enterprise).
-	// 32 = 31 compliance frameworks + 1 Trust pillar.
-	if got := ModuleRequirementCount(); got != 32 {
-		t.Errorf("ModuleRequirementCount = %d, want 32 (v4.2.0 unified: 31 frameworks + 1 Trust)", got)
+	// v4.2.0: 31 modules total (4 Community free + 6 Developer + 16 Professional + 5 Enterprise).
+	// 31 compliance frameworks (Trust is a platform feature in tier.go).
+	if got := ModuleRequirementCount(); got != 31 {
+		t.Errorf("ModuleRequirementCount = %d, want 31 (v4.2.0: 31 compliance frameworks)", got)
 	}
 }

@@ -40,7 +40,7 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{ModuleFIPS, true},
 		{ModuleEUAIAct, true}, // v3.3.0 Phase 1
 		// Reserved for future use (Trust Framework Phase 4).
-		{ModuleTrust, true},
+		{ModuleTrust, false},  // Trust is in tier.go, not a billable module
 		// Unknown module names.
 		{"", false},
 		{"unknown", false},
@@ -189,9 +189,9 @@ func TestModules_EmptyAndInvalid(t *testing.T) {
 }
 
 func TestAllModules_Count(t *testing.T) {
-	// v4.2.0: 32 modules (31 compliance frameworks + 1 Trust pillar)
+	// v4.2.0: 31 modules (31 compliance frameworks, Trust is in tier.go)
 	// Community tier free modules: CCPA, NIST AI RMF, ATLAS, GDPR, OWASP LLM, OWASP Web
-	if len(AllModules) != 32 {
-		t.Errorf("AllModules has %d items, want 32 (v4.2.0: 31 frameworks + 1 Trust)", len(AllModules))
+	if len(AllModules) != 31 {
+		t.Errorf("AllModules has %d items, want 31 (v4.2.0: 31 compliance frameworks)", len(AllModules))
 	}
 }
