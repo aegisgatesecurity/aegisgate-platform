@@ -1,0 +1,19 @@
+{{- if and .Values.grafanaDashboard.enabled .Values.metrics.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-dashboard
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aegisgate-platform.labels" . | nindent 4 }}
+    {{- if .Values.grafanaDashboard.sidecarLabel }}
+    {{ .Values.grafanaDashboard.sidecarLabel }}: "1"
+    {{- else }}
+    grafana_dashboard: "1"
+    {{- end }}
+  annotations:
+    grafana_folder: "AegisGate"
+data:
+  aegisgate-overview.json: |
+{{ .Files.Get "dashboards/aegisgate-overview.json" | indent 4 }}
+{{- end }}

@@ -1,0 +1,58 @@
+{{- /*
+# =========================================================================
+# AegisGate Security Platform — Horizontal Pod Autoscaler (EXAMPLE)
+# =========================================================================
+#
+# This HPA configuration is provided as an EXAMPLE and is DISABLED by default.
+#
+# WHY DISABLED?
+# - AegisGate is self-hosted; customers have their own scaling policies
+# - HPA requires metrics-server (not always available in air-gapped environments)
+# - Some SOCs prefer manual scaling for compliance/audit reasons
+#
+# TO ENABLE:
+# 1. Ensure metrics-server is installed in your cluster
+# 2. Set autoscaling.enabled: true in values.yaml
+# 3. Adjust minReplicas/maxReplicas/targetCPU based on your workload
+#
+# ALTERNATIVE: Use KEDA for event-driven scaling (not provided, customer choice)
+# =========================================================================
+*/ -}}
+
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-aegisgate-platform
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aegisgate-platform.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-aegisgate-platform
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+  {{- with .Values.autoscaling.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

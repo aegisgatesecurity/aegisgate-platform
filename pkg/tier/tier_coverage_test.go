@@ -277,9 +277,9 @@ func TestAllFeaturesCounts(t *testing.T) {
 		minFeatures int
 	}{
 		{TierCommunity, 30},
-		{TierDeveloper, 53},
-		{TierProfessional, 73},
-		{TierEnterprise, 91},
+		{TierDeveloper, 50},
+		{TierProfessional, 68},
+		{TierEnterprise, 80},
 	}
 	for _, tt := range tests {
 		got := AllFeatures(tt.tier)

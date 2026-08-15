@@ -1,0 +1,178 @@
+{{- if and .Values.prometheusRules.enabled .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-aegisgate-alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aegisgate-platform.labels" . | nindent 4 }}
+    {{- if .Values.prometheusRules.additionalLabels }}
+    {{- toYaml .Values.prometheusRules.additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: aegisgate.rules
+      rules:
+        # =========================================================================
+        # CRITICAL ALERTS
+        # =========================================================================
+
+        # High Error Rate (>10% of requests failing)
+        - alert: AegisGateHighErrorRate
+          expr: |
+            sum(rate(aegisgate_http_requests_total{status=~"5.."}[5m])) 
+            / sum(rate(aegisgate_http_requests_total[5m])) > 0.10
+          for: 5m
+          labels:
+            severity: critical
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform high error rate"
+            description: "Error rate is above 10% threshold"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/high-error-rate"
+
+        # Pod Down (no metrics for 2 minutes)
+        - alert: AegisGatePodDown
+          expr: |
+            absent(up{job=~".*aegisgate.*"} == 1)
+          for: 2m
+          labels:
+            severity: critical
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform pod is down"
+            description: "AegisGate pod has been down for more than 2 minutes"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/pod-down"
+
+        # High Rate Limit Hits (>100 rate limit hits per minute)
+        - alert: AegisGateHighRateLimitHits
+          expr: |
+            sum(rate(aegisgate_rate_limit_hits_total[5m])) > 100
+          for: 5m
+          labels:
+            severity: critical
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform high rate limit hits"
+            description: "Rate limit hits exceed 100 per second"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/high-rate-limits"
+
+        # =========================================================================
+        # WARNING ALERTS
+        # =========================================================================
+
+        # High Request Latency (p95 > 2 seconds)
+        - alert: AegisGateHighLatency
+          expr: |
+            histogram_quantile(0.95, 
+              sum(rate(aegisgate_http_request_duration_seconds_bucket[5m])) by (le)
+            ) > 2
+          for: 10m
+          labels:
+            severity: warning
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform high request latency"
+            description: "95th percentile latency exceeds 2 seconds"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/high-latency"
+
+        # Low Disk Space (<20% remaining on PVC)
+        - alert: AegisGateLowDiskSpace
+          expr: |
+            kubelet_volume_stats_available_bytes 
+            / kubelet_volume_stats_capacity_bytes < 0.20
+          for: 15m
+          labels:
+            severity: warning
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform low disk space"
+            description: "PVC has less than 20% space remaining"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/low-disk-space"
+
+        # High Memory Usage (>85% of limit)
+        - alert: AegisGateHighMemoryUsage
+          expr: |
+            container_memory_usage_bytes{container="aegisgate-platform"} 
+            / container_spec_memory_limit_bytes{container="aegisgate-platform"} > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform high memory usage"
+            description: "Memory usage exceeds 85% of limit"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/high-memory"
+
+        # High CPU Usage (>85% of limit)
+        - alert: AegisGateHighCPUUsage
+          expr: |
+            rate(container_cpu_usage_seconds_total{container="aegisgate-platform"}[5m]) 
+            / container_spec_cpu_quota{container="aegisgate-platform"} * 100000 > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform high CPU usage"
+            description: "CPU usage exceeds 85% of limit"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/high-cpu"
+
+        # No Active Connections (potential service issue)
+        - alert: AegisGateNoActiveConnections
+          expr: |
+            sum(aegisgate_active_connections) == 0
+          for: 5m
+          labels:
+            severity: warning
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform no active connections"
+            description: "No active connections for 5 minutes - potential service issue"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/no-connections"
+
+        # =========================================================================
+        # INFO ALERTS
+        # =========================================================================
+
+        # Security Scan Spike (unusual increase in security scans)
+        - alert: AegisGateSecurityScanSpike
+          expr: |
+            sum(rate(aegisgate_security_scans_total[5m])) 
+            > sum(rate(aegisgate_security_scans_total[1h])) * 2
+          for: 5m
+          labels:
+            severity: info
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform security scan spike"
+            description: "Security scan rate is 2x normal rate"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/scan-spike"
+
+        # MCP Connection Drop (sudden decrease in MCP connections)
+        - alert: AegisGateMCPConnectionDrop
+          expr: |
+            delta(aegisgate_mcp_connections[5m]) < -10
+          for: 5m
+          labels:
+            severity: info
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform MCP connection drop"
+            description: "MCP connections dropped significantly in 5 minutes"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/mcp-drop"
+
+        # Certificate Expiring Soon (<30 days)
+        - alert: AegisGateCertificateExpiringSoon
+          expr: |
+            probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+          for: 1h
+          labels:
+            severity: info
+            service: aegisgate-platform
+          annotations:
+            summary: "AegisGate Platform certificate expiring soon"
+            description: "SSL certificate expires in less than 30 days"
+            runbook_url: "https://docs.aegisgatesecurity.io/troubleshooting/cert-expiry"
+
+{{- end }}

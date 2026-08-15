@@ -64,7 +64,6 @@ func TestTierHasFeatureKey_DeveloperFeatures(t *testing.T) {
 		// Developer features accessible by Developer and above
 		{TierDeveloper, "mtls", true},
 		{TierDeveloper, "oauth_sso", true},
-		{TierDeveloper, "storage_redis", true},
 		{TierDeveloper, "code_execute_sandbox", true},
 		{TierDeveloper, "mcp_context_isolation", true},
 		// Community is NOT enough for Developer features
@@ -93,7 +92,6 @@ func TestTierHasFeatureKey_ProfessionalFeatures(t *testing.T) {
 		{TierProfessional, "compliance_soc2", true},
 		{TierProfessional, "deploy_kubernetes", true},
 		{TierProfessional, "storage_postgres", true},
-		{TierProfessional, "vault_secrets", true},
 		{TierProfessional, "mcp_process_sandbox", true},
 		// Lower tiers blocked
 		{TierCommunity, "compliance_hipaa", false},
@@ -121,11 +119,10 @@ func TestTierHasFeatureKey_EnterpriseFeatures(t *testing.T) {
 		{TierEnterprise, "compliance_fedramp", true},
 		{TierEnterprise, "deploy_airgapped", true},
 		{TierEnterprise, "mcp_vm_sandbox", true},
-		{TierEnterprise, "whitelabel", true},
-		{TierEnterprise, "custom_domain", true},
+		{TierEnterprise, "deploy_clustering", true},
 		// Lower tiers blocked
 		{TierCommunity, "hsm_integration", false},
-		{TierDeveloper, "ldap_integration", false},
+		{TierProfessional, "deploy_clustering", false},
 		{TierProfessional, "compliance_iso42001", false},
 	}
 	for _, tt := range tests {
@@ -193,7 +190,6 @@ func TestIsFeatureCommunity_DeveloperKeys(t *testing.T) {
 		"oidc",
 		"grafana",
 		"request_caching",
-		"storage_sqlite",
 		"data_encryption",
 	}
 	for _, key := range devKeys {
@@ -222,10 +218,9 @@ func TestIsFeatureCommunity_ProfessionalKeys(t *testing.T) {
 func TestIsFeatureCommunity_EnterpriseKeys(t *testing.T) {
 	entKeys := []string{
 		"hsm_integration",
-		"ldap_integration",
 		"compliance_fedramp",
 		"deploy_airgapped",
-		"whitelabel",
+		"deploy_clustering",
 		"mcp_vm_sandbox",
 	}
 	for _, key := range entKeys {
@@ -299,7 +294,6 @@ func TestFeatureForKey_ProfessionalKeys(t *testing.T) {
 		{"compliance_hipaa", FeatureHIPAA},
 		{"multi_tenant", FeatureMultiTenant},
 		{"deploy_kubernetes", FeatureKubernetes},
-		{"vault_secrets", FeatureVaultSecrets},
 		{"mcp_process_sandbox", FeatureProcessSandbox},
 	}
 	for _, tt := range tests {
@@ -321,8 +315,8 @@ func TestFeatureForKey_EnterpriseKeys(t *testing.T) {
 		{"hsm_integration", FeatureHSM},
 		{"compliance_fedramp", FeatureFedRAMP},
 		{"deploy_airgapped", FeatureAirGapped},
+		{"deploy_clustering", FeatureClustering},
 		{"mcp_vm_sandbox", FeatureVMSandbox},
-		{"whitelabel", FeatureWhitelabel},
 	}
 	for _, tt := range tests {
 		f, ok := FeatureForKey(tt.key)

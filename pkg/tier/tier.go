@@ -354,9 +354,6 @@ const (
 	FeatureGranularPerms    Feature = "granular_permissions"
 	FeatureGrafana          Feature = "grafana"
 	FeatureWebhooks         Feature = "webhooks"
-	FeatureTerraform        Feature = "deploy_terraform"
-	FeatureSQLite           Feature = "storage_sqlite"
-	FeatureRedis            Feature = "storage_redis"
 	FeatureDataEncryption   Feature = "data_encryption"
 	FeatureAdminAdvanced    Feature = "admin_advanced"
 	FeatureContextIsolation Feature = "mcp_context_isolation" // Full context isolation
@@ -381,32 +378,24 @@ const (
 	FeatureKubernetes     Feature = "deploy_kubernetes"
 	FeatureHelm           Feature = "deploy_helm"
 	FeaturePostgreSQL     Feature = "storage_postgres"
-	FeatureS3             Feature = "storage_s3"
 	FeatureRetentionPol   Feature = "retention_policies"
-	FeatureVaultSecrets   Feature = "vault_secrets"       // HashiCorp Vault integration
 	FeatureProcessSandbox Feature = "mcp_process_sandbox" // Process-level sandboxing
 
 	// ====================================================================
 	// Enterprise tier
 	// ====================================================================
-	FeatureISO42001     Feature = "compliance_iso42001"
-	FeatureFedRAMP      Feature = "compliance_fedramp"
-	FeatureSOC2Type2    Feature = "compliance_soc2_type2"
-	FeatureHITRUST      Feature = "compliance_hitrust"
-	FeatureMLCustom     Feature = "ml_custom_models"
-	FeatureMLZeroDay    Feature = "ml_zeroday"
-	FeatureMLRealtime   Feature = "ml_realtime_response"
-	FeatureHSM          Feature = "hsm_integration"
-	FeatureLDAP         Feature = "ldap_integration"
-	FeatureFIPS         Feature = "fips_compliance"
-	FeatureHA           Feature = "deploy_ha"
-	FeatureAirGapped    Feature = "deploy_airgapped"
-	FeatureAutoScale    Feature = "deploy_autoscale"
-	FeatureMultiRegion  Feature = "deploy_multiregion"
-	FeatureMongoDB      Feature = "storage_mongo"
-	FeatureWhitelabel   Feature = "whitelabel"
-	FeatureCustomDomain Feature = "custom_domain"
-	FeatureVMSandbox    Feature = "mcp_vm_sandbox" // VM-level sandboxing
+	FeatureISO42001   Feature = "compliance_iso42001"
+	FeatureFedRAMP    Feature = "compliance_fedramp"
+	FeatureSOC2Type2  Feature = "compliance_soc2_type2"
+	FeatureHITRUST    Feature = "compliance_hitrust"
+	FeatureMLCustom   Feature = "ml_custom_models"
+	FeatureMLZeroDay  Feature = "ml_zeroday"
+	FeatureMLRealtime Feature = "ml_realtime_response"
+	FeatureHSM        Feature = "hsm_integration"
+	FeatureFIPS       Feature = "fips_compliance"
+	FeatureClustering Feature = "deploy_clustering" // Clustering support (customer provides LB)
+	FeatureAirGapped  Feature = "deploy_airgapped"
+	FeatureVMSandbox  Feature = "mcp_vm_sandbox" // VM-level sandboxing
 	// v3.2.0 Phase 4: Trust Framework (5th pillar). The Trust pillar is the
 	// 5th architectural pillar of the platform (alongside HTTP Proxy, MCP,
 	// A2A, and Compliance). It provides cryptographic agent identity,
@@ -439,8 +428,8 @@ func RequiredTier(feature Feature) Tier {
 		FeatureCostAnomaly, FeatureUsageAnomaly,
 		FeatureNISTView, FeatureBasicSecurity,
 		FeatureCustomRoles, FeatureGranularPerms,
-		FeatureGrafana, FeatureWebhooks, FeatureTerraform,
-		FeatureSQLite, FeatureRedis, FeatureDataEncryption,
+		FeatureGrafana, FeatureWebhooks,
+		FeatureDataEncryption,
 		FeatureAdminAdvanced, FeatureContextIsolation, FeatureCodeExecSandbox:
 		return TierDeveloper
 
@@ -450,17 +439,16 @@ func RequiredTier(feature Feature) Tier {
 		FeatureMLBehavioral, FeatureMLPredictive, FeatureMLThreat,
 		FeatureSIEM, FeatureMultiTenant, FeaturePolicyEngine, FeatureDeptSeparation,
 		FeatureKubernetes, FeatureHelm,
-		FeaturePostgreSQL, FeatureS3, FeatureRetentionPol,
-		FeatureVaultSecrets, FeatureProcessSandbox,
+		FeaturePostgreSQL, FeatureRetentionPol,
+		FeatureProcessSandbox,
 		FeatureTrustPillar: // v3.2.0 Phase 4
 		return TierProfessional
 
 	// Enterprise
 	case FeatureISO42001, FeatureFedRAMP, FeatureSOC2Type2, FeatureHITRUST,
 		FeatureMLCustom, FeatureMLZeroDay, FeatureMLRealtime,
-		FeatureHSM, FeatureLDAP, FeatureFIPS,
-		FeatureHA, FeatureAirGapped, FeatureAutoScale, FeatureMultiRegion,
-		FeatureMongoDB, FeatureWhitelabel, FeatureCustomDomain,
+		FeatureHSM, FeatureFIPS,
+		FeatureClustering, FeatureAirGapped,
 		FeatureVMSandbox:
 		return TierEnterprise
 
@@ -501,9 +489,8 @@ var featureKeyMap = map[string]Feature{
 	"compliance_nist_view": FeatureNISTView, "compliance_basic_security": FeatureBasicSecurity,
 	"custom_roles": FeatureCustomRoles, "granular_permissions": FeatureGranularPerms,
 	"grafana": FeatureGrafana, "webhooks": FeatureWebhooks,
-	"deploy_terraform": FeatureTerraform, "storage_sqlite": FeatureSQLite,
-	"storage_redis": FeatureRedis, "data_encryption": FeatureDataEncryption,
-	"admin_advanced": FeatureAdminAdvanced, "mcp_context_isolation": FeatureContextIsolation,
+	"data_encryption": FeatureDataEncryption,
+	"admin_advanced":  FeatureAdminAdvanced, "mcp_context_isolation": FeatureContextIsolation,
 	"code_execute_sandbox": FeatureCodeExecSandbox,
 	// Professional
 	"compliance_hipaa": FeatureHIPAA, "compliance_pci": FeaturePCI,
@@ -514,20 +501,18 @@ var featureKeyMap = map[string]Feature{
 	"multi_tenant": FeatureMultiTenant, "policy_engine": FeaturePolicyEngine,
 	"department_separation": FeatureDeptSeparation,
 	"deploy_kubernetes":     FeatureKubernetes, "deploy_helm": FeatureHelm,
-	"storage_postgres": FeaturePostgreSQL, "storage_s3": FeatureS3,
-	"retention_policies": FeatureRetentionPol, "vault_secrets": FeatureVaultSecrets,
+	"storage_postgres":    FeaturePostgreSQL,
+	"retention_policies":  FeatureRetentionPol,
 	"mcp_process_sandbox": FeatureProcessSandbox,
 	// Enterprise
 	"compliance_iso42001": FeatureISO42001, "compliance_fedramp": FeatureFedRAMP,
 	"compliance_soc2_type2": FeatureSOC2Type2, "compliance_hitrust": FeatureHITRUST,
 	"ml_custom_models": FeatureMLCustom, "ml_zeroday": FeatureMLZeroDay,
 	"ml_realtime_response": FeatureMLRealtime,
-	"hsm_integration":      FeatureHSM, "ldap_integration": FeatureLDAP,
-	"fips_compliance": FeatureFIPS,
-	"deploy_ha":       FeatureHA, "deploy_airgapped": FeatureAirGapped,
-	"deploy_autoscale": FeatureAutoScale, "deploy_multiregion": FeatureMultiRegion,
-	"storage_mongo": FeatureMongoDB, "whitelabel": FeatureWhitelabel,
-	"custom_domain": FeatureCustomDomain, "mcp_vm_sandbox": FeatureVMSandbox,
+	"hsm_integration":      FeatureHSM,
+	"fips_compliance":      FeatureFIPS,
+	"deploy_clustering":    FeatureClustering, "deploy_airgapped": FeatureAirGapped,
+	"mcp_vm_sandbox": FeatureVMSandbox,
 	// v3.2.0 Phase 4: Trust Framework pillar
 	"trust_pillar": FeatureTrustPillar,
 }
@@ -592,8 +577,8 @@ func allFeatures() []Feature {
 		FeatureCostAnomaly, FeatureUsageAnomaly,
 		FeatureNISTView, FeatureBasicSecurity,
 		FeatureCustomRoles, FeatureGranularPerms,
-		FeatureGrafana, FeatureWebhooks, FeatureTerraform,
-		FeatureSQLite, FeatureRedis, FeatureDataEncryption,
+		FeatureGrafana, FeatureWebhooks,
+		FeatureDataEncryption,
 		FeatureAdminAdvanced, FeatureContextIsolation, FeatureCodeExecSandbox,
 		// Professional
 		FeatureHIPAA, FeaturePCI, FeatureSOC2Full, FeatureGDPRFull,
@@ -601,14 +586,13 @@ func allFeatures() []Feature {
 		FeatureMLBehavioral, FeatureMLPredictive, FeatureMLThreat,
 		FeatureSIEM, FeatureMultiTenant, FeaturePolicyEngine, FeatureDeptSeparation,
 		FeatureKubernetes, FeatureHelm,
-		FeaturePostgreSQL, FeatureS3, FeatureRetentionPol,
-		FeatureVaultSecrets, FeatureProcessSandbox,
+		FeaturePostgreSQL, FeatureRetentionPol,
+		FeatureProcessSandbox,
 		// Enterprise
 		FeatureISO42001, FeatureFedRAMP, FeatureSOC2Type2, FeatureHITRUST,
 		FeatureMLCustom, FeatureMLZeroDay, FeatureMLRealtime,
-		FeatureHSM, FeatureLDAP, FeatureFIPS,
-		FeatureHA, FeatureAirGapped, FeatureAutoScale, FeatureMultiRegion,
-		FeatureMongoDB, FeatureWhitelabel, FeatureCustomDomain,
+		FeatureHSM, FeatureFIPS,
+		FeatureClustering, FeatureAirGapped,
 		FeatureVMSandbox,
 	}
 }
