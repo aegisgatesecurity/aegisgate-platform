@@ -7,15 +7,15 @@
 [![Version](https://img.shields.io/badge/Version-v4.1.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.1.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-10983+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-90.5%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-8000+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Coverage](https://img.shields.io/badge/Coverage-83.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![SIEM](https://img.shields.io/badge/SIEM-Enterprise_only-9333ea?logo=splunk)](#enterprise-features)
-[![ML Detection](https://img.shields.io/badge/ML_Detection-100%25_evasion_resistance-22c55e?logo=tensorflow)](pkg/ml/)
-[![Lens](https://img.shields.io/badge/Lens-153_patterns-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
-[![CodeQL](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml)
+[![ML Detection](https://img.shields.io/badge/ML_Detection-Enterprise_only-22c55e?logo=tensorflow)](#enterprise-features)
+[![Lens](https://img.shields.io/badge/Lens-Browser_Extension-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
+[![CI](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/ci.yml)
+[![Security](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml)
 [![Security Policy](https://img.shields.io/badge/security-RFC%209116-blue.svg)](./SECURITY.md)
-[![Dependabot](https://img.shields.io/badge/dependabot-enabled-green.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/network/dependencies)
 
 [🌐 Website](https://aegisgatesecurity.io) · [🚀 Live Demo](https://demo.aegisgatesecurity.io/) · [📊 Pricing](https://aegisgatesecurity.io/pricing/) · [📚 Docs](https://aegisgatesecurity.io/docs/) · [🔒 Security](SECURITY.md) · [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
@@ -25,9 +25,22 @@
 
 ---
 
-> **🧩 Using AI without enterprise protections?** [AegisGate Lens](https://github.com/aegisgatesecurity/aegisgate-lens) is our free browser extension that brings 153 detection patterns to everyday AI conversations — for the 95% of users who don't have a security gateway. [Install Lens →](https://github.com/aegisgatesecurity/aegisgate-lens)
+> **🧩 Using AI without enterprise protections?** [AegisGate Lens](https://github.com/aegisgatesecurity/aegisgate-lens) is our free browser extension that brings detection patterns to everyday AI conversations — for the 95% of users who don't have a security gateway. [Install Lens →](https://github.com/aegisgatesecurity/aegisgate-lens)
 
 ---
+
+## Open-Core Model
+
+AegisGate is **open-core**: the community edition is Apache 2.0 open source, and enterprise features are proprietary.
+
+| Edition | License | Features |
+|---------|---------|----------|
+| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 153 detection patterns, 6 community compliance frameworks, in-memory + file persistence, HA clustering |
+| **Developer** ($79/mo) | Proprietary | + 6 regulatory frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR), PostgreSQL persistence, SSO |
+| **Professional** ($499/mo) | Proprietary | + 17 industry frameworks (EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, federated IOC |
+| **Enterprise** (custom) | Proprietary | + 31 frameworks, SIEM integration (11 platforms), ML threat detection, HSM support, 24×7 support |
+
+Enterprise features are gated via `//go:build enterprise` build tags. The community edition compiles standalone and returns clear `ErrEnterpriseOnly` errors when enterprise features are invoked. See [Pricing →](https://aegisgatesecurity.io/pricing/)
 
 ## Why AegisGate?
 
@@ -38,16 +51,15 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **Zero-cost proxy.** -2.8ms p99 overhead (faster than direct). Blocked requests resolve in 7.2ms p50. 15K+ RPS with 0% errors at 2,000 VUs.
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
-- **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, RESPONSE, and Trust — no patchwork of point products.
+- **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, Response, and Trust — no patchwork of point products.
 - **153 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
-- **Red-team hardened.** 26/27 adversarial tests pass. TRACE methods rejected. All security headers present. No `unsafe-eval` in CSP.
+- **31 compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
 
 ## Security Posture
 
 | Metric | Value |
 |--------|-------|
 | CVEs | **0** |
-| Red team tests passed | **26 / 27** |
 | Fail-closed by default | ✅ |
 | TRACE/CONNECT/TRACK blocked | ✅ |
 | Security headers (CSP, CORP, COEP, COOP, HSTS) | ✅ |
@@ -131,32 +143,33 @@ result, _ := guard.Scan(ctx, text)
 | Cryptographic attestation | ✅ Native | ❌ Not available |
 | Self-hosted, zero dependencies | ✅ Single binary | ❌ Requires external services |
 | Fail-closed by default | ✅ | ⚠️ Often fail-open |
-| 15+ compliance frameworks | ✅ | ⚠️ 3–5 typical |
+| 31 compliance frameworks | ✅ | ⚠️ 3–5 typical |
 | PostgreSQL + file persistence | ✅ | ⚠️ Cloud-locked |
 | HA clustering | ✅ Native | ⚠️ Enterprise add-on |
-| Open source (Apache 2.0) | ✅ | ❌ Proprietary |
+| Open-core (Apache 2.0 community) | ✅ | ❌ Proprietary |
 
-## v3.6.2 Highlights
+## Pricing Tiers
 
-| Feature | Description |
-|---------|-------------|
-| **FedRAMP 151/170 Automated (88.8%)** | Compliance Engine v2: 69 controls promoted from manual/stub to real CheckFuncs. 19 remaining are customer-responsibility. |
-| **gRPC Service Layer** | 7 services, 50 RPCs with health checking, reflection, and TLS |
-| **Trust API Attestation** | Cryptographic attestation generation and verification (RFC 3161 TSA) |
-| **SIEM 11/11 Platform Coverage** | Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, **Datadog**, **CloudWatch**, **SecurityHub** |
-| **SIEM Event Durability** | BufferConfig.Persist with JSON-lines file persistence and replay on startup |
-| **Incident PostgreSQL Backend** | Full PostgreSQL persistence for incidents, playbooks, and detection rules (7 stores, 7 migrations) |
-| **SSO Persistence** | PostgreSQL-backed OIDC session storage with TTL and ACR value mapping |
-| **Token Analytics** | Per-request token usage metrics wired into the request pipeline |
-| **PDF Export** | Questionnaire results export to formatted PDF with scoring and evidence citations |
-| **Reporting Delivery** | Webhook (HTTP POST) and Email (SMTP+STARTTLS) delivery handlers |
-| **Reporting Templates** | Custom template execution with TemplateID lookup and HTML generation |
-| **CSV Data Export** | Full recursive Section/Key/Value flattening (was metadata-only headers) |
-| **153-Pattern Detection Engine** | Full Lens parity: 45 secrets, 12 XSS, 15+13+9+24 PII, 35 compliance patterns |
-| **PostgreSQL Persistence** | 8 integration test suites via testcontainers-go (IOC, audit, sessions, multi-tenant, correlation, attestation, RBAC, incident) |
-| **HA Clustering** | Multi-node deployments with distributed rate limiting, instance identity, and health checks |
-| **Performance** | Zero-cost proxy (-2.8ms p99), 15K+ RPS sustained, ATLAS p99 10.7ms (81% improvement) |
-| **Security Hardening** | 5 auth bypass fixes, localhost-only metrics, CSP hardening. 26/27 red team tests pass |
+| Tier | Price | Rate Limits (Proxy/MCP) | Users / Agents | Compliance | Key Features |
+|------|-------|------------------------|---------------|------------|--------------|
+| **Community** | Free | Soft-throttle | 5 / 5 | 6 frameworks | HTTP/MCP/A2A scanning, 153 detection patterns, in-memory persistence |
+| **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
+| **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, Trust Framework |
+| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + HITRUST, TISAX, CMMC L2, SIEM (11 platforms), ML detection, HSM |
+
+### Vertical Bundles
+
+| Bundle | Target | Frameworks Included |
+|--------|--------|-------------------|
+| Healthcare | HIPAA-covered entities | HIPAA, HITECH, HITRUST, FedRAMP |
+| Defense | DoD/defense contractors | CMMC L2, NIST 800-171, FedRAMP, TISAX |
+| Finance | Financial services | PCI-DSS, SOX, GLBA, FFIEC, ISO 27001 |
+| Privacy | Privacy-focused orgs | GDPR, CCPA, ISO 27001, EU AI Act |
+| Energy | Energy/critical infra | NERC CIP, ISO 27001, NIST CSF |
+| SaaS B2B | SaaS providers | SOC 2, ISO 27001, CSA STAR, CCPA |
+| EU Compliance | EU organizations | EU AI Act, GDPR, ISO 27001, TISAX |
+
+See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 
 ## 6 Pillars
 
@@ -166,26 +179,57 @@ result, _ := guard.Scan(ctx, text)
 | MCP | `pkg/mcpserver/` | Model Context Protocol guardrails |
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
-| RESPONSE | `pkg/response/detectors/` | 153-pattern detection (secrets, XSS, PII, compliance) |
-| Trust Framework | `pkg/attestation/`, `pkg/trust/` | Cryptographic attestation, CISO posture digest |
+| Response | `pkg/response/detectors/` | 153-pattern detection (secrets, XSS, PII, compliance) |
+| Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Enterprise: full trust scoring) |
 
-## Compliance Coverage
+## Compliance Coverage (31 Frameworks)
 
-| Framework | Controls | Package |
-|-----------|----------|---------|
-| EU AI Act | 82 | `pkg/compliance/eu-ai-act/` |
-| FedRAMP (NIST 800-53) | 170 (151 automated) | `pkg/compliance/fedramp/` |
-| SOC 2 Type II | 5 | `pkg/compliance/soc2/` |
-| ISO 27001 | 14 | `pkg/compliance/iso27001/` |
-| HITRUST CSF | 6 | `pkg/compliance/hitrust/` |
-| TISAX | 7 | `pkg/compliance/tisax/` |
-| CMMC Level 2 | 14 | `pkg/compliance/cmmcl2/` |
-| NIST 800-171 | 14 | `pkg/compliance/nist800171/` |
-| FIPS 140-2 | 11 | `pkg/compliance/fips/` |
-| NIST AI RMF | 8 | `pkg/compliance/nist_ai_rmf/` |
-| CCPA | 7 | `pkg/compliance/ccpa/` |
-| HIPAA | 11 | `pkg/compliance/hipaa/` |
-| PCI-DSS | 12 | `pkg/compliance/pci/` |
+| Framework | Tier | Package |
+|-----------|------|---------|
+| OWASP LLM Top 10 | Community | `pkg/compliance/community/owasp/` |
+| MITRE ATLAS | Community | `pkg/compliance/community/atlas/` |
+| NIST AI RMF | Community | `pkg/compliance/nist_ai_rmf/` |
+| OWASP Web | Community | `pkg/compliance/owasp_web/` |
+| GDPR | Developer | `pkg/compliance/community/gdpr/` |
+| HIPAA | Developer | `pkg/compliance/hipaa/` |
+| PCI-DSS | Developer | `pkg/compliance/pci/` |
+| SOC 2 Type II | Developer | `pkg/compliance/soc2/` |
+| ISO 27001 | Developer | `pkg/compliance/iso27001/` |
+| CCPA | Developer | `pkg/compliance/ccpa/` |
+| EU AI Act | Professional | `pkg/compliance/eu-ai-act/` |
+| FedRAMP (NIST 800-53) | Professional | `pkg/compliance/fedramp/` |
+| NIST CSF | Professional | `pkg/compliance/nist_csf/` |
+| NIST 800-171 | Professional | `pkg/compliance/nist800171/` |
+| FIPS 140-2 | Professional | `pkg/compliance/fips/` |
+| CIS Controls | Professional | `pkg/compliance/cis/` |
+| CSA STAR | Professional | `pkg/compliance/csa_star/` |
+| NIST AI 600-1 | Professional | `pkg/compliance/nist_ai_600_1/` |
+| SOX | Professional | `pkg/compliance/sox/` |
+| GLBA | Professional | `pkg/compliance/glba/` |
+| NERC CIP | Professional | `pkg/compliance/nerc_cip/` |
+| CJIS | Professional | `pkg/compliance/cjis/` |
+| FERPA | Professional | `pkg/compliance/ferpa/` |
+| HITECH | Professional | `pkg/compliance/hitech/` |
+| FFIEC | Professional | `pkg/compliance/ffiec/` |
+| TSA SD | Professional | `pkg/compliance/tsa_sd/` |
+| ISO 21434 | Professional | `pkg/compliance/iso21434/` |
+| ISO 42001 | Professional | `pkg/compliance/iso42001/` |
+| CMMC Level 2 | Enterprise | `pkg/compliance/cmmcl2/` |
+| HITRUST CSF | Enterprise | `pkg/compliance/hitrust/` |
+| TISAX | Enterprise | `pkg/compliance/tisax/` |
+
+## Enterprise Features
+
+The following features require an enterprise license (`//go:build enterprise`):
+
+| Feature | Description |
+|---------|-------------|
+| **SIEM Integration** | Forward audit events to Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, Datadog, CloudWatch, SecurityHub (11 platforms) |
+| **ML Threat Detection** | Char CNN-BiLSTM neural network (1.58M params, ONNX) for adversarial pattern detection with 100/100 evasion resistance |
+| **Trust Framework** | Full trust scoring, pillar-based governance, and attestation with cryptographic provenance |
+| **HSM Support** | Hardware Security Module integration for key management |
+
+Community edition returns clear `ErrEnterpriseOnly` errors for these features.
 
 ## Quick Start
 
@@ -200,8 +244,8 @@ go build -o aegisgate ./cmd/aegisgate-platform
 export DATABASE_URL="postgres://user:pass@localhost:5432/aegisgate"
 ./aegisgate
 
-# Run integration tests (requires Docker)
-go test -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/...
+# Integration tests (requires Docker for PostgreSQL testcontainers)
+go test -tags=integration -timeout 300s ./tests/integration/...
 ```
 
 ## Architecture
@@ -211,46 +255,65 @@ cmd/aegisgate-platform/     # Binary entry point
 pkg/
 ├── a2a/                    # Agent-to-Agent security
 ├── acp/                    # Agent Capability Policy
-├── attestation/            # Cryptographic envelope (Sign/Verify/VerifyWithKey/VerifyOnline)
+├── analytics/              # Token usage and request metrics
+├── attestation/            # Cryptographic attestation (RFC 3161 TSA)
+├── audit/                  # Audit logging + SIEM dispatcher (enterprise: full SIEM)
 ├── audit/soc2/             # SOC 2 evidence collection
-├── compliance/             # 15+ framework modules
+├── bridge/                 # Platform bridge for Lens integration
+├── compliance/             # 31 framework modules across 33 subdirectories
 ├── cluster/                # HA clustering & distributed rate limiting
 ├── correlation/            # Event correlation engine
 ├── cve/                    # CVE-for-AI feed
-├── detectors/              # 153-pattern detection engine
-├── evaluator/              # Adversarial benchmark suite
-├── incident/               # Incident response (PostgreSQL + in-memory)
-├── ioc/                    # IOC management
+├── digest/                 # CISO posture digest
+├── evidence/               # Evidence collection and packaging
+├── grpc/                   # gRPC service layer (7 services, 50 RPCs)
+├── incident/               # Incident response (PostgreSQL + in-memory, 14 playbooks)
+├── ioc/                    # IOC management and STIX export
+├── lensbackend/            # Lens extension backend
 ├── mcpserver/              # MCP guardrails
+├── metrics/                # Prometheus metrics
+├── ml/                     # ML threat detection (enterprise: ONNX inference)
 ├── persistence/            # Storage backends (file + PostgreSQL)
+├── platformconfig/         # Configuration with hot-reload
+├── posture/                # Security posture assessment
+├── promptcache/            # Prompt caching
 ├── rbac/                   # Role-based access control
 ├── response/               # 6-pillar response guard
-├── trust/                  # Trust Framework (6 sub-packages)
-└── testdb/                 # Shared testcontainers infrastructure
+├── response/detectors/     # 153-pattern detection engine
+├── scanner/                # Vulnerability scanner
+├── security/               # Security utilities
+├── signature_verification/ # Package signature verification
+├── sla/                    # SLA tracking
+├── soc/                    # SOC detection patterns
+├── sso/                    # SSO/OIDC
+├── tier/                   # Tier definitions and feature gating
+├── tieradapter/            # Tier adapter for runtime tier checks
+├── toolauth/               # MCP tool authorization matrix
+├── trustportal/            # Trust portal HTTP handlers (enterprise: full portal)
+└── upstream/               # Vendored upstream packages (proxy, dashboard, opsec)
 ```
 
 ## Testing
 
 ```bash
-# Unit tests (102 packages)
+# Unit tests (83.1% coverage, 8000+ tests across 441 files)
 go test ./...
 
-# Integration tests (8 PostgreSQL packages, requires Docker)
-go test -tags=integration -timeout 300s ./pkg/ioc/... ./pkg/persistence/... ./pkg/rbac/... ./pkg/attestation/... ./pkg/correlation/... ./pkg/incident/... ./pkg/rbac/... \
-  ./pkg/license/... ./pkg/correlation/... ./pkg/attestation/...
+# Integration tests (requires Docker for PostgreSQL testcontainers)
+go test -tags=integration -timeout 300s ./tests/integration/...
 
-# Coverage
+# Coverage report
 go test -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out | grep total
 ```
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Apache 2.0 for the community edition — see [LICENSE](LICENSE). Enterprise features are proprietary and require a license key.
 
 ## Security
 
-See [SECURITY.md](SECURITY.md) for vulnerability reporting. See [govulncheck.toml](govulncheck.toml) for the GO-2026-5932 suppression (openpgp transitive, not called).
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ---
 
