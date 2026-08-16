@@ -87,7 +87,8 @@ jobs:
 
       - name: Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('gosec-results.sarif') != ''
+        continue-on-error: true
         with:
           sarif_file: gosec-results.sarif
           category: gosec
@@ -126,7 +127,7 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
-          config: '.trivy.yaml'
+          trivy-config: '.trivy.yaml'
           format: 'sarif'
           output: 'trivy-fs-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
@@ -134,7 +135,8 @@ jobs:
 
       - name: Upload Trivy FS SARIF
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('trivy-fs-results.sarif') != ''
+        continue-on-error: true
         with:
           sarif_file: trivy-fs-results.sarif
           category: trivy-fs
