@@ -132,18 +132,18 @@ func TestRateLimitCounter_ProxyMultipleHits(t *testing.T) {
 //
 //	guardrails.go OnRateLimitCheck → metrics.RecordRateLimitHit(ServiceMCP, sanitized)
 func TestRateLimitCounter_MCPRateLimit(t *testing.T) {
-	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
+	cfg := mcpserver.DefaultGuardrailConfig(tier.TierDeveloper) // 500 RPM
 	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust the RPM limit
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 500; i++ {
 		g.OnRateLimitCheck("10.0.0.1:9999")
 	}
 
 	// This one should be rate-limited (and record a metric)
 	err := g.OnRateLimitCheck("10.0.0.1:9999")
 	if err == nil {
-		t.Fatal("Expected rate limit error after exceeding 60 RPM")
+		t.Fatal("Expected rate limit error after exceeding 500 RPM")
 	}
 
 	// Verify stats reflect the rate limit
@@ -178,11 +178,11 @@ func TestRateLimitCounter_MCPRateLimit(t *testing.T) {
 // get separate rate limit buckets, and only the over-limit client's
 // hits are recorded.
 func TestRateLimitCounter_MCPPerClientIsolation(t *testing.T) {
-	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM per client
+	cfg := mcpserver.DefaultGuardrailConfig(tier.TierDeveloper) // 500 RPM per client
 	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust RPM for client A (subnet 10.x)
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 500; i++ {
 		g.OnRateLimitCheck("10.0.0.1:1111")
 	}
 
@@ -208,7 +208,7 @@ func TestRateLimitCounter_MCPPerClientIsolation(t *testing.T) {
 // GuardrailHandler path records metrics when rate-limiting through
 // the JSON-RPC handler stack.
 func TestRateLimitCounter_MCPGuardrailHandler(t *testing.T) {
-	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
+	cfg := mcpserver.DefaultGuardrailConfig(tier.TierDeveloper) // 500 RPM
 	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	innerHandler := mcp.NewRequestHandler(nil, nil, nil)
@@ -224,8 +224,8 @@ func TestRateLimitCounter_MCPGuardrailHandler(t *testing.T) {
 		Conn: serverConn,
 	}
 
-	// Fire 60 requests to exhaust the limit
-	for i := 0; i < 60; i++ {
+	// Fire 500 requests to exhaust the limit
+	for i := 0; i < 500; i++ {
 		req := &mcp.JSONRPCRequest{
 			JSONRPC: "2.0",
 			ID:      i,
@@ -334,9 +334,9 @@ func TestRateLimitCounter_TierDifferentiation(t *testing.T) {
 		rpm         int
 		expectLimit bool
 	}{
-		{"Community_60RPM", tier.TierCommunity, 60, true},
-		{"Developer_300RPM", tier.TierDeveloper, 300, true},
-		{"Professional_1500RPM", tier.TierProfessional, 1500, true},
+		{"Community_Unlimited", tier.TierCommunity, -1, false},
+		{"Developer_500RPM", tier.TierDeveloper, 500, true},
+		{"Professional_5000RPM", tier.TierProfessional, 5000, true},
 		{"Enterprise_Unlimited", tier.TierEnterprise, -1, false},
 	}
 
@@ -393,11 +393,11 @@ func TestRateLimitCounter_TierDifferentiation(t *testing.T) {
 // expires, the client can make requests again (counter resets per window,
 // but metrics counter continues to accumulate).
 func TestRateLimitCounter_WindowReset(t *testing.T) {
-	cfg := mcpserver.DefaultGuardrailConfig(tier.TierCommunity) // 60 RPM
+	cfg := mcpserver.DefaultGuardrailConfig(tier.TierDeveloper) // 500 RPM
 	g := mcpserver.NewGuardrailMiddleware(cfg, "test-server")
 
 	// Exhaust the limit
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 500; i++ {
 		g.OnRateLimitCheck("10.0.0.1:1111")
 	}
 

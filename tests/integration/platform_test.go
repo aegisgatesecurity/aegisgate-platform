@@ -84,21 +84,22 @@ func getFreePort(t *testing.T) int {
 func TestCommunityTierLimits(t *testing.T) {
 	pt := tier.TierCommunity
 
-	// Updated: Community now gets 120 proxy RPM, 60 MCP RPM, 7-day retention
-	if pt.RateLimitProxy() != 120 {
-		t.Errorf("Community proxy rate limit = %d, want 120", pt.RateLimitProxy())
+	// v3.5.0+: Community has no hard rate cap (soft-throttle policy),
+	// but retains 5 users / 5 agents / 7-day retention.
+	if pt.RateLimitProxy() != -1 {
+		t.Errorf("Community proxy rate limit = %d, want -1 (soft-throttle)", pt.RateLimitProxy())
 	}
-	if pt.RateLimitMCP() != 60 {
-		t.Errorf("Community MCP rate limit = %d, want 60", pt.RateLimitMCP())
+	if pt.RateLimitMCP() != -1 {
+		t.Errorf("Community MCP rate limit = %d, want -1 (soft-throttle)", pt.RateLimitMCP())
 	}
-	if pt.RateLimit() != 120 {
-		t.Errorf("Community rate limit (deprecated) = %d, want 120 (backward compat)", pt.RateLimit())
+	if pt.RateLimit() != -1 {
+		t.Errorf("Community rate limit (deprecated) = %d, want -1 (backward compat)", pt.RateLimit())
 	}
-	if pt.MaxUsers() != 3 {
-		t.Errorf("Community max users = %d, want 3", pt.MaxUsers())
+	if pt.MaxUsers() != 5 {
+		t.Errorf("Community max users = %d, want 5", pt.MaxUsers())
 	}
-	if pt.MaxAgents() != 2 {
-		t.Errorf("Community max agents = %d, want 2", pt.MaxAgents())
+	if pt.MaxAgents() != 5 {
+		t.Errorf("Community max agents = %d, want 5", pt.MaxAgents())
 	}
 	if pt.LogRetentionDays() != 7 {
 		t.Errorf("Community log retention = %d, want 7", pt.LogRetentionDays())
@@ -2335,11 +2336,11 @@ func TestConfigProxyPortParsing(t *testing.T) {
 func TestDeveloperTierLimits(t *testing.T) {
 	dt := tier.TierDeveloper
 
-	if dt.RateLimitProxy() != 600 {
-		t.Errorf("Developer RateLimitProxy = %d, want 600", dt.RateLimitProxy())
+	if dt.RateLimitProxy() != 1000 {
+		t.Errorf("Developer RateLimitProxy = %d, want 1000", dt.RateLimitProxy())
 	}
-	if dt.RateLimitMCP() != 300 {
-		t.Errorf("Developer RateLimitMCP = %d, want 300", dt.RateLimitMCP())
+	if dt.RateLimitMCP() != 500 {
+		t.Errorf("Developer RateLimitMCP = %d, want 500", dt.RateLimitMCP())
 	}
 	if dt.MaxConcurrentMCP() != 25 {
 		t.Errorf("Developer MaxConcurrentMCP = %d, want 25", dt.MaxConcurrentMCP())
@@ -2353,11 +2354,11 @@ func TestDeveloperTierLimits(t *testing.T) {
 	if dt.MaxMCPSandboxMemoryMB() != 512 {
 		t.Errorf("Developer MaxMCPSandboxMemoryMB = %d, want 512", dt.MaxMCPSandboxMemoryMB())
 	}
-	if dt.MaxUsers() != 10 {
-		t.Errorf("Developer MaxUsers = %d, want 10", dt.MaxUsers())
+	if dt.MaxUsers() != 25 {
+		t.Errorf("Developer MaxUsers = %d, want 25", dt.MaxUsers())
 	}
-	if dt.MaxAgents() != 5 {
-		t.Errorf("Developer MaxAgents = %d, want 5", dt.MaxAgents())
+	if dt.MaxAgents() != 25 {
+		t.Errorf("Developer MaxAgents = %d, want 25", dt.MaxAgents())
 	}
 	if dt.LogRetentionDays() != 30 {
 		t.Errorf("Developer LogRetentionDays = %d, want 30", dt.LogRetentionDays())
@@ -2371,11 +2372,11 @@ func TestDeveloperTierLimits(t *testing.T) {
 func TestProfessionalTierLimits(t *testing.T) {
 	pt := tier.TierProfessional
 
-	if pt.RateLimitProxy() != 3000 {
-		t.Errorf("Professional RateLimitProxy = %d, want 3000", pt.RateLimitProxy())
+	if pt.RateLimitProxy() != 10000 {
+		t.Errorf("Professional RateLimitProxy = %d, want 10000", pt.RateLimitProxy())
 	}
-	if pt.RateLimitMCP() != 1500 {
-		t.Errorf("Professional RateLimitMCP = %d, want 1500", pt.RateLimitMCP())
+	if pt.RateLimitMCP() != 5000 {
+		t.Errorf("Professional RateLimitMCP = %d, want 5000", pt.RateLimitMCP())
 	}
 	if pt.MaxConcurrentMCP() != 100 {
 		t.Errorf("Professional MaxConcurrentMCP = %d, want 100", pt.MaxConcurrentMCP())
@@ -2389,11 +2390,11 @@ func TestProfessionalTierLimits(t *testing.T) {
 	if pt.MaxMCPSandboxMemoryMB() != 2048 {
 		t.Errorf("Professional MaxMCPSandboxMemoryMB = %d, want 2048", pt.MaxMCPSandboxMemoryMB())
 	}
-	if pt.MaxUsers() != 50 {
-		t.Errorf("Professional MaxUsers = %d, want 50", pt.MaxUsers())
+	if pt.MaxUsers() != 100 {
+		t.Errorf("Professional MaxUsers = %d, want 100", pt.MaxUsers())
 	}
-	if pt.MaxAgents() != 25 {
-		t.Errorf("Professional MaxAgents = %d, want 25", pt.MaxAgents())
+	if pt.MaxAgents() != 100 {
+		t.Errorf("Professional MaxAgents = %d, want 100", pt.MaxAgents())
 	}
 	if pt.LogRetentionDays() != 90 {
 		t.Errorf("Professional LogRetentionDays = %d, want 90", pt.LogRetentionDays())

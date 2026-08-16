@@ -1338,19 +1338,29 @@ func TestEscalationPolicy(t *testing.T) {
 // 12. Default Playbooks and Rules Integrity
 // =====================================================================
 
-// TestDefaultPlaybooksIntegrity verifies that all 4 default playbooks
+// TestDefaultPlaybooksIntegrity verifies that all 14 default playbooks
 // have valid IDs, steps, and compliance tags.
 func TestDefaultPlaybooksIntegrity(t *testing.T) {
 	playbooks := incident.DefaultPlaybooks()
-	if len(playbooks) != 4 {
-		t.Fatalf("expected 4 default playbooks, got %d", len(playbooks))
+	if len(playbooks) != 14 {
+		t.Fatalf("expected 14 default playbooks, got %d", len(playbooks))
 	}
 
 	expectedIDs := map[string]int{
-		"pb_fedramp_ir4":    4, // 4 steps
-		"pb_fedramp_ir5":    3, // 3 steps
-		"pb_soc2_cc61":      5, // 5 steps
-		"pb_nist800171_ir1": 4, // 4 steps
+		"pb_fedramp_ir4":               4, // 4 steps
+		"pb_fedramp_ir5":               3, // 3 steps
+		"pb_soc2_cc61":                 5, // 5 steps
+		"pb_nist800171_ir1":            4, // 4 steps
+		"pb_atlas_prompt_injection":    4, // 4 steps
+		"pb_atlas_llm_jailbreak":       4, // 4 steps
+		"pb_atlas_prompt_extraction":   4, // 4 steps
+		"pb_atlas_data_extraction":     4, // 4 steps
+		"pb_atlas_indirect_injection":  4, // 4 steps
+		"pb_atlas_vector_db_poisoning": 4, // 4 steps
+		"pb_atlas_content_injection":   4, // 4 steps
+		"pb_atlas_plugin_exploitation": 4, // 4 steps
+		"pb_atlas_defense_evasion":     4, // 4 steps
+		"pb_atlas_elevation_abuse":     4, // 4 steps
 	}
 
 	for _, pb := range playbooks {

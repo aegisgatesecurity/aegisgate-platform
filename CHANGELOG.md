@@ -1,3 +1,33 @@
+## [4.1.0] - 2026-08-15 - Pricing, Open-Core, CI Fixes 🔒
+
+> **v4.1.0** is a major release that finalizes the pricing/tier structure, implements the open-core model (community edition is Apache 2.0, enterprise features are proprietary), fixes all CI failures, and aligns integration tests with current tier values. 83.1% coverage, 0 failures.
+
+### Pricing & Tier System (v4.1.0)
+
+- **feat: unified pricing structure** — 4 tiers (Community $0, Developer $79/mo, Professional $499/mo, Enterprise Custom), 7 vertical bundles, 31 compliance frameworks, à la carte pricing by complexity. Single source of truth in `pkg/compliance/gating.go`.
+- **feat: tier system cleanup** — Community rate limits changed to soft-throttle (-1), Developer 1000/500 RPM, Professional 10000/5000 RPM, Enterprise unlimited. MaxUsers/MaxAgents updated (Community 5/5, Developer 25/25, Professional 100/100).
+- **feat: 10 ATLAS incident response playbooks** — Total 14 default playbooks (4 compliance + 10 ATLAS for AI-specific threats: prompt injection, jailbreak, data extraction, etc.)
+
+### Open-Core Model (v4.1.0)
+
+- **feat: open-core architecture** — Community edition is Apache 2.0 open source. Enterprise features (SIEM integration, Trust Framework, ML model weights/training) are proprietary, gated by `//go:build enterprise` build tags.
+- **refactor: community-edition implementations** — SIEM dispatcher, gRPC SIEM service, and Trust Framework HTTP handlers use build-tag-based feature gating with clear `ErrEnterpriseOnly` errors and `codes.Unimplemented` gRPC responses.
+- **fix: Dockerfile updated** — Removed proprietary model weights from community Docker image. ThreatDetector gracefully falls back to regex-only scanning.
+
+### CI Fixes (v4.1.0)
+
+- **fix: govulncheck** — Bumped Go from 1.26.5 to 1.26.6 (7 stdlib vulnerabilities fixed)
+- **fix: gofmt** — Formatted 16 files that failed formatting check
+- **fix: Prometheus metric collision** — Renamed `aegisgate_scan_duration_seconds` to `aegisgate_scan_pipeline_duration_seconds` to avoid double-registration panic when both `pkg/metrics` and `upstream/aegisgate/pkg/dashboard` are loaded
+- **fix: integration tests** — Updated `TestRateLimitCounter_*`, `TestCommunityTierLimits`, `TestDeveloperTierLimits`, `TestProfessionalTierLimits`, `TestDefaultPlaybooksIntegrity` to match current tier values (rate limits, max users/agents, playbook count)
+- **fix: gosec/trivy SARIF upload** — Added `actions: read` permission; made trivy image SARIF upload conditional on file existence
+
+### Bug Fixes (v4.1.0)
+
+- **fix: removed gen-training-data command** — Imported proprietary `pkg/ml/training` package
+- **fix: git history rewritten** — All proprietary code (Trust Framework, ML models/training, SIEM, premium compliance) removed from git history via git-filter-repo
+- **fix: .gitignore** — Protected paths added to prevent accidental commits of proprietary code
+
 ## [4.0.0] - 2026-08-04 - ML Threat Detection 🔒
 
 > **v4.0.0** adds neural network-based threat detection as a supplementary layer alongside the existing regex scanner. The Char CNN-BiLSTM model (1.58M params, 6.2MB ONNX) achieves 100/100 evasion resistance with 0% false positive rate on benign traffic and ~6ms inference latency. This release also introduces CGO build-tag architecture for seamless ONNX/heuristic split, auto-discovery of the onnxruntime shared library, adversarial robustness testing (PGD + FGSM), data drift monitoring (PSI + KL-divergence), and A/B testing framework for model evaluation. 10,983 tests, 0 failures, 0 race conditions.
