@@ -35,7 +35,7 @@ AegisGate is **open-core**: the community edition is Apache 2.0 open source, and
 
 | Edition | License | Features |
 |---------|---------|----------|
-| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 153 detection patterns, 6 community compliance frameworks, in-memory + file persistence, HA clustering |
+| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 176 detection patterns, 4 community compliance frameworks, in-memory + file persistence |
 | **Developer** ($79/mo) | Proprietary | + 6 regulatory frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR), PostgreSQL persistence, SSO |
 | **Professional** ($499/mo) | Proprietary | + 11 industry frameworks (EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, SIEM (11 platforms), ML threat detection, federated IOC, PostgreSQL |
 | **Enterprise** (custom) | Proprietary | + 5 regulated frameworks (HITRUST, TISAX, CMMC L2, NIST 800-171, ISO 42001), HSM, FIPS mode, air-gapped, K8s clustering, custom ML, 24×7 support |
@@ -52,7 +52,7 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, Response, and Trust — no patchwork of point products.
-- **153 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
+- **176 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
 - **31 compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
 
 ## Security Posture
@@ -101,7 +101,7 @@ flowchart LR
 
 ## Detection Engine
 
-The `pkg/response/detectors/` package provides 153 regex patterns with full Lens parity:
+The `pkg/response/detectors/` package provides 176 regex patterns with full Lens parity:
 
 | Category | Patterns | What it catches |
 |----------|----------|-----------------|
@@ -116,7 +116,7 @@ The `pkg/response/detectors/` package provides 153 regex patterns with full Lens
 ```go
 import "github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
 
-// Scan all 153 patterns
+// Scan all 176 patterns
 matches := detectors.DetectAll(text)
 
 // Scan by category
@@ -139,20 +139,20 @@ result, _ := guard.Scan(ctx, text)
 | MCP guardrails | ✅ Native | ❌ Plugin or missing |
 | A2A protocol security | ✅ Native | ❌ Not supported |
 | ACP enforcement | ✅ Native | ❌ Not supported |
-| Response scanning (153 patterns) | ✅ Built-in | ⚠️ Limited or external |
+| Response scanning (176 patterns) | ✅ Built-in | ⚠️ Limited or external |
 | Cryptographic attestation | ✅ Native | ❌ Not available |
 | Self-hosted, zero dependencies | ✅ Single binary | ❌ Requires external services |
 | Fail-closed by default | ✅ | ⚠️ Often fail-open |
 | 31 compliance frameworks | ✅ | ⚠️ 3–5 typical |
 | PostgreSQL + file persistence | ✅ | ⚠️ Cloud-locked |
-| HA clustering | ✅ Native | ⚠️ Enterprise add-on |
+| HA clustering | ✅ Enterprise+ | ⚠️ Enterprise add-on |
 | Open-core (Apache 2.0 community) | ✅ | ❌ Proprietary |
 
 ## Pricing Tiers
 
 | Tier | Price | Rate Limits (Proxy/MCP) | Users / Agents | Compliance | Key Features |
 |------|-------|------------------------|---------------|------------|--------------|
-| **Community** | Free | Soft-throttle | 5 / 5 | 6 frameworks | HTTP/MCP/A2A scanning, 153 detection patterns, in-memory persistence |
+| **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 176 detection patterns, in-memory persistence |
 | **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
 | **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
 | **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
@@ -179,7 +179,7 @@ See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 | MCP | `pkg/mcpserver/` | Model Context Protocol guardrails |
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
-| Response | `pkg/response/detectors/` | 153-pattern detection (secrets, XSS, PII, compliance) |
+| Response | `pkg/response/detectors/` | 176-pattern detection (secrets, XSS, PII, compliance) |
 | Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
 
 ## Compliance Coverage (31 Frameworks)
@@ -295,7 +295,7 @@ pkg/
 ├── promptcache/            # Prompt caching
 ├── rbac/                   # Role-based access control
 ├── response/               # 6-pillar response guard
-├── response/detectors/     # 153-pattern detection engine
+├── response/detectors/     # 176-pattern detection engine
 ├── scanner/                # Vulnerability scanner
 ├── security/               # Security utilities
 ├── signature_verification/ # Package signature verification
