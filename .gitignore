@@ -233,3 +233,19 @@ upstream/aegisgate/pkg/proxy/certs/ca/ca.key
 !upstream/aegisgate/pkg/adapters/certs/server.crt
 !upstream/aegisgate/pkg/adapters/custom-certs/server.crt
 !upstream/aegisgate/pkg/proxy/certs/ca/ca.crt
+
+# === PROTECTED IP — DO NOT COMMIT ===
+# Model weights and training code (proprietary, not open source)
+pkg/ml/models/
+training/
+# Trust Framework (proprietary, not open source)
+pkg/trust/
+# SIEM integration (proprietary, not open source)
+pkg/siem/
+pkg/audit/siem_dispatcher.go
+pkg/audit/siem_dispatcher_test.go
+# Premium compliance implementations (proprietary)
+pkg/compliance/premium/
+# Trust portal HTTP wire (proprietary)
+cmd/aegisgate-platform/trust_portal_http.go
+cmd/aegisgate-platform/trust_portal_http_test.go
