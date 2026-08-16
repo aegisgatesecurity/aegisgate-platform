@@ -3,7 +3,7 @@
 //
 // report_subcommand_test.go is a thin smoke test for the
 // `aegisgate report pdf-from-report` CLI verb. D22 turned
-// the previously-stubbed subcommand into a real reporter
+// the previously-unwired subcommand into a real reporter
 // instantiation + ExportPDF call; this test verifies the
 // CLI plumbing (flag parsing, exit codes, error messages).
 //
@@ -84,9 +84,9 @@ func TestRunReportPDFFromReport_NonexistentID(t *testing.T) {
 }
 
 // TestRunReportPDFFromReport_VerifyNotStubbed is a regression
-// test for D22: the subcommand must NOT print the v0.1 stub
+// test for D22: the subcommand must NOT print the v0.1 placeholder
 // message "not yet wired in v0.1". If this test fails, the
-// stub has been re-introduced.
+// placeholder has been re-introduced.
 func TestRunReportPDFFromReport_VerifyNotStubbed(t *testing.T) {
 	// Capture stderr.
 	oldStderr := os.Stderr
@@ -99,8 +99,8 @@ func TestRunReportPDFFromReport_VerifyNotStubbed(t *testing.T) {
 	os.Stdout = wOut
 	defer func() { os.Stdout = oldStdout }()
 
-	// Trigger the non-existent-report path. The stub message
-	// would appear here if the stub were re-introduced.
+	// Trigger the non-existent-report path. The placeholder message
+	// would appear here if the placeholder were re-introduced.
 	_ = runReportPDFFromReport([]string{"-id", "stub-regression-test"})
 
 	w.Close()
@@ -110,10 +110,10 @@ func TestRunReportPDFFromReport_VerifyNotStubbed(t *testing.T) {
 	errStr := string(errBytes)
 
 	if strings.Contains(errStr, "not yet wired in v0.1") {
-		t.Errorf("stub message 'not yet wired in v0.1' detected - D22 fix has been reverted!")
+		t.Errorf("placeholder message 'not yet wired in v0.1' detected - D22 fix has been reverted!")
 	}
 	if strings.Contains(errStr, "use 'report pdf --data-file' instead") {
-		t.Errorf("stub redirect to 'report pdf --data-file' detected - D22 fix has been reverted!")
+		t.Errorf("placeholder redirect to 'report pdf --data-file' detected - D22 fix has been reverted!")
 	}
 }
 

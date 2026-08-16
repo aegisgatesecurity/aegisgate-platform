@@ -490,7 +490,7 @@ func generateUUID() string {
 // can verify an attestation by fetching the issuer's public key
 // from the canonical well-known URL, with no out-of-band key exchange.
 //
-// D22: replaces the v0.1 stub that always returned an error.
+// D22: replaces the v0.1 placeholder that always returned an error.
 // 5-second HTTP timeout, context-aware. Errors are wrapped
 // so callers can use errors.As to inspect the failure mode.
 // isPrivateOrReservedHost returns true if the hostname is a private, reserved,

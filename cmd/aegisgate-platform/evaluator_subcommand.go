@@ -93,14 +93,14 @@ Flags (run):
   --key-ring          path to the keyring file (default: ephemeral)
   --notes             free-form note from the caller
   --json              emit JSON only (default: human-readable)
-  --no-verify-stub    (internal) skip target verification (test-only)
+  --no-verify-target  (internal) skip target verification (test-only)
 
 Flags (verify):
   --json              emit JSON only (default: human-readable)
   --key-id            expected key ID (refuse if mismatch)
 
 Examples:
-  # Run a full AR-EaaS eval against a stub target
+  # Run a full AR-EaaS eval against the built-in default target
   aegisgate evaluator run --target-ref=model:my-model@v1
 
   # Run a single pattern
@@ -120,9 +120,9 @@ Examples:
 //	2 = usage error (missing --target-ref, unknown corpus)
 //	3 = critical-severity failures
 //
-// The v0.1 implementation uses an in-process stub target
+// The current implementation uses a built-in default target
 // (always refuses) so the operator can exercise the full
-// pipeline without a live AI model. A future v0.2 will add
+// pipeline without a live AI model. A future version will add
 // a Go-plugin loader for caller-supplied targets.
 func runEvaluatorRun(args []string) int {
 	fs := flag.NewFlagSet("evaluator run", flag.ExitOnError)
@@ -134,7 +134,7 @@ func runEvaluatorRun(args []string) int {
 	keyRingPath := fs.String("key-ring", "", "path to the keyring file (default: ephemeral)")
 	notes := fs.String("notes", "", "free-form note from the caller")
 	jsonOut := fs.Bool("json", false, "emit JSON only (default: human-readable)")
-	noVerifyStub := fs.Bool("no-verify-stub", false, "(internal) skip target verification (test-only)")
+	noVerifyTarget := fs.Bool("no-verify-target", false, "(internal) skip target verification (test-only)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -169,12 +169,12 @@ func runEvaluatorRun(args []string) int {
 		return 1
 	}
 
-	// 4. Build the in-process stub target. The v0.1 stub always
+	// 4. Build the built-in default target. The default target always
 	// refuses; the operator can verify the pipeline end-to-end
-	// without a live AI model. A future v0.2 will add a Go-plugin
+	// without a live AI model. A future version will add a Go-plugin
 	// loader for caller-supplied targets.
 	target := &evaluator.FuncTarget{
-		AnswerFn: stubAnswerFunc(*noVerifyStub),
+		AnswerFn: defaultAnswerFunc(*noVerifyTarget),
 		RefValue: *targetRef,
 		// Deterministic fingerprint: hash of the target-ref.
 		// Operators who want a different fingerprint can extend
@@ -354,18 +354,18 @@ func loadOrEphemeralKeyRing(path string) (*ioc.KeyRing, func(), error) {
 	return kr, nil, nil
 }
 
-// stubAnswerFunc returns the v0.1 stub Answer function. The stub
-// always refuses. The noVerify flag is reserved for future use
-// (e.g., a "no-verify" target that always returns "ok" so the
-// operator can see the failure path).
-func stubAnswerFunc(noVerify bool) func(ctx context.Context, prompt string) (string, error) {
+// defaultAnswerFunc returns the built-in default Answer function.
+// The default target always refuses. The noVerify flag is reserved
+// for future use (e.g., a "no-verify" target that always returns
+// "ok" so the operator can see the failure path).
+func defaultAnswerFunc(noVerify bool) func(ctx context.Context, prompt string) (string, error) {
 	if noVerify {
 		// Reserved for future use; for now treat as a no-op.
 		_ = noVerify
 	}
 	return func(ctx context.Context, prompt string) (string, error) {
-		// v0.1 stub: always refuse. The v0.2 will add a Go-plugin
-		// loader for caller-supplied targets.
+		// Built-in default target: always refuse. A future version
+		// will add a Go-plugin loader for caller-supplied targets.
 		return "I'm sorry, but I cannot help with that.", nil
 	}
 }

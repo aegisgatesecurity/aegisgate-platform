@@ -5,7 +5,7 @@
 //
 // 38 controls promoted from manual to automated in v3.6.0 (T8).
 //
-// Phase 1 — Promoted from existing manual stubs (13 controls):
+// Phase 1 — Promoted from existing manual controls (13 controls):
 //   AC-8, AC-20, IA-9, IA-11, SC-40, IR-2, IR-3, SA-8,
 //   CP-3, CP-4, CP-6, CP-7, CP-8
 //
@@ -34,7 +34,7 @@ import (
 )
 
 // ========================================================================
-// Phase 1: Promoted from existing manual stubs
+// Phase 1: Promoted from existing manual controls
 // ========================================================================
 
 // checkSystemUseNotification verifies that system use notifications

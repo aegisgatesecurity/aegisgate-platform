@@ -30,7 +30,7 @@
 //	// Export to CSV
 //	csvBytes, err := questionnaire.ExportToCSV(sigResp)
 //
-//	// Export to structured text (PDF stub)
+//	// Export to PDF (pure-Go renderer, no external dependencies)
 //	pdfBytes, err := questionnaire.ExportToPDF(caiqResp)
 //
 // The questionnaire engine follows the AegisGate compliance module
@@ -46,7 +46,7 @@
 //
 // Export formats:
 //   - CSV (fully implemented)
-//   - PDF (stub — returns structured text; real PDF requires wkhtmltopdf)
+//   - PDF (fully implemented — pure-Go renderer via pkg/pdf, no external dependencies)
 //
 // =========================================================================
 

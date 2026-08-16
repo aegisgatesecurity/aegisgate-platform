@@ -4,7 +4,7 @@
 // =========================================================================
 //
 // Tests for the 38 controls promoted/added in v3.6.0 (T8):
-//   Phase 1 (13 promoted from manual stubs):
+//   Phase 1 (13 promoted from manual controls):
 //     AC-8, AC-20, IA-9, IA-11, SC-40, IR-2, IR-3, SA-8,
 //     CP-3, CP-4, CP-6, CP-7, CP-8
 //   Phase 2 (25 new controls):

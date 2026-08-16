@@ -3,7 +3,7 @@
 // AegisGate Security Platform - FedRAMP Promoted CheckFuncs
 // =========================================================================
 //
-// Controls promoted from manual_stubs.go (Automated: false) to
+// Controls promoted from manual_controls.go (Automated: false) to
 // Automated: true with real CheckFunc implementations. These controls
 // were previously classified as customer-responsibility because they
 // require "policies" or "procedures", but AegisGate's platform
@@ -18,7 +18,7 @@
 //   - CM-9:  Configuration Management Plan
 //   - CM-11: Software Installation Restrictions
 //
-// The remaining 28 controls in manual_stubs.go are genuinely
+// The remaining 28 controls in manual_controls.go are genuinely
 // customer-responsibility (policies, procedures, training, personnel
 // screening, physical sites, etc.) and cannot be automated by
 // AegisGate.

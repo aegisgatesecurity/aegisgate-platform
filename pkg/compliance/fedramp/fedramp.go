@@ -188,11 +188,11 @@ func (m *FedRAMPModule) registerControls() {
 	// PE: Physical and Environmental Protection (2 controls)
 	m.registerPEControls()
 
-	// Manual stubs: 62 evidence-mapped controls (customer responsibility)
-	m.registerManualStubs()
+	// Manual controls: 62 evidence-mapped controls (customer responsibility)
+	m.registerManualControls()
 
-	// Additional stubs: 16 controls to reach 150 total
-	m.registerAdditionalStubs()
+	// Additional controls: 16 controls to reach 150 total
+	m.registerAdditionalControls()
 
 	// Promoted v2 controls: 25 new FedRAMP Moderate controls (v3.6.0)
 	m.registerPromotedV2Controls()

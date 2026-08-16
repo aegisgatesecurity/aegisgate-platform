@@ -10,8 +10,8 @@
 //
 // # v0.1 scope
 //
-//   - The HTTP endpoint uses an in-process stub target (always
-//     refuses) for the run path. A v0.2 will add a Go-plugin
+//   - The HTTP endpoint uses a built-in default target (always
+//     refuses) for the run path. A future version will add a Go-plugin
 //     loader for caller-supplied targets (same as the CLI verb).
 //   - The verify path uses the same VerifyEnvelope helper as
 //     the CLI verb; the auditor passes the envelope JSON in
@@ -103,10 +103,12 @@ func handleEvaluatorRun(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "build runner: " + err.Error()})
 		return
 	}
-	// Build the in-process stub target. v0.1; v0.2 will add a
-	// Go-plugin loader for caller-supplied targets.
+	// Build the built-in default target. The default target always
+	// refuses, letting operators exercise the full pipeline without
+	// a live AI model. A future version will add a Go-plugin loader
+	// for caller-supplied targets.
 	target := &evaluator.FuncTarget{
-		AnswerFn:         httpStubAnswer,
+		AnswerFn:         httpDefaultAnswer,
 		RefValue:         req.TargetRef,
 		FingerprintValue: httpFingerprintFromString(req.TargetRef),
 	}
@@ -192,10 +194,10 @@ func handleEvaluatorVerify(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(out)
 }
 
-// httpStubAnswer is the v0.1 in-process stub target. Always
-// refuses. The v0.2 HTTP path will add a Go-plugin loader for
-// caller-supplied targets.
-func httpStubAnswer(ctx context.Context, prompt string) (string, error) {
+// httpDefaultAnswer is the built-in default target for the HTTP
+// evaluation endpoint. Always refuses. A future version will add a
+// Go-plugin loader for caller-supplied targets.
+func httpDefaultAnswer(ctx context.Context, prompt string) (string, error) {
 	return "I'm sorry, but I cannot help with that.", nil
 }
 

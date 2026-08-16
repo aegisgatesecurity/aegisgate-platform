@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Security Platform - FedRAMP Manual Stubs (Customer Responsibility)
+// AegisGate Security Platform - FedRAMP Manual Controls (Customer Responsibility)
 // =========================================================================
 //
 // NIST SP 800-53 Rev. 5 — Controls that are primarily process, policy,
@@ -30,12 +30,12 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 )
 
-// registerManualStubs wires the 30 remaining evidence-mapped controls
+// registerManualControls wires the 30 remaining evidence-mapped controls
 // that are genuinely the customer's responsibility (policy, procedure,
 // HR, physical, program management). 13 controls were promoted to
 // automated in v3.6.0 (promoted_checkfuncs_v2.go).
-func (m *FedRAMPModule) registerManualStubs() {
-	// --- AC: Access Control (19 manual stubs for remaining AC controls) ---
+func (m *FedRAMPModule) registerManualControls() {
+	// --- AC: Access Control (19 manual controls for remaining AC controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AC-1",
 		Name:        "Access Control Policy and Procedures",
@@ -126,7 +126,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 AC-20", "FedRAMP Moderate AC-20"},
 	})
 
-	// --- AU: Audit and Accountability (5 manual stubs) ---
+	// --- AU: Audit and Accountability (5 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AU-1",
 		Name:        "Audit and Accountability Policy and Procedures",
@@ -177,7 +177,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 AU-11", "FedRAMP Moderate AU-11"},
 	})
 
-	// --- IA: Identification and Authentication (5 manual stubs) ---
+	// --- IA: Identification and Authentication (5 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IA-1",
 		Name:        "Identification and Authentication Policy and Procedures",
@@ -228,7 +228,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 IA-11", "FedRAMP Moderate IA-11"},
 	})
 
-	// --- SC: System and Communications Protection (4 manual stubs) ---
+	// --- SC: System and Communications Protection (4 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SC-1",
 		Name:        "System and Communications Protection Policy",
@@ -269,7 +269,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SC-40", "FedRAMP Moderate SC-40"},
 	})
 
-	// --- IR: Incident Response (5 manual stubs) ---
+	// --- IR: Incident Response (5 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-IR-1",
 		Name:        "Incident Response Policy and Procedures",
@@ -310,7 +310,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 IR-10", "FedRAMP Moderate IR-10"},
 	})
 
-	// --- SA: System and Services Acquisition (2 manual stubs) ---
+	// --- SA: System and Services Acquisition (2 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-SA-1",
 		Name:        "System and Services Acquisition Policy",
@@ -331,7 +331,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 SA-8", "FedRAMP Moderate SA-08"},
 	})
 
-	// --- CM: Configuration Management (4 manual stubs for remaining CM controls) ---
+	// --- CM: Configuration Management (4 manual controls for remaining CM controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CM-1",
 		Name:        "Configuration Management Policy",
@@ -372,7 +372,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 CM-11", "FedRAMP Moderate CM-11"},
 	})
 
-	// --- RA: Risk Assessment (1 manual stub) ---
+	// --- RA: Risk Assessment (1 manual control) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-RA-1",
 		Name:        "Risk Assessment Policy",
@@ -383,7 +383,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 RA-1", "FedRAMP Moderate RA-01"},
 	})
 
-	// --- CP: Contingency Planning (5 manual stubs) ---
+	// --- CP: Contingency Planning (5 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-CP-3",
 		Name:        "Contingency Training",
@@ -435,7 +435,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 CP-8", "FedRAMP Moderate CP-08"},
 	})
 
-	// --- PS: Personnel Security (3 manual stubs) ---
+	// --- PS: Personnel Security (3 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-PS-1",
 		Name:        "Personnel Security Policy",
@@ -464,7 +464,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 PS-3", "FedRAMP Moderate PS-03"},
 	})
 
-	// --- PM: Program Management (2 manual stubs) ---
+	// --- PM: Program Management (2 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-PM-1",
 		Name:        "Information Security Program Plan",
@@ -484,7 +484,7 @@ func (m *FedRAMPModule) registerManualStubs() {
 		References:  []string{"NIST SP 800-53 Rev. 5 PM-14", "FedRAMP Moderate PM-14"},
 	})
 
-	// --- PL: Planning (2 manual stubs) ---
+	// --- PL: Planning (2 manual controls) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-PL-1",
 		Name:        "Security Planning Policy",

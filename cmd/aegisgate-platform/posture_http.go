@@ -15,7 +15,7 @@
 // the public trust page (marketing-level signal), and the on-call
 // runbook (operator-level signal).
 //
-// This file supersedes the `handlePostureAPI` stub in
+// This file supersedes the un-wired `handlePostureAPI` in
 // posture_subcommand.go (which was marked `//nolint:unused // reserved
 // for v0.2`). The HTTP handler logic is the same; this file provides
 // the proper wire*Handlers entry point and the full set of routes
@@ -52,7 +52,7 @@ var postureMode string
 // wirePostureHandlers registers the /api/v1/posture/* HTTP routes.
 // Call this from main() after the license manager is initialized.
 //
-// D19 (audit P1 #8): replaces the un-wired `handlePostureAPI` stub
+// D19 (audit P1 #8): supersedes the un-wired `handlePostureAPI`
 // in posture_subcommand.go. The function name follows the
 // wire*Handlers convention used by the other v3.4.0+ feature
 // endpoints (wireAIBOMHandlers, wireCVEHandlers, etc.).

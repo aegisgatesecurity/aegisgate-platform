@@ -1050,7 +1050,7 @@ func TestEndToEndSIGWorkflow(t *testing.T) {
 		t.Error("CSV export produced empty output")
 	}
 
-	// Export to PDF (stub).
+	// Export to PDF.
 	pdfBytes, err := ExportToPDF(resp)
 	if err != nil {
 		t.Fatalf("ExportToPDF failed: %v", err)

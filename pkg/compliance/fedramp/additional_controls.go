@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Security Platform - FedRAMP Additional Stubs (Controls 135-150)
+// AegisGate Security Platform - FedRAMP Additional Controls (Controls 135-150)
 // =========================================================================
 //
 // NIST SP 800-53 Rev. 5 — Remaining in-scope controls to reach 150 total.
@@ -16,9 +16,9 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 )
 
-// registerAdditionalStubs wires the remaining 16 controls to reach 150.
+// registerAdditionalControls wires the remaining 16 controls to reach 150.
 // 15 are now automated; 1 (MA-1) is genuinely manual (policy/process).
-func (m *FedRAMPModule) registerAdditionalStubs() {
+func (m *FedRAMPModule) registerAdditionalControls() {
 	// --- AC: remaining Access Control (automated) ---
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FedRAMP-AC-21",

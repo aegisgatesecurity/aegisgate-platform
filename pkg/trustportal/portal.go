@@ -14,7 +14,7 @@
 // The data source is a Source interface (defined below). The wire
 // function in cmd/aegisgate-platform/trust_portal_http.go provides
 // the real implementation (adapters over pkg/posture.Checker and
-// pkg/compliance.Manager). Tests provide a stub Source.
+// pkg/compliance.Manager). Tests provide a mock Source.
 //
 // All routes are GET-only. The handlers do not require authentication
 // (this is a public marketing/operational page). The CSP-compatible
@@ -39,7 +39,7 @@ const (
 // Source is the data source for the trust portal. The wire function
 // in cmd/aegisgate-platform provides a real implementation backed by
 // pkg/posture.Checker and pkg/compliance.Manager. Tests provide a
-// stub.
+// mock.
 type Source interface {
 	// Posture returns the current posture report. The trust portal
 	// uses this for /trust/api/posture and /trust/api/uptime.

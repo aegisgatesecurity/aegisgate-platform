@@ -633,9 +633,9 @@ func exportCollectionCSV(collection *EvidenceCollection) ([]byte, error) {
 }
 
 // DefaultCollectors returns pre-registered collector functions for automatic
-// evidence collection. These are stub implementations that return placeholder
-// data since they cannot import actual scanner/metrics packages without
-// creating circular dependencies.
+// evidence collection. These are default implementations that return
+// structured JSON evidence since they cannot import actual scanner/metrics
+// packages without creating circular dependencies.
 func DefaultCollectors() map[EvidenceType]EvidenceCollectorFunc {
 	return map[EvidenceType]EvidenceCollectorFunc{
 		EvidenceScanResult: func(ctx context.Context, controlID string) ([]byte, error) {

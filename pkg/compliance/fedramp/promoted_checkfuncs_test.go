@@ -3,7 +3,7 @@
 // AegisGate Security Platform - FedRAMP Promoted CheckFuncs Tests
 // =========================================================================
 //
-// Tests for the 7 controls promoted from manual_stubs.go to automated
+// Tests for the 7 controls promoted from manual_controls.go to automated
 // CheckFuncs in v3.5.0 Phase 3:
 //   - AC-10: Concurrent Session Control
 //   - IA-10: Adversary Detection

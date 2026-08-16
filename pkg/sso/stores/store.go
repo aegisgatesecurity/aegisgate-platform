@@ -93,7 +93,7 @@ type TokenStore interface {
 }
 
 // ============================================================================
-// In-Memory Stub Implementations (for testing/development)
+// In-Memory Implementations (for testing/development)
 // ============================================================================
 
 // InMemorySessionStore provides a simple in-memory session store

@@ -17,7 +17,7 @@
 //   - Fail-closed in *display*: an unhealthy subsystem is shown as such,
 //     never silently masked.
 //   - Composable. The Checker accepts injected dependencies so the
-//     posture check can be tested with stub data.
+//     posture check can be tested with mock data.
 //   - Two output modes: default (plain text, non-technical operator) and
 //     verbose (JSON, technical operator with full subsystem detail).
 //   - No new network calls. Posture reads only in-process state that

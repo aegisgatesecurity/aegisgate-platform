@@ -271,8 +271,9 @@ func (c *Config) MergeWith(other Config) {
 	c.Performance = other.Performance
 }
 
-// readFile is a stub that will be replaced by actual file reading in integration.
-// This allows the config package to remain pure Go without os import.
+// readFile is the file-reading hook for the config package. It defaults
+// to an error-returning implementation; callers must call SetFileReader
+// to wire real file I/O (keeps the package pure Go without os import).
 var readFile func(path string) ([]byte, error)
 
 // SetFileReader sets the file reading function (for testing/integration).
@@ -285,9 +286,10 @@ func init() {
 	readFile = defaultReadFile
 }
 
-// defaultReadFile is the default file reading implementation.
+// defaultReadFile is the default file reader. Returns an error so
+// callers know file I/O has not been wired via SetFileReader.
 func defaultReadFile(path string) ([]byte, error) {
-	// This will be overridden in actual usage
+	// Call SetFileReader to wire real file I/O.
 	return nil, fmt.Errorf("file reading not configured - use SetFileReader")
 }
 

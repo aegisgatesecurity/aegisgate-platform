@@ -4,11 +4,11 @@
 // =========================================================================
 //
 // NIST SP 800-53 Rev. 5 — CheckFunc implementations for controls previously
-// registered as evidence-mapped (Automated: false) stubs. These controls
+// registered as evidence-mapped (Automated: false) controls. These controls
 // can be scanner-verified against AegisGate's actual security capabilities.
 //
-// This file promotes the 16 additional stubs (additional_stubs.go) and
-// selected manual stubs (manual_stubs.go) to automated status.
+// This file promotes the 16 additional controls (additional_controls.go) and
+// selected manual controls (manual_controls.go) to automated status.
 //
 // Strategy:
 //   - AC-21, AC-22, AC-23: Access Control — trust framework, portal, rate limiting
@@ -17,10 +17,10 @@
 //   - AU-13, AU-14: Audit — CCM, hash-chain audit
 //   - CP-10: Contingency Planning — recovery
 //   - MA-4, SA-10: Maintenance & Acquisition — AIBOM, SBOM
-//   - Selected manual stubs that map to AegisGate capabilities
+//   - Selected manual controls that map to AegisGate capabilities
 //
 // Genuinely manual controls (policy/process/HR/physical) remain
-// evidence-mapped in manual_stubs.go with Automated: false.
+// evidence-mapped in manual_controls.go with Automated: false.
 //
 // =========================================================================
 
@@ -608,7 +608,7 @@ func (m *FedRAMPModule) checkDeveloperConfigMgmt(ctx context.Context, input []by
 	}, nil
 }
 
-// --- Selected manual stubs promoted to automated ---
+// --- Selected manual controls promoted to automated ---
 
 // checkUnsuccessfulLogin verifies AC-7: rate limiting and session management
 // enforce limits on unsuccessful login attempts.

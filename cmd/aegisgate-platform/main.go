@@ -656,7 +656,7 @@ func main() {
 	// Component 0a-3: SIEM Dispatcher (Phase 4, D15)
 	// ============================================================
 	// SIEM integration is an enterprise feature. In the community
-	// edition, this is a no-op. See pkg/audit/siem_dispatcher_stub.go.
+	// edition, this is a no-op. See pkg/audit/siem_dispatcher_community.go.
 	siemEnabledFlag := *siemEnabled || (cfg != nil && cfg.SIEM.Enabled)
 	var siemDisp *audit.SIEMDispatcher
 	var siemMgr interface{ Stop() }
@@ -1510,9 +1510,10 @@ func main() {
 	// AR-EaaS HTTP endpoint (v3.7.0+ TODO-301). Mounted on the
 	// dashboard mux (admin port) so the run/verify verbs are
 	// reachable for operators but NOT exposed to public proxy
-	// traffic. The endpoint uses an in-process stub target
-	// for v0.1; v0.2 will add a Go-plugin loader for
-	// caller-supplied targets.
+	// traffic. The endpoint uses a built-in default target
+	// that always refuses, so the full pipeline can be exercised
+	// without a live AI model. A future version will add a
+	// Go-plugin loader for caller-supplied targets.
 	if iocW != nil {
 		wireEvaluatorHandlers(dashMux, authMiddleware, iocW.KeyRing)
 		log.Printf("[EVALUATOR] AR-EaaS HTTP API enabled at /api/v1/evaluator/{run,verify}")
@@ -1588,10 +1589,9 @@ func main() {
 	// dashboard mux. The generate side is
 	// Professional+ (the digest is a
 	// customer-facing artifact); the verify side
-	// is free. v0.1 ships a stub (BuildDigest
-	// with no sources); v0.2 wires the real source
-	// pipeline (PostureSource, IOCSource,
-	// AuditSource).
+	// is free. The source pipeline wires real
+	// platform dependencies (IOCSource, AuditLogSource,
+	// PostureSource) via wireDigestHandlers.
 	if iocW != nil {
 		wireDigestHandlers(dashMux, authMiddleware, WireDigestDeps{
 			KeyRing:  iocW.KeyRing,
@@ -1606,9 +1606,9 @@ func main() {
 
 	// Posture Check HTTP endpoints (D19, P1 #8).
 	// Closes the last gap in the v3.4.0+ HTTP feature set.
-	// posture_subcommand.go already had a `handlePostureAPI`
-	// stub marked `//nolint:unused // reserved for v0.2`; this
-	// is the v0.2 refactor that wires it. The HTTP routes are
+	// posture_subcommand.go had an un-wired `handlePostureAPI`
+	// marked `//nolint:unused // reserved for v0.2`; this
+	// is the refactor that wires it. The HTTP routes are
 	// /api/v1/posture (JSON), /api/v1/posture/verbose (verbose
 	// JSON, same shape), /api/v1/posture/text (plain text).
 	// All 3 require auth. Posture is read-only.

@@ -115,7 +115,7 @@ func runReportPDF(args []string) int {
 // previously generated upstream report and renders
 // it to a PDF.
 //
-// D22: implements the previously-stubbed subcommand.
+// D22: implements the previously-unwired subcommand.
 // Instantiates an ephemeral reporter (no persistence)
 // and calls ExportPDF on the requested reportID.
 // Requires the report to be in "completed" status

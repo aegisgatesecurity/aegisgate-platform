@@ -272,7 +272,7 @@ type Target interface {
 // by the caller.
 //
 // Use FuncTarget for tests and for in-process evaluations where
-// the target is a Go function (e.g., a stub that always refuses
+// the target is a Go function (e.g., a default that always refuses
 // a prompt, or a wrapper around an LLM SDK call).
 type FuncTarget struct {
 	// AnswerFn is the function that produces responses.

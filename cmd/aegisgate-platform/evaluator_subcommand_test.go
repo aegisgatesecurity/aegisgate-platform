@@ -90,7 +90,7 @@ func runEvaluatorInProcess(t *testing.T, args []string) (stdout string, exitCode
 // Tests
 // --------------------------------------------------------------------
 
-func TestEvaluatorCLI_Run_DefaultStub(t *testing.T) {
+func TestEvaluatorCLI_Run_DefaultTarget(t *testing.T) {
 	stdout, _ := runEvaluatorInProcess(t, []string{
 		"run",
 		"--target-ref=model:test-cli@v1",

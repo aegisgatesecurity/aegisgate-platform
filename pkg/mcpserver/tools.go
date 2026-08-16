@@ -10,7 +10,7 @@
 //
 // This mirrors AegisGuard's registerBuiltInTools() but uses the platform's
 // unified tier system for feature gating and the real tool-executor
-// implementations instead of stubs.
+// implementations instead of placeholders.
 // =========================================================================
 
 package mcpserver

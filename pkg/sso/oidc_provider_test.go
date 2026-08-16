@@ -648,11 +648,11 @@ func TestOIDCDiscover(t *testing.T) {
 	}
 }
 
-// Test validateAccessToken stub
+// Test validateAccessToken with default no-op behavior
 func TestOIDCValidateAccessToken(t *testing.T) {
 	provider := &OIDCProvider{}
 
-	// This is a stub that just returns nil
+	// Default behavior: returns nil (no validation configured)
 	err := provider.validateAccessToken("any-token")
 	if err != nil {
 		t.Errorf("validateAccessToken() returned error: %v", err)

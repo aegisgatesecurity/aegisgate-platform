@@ -3,7 +3,7 @@
 //
 // check.go collects data from existing subsystems (license, compliance
 // gating, uptime, version) and produces a posture.Report. The Checker
-// is dependency-injected so the test suite can substitute stub
+// is dependency-injected so the test suite can substitute mock
 // implementations of any subsystem without touching globals.
 //
 // v3.3.0 Phase 6.5.

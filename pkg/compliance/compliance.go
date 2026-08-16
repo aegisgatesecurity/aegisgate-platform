@@ -483,7 +483,7 @@ func (f Framework) String() string {
 	return string(f)
 }
 
-// Requirement represents a compliance requirement (stub for compatibility)
+// Requirement represents a compliance requirement (retained for backward compatibility)
 type Requirement struct {
 	ID          string
 	Name        string

@@ -1272,7 +1272,7 @@ func TestFedRAMPModule_EvidenceMappedControls(t *testing.T) {
 	controls := m.Controls()
 
 	evidenceMappedIDs := []string{
-		// Manual stubs (customer responsibility — policies, procedures, HR, physical)
+		// Manual controls (customer responsibility — policies, procedures, HR, physical)
 		"FedRAMP-AC-1",
 		"FedRAMP-AU-1",
 		"FedRAMP-IA-1",

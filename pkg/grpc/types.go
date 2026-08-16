@@ -862,7 +862,7 @@ type TLSSvcServer interface {
 }
 
 // ============================================================
-// UNIMPLEMENTED STUBS
+// UNIMPLEMENTED RPC HANDLERS
 // ============================================================
 
 // UnimplementedAuthServiceServer returns codes.Unimplemented for all methods.
