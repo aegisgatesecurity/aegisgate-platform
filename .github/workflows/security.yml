@@ -156,6 +156,7 @@ jobs:
       - name: Upload Trivy Image SARIF
         uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-image-results.sarif') != ''
+        continue-on-error: true
         with:
           sarif_file: trivy-image-results.sarif
           category: trivy-image
