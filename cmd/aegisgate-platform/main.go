@@ -61,11 +61,8 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/soar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/trust"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/trust/attestation"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
-	"github.com/aegisgatesecurity/aegisgate/pkg/siem"
 )
 
 // tsaSignerAdapter wraps audit.TSAClient to satisfy the
@@ -658,114 +655,15 @@ func main() {
 	// ============================================================
 	// Component 0a-3: SIEM Dispatcher (Phase 4, D15)
 	// ============================================================
-	// Bridges the platform's audit event stream to external SIEM
-	// platforms (Splunk, Elasticsearch, QRadar, Sentinel, etc.).
-	// The dispatcher polls the audit ring buffer and forwards
-	// aggregated event summaries to the configured SIEM manager.
-	//
-	// Feature gate: Professional+ tier (same as PostgreSQL).
-	// Config: cfg.SIEM (in platformconfig.yaml)
-	siemEnabledFlag := *siemEnabled
-	if !siemEnabledFlag {
-		if v := os.Getenv("AEGISGATE_SIEM_ENABLED"); v == "true" || v == "1" || v == "yes" {
-			siemEnabledFlag = true
-		}
-	}
-	if cfg.SIEM.Enabled {
-		siemEnabledFlag = true
-	}
-	var siemMgr *siem.Manager
+	// SIEM integration is an enterprise feature. In the community
+	// edition, this is a no-op. See pkg/audit/siem_dispatcher_stub.go.
+	siemEnabledFlag := *siemEnabled || (cfg != nil && cfg.SIEM.Enabled)
 	var siemDisp *audit.SIEMDispatcher
+	var siemMgr interface{ Stop() }
 	var siemPlatformCount int
-	if siemEnabledFlag && tier.HasFeature(platformTier, tier.FeaturePostgreSQL) {
-		// Convert platformconfig.SIEMConfig to siem.Config
-		siemCfg := siem.Config{
-			Global: siem.GlobalConfig{
-				AppName:     cfg.SIEM.Source,
-				Environment: cfg.Platform.Mode,
-			},
-			Buffer: siem.BufferConfig{
-				MaxSize: cfg.SIEM.BufferMaxSize,
-			},
-		}
-		// Convert each platform config
-		for _, p := range cfg.SIEM.Platforms {
-			if !p.Enabled {
-				continue
-			}
-			pc := siem.PlatformConfig{
-				Platform: siem.Platform(p.Platform),
-				Enabled:  true,
-				Format:   siem.Format(p.Format),
-				Endpoint: p.Endpoint,
-				Settings: p.Settings,
-			}
-			pc.Auth.Type = p.Auth.Type
-			pc.Auth.APIKey = p.Auth.APIKey
-			pc.Auth.APIKeyHeader = p.Auth.APIKeyHeader
-			pc.Auth.Username = p.Auth.Username
-			pc.Auth.Password = p.Auth.Password
-			pc.Auth.TokenURL = p.Auth.TokenURL
-			pc.Auth.ClientID = p.Auth.ClientID
-			pc.Auth.ClientSecret = p.Auth.ClientSecret
-			pc.TLS.Enabled = p.TLS.Enabled
-			pc.TLS.InsecureSkipVerify = p.TLS.InsecureSkipVerify
-			pc.TLS.CAFile = p.TLS.CAFile
-			pc.TLS.ServerName = p.TLS.ServerName
-			pc.Retry.Enabled = p.Retry.Enabled
-			pc.Retry.MaxAttempts = p.Retry.MaxAttempts
-			if p.Retry.InitialBackoff != "" {
-				if d, err := time.ParseDuration(p.Retry.InitialBackoff); err == nil {
-					pc.Retry.InitialBackoff = d
-				}
-			}
-			if p.Retry.MaxBackoff != "" {
-				if d, err := time.ParseDuration(p.Retry.MaxBackoff); err == nil {
-					pc.Retry.MaxBackoff = d
-				}
-			}
-			pc.Retry.BackoffMultiplier = p.Retry.BackoffMultiplier
-			pc.Batch.Enabled = p.Batch.Enabled
-			pc.Batch.MaxSize = p.Batch.MaxSize
-			if p.Batch.MaxWait != "" {
-				if d, err := time.ParseDuration(p.Batch.MaxWait); err == nil {
-					pc.Batch.MaxWait = d
-				}
-			}
-			siemCfg.Platforms = append(siemCfg.Platforms, pc)
-		}
-
-		var siemErr error
-		siemMgr, siemErr = siem.NewManager(siemCfg)
-		if siemErr != nil {
-			log.Printf("⚠️  SIEM manager init failed: %v (continuing without SIEM)", siemErr)
-		} else {
-			siemMgr.Start()
-			siemDisp, siemErr = audit.NewSIEMDispatcher(audit.SIEMDispatcherConfig{
-				Manager:      siemMgr,
-				EventSource:  auditRing,
-				PollInterval: cfg.SIEM.PollInterval,
-				BatchSize:    cfg.SIEM.BatchSize,
-				Source:       cfg.SIEM.Source,
-			})
-			if siemErr != nil {
-				log.Printf("⚠️  SIEM dispatcher init failed: %v (continuing without SIEM)", siemErr)
-				siemMgr.Stop()
-				siemMgr = nil
-			} else {
-				go siemDisp.Run(ctx)
-				log.Printf("SIEM dispatcher: enabled (platforms=%d, poll=%s, source=%s)",
-					len(siemCfg.Platforms), cfg.SIEM.PollInterval, cfg.SIEM.Source)
-				siemPlatformCount = len(siemCfg.Platforms)
-				defer siemDisp.Stop()
-				defer siemMgr.Stop()
-			}
-		}
-	} else if siemEnabledFlag {
-		log.Printf("⚠️  SIEM requires Professional+ tier (current: %s); SIEM disabled", platformTier)
+	if siemEnabledFlag {
+		log.Printf("⚠️  SIEM dispatcher requires enterprise build; SIEM disabled")
 	}
-
-	// ============================================================
 	// Component 0a-4: SOAR Outbound Webhooks (v3.7.0)
 	// ============================================================
 	// Sends structured incident alerts to PagerDuty, Jira, and
@@ -1292,39 +1190,13 @@ func main() {
 		// ============================================================
 		// Component 6: Trust Framework (6th pillar) HTTP API
 		// ============================================================
-		// Gated on cfg.Trust.Enabled (Trust audit: parity with A2A/ACP)
-		// The Trust Framework provides per-agent identity, capability
-		// contracts, real-time trust scoring, anomaly detection, and
-		// signed attestations. HTTP API at /api/v1/trust/*.
-		// License gate: when cfg.Trust.RequireLicense=true, the
-		// manager is wrapped in a tier check (Professional+ per Q3).
-		if cfg != nil && cfg.Trust.Enabled {
-			trustMgr := trust.NewManager(nil, nil)
-			attestGen, err := attestation.NewGenerator()
-			if err != nil {
-				log.Printf("[TRUST] Warning: failed to create attestation generator: %v; attestation endpoints will return 501", err)
-			}
-			attestVal := attestation.NewValidator()
-			trustAPI := trust.NewAPI(trustMgr, &trust.APIConfig{
-				AttestationGenerator: attestGen,
-				AttestationValidator: attestVal,
-				AttestationCap:       1000,
-			})
-			if cfg.Trust.RequireLicense && licenseMgr != nil {
-				// Wrap trustAPI in a tier-gated HandlerFunc via adapter
-				gate := license.NewLicenseMiddleware(licenseMgr).RequireTier(tier.TierProfessional)
-				proxyMux.HandleFunc("/api/v1/trust/", gate(trustAPI.ServeHTTP))
-			} else {
-				proxyMux.Handle("/api/v1/trust/", trustAPI)
-			}
-			log.Printf("Trust Framework: 6th pillar active (manager wired, HTTP API mounted at /api/v1/trust/*, license_gate=%v)", cfg.Trust.RequireLicense)
-		} else {
-			proxyMux.HandleFunc("/api/v1/trust/", func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				writeJSON(w, map[string]string{"status": "disabled", "reason": "trust framework not configured"})
-			})
-			log.Printf("Trust Framework: 6th pillar not enabled (set trust.enabled=true in config or AEGISGATE_TRUST_ENABLED=true)")
-		}
+		// Trust Framework is an enterprise feature. In the community
+		// edition, the API returns a disabled response.
+		proxyMux.HandleFunc("/api/v1/trust/", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			writeJSON(w, map[string]string{"status": "disabled", "reason": "trust framework requires enterprise build"})
+		})
+		log.Printf("Trust Framework: enterprise feature (not available in community build)")
 
 		log.Printf("Warning: Failed to create platform bridge: %v - continuing without bridge", bridgeErr)
 		log.Println("Continuing without bridge - LLM calls won't be routed through AegisGate")
