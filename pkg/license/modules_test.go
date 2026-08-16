@@ -40,16 +40,16 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{ModuleFIPS, true},
 		{ModuleEUAIAct, true}, // v3.3.0 Phase 1
 		// Reserved for future use (Trust Framework Phase 4).
-		{ModuleTrust, false},  // Trust is in tier.go, not a billable module
+		{ModuleTrust, false}, // Trust is in tier.go, not a billable module
 		// Unknown module names.
 		{"", false},
 		{"unknown", false},
-		{"hippa", false},    // typo
-		{"HIPAA", false},    // wrong case
-		{"hipaa ", false},   // trailing space
-		{" hipaa", false},   // leading space
-		{"gdpr", true},      // v4.2.0: GDPR is now a Community-tier module (free)
-		{"iso27001", true},  // v4.2.0: ISO 27001 is now a billable module
+		{"hippa", false},   // typo
+		{"HIPAA", false},   // wrong case
+		{"hipaa ", false},  // trailing space
+		{" hipaa", false},  // leading space
+		{"gdpr", true},     // v4.2.0: GDPR is now a Community-tier module (free)
+		{"iso27001", true}, // v4.2.0: ISO 27001 is now a billable module
 		{"soc2_type2", false},
 	}
 	for _, tc := range cases {

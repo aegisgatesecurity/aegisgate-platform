@@ -476,9 +476,9 @@ func TestBuildFrameworksSnapshot(t *testing.T) {
 	// changed. Instead, verify that key frameworks are present.
 	wantNames := map[string]bool{
 		"HIPAA Security Rule": true,
-		"PCI-DSS v4.0":       true,
-		"SOC 2 Type II":      true,
-		"ISO/IEC 42001:2023": true,
+		"PCI-DSS v4.0":        true,
+		"SOC 2 Type II":       true,
+		"ISO/IEC 42001:2023":  true,
 	}
 	for _, fw := range snap.Frameworks {
 		delete(wantNames, fw.DisplayName)

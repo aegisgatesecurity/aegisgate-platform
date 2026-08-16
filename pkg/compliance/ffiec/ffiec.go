@@ -18,9 +18,9 @@ import (
 // FFIECModule implements FFIEC compliance controls.
 type FFIECModule struct {
 	*compliance.BaseComplianceModule
-	infoSecPatterns    []*regexp.Regexp
-	authPatterns       []*regexp.Regexp
-	examPatterns       []*regexp.Regexp
+	infoSecPatterns     []*regexp.Regexp
+	authPatterns        []*regexp.Regexp
+	examPatterns        []*regexp.Regexp
 	outsourcingPatterns []*regexp.Regexp
 }
 

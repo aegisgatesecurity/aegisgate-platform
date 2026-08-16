@@ -49,13 +49,13 @@ type ModuleRequirement struct {
 //   - Community (free):  OWASP LLM, OWASP Web, ATLAS, NIST AI RMF (4 modules)
 //   - Developer ($79):   HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR (6 modules)
 //   - Professional ($499): ISO 42001, EU AI Act, FIPS, CIS, NIST CSF,
-//                          CSA STAR, NIST AI 600-1, SOX, GLBA, CJIS,
-//                          NERC CIP, FERPA, HITECH, FFIEC, TSA SD,
-//                          ISO 21434 (16 modules)
+//     CSA STAR, NIST AI 600-1, SOX, GLBA, CJIS,
+//     NERC CIP, FERPA, HITECH, FFIEC, TSA SD,
+//     ISO 21434 (16 modules)
 //   - Enterprise ($2000+): FedRAMP, CMMC L2, NIST 800-171, HITRUST,
-//                          TISAX (5 modules)
-//   Total: 31 compliance frameworks
-//   Total: 32 modules (31 compliance frameworks + 1 Trust pillar)
+//     TISAX (5 modules)
+//     Total: 31 compliance frameworks
+//     Total: 32 modules (31 compliance frameworks + 1 Trust pillar)
 var moduleRequirements = map[string]ModuleRequirement{
 	// ── Community tier (free, AI-focused: our differentiator) ──
 	license.ModuleOWASP: {
@@ -279,6 +279,7 @@ var moduleRequirements = map[string]ModuleRequirement{
 		HasImplementation: true,  // pkg/compliance/tisax/ exists
 	},
 }
+
 // AllModuleRequirements returns a copy of the canonical module requirement
 // table, in a deterministic order (sorted by RequiredTier then DisplayName).
 // Useful for the compliance scan API's "list all available modules" call.

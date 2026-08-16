@@ -111,22 +111,22 @@ const (
 
 	// v4.2.0: Previously orphaned frameworks (built but not billable).
 	// Now registered in gating.go with tier gates and pricing.
-	ModuleSOX        = "sox"          // Sarbanes-Oxley Act
-	ModuleGLBA       = "glba"         // Gramm-Leach-Bliley Act
-	ModuleCJIS       = "cjis"         // Criminal Justice Information Services
-	ModuleNERCCIP    = "nerc_cip"     // NERC Critical Infrastructure Protection
-	ModuleFERPA      = "ferpa"        // Family Educational Rights & Privacy Act
-	ModuleCSASTAR    = "csa_star"     // CSA STAR Attestation
-	ModuleNISTCSF    = "nist_csf"     // NIST Cybersecurity Framework
-	ModuleCIS        = "cis"          // CIS Critical Security Controls
-	ModuleNISTAI600  = "nist_ai_600_1" // NIST AI 600-1
-	ModuleOWASPWeb   = "owasp_web"    // OWASP Web Top 10
+	ModuleSOX       = "sox"           // Sarbanes-Oxley Act
+	ModuleGLBA      = "glba"          // Gramm-Leach-Bliley Act
+	ModuleCJIS      = "cjis"          // Criminal Justice Information Services
+	ModuleNERCCIP   = "nerc_cip"      // NERC Critical Infrastructure Protection
+	ModuleFERPA     = "ferpa"         // Family Educational Rights & Privacy Act
+	ModuleCSASTAR   = "csa_star"      // CSA STAR Attestation
+	ModuleNISTCSF   = "nist_csf"      // NIST Cybersecurity Framework
+	ModuleCIS       = "cis"           // CIS Critical Security Controls
+	ModuleNISTAI600 = "nist_ai_600_1" // NIST AI 600-1
+	ModuleOWASPWeb  = "owasp_web"     // OWASP Web Top 10
 
 	// v4.2.0: New frameworks — built and integrated with cross-framework mapping.
-	ModuleHITECH     = "hitech"       // HITECH Act (extends HIPAA)
-	ModuleFFIEC      = "ffiec"        // FFIEC Banking Guidance
-	ModuleTSASD      = "tsa_sd"       // TSA Security Directive (pipeline)
-	ModuleISO21434   = "iso21434"     // ISO 21434 (automotive cybersecurity)
+	ModuleHITECH   = "hitech"   // HITECH Act (extends HIPAA)
+	ModuleFFIEC    = "ffiec"    // FFIEC Banking Guidance
+	ModuleTSASD    = "tsa_sd"   // TSA Security Directive (pipeline)
+	ModuleISO21434 = "iso21434" // ISO 21434 (automotive cybersecurity)
 )
 
 // ---------------------------------------------------------------------------
@@ -138,13 +138,13 @@ const (
 // ---------------------------------------------------------------------------
 
 const (
-	BundleHealthcare    = "healthcare"     // HIPAA + HITECH + HITRUST
-	BundleDefense       = "defense"        // CMMC L2 + NIST 800-171 + FedRAMP + CJIS + TSA SD
-	BundleFinance       = "finance"        // PCI + SOC 2 + ISO 27001 + GLBA + SOX + FFIEC
-	BundleEnergy        = "energy"         // NERC CIP + TSA SD + FIPS (revised from Manufacturing)
-	BundlePrivacy       = "privacy"        // GDPR + CCPA + ISO 27001
-	BundleSaaSB2B       = "saas_b2b"       // SOC 2 + ISO 27001 + ISO 42001 (NEW)
-	BundleEUCompliance  = "eu_compliance"  // EU AI Act + GDPR + ISO 42001 (NEW)
+	BundleHealthcare   = "healthcare"    // HIPAA + HITECH + HITRUST
+	BundleDefense      = "defense"       // CMMC L2 + NIST 800-171 + FedRAMP + CJIS + TSA SD
+	BundleFinance      = "finance"       // PCI + SOC 2 + ISO 27001 + GLBA + SOX + FFIEC
+	BundleEnergy       = "energy"        // NERC CIP + TSA SD + FIPS (revised from Manufacturing)
+	BundlePrivacy      = "privacy"       // GDPR + CCPA + ISO 27001
+	BundleSaaSB2B      = "saas_b2b"      // SOC 2 + ISO 27001 + ISO 42001 (NEW)
+	BundleEUCompliance = "eu_compliance" // EU AI Act + GDPR + ISO 42001 (NEW)
 )
 
 // AllBundles is the canonical list of bundle IDs, in display order.
@@ -210,6 +210,7 @@ var AllModules = []string{
 	ModuleHITRUST,
 	ModuleTISAX,
 }
+
 // IsValidModule returns true if the given module name is a known billable module.
 // Unknown module names (typos, old format, etc.) are rejected.
 func IsValidModule(name string) bool {

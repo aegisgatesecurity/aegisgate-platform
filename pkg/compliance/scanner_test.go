@@ -68,7 +68,7 @@ func TestScanner_Scan_CommunityNoModules(t *testing.T) {
 	}
 	// All Community tier (free) frameworks should be Enforced.
 	// v4.2.0: 4 Community tier frameworks (OWASP LLM, OWASP Web, ATLAS, NIST AI RMF)
-	// 
+	//
 	freeCount := 0
 	for _, f := range rpt.Frameworks {
 		if f.Enforced && f.ReasonEnforced == "framework_free" {
@@ -304,7 +304,7 @@ func TestScanner_Scan_AllBillableModulesPresent(t *testing.T) {
 		"hipaa": true, "pci": true, "soc2": true,
 		"iso42001": true, "fips": true,
 		"eu_ai_act": true,
-		"ccpa": true, "gdpr": true, "iso27001": true, "nist_ai_rmf": true,
+		"ccpa":      true, "gdpr": true, "iso27001": true, "nist_ai_rmf": true,
 		"sox": true, "glba": true, "cjis": true, "nerc_cip": true,
 	}
 	for _, f := range rpt.Frameworks {

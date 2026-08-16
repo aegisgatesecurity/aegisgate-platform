@@ -18,9 +18,9 @@ import (
 // TSASDModule implements TSA Security Directive compliance controls.
 type TSASDModule struct {
 	*compliance.BaseComplianceModule
-	pipelinePatterns  []*regexp.Regexp
-	cisaPatterns      []*regexp.Regexp
-	incidentPatterns  []*regexp.Regexp
+	pipelinePatterns []*regexp.Regexp
+	cisaPatterns     []*regexp.Regexp
+	incidentPatterns []*regexp.Regexp
 }
 
 // NewTSASDModule creates a new TSA Security Directive compliance module.

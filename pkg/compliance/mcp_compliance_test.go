@@ -150,7 +150,7 @@ func TestMCPTierAwareCompliance_FilterFindingsByTier(t *testing.T) {
 	findings := []Finding{
 		{Framework: FrameworkATLAS, Severity: SeverityHigh},
 		{Framework: FrameworkNIST1500, Severity: SeverityMedium},
-		{Framework: FrameworkSOC2, Severity: SeverityHigh},      // Premium - should be filtered for Community
+		{Framework: FrameworkSOC2, Severity: SeverityHigh},         // Premium - should be filtered for Community
 		{Framework: FrameworkISO42001, Severity: SeverityCritical}, // Premium - should be filtered for Community
 	}
 

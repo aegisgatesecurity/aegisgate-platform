@@ -6,7 +6,7 @@
 // Exposes Prometheus histograms for detection/scan latency so operators
 // can monitor p50/p95/p99 and set SLO alerts. Three granularities:
 //
-//   - aegisgate_scan_duration_seconds: full scan pipeline (regex + ML)
+//   - aegisgate_scan_pipeline_duration_seconds: full scan pipeline (regex + ML)
 //   - aegisgate_regex_scan_duration_seconds: regex-only phase
 //   - aegisgate_ml_inference_duration_seconds: ML model inference phase
 //
@@ -25,7 +25,7 @@ import (
 
 // Scan latency histogram metric names.
 const (
-	MetricScanDuration          = "aegisgate_scan_duration_seconds"
+	MetricScanDuration          = "aegisgate_scan_pipeline_duration_seconds"
 	MetricRegexScanDuration     = "aegisgate_regex_scan_duration_seconds"
 	MetricMLInferenceDuration   = "aegisgate_ml_inference_duration_seconds"
 	MetricShadowPredictionTotal = "aegisgate_shadow_prediction_total"

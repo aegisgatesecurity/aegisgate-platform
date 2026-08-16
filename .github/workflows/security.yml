@@ -10,11 +10,12 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: '1.26.5'
+  GO_VERSION: '1.26.6'
 
 permissions:
   contents: read
   security-events: write
+  actions: read
 
 jobs:
   # Job 1: Vulnerability Scanning
@@ -152,7 +153,7 @@ jobs:
 
       - name: Upload Trivy Image SARIF
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('trivy-image-results.sarif') != ''
         with:
           sarif_file: trivy-image-results.sarif
           category: trivy-image

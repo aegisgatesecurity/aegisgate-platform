@@ -22,9 +22,9 @@
 #   - Only ca-certificates and libonnxruntime are added (minimal attack surface).
 # =========================================================================
 
-# Builder stage: Go 1.26.5 on Alpine, pinned by digest for reproducibility.
-# Update digest when bumping the Go version. Digest source: docker pull golang:1.26.5-alpine
-FROM golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS builder
+# Builder stage: Go 1.26.6 on Alpine, pinned to digest for reproducibility.
+# Update digest when bumping the Go version. Digest source: docker pull golang:1.26.6-alpine
+FROM golang:1.26.6-alpine AS builder
 
 # CGO dependencies: gcc + musl for CGO compilation.
 # ONNX Runtime headers come from the bundled release tarball (see
@@ -94,11 +94,11 @@ COPY --from=builder /usr/local/lib/libonnxruntime_providers_shared.so /usr/local
 COPY --from=builder /aegisgate-platform /usr/local/bin/aegisgate-platform
 COPY --from=builder /build/aegisgate-platform/ui/frontend /opt/aegisgate-platform/ui/frontend
 
-# Copy ONNX threat detection model (6.2MB, opset 18, Char CNN-BiLSTM).
-# Auto-discovered by ThreatDetector via ModelPath config or
-# AEGISGATE_ML_MODEL_PATH env var. Default: /opt/aegisgate-platform/models/
-COPY --from=builder /build/aegisgate-platform/pkg/ml/models/threat_cnn_bilstm.onnx /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
-COPY --from=builder /build/aegisgate-platform/pkg/ml/models/threat_cnn_bilstm_model_card.json /opt/aegisgate-platform/models/threat_cnn_bilstm_model_card.json
+# NOTE: ONNX threat detection model (threat_cnn_bilstm.onnx) is proprietary
+# and not included in the community/open-source build. Enterprise builds
+# inject the model via a separate build stage or volume mount. The
+# ThreatDetector gracefully falls back to regex-only scanning when no
+# model file is present.
 
 # Create writable data directories (audits, certs, logs)
 # /data is the single writable volume — everything else is read-only

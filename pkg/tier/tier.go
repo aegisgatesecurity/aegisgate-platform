@@ -338,33 +338,33 @@ const (
 	// ====================================================================
 	// Developer tier
 	// ====================================================================
-	FeatureOAuthSSO         Feature = "oauth_sso"
-	FeatureOIDC             Feature = "oidc"
-	FeatureCohere           Feature = "cohere"
-	FeatureAzureOpenAI      Feature = "azure_openai"
-	FeatureRequestCache     Feature = "request_caching"
-	FeatureRequestDedup     Feature = "request_dedup"
-	FeatureMTLS             Feature = "mtls"
-	FeatureRuntimeHarden    Feature = "runtime_hardening"
-	FeatureCostAnomaly      Feature = "ml_cost_anomaly"
-	FeatureUsageAnomaly     Feature = "ml_usage_anomaly"
-	FeatureNISTView         Feature = "compliance_nist_view" // Enhanced NIST view
-	FeatureBasicSecurity    Feature = "compliance_basic_security"
-	FeatureCustomRoles      Feature = "custom_roles"
-	FeatureGranularPerms    Feature = "granular_permissions"
-	FeatureGrafana          Feature = "grafana"
-	FeatureWebhooks         Feature = "webhooks"
+	FeatureOAuthSSO      Feature = "oauth_sso"
+	FeatureOIDC          Feature = "oidc"
+	FeatureCohere        Feature = "cohere"
+	FeatureAzureOpenAI   Feature = "azure_openai"
+	FeatureRequestCache  Feature = "request_caching"
+	FeatureRequestDedup  Feature = "request_dedup"
+	FeatureMTLS          Feature = "mtls"
+	FeatureRuntimeHarden Feature = "runtime_hardening"
+	FeatureCostAnomaly   Feature = "ml_cost_anomaly"
+	FeatureUsageAnomaly  Feature = "ml_usage_anomaly"
+	FeatureNISTView      Feature = "compliance_nist_view" // Enhanced NIST view
+	FeatureBasicSecurity Feature = "compliance_basic_security"
+	FeatureCustomRoles   Feature = "custom_roles"
+	FeatureGranularPerms Feature = "granular_permissions"
+	FeatureGrafana       Feature = "grafana"
+	FeatureWebhooks      Feature = "webhooks"
 
 	// v4.2.0: New subsystem feature gates — previously ungated subsystems.
 	// These gate PLATFORM CAPABILITY (not compliance modules — those are in gating.go).
-	FeatureCorrelation      Feature = "correlation_engine"    // Event correlation (Community)
+	FeatureCorrelation      Feature = "correlation_engine"     // Event correlation (Community)
 	FeatureCVE              Feature = "cve_integration"        // CVE database (Community)
 	FeatureBridge           Feature = "protocol_bridge"        // Protocol bridge (Community)
 	FeatureANP              Feature = "agent_network_protocol" // ANP (Community)
 	FeatureAIBOM            Feature = "aibom_generation"       // AI Bill of Materials (Developer)
 	FeaturePromptCache      Feature = "prompt_cache_opt"       // Prompt cache optimization (Developer)
-	FeatureIncident         Feature = "incident_response"     // Incident engine (Professional)
-	FeatureEvidence         Feature = "evidence_packages"     // Compliance evidence (Professional)
+	FeatureIncident         Feature = "incident_response"      // Incident engine (Professional)
+	FeatureEvidence         Feature = "evidence_packages"      // Compliance evidence (Professional)
 	FeatureA2A              Feature = "a2a_protocol"           // Agent-to-Agent (Professional)
 	FeatureACP              Feature = "acp_protocol"           // Agent Communication Protocol (Professional)
 	FeatureFederatedIOC     Feature = "federated_ioc"          // Federated IOC sharing (Professional)

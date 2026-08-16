@@ -203,7 +203,7 @@ func TestIsFrameworkIncludedInTier(t *testing.T) {
 		{license.ModuleHITRUST, tierpkg.TierProfessional, false},
 		{license.ModuleHITRUST, tierpkg.TierEnterprise, true},
 		// v4.2.0: FedRAMP is Enterprise tier, NOT included at Professional
-		{license.ModuleFedRAMP, tierpkg.TierProfessional, false},  // FedRAMP is Enterprise tier now
+		{license.ModuleFedRAMP, tierpkg.TierProfessional, false}, // FedRAMP is Enterprise tier now
 		{license.ModuleFedRAMP, tierpkg.TierEnterprise, true},
 	}
 	for _, tc := range cases {

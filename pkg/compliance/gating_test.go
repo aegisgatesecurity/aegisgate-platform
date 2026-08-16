@@ -428,7 +428,7 @@ func TestIsImplementationReady(t *testing.T) {
 		{license.ModuleEUAIAct, true},  // pkg/compliance/eu-ai-act/ exists
 		{license.ModuleFIPS, true},     // pkg/compliance/fips/ exists (v3.4.0+)
 		{license.ModuleFedRAMP, true},  // pkg/compliance/fedramp/ exists (v3.4.0+: 8 highest-priority Moderate controls; full catalog 4-6 weeks)
-	
+
 		{"unknown", false},
 		{"", false},
 	}

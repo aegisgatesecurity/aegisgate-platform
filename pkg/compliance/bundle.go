@@ -157,7 +157,7 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleFFIEC,
 		},
 		RequiredTier:         tierpkg.TierDeveloper,
-		BundlePriceCents:     24900, // $249/mo
+		BundlePriceCents:     24900,  // $249/mo
 		IndividualPriceCents: 104400, // $149 + $149 + $149 + $199 + $199 + $199 = $1,044/mo
 		DiscountPercent:      76,
 		Industries:           []string{"finance", "fintech", "banking", "insurance", "payments"},
@@ -187,8 +187,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleISO42001,
 		},
 		RequiredTier:         tierpkg.TierDeveloper, // Available at Developer — EU startups need this
-		BundlePriceCents:     14900, // $149/mo
-		IndividualPriceCents: 54700, // $199 + $149 + $199 = $547/mo
+		BundlePriceCents:     14900,                 // $149/mo
+		IndividualPriceCents: 54700,                 // $199 + $149 + $199 = $547/mo
 		DiscountPercent:      73,
 		Industries:           []string{"eu", "europe", "privacy", "ai_governance"},
 	},
@@ -219,8 +219,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleTSASD,
 		},
 		RequiredTier:         tierpkg.TierEnterprise, // Contains Enterprise-tier frameworks
-		BundlePriceCents:     119900, // $1,199/mo
-		IndividualPriceCents: 189500, // $499 + $499 + $499 + $199 + $199 = $1,895/mo
+		BundlePriceCents:     119900,                 // $1,199/mo
+		IndividualPriceCents: 189500,                 // $499 + $499 + $499 + $199 + $199 = $1,895/mo
 		DiscountPercent:      37,
 		Industries:           []string{"defense", "aerospace", "government", "contracting", "dod", "law_enforcement"},
 	},
