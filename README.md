@@ -10,8 +10,8 @@
 [![Tests](https://img.shields.io/badge/Tests-8000+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-83.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
-[![SIEM](https://img.shields.io/badge/SIEM-Enterprise_only-9333ea?logo=splunk)](#enterprise-features)
-[![ML Detection](https://img.shields.io/badge/ML_Detection-Enterprise_only-22c55e?logo=tensorflow)](#enterprise-features)
+[![SIEM](https://img.shields.io/badge/SIEM-Pro+_only-9333ea?logo=splunk)](#tier-gated-features)
+[![ML Detection](https://img.shields.io/badge/ML_Detection-Pro+_only-22c55e?logo=tensorflow)](#tier-gated-features)
 [![Lens](https://img.shields.io/badge/Lens-Browser_Extension-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
 [![CI](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml)
@@ -37,10 +37,10 @@ AegisGate is **open-core**: the community edition is Apache 2.0 open source, and
 |---------|---------|----------|
 | **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 153 detection patterns, 6 community compliance frameworks, in-memory + file persistence, HA clustering |
 | **Developer** ($79/mo) | Proprietary | + 6 regulatory frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR), PostgreSQL persistence, SSO |
-| **Professional** ($499/mo) | Proprietary | + 17 industry frameworks (EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, federated IOC |
-| **Enterprise** (custom) | Proprietary | + 31 frameworks, SIEM integration (11 platforms), ML threat detection, HSM support, 24×7 support |
+| **Professional** ($499/mo) | Proprietary | + 11 industry frameworks (EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, SIEM (11 platforms), ML threat detection, federated IOC, PostgreSQL |
+| **Enterprise** (custom) | Proprietary | + 5 regulated frameworks (HITRUST, TISAX, CMMC L2, NIST 800-171, ISO 42001), HSM, FIPS mode, air-gapped, K8s clustering, custom ML, 24×7 support |
 
-Enterprise features are gated via `//go:build enterprise` build tags. The community edition compiles standalone and returns clear `ErrEnterpriseOnly` errors when enterprise features are invoked. See [Pricing →](https://aegisgatesecurity.io/pricing/)
+Enterprise features are gated via `//go:build enterprise` build tags and tier checks in `pkg/tier/tier.go`. The community edition compiles standalone (CGO_ENABLED=0, no ONNX Runtime) and returns clear `ErrEnterpriseOnly` / `codes.Unimplemented` responses when features above the licensed tier are invoked. See [Pricing →](https://aegisgatesecurity.io/pricing/)
 
 ## Why AegisGate?
 
@@ -154,8 +154,8 @@ result, _ := guard.Scan(ctx, text)
 |------|-------|------------------------|---------------|------------|--------------|
 | **Community** | Free | Soft-throttle | 5 / 5 | 6 frameworks | HTTP/MCP/A2A scanning, 153 detection patterns, in-memory persistence |
 | **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
-| **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, Trust Framework |
-| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + HITRUST, TISAX, CMMC L2, SIEM (11 platforms), ML detection, HSM |
+| **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
+| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
 
 ### Vertical Bundles
 
@@ -180,7 +180,7 @@ See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
 | Response | `pkg/response/detectors/` | 153-pattern detection (secrets, XSS, PII, compliance) |
-| Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Enterprise: full trust scoring) |
+| Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
 
 ## Compliance Coverage (31 Frameworks)
 
@@ -218,18 +218,34 @@ See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 | HITRUST CSF | Enterprise | `pkg/compliance/hitrust/` |
 | TISAX | Enterprise | `pkg/compliance/tisax/` |
 
-## Enterprise Features
+## Tier-Gated Features
 
-The following features require an enterprise license (`//go:build enterprise`):
+The following features are gated by tier in `pkg/tier/tier.go`. Community edition
+returns clear `ErrEnterpriseOnly` / `codes.Unimplemented` responses for features
+above the licensed tier.
+
+### Professional+ Features
 
 | Feature | Description |
 |---------|-------------|
 | **SIEM Integration** | Forward audit events to Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, Datadog, CloudWatch, SecurityHub (11 platforms) |
 | **ML Threat Detection** | Char CNN-BiLSTM neural network (1.58M params, ONNX) for adversarial pattern detection with 100/100 evasion resistance |
-| **Trust Framework** | Full trust scoring, pillar-based governance, and attestation with cryptographic provenance |
-| **HSM Support** | Hardware Security Module integration for key management |
+| **Trust Framework** | Cryptographic agent identity, per-session trust scoring, pillar-based governance, and signed attestations |
+| **Federated IOC** | Cross-organization indicator-of-compromise sharing |
+| **Incident Response** | Automated playbook-driven incident management (14 default playbooks) |
+| **CISO Posture Digest** | Signed posture digest with IOC, audit, and posture sources |
+| **Trust Portal** | Public-facing trust page with posture, frameworks, and uptime snapshots |
 
-Community edition returns clear `ErrEnterpriseOnly` errors for these features.
+### Enterprise Features
+
+| Feature | Description |
+|---------|-------------|
+| **HSM Support** | Hardware Security Module integration for key management |
+| **FIPS 140** | FIPS 140-2/140-3 cryptographic compliance mode |
+| **Air-Gapped Deployment** | Fully offline deployment for regulated environments |
+| **Kubernetes Clustering** | Multi-node clustering with Helm charts |
+| **VM Sandboxing** | VM-level sandboxing for MCP agent isolation |
+| **Custom ML Models** | Customer-supplied ML models for threat detection |
 
 ## Quick Start
 
