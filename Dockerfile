@@ -46,7 +46,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /aegisgate-platform ./cmd/aegisgate-platform
 
 # Production stage: minimal Alpine.
-FROM alpine:3.23
+FROM alpine:3.24
 
 # Install runtime dependencies: ca-certificates (TLS), wget (healthcheck).
 RUN apk add --no-cache ca-certificates wget && \
