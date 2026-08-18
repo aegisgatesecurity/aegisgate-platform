@@ -3,193 +3,142 @@ package gdpr
 import (
 	"context"
 	"testing"
-
-	"github.com/aegisgatesecurity/aegisgate/pkg/compliance/common"
 )
 
-func TestGDPRFramework_NewFramework(t *testing.T) {
-	f := NewGDPRFramework()
-
-	if f == nil {
-		t.Fatal("NewGDPRFramework returned nil")
+func TestGDPRModule_New(t *testing.T) {
+	m := NewGDPRModule()
+	if m == nil {
+		t.Fatal("NewGDPRModule returned nil")
 	}
-
-	if f.GetName() != FrameworkName {
-		t.Errorf("Expected name %s, got %s", FrameworkName, f.GetName())
+	if m.Framework() != "gdpr" {
+		t.Errorf("Framework() = %q, want %q", m.Framework(), "gdpr")
 	}
-
-	if f.GetVersion() != FrameworkVersion {
-		t.Errorf("Expected version %s, got %s", FrameworkVersion, f.GetVersion())
+	if m.Version() != "Regulation (EU) 2016/679" {
+		t.Errorf("Version() = %q", m.Version())
 	}
 }
 
-func TestGDPRFramework_GetDescription(t *testing.T) {
-	f := NewGDPRFramework()
-	desc := f.GetDescription()
-
-	if desc == "" {
-		t.Error("GetDescription returned empty string")
+func TestGDPRModule_All99ArticlesRegistered(t *testing.T) {
+	m := NewGDPRModule()
+	controls := m.Controls()
+	if len(controls) != 99 {
+		t.Errorf("Expected 99 controls (all GDPR articles), got %d", len(controls))
 	}
-
-	if len(desc) < 5 {
-		t.Errorf("Description too short: %s", desc)
+	// Verify article 1 through 99 all present
+	seen := make(map[string]bool)
+	for _, c := range controls {
+		seen[c.ID] = true
 	}
-}
-
-func TestGDPRFramework_IsEnabled(t *testing.T) {
-	f := NewGDPRFramework()
-
-	if !f.IsEnabled() {
-		t.Error("New framework should be enabled by default")
+	for i := 1; i <= 99; i++ {
+		id := "GDPR-Art" + itoa(i)
+		if !seen[id] {
+			t.Errorf("Missing control %s", id)
+		}
 	}
 }
 
-func TestGDPRFramework_EnableDisable(t *testing.T) {
-	f := NewGDPRFramework()
-
-	f.Disable()
-	if f.IsEnabled() {
-		t.Error("Disable should make framework disabled")
+func TestGDPRModule_AutomatedControls(t *testing.T) {
+	m := NewGDPRModule()
+	controls := m.Controls()
+	auto := 0
+	for _, c := range controls {
+		if c.Automated && c.CheckFunc != nil {
+			auto++
+		}
 	}
-
-	f.Enable()
-	if !f.IsEnabled() {
-		t.Error("Enable should make framework enabled")
-	}
-}
-
-func TestGDPRFramework_Configure(t *testing.T) {
-	f := NewGDPRFramework()
-
-	config := map[string]interface{}{
-		"strictMode":        true,
-		"dataRetentionDays": 30,
-	}
-
-	err := f.Configure(config)
-	if err != nil {
-		t.Errorf("Configure failed: %v", err)
+	if auto != 12 {
+		t.Errorf("Expected 12 automated controls with CheckFunc, got %d", auto)
 	}
 }
 
-func TestGDPRFramework_GetFrameworkID(t *testing.T) {
-	f := NewGDPRFramework()
-	id := f.GetFrameworkID()
-
-	if id == "" {
-		t.Error("GetFrameworkID returned empty string")
+func TestGDPRModule_ManualControlsHaveNoCheckFunc(t *testing.T) {
+	m := NewGDPRModule()
+	for _, c := range m.Controls() {
+		if !c.Automated && c.CheckFunc != nil {
+			t.Errorf("Manual control %s should not have CheckFunc", c.ID)
+		}
 	}
 }
 
-func TestGDPRFramework_GetPatternCount(t *testing.T) {
-	f := NewGDPRFramework()
-	count := f.GetPatternCount()
-
-	if count <= 0 {
-		t.Errorf("Expected positive pattern count, got %d", count)
-	}
-}
-
-func TestGDPRFramework_GetSeverityLevels(t *testing.T) {
-	f := NewGDPRFramework()
-	levels := f.GetSeverityLevels()
-
-	if len(levels) == 0 {
-		t.Error("GetSeverityLevels returned empty slice")
-	}
-}
-
-func TestGDPRFramework_Check(t *testing.T) {
-	f := NewGDPRFramework()
+func TestGDPRModule_CheckAllAutomated(t *testing.T) {
+	m := NewGDPRModule()
 	ctx := context.Background()
-
-	input := common.CheckInput{
-		Content:  "Personal data processing test content",
-		Headers:  map[string]string{"Content-Type": "text/plain"},
-		Metadata: map[string]interface{}{"source": "test"},
-	}
-
-	result, err := f.Check(ctx, input)
+	input := []byte("encryption aes tls access_control rbac consent privacy_policy audit_log breach_notification dpia")
+	results, err := m.CheckAll(ctx, input)
 	if err != nil {
-		t.Errorf("Check failed: %v", err)
+		t.Fatalf("CheckAll failed: %v", err)
 	}
-
-	if result == nil {
-		t.Fatal("Check returned nil result")
-	}
-
-	if result.Framework != FrameworkName {
-		t.Errorf("Expected framework %s, got %s", FrameworkName, result.Framework)
+	if len(results) != 12 {
+		t.Errorf("Expected 12 results from automated controls, got %d", len(results))
 	}
 }
 
-func TestGDPRFramework_CheckRequest(t *testing.T) {
-	f := NewGDPRFramework()
+func TestGDPRModule_SecurityOfProcessing_Compliant(t *testing.T) {
+	m := NewGDPRModule()
 	ctx := context.Background()
-
-	req := &common.HTTPRequest{
-		Method:  "POST",
-		URL:     "https://api.example.com/data",
-		Headers: map[string][]string{"Content-Type": {"application/json"}},
-		Body:    []byte(`{"name": "John", "email": "john@example.com"}`),
-	}
-
-	findings, err := f.CheckRequest(ctx, req)
+	input := []byte("encryption enabled with aes-256, tls 1.3, access_control with rbac")
+	results, err := m.CheckAll(ctx, input)
 	if err != nil {
-		t.Errorf("CheckRequest failed: %v", err)
+		t.Fatalf("CheckAll failed: %v", err)
 	}
-
-	// Findings may be empty
-	_ = len(findings)
+	for _, r := range results {
+		if r.ControlID == "GDPR-Art32" {
+			if r.Status != "compliant" {
+				t.Errorf("Art32 status = %q, want compliant", r.Status)
+			}
+			return
+		}
+	}
+	t.Error("Art32 result not found")
 }
 
-func TestGDPRFramework_CheckResponse(t *testing.T) {
-	f := NewGDPRFramework()
+func TestGDPRModule_SecurityOfProcessing_NonCompliant(t *testing.T) {
+	m := NewGDPRModule()
 	ctx := context.Background()
-
-	resp := &common.HTTPResponse{
-		StatusCode: 200,
-		Headers:    map[string][]string{"Content-Type": {"application/json"}},
-		Body:       []byte(`{"data": "personal data"}`),
-	}
-
-	findings, err := f.CheckResponse(ctx, resp)
+	input := []byte("no security measures mentioned")
+	results, err := m.CheckAll(ctx, input)
 	if err != nil {
-		t.Errorf("CheckResponse failed: %v", err)
+		t.Fatalf("CheckAll failed: %v", err)
 	}
-
-	// Findings may be empty
-	_ = len(findings)
+	for _, r := range results {
+		if r.ControlID == "GDPR-Art32" {
+			if r.Status != "non_compliant" {
+				t.Errorf("Art32 status = %q, want non_compliant", r.Status)
+			}
+			return
+		}
+	}
+	t.Error("Art32 result not found")
 }
 
-func TestGDPRRequirements(t *testing.T) {
-	f := NewGDPRFramework()
-
-	requirements := f.requirements
-	if len(requirements) == 0 {
-		t.Error("No requirements loaded")
+func TestGDPRModule_AllControlsHaveReferences(t *testing.T) {
+	m := NewGDPRModule()
+	for _, c := range m.Controls() {
+		if len(c.References) == 0 {
+			t.Errorf("Control %s has no references", c.ID)
+		}
 	}
-
-	// Just verify requirements exist
-	t.Logf("GDPR requirements count: %d", len(requirements))
 }
 
-func TestGDPRFramework_Check_EmptyContent(t *testing.T) {
-	f := NewGDPRFramework()
-	ctx := context.Background()
-
-	input := common.CheckInput{
-		Content:  "",
-		Headers:  map[string]string{},
-		Metadata: map[string]interface{}{},
+func TestGDPRModule_AllControlsHaveCategory(t *testing.T) {
+	m := NewGDPRModule()
+	for _, c := range m.Controls() {
+		if c.Category == "" {
+			t.Errorf("Control %s has no category", c.ID)
+		}
 	}
+}
 
-	result, err := f.Check(ctx, input)
-	if err != nil {
-		t.Errorf("Check failed with empty content: %v", err)
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
 	}
-
-	if result != nil {
-		t.Logf("Empty content result passed: %v", result.Passed)
+	var buf [20]byte
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
 	}
+	return string(buf[i:])
 }
