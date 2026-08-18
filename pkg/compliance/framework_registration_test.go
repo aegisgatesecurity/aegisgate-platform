@@ -76,8 +76,8 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		t.Errorf("fedramp control count = %d, want 170", fedrampCount)
 	}
 	// v3.6.2 new frameworks: verify specific control counts
-	if cjisCount := frameworks["cjis"]; cjisCount != 16 {
-		t.Errorf("cjis control count = %d, want 16", cjisCount)
+	if cjisCount := frameworks["cjis"]; cjisCount != 64 {
+		t.Errorf("cjis control count = %d, want 64", cjisCount)
 	}
 	if ferpaCount := frameworks["ferpa"]; ferpaCount != 16 {
 		t.Errorf("ferpa control count = %d, want 16", ferpaCount)

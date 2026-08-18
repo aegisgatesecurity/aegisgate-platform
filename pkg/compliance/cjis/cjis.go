@@ -1,3 +1,32 @@
+// SPDX-License-Identifier: Apache-2.0
+// =========================================================================
+// AegisGate Security Platform - CJIS Compliance Module
+// =========================================================================
+//
+// Criminal Justice Information Services (CJIS) Security Policy compliance
+// controls as a licensed add-on module. Covers 13 policy areas:
+// Information Management, Personnel Security, Access Control, Physical
+// Protection, Cryptography, Incident Response, System and Communications
+// Protection, System and Information Integrity, Configuration Management,
+// Maintenance, Identification and Authentication, Cloud Computing, and
+// AI Controls.
+//
+// Module metadata:
+//   - Framework:     "cjis"
+//   - Version:       "5.9.1"
+//   - Required tier: Professional ($199/mo)
+//   - Controls:      64 (24 automated, 40 manual)
+//   - Categories:    13
+//
+// Architecture:
+//   - cjis.go:              module wiring, 64 RegisterControl calls,
+//                           24 CheckFunc implementations
+//   - cjis_test.go:         unit tests
+//   - tier_coverage_test.go: tier/framework tests
+//
+// Reference: CJIS Security Policy v5.9.1
+// =========================================================================
+
 // Package cjis provides CJIS Security Policy compliance controls as a licensed add-on module.
 package cjis
 
@@ -20,7 +49,7 @@ type CJISModule struct {
 // NewCJISModule creates a new CJIS compliance module.
 func NewCJISModule() *CJISModule {
 	m := &CJISModule{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("cjis", "5.9.1", core.TierEnterprise),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("cjis", "5.9.1", core.TierProfessional),
 	}
 
 	m.initCJIPatterns()
@@ -45,175 +74,706 @@ func (m *CJISModule) initCJIPatterns() {
 	}
 }
 
+// ============================================================================
+// Control Registration — 64 controls
+// ============================================================================
+
 // registerControls registers all CJIS Security Policy v5.9.1 controls.
 func (m *CJISModule) registerControls() {
-	// Information Management (IM)
+	// ── Information Management (IM) — 6 controls, 3 automated ──
+
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-IM-001",
+		ID:          "CJIS-IM-01",
 		Name:        "Information Management Policy",
 		Description: "Policies and procedures for managing Criminal Justice Information throughout its lifecycle",
 		Category:    "Information Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkInformationManagement,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.1"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-IM-002",
+		ID:          "CJIS-IM-02",
 		Name:        "Media Protection",
 		Description: "Protect CJI stored on physical and electronic media through encryption and access controls",
 		Category:    "Information Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkMediaProtection,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.2.1"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-IM-003",
+		ID:          "CJIS-IM-03",
+		Name:        "Media Storage",
+		Description: "Store CJI media in secure locations with appropriate environmental and access controls",
+		Category:    "Information Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.2.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IM-04",
+		Name:        "Media Transport",
+		Description: "Protect CJI media during transport through encryption and chain-of-custody procedures",
+		Category:    "Information Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.2.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IM-05",
+		Name:        "Media Sanitization and Disposal",
+		Description: "Sanitize and dispose of CJI media using approved methods to prevent data recovery",
+		Category:    "Information Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.2.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IM-06",
 		Name:        "Record Retention",
 		Description: "Implement data retention policies for Criminal Justice Information in compliance with CJIS requirements",
 		Category:    "Information Management",
 		Severity:    compliance.SeverityMedium,
 		Automated:   true,
 		CheckFunc:   m.checkRecordRetention,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.3"},
 	})
 
-	// Personnel Security (PS)
+	// ── Personnel Security (PS) — 6 controls, 3 automated ──
+
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-PS-001",
+		ID:          "CJIS-PS-01",
 		Name:        "Personnel Security Policy",
 		Description: "Ensure all personnel with CJI access undergo background checks and security screening",
 		Category:    "Personnel Security",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkPersonnelSecurity,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.1"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-PS-002",
+		ID:          "CJIS-PS-02",
 		Name:        "Security Awareness Training",
 		Description: "Provide security awareness training for all personnel accessing CJI",
 		Category:    "Personnel Security",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkSecurityAwarenessTraining,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.2"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-PS-003",
+		ID:          "CJIS-PS-03",
 		Name:        "Incident Response Training",
 		Description: "Provide incident response training for personnel with CJI access",
 		Category:    "Personnel Security",
 		Severity:    compliance.SeverityMedium,
 		Automated:   true,
 		CheckFunc:   m.checkIncidentResponseTraining,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.3"},
 	})
 
-	// Access Control (AC)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-AC-001",
+		ID:          "CJIS-PS-04",
+		Name:        "Background Checks",
+		Description: "Conduct criminal history record checks and fingerprint-based background checks for all personnel with CJI access",
+		Category:    "Personnel Security",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.1.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-PS-05",
+		Name:        "Personnel Sanctioning",
+		Description: "Implement sanctions for personnel who fail to comply with CJIS Security Policy requirements",
+		Category:    "Personnel Security",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.1.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-PS-06",
+		Name:        "Termination Procedures",
+		Description: "Implement procedures for terminating access to CJI when personnel depart or change roles",
+		Category:    "Personnel Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.1.3"},
+	})
+
+	// ── Access Control (AC) — 8 controls, 4 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AC-01",
 		Name:        "Access Control Policy",
 		Description: "Implement role-based access controls to restrict CJI access to authorized personnel",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkAccessControl,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.1"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-AC-002",
+		ID:          "CJIS-AC-02",
 		Name:        "Account Management",
 		Description: "Implement procedures for creating, managing, and disabling accounts with CJI access",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkAccountManagement,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.2"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-AC-003",
+		ID:          "CJIS-AC-03",
 		Name:        "Audit and Accountability",
 		Description: "Implement audit logging for all access to Criminal Justice Information",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkAuditAccountability,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.3"},
 	})
 
-	// Physical Protection (PP)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-PP-001",
+		ID:          "CJIS-AC-04",
+		Name:        "Access Enforcement",
+		Description: "Enforce access control policies through technical mechanisms on all CJI systems",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AC-05",
+		Name:        "Information Flow Enforcement",
+		Description: "Enforce information flow control policies between CJI systems and external networks",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.5"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AC-06",
+		Name:        "Separation of Duties",
+		Description: "Implement separation of duties to prevent single individuals from compromising CJI security",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.6"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AC-07",
+		Name:        "Least Privilege",
+		Description: "Assign the least privilege necessary for personnel to accomplish their assigned tasks with CJI",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.7"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AC-08",
+		Name:        "Remote Access",
+		Description: "Implement secure remote access controls including VPN and multi-factor authentication for CJI access",
+		Category:    "Access Control",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkRemoteAccess,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.8"},
+	})
+
+	// ── Physical Protection (PP) — 4 controls, 1 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-PP-01",
 		Name:        "Physical Protection Policy",
 		Description: "Implement physical security controls for facilities housing CJI systems (customer responsibility)",
 		Category:    "Physical Protection",
 		Severity:    compliance.SeverityHigh,
 		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.4.1"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-PP-002",
+		ID:          "CJIS-PP-02",
 		Name:        "Mobile Device Security",
 		Description: "Implement mobile device management for all devices that access CJI",
 		Category:    "Physical Protection",
 		Severity:    compliance.SeverityMedium,
 		Automated:   true,
 		CheckFunc:   m.checkMobileDeviceSecurity,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.4.2"},
 	})
 
-	// Cryptography (CR)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-CR-001",
+		ID:          "CJIS-PP-03",
+		Name:        "Facility Security",
+		Description: "Implement facility security controls including perimeter protection and access monitoring",
+		Category:    "Physical Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.4.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-PP-04",
+		Name:        "Visitor Control",
+		Description: "Implement visitor control procedures for facilities housing CJI systems",
+		Category:    "Physical Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.4.4"},
+	})
+
+	// ── Cryptography (CR) — 5 controls, 3 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CR-01",
 		Name:        "Encryption at Rest",
 		Description: "Encrypt CJI at rest using FIPS 140-2 validated cryptographic modules (AES-256)",
 		Category:    "Cryptography",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkEncryptionAtRest,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.1"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-CR-002",
+		ID:          "CJIS-CR-02",
 		Name:        "Encryption in Transit",
 		Description: "Encrypt CJI in transit using TLS 1.2 or higher (TLS 1.3 recommended)",
 		Category:    "Cryptography",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkEncryptionInTransit,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.2"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-CR-003",
+		ID:          "CJIS-CR-03",
 		Name:        "Key Management",
 		Description: "Implement cryptographic key management procedures including rotation and secure storage",
 		Category:    "Cryptography",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkKeyManagement,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.3"},
 	})
 
-	// AI-Specific (AI)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-AI-001",
+		ID:          "CJIS-CR-04",
+		Name:        "FIPS-Validated Cryptography",
+		Description: "Use FIPS 140-2 validated cryptographic modules for all CJI encryption operations",
+		Category:    "Cryptography",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CR-05",
+		Name:        "Public Key Infrastructure",
+		Description: "Implement PKI infrastructure for CJI systems including certificate management and validation",
+		Category:    "Cryptography",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.5"},
+	})
+
+	// ── Incident Response (IR) — 5 controls, 2 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IR-01",
+		Name:        "Incident Response Plan",
+		Description: "Implement an incident response plan for CJI security incidents including roles and procedures",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponse,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.5.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IR-02",
+		Name:        "Incident Response Training",
+		Description: "Provide incident response training for personnel involved in CJI incident response",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.5.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IR-03",
+		Name:        "Incident Monitoring",
+		Description: "Implement monitoring capabilities to detect and respond to CJI security incidents",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentMonitoring,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.5.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IR-04",
+		Name:        "Incident Reporting",
+		Description: "Implement procedures for reporting CJI security incidents to appropriate authorities",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.5.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IR-05",
+		Name:        "Incident Response Testing",
+		Description: "Test incident response plans and procedures on a regular basis for CJI systems",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.5.5"},
+	})
+
+	// ── System and Communications Protection (SC) — 5 controls, 0 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SC-01",
+		Name:        "Boundary Protection",
+		Description: "Implement boundary protection controls including firewalls and network segmentation for CJI systems",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SC-02",
+		Name:        "Transmission Confidentiality and Integrity",
+		Description: "Protect the confidentiality and integrity of transmitted CJI using cryptographic mechanisms",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SC-03",
+		Name:        "Network Access Control",
+		Description: "Implement network access control to restrict access to CJI systems and networks",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SC-04",
+		Name:        "Protection of Information at Rest",
+		Description: "Protect CJI at rest through encryption, access controls, and data integrity mechanisms",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SC-05",
+		Name:        "Security Function Isolation",
+		Description: "Isolate security functions from non-security functions in CJI systems",
+		Category:    "System and Communications Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.5"},
+	})
+
+	// ── System and Information Integrity (SI) — 5 controls, 2 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SI-01",
+		Name:        "Flaw Remediation",
+		Description: "Implement flaw remediation procedures including patch management and vulnerability remediation",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkFlawRemediation,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SI-02",
+		Name:        "Malicious Code Protection",
+		Description: "Implement malicious code protection including antivirus, anti-malware, and EDR solutions",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMaliciousCodeProtection,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SI-03",
+		Name:        "Security Alerts and Advisories",
+		Description: "Receive and act on security alerts and advisories relevant to CJI systems",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SI-04",
+		Name:        "Security Functionality Verification",
+		Description: "Verify security functionality of CJI systems on a regular basis",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-SI-05",
+		Name:        "Software and Information Integrity",
+		Description: "Implement controls to verify the integrity of software and information in CJI systems",
+		Category:    "System and Information Integrity",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.5"},
+	})
+
+	// ── Configuration Management (CM) — 5 controls, 1 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CM-01",
+		Name:        "Configuration Management Policy",
+		Description: "Implement configuration management policies and procedures for CJI systems",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CM-02",
+		Name:        "Configuration Change Control",
+		Description: "Implement configuration change control including change approval and documentation",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkConfigChangeControl,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CM-03",
+		Name:        "Security Impact Analysis",
+		Description: "Perform security impact analysis for configuration changes to CJI systems",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CM-04",
+		Name:        "Change Implementation",
+		Description: "Implement approved configuration changes through controlled procedures for CJI systems",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CM-05",
+		Name:        "Software Usage and Restrictions",
+		Description: "Implement software usage restrictions and license management for CJI systems",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.5"},
+	})
+
+	// ── Maintenance (MA) — 4 controls, 0 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-MA-01",
+		Name:        "Maintenance Policy",
+		Description: "Implement maintenance policies and procedures for CJI systems",
+		Category:    "Maintenance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.9.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-MA-02",
+		Name:        "Controlled Maintenance",
+		Description: "Implement controlled maintenance procedures for CJI systems including scheduling and documentation",
+		Category:    "Maintenance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.9.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-MA-03",
+		Name:        "Maintenance Tools",
+		Description: "Control and monitor maintenance tools used on CJI systems",
+		Category:    "Maintenance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.9.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-MA-04",
+		Name:        "Remote Maintenance and Diagnostic Ports",
+		Description: "Implement controls for remote maintenance and diagnostic ports on CJI systems (customer responsibility)",
+		Category:    "Maintenance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.9.4"},
+	})
+
+	// ── Identification and Authentication (IA) — 5 controls, 3 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IA-01",
+		Name:        "Identification and Authentication Policy",
+		Description: "Implement identification and authentication policies for CJI system access",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIdentificationAuth,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.10.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IA-02",
+		Name:        "Identifier Management",
+		Description: "Implement identifier management procedures for CJI system accounts",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.10.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IA-03",
+		Name:        "Authenticator Management",
+		Description: "Implement authenticator management including token and credential lifecycle management",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAuthenticatorManagement,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.10.3"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IA-04",
+		Name:        "Advanced Authentication",
+		Description: "Implement advanced authentication including MFA for all CJI system access per CJIS requirements",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkAdvancedAuth,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.10.4"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-IA-05",
+		Name:        "FICAM Compliance",
+		Description: "Implement FICAM-aligned identity, credential, and access management for CJI systems",
+		Category:    "Identification and Authentication",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.10.5"},
+	})
+
+	// ── Cloud Computing (CC) — 3 controls, 0 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CC-01",
+		Name:        "Cloud Service Provider Security",
+		Description: "Ensure cloud service providers meet CJIS Security Policy requirements for CJI processing",
+		Category:    "Cloud Computing",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.11.1"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CC-02",
+		Name:        "Cloud Access Controls",
+		Description: "Implement access controls for cloud-hosted CJI systems including identity federation",
+		Category:    "Cloud Computing",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.11.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-CC-03",
+		Name:        "Cloud Data Protection",
+		Description: "Implement data protection controls for CJI stored and processed in cloud environments",
+		Category:    "Cloud Computing",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 Section 5.11.3"},
+	})
+
+	// ── AI Controls (AI) — 3 controls, 2 automated ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AI-01",
 		Name:        "AI Model CJI Protection",
 		Description: "Ensure AI models do not retain or expose Criminal Justice Information",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkAIModelCJIProtection,
+		References:  []string{"CJIS Security Policy v5.9.1 AI Supplement"},
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CJIS-AI-002",
+		ID:          "CJIS-AI-02",
 		Name:        "AI Audit Trail",
 		Description: "Maintain audit trails for all AI model interactions involving Criminal Justice Information",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkAIAuditTrail,
+		References:  []string{"CJIS Security Policy v5.9.1 AI Supplement"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CJIS-AI-03",
+		Name:        "AI Model Governance for CJI Systems",
+		Description: "Implement AI model governance for systems processing Criminal Justice Information",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"CJIS Security Policy v5.9.1 AI Supplement"},
 	})
 }
 
-// Check implementations
+// ============================================================================
+// Check Function Implementations — 24 automated checks
+// ============================================================================
 
 func (m *CJISModule) checkInformationManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
@@ -222,7 +782,7 @@ func (m *CJISModule) checkInformationManagement(ctx context.Context, input []byt
 	if hasInfoPolicy {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-IM-001",
+			ControlID:   "CJIS-IM-01",
 			ControlName: "Information Management Policy",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -233,7 +793,7 @@ func (m *CJISModule) checkInformationManagement(ctx context.Context, input []byt
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-IM-001",
+		ControlID:   "CJIS-IM-01",
 		ControlName: "Information Management Policy",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -251,7 +811,7 @@ func (m *CJISModule) checkMediaProtection(ctx context.Context, input []byte) (*c
 	if hasMediaProtection && hasEncryptionAtRest {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-IM-002",
+			ControlID:   "CJIS-IM-02",
 			ControlName: "Media Protection",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -263,7 +823,7 @@ func (m *CJISModule) checkMediaProtection(ctx context.Context, input []byte) (*c
 	if hasMediaProtection || hasEncryptionAtRest {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-IM-002",
+			ControlID:   "CJIS-IM-02",
 			ControlName: "Media Protection",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
@@ -275,7 +835,7 @@ func (m *CJISModule) checkMediaProtection(ctx context.Context, input []byte) (*c
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-IM-002",
+		ControlID:   "CJIS-IM-02",
 		ControlName: "Media Protection",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -292,7 +852,7 @@ func (m *CJISModule) checkRecordRetention(ctx context.Context, input []byte) (*c
 	if hasRecordRetention {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-IM-003",
+			ControlID:   "CJIS-IM-06",
 			ControlName: "Record Retention",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
@@ -303,7 +863,7 @@ func (m *CJISModule) checkRecordRetention(ctx context.Context, input []byte) (*c
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-IM-003",
+		ControlID:   "CJIS-IM-06",
 		ControlName: "Record Retention",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
@@ -320,7 +880,7 @@ func (m *CJISModule) checkPersonnelSecurity(ctx context.Context, input []byte) (
 	if hasPersonnelSecurity {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-PS-001",
+			ControlID:   "CJIS-PS-01",
 			ControlName: "Personnel Security Policy",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -331,7 +891,7 @@ func (m *CJISModule) checkPersonnelSecurity(ctx context.Context, input []byte) (
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-PS-001",
+		ControlID:   "CJIS-PS-01",
 		ControlName: "Personnel Security Policy",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -348,7 +908,7 @@ func (m *CJISModule) checkSecurityAwarenessTraining(ctx context.Context, input [
 	if hasTraining {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-PS-002",
+			ControlID:   "CJIS-PS-02",
 			ControlName: "Security Awareness Training",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -359,7 +919,7 @@ func (m *CJISModule) checkSecurityAwarenessTraining(ctx context.Context, input [
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-PS-002",
+		ControlID:   "CJIS-PS-02",
 		ControlName: "Security Awareness Training",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -376,7 +936,7 @@ func (m *CJISModule) checkIncidentResponseTraining(ctx context.Context, input []
 	if hasIRTraining {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-PS-003",
+			ControlID:   "CJIS-PS-03",
 			ControlName: "Incident Response Training",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
@@ -387,7 +947,7 @@ func (m *CJISModule) checkIncidentResponseTraining(ctx context.Context, input []
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-PS-003",
+		ControlID:   "CJIS-PS-03",
 		ControlName: "Incident Response Training",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
@@ -404,7 +964,7 @@ func (m *CJISModule) checkAccessControl(ctx context.Context, input []byte) (*com
 	if hasAccessControl {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-AC-001",
+			ControlID:   "CJIS-AC-01",
 			ControlName: "Access Control Policy",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -415,7 +975,7 @@ func (m *CJISModule) checkAccessControl(ctx context.Context, input []byte) (*com
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-AC-001",
+		ControlID:   "CJIS-AC-01",
 		ControlName: "Access Control Policy",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -432,7 +992,7 @@ func (m *CJISModule) checkAccountManagement(ctx context.Context, input []byte) (
 	if hasAccountMgmt {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-AC-002",
+			ControlID:   "CJIS-AC-02",
 			ControlName: "Account Management",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -443,7 +1003,7 @@ func (m *CJISModule) checkAccountManagement(ctx context.Context, input []byte) (
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-AC-002",
+		ControlID:   "CJIS-AC-02",
 		ControlName: "Account Management",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -460,7 +1020,7 @@ func (m *CJISModule) checkAuditAccountability(ctx context.Context, input []byte)
 	if hasAuditLog {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-AC-003",
+			ControlID:   "CJIS-AC-03",
 			ControlName: "Audit and Accountability",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -471,13 +1031,44 @@ func (m *CJISModule) checkAuditAccountability(ctx context.Context, input []byte)
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-AC-003",
+		ControlID:   "CJIS-AC-03",
 		ControlName: "Audit and Accountability",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
 		Message:     "Audit logging controls not detected",
 		Timestamp:   time.Now(),
 		Remediation: "Enable comprehensive audit logging for all CJI access events",
+	}, nil
+}
+
+func (m *CJISModule) checkRemoteAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRemoteAccess := strings.Contains(inputStr, "remote_access") ||
+		strings.Contains(inputStr, "vpn") ||
+		strings.Contains(inputStr, "vpn_required") ||
+		strings.Contains(inputStr, "remote_desktop")
+
+	if hasRemoteAccess {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-AC-08",
+			ControlName: "Remote Access",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Remote access controls including VPN detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-AC-08",
+		ControlName: "Remote Access",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Remote access controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement secure remote access including VPN and multi-factor authentication for CJI access",
 	}, nil
 }
 
@@ -488,7 +1079,7 @@ func (m *CJISModule) checkMobileDeviceSecurity(ctx context.Context, input []byte
 	if hasMDM {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-PP-002",
+			ControlID:   "CJIS-PP-02",
 			ControlName: "Mobile Device Security",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
@@ -499,7 +1090,7 @@ func (m *CJISModule) checkMobileDeviceSecurity(ctx context.Context, input []byte
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-PP-002",
+		ControlID:   "CJIS-PP-02",
 		ControlName: "Mobile Device Security",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
@@ -516,7 +1107,7 @@ func (m *CJISModule) checkEncryptionAtRest(ctx context.Context, input []byte) (*
 	if hasEncryptionAtRest {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-CR-001",
+			ControlID:   "CJIS-CR-01",
 			ControlName: "Encryption at Rest",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -527,7 +1118,7 @@ func (m *CJISModule) checkEncryptionAtRest(ctx context.Context, input []byte) (*
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-CR-001",
+		ControlID:   "CJIS-CR-01",
 		ControlName: "Encryption at Rest",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -545,7 +1136,7 @@ func (m *CJISModule) checkEncryptionInTransit(ctx context.Context, input []byte)
 	if hasTLS13 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-CR-002",
+			ControlID:   "CJIS-CR-02",
 			ControlName: "Encryption in Transit",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -557,7 +1148,7 @@ func (m *CJISModule) checkEncryptionInTransit(ctx context.Context, input []byte)
 	if hasTLS {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-CR-002",
+			ControlID:   "CJIS-CR-02",
 			ControlName: "Encryption in Transit",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityCritical,
@@ -569,7 +1160,7 @@ func (m *CJISModule) checkEncryptionInTransit(ctx context.Context, input []byte)
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-CR-002",
+		ControlID:   "CJIS-CR-02",
 		ControlName: "Encryption in Transit",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -586,7 +1177,7 @@ func (m *CJISModule) checkKeyManagement(ctx context.Context, input []byte) (*com
 	if hasKeyManagement {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-CR-003",
+			ControlID:   "CJIS-CR-03",
 			ControlName: "Key Management",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -597,7 +1188,7 @@ func (m *CJISModule) checkKeyManagement(ctx context.Context, input []byte) (*com
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-CR-003",
+		ControlID:   "CJIS-CR-03",
 		ControlName: "Key Management",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -607,13 +1198,257 @@ func (m *CJISModule) checkKeyManagement(ctx context.Context, input []byte) (*com
 	}, nil
 }
 
+func (m *CJISModule) checkIncidentResponse(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIRPlan := strings.Contains(inputStr, "incident_response_plan") ||
+		strings.Contains(inputStr, "ir_plan") ||
+		strings.Contains(inputStr, "incident_response")
+
+	if hasIRPlan {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-IR-01",
+			ControlName: "Incident Response Plan",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Incident response plan detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-IR-01",
+		ControlName: "Incident Response Plan",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Incident response plan not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement an incident response plan for CJI security incidents",
+	}, nil
+}
+
+func (m *CJISModule) checkIncidentMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "incident_monitoring") ||
+		strings.Contains(inputStr, "siem") ||
+		strings.Contains(inputStr, "security_monitoring")
+
+	if hasMonitoring {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-IR-03",
+			ControlName: "Incident Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Incident monitoring and SIEM controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-IR-03",
+		ControlName: "Incident Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Incident monitoring controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement incident monitoring with SIEM for CJI systems",
+	}, nil
+}
+
+func (m *CJISModule) checkFlawRemediation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFlawRemediation := strings.Contains(inputStr, "flaw_remediation") ||
+		strings.Contains(inputStr, "patch_management") ||
+		strings.Contains(inputStr, "vulnerability_patch")
+
+	if hasFlawRemediation {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-SI-01",
+			ControlName: "Flaw Remediation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Flaw remediation and patch management controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-SI-01",
+		ControlName: "Flaw Remediation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Flaw remediation controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement flaw remediation including patch management and vulnerability remediation",
+	}, nil
+}
+
+func (m *CJISModule) checkMaliciousCodeProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMaliciousCodeProtection := strings.Contains(inputStr, "antivirus") ||
+		strings.Contains(inputStr, "anti_malware") ||
+		strings.Contains(inputStr, "malware_detection") ||
+		strings.Contains(inputStr, "edr")
+
+	if hasMaliciousCodeProtection {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-SI-02",
+			ControlName: "Malicious Code Protection",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Malicious code protection including antivirus and EDR detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-SI-02",
+		ControlName: "Malicious Code Protection",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Malicious code protection controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement malicious code protection including antivirus, anti-malware, and EDR solutions",
+	}, nil
+}
+
+func (m *CJISModule) checkConfigChangeControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChangeControl := strings.Contains(inputStr, "change_control") ||
+		strings.Contains(inputStr, "change_management") ||
+		strings.Contains(inputStr, "cab_approval") ||
+		strings.Contains(inputStr, "configuration_change")
+
+	if hasChangeControl {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-CM-02",
+			ControlName: "Configuration Change Control",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Configuration change control and management controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-CM-02",
+		ControlName: "Configuration Change Control",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Configuration change control not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement configuration change control including change approval and documentation",
+	}, nil
+}
+
+func (m *CJISModule) checkIdentificationAuth(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIdentAuth := strings.Contains(inputStr, "identification") ||
+		strings.Contains(inputStr, "authentication") ||
+		strings.Contains(inputStr, "user_identification")
+
+	if hasIdentAuth {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-IA-01",
+			ControlName: "Identification and Authentication Policy",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Identification and authentication controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-IA-01",
+		ControlName: "Identification and Authentication Policy",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Identification and authentication controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement identification and authentication policies for CJI system access",
+	}, nil
+}
+
+func (m *CJISModule) checkAuthenticatorManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAuthenticatorMgmt := strings.Contains(inputStr, "authenticator_management") ||
+		strings.Contains(inputStr, "token_management") ||
+		strings.Contains(inputStr, "credential_management")
+
+	if hasAuthenticatorMgmt {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-IA-03",
+			ControlName: "Authenticator Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Authenticator management including token and credential management detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-IA-03",
+		ControlName: "Authenticator Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Authenticator management controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement authenticator management including token and credential lifecycle management",
+	}, nil
+}
+
+func (m *CJISModule) checkAdvancedAuth(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAdvancedAuth := strings.Contains(inputStr, "advanced_authentication") ||
+		strings.Contains(inputStr, "mfa") ||
+		strings.Contains(inputStr, "multi_factor") ||
+		strings.Contains(inputStr, "totp") ||
+		strings.Contains(inputStr, "fido")
+
+	if hasAdvancedAuth {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CJIS-IA-04",
+			ControlName: "Advanced Authentication",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Advanced authentication including MFA detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CJIS-IA-04",
+		ControlName: "Advanced Authentication",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Advanced authentication controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement advanced authentication including MFA for all CJI system access",
+	}, nil
+}
+
 func (m *CJISModule) checkAIModelCJIProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	cjiFound := m.detectCJI(string(input))
 
 	if len(cjiFound) == 0 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-AI-001",
+			ControlID:   "CJIS-AI-01",
 			ControlName: "AI Model CJI Protection",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -624,7 +1459,7 @@ func (m *CJISModule) checkAIModelCJIProtection(ctx context.Context, input []byte
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-AI-001",
+		ControlID:   "CJIS-AI-01",
 		ControlName: "AI Model CJI Protection",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -655,7 +1490,7 @@ func (m *CJISModule) checkAIAuditTrail(ctx context.Context, input []byte) (*comp
 	if len(violations) == 0 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-AI-002",
+			ControlID:   "CJIS-AI-02",
 			ControlName: "AI Audit Trail",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -667,7 +1502,7 @@ func (m *CJISModule) checkAIAuditTrail(ctx context.Context, input []byte) (*comp
 	if len(violations) < 3 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CJIS-AI-002",
+			ControlID:   "CJIS-AI-02",
 			ControlName: "AI Audit Trail",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
@@ -679,7 +1514,7 @@ func (m *CJISModule) checkAIAuditTrail(ctx context.Context, input []byte) (*comp
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CJIS-AI-002",
+		ControlID:   "CJIS-AI-02",
 		ControlName: "AI Audit Trail",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
