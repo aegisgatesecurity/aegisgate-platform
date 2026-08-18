@@ -28,6 +28,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cjis"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cmmcl2"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/community/gdpr"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/csa_star"
 	eu_ai_act "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/eu-ai-act"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fedramp"
@@ -355,7 +356,13 @@ func RegisterBuiltinFrameworks() {
 	// control/pattern counts are known at registration time and are
 	// registered as static values.
 	registerFrameworkControls("atlas", 66) // MITRE ATLAS: 66 technique patterns (full v4.6.0 coverage)
-	registerFrameworkControls("gdpr", 6)   // GDPR: 6 core data protection requirements
+
+	// GDPR: now uses BaseComplianceModule with 99 article controls
+	if mod := gdpr.NewGDPRModule(); mod != nil {
+		if controls := mod.Controls(); len(controls) > 0 {
+			registerFrameworkControls("gdpr", len(controls))
+		}
+	}
 	registerFrameworkControls("owasp", 10) // OWASP LLM Top 10: 10 risk categories
 }
 
@@ -411,6 +418,9 @@ func RegisterBuiltinFrameworksIntoRegistry(registry *Registry) {
 	registerIntoRegistry(registry, "ffiec", ffiec.NewFFIECModule())
 	registerIntoRegistry(registry, "tsa_sd", tsa_sd.NewTSASDModule())
 	registerIntoRegistry(registry, "iso21434", iso21434.NewISO21434Module())
+
+	// Community frameworks (new-style BaseComplianceModule)
+	registerIntoRegistry(registry, "gdpr", gdpr.NewGDPRModule())
 }
 
 // registerIntoRegistry is a helper that safely registers a framework module

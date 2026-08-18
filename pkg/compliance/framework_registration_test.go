@@ -82,11 +82,19 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	if ferpaCount := frameworks["ferpa"]; ferpaCount != 16 {
 		t.Errorf("ferpa control count = %d, want 16", ferpaCount)
 	}
-	if soxCount := frameworks["sox"]; soxCount != 16 {
-		t.Errorf("sox control count = %d, want 16", soxCount)
+	if soxCount := frameworks["sox"]; soxCount != 80 {
+		t.Errorf("sox control count = %d, want 80", soxCount)
 	}
 	if glbaCount := frameworks["glba"]; glbaCount != 14 {
 		t.Errorf("glba control count = %d, want 14", glbaCount)
+	}
+	// NIST CSF 2.0: 131 subcategories (23 automated + 108 manual)
+	if nistCSFCount := frameworks["nist_csf"]; nistCSFCount != 131 {
+		t.Errorf("nist_csf control count = %d, want 131", nistCSFCount)
+	}
+	// GDPR: 99 article controls (12 automated + 87 manual)
+	if gdprCount := frameworks["gdpr"]; gdprCount != 99 {
+		t.Errorf("gdpr control count = %d, want 99", gdprCount)
 	}
 	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 18 {
 		t.Errorf("nerc_cip control count = %d, want 18", nercCipCount)
