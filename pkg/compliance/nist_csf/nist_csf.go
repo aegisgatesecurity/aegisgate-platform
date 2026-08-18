@@ -17,20 +17,18 @@
 //   RECOVER   -> Audit log replay, hash-chain verification, IOC store restore
 //
 // Module metadata:
-//   - Framework:   "nist_csf"
-//   - Version:     "1.0"
-//   - Required tier: Community (free)
-//   - Pricing:      No separate add-on (bundled with the platform)
+//   - Framework:     "nist_csf"
+//   - Version:       "2.0"
+//   - Required tier: Professional ($79/mo)
+//   - Controls:      131 subcategories (23 automated, 108 manual)
+//   - Functions:     6 (GV, ID, PR, DE, RS, RC)
+//   - Categories:    22
 //
 // Architecture:
-//   - nist_csf.go:        module wiring, 6 RegisterControl calls (one
-//                          per Function), 6 CheckFunc implementations
+//   - nist_csf.go:        module wiring, 131 RegisterControl calls,
+//                          23 CheckFunc implementations
 //   - nist_csf_test.go:   unit tests
-//
-// Coverage: All 6 CSF 2.0 Functions covered. Each Function has 1
-// automated CheckFunc that maps to existing AegisGate modules. Within
-// each Function, the customer can drill into the underlying AegisGate
-// controls for the specific subcategories.
+//   - tier_coverage_test.go: tier/framework tests
 //
 // Reference: https://www.nist.gov/cyberframework
 //            NIST CSF 2.0 (February 26, 2024)
@@ -60,7 +58,7 @@ type NISTCSFModule struct {
 // NewNISTCSFModule creates a new NIST CSF 2.0 module.
 func NewNISTCSFModule() *NISTCSFModule {
 	m := &NISTCSFModule{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("nist_csf", "1.0", core.TierCommunity),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("nist_csf", "2.0", core.TierProfessional),
 	}
 	m.initPatterns()
 	m.registerControls()
@@ -80,382 +78,1343 @@ func (m *NISTCSFModule) initPatterns() {
 	}
 }
 
+// ============================================================================
+// Control Registration — 131 subcategories
+// ============================================================================
+
 func (m *NISTCSFModule) registerControls() {
-	// GOVERN: The organization's cybersecurity risk management strategy,
-	// expectations, and policy are established, communicated, and monitored.
+	// ── Function GV (Govern) — 36 subcategories, 6 categories ──
+
+	// GV.OC (Organizational Context) — 5
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "NIST-CSF-GOVERN",
-		Name:        "Govern (GV)",
-		Description: "NIST CSF 2.0 GV: The organization's cybersecurity risk management strategy, expectations, and policy are established, communicated, and monitored",
-		Category:    "Govern",
-		Severity:    compliance.SeverityHigh,
-		Automated:   true,
-		CheckFunc:   m.checkGovern,
-		References:  []string{"NIST CSF 2.0 GV (Govern)"},
+		ID: "GV.OC-01", Name: "Organizational mission understood and communicated",
+		Description: "The organizational mission is understood and communicated.",
+		Category:    "GV.OC (Organizational Context)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OC-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OC-02", Name: "Internal culture understood",
+		Description: "The organizational internal culture is understood.",
+		Category:    "GV.OC (Organizational Context)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OC-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OC-03", Name: "Connectivity to other organizations understood",
+		Description: "Connectivity to other organizations and customers is understood.",
+		Category:    "GV.OC (Organizational Context)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OC-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OC-04", Name: "Cybersecurity considered across all aspects",
+		Description: "Cybersecurity is considered across all aspects of the organization.",
+		Category:    "GV.OC (Organizational Context)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OC-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OC-05", Name: "Cybersecurity approach integrated with risk functions",
+		Description: "The organization's cybersecurity approach is integrated with other risk functions.",
+		Category:    "GV.OC (Organizational Context)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OC-05"},
 	})
 
-	// IDENTIFY: The organization's current cybersecurity risks are understood.
+	// GV.RM (Risk Management) — 7
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "NIST-CSF-IDENTIFY",
-		Name:        "Identify (ID)",
-		Description: "NIST CSF 2.0 ID: The organization's current cybersecurity risks are understood (asset inventory, risk assessment)",
-		Category:    "Identify",
-		Severity:    compliance.SeverityHigh,
-		Automated:   true,
-		CheckFunc:   m.checkIdentify,
-		References:  []string{"NIST CSF 2.0 ID (Identify)"},
+		ID: "GV.RM-01", Name: "Risk management processes established",
+		Description: "Risk management processes are established, managed, and agreed to by stakeholders.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkGovern,
+		References: []string{"NIST CSF 2.0 GV.RM-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RM-02", Name: "Risk responsibilities assigned",
+		Description: "Risk responsibilities are assigned and understood.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RM-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RM-03", Name: "Risk management integrated into enterprise risk",
+		Description: "Risk management processes are integrated into enterprise risk management.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RM-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RM-04", Name: "Risk tolerance determined",
+		Description: "Risk management processes include determining organizational risk tolerance.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RM-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RM-05", Name: "Supply chain risk determined",
+		Description: "Risk management processes include determining, documenting, and responding to supply chain risk.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RM-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RM-06", Name: "Critical infrastructure risk determined",
+		Description: "Risk management processes include determining cybersecurity risk associated with critical infrastructure.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RM-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RM-07", Name: "Third-party provider risk determined",
+		Description: "Risk management processes include cybersecurity risk associated with using third-party and external providers.",
+		Category:    "GV.RM (Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RM-07"},
 	})
 
-	// PROTECT: Safeguards to manage the organization's cybersecurity risks.
+	// GV.RR (Risk Strategy) — 4
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "NIST-CSF-PROTECT",
-		Name:        "Protect (PR)",
-		Description: "NIST CSF 2.0 PR: Safeguards to manage the organization's cybersecurity risks (access control, encryption, training)",
-		Category:    "Protect",
-		Severity:    compliance.SeverityCritical,
-		Automated:   true,
-		CheckFunc:   m.checkProtect,
-		References:  []string{"NIST CSF 2.0 PR (Protect)"},
+		ID: "GV.RR-01", Name: "Risk responses prioritized",
+		Description: "Cybersecurity risk management responses and remediation are prioritized.",
+		Category:    "GV.RR (Risk Strategy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RR-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RR-02", Name: "Risk responses integrated with enterprise risk",
+		Description: "Cybersecurity risk management responses and remediation are integrated with enterprise risk.",
+		Category:    "GV.RR (Risk Strategy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RR-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RR-03", Name: "Risk response decisions include risk tolerance",
+		Description: "Cybersecurity risk management response decisions include risk tolerance.",
+		Category:    "GV.RR (Risk Strategy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RR-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.RR-04", Name: "Risk response decisions include legal and regulatory requirements",
+		Description: "Risk management response decisions include legal and regulatory requirements.",
+		Category:    "GV.RR (Risk Strategy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.RR-04"},
 	})
 
-	// DETECT: Possible cybersecurity attacks and compromises are found and analyzed.
+	// GV.PO (Policy) — 6
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "NIST-CSF-DETECT",
-		Name:        "Detect (DE)",
-		Description: "NIST CSF 2.0 DE: Possible cybersecurity attacks and compromises are found and analyzed (anomaly detection, scanning)",
-		Category:    "Detect",
-		Severity:    compliance.SeverityHigh,
-		Automated:   true,
-		CheckFunc:   m.checkDetect,
-		References:  []string{"NIST CSF 2.0 DE (Detect)"},
+		ID: "GV.PO-01", Name: "Cybersecurity policies established",
+		Description: "Cybersecurity policies are established, managed, and published.",
+		Category:    "GV.PO (Policy)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkPolicy,
+		References: []string{"NIST CSF 2.0 GV.PO-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.PO-02", Name: "Roles and responsibilities established",
+		Description: "Cybersecurity roles and responsibilities are established and managed.",
+		Category:    "GV.PO (Policy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.PO-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.PO-03", Name: "Supply chain risk management policies established",
+		Description: "Cybersecurity supply chain risk management policies are established, managed, and published.",
+		Category:    "GV.PO (Policy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.PO-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.PO-04", Name: "Processes and procedures established",
+		Description: "Processes and procedures are established and managed.",
+		Category:    "GV.PO (Policy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.PO-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.PO-05", Name: "Technology infrastructure policies established",
+		Description: "Technology infrastructure policies are established, managed, and published.",
+		Category:    "GV.PO (Policy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.PO-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.PO-06", Name: "Asset management processes established",
+		Description: "Processes and procedures for asset management are established and managed.",
+		Category:    "GV.PO (Policy)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.PO-06"},
 	})
 
-	// RESPOND: Actions regarding a detected cybersecurity incident are taken.
+	// GV.OV (Oversight) — 4
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "NIST-CSF-RESPOND",
-		Name:        "Respond (RS)",
-		Description: "NIST CSF 2.0 RS: Actions regarding a detected cybersecurity incident are taken (incident response, communications)",
-		Category:    "Respond",
-		Severity:    compliance.SeverityHigh,
-		Automated:   true,
-		CheckFunc:   m.checkRespond,
-		References:  []string{"NIST CSF 2.0 RS (Respond)"},
+		ID: "GV.OV-01", Name: "Cybersecurity performance reviewed",
+		Description: "Organizational cybersecurity performance is reviewed and reported against organizational risk tolerance.",
+		Category:    "GV.OV (Oversight)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OV-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OV-02", Name: "Risk management results reviewed",
+		Description: "Cybersecurity risk management results are reviewed and reported against organizational risk tolerance.",
+		Category:    "GV.OV (Oversight)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OV-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OV-03", Name: "Oversight results inform improvements",
+		Description: "Risk management and oversight results are used to inform and improve risk management.",
+		Category:    "GV.OV (Oversight)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OV-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.OV-04", Name: "Risk management communicated to stakeholders",
+		Description: "Cybersecurity risk management activities and results are communicated to stakeholders.",
+		Category:    "GV.OV (Oversight)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.OV-04"},
 	})
 
-	// RECOVER: Assets and operations affected by a cybersecurity incident are restored.
+	// GV.SC (Supply Chain Risk Management) — 10
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "NIST-CSF-RECOVER",
-		Name:        "Recover (RC)",
-		Description: "NIST CSF 2.0 RC: Assets and operations affected by a cybersecurity incident are restored (recovery, improvements)",
-		Category:    "Recover",
-		Severity:    compliance.SeverityHigh,
-		Automated:   true,
-		CheckFunc:   m.checkRecover,
-		References:  []string{"NIST CSF 2.0 RC (Recover)"},
+		ID: "GV.SC-01", Name: "Supply chain risk management integrated",
+		Description: "Cybersecurity supply chain risk management is integrated into cybersecurity risk management.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-02", Name: "Supply chain risk processes established",
+		Description: "Cybersecurity supply chain risk management processes are established, managed, and agreed to by stakeholders.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-03", Name: "Supply chain requirements communicated",
+		Description: "Cybersecurity supply chain requirements are established, managed, and communicated to suppliers and third-party providers.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-04", Name: "Cybersecurity requirements in contracts",
+		Description: "Cybersecurity requirements are included in supplier and third-party contracts.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-05", Name: "Supply chain risks identified and assessed",
+		Description: "Cybersecurity supply chain risk management activities include identifying, assessing, and prioritizing supply chain risks.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-06", Name: "Supply chain risks mitigated",
+		Description: "Cybersecurity supply chain risk management activities include mitigation of supply chain risks.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-07", Name: "Supply chain risks monitored",
+		Description: "Cybersecurity supply chain risk management activities include monitoring of supply chain risks.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-07"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-08", Name: "Supply chain risks tracked and documented",
+		Description: "Cybersecurity supply chain risk management processes include tracking, documenting, and responding to supply chain risks.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-08"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-09", Name: "Supply chain risks responded to",
+		Description: "Cybersecurity supply chain risk management activities include tracking, documenting, and responding to supply chain risks.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-09"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "GV.SC-10", Name: "Supply chain risks communicated",
+		Description: "Cybersecurity supply chain risk management activities include communicating supply chain risks and findings.",
+		Category:    "GV.SC (Supply Chain Risk Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 GV.SC-10"},
+	})
+
+	// ── Function ID (Identify) — 20 subcategories, 3 categories ──
+
+	// ID.AM (Asset Management) — 8
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-01", Name: "Asset inventories established",
+		Description: "Inventories of assets are established and managed.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkAssetMgmt,
+		References: []string{"NIST CSF 2.0 ID.AM-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-02", Name: "Software and services inventoried",
+		Description: "Software, platforms, and services are inventoried and managed.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-03", Name: "Data inventoried",
+		Description: "Data are inventoried and managed.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-04", Name: "Device inventories maintained",
+		Description: "Device inventories are maintained.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-05", Name: "Dependencies and criticality understood",
+		Description: "Dependencies and criticality are understood.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-06", Name: "Suppliers inventoried",
+		Description: "Suppliers and third-party providers are inventoried and managed.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-07", Name: "Data sensitivity and classification managed",
+		Description: "Data sensitivity and classification are understood and managed.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-07"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.AM-08", Name: "Systems and services inventoried",
+		Description: "Systems, platforms, and services are inventoried.",
+		Category:    "ID.AM (Asset Management)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.AM-08"},
+	})
+
+	// ID.RA (Risk Assessment) — 10
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-01", Name: "Vulnerabilities identified and managed",
+		Description: "Vulnerabilities are identified, documented, and managed.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkVulnMgmt,
+		References: []string{"NIST CSF 2.0 ID.RA-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-02", Name: "Threats identified and managed",
+		Description: "Threats are identified, documented, and managed.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkThreatMgmt,
+		References: []string{"NIST CSF 2.0 ID.RA-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-03", Name: "Risk assessments performed",
+		Description: "Risk assessments are performed and documented.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkRiskAssess,
+		References: []string{"NIST CSF 2.0 ID.RA-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-04", Name: "Threats and vulnerabilities prioritized",
+		Description: "Threats and vulnerabilities are prioritized.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-05", Name: "Asset criticality and risk tolerance understood",
+		Description: "Asset criticality and risk tolerance are understood and used to inform risk management.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-06", Name: "Risk assessment results inform risk management",
+		Description: "Risk assessment results are used to inform risk management.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-07", Name: "Risk assessment results inform risk responses",
+		Description: "Risk assessment results are used to inform and prioritize risk responses.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-07"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-08", Name: "Risk assessment results inform remediation",
+		Description: "Risk assessment results are used to inform and prioritize remediation.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-08"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-09", Name: "Risk assessment results inform improvements",
+		Description: "Risk assessment results are used to inform and prioritize improvements.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-09"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.RA-10", Name: "Improvements evaluated for effectiveness",
+		Description: "Improvements are evaluated for effectiveness.",
+		Category:    "ID.RA (Risk Assessment)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.RA-10"},
+	})
+
+	// ID.IM (Improvements) — 2
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.IM-01", Name: "Improvements identified",
+		Description: "Improvements are identified from assessments, risk monitoring, and other sources.",
+		Category:    "ID.IM (Improvements)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.IM-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "ID.IM-02", Name: "Improvements implemented and evaluated",
+		Description: "Improvements are implemented and evaluated for effectiveness.",
+		Category:    "ID.IM (Improvements)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 ID.IM-02"},
+	})
+
+	// ── Function PR (Protect) — 28 subcategories, 5 categories ──
+
+	// PR.AA (Identity, Authentication, and Access) — 5
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AA-01", Name: "Identities and credentials managed",
+		Description: "Identities and credentials are managed.",
+		Category:    "PR.AA (Identity, Authentication, and Access)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkIdentity,
+		References: []string{"NIST CSF 2.0 PR.AA-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AA-02", Name: "Authenticators protected",
+		Description: "Authenticators are protected.",
+		Category:    "PR.AA (Identity, Authentication, and Access)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkAuthenticators,
+		References: []string{"NIST CSF 2.0 PR.AA-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AA-03", Name: "Users authenticated",
+		Description: "Users are authenticated.",
+		Category:    "PR.AA (Identity, Authentication, and Access)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkAuthentication,
+		References: []string{"NIST CSF 2.0 PR.AA-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AA-04", Name: "Permissions and access managed",
+		Description: "Permissions, privileges, and access are managed.",
+		Category:    "PR.AA (Identity, Authentication, and Access)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkAccessMgmt,
+		References: []string{"NIST CSF 2.0 PR.AA-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AA-05", Name: "Network access managed and enforced",
+		Description: "Network access is managed and enforced.",
+		Category:    "PR.AA (Identity, Authentication, and Access)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.AA-05"},
+	})
+
+	// PR.AT (Awareness and Training) — 4
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AT-01", Name: "Awareness training provided",
+		Description: "Awareness training is provided.",
+		Category:    "PR.AT (Awareness and Training)", Severity: compliance.SeverityLow,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.AT-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AT-02", Name: "Role-based training provided",
+		Description: "Role-based training is provided.",
+		Category:    "PR.AT (Awareness and Training)", Severity: compliance.SeverityLow,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.AT-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AT-03", Name: "Advanced training topics included",
+		Description: "Training includes advanced topics.",
+		Category:    "PR.AT (Awareness and Training)", Severity: compliance.SeverityLow,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.AT-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.AT-04", Name: "Training updated and communicated",
+		Description: "Training is updated and communicated.",
+		Category:    "PR.AT (Awareness and Training)", Severity: compliance.SeverityLow,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.AT-04"},
+	})
+
+	// PR.DS (Data Security) — 10
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-01", Name: "Confidentiality, integrity, and availability protected",
+		Description: "Confidentiality, integrity, and availability of data are protected.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: true, CheckFunc: m.checkDataSecurity,
+		References: []string{"NIST CSF 2.0 PR.DS-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-02", Name: "Backups protected and managed",
+		Description: "Backups are protected and managed.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-03", Name: "Configuration management established",
+		Description: "Configuration management is established and managed.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-04", Name: "Integrity checking performed",
+		Description: "Integrity checking is performed.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-05", Name: "Communications and control networks protected",
+		Description: "Communications and control networks are protected.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-06", Name: "Transmission media protected",
+		Description: "Transmission media are protected.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-07", Name: "Data managed throughout lifecycle",
+		Description: "Data are managed and protected throughout their lifecycle.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-07"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-08", Name: "Data protected at rest",
+		Description: "Data are managed and protected at rest.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: true, CheckFunc: m.checkDataAtRest,
+		References: []string{"NIST CSF 2.0 PR.DS-08"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-09", Name: "Data protected in transit",
+		Description: "Data are managed and protected in transit.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: true, CheckFunc: m.checkDataInTransit,
+		References: []string{"NIST CSF 2.0 PR.DS-09"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.DS-10", Name: "Network and communication protocols protected",
+		Description: "Network and communication protocols are protected.",
+		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-10"},
+	})
+
+	// PR.PS (Platform Security) — 6
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.PS-01", Name: "Platform configuration management established",
+		Description: "Configuration management is established and managed.",
+		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.PS-02", Name: "Software lifecycle managed",
+		Description: "Software lifecycle is managed.",
+		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.PS-03", Name: "Platforms hardened and managed",
+		Description: "Platforms are hardened and managed.",
+		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.PS-04", Name: "Platforms removed when no longer needed",
+		Description: "Platforms are removed when no longer needed.",
+		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.PS-05", Name: "Platforms protected from manipulation",
+		Description: "Platforms are protected from manipulation.",
+		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.PS-06", Name: "Platform integrity verified",
+		Description: "Platform integrity is verified.",
+		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-06"},
+	})
+
+	// PR.IR (Technology Infrastructure Resilience) — 3
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.IR-01", Name: "Backups protected and managed",
+		Description: "Backups are protected and managed.",
+		Category:    "PR.IR (Technology Infrastructure Resilience)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.IR-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.IR-02", Name: "Monitoring performed and reported",
+		Description: "Monitoring is performed and reported.",
+		Category:    "PR.IR (Technology Infrastructure Resilience)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.IR-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "PR.IR-03", Name: "Technologies tested and validated",
+		Description: "Technologies are tested and validated.",
+		Category:    "PR.IR (Technology Infrastructure Resilience)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 PR.IR-03"},
+	})
+
+	// ── Function DE (Detect) — 19 subcategories, 2 categories ──
+
+	// DE.CM (Continuous Monitoring) — 10
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-01", Name: "Networks and network services monitored",
+		Description: "Networks and network services are monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkNetworkMonitor,
+		References: []string{"NIST CSF 2.0 DE.CM-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-02", Name: "Physical environment monitored",
+		Description: "Physical environment is monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-03", Name: "Personnel activity monitored",
+		Description: "Personnel activity is monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-04", Name: "Events monitored to detect anomalies",
+		Description: "Events are monitored to detect anomalies.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkAnomalyDetect,
+		References: []string{"NIST CSF 2.0 DE.CM-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-05", Name: "Asset vulnerabilities monitored",
+		Description: "Asset vulnerabilities are monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkVulnMonitor,
+		References: []string{"NIST CSF 2.0 DE.CM-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-06", Name: "External service provider activity monitored",
+		Description: "External service provider activity is monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-07", Name: "Detection processes monitored",
+		Description: "Detection processes are monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-07"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-08", Name: "Unauthorized service providers monitored",
+		Description: "Unauthorized service providers and connections are monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-08"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-09", Name: "Unauthorized mobile code monitored",
+		Description: "Unauthorized mobile code is monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-09"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.CM-10", Name: "Unauthorized physical access monitored",
+		Description: "Unauthorized physical access is monitored.",
+		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-10"},
+	})
+
+	// DE.AE (Adverse Events) — 9
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-01", Name: "Events detected",
+		Description: "Events are detected.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkEventDetect,
+		References: []string{"NIST CSF 2.0 DE.AE-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-02", Name: "Event information propagated",
+		Description: "Event information is propagated.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-03", Name: "Anomalies analyzed",
+		Description: "Anomalies are analyzed.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-04", Name: "Anomalies prioritized",
+		Description: "Anomalies are prioritized.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-05", Name: "Intrusions detected",
+		Description: "Intrusions are detected.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkIntrusionDetect,
+		References: []string{"NIST CSF 2.0 DE.AE-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-06", Name: "Impact analyzed",
+		Description: "Impact is analyzed.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-06"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-07", Name: "Adverse events reported",
+		Description: "Adverse events are reported.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-07"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-08", Name: "Adverse events correlated",
+		Description: "Adverse events are correlated.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-08"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "DE.AE-09", Name: "Adverse events detected",
+		Description: "Adverse events are detected.",
+		Category:    "DE.AE (Adverse Events)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 DE.AE-09"},
+	})
+
+	// ── Function RS (Respond) — 18 subcategories, 4 categories ──
+
+	// RS.MA (Incident Management) — 5
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MA-01", Name: "Incidents declared",
+		Description: "Incidents are declared.",
+		Category:    "RS.MA (Incident Management)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkIncidentMgmt,
+		References: []string{"NIST CSF 2.0 RS.MA-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MA-02", Name: "Incidents assessed",
+		Description: "Incidents are assessed.",
+		Category:    "RS.MA (Incident Management)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MA-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MA-03", Name: "Incidents managed",
+		Description: "Incidents are managed.",
+		Category:    "RS.MA (Incident Management)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MA-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MA-04", Name: "Incidents escalated",
+		Description: "Incidents are escalated.",
+		Category:    "RS.MA (Incident Management)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MA-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MA-05", Name: "Incidents contained",
+		Description: "Incidents are contained.",
+		Category:    "RS.MA (Incident Management)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MA-05"},
+	})
+
+	// RS.AN (Analysis) — 5
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.AN-01", Name: "Detection notifications investigated",
+		Description: "Notifications from detection systems are investigated.",
+		Category:    "RS.AN (Analysis)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.AN-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.AN-02", Name: "Impact understood",
+		Description: "Impact is understood.",
+		Category:    "RS.AN (Analysis)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.AN-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.AN-03", Name: "Forensics performed",
+		Description: "Forensics are performed.",
+		Category:    "RS.AN (Analysis)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.AN-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.AN-04", Name: "Investigations scoped",
+		Description: "Investigations are scoped.",
+		Category:    "RS.AN (Analysis)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.AN-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.AN-05", Name: "Investigations classified",
+		Description: "Investigations are classified.",
+		Category:    "RS.AN (Analysis)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.AN-05"},
+	})
+
+	// RS.CO (Communication) — 4
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.CO-01", Name: "Stakeholders notified",
+		Description: "Stakeholders are notified.",
+		Category:    "RS.CO (Communication)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkCommNotify,
+		References: []string{"NIST CSF 2.0 RS.CO-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.CO-02", Name: "Information shared",
+		Description: "Information is shared.",
+		Category:    "RS.CO (Communication)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.CO-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.CO-03", Name: "Voluntary information sharing established",
+		Description: "Voluntary information sharing is established.",
+		Category:    "RS.CO (Communication)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.CO-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.CO-04", Name: "Stakeholders kept up to date",
+		Description: "Stakeholders are kept up to date.",
+		Category:    "RS.CO (Communication)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.CO-04"},
+	})
+
+	// RS.MI (Mitigation, Response, and Recovery) — 4
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MI-01", Name: "Incidents contained",
+		Description: "Incidents are contained.",
+		Category:    "RS.MI (Mitigation, Response, and Recovery)", Severity: compliance.SeverityHigh,
+		Automated: true, CheckFunc: m.checkMitigation,
+		References: []string{"NIST CSF 2.0 RS.MI-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MI-02", Name: "Incidents mitigated",
+		Description: "Incidents are mitigated.",
+		Category:    "RS.MI (Mitigation, Response, and Recovery)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MI-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MI-03", Name: "Incidents resolved",
+		Description: "Incidents are resolved.",
+		Category:    "RS.MI (Mitigation, Response, and Recovery)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MI-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RS.MI-04", Name: "Newly identified vulnerabilities mitigated",
+		Description: "Newly identified vulnerabilities are mitigated.",
+		Category:    "RS.MI (Mitigation, Response, and Recovery)", Severity: compliance.SeverityHigh,
+		Automated: false, References: []string{"NIST CSF 2.0 RS.MI-04"},
+	})
+
+	// ── Function RC (Recover) — 10 subcategories, 2 categories ──
+
+	// RC.RP (Recovery Plan) — 6
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.RP-01", Name: "Recovery plan established",
+		Description: "Recovery plan is established and managed.",
+		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkRecoveryPlan,
+		References: []string{"NIST CSF 2.0 RC.RP-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.RP-02", Name: "Recovery plan implemented",
+		Description: "Recovery plan is implemented.",
+		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
+		Automated: true, CheckFunc: m.checkRecoveryImpl,
+		References: []string{"NIST CSF 2.0 RC.RP-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.RP-03", Name: "Recovery plan improved",
+		Description: "Recovery plan is improved.",
+		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.RP-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.RP-04", Name: "Recovery plan communicated",
+		Description: "Recovery plan is communicated.",
+		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.RP-04"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.RP-05", Name: "Recovery plan tested",
+		Description: "Recovery plan is tested.",
+		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.RP-05"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.RP-06", Name: "Recovery plan coordinated with parties",
+		Description: "Recovery plan includes coordination with internal and external parties.",
+		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.RP-06"},
+	})
+
+	// RC.CO (Recovery Communication) — 4
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.CO-01", Name: "Recovery communications managed",
+		Description: "Recovery communications are managed.",
+		Category:    "RC.CO (Recovery Communication)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.CO-01"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.CO-02", Name: "Recovery communications shared",
+		Description: "Recovery communications are shared.",
+		Category:    "RC.CO (Recovery Communication)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.CO-02"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.CO-03", Name: "Recovery communications updated",
+		Description: "Recovery communications are updated.",
+		Category:    "RC.CO (Recovery Communication)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.CO-03"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID: "RC.CO-04", Name: "Recovery communications coordinated",
+		Description: "Recovery communications are coordinated with stakeholders.",
+		Category:    "RC.CO (Recovery Communication)", Severity: compliance.SeverityMedium,
+		Automated: false, References: []string{"NIST CSF 2.0 RC.CO-04"},
 	})
 }
 
 // ============================================================================
-// Check implementations
+// CheckFunc implementations — 23 automated checks
 // ============================================================================
 
-// checkGovern verifies the cybersecurity risk management strategy is established.
+// checkGovern verifies risk management processes are established (GV.RM-01).
 func (m *NISTCSFModule) checkGovern(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasPolicy := strings.Contains(inputStr, "ai_policy") || strings.Contains(inputStr, "security_policy") || strings.Contains(inputStr, "cybersecurity_policy")
-	hasRiskManagement := strings.Contains(inputStr, "risk_management") || strings.Contains(inputStr, "risk_assessment")
-	hasComplianceScan := strings.Contains(inputStr, "compliance_scan") || strings.Contains(inputStr, "/api/v1/compliance")
+	s := strings.ToLower(string(input))
+	hasRiskMgmt := strings.Contains(s, "risk_management") || strings.Contains(s, "risk_assessment")
+	hasCompliance := strings.Contains(s, "compliance_scan") || strings.Contains(s, "/api/v1/compliance")
+	hasPolicy := strings.Contains(s, "security_policy") || strings.Contains(s, "cybersecurity_policy")
+	if hasRiskMgmt && hasCompliance {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "GV.RM-01", ControlName: "Risk management processes established",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Risk management processes and compliance scanning detected", Timestamp: time.Now(),
+		}, nil
+	}
+	if hasRiskMgmt || hasCompliance || hasPolicy {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "GV.RM-01", ControlName: "Risk management processes established",
+			Status: compliance.StatusPartial, Severity: compliance.SeverityMedium,
+			Message: "Partial risk management evidence detected", Timestamp: time.Now(),
+			Remediation: "Establish documented risk management processes and enable compliance scanning",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "GV.RM-01", ControlName: "Risk management processes established",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No risk management evidence detected", Timestamp: time.Now(),
+		Remediation: "Establish documented risk management processes and enable compliance scanning",
+	}, nil
+}
 
-	present := 0
+// checkPolicy verifies cybersecurity policies are established (GV.PO-01).
+func (m *NISTCSFModule) checkPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasPolicy := strings.Contains(s, "security_policy") || strings.Contains(s, "cybersecurity_policy") || strings.Contains(s, "ai_policy") || strings.Contains(s, "policy")
 	if hasPolicy {
-		present++
-	}
-	if hasRiskManagement {
-		present++
-	}
-	if hasComplianceScan {
-		present++
-	}
-
-	if present >= 2 {
 		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-GOVERN", ControlName: "Govern (GV)",
-			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
-			Message:   "Governance verified (policy + risk management + compliance scan)",
-			Timestamp: time.Now(),
-		}, nil
-	}
-	if present == 1 {
-		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-GOVERN", ControlName: "Govern (GV)",
-			Status: compliance.StatusPartial, Severity: compliance.SeverityHigh,
-			Message:     "Partial governance: 1 of 3 controls configured",
-			Timestamp:   time.Now(),
-			Remediation: "Document security policy + risk management process; use /api/v1/compliance/scan for evidence",
+			Framework: m.Framework(), ControlID: "GV.PO-01", ControlName: "Cybersecurity policies established",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Cybersecurity policies detected", Timestamp: time.Now(),
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
-		Framework: m.Framework(), ControlID: "NIST-CSF-GOVERN", ControlName: "Govern (GV)",
-		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
-		Message:     "No governance evidence",
-		Timestamp:   time.Now(),
-		Remediation: "Document security policy and risk management process; use AegisGate /api/v1/compliance/scan for evidence",
+		Framework: m.Framework(), ControlID: "GV.PO-01", ControlName: "Cybersecurity policies established",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No cybersecurity policies detected", Timestamp: time.Now(),
+		Remediation: "Establish, document, and publish cybersecurity policies",
 	}, nil
 }
 
-// checkIdentify verifies the organization understands its cybersecurity risks.
-func (m *NISTCSFModule) checkIdentify(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasInventory := strings.Contains(inputStr, "asset_inventory") || strings.Contains(inputStr, "ioc_store") || strings.Contains(inputStr, "model_id")
-	hasRiskAssessment := strings.Contains(inputStr, "risk_assessment") || strings.Contains(inputStr, "risk_register")
-	hasThreatModel := strings.Contains(inputStr, "threat_model") || strings.Contains(inputStr, "stride")
-
-	present := 0
+// checkAssetMgmt verifies asset inventories are established (ID.AM-01).
+func (m *NISTCSFModule) checkAssetMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasInventory := strings.Contains(s, "asset_inventory") || strings.Contains(s, "ioc_store") || strings.Contains(s, "model_id") || strings.Contains(s, "inventory")
 	if hasInventory {
-		present++
-	}
-	if hasRiskAssessment {
-		present++
-	}
-	if hasThreatModel {
-		present++
-	}
-
-	if present >= 2 {
 		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-IDENTIFY", ControlName: "Identify (ID)",
-			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
-			Message:   "Identification verified (asset inventory + risk assessment + threat model)",
-			Timestamp: time.Now(),
+			Framework: m.Framework(), ControlID: "ID.AM-01", ControlName: "Asset inventories established",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Asset inventory detected", Timestamp: time.Now(),
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
-		Framework: m.Framework(), ControlID: "NIST-CSF-IDENTIFY", ControlName: "Identify (ID)",
-		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
-		Message:     "Identification gaps: missing asset inventory, risk assessment, or threat model",
-		Timestamp:   time.Now(),
-		Remediation: "Use AegisGate IOC store (asset inventory), plans/THREAT-MODEL.md (threat model), and document a risk assessment",
+		Framework: m.Framework(), ControlID: "ID.AM-01", ControlName: "Asset inventories established",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No asset inventory detected", Timestamp: time.Now(),
+		Remediation: "Establish and maintain an asset inventory (use AegisGate IOC store)",
 	}, nil
 }
 
-// checkProtect verifies safeguards are in place.
-func (m *NISTCSFModule) checkProtect(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled")
-	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "roles")
-	hasMFA := strings.Contains(inputStr, "mfa") || strings.Contains(inputStr, "multi_factor")
+// checkVulnMgmt verifies vulnerabilities are identified and managed (ID.RA-01).
+func (m *NISTCSFModule) checkVulnMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasVuln := strings.Contains(s, "vulnerability") || strings.Contains(s, "vuln_scan") || strings.Contains(s, "cve")
+	if hasVuln {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "ID.RA-01", ControlName: "Vulnerabilities identified and managed",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Vulnerability management detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "ID.RA-01", ControlName: "Vulnerabilities identified and managed",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No vulnerability management detected", Timestamp: time.Now(),
+		Remediation: "Implement vulnerability scanning and CVE tracking",
+	}, nil
+}
+
+// checkThreatMgmt verifies threats are identified and managed (ID.RA-02).
+func (m *NISTCSFModule) checkThreatMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasThreat := strings.Contains(s, "threat_model") || strings.Contains(s, "stride") || strings.Contains(s, "threat_intel")
+	if hasThreat {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "ID.RA-02", ControlName: "Threats identified and managed",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Threat management detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "ID.RA-02", ControlName: "Threats identified and managed",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No threat management detected", Timestamp: time.Now(),
+		Remediation: "Document threat models (STRIDE) and integrate threat intelligence",
+	}, nil
+}
+
+// checkRiskAssess verifies risk assessments are performed (ID.RA-03).
+func (m *NISTCSFModule) checkRiskAssess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasRisk := strings.Contains(s, "risk_assessment") || strings.Contains(s, "risk_register")
+	if hasRisk {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "ID.RA-03", ControlName: "Risk assessments performed",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Risk assessment detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "ID.RA-03", ControlName: "Risk assessments performed",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No risk assessment detected", Timestamp: time.Now(),
+		Remediation: "Perform and document risk assessments; maintain a risk register",
+	}, nil
+}
+
+// checkIdentity verifies identities and credentials are managed (PR.AA-01).
+func (m *NISTCSFModule) checkIdentity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasIdentity := strings.Contains(s, "identity") || strings.Contains(s, "identity_management") || strings.Contains(s, "iam")
+	if hasIdentity {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.AA-01", ControlName: "Identities and credentials managed",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Identity management detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "PR.AA-01", ControlName: "Identities and credentials managed",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No identity management detected", Timestamp: time.Now(),
+		Remediation: "Implement identity and credential management (IAM)",
+	}, nil
+}
+
+// checkAuthenticators verifies authenticators are protected (PR.AA-02).
+func (m *NISTCSFModule) checkAuthenticators(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAuthenticator := strings.Contains(s, "mfa") || strings.Contains(s, "multi_factor") || strings.Contains(s, "authenticator") || strings.Contains(s, "totp")
+	if hasAuthenticator {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.AA-02", ControlName: "Authenticators protected",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Authenticator protection (MFA) detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "PR.AA-02", ControlName: "Authenticators protected",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No authenticator protection detected", Timestamp: time.Now(),
+		Remediation: "Enable multi-factor authentication (MFA) and protect authenticators",
+	}, nil
+}
+
+// checkAuthentication verifies users are authenticated (PR.AA-03).
+func (m *NISTCSFModule) checkAuthentication(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAuth := strings.Contains(s, "authentication") || strings.Contains(s, "auth_enabled") || strings.Contains(s, "sso")
+	if hasAuth {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.AA-03", ControlName: "Users authenticated",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "User authentication detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "PR.AA-03", ControlName: "Users authenticated",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No user authentication detected", Timestamp: time.Now(),
+		Remediation: "Enable user authentication and consider SSO integration",
+	}, nil
+}
+
+// checkAccessMgmt verifies permissions and access are managed (PR.AA-04).
+func (m *NISTCSFModule) checkAccessMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAccess := strings.Contains(s, "rbac") || strings.Contains(s, "roles") || strings.Contains(s, "permissions") || strings.Contains(s, "access_control")
+	if hasAccess {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.AA-04", ControlName: "Permissions and access managed",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Access management (RBAC) detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "PR.AA-04", ControlName: "Permissions and access managed",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No access management detected", Timestamp: time.Now(),
+		Remediation: "Implement role-based access control (RBAC) and manage permissions",
+	}, nil
+}
+
+// checkDataSecurity verifies CIA of data is protected (PR.DS-01).
+func (m *NISTCSFModule) checkDataSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasEncrypt := strings.Contains(s, "encryption") || strings.Contains(s, "encrypt")
+	hasDataSec := strings.Contains(s, "data_security") || strings.Contains(s, "cia")
+	hasIntegrity := strings.Contains(s, "integrity")
+	if hasEncrypt && (hasDataSec || hasIntegrity) {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.DS-01", ControlName: "Confidentiality, integrity, and availability protected",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical,
+			Message: "Data security (encryption + integrity) detected", Timestamp: time.Now(),
+		}, nil
+	}
+	if hasEncrypt || hasDataSec || hasIntegrity {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.DS-01", ControlName: "Confidentiality, integrity, and availability protected",
+			Status: compliance.StatusPartial, Severity: compliance.SeverityCritical,
+			Message: "Partial data security measures detected", Timestamp: time.Now(),
+			Remediation: "Implement encryption, data security controls, and integrity checking",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "PR.DS-01", ControlName: "Confidentiality, integrity, and availability protected",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical,
+		Message: "No data security measures detected", Timestamp: time.Now(),
+		Remediation: "Implement encryption, data security controls, and integrity checking",
+	}, nil
+}
+
+// checkDataAtRest verifies data is protected at rest (PR.DS-08).
+func (m *NISTCSFModule) checkDataAtRest(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAtRest := strings.Contains(s, "encryption_at_rest") || strings.Contains(s, "data_encrypted") || strings.Contains(s, "aes")
+	if hasAtRest {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "PR.DS-08", ControlName: "Data protected at rest",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical,
+			Message: "Encryption at rest detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "PR.DS-08", ControlName: "Data protected at rest",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical,
+		Message: "No encryption at rest detected", Timestamp: time.Now(),
+		Remediation: "Enable encryption at rest (AES) for all stored data",
+	}, nil
+}
+
+// checkDataInTransit verifies data is protected in transit (PR.DS-09).
+func (m *NISTCSFModule) checkDataInTransit(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
 	hasTLS := false
 	for _, p := range m.tlsPatterns {
-		if p.MatchString(inputStr) {
+		if p.MatchString(s) {
 			hasTLS = true
 			break
 		}
 	}
-	hasEncryptAtRest := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "data_encrypted")
-	hasPIIFilter := strings.Contains(inputStr, "pii_scanner") || strings.Contains(inputStr, "pii_filter")
-
-	missing := []string{}
-	if !hasAuth {
-		missing = append(missing, "auth")
-	}
-	if !hasRBAC {
-		missing = append(missing, "RBAC")
-	}
-	if !hasMFA {
-		missing = append(missing, "MFA")
-	}
-	if !hasTLS {
-		missing = append(missing, "TLS 1.2+")
-	}
-	if !hasEncryptAtRest {
-		missing = append(missing, "encryption at rest")
-	}
-	if !hasPIIFilter {
-		missing = append(missing, "PII filter")
-	}
-
-	if len(missing) == 0 {
+	hasHTTPS := strings.Contains(s, "https") || strings.Contains(s, "encryption_in_transit")
+	if hasTLS || hasHTTPS {
 		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-PROTECT", ControlName: "Protect (PR)",
+			Framework: m.Framework(), ControlID: "PR.DS-09", ControlName: "Data protected in transit",
 			Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical,
-			Message:   "Protection verified: auth + RBAC + MFA + TLS + encryption + PII filter",
-			Timestamp: time.Now(),
-		}, nil
-	}
-	if len(missing) <= 2 {
-		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-PROTECT", ControlName: "Protect (PR)",
-			Status: compliance.StatusPartial, Severity: compliance.SeverityCritical,
-			Message:     "Partial protection: " + strings.Join(missing, ", "),
-			Timestamp:   time.Now(),
-			Remediation: "Configure: " + strings.Join(missing, ", "),
+			Message: "Encryption in transit (TLS 1.2+) detected", Timestamp: time.Now(),
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
-		Framework: m.Framework(), ControlID: "NIST-CSF-PROTECT", ControlName: "Protect (PR)",
+		Framework: m.Framework(), ControlID: "PR.DS-09", ControlName: "Data protected in transit",
 		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical,
-		Message:     "Critical protection gaps: " + strings.Join(missing, ", "),
-		Timestamp:   time.Now(),
-		Remediation: "Configure: " + strings.Join(missing, ", "),
+		Message: "No encryption in transit detected", Timestamp: time.Now(),
+		Remediation: "Enable TLS 1.2+ for all data in transit; enforce HTTPS",
 	}, nil
 }
 
-// checkDetect verifies detection capabilities are in place.
-func (m *NISTCSFModule) checkDetect(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasScanner := strings.Contains(inputStr, "scanner") || strings.Contains(inputStr, "threat_detection")
-	hasAnomaly := strings.Contains(inputStr, "anomaly") || strings.Contains(inputStr, "trust_score")
-	hasIOCStore := strings.Contains(inputStr, "ioc_store") || strings.Contains(inputStr, "ioc_federation")
-	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "pagerduty")
-
-	present := 0
-	if hasScanner {
-		present++
+// checkNetworkMonitor verifies networks are monitored (DE.CM-01).
+func (m *NISTCSFModule) checkNetworkMonitor(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasMonitor := strings.Contains(s, "network_monitor") || strings.Contains(s, "traffic_monitor") || strings.Contains(s, "ids") || strings.Contains(s, "ips")
+	if hasMonitor {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "DE.CM-01", ControlName: "Networks and network services monitored",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Network monitoring detected", Timestamp: time.Now(),
+		}, nil
 	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "DE.CM-01", ControlName: "Networks and network services monitored",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No network monitoring detected", Timestamp: time.Now(),
+		Remediation: "Implement network monitoring (IDS/IPS, traffic monitoring)",
+	}, nil
+}
+
+// checkAnomalyDetect verifies anomaly detection is in place (DE.CM-04).
+func (m *NISTCSFModule) checkAnomalyDetect(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAnomaly := strings.Contains(s, "anomaly") || strings.Contains(s, "anomaly_detection") || strings.Contains(s, "trust_score")
 	if hasAnomaly {
-		present++
-	}
-	if hasIOCStore {
-		present++
-	}
-	if hasAlerting {
-		present++
-	}
-
-	if present >= 3 {
 		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-DETECT", ControlName: "Detect (DE)",
+			Framework: m.Framework(), ControlID: "DE.CM-04", ControlName: "Events monitored to detect anomalies",
 			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
-			Message:   "Detection verified (scanner + anomaly + IOC + alerting)",
-			Timestamp: time.Now(),
-		}, nil
-	}
-	if present >= 1 {
-		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-DETECT", ControlName: "Detect (DE)",
-			Status: compliance.StatusPartial, Severity: compliance.SeverityHigh,
-			Message:     "Partial detection: " + intToStr(present) + " of 4 controls configured",
-			Timestamp:   time.Now(),
-			Remediation: "Enable AegisGate scanner + anomaly + IOC store + alerting",
+			Message: "Anomaly detection detected", Timestamp: time.Now(),
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
-		Framework: m.Framework(), ControlID: "NIST-CSF-DETECT", ControlName: "Detect (DE)",
+		Framework: m.Framework(), ControlID: "DE.CM-04", ControlName: "Events monitored to detect anomalies",
 		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
-		Message:     "No detection capabilities",
-		Timestamp:   time.Now(),
-		Remediation: "Enable AegisGate scanner, anomaly detection, IOC store, and alerting (P0 for any production deployment)",
+		Message: "No anomaly detection detected", Timestamp: time.Now(),
+		Remediation: "Enable anomaly detection and trust scoring",
 	}, nil
 }
 
-// checkRespond verifies incident response capabilities.
-func (m *NISTCSFModule) checkRespond(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasIRPlan := strings.Contains(inputStr, "incident_response_plan") || strings.Contains(inputStr, "ir_plan")
-	hasAttestations := strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "trust.attestation")
-	hasKillSwitch := strings.Contains(inputStr, "kill_switch") || strings.Contains(inputStr, "abort")
-	hasAuditTrail := false
-	for _, p := range m.auditLogPatterns {
-		if p.MatchString(inputStr) {
-			hasAuditTrail = true
-			break
-		}
-	}
-
-	missing := []string{}
-	if !hasIRPlan {
-		missing = append(missing, "IR plan")
-	}
-	if !hasAttestations {
-		missing = append(missing, "signed attestations")
-	}
-	if !hasKillSwitch {
-		missing = append(missing, "kill switch / abort")
-	}
-	if !hasAuditTrail {
-		missing = append(missing, "audit trail")
-	}
-
-	if len(missing) == 0 {
+// checkVulnMonitor verifies vulnerability monitoring is in place (DE.CM-05).
+func (m *NISTCSFModule) checkVulnMonitor(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasVulnMon := strings.Contains(s, "vuln_monitor") || strings.Contains(s, "vulnerability_scan") || strings.Contains(s, "patch")
+	if hasVulnMon {
 		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-RESPOND", ControlName: "Respond (RS)",
+			Framework: m.Framework(), ControlID: "DE.CM-05", ControlName: "Asset vulnerabilities monitored",
 			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
-			Message:   "Response ready (IR plan + attestations + kill switch + audit trail)",
-			Timestamp: time.Now(),
+			Message: "Vulnerability monitoring detected", Timestamp: time.Now(),
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
-		Framework: m.Framework(), ControlID: "NIST-CSF-RESPOND", ControlName: "Respond (RS)",
+		Framework: m.Framework(), ControlID: "DE.CM-05", ControlName: "Asset vulnerabilities monitored",
 		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
-		Message:     "Response gaps: " + strings.Join(missing, ", "),
-		Timestamp:   time.Now(),
-		Remediation: "Create IR plan; enable AegisGate signed attestations (pkg/attestation/) + kill switch + audit trail",
+		Message: "No vulnerability monitoring detected", Timestamp: time.Now(),
+		Remediation: "Implement continuous vulnerability monitoring and patch management",
 	}, nil
 }
 
-// checkRecover verifies recovery capabilities.
-func (m *NISTCSFModule) checkRecover(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasBackup := strings.Contains(inputStr, "backup") || strings.Contains(inputStr, "disaster_recovery")
-	hasAuditReplay := strings.Contains(inputStr, "audit_replay") || strings.Contains(inputStr, "log_replay") || strings.Contains(inputStr, "log_search")
-	hasPostMortem := strings.Contains(inputStr, "post_mortem") || strings.Contains(inputStr, "incident_review")
-	hasIntegrity := strings.Contains(inputStr, "log_integrity") || strings.Contains(inputStr, "hash_chain")
-
-	present := 0
-	if hasBackup {
-		present++
-	}
-	if hasAuditReplay {
-		present++
-	}
-	if hasPostMortem {
-		present++
-	}
-	if hasIntegrity {
-		present++
-	}
-
-	if present >= 2 {
+// checkEventDetect verifies event detection is in place (DE.AE-01).
+func (m *NISTCSFModule) checkEventDetect(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasEvent := strings.Contains(s, "scanner") || strings.Contains(s, "threat_detection") || strings.Contains(s, "event_detection")
+	if hasEvent {
 		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-RECOVER", ControlName: "Recover (RC)",
+			Framework: m.Framework(), ControlID: "DE.AE-01", ControlName: "Events detected",
 			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
-			Message:   "Recovery verified (backup + audit replay + post-mortem + log integrity)",
-			Timestamp: time.Now(),
-		}, nil
-	}
-	if present == 1 {
-		return &compliance.ControlCheckResult{
-			Framework: m.Framework(), ControlID: "NIST-CSF-RECOVER", ControlName: "Recover (RC)",
-			Status: compliance.StatusPartial, Severity: compliance.SeverityHigh,
-			Message:     "Partial recovery: 1 of 4 controls configured",
-			Timestamp:   time.Now(),
-			Remediation: "Add backup, audit log replay, post-mortem template, and hash-chain integrity for full recovery",
+			Message: "Event detection detected", Timestamp: time.Now(),
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
-		Framework: m.Framework(), ControlID: "NIST-CSF-RECOVER", ControlName: "Recover (RC)",
+		Framework: m.Framework(), ControlID: "DE.AE-01", ControlName: "Events detected",
 		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
-		Message:     "No recovery capabilities",
-		Timestamp:   time.Now(),
-		Remediation: "Set up backups, enable hash-chain audit log (verifiable on restore), document post-mortem template",
+		Message: "No event detection detected", Timestamp: time.Now(),
+		Remediation: "Implement event detection (scanner, threat detection)",
 	}, nil
 }
 
-// intToStr helper to avoid importing strconv in every check.
-func intToStr(n int) string {
-	if n == 0 {
-		return "0"
+// checkIntrusionDetect verifies intrusion detection is in place (DE.AE-05).
+func (m *NISTCSFModule) checkIntrusionDetect(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasIntrusion := strings.Contains(s, "intrusion") || strings.Contains(s, "ids") || strings.Contains(s, "ips") || strings.Contains(s, "siem")
+	if hasIntrusion {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "DE.AE-05", ControlName: "Intrusions detected",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Intrusion detection detected", Timestamp: time.Now(),
+		}, nil
 	}
-	const digits = "0123456789"
-	if n < 0 {
-		return "-intToStr(-n)"
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "DE.AE-05", ControlName: "Intrusions detected",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No intrusion detection detected", Timestamp: time.Now(),
+		Remediation: "Implement intrusion detection (IDS/IPS/SIEM)",
+	}, nil
+}
+
+// checkIncidentMgmt verifies incident management is in place (RS.MA-01).
+func (m *NISTCSFModule) checkIncidentMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasIR := strings.Contains(s, "incident_response") || strings.Contains(s, "ir_plan") || strings.Contains(s, "incident_mgmt")
+	if hasIR {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "RS.MA-01", ControlName: "Incidents declared",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Incident management detected", Timestamp: time.Now(),
+		}, nil
 	}
-	var result []byte
-	for n > 0 {
-		result = append([]byte{digits[n%10]}, result...)
-		n /= 10
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "RS.MA-01", ControlName: "Incidents declared",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No incident management detected", Timestamp: time.Now(),
+		Remediation: "Establish an incident response plan and incident management process",
+	}, nil
+}
+
+// checkCommNotify verifies stakeholder notification is in place (RS.CO-01).
+func (m *NISTCSFModule) checkCommNotify(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasNotify := strings.Contains(s, "alerting") || strings.Contains(s, "notification") || strings.Contains(s, "pagerduty") || strings.Contains(s, "slack")
+	if hasNotify {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "RS.CO-01", ControlName: "Stakeholders notified",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Stakeholder notification detected", Timestamp: time.Now(),
+		}, nil
 	}
-	return string(result)
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "RS.CO-01", ControlName: "Stakeholders notified",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No stakeholder notification detected", Timestamp: time.Now(),
+		Remediation: "Configure alerting and stakeholder notification (PagerDuty, Slack)",
+	}, nil
+}
+
+// checkMitigation verifies incident containment is in place (RS.MI-01).
+func (m *NISTCSFModule) checkMitigation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasContainment := strings.Contains(s, "kill_switch") || strings.Contains(s, "abort") || strings.Contains(s, "containment")
+	if hasContainment {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "RS.MI-01", ControlName: "Incidents contained",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh,
+			Message: "Incident containment detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "RS.MI-01", ControlName: "Incidents contained",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh,
+		Message: "No incident containment detected", Timestamp: time.Now(),
+		Remediation: "Implement kill switch / abort / containment mechanisms",
+	}, nil
+}
+
+// checkRecoveryPlan verifies recovery plan is established (RC.RP-01).
+func (m *NISTCSFModule) checkRecoveryPlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasRecovery := strings.Contains(s, "backup") || strings.Contains(s, "disaster_recovery") || strings.Contains(s, "recovery_plan")
+	if hasRecovery {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "RC.RP-01", ControlName: "Recovery plan established",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Recovery plan detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "RC.RP-01", ControlName: "Recovery plan established",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No recovery plan detected", Timestamp: time.Now(),
+		Remediation: "Establish a recovery plan with backups and disaster recovery procedures",
+	}, nil
+}
+
+// checkRecoveryImpl verifies recovery plan is implemented (RC.RP-02).
+func (m *NISTCSFModule) checkRecoveryImpl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasImpl := strings.Contains(s, "audit_replay") || strings.Contains(s, "log_replay") || strings.Contains(s, "hash_chain") || strings.Contains(s, "log_integrity")
+	if hasImpl {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "RC.RP-02", ControlName: "Recovery plan implemented",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Recovery implementation (audit replay, log integrity) detected", Timestamp: time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "RC.RP-02", ControlName: "Recovery plan implemented",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "No recovery implementation detected", Timestamp: time.Now(),
+		Remediation: "Implement audit log replay and hash-chain integrity for recovery",
+	}, nil
 }
 
 // Dependencies returns required modules.

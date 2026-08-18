@@ -5,6 +5,7 @@ package nist_csf
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -16,150 +17,218 @@ func TestNewNISTCSFModule(t *testing.T) {
 	if m.Framework() != "nist_csf" {
 		t.Errorf("Framework() = %q, want nist_csf", m.Framework())
 	}
-	if m.Version() != "1.0" {
-		t.Errorf("Version() = %q, want 1.0", m.Version())
+	if m.Version() != "2.0" {
+		t.Errorf("Version() = %q, want 2.0", m.Version())
 	}
 	controls := m.Controls()
-	if len(controls) != 6 {
-		t.Errorf("len(Controls()) = %d, want 6", len(controls))
+	if len(controls) != 131 {
+		t.Errorf("len(Controls()) = %d, want 131", len(controls))
 	}
-	expected := map[string]bool{
-		"NIST-CSF-GOVERN":   false,
-		"NIST-CSF-IDENTIFY": false,
-		"NIST-CSF-PROTECT":  false,
-		"NIST-CSF-DETECT":   false,
-		"NIST-CSF-RESPOND":  false,
-		"NIST-CSF-RECOVER":  false,
+	// Verify a sample of expected IDs
+	expectedIDs := []string{
+		"GV.OC-01", "GV.RM-01", "GV.RR-01", "GV.PO-01", "GV.OV-01", "GV.SC-01",
+		"ID.AM-01", "ID.RA-01", "ID.IM-01",
+		"PR.AA-01", "PR.AT-01", "PR.DS-01", "PR.PS-01", "PR.IR-01",
+		"DE.CM-01", "DE.AE-01",
+		"RS.MA-01", "RS.AN-01", "RS.CO-01", "RS.MI-01",
+		"RC.RP-01", "RC.CO-01",
 	}
+	controlMap := make(map[string]bool)
 	for _, c := range controls {
-		if _, ok := expected[c.ID]; ok {
-			expected[c.ID] = true
-		}
-		if !c.Automated {
-			t.Errorf("Control %s should be automated", c.ID)
-		}
+		controlMap[c.ID] = true
 	}
-	for id, found := range expected {
-		if !found {
+	for _, id := range expectedIDs {
+		if !controlMap[id] {
 			t.Errorf("Control %s not registered", id)
 		}
 	}
 }
 
-func TestNISTCSFCheck_Compliant(t *testing.T) {
+func TestNISTCSF_AutomatedCount(t *testing.T) {
+	m := NewNISTCSFModule()
+	controls := m.Controls()
+	automated := 0
+	for _, c := range controls {
+		if c.Automated {
+			automated++
+		}
+	}
+	if automated != 23 {
+		t.Errorf("automated controls = %d, want 23", automated)
+	}
+}
+
+func TestNISTCSF_ManualControlsHaveNoCheckFunc(t *testing.T) {
+	m := NewNISTCSFModule()
+	controls := m.Controls()
+	for _, c := range controls {
+		if !c.Automated && c.CheckFunc != nil {
+			t.Errorf("Manual control %s should have nil CheckFunc", c.ID)
+		}
+		if c.Automated && c.CheckFunc == nil {
+			t.Errorf("Automated control %s should have non-nil CheckFunc", c.ID)
+		}
+	}
+}
+
+func TestNISTCSF_AllControlsHaveReferences(t *testing.T) {
+	m := NewNISTCSFModule()
+	controls := m.Controls()
+	for _, c := range controls {
+		if len(c.References) == 0 {
+			t.Errorf("Control %s has no references", c.ID)
+		}
+	}
+}
+
+func TestNISTCSF_AllControlsHaveCategory(t *testing.T) {
+	m := NewNISTCSFModule()
+	controls := m.Controls()
+	for _, c := range controls {
+		if c.Category == "" {
+			t.Errorf("Control %s has empty category", c.ID)
+		}
+	}
+}
+
+func TestNISTCSF_FunctionCoverage(t *testing.T) {
+	m := NewNISTCSFModule()
+	controls := m.Controls()
+	functions := map[string]bool{"GV": false, "ID": false, "PR": false, "DE": false, "RS": false, "RC": false}
+	for _, c := range controls {
+		for fn := range functions {
+			if strings.HasPrefix(c.ID, fn+".") {
+				functions[fn] = true
+			}
+		}
+	}
+	for fn, found := range functions {
+		if !found {
+			t.Errorf("No controls found for function %s", fn)
+		}
+	}
+}
+
+func TestNISTCSF_CheckAllAutomated_Compliant(t *testing.T) {
 	m := NewNISTCSFModule()
 	ctx := context.Background()
 
-	// A "fully compliant" config that satisfies all 6 CSF Functions
 	compliantConfig := []byte(`{
-		"ai_policy": true,
-		"security_policy": true,
 		"risk_management": true,
 		"risk_assessment": true,
 		"compliance_scan": true,
+		"security_policy": true,
+		"cybersecurity_policy": true,
+		"ai_policy": true,
+		"policy": true,
 		"asset_inventory": true,
 		"ioc_store": true,
 		"model_id": "gpt-4",
+		"inventory": true,
+		"vulnerability": true,
+		"vuln_scan": true,
+		"cve": true,
 		"threat_model": "stride",
-		"authentication": true,
-		"rbac": true,
+		"stride": true,
+		"threat_intel": true,
+		"risk_register": true,
+		"identity": true,
+		"identity_management": true,
+		"iam": true,
 		"mfa": true,
-		"session_timeout": 1800,
-		"tls1.3": true,
+		"multi_factor": true,
+		"authenticator": true,
+		"totp": true,
+		"authentication": true,
+		"auth_enabled": true,
+		"sso": true,
+		"rbac": true,
+		"roles": true,
+		"permissions": true,
+		"access_control": true,
+		"encryption": true,
+		"encrypt": true,
+		"data_security": true,
+		"cia": true,
+		"integrity": true,
 		"encryption_at_rest": true,
 		"data_encrypted": true,
-		"pii_scanner": true,
-		"scanner": true,
+		"aes": true,
+		"tls1.2": true,
+		"tls1.3": true,
+		"https": true,
+		"encryption_in_transit": true,
+		"network_monitor": true,
+		"traffic_monitor": true,
+		"ids": true,
+		"ips": true,
 		"anomaly": true,
-		"ioc_federation": true,
+		"anomaly_detection": true,
+		"trust_score": true,
+		"vuln_monitor": true,
+		"vulnerability_scan": true,
+		"patch": true,
+		"scanner": true,
+		"threat_detection": true,
+		"event_detection": true,
+		"intrusion": true,
+		"siem": true,
+		"incident_response": true,
+		"ir_plan": true,
+		"incident_mgmt": true,
 		"alerting": true,
-		"attestation": true,
-		"trust_attestation": true,
+		"notification": true,
+		"pagerduty": true,
+		"slack": true,
 		"kill_switch": true,
-		"audit_log": true,
-		"incident_response_plan": true,
+		"abort": true,
+		"containment": true,
 		"backup": true,
+		"disaster_recovery": true,
+		"recovery_plan": true,
 		"audit_replay": true,
-		"log_integrity": true,
-		"hash_chain": true
+		"log_replay": true,
+		"hash_chain": true,
+		"log_integrity": true
 	}`)
 
-	checks := map[string]func(context.Context, []byte) (string, string){
-		"NIST-CSF-GOVERN": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkGovern(c, b)
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-IDENTIFY": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkIdentify(c, b)
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-PROTECT": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkProtect(c, b)
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-DETECT": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkDetect(c, b)
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-RESPOND": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkRespond(c, b)
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-RECOVER": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkRecover(c, b)
-			return string(r.Status), r.Message
-		},
-	}
-
-	for controlID, checkFn := range checks {
-		t.Run(controlID, func(t *testing.T) {
-			status, msg := checkFn(ctx, compliantConfig)
-			if status != "compliant" {
+	controls := m.Controls()
+	for _, c := range controls {
+		if !c.Automated {
+			continue
+		}
+		t.Run(c.ID, func(t *testing.T) {
+			result, err := c.CheckFunc(ctx, compliantConfig)
+			if err != nil {
+				t.Fatalf("Control %s CheckFunc error: %v", c.ID, err)
+			}
+			if result.Status != "compliant" {
 				t.Errorf("Control %s on compliant config: status=%s, msg=%s",
-					controlID, status, msg)
+					c.ID, result.Status, result.Message)
 			}
 		})
 	}
 }
 
-func TestNISTCSFCheck_NonCompliant(t *testing.T) {
+func TestNISTCSF_CheckAllAutomated_NonCompliant(t *testing.T) {
 	m := NewNISTCSFModule()
 	ctx := context.Background()
 
-	checks := map[string]func(context.Context, []byte) (string, string){
-		"NIST-CSF-GOVERN": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkGovern(c, []byte(`{}`))
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-IDENTIFY": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkIdentify(c, []byte(`{}`))
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-PROTECT": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkProtect(c, []byte(`{}`))
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-DETECT": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkDetect(c, []byte(`{}`))
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-RESPOND": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkRespond(c, []byte(`{}`))
-			return string(r.Status), r.Message
-		},
-		"NIST-CSF-RECOVER": func(c context.Context, b []byte) (string, string) {
-			r, _ := m.checkRecover(c, []byte(`{}`))
-			return string(r.Status), r.Message
-		},
-	}
+	emptyConfig := []byte(`{}`)
 
-	for controlID, checkFn := range checks {
-		t.Run(controlID, func(t *testing.T) {
-			status, _ := checkFn(ctx, nil)
-			// All 6 should be non_compliant on empty config
-			if status == "compliant" {
-				t.Errorf("Control %s on empty config: should NOT be compliant",
-					controlID)
+	controls := m.Controls()
+	for _, c := range controls {
+		if !c.Automated {
+			continue
+		}
+		t.Run(c.ID, func(t *testing.T) {
+			result, err := c.CheckFunc(ctx, emptyConfig)
+			if err != nil {
+				t.Fatalf("Control %s CheckFunc error: %v", c.ID, err)
+			}
+			if result.Status == "compliant" {
+				t.Errorf("Control %s on empty config: should NOT be compliant, got %s",
+					c.ID, result.Status)
 			}
 		})
 	}

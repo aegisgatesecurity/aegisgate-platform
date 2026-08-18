@@ -15,13 +15,20 @@
 //   RECOVER   -> Audit log replay, hash-chain verification, IOC restore
 //
 // Architecture:
-//   - nist_csf.go:        module wiring, 6 RegisterControl calls (one
-//                          per Function), 6 CheckFunc implementations
-//   - nist_csf_test.go:   unit tests
+//   - nist_csf.go:              module wiring, 131 RegisterControl calls,
+//                                23 CheckFunc implementations
+//   - nist_csf_test.go:         unit tests
+//   - tier_coverage_test.go:    tier/framework tests
 //
 // Tier & pricing:
-//   - Required tier:  Community (free, bundled with the platform)
+//   - Required tier:  Professional ($79/mo)
 //   - Module key:     "nist_csf"
+//   - Version:        "2.0"
+//
+// Coverage:
+//   - 131 subcategories across 6 functions and 22 categories
+//   - 23 automated controls (with CheckFunc)
+//   - 108 manual controls (evidence-mapped)
 //
 // Reference: https://www.nist.gov/cyberframework
 //            NIST CSF 2.0 (February 26, 2024)
