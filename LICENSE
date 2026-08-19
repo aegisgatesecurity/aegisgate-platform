@@ -1,3 +1,57 @@
+========================================================================
+ AegisGate Security Platform — Open-Core License
+========================================================================
+
+AegisGate is an open-core security platform. The codebase is split into
+two licensing tiers:
+
+  1. Open-Source Core (Apache License 2.0)
+     ----------------------------------------
+     The majority of the platform — including the AI proxy, MCP gateway,
+     compliance frameworks, secret/PII scanning, prompt injection
+     detection, ML threat detection, audit logging, admin dashboard,
+     and all Community/Developer/Professional-tier features — is
+     licensed under the Apache License 2.0 below.
+
+     All files in this repository NOT listed in the "Enterprise
+     Commercial" section below are Apache 2.0 licensed.
+
+  2. Enterprise Commercial (Separate License)
+     ------------------------------------------
+     The following packages are proprietary and require a commercial
+     AegisGate Enterprise license. They are excluded from this
+     open-source repository and maintained in a separate private
+     repository (aegisgate-enterprise):
+
+       pkg/trust/               Trust Framework (trust scoring,
+                                attestation, identity, contracts,
+                                session management, dashboard)
+       pkg/siem/                SIEM integration manager
+       pkg/audit/siem_dispatcher.go          SIEM event dispatcher
+       pkg/audit/siem_dispatcher_test.go
+       pkg/compliance/premium/  Premium compliance implementations
+                                (HIPAA, PCI DSS, SOC 2)
+       pkg/ml/models/           Trained ML model weights (.onnx)
+       pkg/ml/training/         ML model training pipeline
+       cmd/aegisgate-platform/trust_portal_http.go
+       cmd/aegisgate-platform/trust_portal_http_test.go
+
+     The community-edition stubs for these features (files with
+     `_community.go` suffix or `//go:build !enterprise` build tag)
+     are Apache 2.0 licensed and provide API-compatible no-op
+     implementations so the open-source build compiles and runs
+     without the enterprise packages.
+
+  For enterprise licensing inquiries:
+    https://aegisgate.dev/pricing
+    support@aegisgate.dev
+
+========================================================================
+ Apache License 2.0 — Applies to all open-source files in this
+ repository (everything not listed in the Enterprise Commercial
+ section above).
+========================================================================
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
