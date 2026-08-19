@@ -96,6 +96,10 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	if gdprCount := frameworks["gdpr"]; gdprCount != 99 {
 		t.Errorf("gdpr control count = %d, want 99", gdprCount)
 	}
+	// HIPAA: 54 Security Rule controls (24 automated + 30 manual)
+	if hipaaCount := frameworks["hipaa"]; hipaaCount != 54 {
+		t.Errorf("hipaa control count = %d, want 54", hipaaCount)
+	}
 	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 18 {
 		t.Errorf("nerc_cip control count = %d, want 18", nercCipCount)
 	}
