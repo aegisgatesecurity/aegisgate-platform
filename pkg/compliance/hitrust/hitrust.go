@@ -19,6 +19,7 @@
 //   - Required tier: Enterprise+ (gated via pkg/compliance/gating.go)
 //   - Monthly price: $799/mo (founder-locked 2026-07-22)
 //   - Baseline:    HITRUST CSF v11.2
+//   - Controls:    200 (50 automated + 150 manual)
 //
 // IMPORTANT — Self-attested posture (same as EU AI Act + FIPS + FedRAMP):
 //   AegisGate is NOT a HITRUST-authorized External Assessor (EA). The
@@ -32,19 +33,31 @@
 //
 // Architecture (family-based file structure):
 //   - hitrust.go:   module wiring, registerControls, Dependencies, pattern caches
-//   - am.go:        Access Management family (AM-01 through AM-10)
-//   - id_ip_pe.go:  Identity, Info Protection, Privacy & Endpoint families
-//   - hitrust_test.go: unit tests
-//   - doc.go:       package documentation
+//   - am.go:        Access Management family (AM-01 through AM-25)
+//   - id_ip_pe.go:  Identity (ID-01..10), Info Protection (IP-01..25),
+//                   Privacy & Endpoint (PE-01..25) families
+//   - op_or_pr.go:  Operations (OP-01..20), Organizational Risk (OR-01..10),
+//                   Program (PR-01..15) families
+//   - bc_ra_ca.go:  Business Continuity (BC-01..10), Regulatory Assessment
+//                   (RA-01..10), Change Management (CA-01..10) families
+//   - ir_sd.go:     Incident Response (IR-01..15), Supplier/Development
+//                   (SD-01..15), AI Controls (AI-01..10) families
 //
-// Design: HITRUST CSF controls are mapped to existing AegisGate modules
-// (HIPAA, SOC 2, ISO 27001, FIPS 140, Trust Framework, IOC store) to
-// avoid duplicating the implementation. Each HITRUST control either:
-//   1. Is AUTOMATED and reuses an existing AegisGate scanner output
-//      (e.g., HITRUST AM-02 User Authentication maps to HIPAA Access Control)
-//   2. Is EVIDENCE-MAPPED and AegisGate generates the evidence
-//      artifact (audit log, IOC, attestation) the customer attaches
-//      to their HITRUST CSF Assessment
+// Control families (13 families, 200 controls):
+//   AM = Access Management          (25 controls: 9 automated + 16 manual)
+//   ID = Identity Management        (10 controls:  4 automated +  6 manual)
+//   IP = Information Protection     (25 controls:  9 automated + 16 manual)
+//   PE = Privacy and Endpoint       (25 controls:  5 automated + 20 manual)
+//   OP = Operations                 (20 controls:  5 automated + 15 manual)
+//   OR = Organizational Risk        (10 controls:  3 automated +  7 manual)
+//   PR = Program                    (15 controls:  2 automated + 13 manual)
+//   BC = Business Continuity        (10 controls:  1 automated +  9 manual)
+//   RA = Regulatory Assessment      (10 controls:  2 automated +  8 manual)
+//   CA = Change Management          (10 controls:  1 automated +  9 manual)
+//   IR = Incident Response          (15 controls:  3 automated + 12 manual)
+//   SD = Supplier/Development       (15 controls:  1 automated + 14 manual)
+//   AI = AI Controls                (10 controls:  2 automated +  8 manual)
+//   Total: 200 controls (50 automated + 150 manual)
 //
 // Reference: HITRUST CSF v11.2
 //            https://hitrustalliance.net/csf-license-agreement/
@@ -144,18 +157,36 @@ func (m *HITRUSTModule) initPatterns() {
 // registerControls wires all HITRUST CSF v11.2 controls into the module.
 // Called once from NewHITRUSTModule.
 //
-// Controls are organized by HITRUST CSF v11.2 family:
+// Controls are organized by HITRUST CSF v11.2 family across multiple files:
 //
-//	AM = Access Management
-//	ID = Identity Management
-//	IP = Information Protection
-//	PE = Privacy & Endpoint
+//	AM = Access Management            (am.go)
+//	ID = Identity Management          (id_ip_pe.go)
+//	IP = Information Protection       (id_ip_pe.go)
+//	PE = Privacy and Endpoint         (id_ip_pe.go)
+//	OP = Operations                   (op_or_pr.go)
+//	OR = Organizational Risk          (op_or_pr.go)
+//	PR = Program                      (op_or_pr.go)
+//	BC = Business Continuity          (bc_ra_ca.go)
+//	RA = Regulatory Assessment        (bc_ra_ca.go)
+//	CA = Change Management            (bc_ra_ca.go)
+//	IR = Incident Response            (ir_sd.go)
+//	SD = Supplier/Development         (ir_sd.go)
+//	AI = AI Controls                  (ir_sd.go)
 func (m *HITRUSTModule) registerControls() {
-	// AM: Access Management (10 controls)
+	// AM: Access Management (25 controls)
 	m.registerAMControls()
 
-	// ID/IP/PE: Identity, Info Protection, Privacy & Endpoint (33 controls)
+	// ID/IP/PE: Identity, Info Protection, Privacy & Endpoint (60 controls)
 	m.registerIDIPPEControls()
+
+	// OP/OR/PR: Operations, Organizational Risk, Program (45 controls)
+	m.registerOPOrPRControls()
+
+	// BC/RA/CA: Business Continuity, Regulatory Assessment, Change Mgmt (30 controls)
+	m.registerBCRACAControls()
+
+	// IR/SD/AI: Incident Response, Supplier/Development, AI Controls (40 controls)
+	m.registerIRSDControls()
 }
 
 // Dependencies returns required modules. HITRUST CSF depends on the
@@ -198,6 +229,26 @@ func (m *HITRUSTModule) hasEncryption(input string) bool {
 // hasAudit checks if the input contains audit-related patterns.
 func (m *HITRUSTModule) hasAudit(input string) bool {
 	for _, p := range m.auditPatterns {
+		if p.MatchString(input) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasVulnScan checks if the input contains vulnerability scanning patterns.
+func (m *HITRUSTModule) hasVulnScan(input string) bool {
+	for _, p := range m.vulnPatterns {
+		if p.MatchString(input) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasFirewall checks if the input contains firewall/network patterns.
+func (m *HITRUSTModule) hasFirewall(input string) bool {
+	for _, p := range m.firewallPatterns {
 		if p.MatchString(input) {
 			return true
 		}

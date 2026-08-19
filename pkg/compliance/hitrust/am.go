@@ -4,19 +4,35 @@
 // =========================================================================
 //
 // HITRUST CSF v11.2 — Access Management family (AM)
-// 10 controls covering authentication, authorization, and access review.
+// 25 controls covering authentication, authorization, access review,
+// wireless/mobile access, remote access, and network access control.
 //
-// In-scope AM controls (10 of ~30 AM control specifications):
-//   AM-01  Access Control Policy            (evidence-mapped)
+// In-scope AM controls (25 total: 9 automated + 16 manual):
+//   AM-01  Access Control Policy            (manual)
 //   AM-02  User Authentication               (automated)
 //   AM-03  Logical Access                     (automated)
 //   AM-04  Multi-Factor Authentication        (automated)
-//   AM-05  Registration                       (evidence-mapped)
+//   AM-05  Registration                       (manual)
 //   AM-06  Password Management                (automated)
 //   AM-07  Access Review                      (automated)
-//   AM-08  Termination                        (evidence-mapped)
+//   AM-08  Termination                        (manual)
 //   AM-09  Session Management                 (automated)
 //   AM-10  Privileged Access                  (automated)
+//   AM-11  Wireless Access Control            (manual)
+//   AM-12  Mobile Device Access               (manual)
+//   AM-13  Remote Access                      (automated)
+//   AM-14  Access Control for Mobile Code     (manual)
+//   AM-15  Use of External Systems            (manual)
+//   AM-16  Information Sharing                (manual)
+//   AM-17  Public Access                      (manual)
+//   AM-18  Automated Marking                  (manual)
+//   AM-19  Account Monitoring                 (automated)
+//   AM-20  Shared/Group Account Prohibition   (manual)
+//   AM-21  Network Access Control             (automated)
+//   AM-22  Information Flow Enforcement       (manual)
+//   AM-23  Security Filters                   (manual)
+//   AM-24  Privileged Account Inventory       (manual)
+//   AM-25  Concurrent Session Control         (manual)
 //
 // =========================================================================
 
@@ -32,7 +48,7 @@ import (
 
 // registerAMControls wires the AM family controls into the module.
 func (m *HITRUSTModule) registerAMControls() {
-	// AM-01: Access Control Policy (evidence-mapped)
+	// AM-01: Access Control Policy (manual)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "HITRUST-AM-01",
 		Name:        "Access Control Policy",
@@ -79,7 +95,7 @@ func (m *HITRUSTModule) registerAMControls() {
 		References:  []string{"HITRUST CSF v11.2 01.d", "NIST SP 800-53 Rev. 5 IA-2(1)"},
 	})
 
-	// AM-05: Registration (evidence-mapped)
+	// AM-05: Registration (manual)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "HITRUST-AM-05",
 		Name:        "Registration",
@@ -114,7 +130,7 @@ func (m *HITRUSTModule) registerAMControls() {
 		References:  []string{"HITRUST CSF v11.2 01.g", "NIST SP 800-53 Rev. 5 AC-2(3)"},
 	})
 
-	// AM-08: Termination (evidence-mapped)
+	// AM-08: Termination (manual)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "HITRUST-AM-08",
 		Name:        "Termination",
@@ -148,7 +164,177 @@ func (m *HITRUSTModule) registerAMControls() {
 		CheckFunc:   m.checkPrivilegedAccess,
 		References:  []string{"HITRUST CSF v11.2 01.j", "NIST SP 800-53 Rev. 5 AC-2(7)"},
 	})
+
+	// AM-11: Wireless Access Control (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-11",
+		Name:        "Wireless Access Control",
+		Description: "HITRUST CSF v11.2 AM-11: Wireless access controls — authentication, encryption, and monitoring for wireless networks",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-18"},
+	})
+
+	// AM-12: Mobile Device Access (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-12",
+		Name:        "Mobile Device Access",
+		Description: "HITRUST CSF v11.2 AM-12: Mobile device access controls — registration, authentication, and encryption for mobile devices",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-19"},
+	})
+
+	// AM-13: Remote Access (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-13",
+		Name:        "Remote Access",
+		Description: "HITRUST CSF v11.2 AM-13: Remote access controls — VPN, MFA, and monitoring for remote connections",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkRemoteAccess,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-17"},
+	})
+
+	// AM-14: Access Control for Mobile Code (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-14",
+		Name:        "Access Control for Mobile Code",
+		Description: "HITRUST CSF v11.2 AM-14: Access controls for mobile code — execution policies and sandboxing of mobile code technologies",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-20"},
+	})
+
+	// AM-15: Use of External Systems (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-15",
+		Name:        "Use of External Systems",
+		Description: "HITRUST CSF v11.2 AM-15: Controls for use of external systems — restrictions and requirements for accessing organizational data from external systems",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-20"},
+	})
+
+	// AM-16: Information Sharing (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-16",
+		Name:        "Information Sharing",
+		Description: "HITRUST CSF v11.2 AM-16: Information sharing controls — policies and procedures for sharing data with external partners",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-21"},
+	})
+
+	// AM-17: Public Access (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-17",
+		Name:        "Public Access",
+		Description: "HITRUST CSF v11.2 AM-17: Public access controls — restrictions and monitoring for publicly accessible systems",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-22"},
+	})
+
+	// AM-18: Automated Marking (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-18",
+		Name:        "Automated Marking",
+		Description: "HITRUST CSF v11.2 AM-18: Automated marking of information — security labels applied to data assets",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-16"},
+	})
+
+	// AM-19: Account Monitoring (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-19",
+		Name:        "Account Monitoring",
+		Description: "HITRUST CSF v11.2 AM-19: Account monitoring — automated monitoring for atypical account usage and unauthorized access attempts",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAccountMonitoring,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-2(12)"},
+	})
+
+	// AM-20: Shared/Group Account Prohibition (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-20",
+		Name:        "Shared/Group Account Prohibition",
+		Description: "HITRUST CSF v11.2 AM-20: Shared and group account prohibition — individual accountability enforced",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-2(2)"},
+	})
+
+	// AM-21: Network Access Control (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-21",
+		Name:        "Network Access Control",
+		Description: "HITRUST CSF v11.2 AM-21: Network access control — NAC enforcement, authentication, and policy compliance for network connections",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkNAC,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-3"},
+	})
+
+	// AM-22: Information Flow Enforcement (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-22",
+		Name:        "Information Flow Enforcement",
+		Description: "HITRUST CSF v11.2 AM-22: Information flow enforcement — policies and controls to regulate data flow between systems",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-4"},
+	})
+
+	// AM-23: Security Filters (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-23",
+		Name:        "Security Filters",
+		Description: "HITRUST CSF v11.2 AM-23: Security filters — content filtering and inspection at network boundaries",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-4(7)"},
+	})
+
+	// AM-24: Privileged Account Inventory (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-24",
+		Name:        "Privileged Account Inventory",
+		Description: "HITRUST CSF v11.2 AM-24: Privileged account inventory — comprehensive tracking and review of privileged accounts",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-2(7)"},
+	})
+
+	// AM-25: Concurrent Session Control (manual)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "HITRUST-AM-25",
+		Name:        "Concurrent Session Control",
+		Description: "HITRUST CSF v11.2 AM-25: Concurrent session control — limits on simultaneous sessions per user",
+		Category:    "Access Management",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-10"},
+	})
 }
+
+// ── AM Family Automated Checks (existing) ─────────────────────────
 
 // checkUserAuthentication verifies unique identification and authentication
 // before access. Maps to HITRUST AM-02.
@@ -449,5 +635,134 @@ func (m *HITRUSTModule) checkPrivilegedAccess(ctx context.Context, input []byte)
 		Message:     "Privileged access gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Enable RBAC, require MFA for privileged accounts, configure audit logging, and implement PAM",
+	}, nil
+}
+
+// ── AM Family Automated Checks (new) ──────────────────────────────
+
+// checkRemoteAccess verifies remote access controls. Maps to HITRUST AM-13.
+func (m *HITRUSTModule) checkRemoteAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVPN := strings.Contains(inputStr, "vpn") || strings.Contains(inputStr, "remote_access")
+	hasMFA := m.hasMFA(inputStr)
+	hasAudit := m.hasAudit(inputStr)
+
+	if hasVPN && hasMFA && hasAudit {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "HITRUST-AM-13",
+			ControlName: "Remote Access",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Remote access controls verified (VPN + MFA + audit monitoring)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasVPN {
+		violations = append(violations, "VPN/remote access not configured")
+	}
+	if !hasMFA {
+		violations = append(violations, "MFA not required for remote access")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit monitoring not configured for remote sessions")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "HITRUST-AM-13",
+		ControlName: "Remote Access",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Remote access gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure VPN with MFA and audit monitoring for all remote access",
+	}, nil
+}
+
+// checkAccountMonitoring verifies account monitoring for atypical usage.
+// Maps to HITRUST AM-19.
+func (m *HITRUSTModule) checkAccountMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "account_monitoring") || strings.Contains(inputStr, "monitoring")
+	hasAudit := m.hasAudit(inputStr)
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "anomaly_detection") || strings.Contains(inputStr, "siem")
+
+	if hasMonitoring && hasAudit && hasAlerting {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "HITRUST-AM-19",
+			ControlName: "Account Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Account monitoring controls verified (monitoring + audit + alerting)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasMonitoring {
+		violations = append(violations, "account monitoring not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	if !hasAlerting {
+		violations = append(violations, "alerting/anomaly detection not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "HITRUST-AM-19",
+		ControlName: "Account Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Account monitoring gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure account monitoring with audit logging and anomaly detection alerting",
+	}, nil
+}
+
+// checkNAC verifies network access control. Maps to HITRUST AM-21.
+func (m *HITRUSTModule) checkNAC(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasNAC := strings.Contains(inputStr, "nac") || strings.Contains(inputStr, "network_access_control") || strings.Contains(inputStr, "nac_enabled")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled")
+	hasPolicy := strings.Contains(inputStr, "network_policy") || strings.Contains(inputStr, "policy_compliance") || strings.Contains(inputStr, "policy")
+
+	if hasNAC && hasAuth && hasPolicy {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "HITRUST-AM-21",
+			ControlName: "Network Access Control",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Network access control verified (NAC + authentication + policy compliance)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasNAC {
+		violations = append(violations, "NAC not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured for NAC")
+	}
+	if !hasPolicy {
+		violations = append(violations, "policy compliance not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "HITRUST-AM-21",
+		ControlName: "Network Access Control",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Network access control gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Deploy NAC with authentication and policy compliance enforcement",
 	}, nil
 }
