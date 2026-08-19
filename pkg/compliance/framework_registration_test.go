@@ -58,6 +58,10 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		"nerc_cip": lookupControlCount("nerc_cip"),
 		// v3.8.0 additions
 		"iso21434": lookupControlCount("iso21434"),
+		// P2 expansions
+		"hitech": lookupControlCount("hitech"),
+		"ffiec":  lookupControlCount("ffiec"),
+		"tsa_sd": lookupControlCount("tsa_sd"),
 		// Community frameworks (static counts)
 		"atlas": lookupControlCount("atlas"),
 		"gdpr":  lookupControlCount("gdpr"),
@@ -69,9 +73,9 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 			t.Errorf("%s control count should be > 0 after RegisterBuiltinFrameworks", fw)
 		}
 	}
-	// Verify total framework count (24 registered + 3 community = 27)
-	if got := len(frameworks); got != 28 {
-		t.Errorf("total framework count = %d, want 27", got)
+	// Verify total framework count (31 registered + community frameworks)
+	if got := len(frameworks); got != 31 {
+		t.Errorf("total framework count = %d, want 31", got)
 	}
 	// FedRAMP v3.6.0: 170 controls (151 automated CheckFuncs + 19 evidence-mapped).
 	if fedrampCount := frameworks["fedramp"]; fedrampCount != 170 {
@@ -81,8 +85,8 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	if cjisCount := frameworks["cjis"]; cjisCount != 64 {
 		t.Errorf("cjis control count = %d, want 64", cjisCount)
 	}
-	if ferpaCount := frameworks["ferpa"]; ferpaCount != 16 {
-		t.Errorf("ferpa control count = %d, want 16", ferpaCount)
+	if ferpaCount := frameworks["ferpa"]; ferpaCount != 45 {
+		t.Errorf("ferpa control count = %d, want 45", ferpaCount)
 	}
 	if soxCount := frameworks["sox"]; soxCount != 80 {
 		t.Errorf("sox control count = %d, want 80", soxCount)
@@ -114,8 +118,8 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	if ccpaCount := frameworks["ccpa"]; ccpaCount != 26 {
 		t.Errorf("ccpa control count = %d, want 26", ccpaCount)
 	}
-	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 18 {
-		t.Errorf("nerc_cip control count = %d, want 18", nercCipCount)
+	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 55 {
+		t.Errorf("nerc_cip control count = %d, want 55", nercCipCount)
 	}
 	// FIPS 140-2/140-3 v2.0: 40 controls (27 automated + 13 manual)
 	if fipsCount := frameworks["fips"]; fipsCount != 40 {
@@ -128,6 +132,26 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	// ISO 21434 v2.0: 42 controls (25 automated + 17 manual)
 	if iso21434Count := frameworks["iso21434"]; iso21434Count != 42 {
 		t.Errorf("iso21434 control count = %d, want 42", iso21434Count)
+	}
+	// HITECH Act: 35 controls (23 automated + 12 manual)
+	if hitechCount := frameworks["hitech"]; hitechCount != 35 {
+		t.Errorf("hitech control count = %d, want 35", hitechCount)
+	}
+	// FFIEC: 40 controls (25 automated + 15 manual)
+	if ffiecCount := frameworks["ffiec"]; ffiecCount != 40 {
+		t.Errorf("ffiec control count = %d, want 40", ffiecCount)
+	}
+	// TSA SD: 35 controls (22 automated + 13 manual)
+	if tsaSdCount := frameworks["tsa_sd"]; tsaSdCount != 35 {
+		t.Errorf("tsa_sd control count = %d, want 35", tsaSdCount)
+	}
+	// EU AI Act: 120 controls (17 automated + 103 manual)
+	if euAiActCount := frameworks["eu_ai_act"]; euAiActCount != 120 {
+		t.Errorf("eu_ai_act control count = %d, want 120", euAiActCount)
+	}
+	// CIS v8 v2.0: 50 controls (38 automated + 12 manual)
+	if cisCount := frameworks["cis"]; cisCount != 50 {
+		t.Errorf("cis control count = %d, want 50", cisCount)
 	}
 }
 

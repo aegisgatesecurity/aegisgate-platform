@@ -42,9 +42,12 @@ func (m *FERPAModule) initFERPAPatterns() {
 
 // registerControls registers all FERPA 34 CFR 99 compliance controls.
 func (m *FERPAModule) registerControls() {
-	// Student Education Records (ER)
+	// =====================================================
+	// Student Education Records (ER) — 8 controls (6 auto, 2 manual)
+	// =====================================================
+
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-ER-001",
+		ID:          "FERPA-ER-01",
 		Name:        "Education Records Access",
 		Description: "Students have the right to access their education records under FERPA",
 		Category:    "Student Education Records",
@@ -54,7 +57,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-ER-002",
+		ID:          "FERPA-ER-02",
 		Name:        "Record Amendment Rights",
 		Description: "Students can request amendment of inaccurate or misleading education records",
 		Category:    "Student Education Records",
@@ -64,7 +67,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-ER-003",
+		ID:          "FERPA-ER-03",
 		Name:        "Record Destruction Policy",
 		Description: "Institutions must have policies for destroying education records when no longer needed",
 		Category:    "Student Education Records",
@@ -73,9 +76,60 @@ func (m *FERPAModule) registerControls() {
 		CheckFunc:   m.checkRecordDestruction,
 	})
 
-	// Directory Information (DI)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-DI-001",
+		ID:          "FERPA-ER-04",
+		Name:        "Right to Inspect Records",
+		Description: "Students and eligible parents must be able to inspect and review education records within 45 days of a request",
+		Category:    "Student Education Records",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkRightToInspectRecords,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-ER-05",
+		Name:        "Records Custodian Designation",
+		Description: "Institution must designate an official custodian of education records responsible for FERPA compliance",
+		Category:    "Student Education Records",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-ER-06",
+		Name:        "Annual Notification of Rights",
+		Description: "Institution must provide annual notification to students of their FERPA rights",
+		Category:    "Student Education Records",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAnnualNotificationOfRights,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-ER-07",
+		Name:        "Record Access Log",
+		Description: "Maintain a log of all parties who have accessed student education records",
+		Category:    "Student Education Records",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkRecordAccessLog,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-ER-08",
+		Name:        "Records Retention Schedule",
+		Description: "Institution must establish and document a records retention schedule for all education records",
+		Category:    "Student Education Records",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
+
+	// =====================================================
+	// Directory Information (DI) — 6 controls (5 auto, 1 manual)
+	// =====================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DI-01",
 		Name:        "Directory Information Classification",
 		Description: "Institutions must classify which data elements constitute directory information",
 		Category:    "Directory Information",
@@ -85,7 +139,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-DI-002",
+		ID:          "FERPA-DI-02",
 		Name:        "Opt-Out Mechanism",
 		Description: "Students must be able to opt out of directory information disclosure",
 		Category:    "Directory Information",
@@ -95,7 +149,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-DI-003",
+		ID:          "FERPA-DI-03",
 		Name:        "Disclosure Consent",
 		Description: "Written consent required before disclosing non-directory PII from education records",
 		Category:    "Directory Information",
@@ -104,9 +158,41 @@ func (m *FERPAModule) registerControls() {
 		CheckFunc:   m.checkDisclosureConsent,
 	})
 
-	// Consent & Disclosure (CD)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-CD-001",
+		ID:          "FERPA-DI-04",
+		Name:        "Annual Directory Information Notice",
+		Description: "Institution must provide annual notice of directory information categories and opt-out rights",
+		Category:    "Directory Information",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAnnualDirectoryInfoNotice,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DI-05",
+		Name:        "Directory Info Disclosure Tracking",
+		Description: "Track and log all disclosures of directory information to third parties",
+		Category:    "Directory Information",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkDirectoryInfoDisclosureTracking,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DI-06",
+		Name:        "Limited Directory Information Policy",
+		Description: "Institution must establish a policy defining limited directory information categories for specific disclosures",
+		Category:    "Directory Information",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
+
+	// =====================================================
+	// Consent & Disclosure (CD) — 8 controls (5 auto, 3 manual)
+	// =====================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CD-01",
 		Name:        "Authorized Disclosure",
 		Description: "Only authorized disclosures under FERPA exceptions are permitted without written consent",
 		Category:    "Consent & Disclosure",
@@ -116,7 +202,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-CD-002",
+		ID:          "FERPA-CD-02",
 		Name:        "Health/Safety Exception",
 		Description: "Emergency disclosure of education records allowed for health and safety purposes",
 		Category:    "Consent & Disclosure",
@@ -126,7 +212,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-CD-003",
+		ID:          "FERPA-CD-03",
 		Name:        "Law Enforcement Unit Records",
 		Description: "Separate records must be maintained for campus law enforcement unit records under FERPA",
 		Category:    "Consent & Disclosure",
@@ -135,9 +221,59 @@ func (m *FERPAModule) registerControls() {
 		CheckFunc:   m.checkLawEnforcementRecords,
 	})
 
-	// Data Security (DS)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-DS-001",
+		ID:          "FERPA-CD-04",
+		Name:        "School Official Exception",
+		Description: "Disclosures to school officials with legitimate educational interest must be documented and controlled",
+		Category:    "Consent & Disclosure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSchoolOfficialException,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CD-05",
+		Name:        "Transfer School Enrollment",
+		Description: "Education records may be transferred to a school where the student enrolls or intends to enroll",
+		Category:    "Consent & Disclosure",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkTransferSchoolEnrollment,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CD-06",
+		Name:        "Financial Aid Disclosure",
+		Description: "Disclosure of education records for financial aid purposes must be limited to necessary parties",
+		Category:    "Consent & Disclosure",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CD-07",
+		Name:        "Accrediting Organization Disclosure",
+		Description: "Disclosure to accrediting organizations must be documented and limited to accreditation purposes",
+		Category:    "Consent & Disclosure",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CD-08",
+		Name:        "Court Order/Subpoena Compliance",
+		Description: "Institution must have procedures for responding to court orders and subpoenas for education records",
+		Category:    "Consent & Disclosure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+	})
+
+	// =====================================================
+	// Data Security (DS) — 8 controls (5 auto, 3 manual)
+	// =====================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DS-01",
 		Name:        "Administrative Data Safeguards",
 		Description: "Administrative safeguards for protecting education records including governance and access controls",
 		Category:    "Data Security",
@@ -147,7 +283,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-DS-002",
+		ID:          "FERPA-DS-02",
 		Name:        "Physical Data Safeguards",
 		Description: "Physical security of education record storage (customer responsibility)",
 		Category:    "Data Security",
@@ -156,7 +292,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-DS-003",
+		ID:          "FERPA-DS-03",
 		Name:        "Technical Data Safeguards",
 		Description: "Technical controls including encryption, access logs, and multi-factor authentication for education records",
 		Category:    "Data Security",
@@ -165,9 +301,60 @@ func (m *FERPAModule) registerControls() {
 		CheckFunc:   m.checkTechnicalSafeguards,
 	})
 
-	// AI-Specific (AI)
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-AI-001",
+		ID:          "FERPA-DS-04",
+		Name:        "Encryption of Education Records",
+		Description: "Education records must be encrypted at rest and in transit to protect student PII",
+		Category:    "Data Security",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkEncryptionOfEducationRecords,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DS-05",
+		Name:        "Access Control for Education Records",
+		Description: "Role-based access controls must restrict education record access to authorized personnel only",
+		Category:    "Data Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAccessControlForEducationRecords,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DS-06",
+		Name:        "Data Breach Response Plan",
+		Description: "Institution must maintain a documented data breach response plan for education records",
+		Category:    "Data Security",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DS-07",
+		Name:        "Third-Party Service Provider Security",
+		Description: "Third-party service providers handling education records must meet FERPA security requirements",
+		Category:    "Data Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-DS-08",
+		Name:        "Data Minimization for Education Records",
+		Description: "Only the minimum necessary education record data should be collected, stored, and shared",
+		Category:    "Data Security",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkDataMinimizationForEducationRecords,
+	})
+
+	// =====================================================
+	// AI Controls (AI) — 6 controls (5 auto, 1 manual)
+	// =====================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-AI-01",
 		Name:        "AI Model Student Data Protection",
 		Description: "AI models must not retain or expose student PII from education records",
 		Category:    "AI Controls",
@@ -177,7 +364,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-AI-002",
+		ID:          "FERPA-AI-02",
 		Name:        "AI Training Data Consent",
 		Description: "Explicit consent required before using student data for AI training purposes",
 		Category:    "AI Controls",
@@ -187,7 +374,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-AI-003",
+		ID:          "FERPA-AI-03",
 		Name:        "AI Audit Trail for Education Records",
 		Description: "Audit logging required for AI interactions involving education records",
 		Category:    "AI Controls",
@@ -197,7 +384,7 @@ func (m *FERPAModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "FERPA-AI-004",
+		ID:          "FERPA-AI-04",
 		Name:        "AI Bias Detection in Education",
 		Description: "Detect and mitigate bias in AI systems making education-related decisions",
 		Category:    "AI Controls",
@@ -205,9 +392,120 @@ func (m *FERPAModule) registerControls() {
 		Automated:   true,
 		CheckFunc:   m.checkAIBiasDetection,
 	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-AI-05",
+		Name:        "AI-Generated Content Disclosure for Education",
+		Description: "AI-generated content in education records must be disclosed and labeled as AI-generated",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAIGeneratedContentDisclosure,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-AI-06",
+		Name:        "AI Model Retraining with Student Data Governance",
+		Description: "Governance controls for AI model retraining using student data including approval and review processes",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+	})
+
+	// =====================================================
+	// Compliance & Enforcement (CE) — 9 controls (5 auto, 4 manual)
+	// =====================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-01",
+		Name:        "FERPA Designation",
+		Description: "Institution must formally designate FERPA compliance responsibilities and accountable personnel",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkFERPADesignation,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-02",
+		Name:        "Policy Documentation",
+		Description: "Institution must maintain documented FERPA policies and procedures available to all stakeholders",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkPolicyDocumentation,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-03",
+		Name:        "Training Program for Staff",
+		Description: "Annual FERPA training must be provided to all staff with access to education records",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkTrainingProgramForStaff,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-04",
+		Name:        "Internal Compliance Audits",
+		Description: "Regular internal audits must be conducted to verify FERPA compliance across the institution",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkInternalComplianceAudits,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-05",
+		Name:        "Student Complaint Process",
+		Description: "Institution must provide a process for students to file FERPA complaints internally",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkStudentComplaintProcess,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-06",
+		Name:        "DOE Complaint Investigation",
+		Description: "Institution must cooperate with U.S. Department of Education FERPA complaint investigations",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-07",
+		Name:        "Corrective Action Plans",
+		Description: "Institution must develop and implement corrective action plans for FERPA violations",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-08",
+		Name:        "FERPA Affidavit Requirements",
+		Description: "Institution must maintain FERPA affidavits for third-party disclosures of education records",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "FERPA-CE-09",
+		Name:        "State Education Authority Reporting",
+		Description: "Institution must report FERPA compliance status to state education authorities as required",
+		Category:    "Compliance & Enforcement",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+	})
 }
 
-// Check implementations
+// =====================================================
+// Check implementations — Student Education Records (ER)
+// =====================================================
 
 func (m *FERPAModule) checkEducationRecordsAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
@@ -216,7 +514,7 @@ func (m *FERPAModule) checkEducationRecordsAccess(ctx context.Context, input []b
 	if hasRecordsAccess {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-ER-001",
+			ControlID:   "FERPA-ER-01",
 			ControlName: "Education Records Access",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -227,7 +525,7 @@ func (m *FERPAModule) checkEducationRecordsAccess(ctx context.Context, input []b
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-ER-001",
+		ControlID:   "FERPA-ER-01",
 		ControlName: "Education Records Access",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -244,7 +542,7 @@ func (m *FERPAModule) checkRecordAmendment(ctx context.Context, input []byte) (*
 	if hasAmendment {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-ER-002",
+			ControlID:   "FERPA-ER-02",
 			ControlName: "Record Amendment Rights",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -255,7 +553,7 @@ func (m *FERPAModule) checkRecordAmendment(ctx context.Context, input []byte) (*
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-ER-002",
+		ControlID:   "FERPA-ER-02",
 		ControlName: "Record Amendment Rights",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -272,7 +570,7 @@ func (m *FERPAModule) checkRecordDestruction(ctx context.Context, input []byte) 
 	if hasDestruction {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-ER-003",
+			ControlID:   "FERPA-ER-03",
 			ControlName: "Record Destruction Policy",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -283,7 +581,7 @@ func (m *FERPAModule) checkRecordDestruction(ctx context.Context, input []byte) 
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-ER-003",
+		ControlID:   "FERPA-ER-03",
 		ControlName: "Record Destruction Policy",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -293,6 +591,94 @@ func (m *FERPAModule) checkRecordDestruction(ctx context.Context, input []byte) 
 	}, nil
 }
 
+func (m *FERPAModule) checkRightToInspectRecords(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInspect := strings.Contains(inputStr, "inspect_records") || strings.Contains(inputStr, "review_records") || strings.Contains(inputStr, "right_to_inspect")
+
+	if hasInspect {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-ER-04",
+			ControlName: "Right to Inspect Records",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Right to inspect and review education records controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-ER-04",
+		ControlName: "Right to Inspect Records",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Right to inspect records controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement procedures allowing students to inspect and review education records within 45 days of request per FERPA",
+	}, nil
+}
+
+func (m *FERPAModule) checkAnnualNotificationOfRights(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasNotification := strings.Contains(inputStr, "annual_notification") || strings.Contains(inputStr, "ferpa_rights_notice") || strings.Contains(inputStr, "student_rights_notification")
+
+	if hasNotification {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-ER-06",
+			ControlName: "Annual Notification of Rights",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Annual notification of FERPA rights controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-ER-06",
+		ControlName: "Annual Notification of Rights",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Annual notification of FERPA rights not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement annual notification to students of their FERPA rights per 34 CFR 99.7",
+	}, nil
+}
+
+func (m *FERPAModule) checkRecordAccessLog(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAccessLog := strings.Contains(inputStr, "record_access_log") || strings.Contains(inputStr, "access_log") || strings.Contains(inputStr, "disclosure_log")
+
+	if hasAccessLog {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-ER-07",
+			ControlName: "Record Access Log",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Record access logging controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-ER-07",
+		ControlName: "Record Access Log",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Record access logging controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement access logging for all parties who access or request student education records per FERPA",
+	}, nil
+}
+
+// =====================================================
+// Check implementations — Directory Information (DI)
+// =====================================================
+
 func (m *FERPAModule) checkDirectoryInfoClassification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasDirectoryInfo := strings.Contains(inputStr, "directory_information") || strings.Contains(inputStr, "public_directory") || strings.Contains(inputStr, "student_directory")
@@ -300,7 +686,7 @@ func (m *FERPAModule) checkDirectoryInfoClassification(ctx context.Context, inpu
 	if hasDirectoryInfo {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-DI-001",
+			ControlID:   "FERPA-DI-01",
 			ControlName: "Directory Information Classification",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -311,7 +697,7 @@ func (m *FERPAModule) checkDirectoryInfoClassification(ctx context.Context, inpu
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-DI-001",
+		ControlID:   "FERPA-DI-01",
 		ControlName: "Directory Information Classification",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -328,7 +714,7 @@ func (m *FERPAModule) checkOptOutMechanism(ctx context.Context, input []byte) (*
 	if hasOptOut {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-DI-002",
+			ControlID:   "FERPA-DI-02",
 			ControlName: "Opt-Out Mechanism",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
@@ -339,7 +725,7 @@ func (m *FERPAModule) checkOptOutMechanism(ctx context.Context, input []byte) (*
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-DI-002",
+		ControlID:   "FERPA-DI-02",
 		ControlName: "Opt-Out Mechanism",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
@@ -356,7 +742,7 @@ func (m *FERPAModule) checkDisclosureConsent(ctx context.Context, input []byte) 
 	if hasDisclosureConsent {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-DI-003",
+			ControlID:   "FERPA-DI-03",
 			ControlName: "Disclosure Consent",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
@@ -367,7 +753,7 @@ func (m *FERPAModule) checkDisclosureConsent(ctx context.Context, input []byte) 
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-DI-003",
+		ControlID:   "FERPA-DI-03",
 		ControlName: "Disclosure Consent",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
@@ -377,6 +763,66 @@ func (m *FERPAModule) checkDisclosureConsent(ctx context.Context, input []byte) 
 	}, nil
 }
 
+func (m *FERPAModule) checkAnnualDirectoryInfoNotice(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasNotice := strings.Contains(inputStr, "directory_info_notice") || strings.Contains(inputStr, "annual_directory_notice") || strings.Contains(inputStr, "directory_categories_notice")
+
+	if hasNotice {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-DI-04",
+			ControlName: "Annual Directory Information Notice",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Annual directory information notice controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-DI-04",
+		ControlName: "Annual Directory Information Notice",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Annual directory information notice not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement annual notice of directory information categories and opt-out rights per FERPA 34 CFR 99.37",
+	}, nil
+}
+
+func (m *FERPAModule) checkDirectoryInfoDisclosureTracking(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTracking := strings.Contains(inputStr, "disclosure_tracking") || strings.Contains(inputStr, "directory_disclosure_log") || strings.Contains(inputStr, "third_party_disclosure_log")
+
+	if hasTracking {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-DI-05",
+			ControlName: "Directory Info Disclosure Tracking",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Directory information disclosure tracking controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-DI-05",
+		ControlName: "Directory Info Disclosure Tracking",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Directory information disclosure tracking not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement tracking and logging of all directory information disclosures to third parties per FERPA",
+	}, nil
+}
+
+// =====================================================
+// Check implementations — Consent & Disclosure (CD)
+// =====================================================
+
 func (m *FERPAModule) checkAuthorizedDisclosure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasAuthDisclosure := strings.Contains(inputStr, "authorized_disclosure") || strings.Contains(inputStr, "disclosure_policy") || strings.Contains(inputStr, "ferpa_exceptions")
@@ -384,7 +830,7 @@ func (m *FERPAModule) checkAuthorizedDisclosure(ctx context.Context, input []byt
 	if hasAuthDisclosure {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-CD-001",
+			ControlID:   "FERPA-CD-01",
 			ControlName: "Authorized Disclosure",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -395,7 +841,7 @@ func (m *FERPAModule) checkAuthorizedDisclosure(ctx context.Context, input []byt
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-CD-001",
+		ControlID:   "FERPA-CD-01",
 		ControlName: "Authorized Disclosure",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -412,7 +858,7 @@ func (m *FERPAModule) checkHealthSafetyException(ctx context.Context, input []by
 	if hasHealthSafety {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-CD-002",
+			ControlID:   "FERPA-CD-02",
 			ControlName: "Health/Safety Exception",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
@@ -423,7 +869,7 @@ func (m *FERPAModule) checkHealthSafetyException(ctx context.Context, input []by
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-CD-002",
+		ControlID:   "FERPA-CD-02",
 		ControlName: "Health/Safety Exception",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
@@ -440,7 +886,7 @@ func (m *FERPAModule) checkLawEnforcementRecords(ctx context.Context, input []by
 	if hasLERecords {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-CD-003",
+			ControlID:   "FERPA-CD-03",
 			ControlName: "Law Enforcement Unit Records",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -451,7 +897,7 @@ func (m *FERPAModule) checkLawEnforcementRecords(ctx context.Context, input []by
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-CD-003",
+		ControlID:   "FERPA-CD-03",
 		ControlName: "Law Enforcement Unit Records",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -461,6 +907,66 @@ func (m *FERPAModule) checkLawEnforcementRecords(ctx context.Context, input []by
 	}, nil
 }
 
+func (m *FERPAModule) checkSchoolOfficialException(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSchoolOfficial := strings.Contains(inputStr, "school_official_exception") || strings.Contains(inputStr, "legitimate_educational_interest") || strings.Contains(inputStr, "school_official_disclosure")
+
+	if hasSchoolOfficial {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CD-04",
+			ControlName: "School Official Exception",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "School official exception and legitimate educational interest controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CD-04",
+		ControlName: "School Official Exception",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "School official exception controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement documented school official exception with legitimate educational interest criteria per 34 CFR 99.31(a)(1)",
+	}, nil
+}
+
+func (m *FERPAModule) checkTransferSchoolEnrollment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTransfer := strings.Contains(inputStr, "transfer_enrollment") || strings.Contains(inputStr, "records_transfer") || strings.Contains(inputStr, "school_transfer_disclosure")
+
+	if hasTransfer {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CD-05",
+			ControlName: "Transfer School Enrollment",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Transfer school enrollment disclosure controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CD-05",
+		ControlName: "Transfer School Enrollment",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Transfer school enrollment disclosure controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement procedures for transferring education records to schools where students enroll per 34 CFR 99.31(a)(2)",
+	}, nil
+}
+
+// =====================================================
+// Check implementations — Data Security (DS)
+// =====================================================
+
 func (m *FERPAModule) checkAdministrativeSafeguards(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasAdminSafeguards := strings.Contains(inputStr, "administrative_safeguards") || strings.Contains(inputStr, "data_governance") || strings.Contains(inputStr, "access_controls")
@@ -468,7 +974,7 @@ func (m *FERPAModule) checkAdministrativeSafeguards(ctx context.Context, input [
 	if hasAdminSafeguards {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-DS-001",
+			ControlID:   "FERPA-DS-01",
 			ControlName: "Administrative Data Safeguards",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -479,7 +985,7 @@ func (m *FERPAModule) checkAdministrativeSafeguards(ctx context.Context, input [
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-DS-001",
+		ControlID:   "FERPA-DS-01",
 		ControlName: "Administrative Data Safeguards",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -509,7 +1015,7 @@ func (m *FERPAModule) checkTechnicalSafeguards(ctx context.Context, input []byte
 	if len(detected) == 3 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-DS-003",
+			ControlID:   "FERPA-DS-03",
 			ControlName: "Technical Data Safeguards",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -521,7 +1027,7 @@ func (m *FERPAModule) checkTechnicalSafeguards(ctx context.Context, input []byte
 	if len(detected) > 0 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-DS-003",
+			ControlID:   "FERPA-DS-03",
 			ControlName: "Technical Data Safeguards",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityCritical,
@@ -533,7 +1039,7 @@ func (m *FERPAModule) checkTechnicalSafeguards(ctx context.Context, input []byte
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-DS-003",
+		ControlID:   "FERPA-DS-03",
 		ControlName: "Technical Data Safeguards",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -543,13 +1049,122 @@ func (m *FERPAModule) checkTechnicalSafeguards(ctx context.Context, input []byte
 	}, nil
 }
 
+func (m *FERPAModule) checkEncryptionOfEducationRecords(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAtRest := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "data_at_rest_encrypted")
+	hasInTransit := strings.Contains(inputStr, "encryption_in_transit") || strings.Contains(inputStr, "tls_enabled") || strings.Contains(inputStr, "data_in_transit_encrypted")
+
+	if hasAtRest && hasInTransit {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-DS-04",
+			ControlName: "Encryption of Education Records",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Encryption of education records at rest and in transit detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	if hasAtRest || hasInTransit {
+		missing := []string{}
+		if !hasAtRest {
+			missing = append(missing, "encryption at rest")
+		}
+		if !hasInTransit {
+			missing = append(missing, "encryption in transit")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-DS-04",
+			ControlName: "Encryption of Education Records",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial encryption controls: missing " + strings.Join(missing, ", "),
+			Timestamp:   time.Now(),
+			Remediation: "Implement encryption for education records both at rest and in transit per FERPA security requirements",
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-DS-04",
+		ControlName: "Encryption of Education Records",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Encryption of education records not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement encryption at rest and in transit for all education records containing student PII per FERPA",
+	}, nil
+}
+
+func (m *FERPAModule) checkAccessControlForEducationRecords(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAccessControl := strings.Contains(inputStr, "role_based_access") || strings.Contains(inputStr, "rbac_education_records") || strings.Contains(inputStr, "access_control_policy")
+
+	if hasAccessControl {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-DS-05",
+			ControlName: "Access Control for Education Records",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Role-based access controls for education records detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-DS-05",
+		ControlName: "Access Control for Education Records",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Access controls for education records not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement role-based access controls restricting education record access to authorized personnel per FERPA",
+	}, nil
+}
+
+func (m *FERPAModule) checkDataMinimizationForEducationRecords(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMinimization := strings.Contains(inputStr, "data_minimization") || strings.Contains(inputStr, "minimum_necessary_data") || strings.Contains(inputStr, "data_collection_limit")
+
+	if hasMinimization {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-DS-08",
+			ControlName: "Data Minimization for Education Records",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Data minimization controls for education records detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-DS-08",
+		ControlName: "Data Minimization for Education Records",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Data minimization controls for education records not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement data minimization policies ensuring only necessary education record data is collected and stored per FERPA",
+	}, nil
+}
+
+// =====================================================
+// Check implementations — AI Controls (AI)
+// =====================================================
+
 func (m *FERPAModule) checkAIModelStudentDataProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	piiFound := m.detectStudentPII(string(input))
 
 	if len(piiFound) == 0 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-AI-001",
+			ControlID:   "FERPA-AI-01",
 			ControlName: "AI Model Student Data Protection",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -560,7 +1175,7 @@ func (m *FERPAModule) checkAIModelStudentDataProtection(ctx context.Context, inp
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-AI-001",
+		ControlID:   "FERPA-AI-01",
 		ControlName: "AI Model Student Data Protection",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -578,7 +1193,7 @@ func (m *FERPAModule) checkAITrainingDataConsent(ctx context.Context, input []by
 	if hasConsent {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-AI-002",
+			ControlID:   "FERPA-AI-02",
 			ControlName: "AI Training Data Consent",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
@@ -589,7 +1204,7 @@ func (m *FERPAModule) checkAITrainingDataConsent(ctx context.Context, input []by
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-AI-002",
+		ControlID:   "FERPA-AI-02",
 		ControlName: "AI Training Data Consent",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
@@ -619,7 +1234,7 @@ func (m *FERPAModule) checkAIAuditTrail(ctx context.Context, input []byte) (*com
 	if len(violations) == 0 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-AI-003",
+			ControlID:   "FERPA-AI-03",
 			ControlName: "AI Audit Trail for Education Records",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -631,7 +1246,7 @@ func (m *FERPAModule) checkAIAuditTrail(ctx context.Context, input []byte) (*com
 	if len(violations) < 3 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-AI-003",
+			ControlID:   "FERPA-AI-03",
 			ControlName: "AI Audit Trail for Education Records",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
@@ -643,7 +1258,7 @@ func (m *FERPAModule) checkAIAuditTrail(ctx context.Context, input []byte) (*com
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-AI-003",
+		ControlID:   "FERPA-AI-03",
 		ControlName: "AI Audit Trail for Education Records",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -660,7 +1275,7 @@ func (m *FERPAModule) checkAIBiasDetection(ctx context.Context, input []byte) (*
 	if hasBiasDetection {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "FERPA-AI-004",
+			ControlID:   "FERPA-AI-04",
 			ControlName: "AI Bias Detection in Education",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
@@ -671,7 +1286,7 @@ func (m *FERPAModule) checkAIBiasDetection(ctx context.Context, input []byte) (*
 
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "FERPA-AI-004",
+		ControlID:   "FERPA-AI-04",
 		ControlName: "AI Bias Detection in Education",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
@@ -680,6 +1295,182 @@ func (m *FERPAModule) checkAIBiasDetection(ctx context.Context, input []byte) (*
 		Remediation: "Implement bias detection and fairness audit for AI systems making education-related decisions",
 	}, nil
 }
+
+func (m *FERPAModule) checkAIGeneratedContentDisclosure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasContentDisclosure := strings.Contains(inputStr, "ai_content_disclosure") || strings.Contains(inputStr, "ai_generated_label") || strings.Contains(inputStr, "ai_content_attribution")
+
+	if hasContentDisclosure {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-AI-05",
+			ControlName: "AI-Generated Content Disclosure for Education",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "AI-generated content disclosure and labeling controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-AI-05",
+		ControlName: "AI-Generated Content Disclosure for Education",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "AI-generated content disclosure controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement disclosure and labeling of AI-generated content in education records per FERPA requirements",
+	}, nil
+}
+
+// =====================================================
+// Check implementations — Compliance & Enforcement (CE)
+// =====================================================
+
+func (m *FERPAModule) checkFERPADesignation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDesignation := strings.Contains(inputStr, "ferpa_designation") || strings.Contains(inputStr, "ferpa_officer") || strings.Contains(inputStr, "compliance_designation")
+
+	if hasDesignation {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CE-01",
+			ControlName: "FERPA Designation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "FERPA compliance designation and accountable personnel detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CE-01",
+		ControlName: "FERPA Designation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "FERPA compliance designation not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Designate an official responsible for FERPA compliance and document accountability per FERPA requirements",
+	}, nil
+}
+
+func (m *FERPAModule) checkPolicyDocumentation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicyDocs := strings.Contains(inputStr, "ferpa_policy") || strings.Contains(inputStr, "policy_documentation") || strings.Contains(inputStr, "ferpa_procedures")
+
+	if hasPolicyDocs {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CE-02",
+			ControlName: "Policy Documentation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "FERPA policy documentation and procedures detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CE-02",
+		ControlName: "Policy Documentation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "FERPA policy documentation not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Maintain documented FERPA policies and procedures available to all stakeholders per FERPA requirements",
+	}, nil
+}
+
+func (m *FERPAModule) checkTrainingProgramForStaff(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTraining := strings.Contains(inputStr, "ferpa_training") || strings.Contains(inputStr, "staff_training_program") || strings.Contains(inputStr, "annual_training")
+
+	if hasTraining {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CE-03",
+			ControlName: "Training Program for Staff",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "FERPA staff training program controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CE-03",
+		ControlName: "Training Program for Staff",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "FERPA staff training program not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement annual FERPA training for all staff with access to education records per FERPA best practices",
+	}, nil
+}
+
+func (m *FERPAModule) checkInternalComplianceAudits(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAudits := strings.Contains(inputStr, "internal_compliance_audit") || strings.Contains(inputStr, "ferpa_audit") || strings.Contains(inputStr, "compliance_review")
+
+	if hasAudits {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CE-04",
+			ControlName: "Internal Compliance Audits",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Internal FERPA compliance audit controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CE-04",
+		ControlName: "Internal Compliance Audits",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Internal FERPA compliance audit controls not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement regular internal audits to verify FERPA compliance across the institution per FERPA best practices",
+	}, nil
+}
+
+func (m *FERPAModule) checkStudentComplaintProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasComplaintProcess := strings.Contains(inputStr, "student_complaint_process") || strings.Contains(inputStr, "ferpa_complaint") || strings.Contains(inputStr, "grievance_procedure")
+
+	if hasComplaintProcess {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "FERPA-CE-05",
+			ControlName: "Student Complaint Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Student FERPA complaint process controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "FERPA-CE-05",
+		ControlName: "Student Complaint Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Student FERPA complaint process not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement a process for students to file FERPA complaints internally with clear procedures and timelines",
+	}, nil
+}
+
+// =====================================================
+// Helper functions
+// =====================================================
 
 // detectStudentPII scans input for potential student PII patterns.
 func (m *FERPAModule) detectStudentPII(input string) []string {

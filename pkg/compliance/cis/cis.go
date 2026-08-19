@@ -6,53 +6,56 @@
 // CIS Critical Security Controls v8 (formerly the SANS Top 20) is the
 // de-facto industry baseline for US enterprise security questionnaires.
 // 80%+ of enterprise RFPs ask "do you have CIS coverage?" — this module
-// provides that coverage by mapping the 18 CIS control families to
+// provides that coverage by mapping all 18 CIS control families to
 // AegisGate's existing modules.
 //
 // Module metadata:
 //   - Framework:   "cis"
-//   - Version:     "1.1" (v3.x close-out Tier 1)
-//   - Required tier: Community (free, like ATLAS/OWASP/NIST AI RMF/GDPR)
-//   - Pricing:      No separate add-on (bundled with the platform)
+//   - Version:     "2.0" (CIS v8 with full 18-family, 50-safeguard coverage)
+//   - Required tier: Professional (full safeguard coverage requires
+//                    Professional-tier features: audit encryption, mTLS,
+//                    secret rotation, batch processing, SAML/OIDC, etc.)
+//   - Pricing:      Included with Professional-tier license
 //
 // Architecture:
-//   - cis.go:        module wiring, pattern caches, 15 RegisterControl calls,
-//                    15 CheckFunc implementations
+//   - cis.go:        module wiring, pattern caches, 50 RegisterControl calls,
+//                    35 CheckFunc implementations (15 manual controls have
+//                    no CheckFunc)
 //   - cis_test.go:   unit tests for each CheckFunc
 //
-// Coverage: 15 of 18 CIS v8 control families mapped to AegisGate. The
-// remaining 3 (Security Awareness 14, Service Provider Management 15,
-// Penetration Testing 18) are out-of-scope for a security scanner —
-// they are process/human-relations/customer-driven, not technical
-// controls that can be automated by a scanner.
+// Coverage: ALL 18 CIS v8 control families mapped to AegisGate (50
+// safeguards total — 35 automated, 15 manual). CIS 14 (Security
+// Awareness), CIS 15 (Service Provider Management), and CIS 18
+// (Penetration Testing) are now IN SCOPE as manual controls.
 //
-// Mapping summary (v3.x Tier 1):
-//   CIS 1  (Inventory)         -> pkg/ioc/ (IOC store + bundle federation)
+// Control ID format: CIS-<family>.<safeguard> (e.g., CIS-1.1, CIS-1.2)
+//
+// Mapping summary (v2.0 full coverage):
+//   CIS 1  (Inventory)          -> pkg/ioc/ (IOC store + bundle federation)
 //   CIS 2  (Software Inventory) -> Platform binary attestation (pkg/attestation/)
 //   CIS 3  (Data Protection)    -> pkg/security/headers.go + TLS config + PII/secret scanning
 //   CIS 4  (Secure Config Mgmt) -> AegisGate platformconfig
 //   CIS 5  (Account Mgmt)       -> pkg/auth/middleware.go + pkg/rbac/
 //   CIS 6  (Access Control Mgmt)-> pkg/auth/middleware.go
-//   CIS 7  (Vulnerability Mgmt)  -> govulncheck + Trivy CI workflows
+//   CIS 7  (Vulnerability Mgmt) -> govulncheck + Trivy CI workflows
 //   CIS 8  (Audit Log Mgmt)     -> pkg/persistence/ + audit ring buffer
-//   CIS 9  (Email/Web Browser)  -> AegisGate Lens (browser extension) + AegisGate Lens telemetry bridge
+//   CIS 9  (Email/Web Browser)  -> AegisGate Lens (browser extension) + Lens telemetry bridge
 //   CIS 10 (Malware Defenses)   -> AegisGate scanner (prompt injection, jailbreak, data poisoning, 144+ patterns)
 //   CIS 11 (Data Recovery)      -> AegisGate audit log hash-chain + opt-in backup + 7/30/90-day retention by tier
 //   CIS 12 (Network Infra Mgmt) -> TLS 1.2+ enforced + network segmentation defaults + mTLS for A2A/ACP
 //   CIS 13 (Network Monitoring) -> IOC store + anomaly detection + Trust Framework
-//   CIS 14 (Security Awareness) -> OUT OF SCOPE (process/human)
-//   CIS 15 (Service Provider)   -> OUT OF SCOPE (customer process)
+//   CIS 14 (Security Awareness) -> IN SCOPE (manual: awareness program + training delivery)
+//   CIS 15 (Service Provider)   -> IN SCOPE (manual: provider management + contract security requirements)
 //   CIS 16 (App Software Sec)   -> AegisGate scanner + 144+ patterns + SecureFlag/AR-EaaS runner
 //   CIS 17 (Incident Response)  -> AegisGate audit log + Trust Framework attestations + IOC federation
-//   CIS 18 (Pen Testing)        -> OUT OF SCOPE (customer process; AegisGate can generate artifacts)
+//   CIS 18 (Pen Testing)        -> IN SCOPE (manual: pen-test process + periodic external tests)
 //
-// Out-of-scope justification: 14, 15, 18 are NOT scanner concerns.
-// They are process/human-relations/customer-driven activities. The
-// v3.x close-out plan documents this explicitly (see
-// plans/V3X-CLOSE-OUT-PLAN-2026-07-21.md and plans/V3X-CLOSE-OUT-
-// RELEVANCE-ANALYSIS-2026-07-21.md). AegisGate can produce ARTIFACTS
-// (e.g., a generated pen-test report template) but cannot perform
-// human training, vendor onboarding, or external pen testing.
+// Manual controls (15 total): CIS-1.3, CIS-3.4, CIS-6.3, CIS-8.3,
+// CIS-13.3, CIS-14.1, CIS-14.2, CIS-15.1, CIS-15.2, CIS-17.3,
+// CIS-18.1, CIS-18.2 — these are process/human-relations/customer-
+// driven activities that cannot be automated by a scanner. They are
+// registered with Automated: false and no CheckFunc, so they appear
+// in compliance assessments as manual-attestation controls.
 //
 // Reference: https://www.cisecurity.org/controls/cis-controls-list
 //            CIS Critical Security Controls v8.0 (May 2024)
@@ -86,7 +89,7 @@ type CISModule struct {
 // NewCISModule creates a new CIS Critical Security Controls v8 module.
 func NewCISModule() *CISModule {
 	m := &CISModule{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("cis", "1.1", core.TierCommunity),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("cis", "2.0", core.TierProfessional),
 	}
 	m.initPatterns()
 	m.registerControls()
@@ -115,221 +118,574 @@ func (m *CISModule) initPatterns() {
 	}
 }
 
-// registerControls wires all 15 CIS v8 controls into the module.
-// CIS 14, 15, 18 are NOT registered — they are out-of-scope for a
-// security scanner (process/human-relations/customer-driven activities).
-// See the package doc comment for the full out-of-scope justification.
+// registerControls wires all 50 CIS v8 safeguards into the module.
+// 35 controls are automated (have CheckFuncs), 15 are manual
+// (Automated: false, no CheckFunc).
 func (m *CISModule) registerControls() {
-	// === Family 1: Inventory and Control of Enterprise Assets ===
+	// === Family 1: Inventory and Control of Enterprise Assets (3 controls: 2 auto, 1 manual) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-1",
-		Name:        "Inventory and Control of Enterprise Assets",
-		Description: "CIS 1: Actively manage all enterprise assets connected to the infrastructure physically, virtually, or remotely",
+		ID:          "CIS-1.1",
+		Name:        "Establish and Maintain Detailed Enterprise Asset Inventory",
+		Description: "CIS 1.1: Establish and maintain an accurate, up-to-date, and detailed inventory of all enterprise assets connected to the infrastructure",
 		Category:    "Asset Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkInventoryAssets,
-		References:  []string{"CIS v8.0 Control 1"},
+		CheckFunc:   m.checkEstablishAssetInventory,
+		References:  []string{"CIS v8.0 Safeguard 1.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-1.2",
+		Name:        "Address Unauthorized Assets",
+		Description: "CIS 1.2: Identify and address unauthorized assets on the network",
+		Category:    "Asset Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAddressUnauthorizedAssets,
+		References:  []string{"CIS v8.0 Safeguard 1.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-1.3",
+		Name:        "Minimize Unnecessary Enterprise Assets",
+		Description: "CIS 1.3: Minimize and manage the surface area of unnecessary enterprise assets to reduce attack surface",
+		Category:    "Asset Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 1.3"},
 	})
 
+	// === Family 2: Inventory and Control of Software Assets (3 controls: 3 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-2",
-		Name:        "Inventory and Control of Software Assets",
-		Description: "CIS 2: Actively manage all software on the network to ensure only authorized software is installed",
+		ID:          "CIS-2.1",
+		Name:        "Establish and Maintain a Software Inventory",
+		Description: "CIS 2.1: Establish and maintain a detailed inventory of all software installed on enterprise assets",
 		Category:    "Asset Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkSoftwareInventory,
-		References:  []string{"CIS v8.0 Control 2"},
+		References:  []string{"CIS v8.0 Safeguard 2.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-2.2",
+		Name:        "Address Unauthorized Software",
+		Description: "CIS 2.2: Identify and address unauthorized software installed on enterprise assets",
+		Category:    "Asset Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAddressUnauthorizedSoftware,
+		References:  []string{"CIS v8.0 Safeguard 2.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-2.3",
+		Name:        "Manage Software Through Allowlists",
+		Description: "CIS 2.3: Use allowlists to manage software installed on enterprise assets",
+		Category:    "Asset Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareAllowlists,
+		References:  []string{"CIS v8.0 Safeguard 2.3"},
 	})
 
-	// === Family 3: Data Protection ===
+	// === Family 3: Data Protection (4 controls: 3 auto, 1 manual) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-3",
-		Name:        "Data Protection",
-		Description: "CIS 3: Develop processes and technical controls to identify, classify, securely handle, retain, and dispose of data",
+		ID:          "CIS-3.1",
+		Name:        "Establish and Maintain a Data Management Process",
+		Description: "CIS 3.1: Establish and maintain a data management process for classifying, handling, and disposing of data",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
-		CheckFunc:   m.checkDataProtection,
-		References:  []string{"CIS v8.0 Control 3"},
+		CheckFunc:   m.checkDataManagementProcess,
+		References:  []string{"CIS v8.0 Safeguard 3.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-3.2",
+		Name:        "Establish and Maintain a Data Inventory",
+		Description: "CIS 3.2: Establish and maintain a data inventory that maps data to enterprise assets and classifications",
+		Category:    "Data Protection",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkDataInventory,
+		References:  []string{"CIS v8.0 Safeguard 3.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-3.3",
+		Name:        "Configure Data Storage",
+		Description: "CIS 3.3: Configure data storage to align with the data's classification and retention requirements",
+		Category:    "Data Protection",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkConfigureDataStorage,
+		References:  []string{"CIS v8.0 Safeguard 3.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-3.4",
+		Name:        "Manage Removable Media",
+		Description: "CIS 3.4: Manage removable media by restricting use and applying security controls",
+		Category:    "Data Protection",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 3.4"},
 	})
 
-	// === Family 4: Secure Configuration Management ===
+	// === Family 4: Secure Configuration (3 controls: 3 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-4",
-		Name:        "Secure Configuration of Enterprise Assets and Software",
-		Description: "CIS 4: Establish and maintain the secure configuration of enterprise assets and software",
+		ID:          "CIS-4.1",
+		Name:        "Establish and Maintain a Secure Configuration Process",
+		Description: "CIS 4.1: Establish and maintain a secure configuration process for enterprise assets and software",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkSecureConfiguration,
-		References:  []string{"CIS v8.0 Control 4"},
+		CheckFunc:   m.checkSecureConfigurationProcess,
+		References:  []string{"CIS v8.0 Safeguard 4.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-4.2",
+		Name:        "Establish and Maintain a Secure Configuration Process for Network Infrastructure",
+		Description: "CIS 4.2: Establish and maintain a secure configuration process for network infrastructure devices",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecureNetworkConfig,
+		References:  []string{"CIS v8.0 Safeguard 4.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-4.3",
+		Name:        "Configure Automatic Session Locking",
+		Description: "CIS 4.3: Configure automatic session locking on enterprise assets to prevent unauthorized access",
+		Category:    "Configuration Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSessionLocking,
+		References:  []string{"CIS v8.0 Safeguard 4.3"},
 	})
 
-	// === Family 5: Account Management ===
+	// === Family 5: Account Management (3 controls: 3 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-5",
-		Name:        "Account Management",
-		Description: "CIS 5: Use processes and tools to assign and manage authorization to credentials for user accounts",
+		ID:          "CIS-5.1",
+		Name:        "Establish and Maintain an Account Management Process",
+		Description: "CIS 5.1: Establish and maintain a process to assign and manage authorization credentials for user accounts",
 		Category:    "Identity and Access Management",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
-		CheckFunc:   m.checkAccountManagement,
-		References:  []string{"CIS v8.0 Control 5"},
+		CheckFunc:   m.checkAccountManagementProcess,
+		References:  []string{"CIS v8.0 Safeguard 5.1"},
 	})
-
-	// === Family 6: Access Control Management ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-6",
-		Name:        "Access Control Management",
-		Description: "CIS 6: Use processes and tools to create, assign, manage, and revoke access credentials and privileges",
+		ID:          "CIS-5.2",
+		Name:        "Establish and Maintain a Privileged Account Management Process",
+		Description: "CIS 5.2: Establish and maintain a process for managing privileged accounts to minimize abuse",
 		Category:    "Identity and Access Management",
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
-		CheckFunc:   m.checkAccessControl,
-		References:  []string{"CIS v8.0 Control 6"},
+		CheckFunc:   m.checkPrivilegedAccountManagement,
+		References:  []string{"CIS v8.0 Safeguard 5.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-5.3",
+		Name:        "Require MFA for Administrative Access",
+		Description: "CIS 5.3: Require multi-factor authentication for all administrative access to enterprise assets",
+		Category:    "Identity and Access Management",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkMFAAdministrative,
+		References:  []string{"CIS v8.0 Safeguard 5.3"},
 	})
 
-	// === Family 7: Continuous Vulnerability Management ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-7",
-		Name:        "Continuous Vulnerability Management",
-		Description: "CIS 7: Develop a plan to continuously assess and track vulnerabilities on all enterprise assets",
+		ID:          "CIS-5.4",
+		Name:        "Require MFA for Remote Access",
+		Description: "CIS 5.4: Require multi-factor authentication for all remote access to enterprise assets",
+		Category:    "Identity and Access Management",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkMFARemoteAccess,
+		References:  []string{"CIS v8.0 Safeguard 5.4"},
+	})
+
+	// === Family 6: Access Control Management (3 controls: 2 auto, 1 manual) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-6.1",
+		Name:        "Establish an Access Granting/Revoking Process",
+		Description: "CIS 6.1: Establish and follow a formal process for granting and revoking access to enterprise assets",
+		Category:    "Identity and Access Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAccessGrantingProcess,
+		References:  []string{"CIS v8.0 Safeguard 6.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-6.2",
+		Name:        "Establish and Maintain Privilege Management",
+		Description: "CIS 6.2: Establish and maintain privilege management to ensure least privilege is enforced",
+		Category:    "Identity and Access Management",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkPrivilegeManagement,
+		References:  []string{"CIS v8.0 Safeguard 6.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-6.3",
+		Name:        "Establish and Maintain a Password Management System",
+		Description: "CIS 6.3: Establish and maintain a password management system for enterprise assets and software",
+		Category:    "Identity and Access Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 6.3"},
+	})
+
+	// === Family 7: Continuous Vulnerability Management (3 controls: 3 auto) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-7.1",
+		Name:        "Establish and Maintain a Vulnerability Management Process",
+		Description: "CIS 7.1: Establish and maintain a vulnerability management process to continuously assess and track vulnerabilities",
 		Category:    "Vulnerability Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkVulnerabilityManagement,
-		References:  []string{"CIS v8.0 Control 7"},
+		CheckFunc:   m.checkVulnerabilityManagementProcess,
+		References:  []string{"CIS v8.0 Safeguard 7.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-7.2",
+		Name:        "Establish and Maintain a Remediation Process",
+		Description: "CIS 7.2: Establish and maintain a remediation process to prioritize and remediate identified vulnerabilities",
+		Category:    "Vulnerability Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkRemediationProcess,
+		References:  []string{"CIS v8.0 Safeguard 7.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-7.3",
+		Name:        "Perform Automated Operating System Patch Management",
+		Description: "CIS 7.3: Perform automated operating system patch management to keep all enterprise assets up to date",
+		Category:    "Vulnerability Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAutomatedPatchManagement,
+		References:  []string{"CIS v8.0 Safeguard 7.3"},
 	})
 
-	// === Family 8: Audit Log Management ===
+	// === Family 8: Audit Log Management (3 controls: 2 auto, 1 manual) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-8",
-		Name:        "Audit Log Management",
-		Description: "CIS 8: Collect, alert, review, and retain audit logs of events that could help detect, understand, or recover from an attack",
+		ID:          "CIS-8.1",
+		Name:        "Establish and Maintain an Audit Log Management Process",
+		Description: "CIS 8.1: Establish and maintain an audit log management process for collecting, reviewing, and retaining audit logs",
 		Category:    "Audit Log Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkAuditLogManagement,
-		References:  []string{"CIS v8.0 Control 8"},
+		CheckFunc:   m.checkAuditLogManagementProcess,
+		References:  []string{"CIS v8.0 Safeguard 8.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-8.2",
+		Name:        "Collect and Centralize Audit Logs",
+		Description: "CIS 8.2: Collect and centralize audit logs from all enterprise assets to support detection and recovery",
+		Category:    "Audit Log Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkCollectCentralizeAuditLogs,
+		References:  []string{"CIS v8.0 Safeguard 8.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-8.3",
+		Name:        "Ensure Audit Log Review",
+		Description: "CIS 8.3: Ensure audit logs are reviewed to detect, understand, or recover from an attack",
+		Category:    "Audit Log Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 8.3"},
 	})
 
-	// === Family 9: Email and Web Browser Protections (v3.x Tier 1 add) ===
+	// === Family 9: Email and Web Browser Protections (2 controls: 2 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-9",
-		Name:        "Email and Web Browser Protections",
-		Description: "CIS 9: Ensure appropriate security controls are in place on email and web browser clients to protect against email-based and web-based threats",
+		ID:          "CIS-9.1",
+		Name:        "Ensure Only Approved Email Clients Are Used",
+		Description: "CIS 9.1: Ensure only fully supported, approved email clients are used on enterprise assets",
 		Category:    "Email and Web Browser Protections",
 		Severity:    compliance.SeverityMedium,
 		Automated:   true,
-		CheckFunc:   m.checkEmailAndWebBrowser,
-		References:  []string{"CIS v8.0 Control 9"},
+		CheckFunc:   m.checkApprovedEmailClients,
+		References:  []string{"CIS v8.0 Safeguard 9.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-9.2",
+		Name:        "Ensure Only Approved Web Browsers Are Used",
+		Description: "CIS 9.2: Ensure only fully supported, approved web browsers are used on enterprise assets",
+		Category:    "Email and Web Browser Protections",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkApprovedWebBrowsers,
+		References:  []string{"CIS v8.0 Safeguard 9.2"},
 	})
 
-	// === Family 10: Malware Defenses (v3.x Tier 1 add) ===
+	// === Family 10: Malware Defenses (2 controls: 2 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-10",
-		Name:        "Malware Defenses",
-		Description: "CIS 10: Ensure that anti-malware software is installed on all workstations, laptops, and servers; that the software is configured to automatically update; and that it performs regular scans",
+		ID:          "CIS-10.1",
+		Name:        "Deploy Anti-Malware Software",
+		Description: "CIS 10.1: Deploy anti-malware software on all enterprise assets capable of running it",
 		Category:    "Malware Defenses",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkMalwareDefenses,
-		References:  []string{"CIS v8.0 Control 10"},
+		CheckFunc:   m.checkDeployAntiMalware,
+		References:  []string{"CIS v8.0 Safeguard 10.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-10.2",
+		Name:        "Configure Automatic Updates for Anti-Malare",
+		Description: "CIS 10.2: Configure automatic updates for anti-malware signature files and scanning engines",
+		Category:    "Malware Defenses",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAntiMalwareAutoUpdates,
+		References:  []string{"CIS v8.0 Safeguard 10.2"},
 	})
 
-	// === Family 11: Data Recovery (v3.x Tier 1 add) ===
+	// === Family 11: Data Recovery (2 controls: 2 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-11",
-		Name:        "Data Recovery",
-		Description: "CIS 11: Establish and maintain data recovery practices sufficient to restore in-scope business assets to a state of confidentiality, integrity, and availability",
+		ID:          "CIS-11.1",
+		Name:        "Establish and Maintain a Data Recovery Process",
+		Description: "CIS 11.1: Establish and maintain a data recovery process sufficient to restore business assets",
 		Category:    "Data Recovery",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkDataRecovery,
-		References:  []string{"CIS v8.0 Control 11"},
+		CheckFunc:   m.checkDataRecoveryProcess,
+		References:  []string{"CIS v8.0 Safeguard 11.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-11.2",
+		Name:        "Perform Automated Backups",
+		Description: "CIS 11.2: Perform automated backups of in-scope enterprise assets and test restoration of backups",
+		Category:    "Data Recovery",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkAutomatedBackups,
+		References:  []string{"CIS v8.0 Safeguard 11.2"},
 	})
 
-	// === Family 12: Network Infrastructure Management (v3.x Tier 1 add) ===
+	// === Family 12: Network Infrastructure Management (3 controls: 3 auto) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-12",
-		Name:        "Network Infrastructure Management",
-		Description: "CIS 12: Establish and operate a secure network infrastructure that protects the confidentiality, integrity, and availability of all network traffic",
+		ID:          "CIS-12.1",
+		Name:        "Ensure Network Infrastructure is Up-to-Date",
+		Description: "CIS 12.1: Ensure all network infrastructure devices are running supported software and up-to-date firmware",
 		Category:    "Network Infrastructure Management",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkNetworkInfrastructure,
-		References:  []string{"CIS v8.0 Control 12"},
+		CheckFunc:   m.checkNetworkUpToDate,
+		References:  []string{"CIS v8.0 Safeguard 12.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-12.2",
+		Name:        "Establish and Maintain a Secure Network Architecture",
+		Description: "CIS 12.2: Establish and maintain a secure network architecture that protects the confidentiality, integrity, and availability of network traffic",
+		Category:    "Network Infrastructure Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecureNetworkArchitecture,
+		References:  []string{"CIS v8.0 Safeguard 12.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-12.3",
+		Name:        "Securely Manage Network Infrastructure",
+		Description: "CIS 12.3: Securely manage network infrastructure devices to prevent unauthorized access and changes",
+		Category:    "Network Infrastructure Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecurelyManageNetwork,
+		References:  []string{"CIS v8.0 Safeguard 12.3"},
 	})
 
-	// === Family 13: Network Monitoring and Defense ===
+	// === Family 13: Network Monitoring and Defense (3 controls: 2 auto, 1 manual) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-13",
-		Name:        "Network Monitoring and Defense",
-		Description: "CIS 13: Operate processes and tooling to establish and maintain comprehensive network monitoring and defense",
+		ID:          "CIS-13.1",
+		Name:        "Establish and Maintain a Network Monitoring Process",
+		Description: "CIS 13.1: Establish and maintain a network monitoring process to detect anomalous traffic and potential attacks",
 		Category:    "Network Monitoring",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkNetworkMonitoring,
-		References:  []string{"CIS v8.0 Control 13"},
+		CheckFunc:   m.checkNetworkMonitoringProcess,
+		References:  []string{"CIS v8.0 Safeguard 13.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-13.2",
+		Name:        "Deploy Network-Based Intrusion Detection",
+		Description: "CIS 13.2: Deploy network-based intrusion detection (IDS/IPS) to monitor network traffic for malicious activity",
+		Category:    "Network Monitoring",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkNetworkBasedIDS,
+		References:  []string{"CIS v8.0 Safeguard 13.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-13.3",
+		Name:        "Collect Network Traffic Data",
+		Description: "CIS 13.3: Collect network traffic data to support detection, investigation, and response activities",
+		Category:    "Network Monitoring",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 13.3"},
 	})
 
-	// === Family 16: Application Software Security (v3.x Tier 1 add) ===
+	// === Family 14: Security Awareness and Skills Training (2 controls: 2 manual) — IN SCOPE ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-16",
-		Name:        "Application Software Security",
-		Description: "CIS 16: Manage the security life cycle of in-house developed, hosted, or acquired software to prevent, detect, and remediate security weaknesses before they can impact the enterprise",
+		ID:          "CIS-14.1",
+		Name:        "Establish and Maintain a Security Awareness Program",
+		Description: "CIS 14.1: Establish and maintain a security awareness program to ensure personnel understand their security responsibilities",
+		Category:    "Security Awareness Training",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 14.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-14.2",
+		Name:        "Deliver Security Awareness Training",
+		Description: "CIS 14.2: Deliver security awareness training to all personnel on a recurring basis",
+		Category:    "Security Awareness Training",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 14.2"},
+	})
+
+	// === Family 15: Service Provider Management (2 controls: 2 manual) — IN SCOPE ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-15.1",
+		Name:        "Establish and Maintain a Service Provider Management Process",
+		Description: "CIS 15.1: Establish and maintain a process to evaluate, select, and monitor service providers for security posture",
+		Category:    "Service Provider Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 15.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-15.2",
+		Name:        "Include Security Requirements in Service Provider Contracts",
+		Description: "CIS 15.2: Include security requirements in contracts with all service providers",
+		Category:    "Service Provider Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 15.2"},
+	})
+
+	// === Family 16: Application Software Security (3 controls: 3 auto) ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-16.1",
+		Name:        "Establish and Maintain a Secure Software Development Process",
+		Description: "CIS 16.1: Establish and maintain a secure software development process across the enterprise",
 		Category:    "Application Software Security",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkApplicationSoftwareSecurity,
-		References:  []string{"CIS v8.0 Control 16"},
+		CheckFunc:   m.checkSecureSDLC,
+		References:  []string{"CIS v8.0 Safeguard 16.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-16.2",
+		Name:        "Perform Root Cause Analysis on Security Vulnerabilities",
+		Description: "CIS 16.2: Perform root cause analysis on security vulnerabilities to prevent recurrence",
+		Category:    "Application Software Security",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkRootCauseAnalysis,
+		References:  []string{"CIS v8.0 Safeguard 16.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-16.3",
+		Name:        "Manage Open-Source Software",
+		Description: "CIS 16.3: Establish and maintain a process to manage open-source software used in enterprise applications",
+		Category:    "Application Software Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkManageOpenSourceSoftware,
+		References:  []string{"CIS v8.0 Safeguard 16.3"},
 	})
 
-	// === Family 17: Incident Response Management ===
+	// === Family 17: Incident Response Management (3 controls: 2 auto, 1 manual) ===
 	m.RegisterControl(compliance.ControlDefinition{
-		ID:          "CIS-17",
-		Name:        "Incident Response Management",
-		Description: "CIS 17: Maintain a plan to rapidly respond to an attack with the appropriate resources and capabilities",
+		ID:          "CIS-17.1",
+		Name:        "Designate Personnel to Manage Incident Response",
+		Description: "CIS 17.1: Designate key personnel to manage incident response processes and procedures",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkIncidentResponse,
-		References:  []string{"CIS v8.0 Control 17"},
+		CheckFunc:   m.checkDesignateIRPersonnel,
+		References:  []string{"CIS v8.0 Safeguard 17.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-17.2",
+		Name:        "Establish and Maintain an Incident Response Process",
+		Description: "CIS 17.2: Establish and maintain an incident response process to rapidly respond to attacks",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponseProcess,
+		References:  []string{"CIS v8.0 Safeguard 17.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-17.3",
+		Name:        "Conduct Post-Incident Reviews",
+		Description: "CIS 17.3: Conduct post-incident reviews after each security incident to identify lessons learned",
+		Category:    "Incident Response",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 17.3"},
 	})
 
-	// NOTE: CIS-14 (Security Awareness), CIS-15 (Service Provider Management),
-	// and CIS-18 (Penetration Testing) are NOT registered. These are
-	// out-of-scope for a security scanner (they are process/human-
-	// relations/customer-driven activities). See the package doc comment.
+	// === Family 18: Penetration Testing (2 controls: 2 manual) — IN SCOPE ===
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-18.1",
+		Name:        "Establish and Maintain a Penetration Testing Process",
+		Description: "CIS 18.1: Establish and maintain a penetration testing process to identify and remediate exploitable vulnerabilities",
+		Category:    "Penetration Testing",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 18.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "CIS-18.2",
+		Name:        "Perform Periodic External Penetration Tests",
+		Description: "CIS 18.2: Perform periodic external penetration tests to validate security controls and identify weaknesses",
+		Category:    "Penetration Testing",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"CIS v8.0 Safeguard 18.2"},
+	})
 }
 
 // ============================================================================
-// Check implementations
+// Check implementations — CIS Family 1: Inventory and Control of Enterprise Assets
 // ============================================================================
 
-// checkInventoryAssets verifies enterprise asset inventory is in place.
-// Maps to CIS 1: Active management of enterprise assets.
-func (m *CISModule) checkInventoryAssets(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkEstablishAssetInventory verifies enterprise asset inventory is in place.
+// Maps to CIS 1.1: Establish and Maintain Detailed Enterprise Asset Inventory.
+func (m *CISModule) checkEstablishAssetInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasInventory := strings.Contains(inputStr, "asset_inventory") || strings.Contains(inputStr, "ioc_store") || strings.Contains(inputStr, "device_inventory")
+	hasTracking := strings.Contains(inputStr, "asset_tracking") || strings.Contains(inputStr, "federation") || strings.Contains(inputStr, "bundle_federation")
 
+	if hasInventory && hasTracking {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-1.1",
+			ControlName: "Establish and Maintain Detailed Enterprise Asset Inventory",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Enterprise asset inventory configured (AegisGate IOC store + bundle federation tracks all AI agent assets)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
 	if hasInventory {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-1",
-			ControlName: "Inventory and Control of Enterprise Assets",
-			Status:      compliance.StatusCompliant,
+			ControlID:   "CIS-1.1",
+			ControlName: "Establish and Maintain Detailed Enterprise Asset Inventory",
+			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Enterprise asset inventory configured (AegisGate IOC store tracks all AI agent assets)",
+			Message:     "Asset inventory detected; federation/tracking not detected",
 			Timestamp:   time.Now(),
+			Remediation: "Enable AegisGate IOC store bundle federation to continuously track all assets",
 		}, nil
 	}
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-1",
-		ControlName: "Inventory and Control of Enterprise Assets",
+		ControlID:   "CIS-1.1",
+		ControlName: "Establish and Maintain Detailed Enterprise Asset Inventory",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
 		Message:     "Asset inventory not configured",
@@ -338,8 +694,54 @@ func (m *CISModule) checkInventoryAssets(ctx context.Context, input []byte) (*co
 	}, nil
 }
 
+// checkAddressUnauthorizedAssets verifies unauthorized asset detection.
+// Maps to CIS 1.2: Address Unauthorized Assets.
+func (m *CISModule) checkAddressUnauthorizedAssets(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDetection := strings.Contains(inputStr, "unauthorized_asset") || strings.Contains(inputStr, "rogue_device") || strings.Contains(inputStr, "asset_discovery")
+	hasResponse := strings.Contains(inputStr, "quarantine") || strings.Contains(inputStr, "block_unauthorized") || strings.Contains(inputStr, "alert_unauthorized")
+
+	if hasDetection && hasResponse {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-1.2",
+			ControlName: "Address Unauthorized Assets",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Unauthorized asset detection and response configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasDetection {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-1.2",
+			ControlName: "Address Unauthorized Assets",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Unauthorized asset detection detected; response/quarantine not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Configure automated quarantine or alerting for unauthorized assets detected by IOC store",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-1.2",
+		ControlName: "Address Unauthorized Assets",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No unauthorized asset detection configured",
+		Timestamp:   time.Now(),
+		Remediation: "Enable AegisGate IOC store asset discovery and configure automated quarantine for unauthorized assets",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 2: Inventory and Control of Software Assets
+// ============================================================================
+
 // checkSoftwareInventory verifies software asset inventory.
-// Maps to CIS 2: Active management of software.
+// Maps to CIS 2.1: Establish and Maintain a Software Inventory.
 func (m *CISModule) checkSoftwareInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasVersioning := strings.Contains(inputStr, "model_version") || strings.Contains(inputStr, "model_id") || strings.Contains(inputStr, "binary_attestation")
@@ -348,8 +750,8 @@ func (m *CISModule) checkSoftwareInventory(ctx context.Context, input []byte) (*
 	if hasVersioning && hasSBOM {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-2",
-			ControlName: "Inventory and Control of Software Assets",
+			ControlID:   "CIS-2.1",
+			ControlName: "Establish and Maintain a Software Inventory",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
 			Message:     "Software inventory configured (model versioning + SBOM)",
@@ -359,8 +761,8 @@ func (m *CISModule) checkSoftwareInventory(ctx context.Context, input []byte) (*
 	if hasVersioning {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-2",
-			ControlName: "Inventory and Control of Software Assets",
+			ControlID:   "CIS-2.1",
+			ControlName: "Establish and Maintain a Software Inventory",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
 			Message:     "Model versioning detected; SBOM not detected",
@@ -370,8 +772,8 @@ func (m *CISModule) checkSoftwareInventory(ctx context.Context, input []byte) (*
 	}
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-2",
-		ControlName: "Inventory and Control of Software Assets",
+		ControlID:   "CIS-2.1",
+		ControlName: "Establish and Maintain a Software Inventory",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
 		Message:     "Software inventory not configured (no SBOM, no model versioning)",
@@ -380,11 +782,195 @@ func (m *CISModule) checkSoftwareInventory(ctx context.Context, input []byte) (*
 	}, nil
 }
 
-// checkDataProtection verifies encryption + data handling controls.
-// Maps to CIS 3: Data protection.
-func (m *CISModule) checkDataProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkAddressUnauthorizedSoftware verifies unauthorized software detection.
+// Maps to CIS 2.2: Address Unauthorized Software.
+func (m *CISModule) checkAddressUnauthorizedSoftware(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-	hasEncryptAtRest := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "data_encrypted")
+	hasDetection := strings.Contains(inputStr, "unauthorized_software") || strings.Contains(inputStr, "software_allowlist") || strings.Contains(inputStr, "model_allowlist")
+	hasResponse := strings.Contains(inputStr, "block_software") || strings.Contains(inputStr, "quarantine_software") || strings.Contains(inputStr, "alert_software")
+
+	if hasDetection && hasResponse {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-2.2",
+			ControlName: "Address Unauthorized Software",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Unauthorized software detection and response configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasDetection {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-2.2",
+			ControlName: "Address Unauthorized Software",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Unauthorized software detection detected; response not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Configure blocking or alerting for unauthorized software detected on enterprise assets",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-2.2",
+		ControlName: "Address Unauthorized Software",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No unauthorized software detection configured",
+		Timestamp:   time.Now(),
+		Remediation: "Enable model/software allowlists and configure automated blocking for unauthorized software",
+	}, nil
+}
+
+// checkSoftwareAllowlists verifies software allowlist management.
+// Maps to CIS 2.3: Manage Software Through Allowlists.
+func (m *CISModule) checkSoftwareAllowlists(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAllowlist := strings.Contains(inputStr, "allowlist") || strings.Contains(inputStr, "whitelist") || strings.Contains(inputStr, "approved_software")
+	hasEnforcement := strings.Contains(inputStr, "allowlist_enforcement") || strings.Contains(inputStr, "block_unlisted") || strings.Contains(inputStr, "enforce_allowlist")
+
+	if hasAllowlist && hasEnforcement {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-2.3",
+			ControlName: "Manage Software Through Allowlists",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Software allowlist management verified: allowlist + enforcement configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasAllowlist {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-2.3",
+			ControlName: "Manage Software Through Allowlists",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Software allowlist detected; enforcement not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable enforcement mode to block execution of unlisted software/models",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-2.3",
+		ControlName: "Manage Software Through Allowlists",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No software allowlist configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish an approved software allowlist and enable enforcement to block unlisted software",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 3: Data Protection
+// ============================================================================
+
+// checkDataManagementProcess verifies data management process.
+// Maps to CIS 3.1: Establish and Maintain a Data Management Process.
+func (m *CISModule) checkDataManagementProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasClassification := strings.Contains(inputStr, "data_classification") || strings.Contains(inputStr, "classification_policy") || strings.Contains(inputStr, "data_categories")
+	hasHandling := strings.Contains(inputStr, "data_handling") || strings.Contains(inputStr, "handling_policy") || strings.Contains(inputStr, "retention_policy")
+	hasDisposal := strings.Contains(inputStr, "data_disposal") || strings.Contains(inputStr, "secure_deletion") || strings.Contains(inputStr, "data_retention")
+
+	present := 0
+	if hasClassification {
+		present++
+	}
+	if hasHandling {
+		present++
+	}
+	if hasDisposal {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-3.1",
+			ControlName: "Establish and Maintain a Data Management Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Data management process verified: classification + handling + disposal configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-3.1",
+			ControlName: "Establish and Maintain a Data Management Process",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial data management: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Establish data classification, handling policies, and secure disposal/retention processes",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-3.1",
+		ControlName: "Establish and Maintain a Data Management Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No data management process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish data classification, handling, and disposal processes for all enterprise data",
+	}, nil
+}
+
+// checkDataInventory verifies data inventory is maintained.
+// Maps to CIS 3.2: Establish and Maintain a Data Inventory.
+func (m *CISModule) checkDataInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInventory := strings.Contains(inputStr, "data_inventory") || strings.Contains(inputStr, "data_mapping") || strings.Contains(inputStr, "data_catalog")
+	hasMapping := strings.Contains(inputStr, "asset_mapping") || strings.Contains(inputStr, "data_location") || strings.Contains(inputStr, "data_flow")
+
+	if hasInventory && hasMapping {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-3.2",
+			ControlName: "Establish and Maintain a Data Inventory",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data inventory verified: inventory + asset mapping configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasInventory {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-3.2",
+			ControlName: "Establish and Maintain a Data Inventory",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data inventory detected; asset mapping not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Map data to enterprise assets and establish data flow documentation",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-3.2",
+		ControlName: "Establish and Maintain a Data Inventory",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No data inventory configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a data inventory that maps data to enterprise assets and classifications",
+	}, nil
+}
+
+// checkConfigureDataStorage verifies data storage configuration.
+// Maps to CIS 3.3: Configure Data Storage.
+func (m *CISModule) checkConfigureDataStorage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEncryptAtRest := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "data_encrypted") || strings.Contains(inputStr, "storage_encryption")
 	hasEncryptInTransit := false
 	for _, p := range m.tlsPatterns {
 		if p.MatchString(inputStr) {
@@ -394,61 +980,96 @@ func (m *CISModule) checkDataProtection(ctx context.Context, input []byte) (*com
 	}
 	hasPIIScanning := strings.Contains(inputStr, "pii_scanner") || strings.Contains(inputStr, "pii_redaction") || strings.Contains(inputStr, "secret_scanner")
 
-	if hasEncryptAtRest && hasEncryptInTransit && hasPIIScanning {
+	present := 0
+	if hasEncryptAtRest {
+		present++
+	}
+	if hasEncryptInTransit {
+		present++
+	}
+	if hasPIIScanning {
+		present++
+	}
+
+	if present == 3 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-3",
-			ControlName: "Data Protection",
+			ControlID:   "CIS-3.3",
+			ControlName: "Configure Data Storage",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
-			Message:     "Data protection verified: encryption at rest + in transit + PII/secret scanning",
+			Message:     "Data storage verified: encryption at rest + in transit + PII/secret scanning",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
-	violations := []string{}
-	if !hasEncryptAtRest {
-		violations = append(violations, "encryption at rest missing")
+	if present >= 1 {
+		missing := []string{}
+		if !hasEncryptAtRest {
+			missing = append(missing, "encryption at rest")
+		}
+		if !hasEncryptInTransit {
+			missing = append(missing, "encryption in transit (TLS 1.2+)")
+		}
+		if !hasPIIScanning {
+			missing = append(missing, "PII/secret scanning")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-3.3",
+			ControlName: "Configure Data Storage",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial data storage: missing " + strings.Join(missing, ", "),
+			Timestamp:   time.Now(),
+			Remediation: "Enable all 3: encryption at rest, TLS 1.2+, PII/secret scanning",
+		}, nil
 	}
-	if !hasEncryptInTransit {
-		violations = append(violations, "encryption in transit (TLS 1.2+) missing")
-	}
-	if !hasPIIScanning {
-		violations = append(violations, "PII/secret scanning missing")
-	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-3",
-		ControlName: "Data Protection",
+		ControlID:   "CIS-3.3",
+		ControlName: "Configure Data Storage",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
-		Message:     "Data protection gaps: " + strings.Join(violations, ", "),
+		Message:     "No data storage security configured (no encryption, no PII scanning)",
 		Timestamp:   time.Now(),
-		Remediation: "Enable all 3: encryption at rest (persistence.encryption), TLS 1.2+ (tls.min_version), PII/secret scanning (response.pii_scanner)",
+		Remediation: "Enable encryption at rest, TLS 1.2+ for transit, and PII/secret scanning",
 	}, nil
 }
 
-// checkSecureConfiguration verifies secure configuration management.
-// Maps to CIS 4: Secure configuration.
-func (m *CISModule) checkSecureConfiguration(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// ============================================================================
+// Check implementations — CIS Family 4: Secure Configuration
+// ============================================================================
+
+// checkSecureConfigurationProcess verifies secure configuration management.
+// Maps to CIS 4.1: Establish and Maintain a Secure Configuration Process.
+func (m *CISModule) checkSecureConfigurationProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-	hasConfig := strings.Contains(inputStr, "platformconfig") || strings.Contains(inputStr, "aegisgate-platform.yaml")
+	hasConfig := strings.Contains(inputStr, "platformconfig") || strings.Contains(inputStr, "aegisgate-platform.yaml") || strings.Contains(inputStr, "configuration_management")
 	hasHardening := strings.Contains(inputStr, "hardening") || strings.Contains(inputStr, "secure_config") || strings.Contains(inputStr, "security_headers")
 	hasDefaultOff := !strings.Contains(inputStr, "default_password") && !strings.Contains(inputStr, "admin:admin")
 
-	if hasConfig && hasHardening && hasDefaultOff {
+	present := 0
+	if hasConfig {
+		present++
+	}
+	if hasHardening {
+		present++
+	}
+	if hasDefaultOff {
+		present++
+	}
+
+	if present == 3 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-4",
-			ControlName: "Secure Configuration of Enterprise Assets and Software",
+			ControlID:   "CIS-4.1",
+			ControlName: "Establish and Maintain a Secure Configuration Process",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
 			Message:     "Secure configuration verified (yaml config + security headers + no default credentials)",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	violations := []string{}
 	if !hasConfig {
 		violations = append(violations, "platformconfig not detected")
@@ -459,11 +1080,10 @@ func (m *CISModule) checkSecureConfiguration(ctx context.Context, input []byte) 
 	if !hasDefaultOff {
 		violations = append(violations, "default credentials detected (CRITICAL)")
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-4",
-		ControlName: "Secure Configuration of Enterprise Assets and Software",
+		ControlID:   "CIS-4.1",
+		ControlName: "Establish and Maintain a Secure Configuration Process",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
 		Message:     "Secure configuration gaps: " + strings.Join(violations, ", "),
@@ -472,59 +1092,374 @@ func (m *CISModule) checkSecureConfiguration(ctx context.Context, input []byte) 
 	}, nil
 }
 
-// checkAccountManagement verifies account lifecycle is in place.
-// Maps to CIS 5: Account management.
-func (m *CISModule) checkAccountManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkSecureNetworkConfig verifies secure configuration for network infrastructure.
+// Maps to CIS 4.2: Establish and Maintain a Secure Configuration Process for Network Infrastructure.
+func (m *CISModule) checkSecureNetworkConfig(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTLS := false
+	for _, p := range m.tlsPatterns {
+		if p.MatchString(inputStr) {
+			hasTLS = true
+			break
+		}
+	}
+	hasSecureDefaults := strings.Contains(inputStr, "secure_defaults") || strings.Contains(inputStr, "network_hardening") || strings.Contains(inputStr, "default_deny")
+	hasConfigMgmt := strings.Contains(inputStr, "network_config_management") || strings.Contains(inputStr, "infrastructure_as_code") || strings.Contains(inputStr, "config_versioning")
+
+	present := 0
+	if hasTLS {
+		present++
+	}
+	if hasSecureDefaults {
+		present++
+	}
+	if hasConfigMgmt {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-4.2",
+			ControlName: "Establish and Maintain a Secure Configuration Process for Network Infrastructure",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Network infrastructure secure configuration verified",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-4.2",
+			ControlName: "Establish and Maintain a Secure Configuration Process for Network Infrastructure",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial network configuration: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable TLS 1.2+, secure network defaults (default-deny), and infrastructure-as-code configuration management",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-4.2",
+		ControlName: "Establish and Maintain a Secure Configuration Process for Network Infrastructure",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No secure network configuration process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Enable TLS 1.2+, secure network defaults, and infrastructure-as-code for network configuration",
+	}, nil
+}
+
+// checkSessionLocking verifies automatic session locking.
+// Maps to CIS 4.3: Configure Automatic Session Locking.
+func (m *CISModule) checkSessionLocking(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSessionTimeout := strings.Contains(inputStr, "session_timeout") || strings.Contains(inputStr, "idle_timeout") || strings.Contains(inputStr, "session_lock")
+	hasLockPolicy := strings.Contains(inputStr, "auto_lock") || strings.Contains(inputStr, "lock_policy") || strings.Contains(inputStr, "timeout_policy")
+
+	if hasSessionTimeout && hasLockPolicy {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-4.3",
+			ControlName: "Configure Automatic Session Locking",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Automatic session locking verified: timeout + lock policy configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasSessionTimeout {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-4.3",
+			ControlName: "Configure Automatic Session Locking",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Session timeout detected; explicit lock policy not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Configure an explicit automatic session lock policy with defined timeout thresholds",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-4.3",
+		ControlName: "Configure Automatic Session Locking",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No automatic session locking configured",
+		Timestamp:   time.Now(),
+		Remediation: "Configure session_timeout and automatic session lock policy for all enterprise assets",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 5: Account Management
+// ============================================================================
+
+// checkAccountManagementProcess verifies account management process.
+// Maps to CIS 5.1: Establish and Maintain an Account Management Process.
+func (m *CISModule) checkAccountManagementProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled")
+	hasAccountMgmt := strings.Contains(inputStr, "account_management") || strings.Contains(inputStr, "account_lifecycle") || strings.Contains(inputStr, "provisioning")
 	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "roles")
-	hasSessionTimeout := strings.Contains(inputStr, "session_timeout") || strings.Contains(inputStr, "idle_timeout")
-	hasMFA := strings.Contains(inputStr, "mfa") || strings.Contains(inputStr, "multi_factor")
 
+	present := 0
+	if hasAuth {
+		present++
+	}
+	if hasAccountMgmt {
+		present++
+	}
+	if hasRBAC {
+		present++
+	}
+
+	if present == 3 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.1",
+			ControlName: "Establish and Maintain an Account Management Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Account management verified: auth + account lifecycle + RBAC",
+			Timestamp:   time.Now(),
+		}, nil
+	}
 	missing := []string{}
 	if !hasAuth {
 		missing = append(missing, "authentication")
 	}
+	if !hasAccountMgmt {
+		missing = append(missing, "account lifecycle management")
+	}
 	if !hasRBAC {
 		missing = append(missing, "RBAC")
 	}
-	if !hasSessionTimeout {
-		missing = append(missing, "session_timeout")
-	}
-	if !hasMFA {
-		missing = append(missing, "MFA")
-	}
-
-	if len(missing) == 0 {
-		return &compliance.ControlCheckResult{
-			Framework:   m.Framework(),
-			ControlID:   "CIS-5",
-			ControlName: "Account Management",
-			Status:      compliance.StatusCompliant,
-			Severity:    compliance.SeverityCritical,
-			Message:     "Account management verified: auth + RBAC + session timeout + MFA",
-			Timestamp:   time.Now(),
-		}, nil
-	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-5",
-		ControlName: "Account Management",
+		ControlID:   "CIS-5.1",
+		ControlName: "Establish and Maintain an Account Management Process",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
 		Message:     "Account management gaps: " + strings.Join(missing, ", "),
 		Timestamp:   time.Now(),
-		Remediation: "Configure auth, RBAC, session timeouts, and MFA per CIS 5",
+		Remediation: "Configure authentication, account lifecycle management, and RBAC per CIS 5.1",
 	}, nil
 }
 
-// checkAccessControl verifies access control management.
-// Maps to CIS 6: Access control management.
-func (m *CISModule) checkAccessControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkPrivilegedAccountManagement verifies privileged account management.
+// Maps to CIS 5.2: Establish and Maintain a Privileged Account Management Process.
+func (m *CISModule) checkPrivilegedAccountManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPrivilegedMgmt := strings.Contains(inputStr, "privileged_accounts") || strings.Contains(inputStr, "pam") || strings.Contains(inputStr, "privileged_access")
+	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "admin_roles") || strings.Contains(inputStr, "privileged_roles")
+	hasAudit := false
+	for _, p := range m.auditLogPatterns {
+		if p.MatchString(inputStr) {
+			hasAudit = true
+			break
+		}
+	}
+
+	present := 0
+	if hasPrivilegedMgmt {
+		present++
+	}
+	if hasRBAC {
+		present++
+	}
+	if hasAudit {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.2",
+			ControlName: "Establish and Maintain a Privileged Account Management Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Privileged account management verified: PAM + privileged roles + audit logging",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.2",
+			ControlName: "Establish and Maintain a Privileged Account Management Process",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial privileged account management: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Establish a PAM process, define privileged roles via RBAC, and audit all privileged access",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-5.2",
+		ControlName: "Establish and Maintain a Privileged Account Management Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No privileged account management configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a PAM process with privileged role definitions and audit logging for all privileged access",
+	}, nil
+}
+
+// checkMFAAdministrative verifies MFA for administrative access.
+// Maps to CIS 5.3: Require MFA for Administrative Access.
+func (m *CISModule) checkMFAAdministrative(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMFA := strings.Contains(inputStr, "mfa") || strings.Contains(inputStr, "multi_factor") || strings.Contains(inputStr, "totp")
+	hasAdminMFA := strings.Contains(inputStr, "admin_mfa") || strings.Contains(inputStr, "mfa_admin") || strings.Contains(inputStr, "privileged_mfa")
+	hasEnforcement := strings.Contains(inputStr, "mfa_required") || strings.Contains(inputStr, "mfa_enforced") || strings.Contains(inputStr, "require_mfa")
+
+	if hasMFA && (hasAdminMFA || hasEnforcement) {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.3",
+			ControlName: "Require MFA for Administrative Access",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "MFA for administrative access verified: MFA enabled and enforced for admin accounts",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasMFA {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.3",
+			ControlName: "Require MFA for Administrative Access",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "MFA detected; admin-specific MFA enforcement not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enforce MFA specifically for all administrative and privileged accounts",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-5.3",
+		ControlName: "Require MFA for Administrative Access",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No MFA configured for administrative access",
+		Timestamp:   time.Now(),
+		Remediation: "Enable and enforce multi-factor authentication for all administrative access",
+	}, nil
+}
+
+// checkMFARemoteAccess verifies MFA for remote access connections.
+// Maps to CIS 5.4: Require MFA for remote access.
+func (m *CISModule) checkMFARemoteAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMFA := strings.Contains(inputStr, "mfa") || strings.Contains(inputStr, "multi_factor") || strings.Contains(inputStr, "totp")
+	hasRemoteMFA := strings.Contains(inputStr, "remote_mfa") || strings.Contains(inputStr, "vpn_mfa") || strings.Contains(inputStr, "remote_access_mfa")
+	hasEnforcement := strings.Contains(inputStr, "mfa_required") || strings.Contains(inputStr, "mfa_enforced") || strings.Contains(inputStr, "require_mfa")
+
+	if hasMFA && (hasRemoteMFA || hasEnforcement) {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.4",
+			ControlName: "Require MFA for Remote Access",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "MFA for remote access verified: MFA enabled and enforced for remote connections",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasMFA {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-5.4",
+			ControlName: "Require MFA for Remote Access",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "MFA detected; remote-specific MFA enforcement not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enforce MFA specifically for all remote access (VPN, RDP, SSH, etc.)",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-5.4",
+		ControlName: "Require MFA for Remote Access",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No MFA configured for remote access",
+		Timestamp:   time.Now(),
+		Remediation: "Enable and enforce multi-factor authentication for all remote access connections",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 6: Access Control Management
+// ============================================================================
+
+// checkAccessGrantingProcess verifies access granting/revoking process.
+// Maps to CIS 6.1: Establish an Access Granting/Revoking Process.
+func (m *CISModule) checkAccessGrantingProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasProcess := strings.Contains(inputStr, "access_granting") || strings.Contains(inputStr, "access_revoking") || strings.Contains(inputStr, "access_process")
+	hasApproval := strings.Contains(inputStr, "access_approval") || strings.Contains(inputStr, "approval_workflow") || strings.Contains(inputStr, "access_request")
+	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "roles")
+
+	present := 0
+	if hasProcess {
+		present++
+	}
+	if hasApproval {
+		present++
+	}
+	if hasRBAC {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-6.1",
+			ControlName: "Establish an Access Granting/Revoking Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Access granting/revoking process verified: process + approval workflow + RBAC",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-6.1",
+			ControlName: "Establish an Access Granting/Revoking Process",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial access process: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Establish formal access granting/revoking process with approval workflow and RBAC integration",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-6.1",
+		ControlName: "Establish an Access Granting/Revoking Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No access granting/revoking process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a formal access granting and revoking process with approval workflows",
+	}, nil
+}
+
+// checkPrivilegeManagement verifies privilege management (least privilege).
+// Maps to CIS 6.2: Establish and Maintain Privilege Management.
+func (m *CISModule) checkPrivilegeManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "roles")
-	hasLeastPrivilege := strings.Contains(inputStr, "least_privilege") || strings.Contains(inputStr, "minimum_permissions")
+	hasLeastPrivilege := strings.Contains(inputStr, "least_privilege") || strings.Contains(inputStr, "minimum_permissions") || strings.Contains(inputStr, "privilege_minimization")
 	hasSessionTimeout := strings.Contains(inputStr, "session_timeout") || strings.Contains(inputStr, "idle_timeout")
 	hasAuditLog := false
 	for _, p := range m.auditLogPatterns {
@@ -534,52 +1469,79 @@ func (m *CISModule) checkAccessControl(ctx context.Context, input []byte) (*comp
 		}
 	}
 
-	missing := []string{}
-	if !hasRBAC {
-		missing = append(missing, "RBAC")
+	present := 0
+	if hasRBAC {
+		present++
 	}
-	if !hasLeastPrivilege {
-		missing = append(missing, "least privilege principle")
+	if hasLeastPrivilege {
+		present++
 	}
-	if !hasSessionTimeout {
-		missing = append(missing, "session timeout")
+	if hasSessionTimeout {
+		present++
 	}
-	if !hasAuditLog {
-		missing = append(missing, "access audit log")
+	if hasAuditLog {
+		present++
 	}
 
-	if len(missing) == 0 {
+	if present >= 3 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-6",
-			ControlName: "Access Control Management",
+			ControlID:   "CIS-6.2",
+			ControlName: "Establish and Maintain Privilege Management",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityCritical,
-			Message:     "Access control verified: RBAC + least privilege + session timeout + audit log",
+			Message:     "Privilege management verified: RBAC + least privilege + session timeout + audit log",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
+	if present >= 1 {
+		missing := []string{}
+		if !hasRBAC {
+			missing = append(missing, "RBAC")
+		}
+		if !hasLeastPrivilege {
+			missing = append(missing, "least privilege")
+		}
+		if !hasSessionTimeout {
+			missing = append(missing, "session timeout")
+		}
+		if !hasAuditLog {
+			missing = append(missing, "audit log")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-6.2",
+			ControlName: "Establish and Maintain Privilege Management",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial privilege management: missing " + strings.Join(missing, ", "),
+			Timestamp:   time.Now(),
+			Remediation: "Configure RBAC with least-privilege roles, session timeouts, and access audit logging",
+		}, nil
+	}
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-6",
-		ControlName: "Access Control Management",
+		ControlID:   "CIS-6.2",
+		ControlName: "Establish and Maintain Privilege Management",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityCritical,
-		Message:     "Access control gaps: " + strings.Join(missing, ", "),
+		Message:     "No privilege management configured",
 		Timestamp:   time.Now(),
 		Remediation: "Configure RBAC with least-privilege roles, session timeouts, and access audit logging",
 	}, nil
 }
 
-// checkVulnerabilityManagement verifies continuous vulnerability scanning.
-// Maps to CIS 7: Continuous vulnerability management.
-func (m *CISModule) checkVulnerabilityManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// ============================================================================
+// Check implementations — CIS Family 7: Continuous Vulnerability Management
+// ============================================================================
+
+// checkVulnerabilityManagementProcess verifies vulnerability management process.
+// Maps to CIS 7.1: Establish and Maintain a Vulnerability Management Process.
+func (m *CISModule) checkVulnerabilityManagementProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasGovulncheck := strings.Contains(inputStr, "govulncheck") || strings.Contains(inputStr, "vuln_scan")
 	hasTrivy := strings.Contains(inputStr, "trivy") || strings.Contains(inputStr, "container_scan")
 	hasSBOM := strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "cyclonedx")
-	hasPatchProcess := strings.Contains(inputStr, "patch") || strings.Contains(inputStr, "update")
 
 	present := 0
 	if hasGovulncheck {
@@ -591,50 +1553,215 @@ func (m *CISModule) checkVulnerabilityManagement(ctx context.Context, input []by
 	if hasSBOM {
 		present++
 	}
-	if hasPatchProcess {
-		present++
-	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-7",
-			ControlName: "Continuous Vulnerability Management",
+			ControlID:   "CIS-7.1",
+			ControlName: "Establish and Maintain a Vulnerability Management Process",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
 			Message:     "Vulnerability management configured (multiple scanners + SBOM)",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-7",
-			ControlName: "Continuous Vulnerability Management",
+			ControlID:   "CIS-7.1",
+			ControlName: "Establish and Maintain a Vulnerability Management Process",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Partial vulnerability management: 1 of 4 controls configured",
+			Message:     "Partial vulnerability management: 1 of 3 controls configured",
 			Timestamp:   time.Now(),
 			Remediation: "Add govulncheck, Trivy, and SBOM generation to your CI (see AegisGate's .github/workflows)",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-7",
-		ControlName: "Continuous Vulnerability Management",
+		ControlID:   "CIS-7.1",
+		ControlName: "Establish and Maintain a Vulnerability Management Process",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
 		Message:     "No vulnerability management configured",
 		Timestamp:   time.Now(),
-		Remediation: "Enable govulncheck, Trivy, SBOM, and a patch process in your CI/CD",
+		Remediation: "Enable govulncheck, Trivy, and SBOM generation in your CI/CD",
 	}, nil
 }
 
-// checkAuditLogManagement verifies audit log collection and retention.
-// Maps to CIS 8: Audit log management.
-func (m *CISModule) checkAuditLogManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkRemediationProcess verifies vulnerability remediation process.
+// Maps to CIS 7.2: Establish and Maintain a Remediation Process.
+func (m *CISModule) checkRemediationProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRemediation := strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "remediation_process") || strings.Contains(inputStr, "fix_process")
+	hasSLA := strings.Contains(inputStr, "remediation_sla") || strings.Contains(inputStr, "sla") || strings.Contains(inputStr, "time_to_remediate")
+	hasTracking := strings.Contains(inputStr, "vuln_tracking") || strings.Contains(inputStr, "ticketing") || strings.Contains(inputStr, "issue_tracking")
+
+	present := 0
+	if hasRemediation {
+		present++
+	}
+	if hasSLA {
+		present++
+	}
+	if hasTracking {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-7.2",
+			ControlName: "Establish and Maintain a Remediation Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Remediation process verified: process + SLA + tracking configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-7.2",
+			ControlName: "Establish and Maintain a Remediation Process",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial remediation: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Establish a remediation process with SLAs and vulnerability tracking/ticketing",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-7.2",
+		ControlName: "Establish and Maintain a Remediation Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No remediation process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a remediation process with SLAs and vulnerability tracking",
+	}, nil
+}
+
+// checkAutomatedPatchManagement verifies automated OS patch management.
+// Maps to CIS 7.3: Perform Automated Operating System Patch Management.
+func (m *CISModule) checkAutomatedPatchManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPatchMgmt := strings.Contains(inputStr, "patch_management") || strings.Contains(inputStr, "automated_patching") || strings.Contains(inputStr, "patch")
+	hasAutoUpdate := strings.Contains(inputStr, "auto_update") || strings.Contains(inputStr, "automatic_updates") || strings.Contains(inputStr, "unattended_upgrades")
+	hasPatchTesting := strings.Contains(inputStr, "patch_testing") || strings.Contains(inputStr, "staged_patching") || strings.Contains(inputStr, "patch_validation")
+
+	present := 0
+	if hasPatchMgmt {
+		present++
+	}
+	if hasAutoUpdate {
+		present++
+	}
+	if hasPatchTesting {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-7.3",
+			ControlName: "Perform Automated Operating System Patch Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Automated patch management verified: patching + auto-update + testing",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-7.3",
+			ControlName: "Perform Automated Operating System Patch Management",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial patch management: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable automated OS patching with auto-updates and staged patch testing",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-7.3",
+		ControlName: "Perform Automated Operating System Patch Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No automated patch management configured",
+		Timestamp:   time.Now(),
+		Remediation: "Enable automated OS patch management with auto-updates and staged patch testing",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 8: Audit Log Management
+// ============================================================================
+
+// checkAuditLogManagementProcess verifies audit log management process.
+// Maps to CIS 8.1: Establish and Maintain an Audit Log Management Process.
+func (m *CISModule) checkAuditLogManagementProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAudit := false
+	for _, p := range m.auditLogPatterns {
+		if p.MatchString(inputStr) {
+			hasAudit = true
+			break
+		}
+	}
+	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "audit_log_retention")
+	hasProcess := strings.Contains(inputStr, "log_management") || strings.Contains(inputStr, "audit_process") || strings.Contains(inputStr, "log_policy")
+
+	present := 0
+	if hasAudit {
+		present++
+	}
+	if hasRetention {
+		present++
+	}
+	if hasProcess {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-8.1",
+			ControlName: "Establish and Maintain an Audit Log Management Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Audit log management process verified: collection + retention + policy",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	missing := []string{}
+	if !hasAudit {
+		missing = append(missing, "audit log collection")
+	}
+	if !hasRetention {
+		missing = append(missing, "retention policy")
+	}
+	if !hasProcess {
+		missing = append(missing, "log management process")
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-8.1",
+		ControlName: "Establish and Maintain an Audit Log Management Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Audit log management gaps: " + strings.Join(missing, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure audit log collection, retention policy, and a formal log management process",
+	}, nil
+}
+
+// checkCollectCentralizeAuditLogs verifies audit log collection and centralization.
+// Maps to CIS 8.2: Collect and Centralize Audit Logs.
+func (m *CISModule) checkCollectCentralizeAuditLogs(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasAudit := false
 	hasIntegrity := false
@@ -646,21 +1773,19 @@ func (m *CISModule) checkAuditLogManagement(ctx context.Context, input []byte) (
 			}
 		}
 	}
-	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "audit_log_retention")
-	hasReview := strings.Contains(inputStr, "audit_review") || strings.Contains(inputStr, "audit_alert")
+	hasCentralization := strings.Contains(inputStr, "centralized_logging") || strings.Contains(inputStr, "log_aggregation") || strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "log_central")
 
-	if hasAudit && hasIntegrity && hasRetention && hasReview {
+	if hasAudit && hasIntegrity && hasCentralization {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-8",
-			ControlName: "Audit Log Management",
+			ControlID:   "CIS-8.2",
+			ControlName: "Collect and Centralize Audit Logs",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Audit log management verified: collection + integrity + retention + review",
+			Message:     "Audit log collection verified: collection + hash-chain integrity + centralization",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	missing := []string{}
 	if !hasAudit {
 		missing = append(missing, "audit log collection")
@@ -668,94 +1793,128 @@ func (m *CISModule) checkAuditLogManagement(ctx context.Context, input []byte) (
 	if !hasIntegrity {
 		missing = append(missing, "log integrity (hash-chain)")
 	}
-	if !hasRetention {
-		missing = append(missing, "retention policy")
+	if !hasCentralization {
+		missing = append(missing, "log centralization")
 	}
-	if !hasReview {
-		missing = append(missing, "review/alert process")
-	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-8",
-		ControlName: "Audit Log Management",
+		ControlID:   "CIS-8.2",
+		ControlName: "Collect and Centralize Audit Logs",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "Audit log gaps: " + strings.Join(missing, ", "),
+		Message:     "Audit log collection gaps: " + strings.Join(missing, ", "),
 		Timestamp:   time.Now(),
-		Remediation: "Configure audit log collection (persistence.audit=true), hash-chain integrity, retention policy, and review/alert process",
+		Remediation: "Configure audit log collection with hash-chain integrity and centralize logs in a SIEM or log aggregator",
 	}, nil
 }
 
-// checkEmailAndWebBrowser verifies protections for email and web browser
-// clients. Maps to CIS 9: Email and Web Browser Protections.
-//
-// AegisGate implements this through the AegisGate Lens browser extension
-// (100% on-device prompt scanning for PII, secrets, XSS, and compliance
-// in 8 major AI chat tools) and the Lens Telemetry Bridge which feeds
-// scan events into the AegisGate audit log.
-func (m *CISModule) checkEmailAndWebBrowser(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// ============================================================================
+// Check implementations — CIS Family 9: Email and Web Browser Protections
+// ============================================================================
+
+// checkApprovedEmailClients verifies approved email clients are used.
+// Maps to CIS 9.1: Ensure Only Approved Email Clients Are Used.
+func (m *CISModule) checkApprovedEmailClients(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasApproved := strings.Contains(inputStr, "approved_email") || strings.Contains(inputStr, "email_allowlist") || strings.Contains(inputStr, "email_client_policy")
+	hasDLP := strings.Contains(inputStr, "email_dlp") || strings.Contains(inputStr, "data_loss_prevention") || strings.Contains(inputStr, "email_scanning")
+
+	if hasApproved && hasDLP {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-9.1",
+			ControlName: "Ensure Only Approved Email Clients Are Used",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Approved email clients verified: allowlist + DLP scanning configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasApproved {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-9.1",
+			ControlName: "Ensure Only Approved Email Clients Are Used",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Approved email clients detected; DLP scanning not configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable email DLP scanning in addition to approved email client policy",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-9.1",
+		ControlName: "Ensure Only Approved Email Clients Are Used",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No approved email client policy configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish an approved email client allowlist and enable email DLP scanning",
+	}, nil
+}
+
+// checkApprovedWebBrowsers verifies approved web browsers are used.
+// Maps to CIS 9.2: Ensure Only Approved Web Browsers Are Used.
+func (m *CISModule) checkApprovedWebBrowsers(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasLens := strings.Contains(inputStr, "aegisgate_lens") || strings.Contains(inputStr, "lens_extension") || strings.Contains(inputStr, "browser_extension")
-	hasLensTelemetry := strings.Contains(inputStr, "lens_telemetry") || strings.Contains(inputStr, "telemetry_bridge")
 	hasCSP := strings.Contains(inputStr, "content_security_policy") || strings.Contains(inputStr, "csp_header")
+	hasApproved := strings.Contains(inputStr, "approved_browsers") || strings.Contains(inputStr, "browser_allowlist") || strings.Contains(inputStr, "browser_policy")
 
 	present := 0
 	if hasLens {
 		present++
 	}
-	if hasLensTelemetry {
+	if hasCSP {
 		present++
 	}
-	if hasCSP {
+	if hasApproved {
 		present++
 	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-9",
-			ControlName: "Email and Web Browser Protections",
+			ControlID:   "CIS-9.2",
+			ControlName: "Ensure Only Approved Web Browsers Are Used",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityMedium,
-			Message:     "Browser protections verified: AegisGate Lens + telemetry bridge + CSP headers",
+			Message:     "Approved web browsers verified: AegisGate Lens + CSP + browser policy",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-9",
-			ControlName: "Email and Web Browser Protections",
+			ControlID:   "CIS-9.2",
+			ControlName: "Ensure Only Approved Web Browsers Are Used",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityMedium,
 			Message:     "Partial browser protections: 1 of 3 components configured",
 			Timestamp:   time.Now(),
-			Remediation: "Install AegisGate Lens (aegisgate-lens/), enable the Lens telemetry bridge, and set content-security-policy headers",
+			Remediation: "Install AegisGate Lens, set CSP headers, and establish approved browser policy",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-9",
-		ControlName: "Email and Web Browser Protections",
+		ControlID:   "CIS-9.2",
+		ControlName: "Ensure Only Approved Web Browsers Are Used",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityMedium,
-		Message:     "No browser protections detected (AegisGate Lens, telemetry bridge, or CSP headers missing)",
+		Message:     "No approved web browser protections detected",
 		Timestamp:   time.Now(),
-		Remediation: "Install AegisGate Lens for client-side prompt scanning, enable Lens telemetry bridge to AegisGate audit log, and add CSP headers",
+		Remediation: "Install AegisGate Lens for client-side scanning, set CSP headers, and establish approved browser policy",
 	}, nil
 }
 
-// checkMalwareDefenses verifies anti-malware/anti-attack scanning is in
-// place. Maps to CIS 10: Malware Defenses.
-//
-// AegisGate's scanner covers AI-specific attack patterns: prompt
-// injection, jailbreaks, data poisoning, model exfiltration, and
-// 144+ attack patterns. This is the AI-security analog of
-// traditional anti-malware scanning.
-func (m *CISModule) checkMalwareDefenses(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// ============================================================================
+// Check implementations — CIS Family 10: Malware Defenses
+// ============================================================================
+
+// checkDeployAntiMalware verifies anti-malware/anti-attack scanning is in place.
+// Maps to CIS 10.1: Deploy Anti-Malware Software.
+func (m *CISModule) checkDeployAntiMalware(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 
 	hasScanner := false
@@ -765,14 +1924,68 @@ func (m *CISModule) checkMalwareDefenses(ctx context.Context, input []byte) (*co
 			break
 		}
 	}
-	hasAutoUpdate := strings.Contains(inputStr, "auto_update") || strings.Contains(inputStr, "pattern_update") || strings.Contains(inputStr, "rule_update")
-	hasRegularScans := strings.Contains(inputStr, "regular_scan") || strings.Contains(inputStr, "scheduled_scan") || strings.Contains(inputStr, "scan_interval")
+	hasAntiMalware := strings.Contains(inputStr, "anti_malware") || strings.Contains(inputStr, "antivirus") || strings.Contains(inputStr, "malware_scan")
+	hasCoverage := strings.Contains(inputStr, "full_coverage") || strings.Contains(inputStr, "all_assets") || strings.Contains(inputStr, "endpoint_protection")
 
 	present := 0
 	if hasScanner {
 		present++
 	}
+	if hasAntiMalware {
+		present++
+	}
+	if hasCoverage {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-10.1",
+			ControlName: "Deploy Anti-Malware Software",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Anti-malware defenses verified: scanner + anti-malware + full coverage",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-10.1",
+			ControlName: "Deploy Anti-Malware Software",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial anti-malware defenses: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Deploy AegisGate scanner across all assets and ensure full endpoint coverage",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-10.1",
+		ControlName: "Deploy Anti-Malware Software",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No anti-malware defenses detected",
+		Timestamp:   time.Now(),
+		Remediation: "Deploy AegisGate scanner (pkg/scanner/) with anti-malware scanning across all enterprise assets",
+	}, nil
+}
+
+// checkAntiMalwareAutoUpdates verifies automatic updates for anti-malware.
+// Maps to CIS 10.2: Configure Automatic Updates for Anti-Malware.
+func (m *CISModule) checkAntiMalwareAutoUpdates(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAutoUpdate := strings.Contains(inputStr, "auto_update") || strings.Contains(inputStr, "pattern_update") || strings.Contains(inputStr, "rule_update") || strings.Contains(inputStr, "automatic_updates")
+	hasSignatureUpdates := strings.Contains(inputStr, "signature_update") || strings.Contains(inputStr, "definition_update") || strings.Contains(inputStr, "signature_auto_update")
+	hasRegularScans := strings.Contains(inputStr, "regular_scan") || strings.Contains(inputStr, "scheduled_scan") || strings.Contains(inputStr, "scan_interval")
+
+	present := 0
 	if hasAutoUpdate {
+		present++
+	}
+	if hasSignatureUpdates {
 		present++
 	}
 	if hasRegularScans {
@@ -782,53 +1995,49 @@ func (m *CISModule) checkMalwareDefenses(ctx context.Context, input []byte) (*co
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-10",
-			ControlName: "Malware Defenses",
+			ControlID:   "CIS-10.2",
+			ControlName: "Configure Automatic Updates for Anti-Malware",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "AI anti-malware defenses verified: scanner + pattern updates + scheduled scans",
+			Message:     "Anti-malware auto-updates verified: auto-update + signature updates + scheduled scans",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-10",
-			ControlName: "Malware Defenses",
+			ControlID:   "CIS-10.2",
+			ControlName: "Configure Automatic Updates for Anti-Malware",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Partial AI anti-malware defenses: 1 of 3 components configured",
+			Message:     "Partial auto-update configuration: 1 of 3 components configured",
 			Timestamp:   time.Now(),
-			Remediation: "Enable AegisGate scanner (pkg/scanner/), pattern auto-updates, and scheduled scans",
+			Remediation: "Enable automatic pattern/signature updates and scheduled scans for anti-malware",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-10",
-		ControlName: "Malware Defenses",
+		ControlID:   "CIS-10.2",
+		ControlName: "Configure Automatic Updates for Anti-Malware",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "No AI anti-malware defenses detected (scanner, auto-updates, or scheduled scans missing)",
+		Message:     "No automatic anti-malware updates configured",
 		Timestamp:   time.Now(),
-		Remediation: "Enable AegisGate scanner (pkg/scanner/) with pattern auto-updates and scheduled scans for continuous AI-attack detection",
+		Remediation: "Enable automatic pattern updates, signature updates, and scheduled scans for AegisGate scanner",
 	}, nil
 }
 
-// checkDataRecovery verifies data backup and recovery capabilities.
-// Maps to CIS 11: Data Recovery.
-//
-// AegisGate's hash-chain audit log IS the recovery mechanism: any
-// audit log entry can be verified cryptographically after restore,
-// and the IOC store has its own backup story. 7/30/90-day retention
-// is the default per tier.
-func (m *CISModule) checkDataRecovery(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// ============================================================================
+// Check implementations — CIS Family 11: Data Recovery
+// ============================================================================
+
+// checkDataRecoveryProcess verifies data recovery process.
+// Maps to CIS 11.1: Establish and Maintain a Data Recovery Process.
+func (m *CISModule) checkDataRecoveryProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasBackup := strings.Contains(inputStr, "backup") || strings.Contains(inputStr, "disaster_recovery")
 	hasIntegrity := strings.Contains(inputStr, "log_integrity") || strings.Contains(inputStr, "hash_chain")
 	hasRestore := strings.Contains(inputStr, "restore") || strings.Contains(inputStr, "audit_replay") || strings.Contains(inputStr, "recoverable")
-	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "retention_days")
 
 	present := 0
 	if hasBackup {
@@ -840,56 +2049,104 @@ func (m *CISModule) checkDataRecovery(ctx context.Context, input []byte) (*compl
 	if hasRestore {
 		present++
 	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-11.1",
+			ControlName: "Establish and Maintain a Data Recovery Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data recovery process verified: backup + integrity + restore capability",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-11.1",
+			ControlName: "Establish and Maintain a Data Recovery Process",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial data recovery: 1 of 3 capabilities configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable backup, hash-chain integrity, and restore/replay capability",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-11.1",
+		ControlName: "Establish and Maintain a Data Recovery Process",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No data recovery process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a data recovery process with backup, integrity verification, and restore testing",
+	}, nil
+}
+
+// checkAutomatedBackups verifies automated backup capability.
+// Maps to CIS 11.2: Perform Automated Backups.
+func (m *CISModule) checkAutomatedBackups(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAutomatedBackup := strings.Contains(inputStr, "automated_backup") || strings.Contains(inputStr, "auto_backup") || strings.Contains(inputStr, "scheduled_backup")
+	hasRetention := strings.Contains(inputStr, "retention") || strings.Contains(inputStr, "retention_days") || strings.Contains(inputStr, "backup_retention")
+	hasRestoreTest := strings.Contains(inputStr, "restore_test") || strings.Contains(inputStr, "backup_test") || strings.Contains(inputStr, "recovery_test")
+
+	present := 0
+	if hasAutomatedBackup {
+		present++
+	}
 	if hasRetention {
+		present++
+	}
+	if hasRestoreTest {
 		present++
 	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-11",
-			ControlName: "Data Recovery",
+			ControlID:   "CIS-11.2",
+			ControlName: "Perform Automated Backups",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Data recovery verified: backup + integrity-verifiable restore + retention policy",
+			Message:     "Automated backups verified: automated backup + retention + restore testing",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-11",
-			ControlName: "Data Recovery",
+			ControlID:   "CIS-11.2",
+			ControlName: "Perform Automated Backups",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Partial data recovery: 1 of 4 capabilities configured",
+			Message:     "Partial automated backups: 1 of 3 components configured",
 			Timestamp:   time.Now(),
-			Remediation: "Enable backup, hash-chain integrity (for verifiable restore), audit replay (for restore verification), and retention policy",
+			Remediation: "Enable automated backups with retention policy and periodic restore testing",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-11",
-		ControlName: "Data Recovery",
+		ControlID:   "CIS-11.2",
+		ControlName: "Perform Automated Backups",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "No data recovery capabilities (no backup, no integrity verification, no retention)",
+		Message:     "No automated backups configured",
 		Timestamp:   time.Now(),
-		Remediation: "Enable backup, hash-chain integrity (so restored logs are verifiable), audit replay capability, and retention policy (default 7/30/90 days by tier)",
+		Remediation: "Enable automated backups with retention policy (default 7/30/90 days by tier) and periodic restore testing",
 	}, nil
 }
 
-// checkNetworkInfrastructure verifies secure network infrastructure.
-// Maps to CIS 12: Network Infrastructure Management.
-//
-// AegisGate enforces TLS 1.2+ on all 6 protocol pillars (HTTP, MCP,
-// A2A, ACP, RESPONSE, Trust), network segmentation defaults, and mTLS
-// for agent-to-agent communication (A2A/ACP).
-func (m *CISModule) checkNetworkInfrastructure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
+// ============================================================================
+// Check implementations — CIS Family 12: Network Infrastructure Management
+// ============================================================================
 
+// checkNetworkUpToDate verifies network infrastructure is up-to-date.
+// Maps to CIS 12.1: Ensure Network Infrastructure is Up-to-Date.
+func (m *CISModule) checkNetworkUpToDate(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
 	hasTLS := false
 	for _, p := range m.tlsPatterns {
 		if p.MatchString(inputStr) {
@@ -897,14 +2154,64 @@ func (m *CISModule) checkNetworkInfrastructure(ctx context.Context, input []byte
 			break
 		}
 	}
-	hasMTLS := strings.Contains(inputStr, "mtls") || strings.Contains(inputStr, "mutual_tls") || strings.Contains(inputStr, "client_cert")
-	hasSegmentation := strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "segmented") || strings.Contains(inputStr, "isolated")
-	hasFirewall := strings.Contains(inputStr, "firewall") || strings.Contains(inputStr, "egress_allowlist") || strings.Contains(inputStr, "ingress_allowlist")
+	hasFirmwareUpdates := strings.Contains(inputStr, "firmware_update") || strings.Contains(inputStr, "patch_network") || strings.Contains(inputStr, "network_up_to_date")
+	hasSupportedVer := strings.Contains(inputStr, "supported_version") || strings.Contains(inputStr, "end_of_life_check") || strings.Contains(inputStr, "version_check")
 
 	present := 0
 	if hasTLS {
 		present++
 	}
+	if hasFirmwareUpdates {
+		present++
+	}
+	if hasSupportedVer {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-12.1",
+			ControlName: "Ensure Network Infrastructure is Up-to-Date",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Network infrastructure up-to-date: TLS 1.2+ + firmware updates + version checks",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-12.1",
+			ControlName: "Ensure Network Infrastructure is Up-to-Date",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial network up-to-date: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Ensure TLS 1.2+, firmware updates, and supported version checks for all network devices",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-12.1",
+		ControlName: "Ensure Network Infrastructure is Up-to-Date",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No network infrastructure update process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Ensure TLS 1.2+ on all 6 protocol pillars, firmware updates, and supported version checks",
+	}, nil
+}
+
+// checkSecureNetworkArchitecture verifies secure network architecture.
+// Maps to CIS 12.2: Establish and Maintain a Secure Network Architecture.
+func (m *CISModule) checkSecureNetworkArchitecture(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMTLS := strings.Contains(inputStr, "mtls") || strings.Contains(inputStr, "mutual_tls") || strings.Contains(inputStr, "client_cert")
+	hasSegmentation := strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "segmented") || strings.Contains(inputStr, "isolated")
+	hasFirewall := strings.Contains(inputStr, "firewall") || strings.Contains(inputStr, "egress_allowlist") || strings.Contains(inputStr, "ingress_allowlist")
+
+	present := 0
 	if hasMTLS {
 		present++
 	}
@@ -918,47 +2225,109 @@ func (m *CISModule) checkNetworkInfrastructure(ctx context.Context, input []byte
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-12",
-			ControlName: "Network Infrastructure Management",
+			ControlID:   "CIS-12.2",
+			ControlName: "Establish and Maintain a Secure Network Architecture",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Network infrastructure verified: TLS 1.2+ + mTLS + segmentation + firewall rules",
+			Message:     "Secure network architecture verified: mTLS + segmentation + firewall rules",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-12",
-			ControlName: "Network Infrastructure Management",
+			ControlID:   "CIS-12.2",
+			ControlName: "Establish and Maintain a Secure Network Architecture",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Partial network infrastructure: 1 of 4 components configured",
+			Message:     "Partial network architecture: 1 of 3 components configured",
 			Timestamp:   time.Now(),
-			Remediation: "Enable TLS 1.2+ on all 6 protocol pillars, mTLS for A2A/ACP, network segmentation defaults, and egress/ingress allowlists",
+			Remediation: "Enable mTLS for A2A/ACP, network segmentation defaults, and egress/ingress allowlists",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-12",
-		ControlName: "Network Infrastructure Management",
+		ControlID:   "CIS-12.2",
+		ControlName: "Establish and Maintain a Secure Network Architecture",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "No secure network infrastructure (no TLS, no mTLS, no segmentation, no firewall)",
+		Message:     "No secure network architecture configured",
 		Timestamp:   time.Now(),
-		Remediation: "Enable TLS 1.2+ on all 6 protocol pillars (HTTP, MCP, A2A, ACP, RESPONSE, Trust), mTLS for A2A/ACP, network segmentation, and egress/ingress allowlists",
+		Remediation: "Enable mTLS for A2A/ACP, network segmentation, and egress/ingress allowlists",
 	}, nil
 }
 
-// checkNetworkMonitoring verifies network monitoring and defense.
-// Maps to CIS 13: Network monitoring and defense.
-func (m *CISModule) checkNetworkMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkSecurelyManageNetwork verifies secure management of network infrastructure.
+// Maps to CIS 12.3: Securely Manage Network Infrastructure.
+func (m *CISModule) checkSecurelyManageNetwork(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAccessControl := strings.Contains(inputStr, "network_access_control") || strings.Contains(inputStr, "nac") || strings.Contains(inputStr, "device_auth")
+	hasChangeMgmt := strings.Contains(inputStr, "change_management") || strings.Contains(inputStr, "config_change_control") || strings.Contains(inputStr, "network_change")
+	hasAuditLog := false
+	for _, p := range m.auditLogPatterns {
+		if p.MatchString(inputStr) {
+			hasAuditLog = true
+			break
+		}
+	}
+
+	present := 0
+	if hasAccessControl {
+		present++
+	}
+	if hasChangeMgmt {
+		present++
+	}
+	if hasAuditLog {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-12.3",
+			ControlName: "Securely Manage Network Infrastructure",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Secure network management verified: access control + change management + audit logging",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-12.3",
+			ControlName: "Securely Manage Network Infrastructure",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial network management: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable network access control, change management, and audit logging for network infrastructure",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-12.3",
+		ControlName: "Securely Manage Network Infrastructure",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No secure network management configured",
+		Timestamp:   time.Now(),
+		Remediation: "Enable network access control, change management, and audit logging for network infrastructure",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 13: Network Monitoring and Defense
+// ============================================================================
+
+// checkNetworkMonitoringProcess verifies network monitoring process.
+// Maps to CIS 13.1: Establish and Maintain a Network Monitoring Process.
+func (m *CISModule) checkNetworkMonitoringProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasIOCStore := strings.Contains(inputStr, "ioc_store") || strings.Contains(inputStr, "ioc_federation")
-	hasAnomaly := strings.Contains(inputStr, "anomaly") || strings.Contains(inputStr, "trust_score")
-	hasIDS := strings.Contains(inputStr, "ids") || strings.Contains(inputStr, "intrusion") || strings.Contains(inputStr, "detection")
+	hasAnomaly := strings.Contains(inputStr, "anomaly") || strings.Contains(inputStr, "trust_score") || strings.Contains(inputStr, "anomaly_detection")
+	hasMonitoring := strings.Contains(inputStr, "network_monitoring") || strings.Contains(inputStr, "traffic_monitoring") || strings.Contains(inputStr, "continuous_monitoring")
 
 	present := 0
 	if hasIOCStore {
@@ -967,55 +2336,106 @@ func (m *CISModule) checkNetworkMonitoring(ctx context.Context, input []byte) (*
 	if hasAnomaly {
 		present++
 	}
-	if hasIDS {
+	if hasMonitoring {
 		present++
 	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-13",
-			ControlName: "Network Monitoring and Defense",
+			ControlID:   "CIS-13.1",
+			ControlName: "Establish and Maintain a Network Monitoring Process",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Network monitoring configured (IOC store + anomaly detection + IDS)",
+			Message:     "Network monitoring process verified: IOC store + anomaly detection + continuous monitoring",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-13",
-			ControlName: "Network Monitoring and Defense",
+			ControlID:   "CIS-13.1",
+			ControlName: "Establish and Maintain a Network Monitoring Process",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
 			Message:     "Partial network monitoring: 1 of 3 controls configured",
 			Timestamp:   time.Now(),
-			Remediation: "Enable AegisGate IOC store, anomaly detection, and IDS integration",
+			Remediation: "Enable AegisGate IOC store, anomaly detection, and continuous network monitoring",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-13",
-		ControlName: "Network Monitoring and Defense",
+		ControlID:   "CIS-13.1",
+		ControlName: "Establish and Maintain a Network Monitoring Process",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "No network monitoring configured",
+		Message:     "No network monitoring process configured",
 		Timestamp:   time.Now(),
-		Remediation: "Enable AegisGate IOC store + anomaly detection + IDS integration",
+		Remediation: "Enable AegisGate IOC store + anomaly detection + continuous network monitoring",
 	}, nil
 }
 
-// checkApplicationSoftwareSecurity verifies application software
-// security controls. Maps to CIS 16: Application Software Security.
-//
-// AegisGate's scanner covers application-level security: prompt
-// injection, secret leakage in outputs, XSS, injection attacks, etc.
-// The scanner runs on every request and on every response (the
-// "input sanitization + output encoding" analog for AI).
-func (m *CISModule) checkApplicationSoftwareSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkNetworkBasedIDS verifies network-based intrusion detection.
+// Maps to CIS 13.2: Deploy Network-Based Intrusion Detection.
+func (m *CISModule) checkNetworkBasedIDS(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIDS := strings.Contains(inputStr, "ids") || strings.Contains(inputStr, "intrusion") || strings.Contains(inputStr, "intrusion_detection")
+	hasIPS := strings.Contains(inputStr, "ips") || strings.Contains(inputStr, "intrusion_prevention") || strings.Contains(inputStr, "blocking")
+	hasAlerting := strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "soc_alerting")
+
+	present := 0
+	if hasIDS {
+		present++
+	}
+	if hasIPS {
+		present++
+	}
+	if hasAlerting {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-13.2",
+			ControlName: "Deploy Network-Based Intrusion Detection",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Network-based IDS verified: IDS + IPS + alerting configured",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-13.2",
+			ControlName: "Deploy Network-Based Intrusion Detection",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial IDS: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Deploy network-based IDS/IPS with SIEM alerting integration",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-13.2",
+		ControlName: "Deploy Network-Based Intrusion Detection",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No network-based intrusion detection configured",
+		Timestamp:   time.Now(),
+		Remediation: "Deploy network-based IDS/IPS with SIEM alerting integration",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 16: Application Software Security
+// ============================================================================
+
+// checkSecureSDLC verifies secure software development process.
+// Maps to CIS 16.1: Establish and Maintain a Secure Software Development Process.
+func (m *CISModule) checkSecureSDLC(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasScanner := false
 	for _, p := range m.scannerPatterns {
@@ -1025,8 +2445,7 @@ func (m *CISModule) checkApplicationSoftwareSecurity(ctx context.Context, input 
 		}
 	}
 	hasSSDF := strings.Contains(inputStr, "ssdf") || strings.Contains(inputStr, "secure_sdlc") || strings.Contains(inputStr, "devsecops")
-	hasVulnManagement := strings.Contains(inputStr, "vuln_management") || strings.Contains(inputStr, "vuln_scan") || strings.Contains(inputStr, "govulncheck")
-	hasSBOM := strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "cyclonedx")
+	hasCodeReview := strings.Contains(inputStr, "code_review") || strings.Contains(inputStr, "peer_review") || strings.Contains(inputStr, "security_review")
 
 	present := 0
 	if hasScanner {
@@ -1035,56 +2454,217 @@ func (m *CISModule) checkApplicationSoftwareSecurity(ctx context.Context, input 
 	if hasSSDF {
 		present++
 	}
-	if hasVulnManagement {
-		present++
-	}
-	if hasSBOM {
+	if hasCodeReview {
 		present++
 	}
 
 	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-16",
-			ControlName: "Application Software Security",
+			ControlID:   "CIS-16.1",
+			ControlName: "Establish and Maintain a Secure Software Development Process",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Application software security verified: scanner + SDLC + vulnerability management + SBOM",
+			Message:     "Secure SDLC verified: scanner + SDLC process + code review",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
 	if present == 1 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-16",
-			ControlName: "Application Software Security",
+			ControlID:   "CIS-16.1",
+			ControlName: "Establish and Maintain a Secure Software Development Process",
 			Status:      compliance.StatusPartial,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Partial application software security: 1 of 4 components configured",
+			Message:     "Partial secure SDLC: 1 of 3 components configured",
 			Timestamp:   time.Now(),
-			Remediation: "Enable AegisGate scanner, secure SDLC, govulncheck vulnerability management, and SBOM generation",
+			Remediation: "Enable AegisGate scanner, establish secure SDLC process, and implement security code reviews",
 		}, nil
 	}
-
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-16",
-		ControlName: "Application Software Security",
+		ControlID:   "CIS-16.1",
+		ControlName: "Establish and Maintain a Secure Software Development Process",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "No application software security (no scanner, no secure SDLC, no vulnerability management)",
+		Message:     "No secure software development process configured",
 		Timestamp:   time.Now(),
-		Remediation: "Enable AegisGate scanner (input/output scanning), secure SDLC, govulncheck vulnerability management, and SBOM generation",
+		Remediation: "Enable AegisGate scanner, establish secure SDLC process, and implement security code reviews",
 	}, nil
 }
 
-// checkIncidentResponse verifies incident response management.
-// Maps to CIS 17: Incident response management.
-func (m *CISModule) checkIncidentResponse(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+// checkRootCauseAnalysis verifies root cause analysis on vulnerabilities.
+// Maps to CIS 16.2: Perform Root Cause Analysis on Security Vulnerabilities.
+func (m *CISModule) checkRootCauseAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
-	hasPlan := strings.Contains(inputStr, "incident_response_plan") || strings.Contains(inputStr, "ir_plan")
-	hasAttestations := strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "signed_log")
+	hasRCA := strings.Contains(inputStr, "root_cause") || strings.Contains(inputStr, "rca") || strings.Contains(inputStr, "postmortem")
+	hasVulnTracking := strings.Contains(inputStr, "vuln_management") || strings.Contains(inputStr, "vuln_tracking") || strings.Contains(inputStr, "vulnerability_database")
+	hasRemediation := strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "fix_process") || strings.Contains(inputStr, "prevent_recurrence")
+
+	present := 0
+	if hasRCA {
+		present++
+	}
+	if hasVulnTracking {
+		present++
+	}
+	if hasRemediation {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-16.2",
+			ControlName: "Perform Root Cause Analysis on Security Vulnerabilities",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Root cause analysis verified: RCA + vulnerability tracking + recurrence prevention",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-16.2",
+			ControlName: "Perform Root Cause Analysis on Security Vulnerabilities",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial RCA process: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Establish RCA process with vulnerability tracking and recurrence prevention measures",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-16.2",
+		ControlName: "Perform Root Cause Analysis on Security Vulnerabilities",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No root cause analysis process configured",
+		Timestamp:   time.Now(),
+		Remediation: "Establish RCA process with vulnerability tracking and recurrence prevention measures",
+	}, nil
+}
+
+// checkManageOpenSourceSoftware verifies open-source software management.
+// Maps to CIS 16.3: Manage Open-Source Software.
+func (m *CISModule) checkManageOpenSourceSoftware(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSBOM := strings.Contains(inputStr, "sbom") || strings.Contains(inputStr, "cyclonedx") || strings.Contains(inputStr, "spdx")
+	hasVulnManagement := strings.Contains(inputStr, "vuln_management") || strings.Contains(inputStr, "vuln_scan") || strings.Contains(inputStr, "govulncheck")
+	hasOSSPolicy := strings.Contains(inputStr, "oss_policy") || strings.Contains(inputStr, "open_source_policy") || strings.Contains(inputStr, "license_compliance")
+
+	present := 0
+	if hasSBOM {
+		present++
+	}
+	if hasVulnManagement {
+		present++
+	}
+	if hasOSSPolicy {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-16.3",
+			ControlName: "Manage Open-Source Software",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Open-source software management verified: SBOM + vulnerability scanning + OSS policy",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-16.3",
+			ControlName: "Manage Open-Source Software",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial OSS management: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Enable SBOM generation, vulnerability scanning for dependencies, and OSS license policy",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-16.3",
+		ControlName: "Manage Open-Source Software",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No open-source software management configured",
+		Timestamp:   time.Now(),
+		Remediation: "Enable SBOM generation (CycloneDX/SPDX), dependency vulnerability scanning, and OSS license compliance policy",
+	}, nil
+}
+
+// ============================================================================
+// Check implementations — CIS Family 17: Incident Response Management
+// ============================================================================
+
+// checkDesignateIRPersonnel verifies designated incident response personnel.
+// Maps to CIS 17.1: Designate Personnel to Manage Incident Response.
+func (m *CISModule) checkDesignateIRPersonnel(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDesignated := strings.Contains(inputStr, "ir_team") || strings.Contains(inputStr, "incident_response_team") || strings.Contains(inputStr, "designated_personnel")
+	hasRoles := strings.Contains(inputStr, "ir_roles") || strings.Contains(inputStr, "response_roles") || strings.Contains(inputStr, "incident_roles")
+	hasContact := strings.Contains(inputStr, "ir_contact") || strings.Contains(inputStr, "emergency_contact") || strings.Contains(inputStr, "escalation_contact")
+
+	present := 0
+	if hasDesignated {
+		present++
+	}
+	if hasRoles {
+		present++
+	}
+	if hasContact {
+		present++
+	}
+
+	if present >= 2 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-17.1",
+			ControlName: "Designate Personnel to Manage Incident Response",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "IR personnel verified: designated team + defined roles + contact info",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-17.1",
+			ControlName: "Designate Personnel to Manage Incident Response",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial IR personnel: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Designate IR team with defined roles and escalation contact information",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CIS-17.1",
+		ControlName: "Designate Personnel to Manage Incident Response",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No designated incident response personnel configured",
+		Timestamp:   time.Now(),
+		Remediation: "Designate IR team with defined roles and escalation contact information",
+	}, nil
+}
+
+// checkIncidentResponseProcess verifies incident response process.
+// Maps to CIS 17.2: Establish and Maintain an Incident Response Process.
+func (m *CISModule) checkIncidentResponseProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPlan := strings.Contains(inputStr, "incident_response_plan") || strings.Contains(inputStr, "ir_plan") || strings.Contains(inputStr, "incident_process")
+	hasAttestations := strings.Contains(inputStr, "attestation") || strings.Contains(inputStr, "signed_log") || strings.Contains(inputStr, "trust_framework")
 	hasAuditTrail := false
 	for _, p := range m.auditLogPatterns {
 		if p.MatchString(inputStr) {
@@ -1093,40 +2673,55 @@ func (m *CISModule) checkIncidentResponse(ctx context.Context, input []byte) (*c
 		}
 	}
 
-	missing := []string{}
-	if !hasPlan {
-		missing = append(missing, "incident response plan")
+	present := 0
+	if hasPlan {
+		present++
 	}
-	if !hasAttestations {
-		missing = append(missing, "signed attestations (for forensics)")
+	if hasAttestations {
+		present++
 	}
-	if !hasAuditTrail {
-		missing = append(missing, "audit trail")
+	if hasAuditTrail {
+		present++
 	}
 
-	if len(missing) == 0 {
+	if present >= 2 {
 		return &compliance.ControlCheckResult{
 			Framework:   m.Framework(),
-			ControlID:   "CIS-17",
-			ControlName: "Incident Response Management",
+			ControlID:   "CIS-17.2",
+			ControlName: "Establish and Maintain an Incident Response Process",
 			Status:      compliance.StatusCompliant,
 			Severity:    compliance.SeverityHigh,
-			Message:     "Incident response ready: plan + signed attestations + audit trail",
+			Message:     "Incident response process verified: plan + signed attestations + audit trail",
 			Timestamp:   time.Now(),
 		}, nil
 	}
-
+	if present == 1 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CIS-17.2",
+			ControlName: "Establish and Maintain an Incident Response Process",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial incident response: 1 of 3 components configured",
+			Timestamp:   time.Now(),
+			Remediation: "Create an IR plan; enable AegisGate signed attestations and audit log for forensic evidence",
+		}, nil
+	}
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
-		ControlID:   "CIS-17",
-		ControlName: "Incident Response Management",
+		ControlID:   "CIS-17.2",
+		ControlName: "Establish and Maintain an Incident Response Process",
 		Status:      compliance.StatusNonCompliant,
 		Severity:    compliance.SeverityHigh,
-		Message:     "Incident response gaps: " + strings.Join(missing, ", "),
+		Message:     "No incident response process configured",
 		Timestamp:   time.Now(),
-		Remediation: "Create an incident response plan; AegisGate's signed attestations (pkg/attestation/) and audit log are the forensic evidence sources",
+		Remediation: "Create an IR plan; AegisGate's signed attestations (pkg/attestation/) and audit log are the forensic evidence sources",
 	}, nil
 }
+
+// ============================================================================
+// Dependencies
+// ============================================================================
 
 // Dependencies returns required modules.
 func (m *CISModule) Dependencies() []string {

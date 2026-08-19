@@ -3,18 +3,20 @@
 // AegisGate Security Platform
 // =========================================================================
 //
-// EU AI Act Compliance Module - Control Definitions (v3.3.0 Phase 1)
+// EU AI Act Compliance Module - Control Definitions (v3.3.0 Phase 2)
 //
-// This file holds the 82 RegisterControl calls for the EU AI Act framework.
-// The 8 categories map to Articles of Regulation 2024/1689 plus AegisGate
-// AI-specific extensions. Of the 82 controls, 9 have automated CheckFunc
-// implementations (defined in eu_ai_act.go); the remaining 73 are manual
-// review items that the customer/auditor verifies out of band. This mix
-// mirrors the HIPAA sub-package's pattern of automated + manual controls.
+// This file holds the 120 RegisterControl calls for the EU AI Act framework.
+// The 10 categories map to Articles of Regulation 2024/1689 plus AegisGate
+// AI-specific extensions and governance/enforcement requirements. Of the 120
+// controls, 17 have automated CheckFunc implementations (defined in
+// eu_ai_act.go); the remaining 103 are manual review items that the
+// customer/auditor verifies out of band. This mix mirrors the HIPAA
+// sub-package's pattern of automated + manual controls.
 //
-// Distribution: 8 (Art 5) + 10 (Art 9) + 8 (Art 10) + 10 (Art 11+12) +
-//                14 (Art 13+14) + 12 (Art 15) + 10 (Art 51-55) + 10 (AI-*)
-//                = 82 controls total.
+// Distribution: 10 (Art 5) + 12 (Art 9) + 10 (Art 10) + 14 (Art 11+12) +
+//                18 (Art 13+14) + 14 (Art 15) + 12 (Art 51-55/GPAI) +
+//                12 (AI-*) + 10 (Governance and Compliance) +
+//                8 (Penalties and Enforcement) = 120 controls total.
 
 package eu_ai_act
 
@@ -22,10 +24,14 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 )
 
-// registerControls wires all 82 EU AI Act controls into the module.
-// Called once from NewEUAIModule. The 9 automated controls reference
-// check* methods defined in eu_ai_act.go; the rest are manual review.
+// registerControls wires all 120 EU AI Act controls into the module.
+// Called once from NewEUAIModule. The 17 automated controls reference
+// check* methods defined in eu_ai_act.go; the remaining 103 are manual
+// review items verified out of band by the customer or auditor.
 func (m *EUAIModule) registerControls() {
+	// ================================================================
+	// Prohibited Practices (Article 5) — 10 controls (8 existing + 2 new)
+	// ================================================================
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art5-001",
 		Name:        "Subliminal Manipulation Techniques",
@@ -107,6 +113,29 @@ func (m *EUAIModule) registerControls() {
 		References:  []string{"EU AI Act Article 5(1)(g)"},
 	})
 
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art5-009",
+		Name:        "Biometric Categorization Systems",
+		Description: "EU AI Act 5(1)(g): Biometric Categorization Systems for Sensitive Attributes",
+		Category:    "Prohibited Practices",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 5(1)(g)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art5-010",
+		Name:        "Crime Prediction Software",
+		Description: "EU AI Act 5(1)(d): Crime Prediction Software Based on Profiling",
+		Category:    "Prohibited Practices",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 5(1)(d)"},
+	})
+
+	// ================================================================
+	// Risk Management (Article 9) — 12 controls (10 existing + 2 new)
+	// ================================================================
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art9-001",
 		Name:        "Risk Management System Established",
@@ -209,6 +238,29 @@ func (m *EUAIModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art9-011",
+		Name:        "Risk Management Iteration",
+		Description: "EU AI Act 9(3): Risk Management Iteration Throughout Lifecycle",
+		Category:    "Risk Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 9(3)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art9-012",
+		Name:        "Risks to Fundamental Rights",
+		Description: "EU AI Act 9(2): Risks to Fundamental Rights Assessment",
+		Category:    "Risk Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 9(2)"},
+	})
+
+	// ================================================================
+	// Data Governance (Article 10) — 10 controls (8 existing + 2 new)
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art10-001",
 		Name:        "Training Data Quality and Relevance",
 		Description: "EU AI Act 10(1): Training Data Quality and Relevance",
@@ -289,6 +341,29 @@ func (m *EUAIModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art10-009",
+		Name:        "Bias Examination Documentation",
+		Description: "EU AI Act 10(2)(a): Bias Examination Documentation and Record-Keeping",
+		Category:    "Data Governance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 10(2)(a)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art10-010",
+		Name:        "Special Category Data Handling",
+		Description: "EU AI Act 10(5): Special Category Data Handling and Protection",
+		Category:    "Data Governance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 10(5)"},
+	})
+
+	// ================================================================
+	// Technical Documentation (Article 11) — 7 controls (5 existing + 2 new)
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art11-001",
 		Name:        "Technical Documentation Before Market",
 		Description: "EU AI Act 11(1): Technical Documentation Before Market",
@@ -340,6 +415,29 @@ func (m *EUAIModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art11-006",
+		Name:        "Documentation for Supervisory Authorities",
+		Description: "EU AI Act 11(1): Documentation for Supervisory Authorities",
+		Category:    "Technical Documentation",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 11(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art11-007",
+		Name:        "Pre-Market Documentation Updates",
+		Description: "EU AI Act 11(1): Pre-Market Documentation Updates and Version Control",
+		Category:    "Technical Documentation",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 11(1)"},
+	})
+
+	// ================================================================
+	// Record Keeping (Article 12) — 7 controls (5 existing + 2 new)
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art12-001",
 		Name:        "Automatic Logging Capabilities",
 		Description: "EU AI Act 12(1): Automatic Logging Capabilities",
@@ -390,6 +488,29 @@ func (m *EUAIModule) registerControls() {
 		References:  []string{"EU AI Act Article 12(5)"},
 	})
 
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art12-006",
+		Name:        "Log Retention Period",
+		Description: "EU AI Act 12(3): Log Retention Period Appropriate Duration",
+		Category:    "Record Keeping",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 12(3)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art12-007",
+		Name:        "Log Access Controls",
+		Description: "EU AI Act 12(4): Log Access Controls and Permissions",
+		Category:    "Record Keeping",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 12(4)"},
+	})
+
+	// ================================================================
+	// Transparency (Article 13) — 10 controls (8 existing + 2 new)
+	// ================================================================
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art13-001",
 		Name:        "System Designed for Transparency",
@@ -472,6 +593,29 @@ func (m *EUAIModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art13-009",
+		Name:        "Transparency for Deployers",
+		Description: "EU AI Act 13(2): Transparency for Deployers on System Operation",
+		Category:    "Transparency",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 13(2)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art13-010",
+		Name:        "Transparency for Affected Persons",
+		Description: "EU AI Act 13(1): Transparency for Persons Affected by AI Decisions",
+		Category:    "Transparency",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 13(1)"},
+	})
+
+	// ================================================================
+	// Human Oversight (Article 14) — 8 controls (6 existing + 2 new)
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art14-001",
 		Name:        "Human Oversight Designed In",
 		Description: "EU AI Act 14(1): Human Oversight Designed In",
@@ -535,6 +679,29 @@ func (m *EUAIModule) registerControls() {
 		References:  []string{"EU AI Act Article 14(6)"},
 	})
 
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art14-008",
+		Name:        "Oversight by Third Parties",
+		Description: "EU AI Act 14(4): Oversight by Third Parties and External Reviewers",
+		Category:    "Human Oversight",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 14(4)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art14-009",
+		Name:        "Oversight Effectiveness Assessment",
+		Description: "EU AI Act 14(2): Oversight Effectiveness Assessment and Validation",
+		Category:    "Human Oversight",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 14(2)"},
+	})
+
+	// ================================================================
+	// Accuracy and Robustness (Article 15) — 14 controls (12 existing + 2 new)
+	// ================================================================
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art15-001",
 		Name:        "Accuracy Level Appropriate",
@@ -658,6 +825,29 @@ func (m *EUAIModule) registerControls() {
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art15-013",
+		Name:        "Environmental Robustness",
+		Description: "EU AI Act 15(2): Environmental Robustness Under Varying Conditions",
+		Category:    "Accuracy and Robustness",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 15(2)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-Art15-014",
+		Name:        "Model Drift Monitoring",
+		Description: "EU AI Act 15(4): Model Drift Monitoring in Operation",
+		Category:    "Accuracy and Robustness",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 15(4)"},
+	})
+
+	// ================================================================
+	// GPAI Models (Articles 51-55) — 12 controls (10 existing + 2 new)
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-Art51-001",
 		Name:        "Technical Documentation for GPAI",
 		Description: "EU AI Act 51(1)(a): Technical Documentation for GPAI",
@@ -757,6 +947,29 @@ func (m *EUAIModule) registerControls() {
 		References:  []string{"EU AI Act Article 55(2)"},
 	})
 
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GPAI-011",
+		Name:        "GPAI System Downstream Documentation",
+		Description: "EU AI Act 51(1)(b): GPAI System Downstream Provider Documentation",
+		Category:    "GPAI Models",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 51(1)(b)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GPAI-012",
+		Name:        "GPAI Copyright Compliance",
+		Description: "EU AI Act 51(1)(c): GPAI Copyright Compliance Policy and Procedures",
+		Category:    "GPAI Models",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 51(1)(c)"},
+	})
+
+	// ================================================================
+	// AI Controls (AegisGate Extensions) — 12 controls (10 existing + 2 new)
+	// ================================================================
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "EUAIAct-AI-001",
 		Name:        "Prompt Injection Protection",
@@ -861,6 +1074,212 @@ func (m *EUAIModule) registerControls() {
 		Severity:    compliance.SeverityMedium,
 		Automated:   false,
 		References:  []string{"EU AI Act Article AegisGate extension"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-AI-011",
+		Name:        "AI Model Sandboxing",
+		Description: "EU AI Act AegisGate extension: AI Model Sandboxing for Safe Deployment",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article AegisGate extension"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-AI-012",
+		Name:        "AI Red Team Testing Program",
+		Description: "EU AI Act AegisGate extension: AI Red Team Testing Program",
+		Category:    "AI Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article AegisGate extension"},
+	})
+
+	// ================================================================
+	// Governance and Compliance (NEW category) — 10 controls
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-001",
+		Name:        "EU Member State Competent Authority Registration",
+		Description: "EU AI Act 49(1): EU Member State Competent Authority Registration",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 49(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-002",
+		Name:        "AI Office Notification",
+		Description: "EU AI Act 49(2): AI Office Notification for High-Risk AI Systems",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 49(2)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-003",
+		Name:        "Conformity Assessment",
+		Description: "EU AI Act 43(1): Conformity Assessment Procedure",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 43(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-004",
+		Name:        "CE Marking Requirements",
+		Description: "EU AI Act 47(1): CE Marking Requirements for High-Risk AI Systems",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 47(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-005",
+		Name:        "Post-Market Monitoring System",
+		Description: "EU AI Act 72(1): Post-Market Monitoring System",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 72(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-006",
+		Name:        "Serious Incident Reporting",
+		Description: "EU AI Act 73(1): Serious Incident Reporting to Market Surveillance Authorities",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 73(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-007",
+		Name:        "Market Surveillance Authority Cooperation",
+		Description: "EU AI Act 74(1): Market Surveillance Authority Cooperation",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 74(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-008",
+		Name:        "Corrective Action and Withdrawal",
+		Description: "EU AI Act 21(1): Corrective Action and Withdrawal of Non-Compliant AI Systems",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 21(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-009",
+		Name:        "Regulatory Sandbox Participation",
+		Description: "EU AI Act 57(1): Regulatory Sandbox Participation for AI System Development",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 57(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-GC-010",
+		Name:        "Fundamental Rights Impact Assessment",
+		Description: "EU AI Act 27(1): Fundamental Rights Impact Assessment for High-Risk AI",
+		Category:    "Governance and Compliance",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 27(1)"},
+	})
+
+	// ================================================================
+	// Penalties and Enforcement (NEW category) — 8 controls
+	// ================================================================
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-001",
+		Name:        "Penalty Framework for Non-Compliance",
+		Description: "EU AI Act 99(1): Penalty Framework for Non-Compliance",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 99(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-002",
+		Name:        "Fines for Prohibited Practice Violations",
+		Description: "EU AI Act 99(2): Fines for Prohibited Practice Violations",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 99(2)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-003",
+		Name:        "Fines for High-Risk System Violations",
+		Description: "EU AI Act 99(3): Fines for High-Risk System Obligation Violations",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 99(3)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-004",
+		Name:        "Fines for Incorrect Information",
+		Description: "EU AI Act 99(4): Fines for Incorrect, Incomplete, or Misleading Information",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 99(4)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-005",
+		Name:        "Fines for GPAI Model Violations",
+		Description: "EU AI Act 99(5): Fines for GPAI Model Obligation Violations",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 99(5)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-006",
+		Name:        "Penalties on Importers/Distributors",
+		Description: "EU AI Act 99(6): Penalties on Importers and Distributors",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 99(6)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-007",
+		Name:        "Right to Explanation of Individual Decision-Making",
+		Description: "EU AI Act 86(1): Right to Explanation of Individual Decision-Making",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 86(1)"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "EUAIAct-PE-008",
+		Name:        "Complaints to National Competent Authorities",
+		Description: "EU AI Act 85(1): Complaints to National Competent Authorities",
+		Category:    "Penalties and Enforcement",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"EU AI Act Article 85(1)"},
 	})
 
 }

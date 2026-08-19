@@ -19,8 +19,8 @@ func TestNewNERCCIPModule(t *testing.T) {
 		if m.Framework() != "nerc_cip" {
 			t.Errorf("Framework() = %q, want %q", m.Framework(), "nerc_cip")
 		}
-		if m.Version() != "v5" {
-			t.Errorf("Version() = %q, want %q", m.Version(), "v5")
+		if m.Version() != "6" {
+			t.Errorf("Version() = %q, want %q", m.Version(), "6")
 		}
 	})
 
@@ -38,23 +38,47 @@ func TestNewNERCCIPModule(t *testing.T) {
 func TestNERCCIPControlCount(t *testing.T) {
 	m := NewNERCCIPModule()
 	controls := m.Controls()
-	if len(controls) != 18 {
-		t.Errorf("len(Controls()) = %d, want 18 (2 CS + 1 SM + 2 PT + 2 EP + 2 PS + 2 SS + 1 IR + 1 RP + 1 CM + 1 IP + 1 SC + 2 AI)", len(controls))
+	if len(controls) != 55 {
+		t.Errorf("len(Controls()) = %d, want 55 (5 CS + 4 SM + 5 PT + 5 EP + 5 PS + 6 SS + 4 IR + 4 RP + 5 CM + 4 IP + 4 SC + 4 AI)", len(controls))
 	}
 
 	expectedIDs := map[string]bool{
-		"NERC-CIP-CS-001": false, "NERC-CIP-CS-002": false,
-		"NERC-CIP-SM-001": false,
-		"NERC-CIP-PT-001": false, "NERC-CIP-PT-002": false,
-		"NERC-CIP-EP-001": false, "NERC-CIP-EP-002": false,
-		"NERC-CIP-PS-001": false, "NERC-CIP-PS-002": false,
-		"NERC-CIP-SS-001": false, "NERC-CIP-SS-002": false,
-		"NERC-CIP-IR-001": false,
-		"NERC-CIP-RP-001": false,
-		"NERC-CIP-CM-001": false,
-		"NERC-CIP-IP-001": false,
-		"NERC-CIP-SC-001": false,
-		"NERC-CIP-AI-001": false, "NERC-CIP-AI-002": false,
+		// Cyber System Categorization (5)
+		"NERC-CIP-CS-01": false, "NERC-CIP-CS-02": false, "NERC-CIP-CS-03": false,
+		"NERC-CIP-CS-04": false, "NERC-CIP-CS-05": false,
+		// Security Management (4)
+		"NERC-CIP-SM-01": false, "NERC-CIP-SM-02": false,
+		"NERC-CIP-SM-03": false, "NERC-CIP-SM-04": false,
+		// Personnel & Training (5)
+		"NERC-CIP-PT-01": false, "NERC-CIP-PT-02": false, "NERC-CIP-PT-03": false,
+		"NERC-CIP-PT-04": false, "NERC-CIP-PT-05": false,
+		// Electronic Security (5)
+		"NERC-CIP-EP-01": false, "NERC-CIP-EP-02": false, "NERC-CIP-EP-03": false,
+		"NERC-CIP-EP-04": false, "NERC-CIP-EP-05": false,
+		// Physical Security (5)
+		"NERC-CIP-PS-01": false, "NERC-CIP-PS-02": false, "NERC-CIP-PS-03": false,
+		"NERC-CIP-PS-04": false, "NERC-CIP-PS-05": false,
+		// System Security (6)
+		"NERC-CIP-SS-01": false, "NERC-CIP-SS-02": false, "NERC-CIP-SS-03": false,
+		"NERC-CIP-SS-04": false, "NERC-CIP-SS-05": false, "NERC-CIP-SS-06": false,
+		// Incident Response (4)
+		"NERC-CIP-IR-01": false, "NERC-CIP-IR-02": false,
+		"NERC-CIP-IR-03": false, "NERC-CIP-IR-04": false,
+		// Recovery Planning (4)
+		"NERC-CIP-RP-01": false, "NERC-CIP-RP-02": false,
+		"NERC-CIP-RP-03": false, "NERC-CIP-RP-04": false,
+		// Configuration Management (5)
+		"NERC-CIP-CM-01": false, "NERC-CIP-CM-02": false, "NERC-CIP-CM-03": false,
+		"NERC-CIP-CM-04": false, "NERC-CIP-CM-05": false,
+		// Information Protection (4)
+		"NERC-CIP-IP-01": false, "NERC-CIP-IP-02": false,
+		"NERC-CIP-IP-03": false, "NERC-CIP-IP-04": false,
+		// Supply Chain (4)
+		"NERC-CIP-SC-01": false, "NERC-CIP-SC-02": false,
+		"NERC-CIP-SC-03": false, "NERC-CIP-SC-04": false,
+		// AI Governance (4)
+		"NERC-CIP-AI-01": false, "NERC-CIP-AI-02": false,
+		"NERC-CIP-AI-03": false, "NERC-CIP-AI-04": false,
 	}
 
 	for _, c := range controls {
@@ -159,8 +183,8 @@ func TestBESCyberSystemCategorizationCheck(t *testing.T) {
 		if result.Status != compliance.StatusCompliant {
 			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
 		}
-		if result.ControlID != "NERC-CIP-CS-001" {
-			t.Errorf("Expected ControlID NERC-CIP-CS-001, got %s", result.ControlID)
+		if result.ControlID != "NERC-CIP-CS-01" {
+			t.Errorf("Expected ControlID NERC-CIP-CS-01, got %s", result.ControlID)
 		}
 	})
 
@@ -202,6 +226,32 @@ func TestImpactRatingAssignmentCheck(t *testing.T) {
 	})
 }
 
+func TestBESCyberAssetInventoryCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("cyber_asset_inventory maintained for all BES systems")
+		result, err := m.checkBESCyberAssetInventory(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_inventory")
+		result, err := m.checkBESCyberAssetInventory(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
 func TestSecurityManagementControlsCheck(t *testing.T) {
 	m := NewNERCCIPModule()
 
@@ -219,6 +269,32 @@ func TestSecurityManagementControlsCheck(t *testing.T) {
 	t.Run("NonCompliantConfig", func(t *testing.T) {
 		input := []byte("basic_config_no_mgmt")
 		result, err := m.checkSecurityManagementControls(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestCyberSecurityPolicyApprovalCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("policy_approval obtained from senior management")
+		result, err := m.checkCyberSecurityPolicyApproval(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_approval")
+		result, err := m.checkCyberSecurityPolicyApproval(context.Background(), input)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -271,6 +347,32 @@ func TestCyberSecurityTrainingCheck(t *testing.T) {
 	t.Run("NonCompliantConfig", func(t *testing.T) {
 		input := []byte("basic_config_no_curriculum")
 		result, err := m.checkCyberSecurityTraining(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestAccessManagementProgramCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("access_management_program defines roles and procedures")
+		result, err := m.checkAccessManagementProgram(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_access_mgmt")
+		result, err := m.checkAccessManagementProgram(context.Background(), input)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -343,6 +445,43 @@ func TestElectronicAccessMonitoringCheck(t *testing.T) {
 	})
 }
 
+func TestNetworkSecurityArchitectureCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantAllThree", func(t *testing.T) {
+		input := []byte("firewall_rules network_segmentation traffic_filtering all configured")
+		result, err := m.checkNetworkSecurityArchitecture(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("PartialWithTwo", func(t *testing.T) {
+		input := []byte("firewall_rules and network_segmentation configured")
+		result, err := m.checkNetworkSecurityArchitecture(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusPartial {
+			t.Errorf("Expected %v, got %v", compliance.StatusPartial, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantNone", func(t *testing.T) {
+		input := []byte("basic_config_no_network_sec")
+		result, err := m.checkNetworkSecurityArchitecture(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
 func TestPhysicalSecurityPerimeterCheck(t *testing.T) {
 	m := NewNERCCIPModule()
 
@@ -369,26 +508,78 @@ func TestPhysicalSecurityPerimeterCheck(t *testing.T) {
 	})
 }
 
+func TestPhysicalAccessControlSystemsCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("access_control_system with badge_access configured")
+		result, err := m.checkPhysicalAccessControlSystems(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_pacs")
+		result, err := m.checkPhysicalAccessControlSystems(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestVisitorAccessManagementCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("visitor_access management with escort and logging")
+		result, err := m.checkVisitorAccessManagement(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_visitor")
+		result, err := m.checkVisitorAccessManagement(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
 func TestTransmissionStationSecurityNonAutomated(t *testing.T) {
 	m := NewNERCCIPModule()
 	controls := m.Controls()
 
-	var ps002 *compliance.ControlDefinition
+	var ps02 *compliance.ControlDefinition
 	for i := range controls {
-		if controls[i].ID == "NERC-CIP-PS-002" {
-			ps002 = &controls[i]
+		if controls[i].ID == "NERC-CIP-PS-02" {
+			ps02 = &controls[i]
 			break
 		}
 	}
 
-	if ps002 == nil {
-		t.Fatal("Control NERC-CIP-PS-002 not found")
+	if ps02 == nil {
+		t.Fatal("Control NERC-CIP-PS-02 not found")
 	}
-	if ps002.Automated {
-		t.Error("NERC-CIP-PS-002 should be non-automated")
+	if ps02.Automated {
+		t.Error("NERC-CIP-PS-02 should be non-automated")
 	}
-	if ps002.CheckFunc != nil {
-		t.Error("NERC-CIP-PS-002 should not have a CheckFunc")
+	if ps02.CheckFunc != nil {
+		t.Error("NERC-CIP-PS-02 should not have a CheckFunc")
 	}
 }
 
@@ -444,6 +635,58 @@ func TestPatchManagementCheck(t *testing.T) {
 	})
 }
 
+func TestMalwarePreventionCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("malware_prevention with antivirus and endpoint protection")
+		result, err := m.checkMalwarePrevention(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_malware")
+		result, err := m.checkMalwarePrevention(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestPortServiceHardeningCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("port_hardening service_hardening unnecessary_ports disabled")
+		result, err := m.checkPortServiceHardening(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_hardening")
+		result, err := m.checkPortServiceHardening(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
 func TestIncidentResponseReportingCheck(t *testing.T) {
 	m := NewNERCCIPModule()
 
@@ -461,6 +704,32 @@ func TestIncidentResponseReportingCheck(t *testing.T) {
 	t.Run("NonCompliantConfig", func(t *testing.T) {
 		input := []byte("basic_config_no_ir")
 		result, err := m.checkIncidentResponseReporting(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestIncidentClassificationCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("incident_classification with severity_level and escalation_criteria")
+		result, err := m.checkIncidentClassification(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_classification")
+		result, err := m.checkIncidentClassification(context.Background(), input)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -507,6 +776,32 @@ func TestRecoveryPlanningCheck(t *testing.T) {
 	})
 }
 
+func TestRecoveryPlanTestingCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("recovery_testing with recovery_exercise and validation")
+		result, err := m.checkRecoveryPlanTesting(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_validation")
+		result, err := m.checkRecoveryPlanTesting(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
 func TestConfigurationChangeManagementCheck(t *testing.T) {
 	m := NewNERCCIPModule()
 
@@ -524,6 +819,58 @@ func TestConfigurationChangeManagementCheck(t *testing.T) {
 	t.Run("NonCompliantConfig", func(t *testing.T) {
 		input := []byte("basic_config_no_chg_mgmt")
 		result, err := m.checkConfigurationChangeManagement(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestBaselineConfigurationCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("baseline_configuration established for all systems")
+		result, err := m.checkBaselineConfiguration(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_baseline")
+		result, err := m.checkBaselineConfiguration(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestChangeTestingCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("change_testing in test_environment with change_validation")
+		result, err := m.checkChangeTesting(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_test")
+		result, err := m.checkChangeTesting(context.Background(), input)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -559,6 +906,32 @@ func TestInformationProtectionCheck(t *testing.T) {
 	})
 }
 
+func TestDataClassificationCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("data_classification with classification_scheme and data_handling")
+		result, err := m.checkDataClassification(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_classify")
+		result, err := m.checkDataClassification(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
 func TestSupplyChainRiskManagementCheck(t *testing.T) {
 	m := NewNERCCIPModule()
 
@@ -576,6 +949,32 @@ func TestSupplyChainRiskManagementCheck(t *testing.T) {
 	t.Run("NonCompliantConfig", func(t *testing.T) {
 		input := []byte("basic_config_no_scrm")
 		result, err := m.checkSupplyChainRiskManagement(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusNonCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusNonCompliant, result.Status)
+		}
+	})
+}
+
+func TestVendorCyberSecurityRequirementsCheck(t *testing.T) {
+	m := NewNERCCIPModule()
+
+	t.Run("CompliantConfig", func(t *testing.T) {
+		input := []byte("vendor_security_requirements enforced for all suppliers")
+		result, err := m.checkVendorCyberSecurityRequirements(context.Background(), input)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Status != compliance.StatusCompliant {
+			t.Errorf("Expected %v, got %v", compliance.StatusCompliant, result.Status)
+		}
+	})
+
+	t.Run("NonCompliantConfig", func(t *testing.T) {
+		input := []byte("basic_config_no_vendor_reqs")
+		result, err := m.checkVendorCyberSecurityRequirements(context.Background(), input)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -699,19 +1098,33 @@ func TestNERCCIPCheckAll(t *testing.T) {
 		input := []byte(strings.Join([]string{
 			"bes_cyber_system categorization active",
 			"impact_rating assigned to all systems",
+			"cyber_asset_inventory maintained",
 			"security_management controls implemented",
+			"policy_approval from management",
 			"personnel_risk assessment completed",
 			"cyber_security_training program active",
+			"access_management_program defined",
 			"electronic_security_perimeter defined",
 			"access_monitoring log_monitoring intrusion_detection active",
+			"firewall_rules network_segmentation traffic_filtering configured",
 			"physical_security perimeter established",
+			"access_control_system with badge_access",
+			"visitor_access management with escort",
 			"system_security management verified",
 			"patch_management program active",
+			"malware_prevention antivirus deployed",
+			"port_hardening service_hardening unnecessary_ports disabled",
 			"incident_response plan documented",
+			"incident_classification severity_level defined",
 			"recovery_plan business_continuity disaster_recovery all in place",
+			"recovery_testing recovery_exercise validated",
 			"change_management process documented",
+			"baseline_configuration established",
+			"change_testing test_environment validated",
 			"information_protection controls active",
+			"data_classification scheme defined",
 			"supply_chain_risk management program",
+			"vendor_security_requirements enforced",
 			"safe_ai_config with no sensitive data",
 			"ai_audit model_logging bes_audit_trail all active",
 		}, " "))
@@ -720,8 +1133,8 @@ func TestNERCCIPCheckAll(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CheckAll returned error: %v", err)
 		}
-		if len(results) != 17 {
-			t.Errorf("Expected 17 results (18 controls minus 1 non-automated), got %d", len(results))
+		if len(results) != 31 {
+			t.Errorf("Expected 31 results (55 controls minus 24 non-automated), got %d", len(results))
 		}
 
 		for _, result := range results {
@@ -754,24 +1167,73 @@ func TestNERCCIPModuleProvisions(t *testing.T) {
 		severity  string
 		automated bool
 	}{
-		"NERC-CIP-CS-001": {category: "Cyber System Categorization", severity: "critical", automated: true},
-		"NERC-CIP-CS-002": {category: "Cyber System Categorization", severity: "high", automated: true},
-		"NERC-CIP-SM-001": {category: "Security Management", severity: "high", automated: true},
-		"NERC-CIP-PT-001": {category: "Personnel & Training", severity: "high", automated: true},
-		"NERC-CIP-PT-002": {category: "Personnel & Training", severity: "medium", automated: true},
-		"NERC-CIP-EP-001": {category: "Electronic Security", severity: "critical", automated: true},
-		"NERC-CIP-EP-002": {category: "Electronic Security", severity: "high", automated: true},
-		"NERC-CIP-PS-001": {category: "Physical Security", severity: "high", automated: true},
-		"NERC-CIP-PS-002": {category: "Physical Security", severity: "critical", automated: false},
-		"NERC-CIP-SS-001": {category: "System Security", severity: "high", automated: true},
-		"NERC-CIP-SS-002": {category: "System Security", severity: "critical", automated: true},
-		"NERC-CIP-IR-001": {category: "Incident Response", severity: "critical", automated: true},
-		"NERC-CIP-RP-001": {category: "Recovery Planning", severity: "high", automated: true},
-		"NERC-CIP-CM-001": {category: "Configuration Management", severity: "high", automated: true},
-		"NERC-CIP-IP-001": {category: "Information Protection", severity: "high", automated: true},
-		"NERC-CIP-SC-001": {category: "Supply Chain", severity: "high", automated: true},
-		"NERC-CIP-AI-001": {category: "AI Governance", severity: "critical", automated: true},
-		"NERC-CIP-AI-002": {category: "AI Governance", severity: "high", automated: true},
+		// Cyber System Categorization (5)
+		"NERC-CIP-CS-01": {category: "Cyber System Categorization", severity: "critical", automated: true},
+		"NERC-CIP-CS-02": {category: "Cyber System Categorization", severity: "high", automated: true},
+		"NERC-CIP-CS-03": {category: "Cyber System Categorization", severity: "high", automated: true},
+		"NERC-CIP-CS-04": {category: "Cyber System Categorization", severity: "medium", automated: false},
+		"NERC-CIP-CS-05": {category: "Cyber System Categorization", severity: "medium", automated: false},
+		// Security Management (4)
+		"NERC-CIP-SM-01": {category: "Security Management", severity: "high", automated: true},
+		"NERC-CIP-SM-02": {category: "Security Management", severity: "high", automated: true},
+		"NERC-CIP-SM-03": {category: "Security Management", severity: "medium", automated: false},
+		"NERC-CIP-SM-04": {category: "Security Management", severity: "medium", automated: false},
+		// Personnel & Training (5)
+		"NERC-CIP-PT-01": {category: "Personnel & Training", severity: "high", automated: true},
+		"NERC-CIP-PT-02": {category: "Personnel & Training", severity: "medium", automated: true},
+		"NERC-CIP-PT-03": {category: "Personnel & Training", severity: "high", automated: true},
+		"NERC-CIP-PT-04": {category: "Personnel & Training", severity: "high", automated: false},
+		"NERC-CIP-PT-05": {category: "Personnel & Training", severity: "medium", automated: false},
+		// Electronic Security (5)
+		"NERC-CIP-EP-01": {category: "Electronic Security", severity: "critical", automated: true},
+		"NERC-CIP-EP-02": {category: "Electronic Security", severity: "high", automated: true},
+		"NERC-CIP-EP-03": {category: "Electronic Security", severity: "high", automated: true},
+		"NERC-CIP-EP-04": {category: "Electronic Security", severity: "high", automated: false},
+		"NERC-CIP-EP-05": {category: "Electronic Security", severity: "medium", automated: false},
+		// Physical Security (5)
+		"NERC-CIP-PS-01": {category: "Physical Security", severity: "high", automated: true},
+		"NERC-CIP-PS-02": {category: "Physical Security", severity: "critical", automated: false},
+		"NERC-CIP-PS-03": {category: "Physical Security", severity: "high", automated: true},
+		"NERC-CIP-PS-04": {category: "Physical Security", severity: "medium", automated: true},
+		"NERC-CIP-PS-05": {category: "Physical Security", severity: "high", automated: false},
+		// System Security (6)
+		"NERC-CIP-SS-01": {category: "System Security", severity: "high", automated: true},
+		"NERC-CIP-SS-02": {category: "System Security", severity: "critical", automated: true},
+		"NERC-CIP-SS-03": {category: "System Security", severity: "high", automated: true},
+		"NERC-CIP-SS-04": {category: "System Security", severity: "high", automated: true},
+		"NERC-CIP-SS-05": {category: "System Security", severity: "high", automated: false},
+		"NERC-CIP-SS-06": {category: "System Security", severity: "medium", automated: false},
+		// Incident Response (4)
+		"NERC-CIP-IR-01": {category: "Incident Response", severity: "critical", automated: true},
+		"NERC-CIP-IR-02": {category: "Incident Response", severity: "high", automated: true},
+		"NERC-CIP-IR-03": {category: "Incident Response", severity: "medium", automated: false},
+		"NERC-CIP-IR-04": {category: "Incident Response", severity: "medium", automated: false},
+		// Recovery Planning (4)
+		"NERC-CIP-RP-01": {category: "Recovery Planning", severity: "high", automated: true},
+		"NERC-CIP-RP-02": {category: "Recovery Planning", severity: "high", automated: true},
+		"NERC-CIP-RP-03": {category: "Recovery Planning", severity: "medium", automated: false},
+		"NERC-CIP-RP-04": {category: "Recovery Planning", severity: "medium", automated: false},
+		// Configuration Management (5)
+		"NERC-CIP-CM-01": {category: "Configuration Management", severity: "high", automated: true},
+		"NERC-CIP-CM-02": {category: "Configuration Management", severity: "high", automated: true},
+		"NERC-CIP-CM-03": {category: "Configuration Management", severity: "high", automated: true},
+		"NERC-CIP-CM-04": {category: "Configuration Management", severity: "medium", automated: false},
+		"NERC-CIP-CM-05": {category: "Configuration Management", severity: "medium", automated: false},
+		// Information Protection (4)
+		"NERC-CIP-IP-01": {category: "Information Protection", severity: "high", automated: true},
+		"NERC-CIP-IP-02": {category: "Information Protection", severity: "high", automated: true},
+		"NERC-CIP-IP-03": {category: "Information Protection", severity: "medium", automated: false},
+		"NERC-CIP-IP-04": {category: "Information Protection", severity: "medium", automated: false},
+		// Supply Chain (4)
+		"NERC-CIP-SC-01": {category: "Supply Chain", severity: "high", automated: true},
+		"NERC-CIP-SC-02": {category: "Supply Chain", severity: "high", automated: true},
+		"NERC-CIP-SC-03": {category: "Supply Chain", severity: "medium", automated: false},
+		"NERC-CIP-SC-04": {category: "Supply Chain", severity: "medium", automated: false},
+		// AI Governance (4)
+		"NERC-CIP-AI-01": {category: "AI Governance", severity: "critical", automated: true},
+		"NERC-CIP-AI-02": {category: "AI Governance", severity: "high", automated: true},
+		"NERC-CIP-AI-03": {category: "AI Governance", severity: "high", automated: false},
+		"NERC-CIP-AI-04": {category: "AI Governance", severity: "high", automated: false},
 	}
 
 	for _, ctrl := range controls {
@@ -794,7 +1256,7 @@ func TestNERCCIPModuleProvisions(t *testing.T) {
 		}
 	}
 
-	if len(controls) != 18 {
-		t.Errorf("Expected 18 controls, got %d", len(controls))
+	if len(controls) != 55 {
+		t.Errorf("Expected 55 controls, got %d", len(controls))
 	}
 }
