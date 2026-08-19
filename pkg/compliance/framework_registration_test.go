@@ -100,6 +100,18 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	if hipaaCount := frameworks["hipaa"]; hipaaCount != 54 {
 		t.Errorf("hipaa control count = %d, want 54", hipaaCount)
 	}
+	// PCI-DSS v4.0: 152 controls (75 automated + 77 manual)
+	if pciCount := frameworks["pci"]; pciCount != 152 {
+		t.Errorf("pci control count = %d, want 152", pciCount)
+	}
+	// SOC 2 v2.0: 64 controls (32 automated + 32 manual)
+	if soc2Count := frameworks["soc2"]; soc2Count != 64 {
+		t.Errorf("soc2 control count = %d, want 64", soc2Count)
+	}
+	// CCPA/CPRA v2.0: 26 controls (14 automated + 12 manual)
+	if ccpaCount := frameworks["ccpa"]; ccpaCount != 26 {
+		t.Errorf("ccpa control count = %d, want 26", ccpaCount)
+	}
 	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 18 {
 		t.Errorf("nerc_cip control count = %d, want 18", nercCipCount)
 	}
