@@ -18,7 +18,7 @@ func TestNewFIPS140Module(t *testing.T) {
 	if m.Framework() != "fips" {
 		t.Errorf("Framework() = %q, want fips", m.Framework())
 	}
-	if m.Version() != "1.1" {
+	if m.Version() != "2.0" {
 		t.Errorf("Version() = %q, want 1.1 (v3.x Tier 1)", m.Version())
 	}
 	controls := m.Controls()
@@ -30,16 +30,26 @@ func TestNewFIPS140Module(t *testing.T) {
 	// customer has configured them. This is a CONFIGURATION check
 	// (we verify the config is set; the actual hardware cert / HSM
 	// device is the customer's responsibility).
-	if len(controls) != 12 {
-		t.Errorf("len(Controls()) = %d, want 12 (9 automated + 2 customer-supplied + 1 new in v3.x Tier 1 = 12)", len(controls))
+	if len(controls) != 40 {
+		t.Errorf("len(Controls()) = %d, want 40 (27 automated + 13 manual)", len(controls))
 	}
+	automatedCount := 0
+	manualCount := 0
 	for _, c := range controls {
-		if !c.Automated {
-			t.Errorf("Control %s should be automated", c.ID)
+		if c.Automated {
+			automatedCount++
+			if c.CheckFunc == nil {
+				t.Errorf("Automated control %s has nil CheckFunc", c.ID)
+			}
+		} else {
+			manualCount++
 		}
-		if c.CheckFunc == nil {
-			t.Errorf("Control %s has nil CheckFunc", c.ID)
-		}
+	}
+	if automatedCount != 27 {
+		t.Errorf("automated count = %d, want 27", automatedCount)
+	}
+	if manualCount != 13 {
+		t.Errorf("manual count = %d, want 13", manualCount)
 	}
 
 	// Verify all 11 control IDs are present

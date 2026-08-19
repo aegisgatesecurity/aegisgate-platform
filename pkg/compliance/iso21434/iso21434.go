@@ -1,3 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+// =========================================================================
+// AegisGate Security Platform - ISO 21434 Compliance Module
+// =========================================================================
+//
+// ISO 21434:2021 (Road Vehicle Cybersecurity) compliance controls as a
+// licensed add-on module. Covers cybersecurity management, risk assessment,
+// product development, production and operations, distributed activities,
+// incident management, and vulnerability management throughout the vehicle
+// lifecycle.
+//
+// Module metadata:
+//   - Framework:     "iso21434"
+//   - Version:       "2.0"
+//   - Required tier: Professional ($499/mo)
+//   - Controls:      42 (22 automated, 20 manual)
+//   - Categories:    7
+//
+// Architecture:
+//   - iso21434.go:  module wiring, 42 RegisterControl calls,
+//                   25 CheckFunc implementations (13 existing + 12 new)
+//
+// Reference: ISO/SAE 21434:2021 - Road vehicles — Cybersecurity engineering
+// =========================================================================
+
 // Package iso21434 provides ISO 21434 automotive cybersecurity compliance controls
 // as a licensed add-on module. ISO 21434 defines cybersecurity engineering requirements
 // for road vehicle electrical and electronic (E/E) systems throughout their lifecycle.
@@ -25,7 +50,7 @@ type ISO21434Module struct {
 // NewISO21434Module creates a new ISO 21434 compliance module.
 func NewISO21434Module() *ISO21434Module {
 	m := &ISO21434Module{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("iso21434", "ISO-21434-2021", core.TierProfessional),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("iso21434", "2.0", core.TierProfessional),
 	}
 
 	m.initPatterns()
@@ -57,7 +82,8 @@ func (m *ISO21434Module) initPatterns() {
 }
 
 func (m *ISO21434Module) registerControls() {
-	// Cybersecurity Management (CM)
+	// ── Cybersecurity Management (CM) — 6 controls, 4 automated, 2 manual ──
+
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-CM-001",
 		Name:        "Cybersecurity Management System (CSMS)",
@@ -66,6 +92,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkCSMS,
+		References:  []string{"ISO 21434:2021 Clause 5.1", "ISO 21434:2021 Clause 5.4.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-CM-002",
@@ -75,6 +102,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkCultureCompetence,
+		References:  []string{"ISO 21434:2021 Clause 5.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-CM-003",
@@ -84,9 +112,39 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkAuditManagementReview,
+		References:  []string{"ISO 21434:2021 Clause 5.4.2", "ISO 21434:2021 Clause 5.4.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-CM-004",
+		Name:        "Quality Management Integration",
+		Description: "Integrate cybersecurity management with the organization's quality management system",
+		Category:    "Cybersecurity Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 5.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-CM-005",
+		Name:        "Resource Allocation",
+		Description: "Allocate adequate resources for cybersecurity activities throughout the lifecycle",
+		Category:    "Cybersecurity Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 5.4.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-CM-006",
+		Name:        "Cybersecurity Information Sharing",
+		Description: "Participate in cybersecurity information sharing with industry partners and authorities",
+		Category:    "Cybersecurity Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkInfoSharing,
+		References:  []string{"ISO 21434:2021 Clause 5.5"},
 	})
 
-	// Risk Assessment (RA)
+	// ── Risk Assessment (RA) — 8 controls, 5 automated, 3 manual ──
+
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-RA-001",
 		Name:        "Threat Analysis and Risk Assessment (TARA)",
@@ -95,6 +153,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkTARA,
+		References:  []string{"ISO 21434:2021 Clause 8.2", "ISO 21434:2021 Clause 15"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-RA-002",
@@ -104,6 +163,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkAssetRiskIdentification,
+		References:  []string{"ISO 21434:2021 Clause 9.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-RA-003",
@@ -113,9 +173,58 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkRiskTreatmentDecision,
+		References:  []string{"ISO 21434:2021 Clause 15.7"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-RA-004",
+		Name:        "Threat Analysis",
+		Description: "Identify and analyze threats to vehicle assets including attack vectors and threat actors",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkThreatAnalysis,
+		References:  []string{"ISO 21434:2021 Clause 9.4"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-RA-005",
+		Name:        "Vulnerability Analysis",
+		Description: "Identify and analyze vulnerabilities in vehicle systems and components",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkVulnerabilityAnalysis,
+		References:  []string{"ISO 21434:2021 Clause 9.5"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-RA-006",
+		Name:        "Impact Rating",
+		Description: "Determine impact rating for identified threat scenarios",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 15.5"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-RA-007",
+		Name:        "Risk Matrix Definition",
+		Description: "Define and document a risk matrix for evaluating cybersecurity risks",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 15.6"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-RA-008",
+		Name:        "Risk Treatment Options",
+		Description: "Document available risk treatment options: accepting, avoiding, reducing, or sharing",
+		Category:    "Risk Assessment",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 15.7"},
 	})
 
-	// Product Development (PD)
+	// ── Product Development (PD) — 10 controls, 6 automated, 4 manual ──
+
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PD-001",
 		Name:        "Cybersecurity Goals and Claims",
@@ -124,6 +233,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkCybersecurityGoals,
+		References:  []string{"ISO 21434:2021 Clause 6.4.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PD-002",
@@ -133,6 +243,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkCybersecurityRequirements,
+		References:  []string{"ISO 21434:2021 Clause 10.4"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PD-003",
@@ -142,6 +253,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkArchitecturalDesignSecurity,
+		References:  []string{"ISO 21434:2021 Clause 10.5"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PD-004",
@@ -151,9 +263,68 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkIntegrationVerification,
+		References:  []string{"ISO 21434:2021 Clause 11"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PD-005",
+		Name:        "Component Cybersecurity Specification",
+		Description: "Define cybersecurity specifications for each component including interfaces and dependencies",
+		Category:    "Product Development",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 10.6"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PD-006",
+		Name:        "Security Architecture Review",
+		Description: "Review security architecture against identified risks and requirements",
+		Category:    "Product Development",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityArchReview,
+		References:  []string{"ISO 21434:2021 Clause 10.5"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PD-007",
+		Name:        "Secure Coding Standards",
+		Description: "Implement secure coding standards for vehicle software development",
+		Category:    "Product Development",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkSecureCoding,
+		References:  []string{"ISO 21434:2021 Clause 10.8"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PD-008",
+		Name:        "Third-Party Component Assessment",
+		Description: "Assess cybersecurity of third-party and supplier-provided components",
+		Category:    "Product Development",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 10.9"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PD-009",
+		Name:        "Cybersecurity Testing",
+		Description: "Perform cybersecurity testing including penetration testing and fuzzing",
+		Category:    "Product Development",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkCyberTesting,
+		References:  []string{"ISO 21434:2021 Clause 10.10"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PD-010",
+		Name:        "Security Update Readiness",
+		Description: "Ensure components are designed to support cybersecurity updates throughout lifecycle",
+		Category:    "Product Development",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 10.11"},
 	})
 
-	// Production and Operations (PO)
+	// ── Production and Operations (PO) — 7 controls, 3 automated, 4 manual ──
+
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PO-001",
 		Name:        "Production Cybersecurity Controls",
@@ -162,6 +333,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkProductionControls,
+		References:  []string{"ISO 21434:2021 Clause 12.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PO-002",
@@ -171,6 +343,7 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityCritical,
 		Automated:   true,
 		CheckFunc:   m.checkIncidentResponse,
+		References:  []string{"ISO 21434:2021 Clause 8.4"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "ISO21434-PO-003",
@@ -180,10 +353,165 @@ func (m *ISO21434Module) registerControls() {
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
 		CheckFunc:   m.checkVulnerabilityManagement,
+		References:  []string{"ISO 21434:2021 Clause 8.3", "ISO 21434:2021 Clause 13.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PO-004",
+		Name:        "Configuration Management",
+		Description: "Maintain configuration management for vehicle cybersecurity throughout production",
+		Category:    "Production and Operations",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkConfigManagement,
+		References:  []string{"ISO 21434:2021 Clause 12.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PO-005",
+		Name:        "Production Process Security",
+		Description: "Ensure production processes maintain cybersecurity integrity of components",
+		Category:    "Production and Operations",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 12.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PO-006",
+		Name:        "Vehicle Configuration Documentation",
+		Description: "Document cybersecurity-relevant configurations for each vehicle produced",
+		Category:    "Production and Operations",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 12.4"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-PO-007",
+		Name:        "Maintenance and Repair Security",
+		Description: "Ensure maintenance and repair activities maintain vehicle cybersecurity",
+		Category:    "Production and Operations",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 13.2"},
+	})
+
+	// ── Distributed Activities (DP) — 4 controls, 1 automated, 3 manual ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-DP-001",
+		Name:        "Supplier Cybersecurity Requirements",
+		Description: "Define and communicate cybersecurity requirements for suppliers and partners",
+		Category:    "Distributed Activities",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 7.4"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-DP-002",
+		Name:        "Supplier Assessment",
+		Description: "Assess supplier cybersecurity capabilities and compliance",
+		Category:    "Distributed Activities",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSupplierAssessment,
+		References:  []string{"ISO 21434:2021 Clause 7.5"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-DP-003",
+		Name:        "Contractual Security Obligations",
+		Description: "Include cybersecurity obligations in supplier and partner contracts",
+		Category:    "Distributed Activities",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 7.6"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-DP-004",
+		Name:        "Supply Chain Risk Management",
+		Description: "Manage cybersecurity risks in the supply chain including software bill of materials",
+		Category:    "Distributed Activities",
+		Severity:    compliance.SeverityCritical,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 7.4", "ISO 21434:2021 Clause 7.5"},
+	})
+
+	// ── Incident Management (IM) — 4 controls, 2 automated, 2 manual ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-IM-001",
+		Name:        "Incident Detection and Monitoring",
+		Description: "Monitor for cybersecurity incidents affecting vehicles in the field",
+		Category:    "Incident Management",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentDetection,
+		References:  []string{"ISO 21434:2021 Clause 8.4.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-IM-002",
+		Name:        "Incident Classification",
+		Description: "Classify cybersecurity incidents by severity and impact",
+		Category:    "Incident Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 8.4.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-IM-003",
+		Name:        "Incident Response Plan",
+		Description: "Maintain and test incident response plans for vehicle cybersecurity incidents",
+		Category:    "Incident Management",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponsePlan,
+		References:  []string{"ISO 21434:2021 Clause 8.4.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-IM-004",
+		Name:        "Incident Communication",
+		Description: "Establish communication procedures for cybersecurity incidents with stakeholders and authorities",
+		Category:    "Incident Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 8.4.4"},
+	})
+
+	// ── Vulnerability Management (VM) — 3 controls, 2 automated, 1 manual ──
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-VM-001",
+		Name:        "Vulnerability Disclosure Program",
+		Description: "Establish a vulnerability disclosure program for receiving and addressing vulnerability reports",
+		Category:    "Vulnerability Management",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkVulnDisclosure,
+		References:  []string{"ISO 21434:2021 Clause 8.3.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-VM-002",
+		Name:        "Vulnerability Assessment Schedule",
+		Description: "Establish schedules for periodic vulnerability assessments of vehicle systems",
+		Category:    "Vulnerability Management",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		References:  []string{"ISO 21434:2021 Clause 8.3.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "ISO21434-VM-003",
+		Name:        "Patch and Update Management",
+		Description: "Implement processes for deploying security patches and updates to vehicle systems",
+		Category:    "Vulnerability Management",
+		Severity:    compliance.SeverityCritical,
+		Automated:   true,
+		CheckFunc:   m.checkPatchManagement,
+		References:  []string{"ISO 21434:2021 Clause 8.3.3", "ISO 21434:2021 Clause 13.3"},
 	})
 }
 
+// =========================================================================
 // CheckFunc implementations — each returns *compliance.ControlCheckResult.
+// =========================================================================
+
+// ── Existing 13 CheckFuncs (preserved) ──
 
 func (m *ISO21434Module) checkCSMS(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	content := string(input)
@@ -462,6 +790,368 @@ func (m *ISO21434Module) checkVulnerabilityManagement(ctx context.Context, input
 	}, nil
 }
 
+// ── 12 new CheckFuncs ──
+
+func (m *ISO21434Module) checkInfoSharing(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInfoSharing := strings.Contains(inputStr, "info_sharing") ||
+		strings.Contains(inputStr, "threat_sharing") ||
+		strings.Contains(inputStr, "auto_isac")
+
+	if hasInfoSharing {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-CM-006",
+			ControlName: "Cybersecurity Information Sharing",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Cybersecurity information sharing program detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-CM-006",
+		ControlName: "Cybersecurity Information Sharing",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Cybersecurity information sharing program not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a cybersecurity information sharing program with industry partners and authorities per ISO 21434 Clause 5.5",
+	}, nil
+}
+
+func (m *ISO21434Module) checkThreatAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasThreatAnalysis := strings.Contains(inputStr, "threat_analysis") ||
+		strings.Contains(inputStr, "attack_vector") ||
+		strings.Contains(inputStr, "threat_actor")
+
+	if hasThreatAnalysis {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-RA-004",
+			ControlName: "Threat Analysis",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Threat analysis with attack vectors and threat actors detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-RA-004",
+		ControlName: "Threat Analysis",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Threat analysis not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Identify and analyze threats to vehicle assets including attack vectors and threat actors per ISO 21434 Clause 9.4",
+	}, nil
+}
+
+func (m *ISO21434Module) checkVulnerabilityAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVulnAnalysis := strings.Contains(inputStr, "vulnerability_analysis") ||
+		strings.Contains(inputStr, "vuln_scan") ||
+		strings.Contains(inputStr, "weakness")
+
+	if hasVulnAnalysis {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-RA-005",
+			ControlName: "Vulnerability Analysis",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Vulnerability analysis for vehicle systems detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-RA-005",
+		ControlName: "Vulnerability Analysis",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Vulnerability analysis not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Identify and analyze vulnerabilities in vehicle systems and components per ISO 21434 Clause 9.5",
+	}, nil
+}
+
+func (m *ISO21434Module) checkSecurityArchReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasArchReview := strings.Contains(inputStr, "architecture_review") ||
+		strings.Contains(inputStr, "security_review") ||
+		strings.Contains(inputStr, "design_review")
+
+	if hasArchReview {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-PD-006",
+			ControlName: "Security Architecture Review",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Security architecture review detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-PD-006",
+		ControlName: "Security Architecture Review",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Security architecture review not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Review security architecture against identified risks and requirements per ISO 21434 Clause 10.5",
+	}, nil
+}
+
+func (m *ISO21434Module) checkSecureCoding(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSecureCoding := strings.Contains(inputStr, "secure_coding") ||
+		strings.Contains(inputStr, "coding_standard") ||
+		strings.Contains(inputStr, "misra")
+
+	if hasSecureCoding {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-PD-007",
+			ControlName: "Secure Coding Standards",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Secure coding standards detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-PD-007",
+		ControlName: "Secure Coding Standards",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Secure coding standards not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement secure coding standards for vehicle software development per ISO 21434 Clause 10.8",
+	}, nil
+}
+
+func (m *ISO21434Module) checkCyberTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCyberTesting := strings.Contains(inputStr, "penetration_test") ||
+		strings.Contains(inputStr, "fuzzing") ||
+		strings.Contains(inputStr, "cybersecurity_test")
+
+	if hasCyberTesting {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-PD-009",
+			ControlName: "Cybersecurity Testing",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Cybersecurity testing including penetration testing and fuzzing detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-PD-009",
+		ControlName: "Cybersecurity Testing",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Cybersecurity testing not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Perform cybersecurity testing including penetration testing and fuzzing per ISO 21434 Clause 10.10",
+	}, nil
+}
+
+func (m *ISO21434Module) checkConfigManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasConfigMgmt := strings.Contains(inputStr, "configuration_management") ||
+		strings.Contains(inputStr, "baseline") ||
+		strings.Contains(inputStr, "version_control")
+
+	if hasConfigMgmt {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-PO-004",
+			ControlName: "Configuration Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Configuration management for vehicle cybersecurity detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-PO-004",
+		ControlName: "Configuration Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Configuration management not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Maintain configuration management for vehicle cybersecurity throughout production per ISO 21434 Clause 12.2",
+	}, nil
+}
+
+func (m *ISO21434Module) checkSupplierAssessment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSupplierAssessment := strings.Contains(inputStr, "supplier_assessment") ||
+		strings.Contains(inputStr, "vendor_audit") ||
+		strings.Contains(inputStr, "supplier_score")
+
+	if hasSupplierAssessment {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-DP-002",
+			ControlName: "Supplier Assessment",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Supplier cybersecurity assessment detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-DP-002",
+		ControlName: "Supplier Assessment",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Supplier cybersecurity assessment not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Assess supplier cybersecurity capabilities and compliance per ISO 21434 Clause 7.5",
+	}, nil
+}
+
+func (m *ISO21434Module) checkIncidentDetection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIncidentDetection := strings.Contains(inputStr, "incident_detection") ||
+		strings.Contains(inputStr, "vehicle_monitoring") ||
+		strings.Contains(inputStr, "anomaly_detection")
+
+	if hasIncidentDetection {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-IM-001",
+			ControlName: "Incident Detection and Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Incident detection and vehicle monitoring detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-IM-001",
+		ControlName: "Incident Detection and Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Incident detection and monitoring not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Monitor for cybersecurity incidents affecting vehicles in the field per ISO 21434 Clause 8.4.1",
+	}, nil
+}
+
+func (m *ISO21434Module) checkIncidentResponsePlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIRPlan := strings.Contains(inputStr, "incident_response_plan") ||
+		strings.Contains(inputStr, "ir_plan") ||
+		strings.Contains(inputStr, "response_procedure")
+
+	if hasIRPlan {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-IM-003",
+			ControlName: "Incident Response Plan",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Incident response plan detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-IM-003",
+		ControlName: "Incident Response Plan",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Incident response plan not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Maintain and test incident response plans for vehicle cybersecurity incidents per ISO 21434 Clause 8.4.3",
+	}, nil
+}
+
+func (m *ISO21434Module) checkVulnDisclosure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVulnDisclosure := strings.Contains(inputStr, "vulnerability_disclosure") ||
+		strings.Contains(inputStr, "bug_bounty") ||
+		strings.Contains(inputStr, "security_researcher")
+
+	if hasVulnDisclosure {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-VM-001",
+			ControlName: "Vulnerability Disclosure Program",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Vulnerability disclosure program detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-VM-001",
+		ControlName: "Vulnerability Disclosure Program",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Vulnerability disclosure program not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a vulnerability disclosure program for receiving and addressing vulnerability reports per ISO 21434 Clause 8.3.1",
+	}, nil
+}
+
+func (m *ISO21434Module) checkPatchManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPatchMgmt := strings.Contains(inputStr, "patch_management") ||
+		strings.Contains(inputStr, "ota_update") ||
+		strings.Contains(inputStr, "security_patch")
+
+	if hasPatchMgmt {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "ISO21434-VM-003",
+			ControlName: "Patch and Update Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Patch and update management for vehicle systems detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "ISO21434-VM-003",
+		ControlName: "Patch and Update Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Patch and update management not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement processes for deploying security patches and updates to vehicle systems per ISO 21434 Clause 8.3.3",
+	}, nil
+}
+
 // GetPatterns returns the detection patterns for this module.
 func (m *ISO21434Module) GetPatterns() []*regexp.Regexp {
 	var all []*regexp.Regexp
@@ -471,16 +1161,6 @@ func (m *ISO21434Module) GetPatterns() []*regexp.Regexp {
 	return all
 }
 
-// Framework returns the framework identifier.
-func (m *ISO21434Module) Framework() string {
-	return "ISO-21434"
-}
-
-// Version returns the framework version.
-func (m *ISO21434Module) Version() string {
-	return "2021"
-}
-
 // LastUpdated returns the last update time.
 func (m *ISO21434Module) LastUpdated() time.Time {
 	return time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -488,5 +1168,10 @@ func (m *ISO21434Module) LastUpdated() time.Time {
 
 // String returns a string representation.
 func (m *ISO21434Module) String() string {
-	return fmt.Sprintf("ISO 21434 Module (v%s, %d controls)", m.Version(), len(m.automotivePatterns)+len(m.taraPatterns)+len(m.csmsPatterns))
+	return fmt.Sprintf("ISO 21434 Module (v%s, %d controls)", m.Version(), len(m.Controls()))
+}
+
+// Dependencies returns required modules.
+func (m *ISO21434Module) Dependencies() []string {
+	return []string{"scanner"}
 }

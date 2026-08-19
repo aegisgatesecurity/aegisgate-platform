@@ -91,7 +91,7 @@ type FedRAMPModule struct {
 // pkg/compliance/gating.go (license.ModuleFedRAMP entry).
 func NewFedRAMPModule() *FedRAMPModule {
 	m := &FedRAMPModule{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("fedramp", "2.0", core.TierProfessional),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("fedramp", "2.0", core.TierEnterprise),
 	}
 	m.initPatterns()
 	m.registerControls()

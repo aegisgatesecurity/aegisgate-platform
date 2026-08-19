@@ -56,6 +56,8 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		"sox":      lookupControlCount("sox"),
 		"glba":     lookupControlCount("glba"),
 		"nerc_cip": lookupControlCount("nerc_cip"),
+		// v3.8.0 additions
+		"iso21434": lookupControlCount("iso21434"),
 		// Community frameworks (static counts)
 		"atlas": lookupControlCount("atlas"),
 		"gdpr":  lookupControlCount("gdpr"),
@@ -68,7 +70,7 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 		}
 	}
 	// Verify total framework count (24 registered + 3 community = 27)
-	if got := len(frameworks); got != 27 {
+	if got := len(frameworks); got != 28 {
 		t.Errorf("total framework count = %d, want 27", got)
 	}
 	// FedRAMP v3.6.0: 170 controls (151 automated CheckFuncs + 19 evidence-mapped).
@@ -114,6 +116,18 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	}
 	if nercCipCount := frameworks["nerc_cip"]; nercCipCount != 18 {
 		t.Errorf("nerc_cip control count = %d, want 18", nercCipCount)
+	}
+	// FIPS 140-2/140-3 v2.0: 40 controls (27 automated + 13 manual)
+	if fipsCount := frameworks["fips"]; fipsCount != 40 {
+		t.Errorf("fips control count = %d, want 40", fipsCount)
+	}
+	// ISO 42001 v2.0: 38 controls (18 automated + 20 manual)
+	if iso42001Count := frameworks["iso42001"]; iso42001Count != 38 {
+		t.Errorf("iso42001 control count = %d, want 38", iso42001Count)
+	}
+	// ISO 21434 v2.0: 42 controls (25 automated + 17 manual)
+	if iso21434Count := frameworks["iso21434"]; iso21434Count != 42 {
+		t.Errorf("iso21434 control count = %d, want 42", iso21434Count)
 	}
 }
 

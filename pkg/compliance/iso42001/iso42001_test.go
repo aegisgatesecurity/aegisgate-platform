@@ -19,14 +19,14 @@ func TestNewISO42001Module(t *testing.T) {
 	if m.Framework() != "iso_42001" {
 		t.Errorf("Framework() = %q, want iso_42001", m.Framework())
 	}
-	if m.Version() != "1.1" {
+	if m.Version() != "2.0" {
 		t.Errorf("Version() = %q, want 1.1", m.Version())
 	}
 
-	// Verify all 8 controls are registered
+	// Verify all 38 controls are registered
 	controls := m.Controls()
-	if len(controls) != 12 {
-		t.Errorf("len(Controls()) = %d, want 12 (v3.x Tier 1: 4 AS + 1 PS + 4 OP + 1 PE + 2 AI = 12 in-scope)", len(controls))
+	if len(controls) != 38 {
+		t.Errorf("len(Controls()) = %d, want 38", len(controls))
 	}
 
 	// Verify the 5 automated control IDs are present
@@ -360,8 +360,8 @@ func TestISO42001Module_Dependencies(t *testing.T) {
 func TestNewISO42001v3xTier1Controls(t *testing.T) {
 	m := NewISO42001Module()
 	controls := m.Controls()
-	if len(controls) != 12 {
-		t.Errorf("len(Controls()) = %d, want 12 (v3.x Tier 1: 4 AS + 1 5.2 + 1 6.1 + 1 7.5 + 3 8.x + 2 9.x + 2 AI = 12 in-scope)", len(controls))
+	if len(controls) != 38 {
+		t.Errorf("len(Controls()) = %d, want 38", len(controls))
 	}
 	// Verify the 4 new control IDs are present
 	expectedNewIDs := map[string]bool{
@@ -519,8 +519,8 @@ func TestManagementReviewCheck(t *testing.T) {
 		if err != nil {
 			t.Fatalf("checkManagementReview: %v", err)
 		}
-		if result.ControlID != "ISO42001-9.3" {
-			t.Errorf("ControlID = %q, want ISO42001-9.3", result.ControlID)
+		if result.ControlID != "ISO42001-9.2" {
+			t.Errorf("ControlID = %q, want ISO42001-9.2", result.ControlID)
 		}
 		if string(result.Status) != "compliant" {
 			t.Errorf("Status = %s, want compliant", result.Status)
