@@ -6,7 +6,7 @@
 // TISAX ISA Catalogue — Information Security (IS) and Organization & Risk
 // (OR) family controls for AL2 assessment.
 //
-// IS family (8 controls):
+// IS family (14 controls):
 //   IS-01  Information Security Policy      (automated)
 //   IS-02  Security Organization             (evidence-mapped)
 //   IS-03  Asset Management                  (automated)
@@ -15,8 +15,14 @@
 //   IS-06  Physical Security                  (evidence-mapped)
 //   IS-07  Operations Security               (evidence-mapped)
 //   IS-08  Communications Security           (automated)
+//   IS-09  Vulnerability Management           (automated)
+//   IS-10  Security Awareness Training        (evidence-mapped)
+//   IS-11  Incident Response Planning         (automated)
+//   IS-12  Business Continuity Management     (evidence-mapped)
+//   IS-13  Supplier Security Assessment       (evidence-mapped)
+//   IS-14  Compliance Monitoring              (automated)
 //
-// OR family (7 controls):
+// OR family (12 controls):
 //   OR-01  Risk Assessment                   (automated)
 //   OR-02  Risk Treatment                    (evidence-mapped)
 //   OR-03  Supplier Relationships             (evidence-mapped)
@@ -24,6 +30,11 @@
 //   OR-05  Legal Compliance                  (evidence-mapped)
 //   OR-06  Human Resource Security           (evidence-mapped)
 //   OR-07  Incident Management               (automated)
+//   OR-08  Risk Monitoring & Review           (automated)
+//   OR-09  Security Investment Planning       (evidence-mapped)
+//   OR-10  Security Metrics & KPIs            (automated)
+//   OR-11  Audit Management                   (evidence-mapped)
+//   OR-12  Management Review Process          (evidence-mapped)
 //
 // =========================================================================
 
@@ -131,6 +142,78 @@ func (m *TISAXModule) registerISControls() {
 		CheckFunc:   m.checkCommsSecurity,
 		References:  []string{"TISAX v6 AL2 ISA-08", "ISO 27001 A.13.1"},
 	})
+
+	// IS-09: Vulnerability Management (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-IS-09",
+		Name:        "Vulnerability Management",
+		Description: "TISAX IS-09: Vulnerability identification, assessment, and remediation tracking",
+		Category:    "Information Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkVulnMgmt,
+		References:  []string{"TISAX v6 AL2 ISA-09", "ISO 27001 A.8.8"},
+	})
+
+	// IS-10: Security Awareness Training (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-IS-10",
+		Name:        "Security Awareness Training",
+		Description: "TISAX IS-10: Security awareness training program with periodic refreshers",
+		Category:    "Information Security",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-10", "ISO 27001 A.6.3"},
+	})
+
+	// IS-11: Incident Response Planning (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-IS-11",
+		Name:        "Incident Response Planning",
+		Description: "TISAX IS-11: Incident response plan documented with defined roles and escalation",
+		Category:    "Information Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponsePlan,
+		References:  []string{"TISAX v6 AL2 ISA-11", "ISO 27001 A.16.1"},
+	})
+
+	// IS-12: Business Continuity Management (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-IS-12",
+		Name:        "Business Continuity Management",
+		Description: "TISAX IS-12: Business continuity management system with recovery objectives",
+		Category:    "Information Security",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-12", "ISO 27001 A.17.1"},
+	})
+
+	// IS-13: Supplier Security Assessment (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-IS-13",
+		Name:        "Supplier Security Assessment",
+		Description: "TISAX IS-13: Supplier and third-party security assessments conducted periodically",
+		Category:    "Information Security",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-13", "ISO 27001 A.5.19"},
+	})
+
+	// IS-14: Compliance Monitoring (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-IS-14",
+		Name:        "Compliance Monitoring",
+		Description: "TISAX IS-14: Continuous compliance monitoring and deviation tracking",
+		Category:    "Information Security",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkComplianceMonitoring,
+		References:  []string{"TISAX v6 AL2 ISA-14", "ISO 27001 A.5.36"},
+	})
 }
 
 // registerORControls wires the Organization & Risk family controls.
@@ -212,6 +295,66 @@ func (m *TISAXModule) registerORControls() {
 		Automated:   true,
 		CheckFunc:   m.checkIncidentMgmt,
 		References:  []string{"TISAX v6 AL2 ISA-15", "ISO 27001 A.16.1"},
+	})
+
+	// OR-08: Risk Monitoring & Review (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-OR-08",
+		Name:        "Risk Monitoring & Review",
+		Description: "TISAX OR-08: Ongoing risk monitoring and periodic review of risk landscape",
+		Category:    "Organization & Risk",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkRiskMonitoring,
+		References:  []string{"TISAX v6 AL2 ISA-16", "ISO 27001 A.8.2"},
+	})
+
+	// OR-09: Security Investment Planning (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-OR-09",
+		Name:        "Security Investment Planning",
+		Description: "TISAX OR-09: Security investment planning and budget allocation documented",
+		Category:    "Organization & Risk",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-17", "ISO 27001 A.5.4"},
+	})
+
+	// OR-10: Security Metrics & KPIs (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-OR-10",
+		Name:        "Security Metrics & KPIs",
+		Description: "TISAX OR-10: Security metrics and KPIs defined, tracked, and reported to management",
+		Category:    "Organization & Risk",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityMetrics,
+		References:  []string{"TISAX v6 AL2 ISA-18", "ISO 27001 A.5.4"},
+	})
+
+	// OR-11: Audit Management (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-OR-11",
+		Name:        "Audit Management",
+		Description: "TISAX OR-11: Internal and external audit program management with findings tracking",
+		Category:    "Organization & Risk",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-19", "ISO 27001 A.5.35"},
+	})
+
+	// OR-12: Management Review Process (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-OR-12",
+		Name:        "Management Review Process",
+		Description: "TISAX OR-12: Management review process for information security performance",
+		Category:    "Organization & Risk",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-20", "ISO 27001 A.5.5"},
 	})
 }
 
@@ -570,5 +713,251 @@ func (m *TISAXModule) checkIncidentMgmt(ctx context.Context, input []byte) (*com
 		Message:     "Incident management gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Establish incident response procedures and activate IOC detection",
+	}, nil
+}
+
+// --- New IS Family CheckFunc implementations (IS-09 through IS-14) ---
+
+// checkVulnMgmt verifies vulnerability identification, assessment, and
+// remediation tracking. Maps to TISAX IS-09.
+func (m *TISAXModule) checkVulnMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasScan := strings.Contains(inputStr, "vulnerability_scan") || strings.Contains(inputStr, "vuln_scan") || strings.Contains(inputStr, "cve")
+	hasTracking := strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "ticket")
+	hasSeverity := strings.Contains(inputStr, "severity") || strings.Contains(inputStr, "cvss") || strings.Contains(inputStr, "risk_score")
+
+	if hasScan && hasTracking {
+		evidence := []string{
+			"Vulnerability scanning configured",
+			"Remediation tracking in place",
+		}
+		if hasSeverity {
+			evidence = append(evidence, "Severity-based prioritization")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-IS-09",
+			ControlName: "Vulnerability Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Vulnerability management verified (scanning + remediation tracking)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasScan {
+		violations = append(violations, "vulnerability scanning not configured")
+	}
+	if !hasTracking {
+		violations = append(violations, "remediation tracking not in place")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-IS-09",
+		ControlName: "Vulnerability Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Vulnerability management gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable vulnerability scanning and implement remediation tracking",
+	}, nil
+}
+
+// checkIncidentResponsePlan verifies that an incident response plan is
+// documented with defined roles and escalation. Maps to TISAX IS-11.
+func (m *TISAXModule) checkIncidentResponsePlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPlan := strings.Contains(inputStr, "incident_response_plan") || strings.Contains(inputStr, "ir_plan") || strings.Contains(inputStr, "response_plan")
+	hasRoles := strings.Contains(inputStr, "roles") || strings.Contains(inputStr, "responsibilities") || strings.Contains(inputStr, "playbook")
+	hasEscalation := strings.Contains(inputStr, "escalation") || strings.Contains(inputStr, "escalation_path") || strings.Contains(inputStr, "notification")
+
+	if hasPlan && hasRoles {
+		evidence := []string{
+			"Incident response plan documented",
+			"Roles and responsibilities defined",
+		}
+		if hasEscalation {
+			evidence = append(evidence, "Escalation paths established")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-IS-11",
+			ControlName: "Incident Response Planning",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Incident response planning verified (plan + roles)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasPlan {
+		violations = append(violations, "incident response plan not documented")
+	}
+	if !hasRoles {
+		violations = append(violations, "roles and responsibilities not defined")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-IS-11",
+		ControlName: "Incident Response Planning",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Incident response planning gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Document an incident response plan with defined roles and escalation paths",
+	}, nil
+}
+
+// checkComplianceMonitoring verifies continuous compliance monitoring and
+// deviation tracking. Maps to TISAX IS-14.
+func (m *TISAXModule) checkComplianceMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "compliance_monitoring") || strings.Contains(inputStr, "continuous_monitoring") || strings.Contains(inputStr, "monitoring")
+	hasDeviations := strings.Contains(inputStr, "deviation") || strings.Contains(inputStr, "non_conformity") || strings.Contains(inputStr, "exceptions")
+	hasReporting := strings.Contains(inputStr, "reporting") || strings.Contains(inputStr, "dashboard") || strings.Contains(inputStr, "compliance_report")
+
+	if hasMonitoring && (hasDeviations || hasReporting) {
+		evidence := []string{
+			"Compliance monitoring active",
+		}
+		if hasDeviations {
+			evidence = append(evidence, "Deviation tracking in place")
+		}
+		if hasReporting {
+			evidence = append(evidence, "Compliance reporting configured")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-IS-14",
+			ControlName: "Compliance Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Compliance monitoring verified (monitoring + deviation tracking/reporting)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasMonitoring {
+		violations = append(violations, "compliance monitoring not active")
+	}
+	if !hasDeviations && !hasReporting {
+		violations = append(violations, "deviation tracking and reporting not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-IS-14",
+		ControlName: "Compliance Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Compliance monitoring gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Enable continuous compliance monitoring with deviation tracking and reporting",
+	}, nil
+}
+
+// --- New OR Family CheckFunc implementations (OR-08, OR-10) ---
+
+// checkRiskMonitoring verifies ongoing risk monitoring and periodic review.
+// Maps to TISAX OR-08.
+func (m *TISAXModule) checkRiskMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitor := strings.Contains(inputStr, "risk_monitoring") || strings.Contains(inputStr, "risk_review") || strings.Contains(inputStr, "monitoring")
+	hasPeriodic := strings.Contains(inputStr, "periodic") || strings.Contains(inputStr, "schedule") || strings.Contains(inputStr, "annual") || strings.Contains(inputStr, "review")
+	hasRegister := strings.Contains(inputStr, "risk_register") || strings.Contains(inputStr, "risk") || strings.Contains(inputStr, "risk_tracker")
+
+	if hasMonitor && hasPeriodic {
+		evidence := []string{
+			"Risk monitoring configured",
+			"Periodic review schedule established",
+		}
+		if hasRegister {
+			evidence = append(evidence, "Risk register maintained")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-OR-08",
+			ControlName: "Risk Monitoring & Review",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Risk monitoring verified (monitoring + periodic review)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasMonitor {
+		violations = append(violations, "risk monitoring not configured")
+	}
+	if !hasPeriodic {
+		violations = append(violations, "periodic review schedule not established")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-OR-08",
+		ControlName: "Risk Monitoring & Review",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Risk monitoring gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure risk monitoring with periodic review schedules",
+	}, nil
+}
+
+// checkSecurityMetrics verifies that security metrics and KPIs are defined,
+// tracked, and reported. Maps to TISAX OR-10.
+func (m *TISAXModule) checkSecurityMetrics(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMetrics := strings.Contains(inputStr, "metrics") || strings.Contains(inputStr, "kpi") || strings.Contains(inputStr, "security_metrics")
+	hasTracking := strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "dashboard") || strings.Contains(inputStr, "reporting")
+	hasMgmt := strings.Contains(inputStr, "management") || strings.Contains(inputStr, "board") || strings.Contains(inputStr, "review")
+
+	if hasMetrics && hasTracking {
+		evidence := []string{
+			"Security metrics and KPIs defined",
+			"Metrics tracking in place",
+		}
+		if hasMgmt {
+			evidence = append(evidence, "Management reporting configured")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-OR-10",
+			ControlName: "Security Metrics & KPIs",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Security metrics verified (KPIs + tracking)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasMetrics {
+		violations = append(violations, "security metrics and KPIs not defined")
+	}
+	if !hasTracking {
+		violations = append(violations, "metrics tracking not in place")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-OR-10",
+		ControlName: "Security Metrics & KPIs",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Security metrics gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Define security metrics/KPIs and implement tracking with management reporting",
 	}, nil
 }

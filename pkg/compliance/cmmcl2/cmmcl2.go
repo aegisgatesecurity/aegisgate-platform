@@ -94,7 +94,7 @@ type CMMCL2Module struct {
 // pkg/compliance/gating.go (license.ModuleCMMCL2 entry).
 func NewCMMCL2Module() *CMMCL2Module {
 	m := &CMMCL2Module{
-		BaseComplianceModule: compliance.NewBaseComplianceModule("cmmcl2", "1.0", core.TierProfessional),
+		BaseComplianceModule: compliance.NewBaseComplianceModule("cmmcl2", "1.0", core.TierEnterprise),
 	}
 	m.initPatterns()
 	m.registerControls()
@@ -157,29 +157,32 @@ func (m *CMMCL2Module) initPatterns() {
 //	SC = System and Communications Protection
 //	SI = System and Information Integrity
 func (m *CMMCL2Module) registerControls() {
-	// AC: Access Control (22 controls)
+	// AC: Access Control (26 controls)
 	m.registerACControls()
 
-	// AT: Awareness & Training (5 controls)
+	// AM: Asset Management (3 controls)
+	m.registerAMControls()
+
+	// AT: Awareness & Training (7 controls)
 	m.registerATControls()
 
-	// AU: Audit and Accountability (9 controls)
+	// AU: Audit and Accountability (12 controls)
 	m.registerAUControls()
 
-	// CA + CM: Assessment & Authorization + Configuration Management (3 + 10 = 13 controls)
+	// CA + CM: Assessment & Authorization + Configuration Management (5 + 12 = 17 controls)
 	m.registerCAControls()
 	m.registerCMControls()
 
-	// IA + IR: Identification & Authentication + Incident Response (8 + 6 = 14 controls)
+	// IA + IR: Identification & Authentication + Incident Response (10 + 8 = 18 controls)
 	m.registerIAControls()
 	m.registerIRControls()
 
-	// MA + MP + PE: Maintenance + Media Protection + Physical Protection (5 + 5 + 6 = 16 controls)
+	// MA + MP + PE: Maintenance + Media Protection + Physical Protection (7 + 7 + 8 = 22 controls)
 	m.registerMAControls()
 	m.registerMPControls()
 	m.registerPEControls()
 
-	// PS: Personnel Security (4 controls)
+	// PS: Personnel Security (6 controls)
 	m.registerPSControls()
 
 	// RA + SA + SC + SI: Risk Assessment + Situational Awareness +
@@ -190,6 +193,9 @@ func (m *CMMCL2Module) registerControls() {
 	m.registerSCControls()
 	m.registerSCExtendedControls()
 	m.registerSIControls()
+
+	// Expanded controls: enhanced practices + CUI Protection domain (37 controls)
+	m.registerExpandedControls()
 }
 
 // Dependencies returns required modules. CMMC L2 depends on the

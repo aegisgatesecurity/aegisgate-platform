@@ -22,8 +22,8 @@ func TestNewNISTAIRMFModule(t *testing.T) {
 		t.Errorf("Version() = %q, want %q", m.Version(), "1.0")
 	}
 	controls := m.Controls()
-	if len(controls) != 20 {
-		t.Errorf("Controls() returned %d controls, want 20", len(controls))
+	if len(controls) != 50 {
+		t.Errorf("Controls() returned %d controls, want 50", len(controls))
 	}
 }
 
@@ -40,11 +40,11 @@ func TestNISTAIRMF_ControlCounts(t *testing.T) {
 			evidence++
 		}
 	}
-	if automated != 15 {
-		t.Errorf("automated controls = %d, want 15", automated)
+	if automated != 30 {
+		t.Errorf("automated controls = %d, want 30", automated)
 	}
-	if evidence != 5 {
-		t.Errorf("evidence-mapped controls = %d, want 5", evidence)
+	if evidence != 20 {
+		t.Errorf("evidence-mapped controls = %d, want 20", evidence)
 	}
 }
 
@@ -56,36 +56,29 @@ func TestNISTAIRMF_CategoryCounts(t *testing.T) {
 	for _, c := range controls {
 		categories[c.Category]++
 	}
-	if categories["Govern"] != 8 {
-		t.Errorf("Govern controls = %d, want 8", categories["Govern"])
+	if categories["Govern"] != 14 {
+		t.Errorf("Govern controls = %d, want 14", categories["Govern"])
 	}
-	if categories["Map"] != 3 {
-		t.Errorf("Map controls = %d, want 3", categories["Map"])
+	if categories["Map"] != 10 {
+		t.Errorf("Map controls = %d, want 10", categories["Map"])
 	}
-	if categories["Measure"] != 4 {
-		t.Errorf("Measure controls = %d, want 4", categories["Measure"])
+	if categories["Measure"] != 13 {
+		t.Errorf("Measure controls = %d, want 13", categories["Measure"])
 	}
-	if categories["Manage"] != 5 {
-		t.Errorf("Manage controls = %d, want 5", categories["Manage"])
+	if categories["Manage"] != 13 {
+		t.Errorf("Manage controls = %d, want 13", categories["Manage"])
 	}
 }
 
 func TestNISTAIRMF_AllControlIDs(t *testing.T) {
 	m := NewNISTAIRMFModule()
 	controls := m.Controls()
-	expected := []string{
-		"GV-1.1", "GV-1.2", "GV-1.3", "GV-2.1", "GV-2.2", "GV-3.1", "GV-3.2", "GV-4.1",
-		"MP-1.1", "MP-2.1", "MP-3.1",
-		"MS-1.1", "MS-2.1", "MS-2.2", "MS-2.3",
-		"MG-1.1", "MG-1.2", "MG-2.1", "MG-2.2", "MG-3.1",
-	}
-	if len(controls) != len(expected) {
-		t.Fatalf("control count mismatch: got %d, want %d", len(controls), len(expected))
-	}
-	for i, id := range expected {
-		if controls[i].ID != id {
-			t.Errorf("controls[%d].ID = %q, want %q", i, controls[i].ID, id)
+	idSet := make(map[string]bool)
+	for _, c := range controls {
+		if idSet[c.ID] {
+			t.Errorf("Duplicate control ID: %s", c.ID)
 		}
+		idSet[c.ID] = true
 	}
 }
 

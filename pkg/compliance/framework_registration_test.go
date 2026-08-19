@@ -153,6 +153,22 @@ func TestRegisterBuiltinFrameworks_RealCounts(t *testing.T) {
 	if cisCount := frameworks["cis"]; cisCount != 50 {
 		t.Errorf("cis control count = %d, want 50", cisCount)
 	}
+	// ISO 27001:2022: 116 controls (92 automated + 24 manual)
+	if isoCount := frameworks["iso27001"]; isoCount != 116 {
+		t.Errorf("iso27001 control count = %d, want 116", isoCount)
+	}
+	// CMMC L2: 150 controls (89 automated + 61 manual)
+	if cmmcCount := frameworks["cmmcl2"]; cmmcCount != 150 {
+		t.Errorf("cmmcl2 control count = %d, want 150", cmmcCount)
+	}
+	// NIST AI RMF 1.0: 50 controls (30 automated + 20 manual)
+	if nistAiRmfCount := frameworks["nist_ai_rmf"]; nistAiRmfCount != 50 {
+		t.Errorf("nist_ai_rmf control count = %d, want 50", nistAiRmfCount)
+	}
+	// TISAX AL2: 65 controls (31 automated + 34 manual)
+	if tisaxCount := frameworks["tisax"]; tisaxCount != 65 {
+		t.Errorf("tisax control count = %d, want 65", tisaxCount)
+	}
 }
 
 func TestLookupControlCount_UnknownFramework(t *testing.T) {

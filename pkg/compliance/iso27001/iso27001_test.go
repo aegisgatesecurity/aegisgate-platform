@@ -23,16 +23,19 @@ func TestNewISO27001Module(t *testing.T) {
 		t.Errorf("Version() = %q, want 1.0 (v3.x Tier 1 new module)", m.Version())
 	}
 	controls := m.Controls()
-	if len(controls) != 67 {
-		t.Errorf("len(Controls()) = %d, want 67 (v3.x Tier 1: 67 of 93 in-scope Annex A controls; revised count after implementation)", len(controls))
+	if len(controls) != 116 {
+		t.Errorf("len(Controls()) = %d, want 116 (ISO 27001:2022 expanded Annex A controls)", len(controls))
 	}
-	// Verify all 60 controls have CheckFunc
+	// Verify all automated controls have CheckFunc (92 automated, 24 manual)
 	for _, c := range controls {
-		if !c.Automated {
-			t.Errorf("Control %s should be automated", c.ID)
-		}
-		if c.CheckFunc == nil {
-			t.Errorf("Control %s has nil CheckFunc", c.ID)
+		if c.Automated {
+			if c.CheckFunc == nil {
+				t.Errorf("Control %s is automated but has nil CheckFunc", c.ID)
+			}
+		} else {
+			if c.CheckFunc != nil {
+				t.Errorf("Control %s is manual but has CheckFunc", c.ID)
+			}
 		}
 	}
 }

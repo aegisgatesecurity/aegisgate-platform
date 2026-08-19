@@ -33,14 +33,14 @@ func TestTISAXControlCount(t *testing.T) {
 			evidenceMapped++
 		}
 	}
-	if total != 35 {
-		t.Errorf("Controls() returned %d controls, want 35", total)
+	if total != 65 {
+		t.Errorf("Controls() returned %d controls, want 65", total)
 	}
-	if automated != 16 {
-		t.Errorf("Automated controls = %d, want 16", automated)
+	if automated != 31 {
+		t.Errorf("Automated controls = %d, want 31", automated)
 	}
-	if evidenceMapped != 19 {
-		t.Errorf("Evidence-mapped controls = %d, want 19", evidenceMapped)
+	if evidenceMapped != 34 {
+		t.Errorf("Evidence-mapped controls = %d, want 34", evidenceMapped)
 	}
 }
 

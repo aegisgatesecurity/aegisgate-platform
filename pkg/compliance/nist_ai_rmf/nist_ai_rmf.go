@@ -10,9 +10,9 @@
 //   MANAGE  (MG) — Prioritizing and acting on AI risks
 //
 // Each function contains subcategories that map to AegisGate controls.
-// This module provides 19 controls covering all subcategories of the
-// AI RMF Playbook, with automated checks for 12 and evidence-mapped
-// checks for 7.
+// This module provides 50 controls covering subcategories of the
+// AI RMF Playbook, with automated checks for 30 and evidence-mapped
+// checks for 20.
 //
 // Module metadata:
 //   - Framework:   "nist_ai_rmf"
@@ -21,11 +21,11 @@
 //   - Pricing:      No separate add-on (bundled with the platform)
 //
 // Architecture:
-//   - nist_ai_rmf.go:      module wiring, 20 RegisterControl calls,
-//                           15 automated + 5 evidence-mapped
+//   - nist_ai_rmf.go:      module wiring, 50 RegisterControl calls,
+//                           30 automated + 20 evidence-mapped
 //   - nist_ai_rmf_test.go: unit tests
 //
-// Coverage: 20 of 20 AI RMF 1.0 subcategories (100% in-scope).
+// Coverage: 50 AI RMF 1.0 subcategories and Playbook actions.
 // The AI RMF Playbook identifies additional suggested actions within
 // each subcategory; those are captured in the evidence-mapped controls
 // where AegisGate can verify artifacts but not fully automate.
@@ -56,6 +56,9 @@ type NISTAIRMFModule struct {
 	riskPatterns         []*regexp.Regexp
 	monitorPatterns      []*regexp.Regexp
 	transparencyPatterns []*regexp.Regexp
+	safetyPatterns       []*regexp.Regexp
+	fairnessPatterns     []*regexp.Regexp
+	securityPatterns     []*regexp.Regexp
 }
 
 // NewNISTAIRMFModule creates a new NIST AI RMF 1.0 module.
@@ -92,6 +95,24 @@ func (m *NISTAIRMFModule) initPatterns() {
 		regexp.MustCompile(`(?i)explainab`),
 		regexp.MustCompile(`(?i)interpretab`),
 		regexp.MustCompile(`(?i)disclosure`),
+	}
+	m.safetyPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)safety[_ ]?metric`),
+		regexp.MustCompile(`(?i)safety[_ ]?assessment`),
+		regexp.MustCompile(`(?i)hazard[_ ]?analysis`),
+		regexp.MustCompile(`(?i)safe[_ ]?operation`),
+	}
+	m.fairnessPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)fairness[_ ]?metric`),
+		regexp.MustCompile(`(?i)bias[_ ]?metric`),
+		regexp.MustCompile(`(?i)equity[_ ]?check`),
+		regexp.MustCompile(`(?i)demographic[_ ]?parity`),
+	}
+	m.securityPatterns = []*regexp.Regexp{
+		regexp.MustCompile(`(?i)security[_ ]?metric`),
+		regexp.MustCompile(`(?i)vulnerability[_ ]?scan`),
+		regexp.MustCompile(`(?i)penetration[_ ]?test`),
+		regexp.MustCompile(`(?i)adversarial[_ ]?robustness`),
 	}
 }
 
@@ -314,6 +335,327 @@ func (m *NISTAIRMFModule) registerControls() {
 		Automated:   true,
 		CheckFunc:   m.checkMG31,
 		References:  []string{"NIST AI RMF 1.0 MG-3.1"},
+	})
+
+	// =================================================================
+	// GOVERN (GV) — Additional subcategories
+	// =================================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "GV-1.4",
+		Name:        "AI business value and risk documented",
+		Description: "GV-1.4: The business value or mission of AI systems is documented and aligned with organizational risk tolerance",
+		Category:    "Govern",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 GV-1.4"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "GV-1.5",
+		Name:        "Legal and regulatory requirements for AI identified",
+		Description: "GV-1.5: Legal and regulatory requirements relevant to AI systems are identified and documented",
+		Category:    "Govern",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkGV15,
+		References:  []string{"NIST AI RMF 1.0 GV-1.5"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "GV-2.3",
+		Name:        "AI risk management practices integrated",
+		Description: "GV-2.3: AI risk management practices are integrated into organizational practices and processes",
+		Category:    "Govern",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkGV23,
+		References:  []string{"NIST AI RMF 1.0 GV-2.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "GV-3.3",
+		Name:        "AI risk management resources allocated",
+		Description: "GV-3.3: Resources required for AI risk management are allocated and tracked (personnel, tools, budget)",
+		Category:    "Govern",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 GV-3.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "GV-4.2",
+		Name:        "AI risk management practices harmonized",
+		Description: "GV-4.2: AI risk management practices are harmonized with related organizational policies and standards",
+		Category:    "Govern",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkGV42,
+		References:  []string{"NIST AI RMF 1.0 GV-4.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "GV-4.3",
+		Name:        "AI risk management practices adapted",
+		Description: "GV-4.3: AI risk management practices are adapted to changes in organizational strategy and risk landscape",
+		Category:    "Govern",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 GV-4.3"},
+	})
+
+	// =================================================================
+	// MAP (MP) — Additional subcategories
+	// =================================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-1.2",
+		Name:        "AI system lifecycle documented",
+		Description: "MP-1.2: AI system lifecycle stages are documented from design through deployment and decommissioning",
+		Category:    "Map",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkMP12,
+		References:  []string{"NIST AI RMF 1.0 MP-1.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-1.3",
+		Name:        "AI system acquirers and users identified",
+		Description: "MP-1.3: Acquirers, users, and downstream parties of the AI system are identified and documented",
+		Category:    "Map",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MP-1.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-2.2",
+		Name:        "AI system capabilities and limitations documented",
+		Description: "MP-2.2: AI system capabilities and limitations are documented and communicated to relevant stakeholders",
+		Category:    "Map",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMP22,
+		References:  []string{"NIST AI RMF 1.0 MP-2.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-2.3",
+		Name:        "AI system reliability and validity assessed",
+		Description: "MP-2.3: AI system reliability and validity are assessed against the defined context and use case",
+		Category:    "Map",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMP23,
+		References:  []string{"NIST AI RMF 1.0 MP-2.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-3.2",
+		Name:        "AI risks prioritized",
+		Description: "MP-3.2: AI risks are prioritized based on likelihood and impact for resource allocation and treatment",
+		Category:    "Map",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MP-3.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-3.3",
+		Name:        "AI risk assessments reviewed",
+		Description: "MP-3.3: AI risk assessments are reviewed and updated on a regular schedule or after significant changes",
+		Category:    "Map",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkMP33,
+		References:  []string{"NIST AI RMF 1.0 MP-3.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MP-4.1",
+		Name:        "AI system impact on individuals assessed",
+		Description: "MP-4.1: AI system impact on individuals and communities is assessed including potential benefits and harms",
+		Category:    "Map",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MP-4.1"},
+	})
+
+	// =================================================================
+	// MEASURE (MS) — Additional subcategories
+	// =================================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-1.2",
+		Name:        "AI reliability metrics tracked",
+		Description: "MS-1.2: AI system reliability metrics are identified, tracked, and compared against performance targets",
+		Category:    "Measure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMS12,
+		References:  []string{"NIST AI RMF 1.0 MS-1.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-1.3",
+		Name:        "AI safety metrics tracked",
+		Description: "MS-1.3: AI system safety metrics are identified and tracked including hazard and incident measures",
+		Category:    "Measure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMS13,
+		References:  []string{"NIST AI RMF 1.0 MS-1.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-2.4",
+		Name:        "AI security metrics tracked",
+		Description: "MS-2.4: AI system security metrics are identified and tracked including vulnerability and attack metrics",
+		Category:    "Measure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMS24,
+		References:  []string{"NIST AI RMF 1.0 MS-2.4"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-2.5",
+		Name:        "AI privacy metrics tracked",
+		Description: "MS-2.5: AI system privacy metrics are identified and tracked including data protection and PII metrics",
+		Category:    "Measure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMS25,
+		References:  []string{"NIST AI RMF 1.0 MS-2.5"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-2.6",
+		Name:        "AI fairness metrics tracked",
+		Description: "MS-2.6: AI system fairness metrics are identified and tracked including bias and equity measures",
+		Category:    "Measure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMS26,
+		References:  []string{"NIST AI RMF 1.0 MS-2.6"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-2.7",
+		Name:        "AI accountability metrics tracked",
+		Description: "MS-2.7: AI system accountability metrics are identified and tracked including auditability and responsibility measures",
+		Category:    "Measure",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MS-2.7"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-2.8",
+		Name:        "AI transparency metrics tracked",
+		Description: "MS-2.8: AI system transparency metrics are identified and tracked including explainability and disclosure measures",
+		Category:    "Measure",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MS-2.8"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-2.9",
+		Name:        "AI system bias measured",
+		Description: "MS-2.9: AI system bias is measured and tracked across demographic groups and decision outcomes",
+		Category:    "Measure",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MS-2.9"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MS-3.1",
+		Name:        "AI risk assessment results verified",
+		Description: "MS-3.1: AI risk assessment results are verified and validated by independent review or testing",
+		Category:    "Measure",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MS-3.1"},
+	})
+
+	// =================================================================
+	// MANAGE (MG) — Additional subcategories
+	// =================================================================
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-1.3",
+		Name:        "AI risk treatment options evaluated",
+		Description: "MG-1.3: AI risk treatment options are evaluated for cost, feasibility, and effectiveness before selection",
+		Category:    "Manage",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MG-1.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-2.3",
+		Name:        "AI incident response mechanisms tested",
+		Description: "MG-2.3: AI incident response mechanisms are tested on a regular schedule and after system changes",
+		Category:    "Manage",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkMG23,
+		References:  []string{"NIST AI RMF 1.0 MG-2.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-2.4",
+		Name:        "AI system recovery procedures in place",
+		Description: "MG-2.4: AI system recovery procedures and fallback mechanisms are documented and tested",
+		Category:    "Manage",
+		Severity:    compliance.SeverityHigh,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MG-2.4"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-3.2",
+		Name:        "AI risk management improvements implemented",
+		Description: "MG-3.2: AI risk management improvements are implemented based on monitoring, feedback, and lessons learned",
+		Category:    "Manage",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MG-3.2"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-3.3",
+		Name:        "AI risk management knowledge shared",
+		Description: "MG-3.3: AI risk management knowledge and lessons learned are shared across the organization",
+		Category:    "Manage",
+		Severity:    compliance.SeverityLow,
+		Automated:   true,
+		CheckFunc:   m.checkMG33,
+		References:  []string{"NIST AI RMF 1.0 MG-3.3"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-4.1",
+		Name:        "AI system documentation maintained",
+		Description: "MG-4.1: AI system documentation is maintained throughout the system lifecycle including updates and changes",
+		Category:    "Manage",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkMG41,
+		References:  []string{"NIST AI RMF 1.0 MG-4.1"},
+	})
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-4.2",
+		Name:        "AI system decommissioning process",
+		Description: "MG-4.2: AI system decommissioning and retirement process is documented and executed when systems are sunset",
+		Category:    "Manage",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MG-4.2"},
+	})
+
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "MG-4.3",
+		Name:        "AI system impact on third parties managed",
+		Description: "MG-4.3: AI system impacts on third parties and downstream users are identified and managed through contractual and governance mechanisms",
+		Category:    "Manage",
+		Severity:    compliance.SeverityLow,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"NIST AI RMF 1.0 MG-4.3"},
 	})
 }
 
@@ -568,6 +910,247 @@ func (m *NISTAIRMFModule) checkMG31(ctx context.Context, input []byte) (*complia
 	}
 	return nonCompliant(m, "MG-3.1", "No continuous improvement mechanisms",
 		"Implement feedback loops and continuous monitoring for AI risk management improvement")
+}
+
+// ============================================================================
+// GOVERN (GV) Additional Check implementations
+// ============================================================================
+
+func (m *NISTAIRMFModule) checkGV15(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLegal := strings.Contains(inputStr, "legal") || strings.Contains(inputStr, "regulatory") || strings.Contains(inputStr, "compliance")
+	hasAI := strings.Contains(inputStr, "ai_") || strings.Contains(inputStr, "artificial_intelligence") || strings.Contains(inputStr, "ml_")
+	if hasLegal && hasAI {
+		return compliant(m, "GV-1.5", "Legal and regulatory requirements for AI systems identified")
+	}
+	if hasLegal {
+		return partial(m, "GV-1.5", "Legal requirements documented but AI-specific requirements not identified",
+			"Identify and document AI-specific legal and regulatory requirements")
+	}
+	return nonCompliant(m, "GV-1.5", "No legal or regulatory requirements for AI identified",
+		"Identify and document legal and regulatory requirements applicable to AI systems")
+}
+
+func (m *NISTAIRMFModule) checkGV23(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAIRisk := matchAny(inputStr, m.riskPatterns) || strings.Contains(inputStr, "ai_risk")
+	hasIntegration := strings.Contains(inputStr, "integrated") || strings.Contains(inputStr, "embedded") || strings.Contains(inputStr, "operational")
+	if hasAIRisk && hasIntegration {
+		return compliant(m, "GV-2.3", "AI risk management practices integrated into organizational processes")
+	}
+	if hasAIRisk {
+		return partial(m, "GV-2.3", "AI risk practices defined but not integrated into organizational processes",
+			"Integrate AI risk management into existing organizational workflows and processes")
+	}
+	return nonCompliant(m, "GV-2.3", "AI risk management practices not integrated",
+		"Define and integrate AI risk management practices into organizational processes")
+}
+
+func (m *NISTAIRMFModule) checkGV42(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicy := matchAny(inputStr, m.policyPatterns) || strings.Contains(inputStr, "standard")
+	hasHarmonized := strings.Contains(inputStr, "harmonized") || strings.Contains(inputStr, "aligned") || strings.Contains(inputStr, "consistent")
+	if hasPolicy && hasHarmonized {
+		return compliant(m, "GV-4.2", "AI risk management practices harmonized with organizational policies")
+	}
+	if hasPolicy {
+		return partial(m, "GV-4.2", "AI policies exist but not harmonized with related organizational standards",
+			"Align AI risk management practices with existing organizational policies and standards")
+	}
+	return nonCompliant(m, "GV-4.2", "AI risk management practices not harmonized",
+		"Harmonize AI risk management practices with related organizational policies and standards")
+}
+
+// ============================================================================
+// MAP (MP) Additional Check implementations
+// ============================================================================
+
+func (m *NISTAIRMFModule) checkMP12(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLifecycle := strings.Contains(inputStr, "lifecycle") || strings.Contains(inputStr, "lifecycle_stage") || strings.Contains(inputStr, "development_phase")
+	hasStages := strings.Contains(inputStr, "design") || strings.Contains(inputStr, "deployment") || strings.Contains(inputStr, "decommission")
+	if hasLifecycle && hasStages {
+		return compliant(m, "MP-1.2", "AI system lifecycle documented from design through decommissioning")
+	}
+	if hasLifecycle {
+		return partial(m, "MP-1.2", "Lifecycle documented but not all stages covered",
+			"Document all lifecycle stages including design, deployment, and decommissioning")
+	}
+	return nonCompliant(m, "MP-1.2", "AI system lifecycle not documented",
+		"Document AI system lifecycle stages from design through deployment and decommissioning")
+}
+
+func (m *NISTAIRMFModule) checkMP22(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCapabilities := strings.Contains(inputStr, "capabilities") || strings.Contains(inputStr, "capability") || strings.Contains(inputStr, "features")
+	hasLimitations := strings.Contains(inputStr, "limitations") || strings.Contains(inputStr, "constraints") || strings.Contains(inputStr, "known_issues")
+	if hasCapabilities && hasLimitations {
+		return compliant(m, "MP-2.2", "AI system capabilities and limitations documented")
+	}
+	if hasCapabilities {
+		return partial(m, "MP-2.2", "AI capabilities documented but limitations not documented",
+			"Document known limitations and constraints of the AI system")
+	}
+	return nonCompliant(m, "MP-2.2", "AI system capabilities and limitations not documented",
+		"Document AI system capabilities and limitations; communicate to stakeholders")
+}
+
+func (m *NISTAIRMFModule) checkMP23(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReliability := strings.Contains(inputStr, "reliability") || strings.Contains(inputStr, "reliable")
+	hasValidity := strings.Contains(inputStr, "validity") || strings.Contains(inputStr, "valid") || strings.Contains(inputStr, "validation")
+	if hasReliability && hasValidity {
+		return compliant(m, "MP-2.3", "AI system reliability and validity assessed")
+	}
+	if hasReliability || hasValidity {
+		return partial(m, "MP-2.3", "Partial reliability or validity assessment",
+			"Complete both reliability and validity assessments for the AI system")
+	}
+	return nonCompliant(m, "MP-2.3", "AI system reliability and validity not assessed",
+		"Assess AI system reliability and validity against the defined context and use case")
+}
+
+func (m *NISTAIRMFModule) checkMP33(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAssessment := matchAny(inputStr, m.riskPatterns) || strings.Contains(inputStr, "risk_assessment")
+	hasReview := strings.Contains(inputStr, "reviewed") || strings.Contains(inputStr, "updated") || strings.Contains(inputStr, "reassessed") || strings.Contains(inputStr, "review_schedule")
+	if hasAssessment && hasReview {
+		return compliant(m, "MP-3.3", "AI risk assessments reviewed and updated on regular schedule")
+	}
+	if hasAssessment {
+		return partial(m, "MP-3.3", "Risk assessments exist but regular review not verified",
+			"Establish a regular review schedule for AI risk assessments")
+	}
+	return nonCompliant(m, "MP-3.3", "AI risk assessments not reviewed or updated",
+		"Implement regular review and update of AI risk assessments")
+}
+
+// ============================================================================
+// MEASURE (MS) Additional Check implementations
+// ============================================================================
+
+func (m *NISTAIRMFModule) checkMS12(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReliability := strings.Contains(inputStr, "reliability_metric") || strings.Contains(inputStr, "reliability") || strings.Contains(inputStr, "uptime") || strings.Contains(inputStr, "availability")
+	hasTracking := strings.Contains(inputStr, "metrics") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "kpi") || matchAny(inputStr, m.monitorPatterns)
+	if hasReliability && hasTracking {
+		return compliant(m, "MS-1.2", "AI reliability metrics tracked against performance targets")
+	}
+	if hasReliability {
+		return partial(m, "MS-1.2", "Reliability metrics defined but tracking not verified",
+			"Enable continuous tracking of AI reliability metrics")
+	}
+	return nonCompliant(m, "MS-1.2", "No AI reliability metrics tracked",
+		"Define and track AI system reliability metrics including uptime and availability")
+}
+
+func (m *NISTAIRMFModule) checkMS13(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSafety := matchAny(inputStr, m.safetyPatterns) || strings.Contains(inputStr, "safety")
+	hasTracking := strings.Contains(inputStr, "metrics") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "kpi") || matchAny(inputStr, m.monitorPatterns)
+	if hasSafety && hasTracking {
+		return compliant(m, "MS-1.3", "AI safety metrics tracked including hazard and incident measures")
+	}
+	if hasSafety {
+		return partial(m, "MS-1.3", "Safety metrics defined but tracking not verified",
+			"Enable continuous tracking of AI safety metrics")
+	}
+	return nonCompliant(m, "MS-1.3", "No AI safety metrics tracked",
+		"Define and track AI system safety metrics including hazard analysis and incident measures")
+}
+
+func (m *NISTAIRMFModule) checkMS24(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSecurity := matchAny(inputStr, m.securityPatterns) || strings.Contains(inputStr, "security_metric") || strings.Contains(inputStr, "security")
+	hasTracking := strings.Contains(inputStr, "metrics") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "vulnerability_scan") || strings.Contains(inputStr, "scanner")
+	if hasSecurity && hasTracking {
+		return compliant(m, "MS-2.4", "AI security metrics tracked including vulnerability and attack metrics")
+	}
+	if hasSecurity {
+		return partial(m, "MS-2.4", "Security metrics defined but tracking not verified",
+			"Enable continuous tracking of AI security metrics")
+	}
+	return nonCompliant(m, "MS-2.4", "No AI security metrics tracked",
+		"Define and track AI system security metrics including vulnerability scans and adversarial robustness")
+}
+
+func (m *NISTAIRMFModule) checkMS25(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPrivacy := strings.Contains(inputStr, "privacy_metric") || strings.Contains(inputStr, "privacy") || strings.Contains(inputStr, "pii") || strings.Contains(inputStr, "data_protection")
+	hasTracking := strings.Contains(inputStr, "metrics") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "kpi") || strings.Contains(inputStr, "pii_scanner")
+	if hasPrivacy && hasTracking {
+		return compliant(m, "MS-2.5", "AI privacy metrics tracked including data protection and PII metrics")
+	}
+	if hasPrivacy {
+		return partial(m, "MS-2.5", "Privacy metrics defined but tracking not verified",
+			"Enable continuous tracking of AI privacy metrics")
+	}
+	return nonCompliant(m, "MS-2.5", "No AI privacy metrics tracked",
+		"Define and track AI system privacy metrics including PII detection and data protection measures")
+}
+
+func (m *NISTAIRMFModule) checkMS26(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFairness := matchAny(inputStr, m.fairnessPatterns) || strings.Contains(inputStr, "fairness") || strings.Contains(inputStr, "bias")
+	hasTracking := strings.Contains(inputStr, "metrics") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "kpi") || matchAny(inputStr, m.monitorPatterns)
+	if hasFairness && hasTracking {
+		return compliant(m, "MS-2.6", "AI fairness metrics tracked including bias and equity measures")
+	}
+	if hasFairness {
+		return partial(m, "MS-2.6", "Fairness metrics defined but tracking not verified",
+			"Enable continuous tracking of AI fairness metrics")
+	}
+	return nonCompliant(m, "MS-2.6", "No AI fairness metrics tracked",
+		"Define and track AI system fairness metrics including bias measurement and equity checks")
+}
+
+// ============================================================================
+// MANAGE (MG) Additional Check implementations
+// ============================================================================
+
+func (m *NISTAIRMFModule) checkMG23(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIRPlan := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "ir_plan") || strings.Contains(inputStr, "response_plan")
+	hasTesting := strings.Contains(inputStr, "tested") || strings.Contains(inputStr, "test_result") || strings.Contains(inputStr, "drill") || strings.Contains(inputStr, "exercise")
+	if hasIRPlan && hasTesting {
+		return compliant(m, "MG-2.3", "AI incident response mechanisms tested on regular schedule")
+	}
+	if hasIRPlan {
+		return partial(m, "MG-2.3", "Incident response plan exists but testing not verified",
+			"Establish regular testing of AI incident response mechanisms")
+	}
+	return nonCompliant(m, "MG-2.3", "AI incident response mechanisms not tested",
+		"Create and regularly test AI incident response mechanisms")
+}
+
+func (m *NISTAIRMFModule) checkMG33(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasKnowledge := strings.Contains(inputStr, "lessons_learned") || strings.Contains(inputStr, "knowledge_base") || strings.Contains(inputStr, "shared")
+	hasOrg := strings.Contains(inputStr, "organization") || strings.Contains(inputStr, "training") || strings.Contains(inputStr, "documentation") || strings.Contains(inputStr, "wiki")
+	if hasKnowledge && hasOrg {
+		return compliant(m, "MG-3.3", "AI risk management knowledge shared across the organization")
+	}
+	if hasKnowledge {
+		return partial(m, "MG-3.3", "Knowledge captured but sharing mechanisms not verified",
+			"Implement organization-wide sharing of AI risk management knowledge and lessons learned")
+	}
+	return nonCompliant(m, "MG-3.3", "No AI risk management knowledge sharing",
+		"Establish mechanisms to share AI risk management knowledge and lessons learned across the organization")
+}
+
+func (m *NISTAIRMFModule) checkMG41(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDocs := strings.Contains(inputStr, "documentation") || strings.Contains(inputStr, "system_docs") || strings.Contains(inputStr, "model_card") || strings.Contains(inputStr, "datasheet")
+	hasMaintained := strings.Contains(inputStr, "maintained") || strings.Contains(inputStr, "updated") || strings.Contains(inputStr, "versioned") || strings.Contains(inputStr, "changelog")
+	if hasDocs && hasMaintained {
+		return compliant(m, "MG-4.1", "AI system documentation maintained throughout lifecycle")
+	}
+	if hasDocs {
+		return partial(m, "MG-4.1", "Documentation exists but maintenance not verified",
+			"Establish regular updates and versioning for AI system documentation")
+	}
+	return nonCompliant(m, "MG-4.1", "AI system documentation not maintained",
+		"Maintain AI system documentation throughout the lifecycle including model cards and changelogs")
 }
 
 // ============================================================================

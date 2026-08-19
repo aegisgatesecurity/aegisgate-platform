@@ -122,19 +122,19 @@ func (m *TISAXModule) initPatterns() {
 //	PP  = Privacy & Personnel
 //	DP  = Development & Prototyping
 func (m *TISAXModule) registerControls() {
-	// IS: Information Security (8 controls)
+	// IS: Information Security (14 controls)
 	m.registerISControls()
 
-	// OR: Organization & Risk (7 controls)
+	// OR: Organization & Risk (12 controls)
 	m.registerORControls()
 
-	// DSC: Data & System Controls (6 controls)
+	// DSC: Data & System Controls (14 controls)
 	m.registerDSCControls()
 
-	// PP: Privacy & Personnel (7 controls)
+	// PP: Privacy & Personnel (13 controls)
 	m.registerPPControls()
 
-	// DP: Development & Prototyping (7 controls)
+	// DP: Development & Prototyping (12 controls)
 	m.registerDPControls()
 }
 

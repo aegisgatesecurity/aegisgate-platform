@@ -6,9 +6,9 @@
 // TISAX AL2 — Data & System Controls, Privacy & Personnel,
 // Development & Prototyping domains.
 //
-// DSC (Data & System Controls): 6 practices (4 automated + 2 evidence-mapped)
-// PP (Privacy & Personnel): 7 practices (1 automated + 6 evidence-mapped)
-// DP (Development & Prototyping): 7 practices (3 automated + 4 evidence-mapped)
+// DSC (Data & System Controls): 14 practices (8 automated + 6 evidence-mapped)
+// PP (Privacy & Personnel): 13 practices (2 automated + 11 evidence-mapped)
+// DP (Development & Prototyping): 12 practices (6 automated + 6 evidence-mapped)
 //
 // =========================================================================
 
@@ -93,6 +93,102 @@ func (m *TISAXModule) registerDSCControls() {
 		Automated:   false,
 		References:  []string{"TISAX v6 AL2 ISA-DSC-06", "ISO 27001 A.8.32"},
 	})
+
+	// DSC-07: Network Security Monitoring (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-07",
+		Name:        "Network Security Monitoring",
+		Description: "TISAX DSC-07: Network security monitoring with IDS/IPS and traffic analysis",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkNetworkMonitoring,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-07", "ISO 27001 A.8.16"},
+	})
+
+	// DSC-08: Endpoint Security Management (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-08",
+		Name:        "Endpoint Security Management",
+		Description: "TISAX DSC-08: Endpoint security management with EDR and device compliance",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkEndpointSecurity,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-08", "ISO 27001 A.8.7"},
+	})
+
+	// DSC-09: Mobile Device Management (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-09",
+		Name:        "Mobile Device Management",
+		Description: "TISAX DSC-09: Mobile device management with enrollment and policy enforcement",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-09", "ISO 27001 A.8.7"},
+	})
+
+	// DSC-10: Cloud Service Security (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-10",
+		Name:        "Cloud Service Security",
+		Description: "TISAX DSC-10: Cloud service security with CSPM and workload protection",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkCloudSecurity,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-10", "ISO 27001 A.5.23"},
+	})
+
+	// DSC-11: Data Loss Prevention (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-11",
+		Name:        "Data Loss Prevention",
+		Description: "TISAX DSC-11: Data loss prevention controls for CUI and proprietary data",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkDLP,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-11", "ISO 27001 A.8.12"},
+	})
+
+	// DSC-12: Secure Configuration Management (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-12",
+		Name:        "Secure Configuration Management",
+		Description: "TISAX DSC-12: Secure configuration management with baselines and drift detection",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkSecureConfig,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-12", "ISO 27001 A.8.9"},
+	})
+
+	// DSC-13: Patch & Vulnerability Management (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-13",
+		Name:        "Patch & Vulnerability Management",
+		Description: "TISAX DSC-13: Patch management and vulnerability remediation with SLAs",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkPatchMgmt,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-13", "ISO 27001 A.8.8"},
+	})
+
+	// DSC-14: AI/ML Security Controls (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DSC-14",
+		Name:        "AI/ML Security Controls",
+		Description: "TISAX DSC-14: AI/ML security controls for model training and deployment",
+		Category:    "Data and System Controls",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-DSC-14", "ISO 27001 A.5.7"},
+	})
 }
 
 // registerPPControls wires Privacy & Personnel domain controls.
@@ -173,6 +269,78 @@ func (m *TISAXModule) registerPPControls() {
 		Severity:    compliance.SeverityMedium,
 		Automated:   false,
 		References:  []string{"TISAX v6 AL2 ISA-PP-07", "GDPR Art. 28"},
+	})
+
+	// PP-08: Background Verification (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-PP-08",
+		Name:        "Background Verification",
+		Description: "TISAX PP-08: Background verification and security screening for personnel",
+		Category:    "Privacy and Personnel",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-PP-08", "ISO 27001 A.6.1"},
+	})
+
+	// PP-09: Security Training Program (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-PP-09",
+		Name:        "Security Training Program",
+		Description: "TISAX PP-09: Role-based security training program with role-specific modules",
+		Category:    "Privacy and Personnel",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-PP-09", "ISO 27001 A.6.3"},
+	})
+
+	// PP-10: Personnel Termination Security (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-PP-10",
+		Name:        "Personnel Termination Security",
+		Description: "TISAX PP-10: Personnel termination security procedures and access revocation",
+		Category:    "Privacy and Personnel",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-PP-10", "ISO 27001 A.6.2"},
+	})
+
+	// PP-11: Privacy Impact Assessment (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-PP-11",
+		Name:        "Privacy Impact Assessment",
+		Description: "TISAX PP-11: Privacy impact assessment for new systems and processing activities",
+		Category:    "Privacy and Personnel",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-PP-11", "GDPR Art. 35"},
+	})
+
+	// PP-12: Data Subject Rights (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-PP-12",
+		Name:        "Data Subject Rights",
+		Description: "TISAX PP-12: Automated data subject rights handling (access, rectification, erasure)",
+		Category:    "Privacy and Personnel",
+		Severity:    compliance.SeverityMedium,
+		Automated:   true,
+		CheckFunc:   m.checkDataSubjectRights,
+		References:  []string{"TISAX v6 AL2 ISA-PP-12", "GDPR Art. 15-22"},
+	})
+
+	// PP-13: AI Privacy Controls (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-PP-13",
+		Name:        "AI Privacy Controls",
+		Description: "TISAX PP-13: Privacy controls for AI systems and data processing",
+		Category:    "Privacy and Personnel",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-PP-13", "GDPR Art. 22"},
 	})
 }
 
@@ -257,6 +425,66 @@ func (m *TISAXModule) registerDPControls() {
 		Automated:   true,
 		CheckFunc:   m.checkAuditReadiness,
 		References:  []string{"TISAX v6 AL2 ISA-DP-07", "ISO 27001 A.5.35"},
+	})
+
+	// DP-08: Threat Modeling (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DP-08",
+		Name:        "Threat Modeling",
+		Description: "TISAX DP-08: Threat modeling performed for systems and applications",
+		Category:    "Development and Prototyping",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkThreatModeling,
+		References:  []string{"TISAX v6 AL2 ISA-DP-08", "ISO 27001 A.8.25"},
+	})
+
+	// DP-09: Penetration Testing (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DP-09",
+		Name:        "Penetration Testing",
+		Description: "TISAX DP-09: Penetration testing program with scheduled and ad-hoc tests",
+		Category:    "Development and Prototyping",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkPenTest,
+		References:  []string{"TISAX v6 AL2 ISA-DP-09", "ISO 27001 A.8.8"},
+	})
+
+	// DP-10: Secure CI/CD Pipeline (automated)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DP-10",
+		Name:        "Secure CI/CD Pipeline",
+		Description: "TISAX DP-10: Secure CI/CD pipeline with automated security gates",
+		Category:    "Development and Prototyping",
+		Severity:    compliance.SeverityHigh,
+		Automated:   true,
+		CheckFunc:   m.checkSecureCICD,
+		References:  []string{"TISAX v6 AL2 ISA-DP-10", "ISO 27001 A.8.25"},
+	})
+
+	// DP-11: AI Model Security (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DP-11",
+		Name:        "AI Model Security",
+		Description: "TISAX DP-11: AI model security controls including adversarial robustness",
+		Category:    "Development and Prototyping",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-DP-11"},
+	})
+
+	// DP-12: Open Source Risk Management (evidence-mapped)
+	m.RegisterControl(compliance.ControlDefinition{
+		ID:          "TISAX-DP-12",
+		Name:        "Open Source Risk Management",
+		Description: "TISAX DP-12: Open source risk management with SBOM and license compliance",
+		Category:    "Development and Prototyping",
+		Severity:    compliance.SeverityMedium,
+		Automated:   false,
+		CheckFunc:   nil,
+		References:  []string{"TISAX v6 AL2 ISA-DP-12", "ISO 27001 A.5.21"},
 	})
 }
 
@@ -586,5 +814,503 @@ func (m *TISAXModule) checkAuditReadiness(ctx context.Context, input []byte) (*c
 		Message:     "Audit readiness gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Enable audit logging and compliance evidence generation",
+	}, nil
+}
+
+// --- New DSC CheckFunc implementations (DSC-07 through DSC-13) ---
+
+// checkNetworkMonitoring verifies network security monitoring with IDS/IPS.
+// Maps to TISAX DSC-07.
+func (m *TISAXModule) checkNetworkMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIDS := strings.Contains(inputStr, "ids") || strings.Contains(inputStr, "ips") || strings.Contains(inputStr, "intrusion_detection")
+	hasTraffic := strings.Contains(inputStr, "traffic_analysis") || strings.Contains(inputStr, "network_monitoring") || strings.Contains(inputStr, "netflow")
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alert") || strings.Contains(inputStr, "siem")
+
+	if hasIDS && hasTraffic {
+		evidence := []string{
+			"IDS/IPS configured",
+			"Network traffic analysis active",
+		}
+		if hasAlerting {
+			evidence = append(evidence, "Network alerting configured")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DSC-07",
+			ControlName: "Network Security Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Network security monitoring verified (IDS/IPS + traffic analysis)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasIDS {
+		violations = append(violations, "IDS/IPS not configured")
+	}
+	if !hasTraffic {
+		violations = append(violations, "network traffic analysis not active")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DSC-07",
+		ControlName: "Network Security Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Network security monitoring gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Deploy IDS/IPS and configure network traffic analysis with alerting",
+	}, nil
+}
+
+// checkEndpointSecurity verifies endpoint security management with EDR.
+// Maps to TISAX DSC-08.
+func (m *TISAXModule) checkEndpointSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEDR := strings.Contains(inputStr, "edr") || strings.Contains(inputStr, "endpoint_detection") || strings.Contains(inputStr, "endpoint_protection")
+	hasCompliance := strings.Contains(inputStr, "device_compliance") || strings.Contains(inputStr, "compliance_check") || strings.Contains(inputStr, "posture")
+	hasMgmt := strings.Contains(inputStr, "mdm") || strings.Contains(inputStr, "endpoint_management") || strings.Contains(inputStr, "device_management")
+
+	if hasEDR && (hasCompliance || hasMgmt) {
+		evidence := []string{
+			"EDR configured",
+		}
+		if hasCompliance {
+			evidence = append(evidence, "Device compliance checking active")
+		}
+		if hasMgmt {
+			evidence = append(evidence, "Endpoint management in place")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DSC-08",
+			ControlName: "Endpoint Security Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Endpoint security verified (EDR + compliance/management)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasEDR {
+		violations = append(violations, "EDR not configured")
+	}
+	if !hasCompliance && !hasMgmt {
+		violations = append(violations, "device compliance and endpoint management not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DSC-08",
+		ControlName: "Endpoint Security Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Endpoint security gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Deploy EDR and configure device compliance checking and endpoint management",
+	}, nil
+}
+
+// checkCloudSecurity verifies cloud service security with CSPM.
+// Maps to TISAX DSC-10.
+func (m *TISAXModule) checkCloudSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCSPM := strings.Contains(inputStr, "cspm") || strings.Contains(inputStr, "cloud_security_posture") || strings.Contains(inputStr, "cloud_security")
+	hasWorkload := strings.Contains(inputStr, "workload_protection") || strings.Contains(inputStr, "cwpp") || strings.Contains(inputStr, "container_security")
+	hasEncryption := m.hasEncryption(inputStr)
+
+	if hasCSPM && (hasWorkload || hasEncryption) {
+		evidence := []string{
+			"Cloud security posture management configured",
+		}
+		if hasWorkload {
+			evidence = append(evidence, "Workload protection in place")
+		}
+		if hasEncryption {
+			evidence = append(evidence, "Cloud encryption configured")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DSC-10",
+			ControlName: "Cloud Service Security",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Cloud security verified (CSPM + workload protection/encryption)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasCSPM {
+		violations = append(violations, "CSPM not configured")
+	}
+	if !hasWorkload && !hasEncryption {
+		violations = append(violations, "workload protection and encryption not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DSC-10",
+		ControlName: "Cloud Service Security",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Cloud security gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure CSPM and deploy workload protection with encryption",
+	}, nil
+}
+
+// checkDLP verifies data loss prevention controls. Maps to TISAX DSC-11.
+func (m *TISAXModule) checkDLP(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDLP := strings.Contains(inputStr, "dlp") || strings.Contains(inputStr, "data_loss_prevention") || strings.Contains(inputStr, "data_loss")
+	hasPolicy := strings.Contains(inputStr, "dlp_policy") || strings.Contains(inputStr, "content_inspection") || strings.Contains(inputStr, "classification")
+	hasBlocking := strings.Contains(inputStr, "blocking") || strings.Contains(inputStr, "quarantine") || strings.Contains(inputStr, "prevent")
+
+	if hasDLP && hasPolicy {
+		evidence := []string{
+			"DLP solution configured",
+			"DLP policies in place",
+		}
+		if hasBlocking {
+			evidence = append(evidence, "DLP blocking/quarantine active")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DSC-11",
+			ControlName: "Data Loss Prevention",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "DLP verified (solution + policies)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasDLP {
+		violations = append(violations, "DLP solution not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "DLP policies not in place")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DSC-11",
+		ControlName: "Data Loss Prevention",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "DLP gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Deploy a DLP solution with content inspection policies and blocking",
+	}, nil
+}
+
+// checkSecureConfig verifies secure configuration management with baselines.
+// Maps to TISAX DSC-12.
+func (m *TISAXModule) checkSecureConfig(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBaseline := strings.Contains(inputStr, "config_baseline") || strings.Contains(inputStr, "baseline") || strings.Contains(inputStr, "hardening")
+	hasDrift := strings.Contains(inputStr, "drift_detection") || strings.Contains(inputStr, "drift") || strings.Contains(inputStr, "config_monitoring")
+	hasScanning := strings.Contains(inputStr, "config_scan") || strings.Contains(inputStr, "cis_benchmark") || strings.Contains(inputStr, "benchmark")
+
+	if hasBaseline && (hasDrift || hasScanning) {
+		evidence := []string{
+			"Secure configuration baseline defined",
+		}
+		if hasDrift {
+			evidence = append(evidence, "Configuration drift detection active")
+		}
+		if hasScanning {
+			evidence = append(evidence, "Configuration scanning against benchmarks")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DSC-12",
+			ControlName: "Secure Configuration Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Secure configuration verified (baseline + drift/scanning)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasBaseline {
+		violations = append(violations, "configuration baseline not defined")
+	}
+	if !hasDrift && !hasScanning {
+		violations = append(violations, "drift detection and config scanning not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DSC-12",
+		ControlName: "Secure Configuration Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Secure configuration gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Define configuration baselines and enable drift detection with benchmark scanning",
+	}, nil
+}
+
+// checkPatchMgmt verifies patch management and vulnerability remediation.
+// Maps to TISAX DSC-13.
+func (m *TISAXModule) checkPatchMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPatch := strings.Contains(inputStr, "patch_management") || strings.Contains(inputStr, "patching") || strings.Contains(inputStr, "patch")
+	hasSLA := strings.Contains(inputStr, "sla") || strings.Contains(inputStr, "patch_sla") || strings.Contains(inputStr, "deadline")
+	hasAutomated := strings.Contains(inputStr, "automated_patching") || strings.Contains(inputStr, "auto_patch") || strings.Contains(inputStr, "scheduled")
+
+	if hasPatch && (hasSLA || hasAutomated) {
+		evidence := []string{
+			"Patch management configured",
+		}
+		if hasSLA {
+			evidence = append(evidence, "Patch SLAs defined")
+		}
+		if hasAutomated {
+			evidence = append(evidence, "Automated patching scheduled")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DSC-13",
+			ControlName: "Patch & Vulnerability Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Patch management verified (patching + SLA/automation)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasPatch {
+		violations = append(violations, "patch management not configured")
+	}
+	if !hasSLA && !hasAutomated {
+		violations = append(violations, "patch SLAs and automation not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DSC-13",
+		ControlName: "Patch & Vulnerability Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Patch management gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure patch management with SLAs and automated patching schedules",
+	}, nil
+}
+
+// --- New PP CheckFunc implementation (PP-12) ---
+
+// checkDataSubjectRights verifies automated data subject rights handling.
+// Maps to TISAX PP-12.
+func (m *TISAXModule) checkDataSubjectRights(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDSR := strings.Contains(inputStr, "data_subject_rights") || strings.Contains(inputStr, "dsr") || strings.Contains(inputStr, "subject_rights")
+	hasAccess := strings.Contains(inputStr, "access_request") || strings.Contains(inputStr, "data_access") || strings.Contains(inputStr, "access")
+	hasErasure := strings.Contains(inputStr, "erasure") || strings.Contains(inputStr, "deletion") || strings.Contains(inputStr, "right_to_be_forgotten")
+
+	if hasDSR && (hasAccess || hasErasure) {
+		evidence := []string{
+			"Data subject rights handling configured",
+		}
+		if hasAccess {
+			evidence = append(evidence, "Data access request handling active")
+		}
+		if hasErasure {
+			evidence = append(evidence, "Data erasure/deletion handling active")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-PP-12",
+			ControlName: "Data Subject Rights",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Data subject rights verified (DSR handling + access/erasure)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasDSR {
+		violations = append(violations, "data subject rights handling not configured")
+	}
+	if !hasAccess && !hasErasure {
+		violations = append(violations, "access and erasure request handling not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-PP-12",
+		ControlName: "Data Subject Rights",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Data subject rights gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure automated data subject rights handling for access and erasure requests",
+	}, nil
+}
+
+// --- New DP CheckFunc implementations (DP-08 through DP-10) ---
+
+// checkThreatModeling verifies threat modeling for systems and applications.
+// Maps to TISAX DP-08.
+func (m *TISAXModule) checkThreatModeling(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasThreatModel := strings.Contains(inputStr, "threat_model") || strings.Contains(inputStr, "threat_modeling") || strings.Contains(inputStr, "threat")
+	hasMethodology := strings.Contains(inputStr, "stride") || strings.Contains(inputStr, "attack_tree") || strings.Contains(inputStr, "methodology")
+	hasMitigation := strings.Contains(inputStr, "mitigation") || strings.Contains(inputStr, "countermeasure") || strings.Contains(inputStr, "control")
+
+	if hasThreatModel && (hasMethodology || hasMitigation) {
+		evidence := []string{
+			"Threat modeling performed",
+		}
+		if hasMethodology {
+			evidence = append(evidence, "Threat modeling methodology applied")
+		}
+		if hasMitigation {
+			evidence = append(evidence, "Threat mitigations documented")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DP-08",
+			ControlName: "Threat Modeling",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Threat modeling verified (modeling + methodology/mitigations)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasThreatModel {
+		violations = append(violations, "threat modeling not performed")
+	}
+	if !hasMethodology && !hasMitigation {
+		violations = append(violations, "methodology and mitigations not documented")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DP-08",
+		ControlName: "Threat Modeling",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Threat modeling gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Perform threat modeling using STRIDE or attack trees and document mitigations",
+	}, nil
+}
+
+// checkPenTest verifies penetration testing program. Maps to TISAX DP-09.
+func (m *TISAXModule) checkPenTest(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPenTest := strings.Contains(inputStr, "penetration_test") || strings.Contains(inputStr, "pentest") || strings.Contains(inputStr, "pen_test")
+	hasSchedule := strings.Contains(inputStr, "scheduled") || strings.Contains(inputStr, "annual") || strings.Contains(inputStr, "periodic")
+	hasRemediation := strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "fix") || strings.Contains(inputStr, "findings")
+
+	if hasPenTest && (hasSchedule || hasRemediation) {
+		evidence := []string{
+			"Penetration testing program in place",
+		}
+		if hasSchedule {
+			evidence = append(evidence, "Scheduled/periodic testing configured")
+		}
+		if hasRemediation {
+			evidence = append(evidence, "Findings remediation process active")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DP-09",
+			ControlName: "Penetration Testing",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Penetration testing verified (testing + schedule/remediation)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasPenTest {
+		violations = append(violations, "penetration testing not configured")
+	}
+	if !hasSchedule && !hasRemediation {
+		violations = append(violations, "schedule and remediation process not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DP-09",
+		ControlName: "Penetration Testing",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Penetration testing gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Establish a penetration testing program with scheduled tests and findings remediation",
+	}, nil
+}
+
+// checkSecureCICD verifies secure CI/CD pipeline with automated security gates.
+// Maps to TISAX DP-10.
+func (m *TISAXModule) checkSecureCICD(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCICD := strings.Contains(inputStr, "ci_cd") || strings.Contains(inputStr, "cicd") || strings.Contains(inputStr, "pipeline")
+	hasSecurityGate := strings.Contains(inputStr, "security_gate") || strings.Contains(inputStr, "sast") || strings.Contains(inputStr, "dast") || strings.Contains(inputStr, "security_scan")
+	hasAutomation := strings.Contains(inputStr, "automated") || strings.Contains(inputStr, "automation") || strings.Contains(inputStr, "automated_scan")
+
+	if hasCICD && hasSecurityGate {
+		evidence := []string{
+			"CI/CD pipeline configured",
+			"Security gates integrated",
+		}
+		if hasAutomation {
+			evidence = append(evidence, "Automated security scanning active")
+		}
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "TISAX-DP-10",
+			ControlName: "Secure CI/CD Pipeline",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Secure CI/CD verified (pipeline + security gates)",
+			Evidence:    evidence,
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasCICD {
+		violations = append(violations, "CI/CD pipeline not configured")
+	}
+	if !hasSecurityGate {
+		violations = append(violations, "security gates not integrated")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "TISAX-DP-10",
+		ControlName: "Secure CI/CD Pipeline",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Secure CI/CD gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure CI/CD pipeline with SAST/DAST security gates and automated scanning",
 	}, nil
 }
