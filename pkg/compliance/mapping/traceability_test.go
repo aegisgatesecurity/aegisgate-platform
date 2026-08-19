@@ -114,7 +114,7 @@ func TestCrossReference_AllFrameworks(t *testing.T) {
 		"iso27001":    "A.9.2.1",
 		"hipaa":       "§164.312(a)(1)",
 		"pci":         "7.1",
-		"nist_csf":    "PR.AC-4",
+		"nist_csf":    "PR.AA-04",
 		"cis":         "CIS-5",
 		"owasp_web":   "OWASPWeb-A01",
 		"owasp_llm":   "LLM02",
