@@ -116,7 +116,24 @@ var compliantConfig = `{
 	"known_issues": true,
 	"features": true,
 	"availability": true,
-	"ml_": true
+	"ml_": true,
+	"ai_business_value": true,
+	"business_value": true,
+	"ai_value": true,
+	"ai_risk_documented": true,
+	"risk_documented": true,
+	"accountability_metrics": true,
+	"accountability_tracking": true,
+	"ai_accountability": true,
+	"transparency_metrics": true,
+	"transparency_tracking": true,
+	"ai_transparency": true,
+	"ai_risk_prioritization": true,
+	"risk_prioritization": true,
+	"risk_priority": true,
+	"ai_risk_treatment": true,
+	"risk_treatment_implemented": true,
+	"risk_treatment": true
 }`
 
 func TestNISTAIRMF_GV12(t *testing.T) {

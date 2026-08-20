@@ -192,7 +192,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "User accounts must be managed through a formal lifecycle process including provisioning, modification, and deactivation",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkAccountLifecycleManagement,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -248,7 +248,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must establish or contract a Security Operations Center for 24/7 monitoring of pipeline systems",
 		Category:    "Detection and Monitoring",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkSecurityOperationsCenter,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -257,7 +257,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must establish a threat hunting program to proactively identify threats in pipeline environments",
 		Category:    "Detection and Monitoring",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkThreatHuntingProgram,
 	})
 
@@ -351,7 +351,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must identify and remediate end-of-life systems in the pipeline environment",
 		Category:    "Configuration and Vulnerability Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkEndOfLifeSystemRemediation,
 	})
 

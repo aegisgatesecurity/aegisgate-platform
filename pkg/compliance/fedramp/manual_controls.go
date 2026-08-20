@@ -480,7 +480,8 @@ func (m *FedRAMPModule) registerManualControls() {
 		Description: "FedRAMP PM-14: Security and privacy personnel at all levels. Customer is responsible for staffing; AegisGate generates role-based access evidence for PM-14.",
 		Category:    "Program Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityPrivacyPersonnel,
 		References:  []string{"NIST SP 800-53 Rev. 5 PM-14", "FedRAMP Moderate PM-14"},
 	})
 
@@ -500,7 +501,8 @@ func (m *FedRAMPModule) registerManualControls() {
 		Description: "FedRAMP PL-2: System security plan developed and maintained. Customer is responsible for the SSP; AegisGate generates the technical evidence (scan results, attestations, IOC store) for the customer's PL-2 SSP.",
 		Category:    "Planning",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemSecurityPlan,
 		References:  []string{"NIST SP 800-53 Rev. 5 PL-2", "FedRAMP Moderate PL-02"},
 	})
 }

@@ -92,7 +92,8 @@ func (m *FERPAModule) registerControls() {
 		Description: "Institution must designate an official custodian of education records responsible for FERPA compliance",
 		Category:    "Student Education Records",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRecordsCustodian,
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
@@ -121,7 +122,8 @@ func (m *FERPAModule) registerControls() {
 		Description: "Institution must establish and document a records retention schedule for all education records",
 		Category:    "Student Education Records",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRecordsRetentionSchedule,
 	})
 
 	// =====================================================
@@ -327,7 +329,8 @@ func (m *FERPAModule) registerControls() {
 		Description: "Institution must maintain a documented data breach response plan for education records",
 		Category:    "Data Security",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBreachResponsePlan,
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
@@ -409,7 +412,8 @@ func (m *FERPAModule) registerControls() {
 		Description: "Governance controls for AI model retraining using student data including approval and review processes",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIRetrainingGovernance,
 	})
 
 	// =====================================================
@@ -1486,4 +1490,52 @@ func (m *FERPAModule) detectStudentPII(input string) []string {
 // Dependencies returns required modules.
 func (m *FERPAModule) Dependencies() []string {
 	return []string{"scanner"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *FERPAModule) checkRecordsCustodian(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCustodian := strings.Contains(inputStr, "records_custodian") || strings.Contains(inputStr, "data_custodian") || strings.Contains(inputStr, "ferpa_custodian")
+	if hasCustodian {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-ER-05", ControlName: "Records Custodian Designation", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Records custodian designation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-ER-05", ControlName: "Records Custodian Designation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Records custodian not detected", Timestamp: time.Now(), Remediation: "Designate a records custodian for FERPA compliance"}, nil
+}
+
+func (m *FERPAModule) checkRecordsRetentionSchedule(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSchedule := strings.Contains(inputStr, "retention_schedule") || strings.Contains(inputStr, "records_retention") || strings.Contains(inputStr, "retention_policy")
+	if hasSchedule {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-ER-08", ControlName: "Records Retention Schedule", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Records retention schedule detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-ER-08", ControlName: "Records Retention Schedule", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Records retention schedule not detected", Timestamp: time.Now(), Remediation: "Establish a records retention schedule"}, nil
+}
+
+func (m *FERPAModule) checkBreachResponsePlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPlan := strings.Contains(inputStr, "breach_response_plan") || strings.Contains(inputStr, "data_breach_response") || strings.Contains(inputStr, "breach_response")
+	if hasPlan {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-DS-06", ControlName: "Data Breach Response Plan", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data breach response plan detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-DS-06", ControlName: "Data Breach Response Plan", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Data breach response plan not detected", Timestamp: time.Now(), Remediation: "Implement a data breach response plan"}, nil
+}
+
+func (m *FERPAModule) checkAIRetrainingGovernance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasGovernance := strings.Contains(inputStr, "ai_retraining_governance") || strings.Contains(inputStr, "retraining_governance") || strings.Contains(inputStr, "model_retraining")
+	hasApproval := strings.Contains(inputStr, "retraining_approval") || strings.Contains(inputStr, "retraining_review") || strings.Contains(inputStr, "retraining_oversight")
+	if hasGovernance && hasApproval {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-AI-06", ControlName: "AI Model Retraining with Student Data Governance", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI retraining governance detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasGovernance {
+		violations = append(violations, "retraining governance not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "retraining approval not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FERPA-AI-06", ControlName: "AI Model Retraining with Student Data Governance", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI retraining gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement AI retraining governance with approval"}, nil
 }

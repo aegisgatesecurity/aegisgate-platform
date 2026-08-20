@@ -66,7 +66,7 @@ func TestCJIS_AutomatedCount(t *testing.T) {
 			automated++
 		}
 	}
-	if automated != 24 {
+	if automated != 47 {
 		t.Errorf("automated controls = %d, want 24", automated)
 	}
 }
@@ -83,7 +83,7 @@ func TestCJIS_ManualControlsHaveNoCheckFunc(t *testing.T) {
 			}
 		}
 	}
-	if manualCount != 40 {
+	if manualCount != 17 {
 		t.Errorf("manual controls = %d, want 40", manualCount)
 	}
 }
@@ -147,7 +147,7 @@ func TestCJIS_CheckAllAutomated_Compliant(t *testing.T) {
 	m := NewCJISModule()
 	ctx := context.Background()
 
-	compliantConfig := []byte(`information_management_policy data_classification media_protection encryption_at_rest disk_encrypted record_retention data_retention_policy personnel_security background_checks screening security_training security_awareness incident_response_training ir_training access_control rbac account_management user_provisioning audit_log audit_enabled logging_enabled mobile_device_management mdm device_enrollment aes_256 fips tls1.3 tls_13 https key_management key_rotation kms remote_access vpn incident_response_plan ir_plan incident_monitoring siem security_monitoring flaw_remediation patch_management vulnerability_patch antivirus anti_malware malware_detection edr change_control change_management cab_approval configuration_change identification authentication user_identification authenticator_management token_management credential_management advanced_authentication mfa multi_factor totp fido ai_audit_trail model_logging`)
+	compliantConfig := []byte(`information_management_policy data_classification media_protection encryption_at_rest disk_encrypted record_retention data_retention_policy personnel_security background_checks screening security_training security_awareness incident_response_training ir_training access_control rbac account_management user_provisioning audit_log audit_enabled logging_enabled mobile_device_management mdm device_enrollment aes_256 fips tls1.3 tls_13 https key_management key_rotation kms remote_access vpn incident_response_plan ir_plan incident_monitoring siem security_monitoring flaw_remediation patch_management vulnerability_patch antivirus anti_malware malware_detection edr change_control change_management cab_approval configuration_change identification authentication user_identification authenticator_management token_management credential_management advanced_authentication mfa multi_factor totp fido ai_audit_trail model_logging access_enforcement access_policy enforcement_policy information_flow flow_control data_flow_enforcement flow_rule flow_policy flow_filtering separation_of_duties sod dual_control least_privilege minimal_access privilege_minimization fips_validated fips_140 fips_compliant pki public_key_infrastructure certificate_authority certificate_management cert_management x509 boundary_protection firewall network_boundary tls encryption_in_transit https transmission_integrity integrity_check hmac network_access_control nac network_access encryption_at_rest data_encrypted aes security_function_isolation function_isolation sandboxing security_alerts advisory_monitoring threat_alerts security_function_verification function_verification security_verification software_integrity integrity_monitoring file_integrity security_impact_analysis impact_analysis change_impact change_implementation controlled_change change_control implementation_review change_review post_review software_usage software_restriction license_control software_policy usage_policy software_inventory remote_maintenance remote_access diagnostic_port maintenance_control remote_maintenance_control diagnostic_control cloud_service_provider csp_security cloud_provider_security provider_assurance cloud_assurance fedramp cloud_access_control cloud_access cloud_rbac cloud_authentication cloud_mfa cloud_sso cloud_data_protection cloud_encryption cloud_data_encryption cloud_dlp cloud_data_loss_prevention cloud_masking ai_model_governance model_governance ai_oversight model_approval ai_approval model_oversight incident_reporting incident_report security_incident_report reporting_procedure reporting_process incident_notification`)
 
 	controls := m.Controls()
 	for _, c := range controls {

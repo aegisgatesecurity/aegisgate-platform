@@ -174,7 +174,8 @@ func (m *FIPS140Module) registerControls() {
 		Description: "Define and document the cryptographic module boundary including all hardware, software, and firmware components",
 		Category:    "Cryptographic Module Specification",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkModuleBoundary,
 		References:  []string{"FIPS 140-2 §4.1", "FIPS 140-3 §7.1"},
 	})
 
@@ -519,7 +520,8 @@ func (m *FIPS140Module) registerControls() {
 		Description: "Maintain a configuration management plan for the cryptographic module lifecycle",
 		Category:    "Design Assurance",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFIPSConfigMgmt,
 		References:  []string{"FIPS 140-2 §4.10", "FIPS 140-3 §7.10"},
 	})
 
@@ -592,7 +594,8 @@ func (m *FIPS140Module) registerControls() {
 		Description: "FIPS 140-3: Document security function initialization procedures",
 		Category:    "FIPS 140-3 Specific",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityFunctionInit,
 		References:  []string{"FIPS 140-3 §7.8"},
 	})
 
@@ -2310,4 +2313,35 @@ func intToStr(n int) string {
 // configuration and the crypto module.
 func (m *FIPS140Module) Dependencies() []string {
 	return []string{"tls", "crypto"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *FIPS140Module) checkModuleBoundary(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBoundary := strings.Contains(inputStr, "module_boundary") || strings.Contains(inputStr, "boundary_definition") || strings.Contains(inputStr, "security_boundary")
+	if hasBoundary {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FIPS-140-013", ControlName: "Module Boundary Definition", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Module boundary definition detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FIPS-140-013", ControlName: "Module Boundary Definition", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Module boundary not detected", Timestamp: time.Now(), Remediation: "Define module boundary"}, nil
+}
+
+func (m *FIPS140Module) checkFIPSConfigMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCM := strings.Contains(inputStr, "configuration_management_plan") || strings.Contains(inputStr, "config_management") || strings.Contains(inputStr, "cm_plan")
+	if hasCM {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FIPS-140-033", ControlName: "Configuration Management Plan", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Configuration management plan detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FIPS-140-033", ControlName: "Configuration Management Plan", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "CM plan not detected", Timestamp: time.Now(), Remediation: "Implement configuration management plan"}, nil
+}
+
+func (m *FIPS140Module) checkSecurityFunctionInit(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInit := strings.Contains(inputStr, "security_function_init") || strings.Contains(inputStr, "function_initialization") || strings.Contains(inputStr, "secure_init")
+	if hasInit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FIPS-140-038", ControlName: "Security Function Initialization", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security function initialization detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FIPS-140-038", ControlName: "Security Function Initialization", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security function init not detected", Timestamp: time.Now(), Remediation: "Implement security function initialization"}, nil
 }

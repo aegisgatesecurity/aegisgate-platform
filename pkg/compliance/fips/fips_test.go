@@ -45,11 +45,11 @@ func TestNewFIPS140Module(t *testing.T) {
 			manualCount++
 		}
 	}
-	if automatedCount != 27 {
-		t.Errorf("automated count = %d, want 27", automatedCount)
+	if automatedCount != 30 {
+		t.Errorf("automated count = %d, want 30", automatedCount)
 	}
-	if manualCount != 13 {
-		t.Errorf("manual count = %d, want 13", manualCount)
+	if manualCount != 10 {
+		t.Errorf("manual count = %d, want 10", manualCount)
 	}
 
 	// Verify all 11 control IDs are present

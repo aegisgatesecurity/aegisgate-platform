@@ -117,11 +117,11 @@ func TestFERPAAutoManualCount(t *testing.T) {
 			manualCount++
 		}
 	}
-	if autoCount != 31 {
-		t.Errorf("autoCount = %d, want 31", autoCount)
+	if autoCount != 35 {
+		t.Errorf("autoCount = %d, want 35", autoCount)
 	}
-	if manualCount != 14 {
-		t.Errorf("manualCount = %d, want 14", manualCount)
+	if manualCount != 10 {
+		t.Errorf("manualCount = %d, want 10", manualCount)
 	}
 }
 
@@ -1166,16 +1166,12 @@ func TestStudentComplaintProcessCheck(t *testing.T) {
 func TestManualControlsExist(t *testing.T) {
 	m := NewFERPAModule()
 	manualIDs := []string{
-		"FERPA-ER-05", // Records Custodian Designation
-		"FERPA-ER-08", // Records Retention Schedule
 		"FERPA-DI-06", // Limited Directory Information Policy
 		"FERPA-CD-06", // Financial Aid Disclosure
 		"FERPA-CD-07", // Accrediting Organization Disclosure
 		"FERPA-CD-08", // Court Order/Subpoena Compliance
 		"FERPA-DS-02", // Physical Data Safeguards
-		"FERPA-DS-06", // Data Breach Response Plan
 		"FERPA-DS-07", // Third-Party Service Provider Security
-		"FERPA-AI-06", // AI Model Retraining with Student Data Governance
 		"FERPA-CE-06", // DOE Complaint Investigation
 		"FERPA-CE-07", // Corrective Action Plans
 		"FERPA-CE-08", // FERPA Affidavit Requirements

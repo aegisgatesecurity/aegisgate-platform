@@ -159,7 +159,8 @@ func (m *FFIECModule) registerControls() {
 		Description: "Institutions should establish a threat intelligence program to identify and respond to emerging cyber threats",
 		Category:    "Information Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkThreatIntelProgram,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FFIEC-IS-07",
@@ -223,7 +224,8 @@ func (m *FFIECModule) registerControls() {
 		Description: "Institutions must deploy fraud detection systems to monitor and respond to suspicious transaction activity",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFraudDetection,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "FFIEC-AU-06",
@@ -406,7 +408,8 @@ func (m *FFIECModule) registerControls() {
 		Description: "Institutions must conduct business impact analyses to identify critical functions and recovery priorities",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBusinessImpactAnalysis,
 	})
 
 	// =========================================================================
@@ -445,7 +448,8 @@ func (m *FFIECModule) registerControls() {
 		Description: "Institutions must establish data retention and disposal policies aligned with regulatory and operational requirements",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataRetentionDisposal,
 	})
 
 	// =========================================================================
@@ -1080,4 +1084,61 @@ func (m *FFIECModule) LastUpdated() time.Time {
 func (m *FFIECModule) String() string {
 	totalPatterns := len(m.infoSecPatterns) + len(m.authPatterns) + len(m.examPatterns) + len(m.outsourcingPatterns) + len(m.bcPatterns) + len(m.dgPatterns) + len(m.aiPatterns)
 	return fmt.Sprintf("FFIEC Module (v%s, %d controls, %d patterns)", m.Version(), len(m.Controls()), totalPatterns)
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *FFIECModule) checkThreatIntelProgram(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasProgram := strings.Contains(inputStr, "threat_intelligence_program") || strings.Contains(inputStr, "threat_intel") || strings.Contains(inputStr, "intel_program")
+	hasFeeds := strings.Contains(inputStr, "threat_feeds") || strings.Contains(inputStr, "intel_feeds") || strings.Contains(inputStr, "ioc_feed")
+	if hasProgram && hasFeeds {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-IS-06", ControlName: "Threat Intelligence Program", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Threat intelligence program detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasProgram {
+		violations = append(violations, "threat intelligence program not configured")
+	}
+	if !hasFeeds {
+		violations = append(violations, "threat feeds not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-IS-06", ControlName: "Threat Intelligence Program", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Threat intel gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement threat intelligence program with feeds"}, nil
+}
+
+func (m *FFIECModule) checkFraudDetection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDetection := strings.Contains(inputStr, "fraud_detection") || strings.Contains(inputStr, "fraud_monitoring") || strings.Contains(inputStr, "fraud_analytics")
+	if hasDetection {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-AU-05", ControlName: "Fraud Detection Systems", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Fraud detection systems detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-AU-05", ControlName: "Fraud Detection Systems", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Fraud detection not detected", Timestamp: time.Now(), Remediation: "Implement fraud detection systems"}, nil
+}
+
+func (m *FFIECModule) checkCyberIRCoordination(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCoord := strings.Contains(inputStr, "cyber_incident_coordination") || strings.Contains(inputStr, "incident_coordination") || strings.Contains(inputStr, "ir_coordination")
+	if hasCoord {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-BC-05", ControlName: "Cyber Incident Response Coordination", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cyber incident response coordination detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-BC-05", ControlName: "Cyber Incident Response Coordination", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cyber IR coordination not detected", Timestamp: time.Now(), Remediation: "Implement cyber incident response coordination"}, nil
+}
+
+func (m *FFIECModule) checkBusinessImpactAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBIA := strings.Contains(inputStr, "business_impact_analysis") || strings.Contains(inputStr, "bia") || strings.Contains(inputStr, "impact_analysis")
+	if hasBIA {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-BC-06", ControlName: "Business Impact Analysis", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Business impact analysis detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-BC-06", ControlName: "Business Impact Analysis", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "BIA not detected", Timestamp: time.Now(), Remediation: "Implement business impact analysis"}, nil
+}
+
+func (m *FFIECModule) checkDataRetentionDisposal(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRetention := strings.Contains(inputStr, "data_retention") || strings.Contains(inputStr, "retention_policy") || strings.Contains(inputStr, "retention_disposal")
+	if hasRetention {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-DG-04", ControlName: "Data Retention and Disposal", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data retention and disposal detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-DG-04", ControlName: "Data Retention and Disposal", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Data retention not detected", Timestamp: time.Now(), Remediation: "Implement data retention and disposal policies"}, nil
 }

@@ -66,8 +66,8 @@ func TestSOX_AutomatedCount(t *testing.T) {
 			automated++
 		}
 	}
-	if automated != 27 {
-		t.Errorf("automated controls = %d, want 27", automated)
+	if automated != 48 {
+		t.Errorf("automated controls = %d, want 48", automated)
 	}
 }
 
@@ -83,8 +83,8 @@ func TestSOX_ManualControlsHaveNoCheckFunc(t *testing.T) {
 			}
 		}
 	}
-	if manualCount != 53 {
-		t.Errorf("manual controls = %d, want 53", manualCount)
+	if manualCount != 32 {
+		t.Errorf("manual controls = %d, want 32", manualCount)
 	}
 }
 
@@ -175,7 +175,28 @@ func TestSOX_CheckAllAutomated_Compliant(t *testing.T) {
 		"log_integrity": true, "hash_chain": true, "immutable_log": true,
 		"data_retention": true, "retention_policy": true, "data_disposal": true,
 		"account_reconciliation": true, "financial_reconciliation": true,
-		"ai_output_validation": true, "output_validation": true, "model_validation": true
+		"ai_output_validation": true, "output_validation": true, "model_validation": true,
+		"risk_identification": true, "risk_analysis": true, "risk_register": true,
+		"fraud_risk": true, "fraud_assessment": true, "fraud_detection": true, "fraud_monitoring": true, "anomaly_detection": true,
+		"change_identification": true, "change_assessment": true, "impact_analysis": true,
+		"access_review": true, "user_access_review": true, "access_recertification": true, "periodic_review": true, "quarterly_review": true,
+		"access_removal": true, "deprovisioning": true, "deprovision": true, "timely_removal": true, "prompt_deprovisioning": true, "automated_deprovisioning": true,
+		"change_testing": true, "test_approval": true, "uat_approval": true, "approval_required": true,
+		"emergency_change": true, "emergency_fix": true, "hotfix_control": true, "post_implementation_review": true, "post_review": true, "retroactive_approval": true,
+		"version_control": true, "source_control": true, "git_repository": true, "code_audit_trail": true, "commit_history": true, "code_review_tracking": true,
+		"change_documentation": true, "change_records": true, "change_log": true, "business_justification": true, "change_justification": true, "approval_records": true,
+		"sdlc": true, "system_development_lifecycle": true, "development_lifecycle": true, "development_methodology": true, "formal_sdlc": true, "sdlc_methodology": true,
+		"testing_qa": true, "quality_assurance": true, "formal_testing": true, "qa_approval": true, "qa_signoff": true,
+		"data_migration": true, "migration_control": true, "data_conversion": true, "migration_integrity": true,
+		"change_authorization": true, "formal_authorization": true, "change_approval": true,
+		"migration_to_production": true, "prod_migration": true, "production_deployment": true, "controlled_migration": true, "documented_migration": true, "deployment_control": true,
+		"rollback_procedures": true, "rollback_plan": true, "rollback_capability": true,
+		"code_review": true, "peer_review": true, "review_required": true, "review_documented": true, "review_records": true, "review_tracking": true,
+		"data_masking": true, "data_redaction": true, "mask_non_production": true, "non_production_masking": true, "test_data_masking": true, "masked": true,
+		"sod_enforced": true, "sod_violation_detection": true,
+		"journal_entry": true, "je_control": true, "journal_entry_control": true, "je_review": true, "journal_review": true, "entry_approval": true,
+		"reconciliation_review": true, "recon_review": true, "reconciliation_control": true,
+		"ai_model_governance": true, "model_governance": true, "ai_oversight": true, "model_approval": true, "ai_approval": true, "model_oversight": true
 	}`)
 
 	controls := m.Controls()

@@ -140,7 +140,8 @@ func (m *FedRAMPModule) registerCAControls() {
 		Description: "FedRAMP CA-1: Organization develops, documents, and disseminates an assessment and authorization policy. AegisGate generates compliance scan evidence for the customer's CA-1 documentation.",
 		Category:    "Assessment, Authorization, and Monitoring",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAssessmentAuthPolicy,
 		References:  []string{"NIST SP 800-53 Rev. 5 CA-1", "FedRAMP Moderate CA-01"},
 	})
 

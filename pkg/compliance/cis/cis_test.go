@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // CIS Critical Security Controls v8 - Unit Tests
-// v2.0 Tier: Professional — 50 safeguards (38 automated, 12 manual)
+// v2.0 Tier: Professional — 50 safeguards (42 automated, 8 manual)
 // All 18 CIS control families are in scope.
 
 package cis
@@ -34,7 +34,7 @@ func TestNewCISModule(t *testing.T) {
 
 	controls := m.Controls()
 	if len(controls) != 50 {
-		t.Errorf("len(Controls()) = %d, want 50 (38 automated + 12 manual)", len(controls))
+		t.Errorf("len(Controls()) = %d, want 50 (42 automated + 8 manual)", len(controls))
 	}
 
 	// --- Verify all control IDs are unique ---
@@ -61,11 +61,11 @@ func TestNewCISModule(t *testing.T) {
 			}
 		}
 	}
-	if auto != 38 {
-		t.Errorf("automated control count = %d, want 38", auto)
+	if auto != 42 {
+		t.Errorf("automated control count = %d, want 42", auto)
 	}
-	if manual != 12 {
-		t.Errorf("manual control count = %d, want 12", manual)
+	if manual != 8 {
+		t.Errorf("manual control count = %d, want 8", manual)
 	}
 }
 
@@ -99,14 +99,14 @@ func TestCISModule_ControlIDsInScope(t *testing.T) {
 	}
 }
 
-// TestCISModule_ManualControlIDs verifies the 12 manual controls are present.
+// TestCISModule_ManualControlIDs verifies the 8 manual controls are present.
 func TestCISModule_ManualControlIDs(t *testing.T) {
 	m := NewCISModule()
 	controls := m.Controls()
 
 	expectedManual := []string{
-		"CIS-1.3", "CIS-3.4", "CIS-6.3", "CIS-8.3",
-		"CIS-13.3", "CIS-14.1", "CIS-14.2",
+		"CIS-1.3",
+		"CIS-14.1", "CIS-14.2",
 		"CIS-15.1", "CIS-15.2",
 		"CIS-17.3", "CIS-18.1", "CIS-18.2",
 	}
@@ -131,7 +131,7 @@ func TestCISModule_ManualControlIDs(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // compliantConfig is a single input string that contains keywords matching
-// all 38 automated controls so that each CheckFunc returns "compliant".
+// all 42 automated controls so that each CheckFunc returns "compliant".
 const compliantConfig = `{
 	"asset_inventory": true,
 	"bundle_federation": true,
@@ -379,7 +379,22 @@ const compliantConfig = `{
 	"incident_process": true,
 	"attestation": true,
 	"signed_log": true,
-	"trust_framework": true
+	"trust_framework": true,
+	"removable_media": true,
+	"usb_control": true,
+	"device_restriction": true,
+	"password_management": true,
+	"password_manager": true,
+	"credential_management": true,
+	"audit_log_review": true,
+	"log_review": true,
+	"log_analysis": true,
+	"network_traffic": true,
+	"traffic_collection": true,
+	"netflow": true,
+	"traffic_analysis": true,
+	"network_monitoring": true,
+	"pcap": true
 }`
 
 func TestCISCheck_Compliant(t *testing.T) {
@@ -639,9 +654,9 @@ func TestCISCheck_All(t *testing.T) {
 		t.Fatalf("CheckAll returned error: %v", err)
 	}
 
-	// CheckAll should return results for all 38 automated controls
-	if len(results) != 38 {
-		t.Errorf("CheckAll returned %d results, want 38 (automated controls only)", len(results))
+	// CheckAll should return results for all 42 automated controls
+	if len(results) != 42 {
+		t.Errorf("CheckAll returned %d results, want 42 (automated controls only)", len(results))
 	}
 
 	// Verify each result has a valid status
@@ -656,7 +671,7 @@ func TestCISCheck_All(t *testing.T) {
 }
 
 // TestCISCheck_All_NonCompliant verifies CheckAll with empty input returns
-// all 38 results and none are "compliant".
+// all 42 results and none are "compliant".
 func TestCISCheck_All_NonCompliant(t *testing.T) {
 	m := NewCISModule()
 	ctx := context.Background()
@@ -665,8 +680,8 @@ func TestCISCheck_All_NonCompliant(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckAll returned error: %v", err)
 	}
-	if len(results) != 38 {
-		t.Errorf("CheckAll returned %d results, want 38", len(results))
+	if len(results) != 42 {
+		t.Errorf("CheckAll returned %d results, want 42", len(results))
 	}
 	for _, r := range results {
 		if r.Status == "compliant" {

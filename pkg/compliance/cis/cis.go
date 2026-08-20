@@ -222,7 +222,8 @@ func (m *CISModule) registerControls() {
 		Description: "CIS 3.4: Manage removable media by restricting use and applying security controls",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRemovableMedia,
 		References:  []string{"CIS v8.0 Safeguard 3.4"},
 	})
 
@@ -328,7 +329,8 @@ func (m *CISModule) registerControls() {
 		Description: "CIS 6.3: Establish and maintain a password management system for enterprise assets and software",
 		Category:    "Identity and Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPasswordManagement,
 		References:  []string{"CIS v8.0 Safeguard 6.3"},
 	})
 
@@ -391,7 +393,8 @@ func (m *CISModule) registerControls() {
 		Description: "CIS 8.3: Ensure audit logs are reviewed to detect, understand, or recover from an attack",
 		Category:    "Audit Log Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuditLogReview,
 		References:  []string{"CIS v8.0 Safeguard 8.3"},
 	})
 
@@ -520,7 +523,8 @@ func (m *CISModule) registerControls() {
 		Description: "CIS 13.3: Collect network traffic data to support detection, investigation, and response activities",
 		Category:    "Network Monitoring",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkNetworkTrafficData,
 		References:  []string{"CIS v8.0 Safeguard 13.3"},
 	})
 
@@ -2726,4 +2730,52 @@ func (m *CISModule) checkIncidentResponseProcess(ctx context.Context, input []by
 // Dependencies returns required modules.
 func (m *CISModule) Dependencies() []string {
 	return []string{"scanner", "auth", "persistence", "ioc", "trust"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *CISModule) checkRemovableMedia(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasControl := strings.Contains(inputStr, "removable_media") || strings.Contains(inputStr, "usb_control") || strings.Contains(inputStr, "device_restriction")
+	if hasControl {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-3.4", ControlName: "Manage Removable Media", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Removable media controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-3.4", ControlName: "Manage Removable Media", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Removable media controls not detected", Timestamp: time.Now(), Remediation: "Implement removable media controls"}, nil
+}
+
+func (m *CISModule) checkPasswordManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSystem := strings.Contains(inputStr, "password_management") || strings.Contains(inputStr, "password_manager") || strings.Contains(inputStr, "credential_management")
+	if hasSystem {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-6.3", ControlName: "Establish and Maintain a Password Management System", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Password management system detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-6.3", ControlName: "Establish and Maintain a Password Management System", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Password management system not detected", Timestamp: time.Now(), Remediation: "Implement a password management system"}, nil
+}
+
+func (m *CISModule) checkAuditLogReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReview := strings.Contains(inputStr, "audit_log_review") || strings.Contains(inputStr, "log_review") || strings.Contains(inputStr, "log_analysis")
+	if hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-8.3", ControlName: "Ensure Audit Log Review", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Audit log review detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-8.3", ControlName: "Ensure Audit Log Review", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Audit log review not detected", Timestamp: time.Now(), Remediation: "Implement audit log review procedures"}, nil
+}
+
+func (m *CISModule) checkNetworkTrafficData(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCollection := strings.Contains(inputStr, "network_traffic") || strings.Contains(inputStr, "traffic_collection") || strings.Contains(inputStr, "netflow")
+	hasAnalysis := strings.Contains(inputStr, "traffic_analysis") || strings.Contains(inputStr, "network_monitoring") || strings.Contains(inputStr, "pcap")
+	if hasCollection && hasAnalysis {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-13.3", ControlName: "Collect Network Traffic Data", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Network traffic data collection detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCollection {
+		violations = append(violations, "network traffic collection not configured")
+	}
+	if !hasAnalysis {
+		violations = append(violations, "traffic analysis not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CIS-13.3", ControlName: "Collect Network Traffic Data", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Network traffic gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement network traffic data collection"}, nil
 }

@@ -201,7 +201,8 @@ func (m *ISO21434Module) registerControls() {
 		Description: "Determine impact rating for identified threat scenarios",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkImpactRating,
 		References:  []string{"ISO 21434:2021 Clause 15.5"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -210,7 +211,8 @@ func (m *ISO21434Module) registerControls() {
 		Description: "Define and document a risk matrix for evaluating cybersecurity risks",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskMatrix,
 		References:  []string{"ISO 21434:2021 Clause 15.6"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -219,7 +221,8 @@ func (m *ISO21434Module) registerControls() {
 		Description: "Document available risk treatment options: accepting, avoiding, reducing, or sharing",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskTreatmentOptions,
 		References:  []string{"ISO 21434:2021 Clause 15.7"},
 	})
 
@@ -319,7 +322,8 @@ func (m *ISO21434Module) registerControls() {
 		Description: "Ensure components are designed to support cybersecurity updates throughout lifecycle",
 		Category:    "Product Development",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityUpdateReadiness,
 		References:  []string{"ISO 21434:2021 Clause 10.11"},
 	})
 
@@ -1174,4 +1178,60 @@ func (m *ISO21434Module) String() string {
 // Dependencies returns required modules.
 func (m *ISO21434Module) Dependencies() []string {
 	return []string{"scanner"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *ISO21434Module) checkImpactRating(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRating := strings.Contains(inputStr, "impact_rating") || strings.Contains(inputStr, "impact_assessment") || strings.Contains(inputStr, "severity_rating")
+	if hasRating {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-RA-006", ControlName: "Impact Rating", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Impact rating detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-RA-006", ControlName: "Impact Rating", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Impact rating not detected", Timestamp: time.Now(), Remediation: "Implement impact rating methodology"}, nil
+}
+
+func (m *ISO21434Module) checkRiskMatrix(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMatrix := strings.Contains(inputStr, "risk_matrix") || strings.Contains(inputStr, "risk_matrix_definition") || strings.Contains(inputStr, "risk_scoring")
+	if hasMatrix {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-RA-007", ControlName: "Risk Matrix Definition", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Risk matrix definition detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-RA-007", ControlName: "Risk Matrix Definition", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk matrix not detected", Timestamp: time.Now(), Remediation: "Define risk matrix"}, nil
+}
+
+func (m *ISO21434Module) checkRiskTreatmentOptions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasOptions := strings.Contains(inputStr, "risk_treatment_options") || strings.Contains(inputStr, "treatment_options") || strings.Contains(inputStr, "risk_mitigation")
+	hasDecision := strings.Contains(inputStr, "treatment_decision") || strings.Contains(inputStr, "risk_decision") || strings.Contains(inputStr, "treatment_plan")
+	if hasOptions && hasDecision {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-RA-008", ControlName: "Risk Treatment Options", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Risk treatment options detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasOptions {
+		violations = append(violations, "treatment options not configured")
+	}
+	if !hasDecision {
+		violations = append(violations, "treatment decisions not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-RA-008", ControlName: "Risk Treatment Options", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk treatment gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement risk treatment options"}, nil
+}
+
+func (m *ISO21434Module) checkSecurityUpdateReadiness(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReadiness := strings.Contains(inputStr, "security_update_readiness") || strings.Contains(inputStr, "update_readiness") || strings.Contains(inputStr, "patch_readiness")
+	hasProcess := strings.Contains(inputStr, "update_process") || strings.Contains(inputStr, "patch_process") || strings.Contains(inputStr, "update_management")
+	if hasReadiness && hasProcess {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-PD-010", ControlName: "Security Update Readiness", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security update readiness detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasReadiness {
+		violations = append(violations, "update readiness not configured")
+	}
+	if !hasProcess {
+		violations = append(violations, "update process not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO21434-PD-010", ControlName: "Security Update Readiness", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Update readiness gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement security update readiness process"}, nil
 }

@@ -15,7 +15,7 @@
 //   - Framework:     "cjis"
 //   - Version:       "5.9.1"
 //   - Required tier: Professional ($199/mo)
-//   - Controls:      64 (24 automated, 40 manual)
+//   - Controls:      64 (47 automated, 17 manual)
 //   - Categories:    13
 //
 // Architecture:
@@ -251,7 +251,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Enforce access control policies through technical mechanisms on all CJI systems",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAccessEnforcement,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.4"},
 	})
 
@@ -261,7 +262,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Enforce information flow control policies between CJI systems and external networks",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInfoFlowEnforcement,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.5"},
 	})
 
@@ -271,7 +273,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement separation of duties to prevent single individuals from compromising CJI security",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCJISSeparationOfDuties,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.6"},
 	})
 
@@ -281,7 +284,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Assign the least privilege necessary for personnel to accomplish their assigned tasks with CJI",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLeastPrivilege,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.4.7"},
 	})
 
@@ -380,7 +384,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Use FIPS 140-2 validated cryptographic modules for all CJI encryption operations",
 		Category:    "Cryptography",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFIPSValidatedCrypto,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.4"},
 	})
 
@@ -390,7 +395,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement PKI infrastructure for CJI systems including certificate management and validation",
 		Category:    "Cryptography",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPKI,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 4.5.5"},
 	})
 
@@ -434,7 +440,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement procedures for reporting CJI security incidents to appropriate authorities",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentReporting,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.5.4"},
 	})
 
@@ -456,7 +463,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement boundary protection controls including firewalls and network segmentation for CJI systems",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBoundaryProtection,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.1"},
 	})
 
@@ -466,7 +474,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Protect the confidentiality and integrity of transmitted CJI using cryptographic mechanisms",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTransmissionConfInteg,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.2"},
 	})
 
@@ -476,7 +485,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement network access control to restrict access to CJI systems and networks",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkNetworkAccessControl,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.3"},
 	})
 
@@ -486,7 +496,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Protect CJI at rest through encryption, access controls, and data integrity mechanisms",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkProtectionAtRest,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.4"},
 	})
 
@@ -496,7 +507,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Isolate security functions from non-security functions in CJI systems",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityFunctionIsolation,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.6.5"},
 	})
 
@@ -530,7 +542,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Receive and act on security alerts and advisories relevant to CJI systems",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityAlerts,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.3"},
 	})
 
@@ -540,7 +553,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Verify security functionality of CJI systems on a regular basis",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityFunctionVerification,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.4"},
 	})
 
@@ -550,7 +564,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement controls to verify the integrity of software and information in CJI systems",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareIntegrity,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.7.5"},
 	})
 
@@ -583,7 +598,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Perform security impact analysis for configuration changes to CJI systems",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityImpactAnalysis,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.3"},
 	})
 
@@ -593,7 +609,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement approved configuration changes through controlled procedures for CJI systems",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeImplementation,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.4"},
 	})
 
@@ -603,7 +620,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement software usage restrictions and license management for CJI systems",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareUsage,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.8.5"},
 	})
 
@@ -645,7 +663,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement controls for remote maintenance and diagnostic ports on CJI systems (customer responsibility)",
 		Category:    "Maintenance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRemoteMaintenance,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.9.4"},
 	})
 
@@ -712,7 +731,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Ensure cloud service providers meet CJIS Security Policy requirements for CJI processing",
 		Category:    "Cloud Computing",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCloudServiceProviderSecurity,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.11.1"},
 	})
 
@@ -722,7 +742,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement access controls for cloud-hosted CJI systems including identity federation",
 		Category:    "Cloud Computing",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCloudAccessControls,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.11.2"},
 	})
 
@@ -732,7 +753,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement data protection controls for CJI stored and processed in cloud environments",
 		Category:    "Cloud Computing",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCloudDataProtection,
 		References:  []string{"CJIS Security Policy v5.9.1 Section 5.11.3"},
 	})
 
@@ -766,7 +788,8 @@ func (m *CJISModule) registerControls() {
 		Description: "Implement AI model governance for systems processing Criminal Justice Information",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIModelGovernanceCJI,
 		References:  []string{"CJIS Security Policy v5.9.1 AI Supplement"},
 	})
 }
@@ -1538,4 +1561,311 @@ func (m *CJISModule) detectCJI(input string) []string {
 // Dependencies returns required modules.
 func (m *CJISModule) Dependencies() []string {
 	return []string{"scanner"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *CJISModule) checkAccessEnforcement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAccess := strings.Contains(inputStr, "access_enforcement") || strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac")
+	hasPolicy := strings.Contains(inputStr, "access_policy") || strings.Contains(inputStr, "enforcement_policy") || strings.Contains(inputStr, "policy_enforcement")
+	if hasAccess && hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-04", ControlName: "Access Enforcement", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access enforcement with policy detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasAccess {
+		violations = append(violations, "access enforcement not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "access policy not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-04", ControlName: "Access Enforcement", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Access enforcement gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement access enforcement with policy"}, nil
+}
+
+func (m *CJISModule) checkInfoFlowEnforcement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFlow := strings.Contains(inputStr, "information_flow") || strings.Contains(inputStr, "flow_control") || strings.Contains(inputStr, "data_flow_enforcement")
+	hasRule := strings.Contains(inputStr, "flow_rule") || strings.Contains(inputStr, "flow_policy") || strings.Contains(inputStr, "flow_filtering")
+	if hasFlow && hasRule {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-05", ControlName: "Information Flow Enforcement", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Information flow enforcement detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasFlow {
+		violations = append(violations, "information flow enforcement not configured")
+	}
+	if !hasRule {
+		violations = append(violations, "flow rules not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-05", ControlName: "Information Flow Enforcement", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Flow enforcement gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement information flow enforcement with rules"}, nil
+}
+
+func (m *CJISModule) checkCJISSeparationOfDuties(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSOD := strings.Contains(inputStr, "separation_of_duties") || strings.Contains(inputStr, "sod") || strings.Contains(inputStr, "dual_control")
+	if hasSOD {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-06", ControlName: "Separation of Duties", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Separation of duties detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-06", ControlName: "Separation of Duties", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Separation of duties not detected", Timestamp: time.Now(), Remediation: "Implement separation of duties controls"}, nil
+}
+
+func (m *CJISModule) checkLeastPrivilege(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLeastPriv := strings.Contains(inputStr, "least_privilege") || strings.Contains(inputStr, "minimal_access") || strings.Contains(inputStr, "privilege_minimization")
+	if hasLeastPriv {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-07", ControlName: "Least Privilege", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Least privilege controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AC-07", ControlName: "Least Privilege", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Least privilege not detected", Timestamp: time.Now(), Remediation: "Implement least privilege access controls"}, nil
+}
+
+func (m *CJISModule) checkFIPSValidatedCrypto(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFIPS := strings.Contains(inputStr, "fips_validated") || strings.Contains(inputStr, "fips_140") || strings.Contains(inputStr, "fips_compliant")
+	if hasFIPS {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CR-04", ControlName: "FIPS-Validated Cryptography", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "FIPS-validated cryptography detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CR-04", ControlName: "FIPS-Validated Cryptography", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "FIPS-validated cryptography not detected", Timestamp: time.Now(), Remediation: "Use FIPS-validated cryptographic modules"}, nil
+}
+
+func (m *CJISModule) checkPKI(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPKI := strings.Contains(inputStr, "pki") || strings.Contains(inputStr, "public_key_infrastructure") || strings.Contains(inputStr, "certificate_authority")
+	hasCertMgmt := strings.Contains(inputStr, "certificate_management") || strings.Contains(inputStr, "cert_management") || strings.Contains(inputStr, "x509")
+	if hasPKI && hasCertMgmt {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CR-05", ControlName: "Public Key Infrastructure", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "PKI with certificate management detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasPKI {
+		violations = append(violations, "PKI not configured")
+	}
+	if !hasCertMgmt {
+		violations = append(violations, "certificate management not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CR-05", ControlName: "Public Key Infrastructure", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "PKI gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement PKI with certificate management"}, nil
+}
+
+func (m *CJISModule) checkBoundaryProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBoundary := strings.Contains(inputStr, "boundary_protection") || strings.Contains(inputStr, "firewall") || strings.Contains(inputStr, "network_boundary")
+	if hasBoundary {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-01", ControlName: "Boundary Protection", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Boundary protection detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-01", ControlName: "Boundary Protection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Boundary protection not detected", Timestamp: time.Now(), Remediation: "Implement boundary protection controls"}, nil
+}
+
+func (m *CJISModule) checkTransmissionConfInteg(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTLS := strings.Contains(inputStr, "tls") || strings.Contains(inputStr, "encryption_in_transit") || strings.Contains(inputStr, "https")
+	hasIntegrity := strings.Contains(inputStr, "transmission_integrity") || strings.Contains(inputStr, "integrity_check") || strings.Contains(inputStr, "hmac")
+	if hasTLS && hasIntegrity {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-02", ControlName: "Transmission Confidentiality and Integrity", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Transmission confidentiality and integrity detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasTLS {
+		violations = append(violations, "transmission encryption not configured")
+	}
+	if !hasIntegrity {
+		violations = append(violations, "transmission integrity not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-02", ControlName: "Transmission Confidentiality and Integrity", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Transmission gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement transmission confidentiality and integrity"}, nil
+}
+
+func (m *CJISModule) checkNetworkAccessControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasNAC := strings.Contains(inputStr, "network_access_control") || strings.Contains(inputStr, "nac") || strings.Contains(inputStr, "network_access")
+	if hasNAC {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-03", ControlName: "Network Access Control", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Network access control detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-03", ControlName: "Network Access Control", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Network access control not detected", Timestamp: time.Now(), Remediation: "Implement network access control"}, nil
+}
+
+func (m *CJISModule) checkProtectionAtRest(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAtRest := strings.Contains(inputStr, "encryption_at_rest") || strings.Contains(inputStr, "data_encrypted") || strings.Contains(inputStr, "aes")
+	if hasAtRest {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-04", ControlName: "Protection of Information at Rest", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Protection of information at rest detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-04", ControlName: "Protection of Information at Rest", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Protection at rest not detected", Timestamp: time.Now(), Remediation: "Implement encryption for data at rest"}, nil
+}
+
+func (m *CJISModule) checkSecurityFunctionIsolation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIsolation := strings.Contains(inputStr, "security_function_isolation") || strings.Contains(inputStr, "function_isolation") || strings.Contains(inputStr, "sandboxing")
+	if hasIsolation {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-05", ControlName: "Security Function Isolation", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security function isolation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SC-05", ControlName: "Security Function Isolation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security function isolation not detected", Timestamp: time.Now(), Remediation: "Implement security function isolation"}, nil
+}
+
+func (m *CJISModule) checkSecurityAlerts(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAlerts := strings.Contains(inputStr, "security_alerts") || strings.Contains(inputStr, "advisory_monitoring") || strings.Contains(inputStr, "threat_alerts")
+	if hasAlerts {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SI-03", ControlName: "Security Alerts and Advisories", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security alerts and advisories detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SI-03", ControlName: "Security Alerts and Advisories", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security alerts not detected", Timestamp: time.Now(), Remediation: "Implement security alerts and advisory monitoring"}, nil
+}
+
+func (m *CJISModule) checkSecurityFunctionVerification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVerification := strings.Contains(inputStr, "security_function_verification") || strings.Contains(inputStr, "function_verification") || strings.Contains(inputStr, "security_verification")
+	if hasVerification {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SI-04", ControlName: "Security Functionality Verification", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security function verification detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SI-04", ControlName: "Security Functionality Verification", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security function verification not detected", Timestamp: time.Now(), Remediation: "Implement security function verification"}, nil
+}
+
+func (m *CJISModule) checkSoftwareIntegrity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIntegrity := strings.Contains(inputStr, "software_integrity") || strings.Contains(inputStr, "integrity_monitoring") || strings.Contains(inputStr, "file_integrity")
+	if hasIntegrity {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SI-05", ControlName: "Software and Information Integrity", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Software and information integrity detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-SI-05", ControlName: "Software and Information Integrity", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Software integrity not detected", Timestamp: time.Now(), Remediation: "Implement software and information integrity monitoring"}, nil
+}
+
+func (m *CJISModule) checkSecurityImpactAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasImpact := strings.Contains(inputStr, "security_impact_analysis") || strings.Contains(inputStr, "impact_analysis") || strings.Contains(inputStr, "change_impact")
+	if hasImpact {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CM-03", ControlName: "Security Impact Analysis", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security impact analysis detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CM-03", ControlName: "Security Impact Analysis", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security impact analysis not detected", Timestamp: time.Now(), Remediation: "Implement security impact analysis for changes"}, nil
+}
+
+func (m *CJISModule) checkChangeImplementation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasImpl := strings.Contains(inputStr, "change_implementation") || strings.Contains(inputStr, "controlled_change") || strings.Contains(inputStr, "change_control")
+	hasReview := strings.Contains(inputStr, "implementation_review") || strings.Contains(inputStr, "change_review") || strings.Contains(inputStr, "post_review")
+	if hasImpl && hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CM-04", ControlName: "Change Implementation", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Controlled change implementation with review detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasImpl {
+		violations = append(violations, "change implementation not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "implementation review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CM-04", ControlName: "Change Implementation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Change implementation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement controlled change with review"}, nil
+}
+
+func (m *CJISModule) checkSoftwareUsage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasUsage := strings.Contains(inputStr, "software_usage") || strings.Contains(inputStr, "software_restriction") || strings.Contains(inputStr, "license_control")
+	hasPolicy := strings.Contains(inputStr, "software_policy") || strings.Contains(inputStr, "usage_policy") || strings.Contains(inputStr, "software_inventory")
+	if hasUsage && hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CM-05", ControlName: "Software Usage and Restrictions", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Software usage controls with policy detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasUsage {
+		violations = append(violations, "software usage controls not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "usage policy not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CM-05", ControlName: "Software Usage and Restrictions", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Software usage gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement software usage and restriction controls"}, nil
+}
+
+func (m *CJISModule) checkRemoteMaintenance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRemote := strings.Contains(inputStr, "remote_maintenance") || strings.Contains(inputStr, "remote_access") || strings.Contains(inputStr, "diagnostic_port")
+	hasControl := strings.Contains(inputStr, "maintenance_control") || strings.Contains(inputStr, "remote_maintenance_control") || strings.Contains(inputStr, "diagnostic_control")
+	if hasRemote && hasControl {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-MA-04", ControlName: "Remote Maintenance and Diagnostic Ports", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Remote maintenance controls detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRemote {
+		violations = append(violations, "remote maintenance not configured")
+	}
+	if !hasControl {
+		violations = append(violations, "maintenance controls not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-MA-04", ControlName: "Remote Maintenance and Diagnostic Ports", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Remote maintenance gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement remote maintenance controls"}, nil
+}
+
+func (m *CJISModule) checkCloudServiceProviderSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCSP := strings.Contains(inputStr, "cloud_service_provider") || strings.Contains(inputStr, "csp_security") || strings.Contains(inputStr, "cloud_provider_security")
+	hasAssurance := strings.Contains(inputStr, "provider_assurance") || strings.Contains(inputStr, "cloud_assurance") || strings.Contains(inputStr, "fedramp")
+	if hasCSP && hasAssurance {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CC-01", ControlName: "Cloud Service Provider Security", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cloud service provider security detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCSP {
+		violations = append(violations, "CSP security not configured")
+	}
+	if !hasAssurance {
+		violations = append(violations, "cloud assurance not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CC-01", ControlName: "Cloud Service Provider Security", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "CSP security gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement cloud service provider security controls"}, nil
+}
+
+func (m *CJISModule) checkCloudAccessControls(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCloudAccess := strings.Contains(inputStr, "cloud_access_control") || strings.Contains(inputStr, "cloud_access") || strings.Contains(inputStr, "cloud_rbac")
+	hasAuth := strings.Contains(inputStr, "cloud_authentication") || strings.Contains(inputStr, "cloud_mfa") || strings.Contains(inputStr, "cloud_sso")
+	if hasCloudAccess && hasAuth {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CC-02", ControlName: "Cloud Access Controls", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cloud access controls detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCloudAccess {
+		violations = append(violations, "cloud access controls not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "cloud authentication not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CC-02", ControlName: "Cloud Access Controls", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cloud access gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement cloud access controls with authentication"}, nil
+}
+
+func (m *CJISModule) checkCloudDataProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEnc := strings.Contains(inputStr, "cloud_data_protection") || strings.Contains(inputStr, "cloud_encryption") || strings.Contains(inputStr, "cloud_data_encryption")
+	hasDLP := strings.Contains(inputStr, "cloud_dlp") || strings.Contains(inputStr, "cloud_data_loss_prevention") || strings.Contains(inputStr, "cloud_masking")
+	if hasEnc && hasDLP {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CC-03", ControlName: "Cloud Data Protection", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cloud data protection detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasEnc {
+		violations = append(violations, "cloud encryption not configured")
+	}
+	if !hasDLP {
+		violations = append(violations, "cloud DLP not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-CC-03", ControlName: "Cloud Data Protection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cloud data protection gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement cloud data protection controls"}, nil
+}
+
+func (m *CJISModule) checkAIModelGovernanceCJI(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasGovernance := strings.Contains(inputStr, "ai_model_governance") || strings.Contains(inputStr, "model_governance") || strings.Contains(inputStr, "ai_oversight")
+	hasApproval := strings.Contains(inputStr, "model_approval") || strings.Contains(inputStr, "ai_approval") || strings.Contains(inputStr, "model_oversight")
+	if hasGovernance && hasApproval {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AI-03", ControlName: "AI Model Governance for CJI Systems", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI model governance with oversight detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasGovernance {
+		violations = append(violations, "AI model governance not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "model approval not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-AI-03", ControlName: "AI Model Governance for CJI Systems", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI governance gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement AI model governance with oversight for CJI systems"}, nil
+}
+
+func (m *CJISModule) checkIncidentReporting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReporting := strings.Contains(inputStr, "incident_reporting") || strings.Contains(inputStr, "incident_report") || strings.Contains(inputStr, "security_incident_report")
+	hasProcedure := strings.Contains(inputStr, "reporting_procedure") || strings.Contains(inputStr, "reporting_process") || strings.Contains(inputStr, "incident_notification")
+	if hasReporting && hasProcedure {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-IR-04", ControlName: "Incident Reporting", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Incident reporting controls detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasReporting {
+		violations = append(violations, "incident reporting not configured")
+	}
+	if !hasProcedure {
+		violations = append(violations, "reporting procedure not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CJIS-IR-04", ControlName: "Incident Reporting", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Incident reporting gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement incident reporting procedures"}, nil
 }

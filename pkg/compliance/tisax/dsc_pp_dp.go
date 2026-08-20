@@ -31,7 +31,8 @@ func (m *TISAXModule) registerDSCControls() {
 		Description: "TISAX DSC-01: Data classification and labeling scheme for CUI and proprietary information",
 		Category:    "Data and System Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTisaxDataClassification,
 		References:  []string{"TISAX v6 AL2 ISA-DSC-01", "ISO 27001 A.8.1"},
 	})
 
@@ -90,7 +91,8 @@ func (m *TISAXModule) registerDSCControls() {
 		Description: "TISAX DSC-06: Change management process for system modifications",
 		Category:    "Data and System Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTisaxChangeMgmt,
 		References:  []string{"TISAX v6 AL2 ISA-DSC-06", "ISO 27001 A.8.32"},
 	})
 
@@ -125,8 +127,8 @@ func (m *TISAXModule) registerDSCControls() {
 		Description: "TISAX DSC-09: Mobile device management with enrollment and policy enforcement",
 		Category:    "Data and System Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
-		CheckFunc:   nil,
+		Automated:   true,
+		CheckFunc:   m.checkTisaxMDM,
 		References:  []string{"TISAX v6 AL2 ISA-DSC-09", "ISO 27001 A.8.7"},
 	})
 
@@ -185,8 +187,8 @@ func (m *TISAXModule) registerDSCControls() {
 		Description: "TISAX DSC-14: AI/ML security controls for model training and deployment",
 		Category:    "Data and System Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
-		CheckFunc:   nil,
+		Automated:   true,
+		CheckFunc:   m.checkTisaxAIMLSecurity,
 		References:  []string{"TISAX v6 AL2 ISA-DSC-14", "ISO 27001 A.5.7"},
 	})
 }
@@ -200,7 +202,8 @@ func (m *TISAXModule) registerPPControls() {
 		Description: "TISAX PP-01: Privacy policy documented and communicated",
 		Category:    "Privacy and Personnel",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTisaxPrivacyPolicy,
 		References:  []string{"TISAX v6 AL2 ISA-PP-01", "GDPR Art. 5"},
 	})
 
@@ -256,7 +259,8 @@ func (m *TISAXModule) registerPPControls() {
 		Description: "TISAX PP-06: Data retention and disposal policies",
 		Category:    "Privacy and Personnel",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTisaxDataRetention,
 		References:  []string{"TISAX v6 AL2 ISA-PP-06", "ISO 27001 A.8.10"},
 	})
 
@@ -1313,4 +1317,62 @@ func (m *TISAXModule) checkSecureCICD(ctx context.Context, input []byte) (*compl
 		Timestamp:   time.Now(),
 		Remediation: "Configure CI/CD pipeline with SAST/DAST security gates and automated scanning",
 	}, nil
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *TISAXModule) checkTisaxDataClassification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasClassification := strings.Contains(inputStr, "data_classification") || strings.Contains(inputStr, "classification_scheme") || strings.Contains(inputStr, "classification_policy")
+	if hasClassification {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-01", ControlName: "Data Classification", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data classification detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-01", ControlName: "Data Classification", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Data classification not detected", Timestamp: time.Now(), Remediation: "Implement data classification"}, nil
+}
+
+func (m *TISAXModule) checkTisaxChangeMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChangeMgmt := strings.Contains(inputStr, "change_management") || strings.Contains(inputStr, "change_control") || strings.Contains(inputStr, "change_process")
+	if hasChangeMgmt {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-06", ControlName: "Change Management", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Change management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-06", ControlName: "Change Management", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Change management not detected", Timestamp: time.Now(), Remediation: "Implement change management"}, nil
+}
+
+func (m *TISAXModule) checkTisaxMDM(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMDM := strings.Contains(inputStr, "mobile_device_management") || strings.Contains(inputStr, "mdm") || strings.Contains(inputStr, "device_management")
+	if hasMDM {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-09", ControlName: "Mobile Device Management", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Mobile device management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-09", ControlName: "Mobile Device Management", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "MDM not detected", Timestamp: time.Now(), Remediation: "Implement mobile device management"}, nil
+}
+
+func (m *TISAXModule) checkTisaxAIMLSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAI := strings.Contains(inputStr, "ai_ml_security") || strings.Contains(inputStr, "ai_security_controls") || strings.Contains(inputStr, "ml_security")
+	if hasAI {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-14", ControlName: "AI/ML Security Controls", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI/ML security controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-DSC-14", ControlName: "AI/ML Security Controls", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI/ML security not detected", Timestamp: time.Now(), Remediation: "Implement AI/ML security controls"}, nil
+}
+
+func (m *TISAXModule) checkTisaxDataRetention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRetention := strings.Contains(inputStr, "data_retention") || strings.Contains(inputStr, "retention_policy") || strings.Contains(inputStr, "retention_schedule")
+	if hasRetention {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-PP-06", ControlName: "Data Retention", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data retention detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-PP-06", ControlName: "Data Retention", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Data retention not detected", Timestamp: time.Now(), Remediation: "Implement data retention policies"}, nil
+}
+
+func (m *TISAXModule) checkTisaxPrivacyPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicy := strings.Contains(inputStr, "privacy_policy") || strings.Contains(inputStr, "privacy_framework") || strings.Contains(inputStr, "privacy_controls")
+	if hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-PP-01", ControlName: "Privacy Policy", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Privacy policy detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "TISAX-PP-01", ControlName: "Privacy Policy", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Privacy policy not detected", Timestamp: time.Now(), Remediation: "Implement privacy policy"}, nil
 }

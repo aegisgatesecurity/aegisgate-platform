@@ -1500,3 +1500,34 @@ func (m *FedRAMPModule) checkSCRMPlan(ctx context.Context, input []byte) (*compl
 		References:  []string{"NIST SP 800-53 Rev. 5 SR-12", "FedRAMP Moderate SR-12"},
 	}, nil
 }
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *FedRAMPModule) checkAssessmentAuthPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicy := strings.Contains(inputStr, "assessment_policy") || strings.Contains(inputStr, "authorization_policy") || strings.Contains(inputStr, "assessment_authorization")
+	if hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FedRAMP-CA-1", ControlName: "Assessment and Authorization Policy and Procedures", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Assessment and authorization policy detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FedRAMP-CA-1", ControlName: "Assessment and Authorization Policy and Procedures", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Assessment policy not detected", Timestamp: time.Now(), Remediation: "Implement assessment and authorization policy"}, nil
+}
+
+func (m *FedRAMPModule) checkSystemSecurityPlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPlan := strings.Contains(inputStr, "system_security_plan") || strings.Contains(inputStr, "ssp") || strings.Contains(inputStr, "security_plan")
+	if hasPlan {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FedRAMP-PL-2", ControlName: "System Security Plan", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "System security plan detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FedRAMP-PL-2", ControlName: "System Security Plan", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "System security plan not detected", Timestamp: time.Now(), Remediation: "Implement system security plan"}, nil
+}
+
+func (m *FedRAMPModule) checkSecurityPrivacyPersonnel(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPersonnel := strings.Contains(inputStr, "security_personnel") || strings.Contains(inputStr, "privacy_personnel") || strings.Contains(inputStr, "security_privacy_staff")
+	if hasPersonnel {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FedRAMP-PM-14", ControlName: "Security and Privacy Personnel", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security and privacy personnel detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FedRAMP-PM-14", ControlName: "Security and Privacy Personnel", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security personnel not detected", Timestamp: time.Now(), Remediation: "Assign security and privacy personnel"}, nil
+}

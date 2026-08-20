@@ -12,7 +12,7 @@
 //   - Framework:     "sox"
 //   - Version:       "2002"
 //   - Required tier: Professional ($199/mo)
-//   - Controls:      80 (27 automated, 53 manual)
+//   - Controls:      80 (48 automated, 32 manual)
 //   - Categories:    15
 //
 // Architecture:
@@ -140,7 +140,8 @@ func (m *SOXModule) registerControls() {
 		Description: "The organization identifies and analyzes risk to the achievement of its objectives.",
 		Category:    "COSO Risk Assessment",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskIdentification,
 		References:  []string{"COSO Principle 7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -149,7 +150,8 @@ func (m *SOXModule) registerControls() {
 		Description: "The organization considers the potential for fraud in assessing risks to the achievement of objectives.",
 		Category:    "COSO Risk Assessment",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFraudRiskAssessment,
 		References:  []string{"COSO Principle 8", "SOX Section 404"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -158,7 +160,8 @@ func (m *SOXModule) registerControls() {
 		Description: "The organization identifies and assesses changes that could significantly impact the system of internal control.",
 		Category:    "COSO Risk Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSignificantChange,
 		References:  []string{"COSO Principle 9"},
 	})
 
@@ -264,7 +267,8 @@ func (m *SOXModule) registerControls() {
 		Description: "User access to financial systems is periodically reviewed and recertified.",
 		Category:    "ITGC - Access Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUserAccessReview,
 		References:  []string{"SOX ITGC - Access Management"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -293,7 +297,8 @@ func (m *SOXModule) registerControls() {
 		Description: "User access is promptly removed upon termination or role change.",
 		Category:    "ITGC - Access Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAccessRemoval,
 		References:  []string{"SOX ITGC - Access Management"},
 	})
 
@@ -315,7 +320,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Changes are tested and approved before migration to production.",
 		Category:    "ITGC - Change Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeTesting,
 		References:  []string{"SOX ITGC - Change Management"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -324,7 +330,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Emergency changes are controlled with post-implementation review and documentation.",
 		Category:    "ITGC - Change Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkEmergencyChange,
 		References:  []string{"SOX ITGC - Change Management"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -333,7 +340,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Source code is maintained under version control with audit trails.",
 		Category:    "ITGC - Change Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSourceCodeControl,
 		References:  []string{"SOX ITGC - Change Management"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -342,7 +350,8 @@ func (m *SOXModule) registerControls() {
 		Description: "All changes are documented with business justification and approval records.",
 		Category:    "ITGC - Change Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeDocumentation,
 		References:  []string{"SOX ITGC - Change Management"},
 	})
 
@@ -403,7 +412,8 @@ func (m *SOXModule) registerControls() {
 		Description: "A formal SDLC methodology is followed for financial system development.",
 		Category:    "ITGC - Program Development",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSDLC,
 		References:  []string{"SOX ITGC - Program Development"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -421,7 +431,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Financial systems undergo formal testing and quality assurance before deployment.",
 		Category:    "ITGC - Program Development",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTestingQA,
 		References:  []string{"SOX ITGC - Program Development"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -439,7 +450,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Data migration controls ensure integrity of financial data during system conversions.",
 		Category:    "ITGC - Program Development",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataMigration,
 		References:  []string{"SOX ITGC - Program Development"},
 	})
 
@@ -451,7 +463,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Program changes to financial systems require formal authorization.",
 		Category:    "ITGC - Program Changes",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeAuthorization,
 		References:  []string{"SOX ITGC - Program Changes"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -460,7 +473,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Migration of program changes to production is controlled and documented.",
 		Category:    "ITGC - Program Changes",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMigrationToProd,
 		References:  []string{"SOX ITGC - Program Changes"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -469,7 +483,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Rollback procedures are in place for failed program changes.",
 		Category:    "ITGC - Program Changes",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRollbackProcedures,
 		References:  []string{"SOX ITGC - Program Changes"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -488,7 +503,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Code reviews are performed and documented for changes to financial systems.",
 		Category:    "ITGC - Program Changes",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCodeReview,
 		References:  []string{"SOX ITGC - Program Changes"},
 	})
 
@@ -626,7 +642,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Sensitive financial data is masked in non-production environments.",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataMasking,
 		References:  []string{"SOX Data Protection"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -675,7 +692,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Segregation of duties is enforced for financial data access and processing.",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataSOD,
 		References:  []string{"SOX Data Protection"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -734,7 +752,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Journal entries are controlled with appropriate review and approval.",
 		Category:    "Financial Reporting",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkJournalEntry,
 		References:  []string{"SOX Financial Reporting"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -743,7 +762,8 @@ func (m *SOXModule) registerControls() {
 		Description: "Account reconciliations are performed and reviewed on a regular basis.",
 		Category:    "Financial Reporting",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAcctReconciliation,
 		References:  []string{"SOX Financial Reporting"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -851,7 +871,8 @@ func (m *SOXModule) registerControls() {
 		Description: "AI models used in financial systems are governed with appropriate oversight.",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIModelGovernance,
 		References:  []string{"SOX AI Controls"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1790,4 +1811,341 @@ func (m *SOXModule) detectFinancialData(input string) []string {
 // Dependencies returns required modules.
 func (m *SOXModule) Dependencies() []string {
 	return []string{"scanner"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *SOXModule) checkRiskIdentification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRiskID := strings.Contains(inputStr, "risk_identification") || strings.Contains(inputStr, "risk_analysis") || strings.Contains(inputStr, "risk_register")
+	hasRiskFramework := strings.Contains(inputStr, "risk_framework") || strings.Contains(inputStr, "risk_assessment")
+	if hasRiskID && hasRiskFramework {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-RA-02", ControlName: "Risk identification and analysis", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Risk identification and analysis framework detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRiskID {
+		violations = append(violations, "risk identification not configured")
+	}
+	if !hasRiskFramework {
+		violations = append(violations, "risk framework not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-RA-02", ControlName: "Risk identification and analysis", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Risk identification gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement risk identification and analysis procedures"}, nil
+}
+
+func (m *SOXModule) checkFraudRiskAssessment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFraudRisk := strings.Contains(inputStr, "fraud_risk") || strings.Contains(inputStr, "fraud_assessment") || strings.Contains(inputStr, "fraud_detection")
+	hasMonitoring := strings.Contains(inputStr, "monitoring") || strings.Contains(inputStr, "fraud_monitoring") || strings.Contains(inputStr, "anomaly_detection")
+	if hasFraudRisk && hasMonitoring {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-RA-03", ControlName: "Fraud risk assessment", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Fraud risk assessment with monitoring detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasFraudRisk {
+		violations = append(violations, "fraud risk assessment not configured")
+	}
+	if !hasMonitoring {
+		violations = append(violations, "fraud monitoring not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-RA-03", ControlName: "Fraud risk assessment", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical, Message: "Fraud risk gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement fraud risk assessment with monitoring"}, nil
+}
+
+func (m *SOXModule) checkSignificantChange(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChangeID := strings.Contains(inputStr, "change_identification") || strings.Contains(inputStr, "change_assessment") || strings.Contains(inputStr, "impact_analysis")
+	if hasChangeID {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-RA-04", ControlName: "Significant change identification", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Significant change identification process detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-RA-04", ControlName: "Significant change identification", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Significant change identification not detected", Timestamp: time.Now(), Remediation: "Implement process for identifying and assessing significant changes"}, nil
+}
+
+func (m *SOXModule) checkUserAccessReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAccessReview := strings.Contains(inputStr, "access_review") || strings.Contains(inputStr, "user_access_review") || strings.Contains(inputStr, "access_recertification")
+	hasPeriodic := strings.Contains(inputStr, "periodic_review") || strings.Contains(inputStr, "quarterly_review") || strings.Contains(inputStr, "access_review")
+	if hasAccessReview && hasPeriodic {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-AM-02", ControlName: "User Access Review", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "User access review and recertification detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasAccessReview {
+		violations = append(violations, "access review not configured")
+	}
+	if !hasPeriodic {
+		violations = append(violations, "periodic review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-AM-02", ControlName: "User Access Review", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Access review gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement periodic user access review and recertification"}, nil
+}
+
+func (m *SOXModule) checkAccessRemoval(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRemoval := strings.Contains(inputStr, "access_removal") || strings.Contains(inputStr, "deprovisioning") || strings.Contains(inputStr, "deprovision")
+	hasTimely := strings.Contains(inputStr, "timely_removal") || strings.Contains(inputStr, "prompt_deprovisioning") || strings.Contains(inputStr, "automated_deprovisioning")
+	if hasRemoval && hasTimely {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-AM-05", ControlName: "Access Removal and Deprovisioning", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access removal and deprovisioning controls detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRemoval {
+		violations = append(violations, "access removal not configured")
+	}
+	if !hasTimely {
+		violations = append(violations, "timely deprovisioning not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-AM-05", ControlName: "Access Removal and Deprovisioning", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Access removal gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement automated access removal and deprovisioning"}, nil
+}
+
+func (m *SOXModule) checkChangeTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTesting := strings.Contains(inputStr, "change_testing") || strings.Contains(inputStr, "test_approval") || strings.Contains(inputStr, "uat_approval")
+	hasApproval := strings.Contains(inputStr, "approval_required") || strings.Contains(inputStr, "cab_approval") || strings.Contains(inputStr, "change_approval")
+	if hasTesting && hasApproval {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-02", ControlName: "Change Testing and Approval", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Change testing and approval controls detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasTesting {
+		violations = append(violations, "change testing not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "approval process not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-02", ControlName: "Change Testing and Approval", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Change testing gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement change testing and approval processes"}, nil
+}
+
+func (m *SOXModule) checkEmergencyChange(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEmergency := strings.Contains(inputStr, "emergency_change") || strings.Contains(inputStr, "emergency_fix") || strings.Contains(inputStr, "hotfix_control")
+	hasPostReview := strings.Contains(inputStr, "post_implementation_review") || strings.Contains(inputStr, "post_review") || strings.Contains(inputStr, "retroactive_approval")
+	if hasEmergency && hasPostReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-03", ControlName: "Emergency Change Controls", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Emergency change controls with post-implementation review detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasEmergency {
+		violations = append(violations, "emergency change controls not configured")
+	}
+	if !hasPostReview {
+		violations = append(violations, "post-implementation review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-03", ControlName: "Emergency Change Controls", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Emergency change gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement emergency change controls with post-implementation review"}, nil
+}
+
+func (m *SOXModule) checkSourceCodeControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasVersionControl := strings.Contains(inputStr, "version_control") || strings.Contains(inputStr, "source_control") || strings.Contains(inputStr, "git_repository")
+	hasAuditTrail := strings.Contains(inputStr, "code_audit_trail") || strings.Contains(inputStr, "commit_history") || strings.Contains(inputStr, "code_review_tracking")
+	if hasVersionControl && hasAuditTrail {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-04", ControlName: "Source Code Version Control", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Source code version control with audit trails detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasVersionControl {
+		violations = append(violations, "version control not configured")
+	}
+	if !hasAuditTrail {
+		violations = append(violations, "audit trail not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-04", ControlName: "Source Code Version Control", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Source code control gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement source code version control with audit trails"}, nil
+}
+
+func (m *SOXModule) checkChangeDocumentation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDoc := strings.Contains(inputStr, "change_documentation") || strings.Contains(inputStr, "change_records") || strings.Contains(inputStr, "change_log")
+	hasJustification := strings.Contains(inputStr, "business_justification") || strings.Contains(inputStr, "change_justification") || strings.Contains(inputStr, "approval_records")
+	if hasDoc && hasJustification {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-05", ControlName: "Change Documentation", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Change documentation with justification detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasDoc {
+		violations = append(violations, "change documentation not configured")
+	}
+	if !hasJustification {
+		violations = append(violations, "business justification not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-CM-05", ControlName: "Change Documentation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Change documentation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement change documentation with business justification"}, nil
+}
+
+func (m *SOXModule) checkSDLC(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSDLC := strings.Contains(inputStr, "sdlc") || strings.Contains(inputStr, "system_development_lifecycle") || strings.Contains(inputStr, "development_lifecycle")
+	hasMethodology := strings.Contains(inputStr, "development_methodology") || strings.Contains(inputStr, "formal_sdlc") || strings.Contains(inputStr, "sdlc_methodology")
+	if hasSDLC && hasMethodology {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PD-01", ControlName: "System Development Life Cycle", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Formal SDLC methodology detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasSDLC {
+		violations = append(violations, "SDLC not configured")
+	}
+	if !hasMethodology {
+		violations = append(violations, "formal methodology not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PD-01", ControlName: "System Development Life Cycle", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "SDLC gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement formal SDLC methodology"}, nil
+}
+
+func (m *SOXModule) checkTestingQA(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTesting := strings.Contains(inputStr, "testing_qa") || strings.Contains(inputStr, "quality_assurance") || strings.Contains(inputStr, "formal_testing")
+	hasApproval := strings.Contains(inputStr, "qa_approval") || strings.Contains(inputStr, "test_approval") || strings.Contains(inputStr, "qa_signoff")
+	if hasTesting && hasApproval {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PD-03", ControlName: "Testing and Quality Assurance", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Formal testing and QA with approval detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasTesting {
+		violations = append(violations, "testing/QA not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "QA approval not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PD-03", ControlName: "Testing and Quality Assurance", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Testing/QA gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement formal testing and QA processes"}, nil
+}
+
+func (m *SOXModule) checkDataMigration(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMigration := strings.Contains(inputStr, "data_migration") || strings.Contains(inputStr, "migration_control") || strings.Contains(inputStr, "data_conversion")
+	hasIntegrity := strings.Contains(inputStr, "migration_integrity") || strings.Contains(inputStr, "data_validation") || strings.Contains(inputStr, "reconciliation")
+	if hasMigration && hasIntegrity {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PD-05", ControlName: "Data Migration Controls", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data migration controls with integrity checks detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMigration {
+		violations = append(violations, "data migration controls not configured")
+	}
+	if !hasIntegrity {
+		violations = append(violations, "integrity checks not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PD-05", ControlName: "Data Migration Controls", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Data migration gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement data migration controls with integrity checks"}, nil
+}
+
+func (m *SOXModule) checkChangeAuthorization(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAuth := strings.Contains(inputStr, "change_authorization") || strings.Contains(inputStr, "formal_authorization") || strings.Contains(inputStr, "change_approval")
+	if hasAuth {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-01", ControlName: "Change Authorization", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Formal change authorization detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-01", ControlName: "Change Authorization", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Change authorization not detected", Timestamp: time.Now(), Remediation: "Implement formal change authorization process"}, nil
+}
+
+func (m *SOXModule) checkMigrationToProd(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMigration := strings.Contains(inputStr, "migration_to_production") || strings.Contains(inputStr, "prod_migration") || strings.Contains(inputStr, "production_deployment")
+	hasControlled := strings.Contains(inputStr, "controlled_migration") || strings.Contains(inputStr, "documented_migration") || strings.Contains(inputStr, "deployment_control")
+	if hasMigration && hasControlled {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-02", ControlName: "Migration to Production", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Controlled production migration detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMigration {
+		violations = append(violations, "production migration not configured")
+	}
+	if !hasControlled {
+		violations = append(violations, "migration controls not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-02", ControlName: "Migration to Production", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Migration gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement controlled migration to production"}, nil
+}
+
+func (m *SOXModule) checkRollbackProcedures(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRollback := strings.Contains(inputStr, "rollback_procedures") || strings.Contains(inputStr, "rollback_plan") || strings.Contains(inputStr, "rollback_capability")
+	if hasRollback {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-03", ControlName: "Rollback Procedures", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Rollback procedures detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-03", ControlName: "Rollback Procedures", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Rollback procedures not detected", Timestamp: time.Now(), Remediation: "Implement rollback procedures for failed changes"}, nil
+}
+
+func (m *SOXModule) checkCodeReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReview := strings.Contains(inputStr, "code_review") || strings.Contains(inputStr, "peer_review") || strings.Contains(inputStr, "review_required")
+	hasDoc := strings.Contains(inputStr, "review_documented") || strings.Contains(inputStr, "review_records") || strings.Contains(inputStr, "review_tracking")
+	if hasReview && hasDoc {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-05", ControlName: "Code Review", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Code review with documentation detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasReview {
+		violations = append(violations, "code review not configured")
+	}
+	if !hasDoc {
+		violations = append(violations, "review documentation not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-PC-05", ControlName: "Code Review", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Code review gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement code review with documentation"}, nil
+}
+
+func (m *SOXModule) checkDataMasking(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMasking := strings.Contains(inputStr, "data_masking") || strings.Contains(inputStr, "data_redaction") || strings.Contains(inputStr, "mask_non_production")
+	hasNonProd := strings.Contains(inputStr, "non_production_masking") || strings.Contains(inputStr, "test_data_masking") || strings.Contains(inputStr, "masked")
+	if hasMasking && hasNonProd {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-DP-04", ControlName: "Data Masking", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data masking in non-production environments detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMasking {
+		violations = append(violations, "data masking not configured")
+	}
+	if !hasNonProd {
+		violations = append(violations, "non-production masking not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-DP-04", ControlName: "Data Masking", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Data masking gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement data masking in non-production environments"}, nil
+}
+
+func (m *SOXModule) checkDataSOD(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSOD := strings.Contains(inputStr, "segregation_of_duties") || strings.Contains(inputStr, "sod") || strings.Contains(inputStr, "dual_control")
+	hasEnforced := strings.Contains(inputStr, "sod_enforced") || strings.Contains(inputStr, "sod_violation_detection") || strings.Contains(inputStr, "dual_control")
+	if hasSOD && hasEnforced {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-DP-09", ControlName: "Segregation of Duties", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Segregation of duties for financial data detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasSOD {
+		violations = append(violations, "segregation of duties not configured")
+	}
+	if !hasEnforced {
+		violations = append(violations, "SOD enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-DP-09", ControlName: "Segregation of Duties", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "SOD gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement segregation of duties for financial data access"}, nil
+}
+
+func (m *SOXModule) checkJournalEntry(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasJE := strings.Contains(inputStr, "journal_entry") || strings.Contains(inputStr, "je_control") || strings.Contains(inputStr, "journal_entry_control")
+	hasReview := strings.Contains(inputStr, "je_review") || strings.Contains(inputStr, "journal_review") || strings.Contains(inputStr, "entry_approval")
+	if hasJE && hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-FR-05", ControlName: "Journal Entry Controls", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Journal entry controls with review detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasJE {
+		violations = append(violations, "journal entry controls not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "JE review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-FR-05", ControlName: "Journal Entry Controls", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "JE control gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement journal entry controls with review and approval"}, nil
+}
+
+func (m *SOXModule) checkAcctReconciliation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRecon := strings.Contains(inputStr, "account_reconciliation") || strings.Contains(inputStr, "financial_reconciliation") || strings.Contains(inputStr, "reconciliation")
+	hasReview := strings.Contains(inputStr, "reconciliation_review") || strings.Contains(inputStr, "recon_review") || strings.Contains(inputStr, "reconciliation_control")
+	if hasRecon && hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-FR-06", ControlName: "Account Reconciliation", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Account reconciliation with review detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRecon {
+		violations = append(violations, "account reconciliation not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "reconciliation review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-FR-06", ControlName: "Account Reconciliation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Reconciliation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement account reconciliation with regular review"}, nil
+}
+
+func (m *SOXModule) checkAIModelGovernance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasGovernance := strings.Contains(inputStr, "ai_model_governance") || strings.Contains(inputStr, "model_governance") || strings.Contains(inputStr, "ai_oversight")
+	hasApproval := strings.Contains(inputStr, "model_approval") || strings.Contains(inputStr, "ai_approval") || strings.Contains(inputStr, "model_oversight")
+	if hasGovernance && hasApproval {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-AI-03", ControlName: "AI Model Governance for Financial Systems", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI model governance with oversight detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasGovernance {
+		violations = append(violations, "AI model governance not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "model approval/oversight not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "SOX-AI-03", ControlName: "AI Model Governance for Financial Systems", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI governance gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement AI model governance with oversight for financial systems"}, nil
 }

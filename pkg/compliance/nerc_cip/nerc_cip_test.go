@@ -1127,14 +1127,18 @@ func TestNERCCIPCheckAll(t *testing.T) {
 			"vendor_security_requirements enforced",
 			"safe_ai_config with no sensitive data",
 			"ai_audit model_logging bes_audit_trail all active",
+			"intrusion_detection ids ips ids_monitoring network_monitoring perimeter_monitoring",
+			"security_event_monitoring event_monitoring siem",
+			"log_review_procedures log_review log_analysis",
+			"incident_response_testing ir_testing ir_test",
 		}, " "))
 
 		results, err := m.CheckAll(context.Background(), input)
 		if err != nil {
 			t.Fatalf("CheckAll returned error: %v", err)
 		}
-		if len(results) != 31 {
-			t.Errorf("Expected 31 results (55 controls minus 24 non-automated), got %d", len(results))
+		if len(results) != 35 {
+			t.Errorf("Expected 35 results (55 controls minus 20 non-automated), got %d", len(results))
 		}
 
 		for _, result := range results {
@@ -1188,7 +1192,7 @@ func TestNERCCIPModuleProvisions(t *testing.T) {
 		"NERC-CIP-EP-01": {category: "Electronic Security", severity: "critical", automated: true},
 		"NERC-CIP-EP-02": {category: "Electronic Security", severity: "high", automated: true},
 		"NERC-CIP-EP-03": {category: "Electronic Security", severity: "high", automated: true},
-		"NERC-CIP-EP-04": {category: "Electronic Security", severity: "high", automated: false},
+		"NERC-CIP-EP-04": {category: "Electronic Security", severity: "high", automated: true},
 		"NERC-CIP-EP-05": {category: "Electronic Security", severity: "medium", automated: false},
 		// Physical Security (5)
 		"NERC-CIP-PS-01": {category: "Physical Security", severity: "high", automated: true},
@@ -1201,12 +1205,12 @@ func TestNERCCIPModuleProvisions(t *testing.T) {
 		"NERC-CIP-SS-02": {category: "System Security", severity: "critical", automated: true},
 		"NERC-CIP-SS-03": {category: "System Security", severity: "high", automated: true},
 		"NERC-CIP-SS-04": {category: "System Security", severity: "high", automated: true},
-		"NERC-CIP-SS-05": {category: "System Security", severity: "high", automated: false},
-		"NERC-CIP-SS-06": {category: "System Security", severity: "medium", automated: false},
+		"NERC-CIP-SS-05": {category: "System Security", severity: "high", automated: true},
+		"NERC-CIP-SS-06": {category: "System Security", severity: "medium", automated: true},
 		// Incident Response (4)
 		"NERC-CIP-IR-01": {category: "Incident Response", severity: "critical", automated: true},
 		"NERC-CIP-IR-02": {category: "Incident Response", severity: "high", automated: true},
-		"NERC-CIP-IR-03": {category: "Incident Response", severity: "medium", automated: false},
+		"NERC-CIP-IR-03": {category: "Incident Response", severity: "medium", automated: true},
 		"NERC-CIP-IR-04": {category: "Incident Response", severity: "medium", automated: false},
 		// Recovery Planning (4)
 		"NERC-CIP-RP-01": {category: "Recovery Planning", severity: "high", automated: true},

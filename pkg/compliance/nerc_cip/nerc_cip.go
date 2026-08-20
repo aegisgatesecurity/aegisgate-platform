@@ -242,7 +242,8 @@ func (m *NERCCIPModule) registerControls() {
 		Description: "Deploy and maintain intrusion detection or prevention systems monitoring the Electronic Security Perimeter for unauthorized access attempts per CIP-005",
 		Category:    "Electronic Security",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIntrusionDetection,
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
@@ -354,7 +355,8 @@ func (m *NERCCIPModule) registerControls() {
 		Description: "Implement security event monitoring for BES Cyber Systems including alert configuration, event correlation, and automated response capabilities per CIP-007",
 		Category:    "System Security",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityEventMonitoring,
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
@@ -363,7 +365,8 @@ func (m *NERCCIPModule) registerControls() {
 		Description: "Establish and document procedures for reviewing security logs and event data from BES Cyber Systems on a regular schedule per CIP-007",
 		Category:    "System Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLogReviewProcedures,
 	})
 
 	// =========================================================
@@ -395,7 +398,8 @@ func (m *NERCCIPModule) registerControls() {
 		Description: "Conduct periodic testing of the incident response plan including tabletop exercises, simulations, and after-action reviews per CIP-008",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponseTesting,
 	})
 
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1717,4 +1721,52 @@ func (m *NERCCIPModule) checkAIAuditTrailBES(ctx context.Context, input []byte) 
 			Remediation: "Implement AI audit trail controls for BES operations",
 		}, nil
 	}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *NERCCIPModule) checkIntrusionDetection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIDS := strings.Contains(inputStr, "intrusion_detection") || strings.Contains(inputStr, "ids") || strings.Contains(inputStr, "ips")
+	hasMonitoring := strings.Contains(inputStr, "ids_monitoring") || strings.Contains(inputStr, "network_monitoring") || strings.Contains(inputStr, "perimeter_monitoring")
+	if hasIDS && hasMonitoring {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-EP-04", ControlName: "Intrusion Detection System", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Intrusion detection system detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasIDS {
+		violations = append(violations, "IDS not configured")
+	}
+	if !hasMonitoring {
+		violations = append(violations, "IDS monitoring not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-EP-04", ControlName: "Intrusion Detection System", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "IDS gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Deploy intrusion detection system"}, nil
+}
+
+func (m *NERCCIPModule) checkSecurityEventMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "security_event_monitoring") || strings.Contains(inputStr, "event_monitoring") || strings.Contains(inputStr, "siem")
+	if hasMonitoring {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-SS-05", ControlName: "Security Event Monitoring", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Security event monitoring detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-SS-05", ControlName: "Security Event Monitoring", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Security event monitoring not detected", Timestamp: time.Now(), Remediation: "Implement security event monitoring"}, nil
+}
+
+func (m *NERCCIPModule) checkLogReviewProcedures(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReview := strings.Contains(inputStr, "log_review_procedures") || strings.Contains(inputStr, "log_review") || strings.Contains(inputStr, "log_analysis")
+	if hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-SS-06", ControlName: "Log Review Procedures", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Log review procedures detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-SS-06", ControlName: "Log Review Procedures", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Log review not detected", Timestamp: time.Now(), Remediation: "Implement log review procedures"}, nil
+}
+
+func (m *NERCCIPModule) checkIncidentResponseTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTesting := strings.Contains(inputStr, "incident_response_testing") || strings.Contains(inputStr, "ir_testing") || strings.Contains(inputStr, "ir_test")
+	if hasTesting {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-IR-03", ControlName: "Incident Response Testing", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident response testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NERC-CIP-IR-03", ControlName: "Incident Response Testing", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "IR testing not detected", Timestamp: time.Now(), Remediation: "Implement incident response testing"}, nil
 }

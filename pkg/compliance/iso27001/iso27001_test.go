@@ -26,7 +26,7 @@ func TestNewISO27001Module(t *testing.T) {
 	if len(controls) != 116 {
 		t.Errorf("len(Controls()) = %d, want 116 (ISO 27001:2022 expanded Annex A controls)", len(controls))
 	}
-	// Verify all automated controls have CheckFunc (92 automated, 24 manual)
+	// Verify all automated controls have CheckFunc (98 automated, 18 manual)
 	for _, c := range controls {
 		if c.Automated {
 			if c.CheckFunc == nil {
@@ -141,7 +141,13 @@ func TestISO27001Check_Compliant(t *testing.T) {
 		"audit_testing": true, "security_audit": true, "compliance_audit": true, "audit_scheduled": true,
 		"fire_suppression": true, "temperature_monitoring": true, "humidity_monitoring": true, "environmental_alerts": true,
 		"secure_area_policy": true, "visitor_log": true, "escort_required": true, "clear_desk": true,
-		"asset_tracking": true, "device_encryption": true, "remote_wipe": true, "asset_inventory": true
+		"asset_tracking": true, "device_encryption": true, "remote_wipe": true, "asset_inventory": true,
+		"infosec_policy": true, "information_security_policy": true, "security_policy": true, "policy_approved": true, "approved_policy": true, "management_approval": true,
+		"segregation_of_duties": true, "sod": true, "dual_control": true,
+		"project_management": true, "infosec_project": true, "security_project": true, "security_integration": true, "project_security_review": true, "security_assessment_project": true,
+		"outsourced_development": true, "third_party_development": true, "vendor_development": true, "outsourced_security": true, "third_party_security": true,
+		"system_acquisition": true, "acquisition_security": true, "procurement_security": true, "security_requirements_acquisition": true, "acquisition_requirements": true, "procurement_requirements": true,
+		"ai_system_security_governance": true, "ai_governance": true, "ai_security_governance": true, "ai_oversight": true, "model_oversight": true, "ai_model_governance": true
 	}`)
 
 	checks := map[string]func(context.Context, []byte) (*compliance.ControlCheckResult, error){

@@ -40,11 +40,11 @@ func TestNISTAIRMF_ControlCounts(t *testing.T) {
 			evidence++
 		}
 	}
-	if automated != 30 {
-		t.Errorf("automated controls = %d, want 30", automated)
+	if automated != 35 {
+		t.Errorf("automated controls = %d, want 35", automated)
 	}
-	if evidence != 20 {
-		t.Errorf("evidence-mapped controls = %d, want 20", evidence)
+	if evidence != 15 {
+		t.Errorf("evidence-mapped controls = %d, want 15", evidence)
 	}
 }
 

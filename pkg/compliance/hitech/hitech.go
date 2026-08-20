@@ -262,7 +262,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Periodic reviews of user access to EHR systems must be conducted to verify appropriate access levels",
 		Category:    "EHR Audit",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkEHRUserAccessReviews,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -310,7 +310,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Covered entities must monitor business associate compliance with HIPAA and HITECH requirements",
 		Category:    "Business Associate",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkBAComplianceMonitoring,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -415,7 +415,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "AI models used in clinical settings must be evaluated for bias across demographic groups to ensure equitable care",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkAIBiasDetection,
 	})
 	m.RegisterControl(compliance.ControlDefinition{

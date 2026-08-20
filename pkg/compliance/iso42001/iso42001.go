@@ -10,7 +10,7 @@
 //   - Framework:     "iso_42001"
 //   - Version:       "2.0"
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Controls:      38 (18 automated, 20 manual)
+//   - Controls:      38 (23 automated, 15 manual)
 //   - Categories:    7 (Context, Leadership, Planning, Support, Operation,
 //                      Performance Evaluation, AI Controls)
 //
@@ -417,7 +417,8 @@ func (m *ISO42001Module) registerControls() {
 		Description: "Operate and monitor AI systems throughout their lifecycle",
 		Category:    "Operation",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIOperationMonitoring,
 		References:  []string{"ISO/IEC 42001:2023 8.5"},
 	})
 
@@ -427,7 +428,8 @@ func (m *ISO42001Module) registerControls() {
 		Description: "Establish procedures for managing AI-related incidents",
 		Category:    "Operation",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIIncidentManagement,
 		References:  []string{"ISO/IEC 42001:2023 8.6"},
 	})
 
@@ -437,7 +439,8 @@ func (m *ISO42001Module) registerControls() {
 		Description: "Manage data used for AI system training, testing, and operation",
 		Category:    "Operation",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIDataManagement,
 		References:  []string{"ISO/IEC 42001:2023 8.7"},
 	})
 
@@ -504,7 +507,8 @@ func (m *ISO42001Module) registerControls() {
 		Description: "Evaluate AI systems for bias and fairness on an ongoing basis",
 		Category:    "Performance Evaluation",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBiasFairnessEvaluation,
 		References:  []string{"ISO/IEC 42001:2023 9.1 (Bias & Fairness)"},
 	})
 
@@ -560,7 +564,8 @@ func (m *ISO42001Module) registerControls() {
 		Description: "Maintain documentation for AI models including model cards and datasheets",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIModelDocumentation,
 		References:  []string{"ISO/IEC 42001:2023 AI Controls - Model Documentation"},
 	})
 
@@ -1544,4 +1549,93 @@ func (m *ISO42001Module) auditLogPatterns() []*regexp.Regexp {
 // Dependencies returns required modules.
 func (m *ISO42001Module) Dependencies() []string {
 	return []string{"scanner", "trust", "metrics"}
+}
+
+// ============================================================================
+// Promoted CheckFunc implementations — P4 Compliance Automation Expansion
+// ============================================================================
+
+func (m *ISO42001Module) checkAIOperationMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasOperation := strings.Contains(inputStr, "ai_operation") || strings.Contains(inputStr, "system_operation") || strings.Contains(inputStr, "ai_monitoring")
+	hasMetrics := strings.Contains(inputStr, "operational_metrics") || strings.Contains(inputStr, "ai_performance_monitoring") || strings.Contains(inputStr, "system_monitoring")
+	if hasOperation && hasMetrics {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-8.5", ControlName: "AI system operation and monitoring", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI system operation and monitoring detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasOperation {
+		violations = append(violations, "AI operation not configured")
+	}
+	if !hasMetrics {
+		violations = append(violations, "operational monitoring not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-8.5", ControlName: "AI system operation and monitoring", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI operation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement AI system operation and monitoring"}, nil
+}
+
+func (m *ISO42001Module) checkAIIncidentManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIncident := strings.Contains(inputStr, "ai_incident") || strings.Contains(inputStr, "incident_management") || strings.Contains(inputStr, "ai_incident_response")
+	hasProcedure := strings.Contains(inputStr, "incident_procedure") || strings.Contains(inputStr, "ai_incident_procedure") || strings.Contains(inputStr, "incident_plan")
+	if hasIncident && hasProcedure {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-8.6", ControlName: "AI system incident management", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI incident management detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasIncident {
+		violations = append(violations, "AI incident management not configured")
+	}
+	if !hasProcedure {
+		violations = append(violations, "incident procedures not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-8.6", ControlName: "AI system incident management", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI incident gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement AI system incident management procedures"}, nil
+}
+
+func (m *ISO42001Module) checkAIDataManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDataMgmt := strings.Contains(inputStr, "data_management") || strings.Contains(inputStr, "ai_data_management") || strings.Contains(inputStr, "data_governance")
+	hasQuality := strings.Contains(inputStr, "data_quality") || strings.Contains(inputStr, "data_lineage") || strings.Contains(inputStr, "data_provenance")
+	if hasDataMgmt && hasQuality {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-8.7", ControlName: "Data management for AI systems", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI data management with quality controls detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasDataMgmt {
+		violations = append(violations, "data management not configured")
+	}
+	if !hasQuality {
+		violations = append(violations, "data quality not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-8.7", ControlName: "Data management for AI systems", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Data management gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement data management for AI systems"}, nil
+}
+
+func (m *ISO42001Module) checkBiasFairnessEvaluation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBias := strings.Contains(inputStr, "bias_detection") || strings.Contains(inputStr, "bias_evaluation") || strings.Contains(inputStr, "fairness_evaluation")
+	hasMetrics := strings.Contains(inputStr, "bias_metrics") || strings.Contains(inputStr, "fairness_metrics") || strings.Contains(inputStr, "bias_monitoring")
+	if hasBias && hasMetrics {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-9.P2", ControlName: "Bias and fairness evaluation", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Bias and fairness evaluation detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasBias {
+		violations = append(violations, "bias evaluation not configured")
+	}
+	if !hasMetrics {
+		violations = append(violations, "bias metrics not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-9.P2", ControlName: "Bias and fairness evaluation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Bias evaluation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement bias and fairness evaluation"}, nil
+}
+
+func (m *ISO42001Module) checkAIModelDocumentation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDocs := strings.Contains(inputStr, "model_documentation") || strings.Contains(inputStr, "ai_documentation") || strings.Contains(inputStr, "model_docs")
+	hasVersioned := strings.Contains(inputStr, "versioned_documentation") || strings.Contains(inputStr, "model_card") || strings.Contains(inputStr, "model_version")
+	if hasDocs && hasVersioned {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-AI-03", ControlName: "AI model documentation", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI model documentation detected", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasDocs {
+		violations = append(violations, "model documentation not configured")
+	}
+	if !hasVersioned {
+		violations = append(violations, "versioned documentation not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "ISO42001-AI-03", ControlName: "AI model documentation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Documentation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Implement AI model documentation with versioning"}, nil
 }
