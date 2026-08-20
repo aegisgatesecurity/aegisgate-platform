@@ -53,8 +53,8 @@ func TestNISTCSF_AutomatedCount(t *testing.T) {
 			automated++
 		}
 	}
-	if automated != 23 {
-		t.Errorf("automated controls = %d, want 23", automated)
+	if automated != 48 {
+		t.Errorf("automated controls = %d, want 48", automated)
 	}
 }
 
@@ -189,7 +189,34 @@ func TestNISTCSF_CheckAllAutomated_Compliant(t *testing.T) {
 		"audit_replay": true,
 		"log_replay": true,
 		"hash_chain": true,
-		"log_integrity": true
+		"log_integrity": true,
+		"software_inventory": true,
+		"data_inventory": true,
+		"data_catalog": true,
+		"device_inventory": true,
+		"data_classification": true,
+		"data_sensitivity": true,
+		"system_inventory": true,
+		"threat_prioritization": true,
+		"network_access": true,
+		"backup_protection": true,
+		"configuration_management": true,
+		"integrity_checking": true,
+		"file_integrity": true,
+		"network_protection": true,
+		"data_lifecycle": true,
+		"platform_config": true,
+		"platform_hardening": true,
+		"platform_protection": true,
+		"platform_integrity": true,
+		"monitoring_report": true,
+		"detection_monitoring": true,
+		"anomaly_analysis": true,
+		"adverse_event": true,
+		"incident_assessment": true,
+		"incident_management": true,
+		"incident_mitigation": true,
+		"incident_resolution": true
 	}`)
 
 	controls := m.Controls()

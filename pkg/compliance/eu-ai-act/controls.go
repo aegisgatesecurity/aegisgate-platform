@@ -153,7 +153,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 9(2)(a): Risk Identification and Analysis",
 		Category:    "Risk Management",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskIdentification,
 		References:  []string{"EU AI Act Article 9(2)(a)"},
 	})
 
@@ -163,7 +164,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 9(2)(b): Risk Estimation and Evaluation",
 		Category:    "Risk Management",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskEstimation,
 		References:  []string{"EU AI Act Article 9(2)(b)"},
 	})
 
@@ -173,7 +175,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 9(2)(c): Risk Mitigation Measures",
 		Category:    "Risk Management",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskMitigationMeasures,
 		References:  []string{"EU AI Act Article 9(2)(c)"},
 	})
 
@@ -193,7 +196,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 9(2)(e): Continuous Monitoring and Review",
 		Category:    "Risk Management",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkContinuousMonitoring,
 		References:  []string{"EU AI Act Article 9(2)(e)"},
 	})
 
@@ -223,7 +227,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 9(5): Documentation of Known Risks",
 		Category:    "Risk Management",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkKnownRisksDocumentation,
 		References:  []string{"EU AI Act Article 9(5)"},
 	})
 
@@ -266,7 +271,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 10(1): Training Data Quality and Relevance",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTrainingDataQuality,
 		References:  []string{"EU AI Act Article 10(1)"},
 	})
 
@@ -276,7 +282,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 10(2): Data Governance and Management",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataGovernance,
 		References:  []string{"EU AI Act Article 10(2)"},
 	})
 
@@ -286,7 +293,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 10(2)(a): Bias Examination and Mitigation",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBiasExamination,
 		References:  []string{"EU AI Act Article 10(2)(a)"},
 	})
 
@@ -336,7 +344,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 10(6): Data Provenance and Lineage",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataProvenance,
 		References:  []string{"EU AI Act Article 10(6)"},
 	})
 
@@ -380,7 +389,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 11(1)(a): System Characteristics Documentation",
 		Category:    "Technical Documentation",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemCharacteristics,
 		References:  []string{"EU AI Act Article 11(1)(a)"},
 	})
 
@@ -454,7 +464,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 12(2): Log Traceability",
 		Category:    "Record Keeping",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLogTraceability,
 		References:  []string{"EU AI Act Article 12(2)"},
 	})
 
@@ -464,7 +475,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 12(3): Log Retention Period",
 		Category:    "Record Keeping",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLogRetention,
 		References:  []string{"EU AI Act Article 12(3)"},
 	})
 
@@ -474,7 +486,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 12(4): Log Integrity and Tamper Evidence",
 		Category:    "Record Keeping",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLogIntegrity,
 		References:  []string{"EU AI Act Article 12(4)"},
 	})
 
@@ -810,7 +823,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5)(f): Model Parameter Integrity",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkModelParameterIntegrity,
 		References:  []string{"EU AI Act Article 15(5)(f)"},
 	})
 
@@ -820,7 +834,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5)(g): System Service Availability",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemServiceAvailability,
 		References:  []string{"EU AI Act Article 15(5)(g)"},
 	})
 
@@ -830,7 +845,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(2): Environmental Robustness Under Varying Conditions",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkEnvironmentalRobustness,
 		References:  []string{"EU AI Act Article 15(2)"},
 	})
 
@@ -840,7 +856,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(4): Model Drift Monitoring in Operation",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkModelDriftMonitoring,
 		References:  []string{"EU AI Act Article 15(4)"},
 	})
 
@@ -1009,7 +1026,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act AegisGate extension: AI Model Bias Detection",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIBiasDetection,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
@@ -1062,7 +1080,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act AegisGate extension: AI Model Interpretability and Explainability",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIInterpretability,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
@@ -1072,7 +1091,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act AegisGate extension: AI System Kill Switch and Rollback",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkKillSwitchRollback,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 

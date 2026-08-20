@@ -133,7 +133,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Review network security control rule sets at least every 6 months",
 		Category:    "Network Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRuleSetReview,
 		References:  []string{"PCI-DSS v4.0 Req 1.7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -142,7 +143,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Remove unnecessary configurations and rules from network security controls",
 		Category:    "Network Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUnnecessaryConfigs,
 		References:  []string{"PCI-DSS v4.0 Req 1.8"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -181,7 +183,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure internal IP addresses are not accessible from the internet",
 		Category:    "Network Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInternalIPLegacy,
 		References:  []string{"PCI-DSS v4.0 Req 1.12"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -200,7 +203,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Encrypt all administrative access to network security components",
 		Category:    "Network Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAdminAccessEncryption,
 		References:  []string{"PCI-DSS v4.0 Req 1.14"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -259,7 +263,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Remove unnecessary functionality from system components including scripts, drivers, and subsystems",
 		Category:    "Configuration",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUnnecessaryFunctionality,
 		References:  []string{"PCI-DSS v4.0 Req 2.5"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -336,7 +341,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Minimize storage of account data to only what is necessary for business and legal purposes",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMinimizeDataStorage,
 		References:  []string{"PCI-DSS v4.0 Req 3.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -412,7 +418,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain data retention and disposal policies for cardholder data",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataRetentionDisposal,
 		References:  []string{"PCI-DSS v4.0 Req 3.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -588,7 +595,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure anti-malware mechanisms are actively running and cannot be disabled by users",
 		Category:    "Vulnerability Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAntiMalwareActive,
 		References:  []string{"PCI-DSS v4.0 Req 5.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -597,7 +605,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure anti-malware mechanisms cannot be disabled or modified by users without authorization",
 		Category:    "Vulnerability Management",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAntiMalwareNonDisableable,
 		References:  []string{"PCI-DSS v4.0 Req 5.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -760,7 +769,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish change control procedures for all changes to system components in the CDE",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeControl,
 		References:  []string{"PCI-DSS v4.0 Req 6.8"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -878,7 +888,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Review access rights at least every 6 months to ensure they remain appropriate",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAccessRightsReview,
 		References:  []string{"PCI-DSS v4.0 Req 7.5"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1042,7 +1053,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure passwords and passphrases are not stored in readable format and are protected with strong cryptography",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPasswordNotReadable,
 		References:  []string{"PCI-DSS v4.0 Req 8.14"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1235,7 +1247,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Retain audit trail history for at least 1 year with 3 months immediately available",
 		Category:    "Monitoring",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuditTrailRetention,
 		References:  []string{"PCI-DSS v4.0 Req 10.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1244,7 +1257,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Use NTP or equivalent time synchronization protocol for all systems in the CDE",
 		Category:    "Monitoring",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTimeSyncNTP,
 		References:  []string{"PCI-DSS v4.0 Req 10.10"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1253,7 +1267,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Protect audit logs from modification, deletion, or unauthorized access",
 		Category:    "Monitoring",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLogIntegrity,
 		References:  []string{"PCI-DSS v4.0 Req 10.11"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1377,7 +1392,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Deploy file integrity monitoring tools to detect unauthorized changes to critical files",
 		Category:    "Testing",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkFileIntegrityMonitoring,
 		References:  []string{"PCI-DSS v4.0 Req 11.12"},
 	})
 
@@ -5005,6 +5021,758 @@ func (m *PCIModule) detectCardData(input string) []string {
 		}
 	}
 	return found
+}
+
+// checkRuleSetReview checks for periodic review of network security control rule sets.
+func (m *PCIModule) checkRuleSetReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"rule_review", "ruleset_review", "firewall_review", "acl_review", "policy_review"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-007",
+			ControlName: "Review Network Security Control Rule Sets Every 6 Months",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Network security control rule set reviews detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-007",
+			ControlName: "Review Network Security Control Rule Sets Every 6 Months",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial rule set review evidence detected",
+			Timestamp:   time.Now(),
+			Remediation: "Establish a formal process to review network security control rule sets at least every 6 months per PCI-DSS v4.0 Req 1.7",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-01-007",
+		ControlName: "Review Network Security Control Rule Sets Every 6 Months",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No evidence of rule set reviews detected",
+		Timestamp:   time.Now(),
+		Remediation: "Establish a formal process to review network security control rule sets at least every 6 months per PCI-DSS v4.0 Req 1.7",
+	}, nil
+}
+
+// checkUnnecessaryConfigs checks for removal of unnecessary configurations and rules.
+func (m *PCIModule) checkUnnecessaryConfigs(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"config_cleanup", "unnecessary_rules_removed", "rule_cleanup", "config_review", "stale_rules"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-008",
+			ControlName: "Remove Unnecessary Configurations",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Unnecessary configuration removal process detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-008",
+			ControlName: "Remove Unnecessary Configurations",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial evidence of unnecessary configuration removal",
+			Timestamp:   time.Now(),
+			Remediation: "Implement a process to remove unnecessary configurations and rules from network security controls per PCI-DSS v4.0 Req 1.8",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-01-008",
+		ControlName: "Remove Unnecessary Configurations",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No evidence of unnecessary configuration removal",
+		Timestamp:   time.Now(),
+		Remediation: "Implement a process to remove unnecessary configurations and rules from network security controls per PCI-DSS v4.0 Req 1.8",
+	}, nil
+}
+
+// checkInternalIPLegacy checks that internal IP addresses are not accessible from the internet.
+func (m *PCIModule) checkInternalIPLegacy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"internal_ip_protected", "nat_configured", "private_ip", "no_public_exposure", "ip_filtering"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-012",
+			ControlName: "Internal IP Addresses Not Accessible from Internet",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Internal IP addresses protected from internet access",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-012",
+			ControlName: "Internal IP Addresses Not Accessible from Internet",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial protection of internal IP addresses detected",
+			Timestamp:   time.Now(),
+			Remediation: "Ensure internal IP addresses are not accessible from the internet per PCI-DSS v4.0 Req 1.12",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-01-012",
+		ControlName: "Internal IP Addresses Not Accessible from Internet",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Internal IP addresses may be accessible from internet",
+		Timestamp:   time.Now(),
+		Remediation: "Ensure internal IP addresses are not accessible from the internet per PCI-DSS v4.0 Req 1.12",
+	}, nil
+}
+
+// checkAdminAccessEncryption checks for encrypted administrative access to network security components.
+func (m *PCIModule) checkAdminAccessEncryption(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"admin_encryption", "ssh_tunnel", "vpn_admin", "tls_admin", "encrypted_admin_access"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-014",
+			ControlName: "Encrypt Admin Access to Network Security Components",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Encrypted administrative access to network security components detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-01-014",
+			ControlName: "Encrypt Admin Access to Network Security Components",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial encryption of administrative access detected",
+			Timestamp:   time.Now(),
+			Remediation: "Encrypt all administrative access to network security components per PCI-DSS v4.0 Req 1.14",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-01-014",
+		ControlName: "Encrypt Admin Access to Network Security Components",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No encrypted administrative access detected",
+		Timestamp:   time.Now(),
+		Remediation: "Encrypt all administrative access to network security components per PCI-DSS v4.0 Req 1.14",
+	}, nil
+}
+
+// checkUnnecessaryFunctionality checks for removal of unnecessary functionality from system components.
+func (m *PCIModule) checkUnnecessaryFunctionality(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"functionality_removed", "unnecessary_scripts_removed", "drivers_removed", "subsystems_removed", "hardening"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-02-005",
+			ControlName: "Remove Unnecessary Functionality",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Unnecessary functionality removal process detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-02-005",
+			ControlName: "Remove Unnecessary Functionality",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial evidence of unnecessary functionality removal",
+			Timestamp:   time.Now(),
+			Remediation: "Remove unnecessary functionality from system components including scripts, drivers, and subsystems per PCI-DSS v4.0 Req 2.5",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-02-005",
+		ControlName: "Remove Unnecessary Functionality",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No evidence of unnecessary functionality removal",
+		Timestamp:   time.Now(),
+		Remediation: "Remove unnecessary functionality from system components including scripts, drivers, and subsystems per PCI-DSS v4.0 Req 2.5",
+	}, nil
+}
+
+// checkMinimizeDataStorage checks for minimization of account data storage.
+func (m *PCIModule) checkMinimizeDataStorage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"data_minimization", "storage_limit", "data_reduction", "retention_limit", "minimal_storage"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-03-001",
+			ControlName: "Minimize Storage of Account Data",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Account data storage minimization detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-03-001",
+			ControlName: "Minimize Storage of Account Data",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial data storage minimization detected",
+			Timestamp:   time.Now(),
+			Remediation: "Minimize storage of account data to only what is necessary for business and legal purposes per PCI-DSS v4.0 Req 3.1",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-03-001",
+		ControlName: "Minimize Storage of Account Data",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No evidence of account data storage minimization",
+		Timestamp:   time.Now(),
+		Remediation: "Minimize storage of account data to only what is necessary for business and legal purposes per PCI-DSS v4.0 Req 3.1",
+	}, nil
+}
+
+// checkDataRetentionDisposal checks for data retention and disposal policies.
+func (m *PCIModule) checkDataRetentionDisposal(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"retention_policy", "disposal_policy", "data_retention", "secure_disposal", "data_destruction"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-03-009",
+			ControlName: "Data Retention and Disposal Policies",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data retention and disposal policies detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-03-009",
+			ControlName: "Data Retention and Disposal Policies",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial data retention and disposal policies detected",
+			Timestamp:   time.Now(),
+			Remediation: "Establish and maintain data retention and disposal policies for cardholder data per PCI-DSS v4.0 Req 3.9",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-03-009",
+		ControlName: "Data Retention and Disposal Policies",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No data retention and disposal policies detected",
+		Timestamp:   time.Now(),
+		Remediation: "Establish and maintain data retention and disposal policies for cardholder data per PCI-DSS v4.0 Req 3.9",
+	}, nil
+}
+
+// checkAntiMalwareActive checks that anti-malware mechanisms are actively running.
+func (m *PCIModule) checkAntiMalwareActive(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"antivirus", "anti-malware", "malware_scanner", "real_time_protection", "endpoint_protection"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-05-002",
+			ControlName: "Anti-Malware Mechanisms Actively Running",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Anti-malware mechanisms actively running",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-05-002",
+			ControlName: "Anti-Malware Mechanisms Actively Running",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial anti-malware protection detected",
+			Timestamp:   time.Now(),
+			Remediation: "Ensure anti-malware mechanisms are actively running on all system components per PCI-DSS v4.0 Req 5.2",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-05-002",
+		ControlName: "Anti-Malware Mechanisms Actively Running",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No active anti-malware mechanisms detected",
+		Timestamp:   time.Now(),
+		Remediation: "Ensure anti-malware mechanisms are actively running on all system components per PCI-DSS v4.0 Req 5.2",
+	}, nil
+}
+
+// checkAntiMalwareNonDisableable checks that anti-malware mechanisms cannot be disabled by users.
+func (m *PCIModule) checkAntiMalwareNonDisableable(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"non_disableable", "tamper_protection", "admin_only", "protected_mechanism", "locked_antivirus"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-05-003",
+			ControlName: "Anti-Malware Mechanisms Not Disableable by Users",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Anti-malware mechanisms protected from user modification",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-05-003",
+			ControlName: "Anti-Malware Mechanisms Not Disableable by Users",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial protection of anti-malware mechanisms detected",
+			Timestamp:   time.Now(),
+			Remediation: "Ensure anti-malware mechanisms cannot be disabled or modified by users without authorization per PCI-DSS v4.0 Req 5.3",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-05-003",
+		ControlName: "Anti-Malware Mechanisms Not Disableable by Users",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Anti-malware mechanisms may be disableable by users",
+		Timestamp:   time.Now(),
+		Remediation: "Ensure anti-malware mechanisms cannot be disabled or modified by users without authorization per PCI-DSS v4.0 Req 5.3",
+	}, nil
+}
+
+// checkChangeControl checks for change control procedures.
+func (m *PCIModule) checkChangeControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"change_control", "change_management", "change_approval", "change_review", "cab_review"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-06-008",
+			ControlName: "Change Control Procedures for All Changes",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Change control procedures detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-06-008",
+			ControlName: "Change Control Procedures for All Changes",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial change control procedures detected",
+			Timestamp:   time.Now(),
+			Remediation: "Establish change control procedures for all changes to system components in the CDE per PCI-DSS v4.0 Req 6.8",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-06-008",
+		ControlName: "Change Control Procedures for All Changes",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No change control procedures detected",
+		Timestamp:   time.Now(),
+		Remediation: "Establish change control procedures for all changes to system components in the CDE per PCI-DSS v4.0 Req 6.8",
+	}, nil
+}
+
+// checkAccessRightsReview checks for periodic access rights reviews.
+func (m *PCIModule) checkAccessRightsReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"access_review", "rights_review", "permission_audit", "access_audit", "periodic_review"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-07-005",
+			ControlName: "Access Rights Reviewed at Least Every 6 Months",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Access rights review process detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-07-005",
+			ControlName: "Access Rights Reviewed at Least Every 6 Months",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial access rights review evidence detected",
+			Timestamp:   time.Now(),
+			Remediation: "Review access rights at least every 6 months to ensure they remain appropriate per PCI-DSS v4.0 Req 7.5",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-07-005",
+		ControlName: "Access Rights Reviewed at Least Every 6 Months",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No evidence of access rights reviews",
+		Timestamp:   time.Now(),
+		Remediation: "Review access rights at least every 6 months to ensure they remain appropriate per PCI-DSS v4.0 Req 7.5",
+	}, nil
+}
+
+// checkPasswordNotReadable checks that passwords are not stored in readable format.
+func (m *PCIModule) checkPasswordNotReadable(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"password_hash", "bcrypt", "argon2", "scrypt", "hashed_password", "pbkdf2"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-08-014",
+			ControlName: "Passwords Not Stored in Readable Format",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Passwords stored with strong cryptography, not in readable format",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-08-014",
+			ControlName: "Passwords Not Stored in Readable Format",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial password protection detected",
+			Timestamp:   time.Now(),
+			Remediation: "Ensure passwords and passphrases are not stored in readable format and are protected with strong cryptography per PCI-DSS v4.0 Req 8.14",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-08-014",
+		ControlName: "Passwords Not Stored in Readable Format",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "Passwords may be stored in readable format",
+		Timestamp:   time.Now(),
+		Remediation: "Ensure passwords and passphrases are not stored in readable format and are protected with strong cryptography per PCI-DSS v4.0 Req 8.14",
+	}, nil
+}
+
+// checkAuditTrailRetention checks for audit trail history retention of at least 1 year.
+func (m *PCIModule) checkAuditTrailRetention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"audit_retention", "log_retention", "retention_1_year", "audit_history", "log_archive"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-10-009",
+			ControlName: "Audit Trail History Retained at Least 1 Year",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Audit trail history retention for at least 1 year detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-10-009",
+			ControlName: "Audit Trail History Retained at Least 1 Year",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial audit trail retention detected",
+			Timestamp:   time.Now(),
+			Remediation: "Retain audit trail history for at least 1 year with 3 months immediately available per PCI-DSS v4.0 Req 10.9",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-10-009",
+		ControlName: "Audit Trail History Retained at Least 1 Year",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No evidence of audit trail history retention",
+		Timestamp:   time.Now(),
+		Remediation: "Retain audit trail history for at least 1 year with 3 months immediately available per PCI-DSS v4.0 Req 10.9",
+	}, nil
+}
+
+// checkTimeSyncNTP checks for NTP or equivalent time synchronization (PCI-10-010).
+func (m *PCIModule) checkTimeSyncNTP(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"ntp", "time_sync", "time_synchronization", "chrony", "ntp_server"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-10-010",
+			ControlName: "Time Sync Using NTP or Equivalent",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Time synchronization using NTP or equivalent detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-10-010",
+			ControlName: "Time Sync Using NTP or Equivalent",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial time synchronization detected",
+			Timestamp:   time.Now(),
+			Remediation: "Use NTP or equivalent time synchronization protocol for all systems in the CDE per PCI-DSS v4.0 Req 10.10",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-10-010",
+		ControlName: "Time Sync Using NTP or Equivalent",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No time synchronization detected",
+		Timestamp:   time.Now(),
+		Remediation: "Use NTP or equivalent time synchronization protocol for all systems in the CDE per PCI-DSS v4.0 Req 10.10",
+	}, nil
+}
+
+// checkLogIntegrity checks that logs are protected from modification.
+func (m *PCIModule) checkLogIntegrity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"log_integrity", "log_protection", "immutable_logs", "append_only", "log_hashing", "tamper_protection"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-10-011",
+			ControlName: "Logs Protected from Modification",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Logs protected from modification detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-10-011",
+			ControlName: "Logs Protected from Modification",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial log protection detected",
+			Timestamp:   time.Now(),
+			Remediation: "Protect audit logs from modification, deletion, or unauthorized access per PCI-DSS v4.0 Req 10.11",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-10-011",
+		ControlName: "Logs Protected from Modification",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No log protection from modification detected",
+		Timestamp:   time.Now(),
+		Remediation: "Protect audit logs from modification, deletion, or unauthorized access per PCI-DSS v4.0 Req 10.11",
+	}, nil
+}
+
+// checkFileIntegrityMonitoring checks for file integrity monitoring (FIM) tools.
+func (m *PCIModule) checkFileIntegrityMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	keywords := []string{"fim", "file_integrity", "integrity_monitoring", "tripwire", "aide", "fim_enabled"}
+	found := 0
+	for _, kw := range keywords {
+		if strings.Contains(inputStr, kw) {
+			found++
+		}
+	}
+	threshold := (len(keywords) + 1) / 2
+
+	if found >= threshold {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-11-012",
+			ControlName: "File Integrity Monitoring (FIM)",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "File integrity monitoring tools detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if found > 0 {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "PCI-11-012",
+			ControlName: "File Integrity Monitoring (FIM)",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Partial file integrity monitoring detected",
+			Timestamp:   time.Now(),
+			Remediation: "Deploy file integrity monitoring tools to detect unauthorized changes to critical files per PCI-DSS v4.0 Req 11.12",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "PCI-11-012",
+		ControlName: "File Integrity Monitoring (FIM)",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No file integrity monitoring tools detected",
+		Timestamp:   time.Now(),
+		Remediation: "Deploy file integrity monitoring tools to detect unauthorized changes to critical files per PCI-DSS v4.0 Req 11.12",
+	}, nil
 }
 
 // Dependencies returns required modules.

@@ -434,8 +434,8 @@ func TestEUAIModule_V350Coverage(t *testing.T) {
 }
 
 func TestEUAIModule_V350AutomatedCount(t *testing.T) {
-	// Verify the v3.5.0+ automated count is correct: 17 controls automated
-	// (9 from v3.3.0 + 8 new in v3.5.0+).
+	// Verify the v3.5.0+ automated count is correct: 37 controls automated
+	// (9 from v3.3.0 + 8 new in v3.5.0+ + 20 new in v3.5.1+ Phase 3).
 	m := NewEUAIModule()
 	automated := 0
 	for _, c := range m.Controls() {
@@ -443,7 +443,7 @@ func TestEUAIModule_V350AutomatedCount(t *testing.T) {
 			automated++
 		}
 	}
-	if automated != 17 {
-		t.Errorf("Automated count = %d, want 17 (9 v3.3.0 + 8 v3.5.0+)", automated)
+	if automated != 37 {
+		t.Errorf("Automated count = %d, want 37 (9 v3.3.0 + 8 v3.5.0+ + 20 v3.5.1+)", automated)
 	}
 }

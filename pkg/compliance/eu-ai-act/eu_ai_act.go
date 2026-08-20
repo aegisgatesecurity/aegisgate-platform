@@ -1038,3 +1038,575 @@ func intToStr(n int) string {
 	}
 	return string(result)
 }
+
+// ============================================================================
+// v3.5.1+ Phase 3: 20 additional automated CheckFuncs (EU AI Act compliance
+// automation expansion). Promotes 20 manual controls to automated by
+// detecting config keywords via strings.Contains on lowercased input.
+// ============================================================================
+
+// checkRiskIdentification (EUAIAct-Art9-002) - Risk Identification and Analysis.
+func (m *EUAIModule) checkRiskIdentification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIdent := strings.Contains(inputStr, "risk_identification") || strings.Contains(inputStr, "risk_analysis") || strings.Contains(inputStr, "threat_identification")
+	hasDoc := strings.Contains(inputStr, "risk_register") || strings.Contains(inputStr, "risk_inventory") || strings.Contains(inputStr, "risk_list")
+	if hasIdent && hasDoc {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art9-002",
+			ControlName: "Risk Identification and Analysis",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Risk identification and analysis process detected with documented risk register",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasIdent || hasDoc {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art9-002",
+			ControlName: "Risk Identification and Analysis",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Partial risk identification evidence; identification or documentation missing",
+			Timestamp:   time.Now(),
+			Remediation: "Establish documented risk identification and analysis per Article 9(2)(a)",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art9-002",
+		ControlName: "Risk Identification and Analysis",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No risk identification or analysis evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement risk identification and analysis per Article 9(2)(a)",
+	}, nil
+}
+
+// checkRiskEstimation (EUAIAct-Art9-003) - Risk Estimation and Evaluation.
+func (m *EUAIModule) checkRiskEstimation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEstimation := strings.Contains(inputStr, "risk_estimation") || strings.Contains(inputStr, "risk_evaluation") || strings.Contains(inputStr, "risk_scoring") || strings.Contains(inputStr, "risk_assessment_matrix")
+	if hasEstimation {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art9-003",
+			ControlName: "Risk Estimation and Evaluation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Risk estimation and evaluation methodology detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art9-003",
+		ControlName: "Risk Estimation and Evaluation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No risk estimation or evaluation evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement risk estimation and evaluation per Article 9(2)(b)",
+	}, nil
+}
+
+// checkRiskMitigationMeasures (EUAIAct-Art9-004) - Risk Mitigation Measures.
+func (m *EUAIModule) checkRiskMitigationMeasures(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMitigation := strings.Contains(inputStr, "risk_mitigation") || strings.Contains(inputStr, "mitigation_measures") || strings.Contains(inputStr, "risk_treatment") || strings.Contains(inputStr, "control_measures")
+	if hasMitigation {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art9-004",
+			ControlName: "Risk Mitigation Measures",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Risk mitigation measures detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art9-004",
+		ControlName: "Risk Mitigation Measures",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No risk mitigation measures detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement risk mitigation measures per Article 9(2)(c)",
+	}, nil
+}
+
+// checkContinuousMonitoring (EUAIAct-Art9-006) - Continuous Monitoring and Review.
+func (m *EUAIModule) checkContinuousMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "continuous_monitoring") || strings.Contains(inputStr, "risk_monitoring") || strings.Contains(inputStr, "ongoing_risk_review") || strings.Contains(inputStr, "periodic_risk_review")
+	if hasMonitoring {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art9-006",
+			ControlName: "Continuous Monitoring and Review",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Continuous risk monitoring and review detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art9-006",
+		ControlName: "Continuous Monitoring and Review",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No continuous monitoring or review evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement continuous monitoring and review of risks per Article 9(2)(e)",
+	}, nil
+}
+
+// checkKnownRisksDocumentation (EUAIAct-Art9-009) - Documentation of Known Risks.
+func (m *EUAIModule) checkKnownRisksDocumentation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDoc := strings.Contains(inputStr, "known_risks") || strings.Contains(inputStr, "risk_documentation") || strings.Contains(inputStr, "risk_register") || strings.Contains(inputStr, "documented_risks")
+	if hasDoc {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art9-009",
+			ControlName: "Documentation of Known Risks",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Known risks documentation detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art9-009",
+		ControlName: "Documentation of Known Risks",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No known risks documentation detected",
+		Timestamp:   time.Now(),
+		Remediation: "Document all known risks per Article 9(5)",
+	}, nil
+}
+
+// checkTrainingDataQuality (EUAIAct-Art10-001) - Training Data Quality and Relevance.
+func (m *EUAIModule) checkTrainingDataQuality(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasQuality := strings.Contains(inputStr, "data_quality") || strings.Contains(inputStr, "training_data_quality") || strings.Contains(inputStr, "data_relevance") || strings.Contains(inputStr, "dataset_quality")
+	if hasQuality {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art10-001",
+			ControlName: "Training Data Quality and Relevance",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Training data quality and relevance controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art10-001",
+		ControlName: "Training Data Quality and Relevance",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No training data quality or relevance evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement training data quality and relevance controls per Article 10(1)",
+	}, nil
+}
+
+// checkDataGovernance (EUAIAct-Art10-002) - Data Governance and Management.
+func (m *EUAIModule) checkDataGovernance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasGovernance := strings.Contains(inputStr, "data_governance") || strings.Contains(inputStr, "data_management") || strings.Contains(inputStr, "data_pipeline_management") || strings.Contains(inputStr, "data_governance_framework")
+	if hasGovernance {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art10-002",
+			ControlName: "Data Governance and Management",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data governance and management framework detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art10-002",
+		ControlName: "Data Governance and Management",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No data governance or management evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement data governance and management per Article 10(2)",
+	}, nil
+}
+
+// checkBiasExamination (EUAIAct-Art10-003) - Bias Examination and Mitigation.
+func (m *EUAIModule) checkBiasExamination(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasExamination := strings.Contains(inputStr, "bias_examination") || strings.Contains(inputStr, "bias_detection") || strings.Contains(inputStr, "bias_audit") || strings.Contains(inputStr, "bias_mitigation")
+	if hasExamination {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art10-003",
+			ControlName: "Bias Examination and Mitigation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Bias examination and mitigation controls detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art10-003",
+		ControlName: "Bias Examination and Mitigation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No bias examination or mitigation evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement bias examination and mitigation per Article 10(2)(a)",
+	}, nil
+}
+
+// checkDataProvenance (EUAIAct-Art10-008) - Data Provenance and Lineage.
+func (m *EUAIModule) checkDataProvenance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasProvenance := strings.Contains(inputStr, "data_provenance") || strings.Contains(inputStr, "data_lineage") || strings.Contains(inputStr, "dataset_origin") || strings.Contains(inputStr, "data_source_tracking")
+	if hasProvenance {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art10-008",
+			ControlName: "Data Provenance and Lineage",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data provenance and lineage tracking detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art10-008",
+		ControlName: "Data Provenance and Lineage",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No data provenance or lineage evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement data provenance and lineage tracking per Article 10(6)",
+	}, nil
+}
+
+// checkSystemCharacteristics (EUAIAct-Art11-002) - System Characteristics Documentation.
+func (m *EUAIModule) checkSystemCharacteristics(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChar := strings.Contains(inputStr, "system_characteristics") || strings.Contains(inputStr, "system_specifications") || strings.Contains(inputStr, "model_architecture") || strings.Contains(inputStr, "system_description")
+	if hasChar {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art11-002",
+			ControlName: "System Characteristics Documentation",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "System characteristics documentation detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art11-002",
+		ControlName: "System Characteristics Documentation",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No system characteristics documentation detected",
+		Timestamp:   time.Now(),
+		Remediation: "Document system characteristics per Article 11(1)(a) and Annex IV",
+	}, nil
+}
+
+// checkLogTraceability (EUAIAct-Art12-002) - Log Traceability.
+func (m *EUAIModule) checkLogTraceability(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTraceability := strings.Contains(inputStr, "log_traceability") || strings.Contains(inputStr, "traceable_logs") || strings.Contains(inputStr, "log_correlation_id") || strings.Contains(inputStr, "event_tracing")
+	if hasTraceability {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art12-002",
+			ControlName: "Log Traceability",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Log traceability mechanisms detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art12-002",
+		ControlName: "Log Traceability",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No log traceability evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement log traceability with correlation IDs per Article 12(2)",
+	}, nil
+}
+
+// checkLogRetention (EUAIAct-Art12-003) - Log Retention Period.
+func (m *EUAIModule) checkLogRetention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRetention := strings.Contains(inputStr, "log_retention") || strings.Contains(inputStr, "retention_period") || strings.Contains(inputStr, "log_retention_policy") || strings.Contains(inputStr, "data_retention")
+	if hasRetention {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art12-003",
+			ControlName: "Log Retention Period",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Log retention period policy detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art12-003",
+		ControlName: "Log Retention Period",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No log retention period evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Define log retention period policy per Article 12(3)",
+	}, nil
+}
+
+// checkLogIntegrity (EUAIAct-Art12-004) - Log Integrity and Tamper Evidence.
+func (m *EUAIModule) checkLogIntegrity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIntegrity := strings.Contains(inputStr, "log_integrity") || strings.Contains(inputStr, "tamper_evident") || strings.Contains(inputStr, "signed_logs") || strings.Contains(inputStr, "log_hashing") || strings.Contains(inputStr, "append_only_logs")
+	if hasIntegrity {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art12-004",
+			ControlName: "Log Integrity and Tamper Evidence",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Log integrity and tamper-evidence mechanisms detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art12-004",
+		ControlName: "Log Integrity and Tamper Evidence",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No log integrity or tamper-evidence evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement log integrity (hashing/signing) and tamper-evidence per Article 12(4)",
+	}, nil
+}
+
+// checkModelParameterIntegrity (EUAIAct-Art15-011) - Model Parameter Integrity.
+func (m *EUAIModule) checkModelParameterIntegrity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIntegrity := strings.Contains(inputStr, "model_parameter_integrity") || strings.Contains(inputStr, "parameter_hashing") || strings.Contains(inputStr, "weight_integrity") || strings.Contains(inputStr, "model_hash") || strings.Contains(inputStr, "parameter_signing")
+	if hasIntegrity {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art15-011",
+			ControlName: "Model Parameter Integrity",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Model parameter integrity protection detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art15-011",
+		ControlName: "Model Parameter Integrity",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No model parameter integrity evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement model parameter integrity (hashing/signing) per Article 15(5)(f)",
+	}, nil
+}
+
+// checkSystemServiceAvailability (EUAIAct-Art15-012) - System Service Availability.
+func (m *EUAIModule) checkSystemServiceAvailability(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAvailability := strings.Contains(inputStr, "service_availability") || strings.Contains(inputStr, "high_availability") || strings.Contains(inputStr, "redundancy") || strings.Contains(inputStr, "failover") || strings.Contains(inputStr, "sla_monitoring")
+	if hasAvailability {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art15-012",
+			ControlName: "System Service Availability",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "System service availability mechanisms detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art15-012",
+		ControlName: "System Service Availability",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityCritical,
+		Message:     "No system service availability evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement service availability (redundancy/failover/SLA) per Article 15(5)(g)",
+	}, nil
+}
+
+// checkEnvironmentalRobustness (EUAIAct-Art15-013) - Environmental Robustness.
+func (m *EUAIModule) checkEnvironmentalRobustness(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRobustness := strings.Contains(inputStr, "environmental_robustness") || strings.Contains(inputStr, "robustness_testing") || strings.Contains(inputStr, "edge_case_testing") || strings.Contains(inputStr, "stress_testing") || strings.Contains(inputStr, "environmental_testing")
+	if hasRobustness {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art15-013",
+			ControlName: "Environmental Robustness",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Environmental robustness testing detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art15-013",
+		ControlName: "Environmental Robustness",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No environmental robustness evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement environmental robustness testing under varying conditions per Article 15(2)",
+	}, nil
+}
+
+// checkModelDriftMonitoring (EUAIAct-Art15-014) - Model Drift Monitoring.
+func (m *EUAIModule) checkModelDriftMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDrift := strings.Contains(inputStr, "model_drift") || strings.Contains(inputStr, "drift_detection") || strings.Contains(inputStr, "drift_monitoring") || strings.Contains(inputStr, "performance_drift") || strings.Contains(inputStr, "concept_drift")
+	if hasDrift {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-Art15-014",
+			ControlName: "Model Drift Monitoring",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Model drift monitoring detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-Art15-014",
+		ControlName: "Model Drift Monitoring",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityHigh,
+		Message:     "No model drift monitoring evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement model drift monitoring in operation per Article 15(4)",
+	}, nil
+}
+
+// checkAIBiasDetection (EUAIAct-AI-004) - AI Model Bias Detection.
+func (m *EUAIModule) checkAIBiasDetection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDetection := strings.Contains(inputStr, "bias_detection") || strings.Contains(inputStr, "fairness_metric") || strings.Contains(inputStr, "bias_metric") || strings.Contains(inputStr, "bias_monitoring") || strings.Contains(inputStr, "demographic_parity")
+	if hasDetection {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-AI-004",
+			ControlName: "AI Model Bias Detection",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "AI model bias detection mechanisms detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-AI-004",
+		ControlName: "AI Model Bias Detection",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No AI model bias detection evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Enable AI model bias detection with fairness metrics in platformconfig",
+	}, nil
+}
+
+// checkAIInterpretability (EUAIAct-AI-009) - AI Model Interpretability and Explainability.
+func (m *EUAIModule) checkAIInterpretability(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInterpret := strings.Contains(inputStr, "interpretability") || strings.Contains(inputStr, "explainability") || strings.Contains(inputStr, "feature_importance") || strings.Contains(inputStr, "model_explanation") || strings.Contains(inputStr, "shap_values")
+	if hasInterpret {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-AI-009",
+			ControlName: "AI Model Interpretability and Explainability",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "AI model interpretability and explainability mechanisms detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-AI-009",
+		ControlName: "AI Model Interpretability and Explainability",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No AI model interpretability or explainability evidence detected",
+		Timestamp:   time.Now(),
+		Remediation: "Enable model interpretability/explainability (feature importance, SHAP, LIME) in platformconfig",
+	}, nil
+}
+
+// checkKillSwitchRollback (EUAIAct-AI-010) - AI System Kill Switch and Rollback.
+func (m *EUAIModule) checkKillSwitchRollback(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasKillSwitch := strings.Contains(inputStr, "kill_switch") || strings.Contains(inputStr, "emergency_stop")
+	hasRollback := strings.Contains(inputStr, "rollback") || strings.Contains(inputStr, "model_rollback") || strings.Contains(inputStr, "version_rollback") || strings.Contains(inputStr, "rollback_capability")
+	if hasKillSwitch && hasRollback {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-AI-010",
+			ControlName: "AI System Kill Switch and Rollback",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Kill switch and rollback capability both detected",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+	if hasKillSwitch || hasRollback {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "EUAIAct-AI-010",
+			ControlName: "AI System Kill Switch and Rollback",
+			Status:      compliance.StatusPartial,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Partial kill switch / rollback; one component missing",
+			Timestamp:   time.Now(),
+			Remediation: "Configure both kill switch and rollback capability for the AI system",
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "EUAIAct-AI-010",
+		ControlName: "AI System Kill Switch and Rollback",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "No kill switch or rollback capability detected",
+		Timestamp:   time.Now(),
+		Remediation: "Configure both kill switch and rollback capability for the AI system",
+	}, nil
+}
