@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_model v0.6.2
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.44.0
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0
 	github.com/yalue/onnxruntime_go v1.32.1
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/time v0.15.0
