@@ -206,6 +206,8 @@ CLI Subcommands (run "aegisgate <subcommand> --help" for details):
   report <generate>            Compliance reports (v3.4.0+ TODO-602)
   soc <timeline|list>          SOC incident timeline (v3.4.0+ TODO-502)
 
+  config <validate|show|profiles>  Config validation and inspection (v4.2.0+)
+
   Run "aegisgate <subcommand> help" for verb-level help.
 
 Deploy Profiles (v4.2.0+ "Easy Button"):
