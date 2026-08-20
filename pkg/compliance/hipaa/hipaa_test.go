@@ -5,7 +5,7 @@
 //
 // Tests for the HIPAA Security Rule compliance module (54 controls, 24
 // automated). Covers module creation, control registration, PHI detection,
-// and all 24 automated CheckFunc implementations.
+// and all 38 automated CheckFunc implementations.
 //
 // Reference: HIPAA Security Rule, 45 CFR Part 164, Subpart C
 // =========================================================================
@@ -106,7 +106,7 @@ func TestHIPAAModuleControls(t *testing.T) {
 				automated++
 			}
 		}
-		assert.Equal(t, 24, automated, "expected 24 automated controls")
+		assert.Equal(t, 38, automated, "expected 38 automated controls")
 	})
 
 	t.Run("ManualCount", func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestHIPAAModuleControls(t *testing.T) {
 				manual++
 			}
 		}
-		assert.Equal(t, 30, manual, "expected 30 manual controls")
+		assert.Equal(t, 16, manual, "expected 16 manual controls")
 	})
 }
 

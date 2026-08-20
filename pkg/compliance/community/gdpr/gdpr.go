@@ -7,8 +7,8 @@
 //
 // Implements all 99 articles across 11 chapters of the General Data
 // Protection Regulation using the new-style compliance.BaseComplianceModule
-// with RegisterControl pattern. 12 controls are automated (CheckFunc) and
-// the remaining 87 are manual (evidence-mapped).
+// with RegisterControl pattern. 27 controls are automated (CheckFunc) and
+// the remaining 72 are manual (evidence-mapped).
 //
 // Tier: Developer ($149/mo)
 // =========================================================================
@@ -124,7 +124,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "Information society services offered to a child require parental consent for children below the age of 16 (or lower if Member State law provides).",
 		Category:    "Chapter II - Principles",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChildConsent,
 		References:  []string{"GDPR Art. 8"},
 	})
 
@@ -145,7 +146,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "Processing of personal data relating to criminal convictions and offences or related security measures shall be carried out only under the control of official authority or when authorised by Union or Member State law.",
 		Category:    "Chapter II - Principles",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCriminalConvictionData,
 		References:  []string{"GDPR Art. 10"},
 	})
 
@@ -155,7 +157,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "If the purposes for which a controller processes personal data do not require identification of a data subject, the controller shall not be obliged to maintain, acquire or process additional information for the sole purpose of complying with this Regulation.",
 		Category:    "Chapter II - Principles",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAnonymization,
 		References:  []string{"GDPR Art. 11"},
 	})
 
@@ -189,7 +192,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "Where personal data have not been obtained from the data subject, the controller shall provide the data subject with information regarding the source and categories of data, and the purposes of processing.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataSourceNotices,
 		References:  []string{"GDPR Art. 14"},
 	})
 
@@ -199,7 +203,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The data subject shall have the right to obtain from the controller confirmation as to whether or not personal data concerning them are being processed, and, where that is the case, access to the personal data.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRightOfAccess,
 		References:  []string{"GDPR Art. 15"},
 	})
 
@@ -209,7 +214,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The data subject shall have the right to obtain from the controller without undue delay the rectification of inaccurate personal data concerning them.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRightToRectification,
 		References:  []string{"GDPR Art. 16"},
 	})
 
@@ -219,7 +225,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The data subject shall have the right to obtain from the controller the erasure of personal data concerning them without undue delay where the grounds for erasure apply.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRightToErasure,
 		References:  []string{"GDPR Art. 17"},
 	})
 
@@ -229,7 +236,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The data subject shall have the right to obtain from the controller restriction of processing where one of the conditions applies.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRightToRestriction,
 		References:  []string{"GDPR Art. 18"},
 	})
 
@@ -239,7 +247,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The controller shall communicate any rectification or erasure of personal data or restriction of processing to each recipient to whom the personal data have been disclosed.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRectificationErasureNotification,
 		References:  []string{"GDPR Art. 19"},
 	})
 
@@ -249,7 +258,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The data subject shall have the right to receive the personal data concerning them, which they have provided to a controller, in a structured, commonly used and machine-readable format and have the right to transmit those data to another controller.",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataPortability,
 		References:  []string{"GDPR Art. 20"},
 	})
 
@@ -259,7 +269,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The data subject shall have the right to object, on grounds relating to their particular situation, at any time to processing of personal data concerning them which is based on point (e) of Article 6(1) or point (a) of Article 9(2).",
 		Category:    "Chapter III - Rights of the Data Subject",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRightToObject,
 		References:  []string{"GDPR Art. 21"},
 	})
 
@@ -333,7 +344,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "Where processing is to be carried out on behalf of a controller, the controller shall use only processors providing sufficient guarantees to implement appropriate technical and organisational measures.",
 		Category:    "Chapter IV - Controller and Processor",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkProcessor,
 		References:  []string{"GDPR Art. 28"},
 	})
 
@@ -343,7 +355,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The processor and any person acting under the authority of the controller or of the processor, who has access to personal data, shall not process those data except on instructions from the controller.",
 		Category:    "Chapter IV - Controller and Processor",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkProcessingUnderAuthority,
 		References:  []string{"GDPR Art. 29"},
 	})
 
@@ -396,7 +409,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "When the personal data breach is likely to result in a high risk to the rights and freedoms of natural persons, the controller shall communicate the personal data breach to the data subject without undue delay.",
 		Category:    "Chapter IV - Controller and Processor",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBreachCommunication,
 		References:  []string{"GDPR Art. 34"},
 	})
 
@@ -427,7 +441,8 @@ func (m *GDPRModule) registerControls() {
 		Description: "The controller and the processor shall designate a data protection officer in any case where the conditions of this Article are met.",
 		Category:    "Chapter IV - Controller and Processor",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDPODesignation,
 		References:  []string{"GDPR Art. 37"},
 	})
 
@@ -820,4 +835,141 @@ func (m *GDPRModule) checkDPIA(ctx context.Context, input []byte) (*compliance.C
 		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art35", ControlName: "Data protection impact assessment", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "DPIA procedures detected", Timestamp: time.Now(), References: []string{"GDPR Art. 35"}}, nil
 	}
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art35", ControlName: "Data protection impact assessment", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "DPIA indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 35"}}, nil
+}
+
+// ── P1 Compliance Automation Expansion: Additional automated controls ──
+
+func (m *GDPRModule) checkChildConsent(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasChildConsent := strings.Contains(s, "age_verification") || strings.Contains(s, "parental_consent") || strings.Contains(s, "child_consent") || strings.Contains(s, "minor_protection")
+	if hasChildConsent {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art8", ControlName: "Conditions applicable to child's consent", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Child consent and age verification mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 8"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art8", ControlName: "Conditions applicable to child's consent", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Child consent and age verification indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 8"}, Remediation: "Implement age verification and parental consent mechanisms for services offered to children"}, nil
+}
+
+func (m *GDPRModule) checkCriminalConvictionData(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasCriminalData := strings.Contains(s, "criminal_conviction") || strings.Contains(s, "criminal_data") || strings.Contains(s, "offense_data") || strings.Contains(s, "criminal_record")
+	if hasCriminalData {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art10", ControlName: "Processing of personal data relating to criminal convictions", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Criminal conviction data handling controls detected", Timestamp: time.Now(), References: []string{"GDPR Art. 10"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art10", ControlName: "Processing of personal data relating to criminal convictions", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Criminal conviction data handling indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 10"}, Remediation: "Implement controls for processing criminal conviction data under official authority"}, nil
+}
+
+func (m *GDPRModule) checkAnonymization(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAnon := strings.Contains(s, "anonymiz") || strings.Contains(s, "pseudonymiz") || strings.Contains(s, "deidentification") || strings.Contains(s, "de-identification")
+	if hasAnon {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art11", ControlName: "Processing which does not require identification", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Anonymization or pseudonymization mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 11"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art11", ControlName: "Processing which does not require identification", Status: compliance.StatusPartial, Severity: compliance.SeverityLow, Message: "Anonymization or pseudonymization indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 11"}, Remediation: "Implement anonymization or pseudonymization for processing that does not require identification"}, nil
+}
+
+func (m *GDPRModule) checkDataSourceNotices(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasNotice := strings.Contains(s, "data_source") || strings.Contains(s, "source_notice") || strings.Contains(s, "third_party_source") || strings.Contains(s, "data_origin")
+	if hasNotice {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art14", ControlName: "Information to be provided where data not obtained from the data subject", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data source notification mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 14"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art14", ControlName: "Information to be provided where data not obtained from the data subject", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Data source notification indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 14"}, Remediation: "Implement notices for data obtained from sources other than the data subject"}, nil
+}
+
+func (m *GDPRModule) checkRightOfAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAccess := strings.Contains(s, "subject_access") || strings.Contains(s, "access_request") || strings.Contains(s, "data_subject_access") || strings.Contains(s, "sar") || strings.Contains(s, "access_api")
+	if hasAccess {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art15", ControlName: "Right of access by the data subject", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data subject access mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 15"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art15", ControlName: "Right of access by the data subject", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Data subject access indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 15"}, Remediation: "Implement data subject access request (SAR) handling mechanisms"}, nil
+}
+
+func (m *GDPRModule) checkRightToRectification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasRectification := strings.Contains(s, "rectification") || strings.Contains(s, "data_correction") || strings.Contains(s, "data_amendment") || strings.Contains(s, "correction_request")
+	if hasRectification {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art16", ControlName: "Right to rectification", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data rectification mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 16"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art16", ControlName: "Right to rectification", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Data rectification indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 16"}, Remediation: "Implement data correction/rectification request handling"}, nil
+}
+
+func (m *GDPRModule) checkRightToErasure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasErasure := strings.Contains(s, "erasure") || strings.Contains(s, "right_to_be_forgotten") || strings.Contains(s, "data_deletion") || strings.Contains(s, "deletion_request")
+	if hasErasure {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art17", ControlName: "Right to erasure (right to be forgotten)", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Data erasure mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 17"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art17", ControlName: "Right to erasure (right to be forgotten)", Status: compliance.StatusPartial, Severity: compliance.SeverityCritical, Message: "Data erasure indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 17"}, Remediation: "Implement data erasure/right to be forgotten request handling"}, nil
+}
+
+func (m *GDPRModule) checkRightToRestriction(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasRestriction := strings.Contains(s, "processing_restriction") || strings.Contains(s, "restriction_request") || strings.Contains(s, "block_processing") || strings.Contains(s, "processing_block")
+	if hasRestriction {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art18", ControlName: "Right to restriction of processing", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Processing restriction mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 18"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art18", ControlName: "Right to restriction of processing", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Processing restriction indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 18"}, Remediation: "Implement processing restriction request handling"}, nil
+}
+
+func (m *GDPRModule) checkRectificationErasureNotification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasNotification := strings.Contains(s, "rectification_notification") || strings.Contains(s, "erasure_notification") || strings.Contains(s, "restriction_notification") || strings.Contains(s, "recipient_notification")
+	if hasNotification {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art19", ControlName: "Notification obligation regarding rectification or erasure or restriction", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Rectification/erasure notification mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 19"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art19", ControlName: "Notification obligation regarding rectification or erasure or restriction", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Rectification/erasure notification indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 19"}, Remediation: "Implement notification to recipients when data is rectified or erased"}, nil
+}
+
+func (m *GDPRModule) checkDataPortability(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasPortability := strings.Contains(s, "data_portability") || strings.Contains(s, "data_export") || strings.Contains(s, "portability") || strings.Contains(s, "machine_readable_export")
+	if hasPortability {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art20", ControlName: "Right to data portability", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data portability mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 20"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art20", ControlName: "Right to data portability", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Data portability indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 20"}, Remediation: "Implement data export in structured, machine-readable format"}, nil
+}
+
+func (m *GDPRModule) checkRightToObject(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasObjection := strings.Contains(s, "objection") || strings.Contains(s, "opt_out") || strings.Contains(s, "right_to_object") || strings.Contains(s, "processing_objection")
+	if hasObjection {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art21", ControlName: "Right to object", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Right to object mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 21"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art21", ControlName: "Right to object", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Right to object indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 21"}, Remediation: "Implement processing objection mechanisms"}, nil
+}
+
+func (m *GDPRModule) checkProcessor(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasDPA := strings.Contains(s, "dpa") || strings.Contains(s, "data_processing_agreement") || strings.Contains(s, "processor_agreement") || strings.Contains(s, "subprocessor")
+	if hasDPA {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art28", ControlName: "Processor", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data processing agreement controls detected", Timestamp: time.Now(), References: []string{"GDPR Art. 28"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art28", ControlName: "Processor", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Data processing agreement indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 28"}, Remediation: "Establish data processing agreements with all processors"}, nil
+}
+
+func (m *GDPRModule) checkProcessingUnderAuthority(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAuthority := strings.Contains(s, "processing_authorization") || strings.Contains(s, "controller_instruction") || strings.Contains(s, "access_restriction") || strings.Contains(s, "authorized_processing")
+	if hasAuthority {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art29", ControlName: "Processing under the authority of the controller or processor", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Processing authority controls detected", Timestamp: time.Now(), References: []string{"GDPR Art. 29"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art29", ControlName: "Processing under the authority of the controller or processor", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Processing authority indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 29"}, Remediation: "Implement access controls ensuring processing only on controller instructions"}, nil
+}
+
+func (m *GDPRModule) checkBreachCommunication(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasBreachComm := strings.Contains(s, "breach_communication") || strings.Contains(s, "breach_notification_data_subject") || strings.Contains(s, "data_subject_breach_notice") || strings.Contains(s, "breach_alert")
+	if hasBreachComm {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art34", ControlName: "Communication of a personal data breach to the data subject", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Breach communication mechanisms detected", Timestamp: time.Now(), References: []string{"GDPR Art. 34"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art34", ControlName: "Communication of a personal data breach to the data subject", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Breach communication indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 34"}, Remediation: "Implement mechanisms to communicate breaches to affected data subjects"}, nil
+}
+
+func (m *GDPRModule) checkDPODesignation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasDPO := strings.Contains(s, "dpo") || strings.Contains(s, "data_protection_officer") || strings.Contains(s, "privacy_officer") || strings.Contains(s, "dpo_designated")
+	if hasDPO {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art37", ControlName: "Designation of the data protection officer", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data Protection Officer designation detected", Timestamp: time.Now(), References: []string{"GDPR Art. 37"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "GDPR-Art37", ControlName: "Designation of the data protection officer", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "DPO designation indicators not detected", Timestamp: time.Now(), References: []string{"GDPR Art. 37"}, Remediation: "Designate a Data Protection Officer where required by GDPR Article 37"}, nil
 }

@@ -14,7 +14,7 @@
 //   - Data Handling             (4 controls, 1 automated)
 //   - Compliance & Enforcement  (4 controls, 2 automated)
 //
-// Total: 26 controls — 14 automated, 12 manual.
+// Total: 26 controls — 22 automated, 4 manual.
 //
 // Module metadata:
 //   - Framework:     "ccpa"
@@ -163,7 +163,8 @@ func (m *CCPAModule) registerCRControls() {
 		Description: "§1798.100(a): Consumers have the right to know the purpose for collecting personal information",
 		Category:    "Consumer Rights",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPurposeOfCollection,
 		References:  []string{"CCPA §1798.100(a)"},
 	})
 
@@ -195,7 +196,8 @@ func (m *CCPAModule) registerCRControls() {
 		Description: "§1798.105(a)(5): Business must verify the identity of the consumer making a deletion request",
 		Category:    "Consumer Rights",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDeletionVerification,
 		References:  []string{"CCPA §1798.105(a)(5)"},
 	})
 
@@ -216,7 +218,8 @@ func (m *CCPAModule) registerCRControls() {
 		Description: "§1798.100(d): Consumers have the right to receive their personal information in a portable format",
 		Category:    "Consumer Rights",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCCPAPortability,
 		References:  []string{"CCPA §1798.100(d)", "CPRA §1798.100(d)"},
 	})
 }
@@ -273,7 +276,8 @@ func (m *CCPAModule) registerOSControls() {
 		Description: "§1798.121(a): Consumers have the right to limit use of sensitive personal information",
 		Category:    "Opt-Out Rights",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLimitSPI,
 		References:  []string{"CPRA §1798.121(a)"},
 	})
 
@@ -341,7 +345,8 @@ func (m *CCPAModule) registerDHControls() {
 		Description: "§1798.100(c): Business shall only collect personal information that is reasonably necessary for the stated purpose",
 		Category:    "Data Handling",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCCPADataMinimization,
 		References:  []string{"CCPA §1798.100(c)"},
 	})
 
@@ -351,7 +356,8 @@ func (m *CCPAModule) registerDHControls() {
 		Description: "§1798.100(a)(3): Business shall not retain personal information for longer than necessary",
 		Category:    "Data Handling",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCCPARetentionLimits,
 		References:  []string{"CCPA §1798.100(a)(3)"},
 	})
 
@@ -372,7 +378,8 @@ func (m *CCPAModule) registerDHControls() {
 		Description: "§1798.121: Business must handle sensitive personal information with additional protections",
 		Category:    "Data Handling",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSPIHandling,
 		References:  []string{"CPRA §1798.121"},
 	})
 }
@@ -417,9 +424,252 @@ func (m *CCPAModule) registerCEControls() {
 		Description: "§1798.130(a)(5): Business must maintain records of consumer requests for 24 months",
 		Category:    "Compliance & Enforcement",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRequestRecordKeeping,
 		References:  []string{"CCPA §1798.130(a)(5)"},
 	})
+}
+
+// ── P1 Compliance Automation Expansion: Additional automated controls ──
+
+// checkPurposeOfCollection verifies Right to Know — Purpose of Collection (CR-03).
+func (m *CCPAModule) checkPurposeOfCollection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasPurpose := strings.Contains(s, "collection_purpose") || strings.Contains(s, "data_purpose") || strings.Contains(s, "processing_purpose") || strings.Contains(s, "purpose_of_collection")
+	if hasPurpose {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-CR-03",
+			ControlName: "Right to Know — Purpose of Collection",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Collection purpose disclosure detected",
+			Evidence:    []string{"collection_purpose"},
+			Timestamp:   time.Now(),
+			References:  []string{"CCPA §1798.100(a)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-CR-03",
+		ControlName: "Right to Know — Purpose of Collection",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Collection purpose disclosure not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Disclose the purpose for collecting personal information per CCPA §1798.100(a)",
+		References:  []string{"CCPA §1798.100(a)"},
+	}, nil
+}
+
+// checkDeletionVerification verifies Right to Delete — Verification Process (CR-06).
+func (m *CCPAModule) checkDeletionVerification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasVerification := strings.Contains(s, "deletion_verification") || strings.Contains(s, "identity_verification") || strings.Contains(s, "delete_verification") || strings.Contains(s, "request_verification")
+	if hasVerification {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-CR-06",
+			ControlName: "Right to Delete — Verification Process",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Deletion request verification process detected",
+			Evidence:    []string{"deletion_verification"},
+			Timestamp:   time.Now(),
+			References:  []string{"CCPA §1798.105(a)(5)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-CR-06",
+		ControlName: "Right to Delete — Verification Process",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Deletion request verification indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement identity verification for deletion requests per CCPA §1798.105(a)(5)",
+		References:  []string{"CCPA §1798.105(a)(5)"},
+	}, nil
+}
+
+// checkCCPAPortability verifies Right to Data Portability (CR-08).
+func (m *CCPAModule) checkCCPAPortability(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasPortability := strings.Contains(s, "data_portability") || strings.Contains(s, "data_export") || strings.Contains(s, "portability") || strings.Contains(s, "machine_readable_export")
+	if hasPortability {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-CR-08",
+			ControlName: "Right to Data Portability",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data portability mechanisms detected",
+			Evidence:    []string{"data_portability"},
+			Timestamp:   time.Now(),
+			References:  []string{"CCPA §1798.100(d)", "CPRA §1798.100(d)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-CR-08",
+		ControlName: "Right to Data Portability",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Data portability indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement data export in portable, machine-readable format per CCPA §1798.100(d)",
+		References:  []string{"CCPA §1798.100(d)", "CPRA §1798.100(d)"},
+	}, nil
+}
+
+// checkLimitSPI verifies Right to Limit Use of Sensitive Personal Information (OS-05).
+func (m *CCPAModule) checkLimitSPI(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasLimitSPI := strings.Contains(s, "limit_sensitive_data") || strings.Contains(s, "spi_restriction") || strings.Contains(s, "limit_spi") || strings.Contains(s, "sensitive_data_limit")
+	if hasLimitSPI {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-OS-05",
+			ControlName: "Right to Limit Use of Sensitive Personal Information",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Sensitive personal information limitation controls detected",
+			Evidence:    []string{"limit_sensitive_data"},
+			Timestamp:   time.Now(),
+			References:  []string{"CPRA §1798.121(a)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-OS-05",
+		ControlName: "Right to Limit Use of Sensitive Personal Information",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "SPI limitation indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement controls for consumers to limit use of sensitive personal information per CPRA §1798.121(a)",
+		References:  []string{"CPRA §1798.121(a)"},
+	}, nil
+}
+
+// checkCCPADataMinimization verifies Data Minimization (DH-01).
+func (m *CCPAModule) checkCCPADataMinimization(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasMinimization := strings.Contains(s, "data_minimization") || strings.Contains(s, "minimization") || strings.Contains(s, "minimize_collection") || strings.Contains(s, "necessary_collection")
+	if hasMinimization {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-DH-01",
+			ControlName: "Data Minimization",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data minimization controls detected",
+			Evidence:    []string{"data_minimization"},
+			Timestamp:   time.Now(),
+			References:  []string{"CCPA §1798.100(c)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-DH-01",
+		ControlName: "Data Minimization",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Data minimization indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement data minimization — collect only necessary personal information per CCPA §1798.100(c)",
+		References:  []string{"CCPA §1798.100(c)"},
+	}, nil
+}
+
+// checkCCPARetentionLimits verifies Data Retention Limits (DH-02).
+func (m *CCPAModule) checkCCPARetentionLimits(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasRetention := strings.Contains(s, "retention_limit") || strings.Contains(s, "retention_policy") || strings.Contains(s, "retention_period") || strings.Contains(s, "data_retention")
+	if hasRetention {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-DH-02",
+			ControlName: "Data Retention Limits",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityHigh,
+			Message:     "Data retention limits detected",
+			Evidence:    []string{"retention_limit"},
+			Timestamp:   time.Now(),
+			References:  []string{"CCPA §1798.100(a)(3)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-DH-02",
+		ControlName: "Data Retention Limits",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityHigh,
+		Message:     "Data retention limit indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement data retention limits — do not retain personal information longer than necessary per CCPA §1798.100(a)(3)",
+		References:  []string{"CCPA §1798.100(a)(3)"},
+	}, nil
+}
+
+// checkSPIHandling verifies Sensitive Personal Information Handling (DH-04).
+func (m *CCPAModule) checkSPIHandling(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasSPIHandling := strings.Contains(s, "sensitive_data_handling") || strings.Contains(s, "spi_controls") || strings.Contains(s, "sensitive_data_protection") || strings.Contains(s, "spi_protection")
+	if hasSPIHandling {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-DH-04",
+			ControlName: "Sensitive Personal Information Handling",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityCritical,
+			Message:     "Sensitive personal information handling controls detected",
+			Evidence:    []string{"sensitive_data_handling"},
+			Timestamp:   time.Now(),
+			References:  []string{"CPRA §1798.121"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-DH-04",
+		ControlName: "Sensitive Personal Information Handling",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityCritical,
+		Message:     "SPI handling indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Implement additional protections for sensitive personal information per CPRA §1798.121",
+		References:  []string{"CPRA §1798.121"},
+	}, nil
+}
+
+// checkRequestRecordKeeping verifies Record-Keeping for Consumer Requests (CE-04).
+func (m *CCPAModule) checkRequestRecordKeeping(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := string(input)
+	hasRecordKeeping := strings.Contains(s, "request_logging") || strings.Contains(s, "dsr_audit_trail") || strings.Contains(s, "request_records") || strings.Contains(s, "consumer_request_log")
+	if hasRecordKeeping {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "CCPA-CE-04",
+			ControlName: "Record-Keeping for Consumer Requests",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Consumer request record-keeping detected",
+			Evidence:    []string{"request_logging"},
+			Timestamp:   time.Now(),
+			References:  []string{"CCPA §1798.130(a)(5)"},
+		}, nil
+	}
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "CCPA-CE-04",
+		ControlName: "Record-Keeping for Consumer Requests",
+		Status:      compliance.StatusPartial,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Consumer request record-keeping indicators not detected",
+		Timestamp:   time.Now(),
+		Remediation: "Maintain records of consumer requests for 24 months per CCPA §1798.130(a)(5)",
+		References:  []string{"CCPA §1798.130(a)(5)"},
+	}, nil
 }
 
 // Dependencies returns required modules. CCPA/CPRA depends on the

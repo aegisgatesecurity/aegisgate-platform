@@ -52,24 +52,24 @@ func TestCCPAModuleControls(t *testing.T) {
 		}
 	})
 
-	t.Run("AutomatedCountIs14", func(t *testing.T) {
+	t.Run("AutomatedCountIs22", func(t *testing.T) {
 		automated := 0
 		for _, c := range controls {
 			if c.Automated {
 				automated++
 			}
 		}
-		assert.Equal(t, 14, automated, "expected 14 automated controls")
+		assert.Equal(t, 22, automated, "expected 22 automated controls")
 	})
 
-	t.Run("ManualCountIs12", func(t *testing.T) {
+	t.Run("ManualCountIs4", func(t *testing.T) {
 		manual := 0
 		for _, c := range controls {
 			if !c.Automated {
 				manual++
 			}
 		}
-		assert.Equal(t, 12, manual, "expected 12 manual controls")
+		assert.Equal(t, 4, manual, "expected 4 manual controls")
 	})
 
 	t.Run("AllExpectedControlIDsPresent", func(t *testing.T) {

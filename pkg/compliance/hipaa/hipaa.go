@@ -13,12 +13,12 @@
 //   - Framework:     "hipaa"
 //   - Version:       "2.2"
 //   - Required tier: Developer ($49/mo)
-//   - Controls:      54 (23 automated, 31 manual)
+//   - Controls:      54 (35 automated, 19 manual)
 //   - Categories:    8
 //
 // Architecture:
 //   - hipaa.go:        module wiring, 54 RegisterControl calls,
-//                      23 CheckFunc implementations
+//                      35 CheckFunc implementations
 //   - hipaa_test.go:   unit tests
 //   - tier_coverage_test.go: tier/framework tests
 //
@@ -86,7 +86,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.306(a)(1): Protect ePHI against threats to confidentiality, integrity, and availability",
 		Category:    "Security Standards",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCIAEPHI,
 		References:  []string{"HIPAA §164.306(a)(1)"},
 	})
 
@@ -96,7 +97,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.306(a)(2): Protect against any reasonably anticipated threats or hazards to security or integrity of ePHI",
 		Category:    "Security Standards",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkThreatProtection,
 		References:  []string{"HIPAA §164.306(a)(2)"},
 	})
 
@@ -106,7 +108,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.306(a)(3): Protect against reasonably anticipated, inappropriate uses or disclosures of ePHI",
 		Category:    "Security Standards",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUnauthorizedDisclosure,
 		References:  []string{"HIPAA §164.306(a)(3)"},
 	})
 
@@ -211,7 +214,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.308(a)(4)(ii)(A): Implement policies and procedures for granting access to ePHI (ADDRESSABLE)",
 		Category:    "Administrative Safeguards",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAccessAuthorization,
 		References:  []string{"HIPAA §164.308(a)(4)(ii)(A)"},
 	})
 
@@ -221,7 +225,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.308(a)(4)(ii)(B): Implement policies and procedures for establishing and modifying access to ePHI (ADDRESSABLE)",
 		Category:    "Administrative Safeguards",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAccessModification,
 		References:  []string{"HIPAA §164.308(a)(4)(ii)(B)"},
 	})
 
@@ -252,7 +257,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.308(a)(5)(ii)(C): Implement procedures for monitoring log-in attempts and reporting discrepancies as part of training (ADDRESSABLE)",
 		Category:    "Administrative Safeguards",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLoginMonitoringTraining,
 		References:  []string{"HIPAA §164.308(a)(5)(ii)(C)"},
 	})
 
@@ -328,7 +334,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.308(a)(7)(ii)(E): Assess the relative criticality of specific applications and data (ADDRESSABLE)",
 		Category:    "Administrative Safeguards",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCriticalityAnalysis,
 		References:  []string{"HIPAA §164.308(a)(7)(ii)(E)"},
 	})
 
@@ -454,7 +461,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.310(d)(2)(iv): Create retrievable, exact copies of ePHI before moving equipment (ADDRESSABLE)",
 		Category:    "Physical Safeguards",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMediaDataBackup,
 		References:  []string{"HIPAA §164.310(d)(2)(iv)"},
 	})
 
@@ -477,7 +485,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.312(a)(2)(ii): Establish procedures for obtaining necessary ePHI during an emergency (REQUIRED)",
 		Category:    "Technical Safeguards",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkEmergencyAccess,
 		References:  []string{"HIPAA §164.312(a)(2)(ii)"},
 	})
 
@@ -588,7 +597,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.316(a): Maintain policies and procedures implemented to comply with this subpart in written or electronic form",
 		Category:    "Documentation Requirements",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDocumentationRequirements,
 		References:  []string{"HIPAA §164.316(a)"},
 	})
 
@@ -598,7 +608,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.316(b)(1): Implement implementation specifications as written and maintained documentation",
 		Category:    "Documentation Requirements",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkImplementationSpecs,
 		References:  []string{"HIPAA §164.316(b)(1)"},
 	})
 
@@ -608,7 +619,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.316(b)(2): Maintain documentation for a minimum of 6 years from creation or last effective date",
 		Category:    "Documentation Requirements",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDocumentationMaintenance,
 		References:  []string{"HIPAA §164.316(b)(2)"},
 	})
 
@@ -644,7 +656,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.402: Perform a risk assessment to determine if an impermissible use or disclosure constitutes a breach",
 		Category:    "Breach Notification",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBreachRiskAssessment,
 		References:  []string{"HIPAA §164.402"},
 	})
 
@@ -654,7 +667,8 @@ func (m *HIPAAModule) registerControls() {
 		Description: "§164.404: Notify affected individuals of a breach of unsecured PHI without unreasonable delay and no later than 60 days",
 		Category:    "Breach Notification",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkBreachIndividualNotification,
 		References:  []string{"HIPAA §164.404"},
 	})
 }
@@ -1704,6 +1718,153 @@ func (m *HIPAAModule) checkAITrainingData(ctx context.Context, input []byte) (*c
 		Timestamp:   time.Now(),
 		Remediation: "Apply HIPAA Safe Harbor or Expert Determination de-identification methods",
 	}, nil
+}
+
+// ── P1 Compliance Automation Expansion: Additional automated controls ──
+
+func (m *HIPAAModule) checkCIAEPHI(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasConfidentiality := strings.Contains(s, "encrypt") || strings.Contains(s, "access_control")
+	hasIntegrity := strings.Contains(s, "integrity") || strings.Contains(s, "hash") || strings.Contains(s, "checksum")
+	hasAvailability := strings.Contains(s, "backup") || strings.Contains(s, "redundancy") || strings.Contains(s, "disaster_recovery")
+	score := 0
+	if hasConfidentiality {
+		score++
+	}
+	if hasIntegrity {
+		score++
+	}
+	if hasAvailability {
+		score++
+	}
+	if score == 3 {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-01", ControlName: "Ensure confidentiality, integrity, and availability of ePHI", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Confidentiality, integrity, and availability measures all detected", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(1)"}}, nil
+	}
+	if score > 0 {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-01", ControlName: "Ensure confidentiality, integrity, and availability of ePHI", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Partial CIA measures detected (" + hipaaCount(score) + "/3)", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(1)"}, Remediation: "Implement all three: encryption/access control (confidentiality), integrity controls, and backup/recovery (availability)"}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-01", ControlName: "Ensure confidentiality, integrity, and availability of ePHI", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "No CIA measures detected", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(1)"}, Remediation: "Implement encryption, access control, integrity controls, and backup/recovery"}, nil
+}
+
+func (m *HIPAAModule) checkThreatProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasThreatProtection := strings.Contains(s, "threat_detection") || strings.Contains(s, "intrusion_detection") || strings.Contains(s, "ids") || strings.Contains(s, "ips") || strings.Contains(s, "malware_detection") || strings.Contains(s, "antivirus")
+	if hasThreatProtection {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-02", ControlName: "Protect against anticipated threats to ePHI", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Threat protection measures detected", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(2)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-02", ControlName: "Protect against anticipated threats to ePHI", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Threat protection indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(2)"}, Remediation: "Implement threat detection and intrusion prevention systems"}, nil
+}
+
+func (m *HIPAAModule) checkUnauthorizedDisclosure(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAccessControl := strings.Contains(s, "access_control") || strings.Contains(s, "rbac")
+	hasAuditLog := strings.Contains(s, "audit_log") || strings.Contains(s, "audit_trail") || strings.Contains(s, "logging_enabled")
+	if hasAccessControl && hasAuditLog {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-03", ControlName: "Protect against unauthorized use or disclosure", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access control and audit logging detected for unauthorized disclosure prevention", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(3)"}}, nil
+	}
+	if hasAccessControl || hasAuditLog {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-03", ControlName: "Protect against unauthorized use or disclosure", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Partial unauthorized disclosure prevention detected", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(3)"}, Remediation: "Implement both access control and audit logging"}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-SS-03", ControlName: "Protect against unauthorized use or disclosure", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "No unauthorized disclosure prevention detected", Timestamp: time.Now(), References: []string{"HIPAA §164.306(a)(3)"}, Remediation: "Implement access control and audit logging"}, nil
+}
+
+func (m *HIPAAModule) checkAccessAuthorization(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAccessAuth := strings.Contains(s, "access_authorization") || strings.Contains(s, "role_assignment") || strings.Contains(s, "rbac") || strings.Contains(s, "access_grant")
+	if hasAccessAuth {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-09", ControlName: "Information Access Management — Access Authorization", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access authorization controls detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(4)(ii)(A)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-09", ControlName: "Information Access Management — Access Authorization", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Access authorization indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(4)(ii)(A)"}, Remediation: "Implement role-based access authorization for ePHI"}, nil
+}
+
+func (m *HIPAAModule) checkAccessModification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasAccessMod := strings.Contains(s, "access_modification") || strings.Contains(s, "role_modification") || strings.Contains(s, "access_management") || strings.Contains(s, "access_review")
+	if hasAccessMod {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-10", ControlName: "Information Access Management — Access Establishment/Modification", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access establishment and modification controls detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(4)(ii)(B)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-10", ControlName: "Information Access Management — Access Establishment/Modification", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Access modification indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(4)(ii)(B)"}, Remediation: "Implement procedures for establishing and modifying ePHI access"}, nil
+}
+
+func (m *HIPAAModule) checkLoginMonitoringTraining(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasLoginMonitoring := strings.Contains(s, "login_monitoring") || strings.Contains(s, "session_tracking") || strings.Contains(s, "log_monitoring") || strings.Contains(s, "login_attempt")
+	if hasLoginMonitoring {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-13", ControlName: "Security Awareness and Training — Log-in Monitoring", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Log-in monitoring procedures detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(5)(ii)(C)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-13", ControlName: "Security Awareness and Training — Log-in Monitoring", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Log-in monitoring indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(5)(ii)(C)"}, Remediation: "Implement log-in monitoring and reporting procedures"}, nil
+}
+
+func (m *HIPAAModule) checkCriticalityAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasCriticality := strings.Contains(s, "criticality_analysis") || strings.Contains(s, "data_classification") || strings.Contains(s, "application_criticality") || strings.Contains(s, "asset_criticality")
+	if hasCriticality {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-20", ControlName: "Contingency Plan — Applications and Data Criticality Analysis", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Application and data criticality analysis detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(7)(ii)(E)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-AS-20", ControlName: "Contingency Plan — Applications and Data Criticality Analysis", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Criticality analysis indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.308(a)(7)(ii)(E)"}, Remediation: "Perform criticality analysis of applications and data containing ePHI"}, nil
+}
+
+func (m *HIPAAModule) checkMediaDataBackup(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasMediaBackup := strings.Contains(s, "media_backup") || strings.Contains(s, "data_backup") || strings.Contains(s, "equipment_backup") || strings.Contains(s, "backup_before_move")
+	if hasMediaBackup {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-PS-10", ControlName: "Device and Media Controls — Data Backup and Storage", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Media data backup controls detected", Timestamp: time.Now(), References: []string{"HIPAA §164.310(d)(2)(iv)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-PS-10", ControlName: "Device and Media Controls — Data Backup and Storage", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Media data backup indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.310(d)(2)(iv)"}, Remediation: "Implement data backup procedures before moving equipment containing ePHI"}, nil
+}
+
+func (m *HIPAAModule) checkEmergencyAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasEmergencyAccess := strings.Contains(s, "emergency_access") || strings.Contains(s, "break_glass") || strings.Contains(s, "emergency_override") || strings.Contains(s, "crisis_access")
+	if hasEmergencyAccess {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-TS-02", ControlName: "Access Control — Emergency Access", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Emergency access procedures detected", Timestamp: time.Now(), References: []string{"HIPAA §164.312(a)(2)(ii)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-TS-02", ControlName: "Access Control — Emergency Access", Status: compliance.StatusPartial, Severity: compliance.SeverityCritical, Message: "Emergency access indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.312(a)(2)(ii)"}, Remediation: "Implement break-glass or emergency access procedures for ePHI during emergencies"}, nil
+}
+
+func (m *HIPAAModule) checkDocumentationRequirements(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasDocumentation := strings.Contains(s, "policy_documentation") || strings.Contains(s, "documentation") || strings.Contains(s, "policy_management") || strings.Contains(s, "procedure_documentation")
+	if hasDocumentation {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-DR-01", ControlName: "Documentation Requirements", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Policy and procedure documentation detected", Timestamp: time.Now(), References: []string{"HIPAA §164.316(a)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-DR-01", ControlName: "Documentation Requirements", Status: compliance.StatusPartial, Severity: compliance.SeverityHigh, Message: "Documentation indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.316(a)"}, Remediation: "Maintain policies and procedures in written or electronic form"}, nil
+}
+
+func (m *HIPAAModule) checkImplementationSpecs(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasImplSpecs := strings.Contains(s, "implementation_spec") || strings.Contains(s, "config_documentation") || strings.Contains(s, "implementation_documentation") || strings.Contains(s, "specification_documentation")
+	if hasImplSpecs {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-DR-02", ControlName: "Implementation Specifications", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Implementation specification documentation detected", Timestamp: time.Now(), References: []string{"HIPAA §164.316(b)(1)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-DR-02", ControlName: "Implementation Specifications", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Implementation specification indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.316(b)(1)"}, Remediation: "Document implementation specifications in written or electronic form"}, nil
+}
+
+func (m *HIPAAModule) checkDocumentationMaintenance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasDocMaintenance := strings.Contains(s, "document_retention") || strings.Contains(s, "retention_policy") || strings.Contains(s, "documentation_retention") || strings.Contains(s, "retention_period")
+	if hasDocMaintenance {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-DR-03", ControlName: "Documentation Maintenance", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Documentation retention and maintenance controls detected", Timestamp: time.Now(), References: []string{"HIPAA §164.316(b)(2)"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-DR-03", ControlName: "Documentation Maintenance", Status: compliance.StatusPartial, Severity: compliance.SeverityMedium, Message: "Documentation retention indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.316(b)(2)"}, Remediation: "Maintain documentation for minimum 6 years from creation or last effective date"}, nil
+}
+
+func (m *HIPAAModule) checkBreachRiskAssessment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasBreachAssessment := strings.Contains(s, "breach_risk_assessment") || strings.Contains(s, "breach_analysis") || strings.Contains(s, "breach_assessment") || strings.Contains(s, "risk_assessment_breach")
+	if hasBreachAssessment {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-BN-01", ControlName: "Breach Notification — Risk Assessment", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Breach risk assessment procedures detected", Timestamp: time.Now(), References: []string{"HIPAA §164.402"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-BN-01", ControlName: "Breach Notification — Risk Assessment", Status: compliance.StatusPartial, Severity: compliance.SeverityCritical, Message: "Breach risk assessment indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.402"}, Remediation: "Implement breach risk assessment procedures"}, nil
+}
+
+func (m *HIPAAModule) checkBreachIndividualNotification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	s := strings.ToLower(string(input))
+	hasIndividualNotif := strings.Contains(s, "individual_notification") || strings.Contains(s, "breach_notification") || strings.Contains(s, "affected_individual_notification") || strings.Contains(s, "breach_notice")
+	if hasIndividualNotif {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-BN-02", ControlName: "Breach Notification — Individual Notification", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Individual breach notification procedures detected", Timestamp: time.Now(), References: []string{"HIPAA §164.404"}}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HIPAA-BN-02", ControlName: "Breach Notification — Individual Notification", Status: compliance.StatusPartial, Severity: compliance.SeverityCritical, Message: "Individual notification indicators not detected", Timestamp: time.Now(), References: []string{"HIPAA §164.404"}, Remediation: "Implement procedures to notify affected individuals within 60 days of breach discovery"}, nil
 }
 
 // ============================================================================

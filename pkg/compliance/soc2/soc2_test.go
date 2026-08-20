@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SOC 2 Type II Compliance Module v2.0 - Unit Tests
 //
-// Test coverage for the 64-control SOC 2 module (32 automated, 32 manual).
+// Test coverage for the 64-control SOC 2 module (41 automated, 23 manual).
 // Tests verify module metadata, control registration, automated check
 // functions, and framework-level operations (CheckAll, CheckControl,
 // GenerateAssessment, Dependencies, Provides).
@@ -53,8 +53,8 @@ func TestSOC2ModuleControls(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, 32, automated, "expected 32 automated controls")
-	assert.Equal(t, 32, manual, "expected 32 manual controls")
+	assert.Equal(t, 41, automated, "expected 41 automated controls")
+	assert.Equal(t, 23, manual, "expected 23 manual controls")
 }
 
 // TestSOC2CheckAll verifies CheckAll runs all automated checks without error.
@@ -167,19 +167,18 @@ func TestUserRegistrationCheck(t *testing.T) {
 }
 
 // TestLeastPrivilegeCheck tests CC6.5 least privilege check.
-// Note: CC6.5 is registered as a manual control (Automated: false),
-// so CheckControl returns StatusNotApplicable for any input.
+// CC6.5 is now an automated control with a CheckFunc.
 func TestLeastPrivilegeCheck(t *testing.T) {
 	m := NewSOC2Module()
 	ctx := context.Background()
 
 	t.Run("ReturnsResult", func(t *testing.T) {
-		input := []byte("least_privilege minimum_access")
+		input := []byte("least_privilege rbac role_based minimize_access")
 		result, err := m.CheckControl(ctx, "SOC2-CC6.5", input)
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		// CC6.5 is a manual control — CheckFunc is nil, so it returns NotApplicable
-		assert.Equal(t, compliance.StatusNotApplicable, result.Status)
+		// CC6.5 is now automated — should detect least_privilege keywords
+		assert.Equal(t, compliance.StatusCompliant, result.Status)
 	})
 
 	t.Run("NonCompliantInput", func(t *testing.T) {
@@ -187,7 +186,8 @@ func TestLeastPrivilegeCheck(t *testing.T) {
 		result, err := m.CheckControl(ctx, "SOC2-CC6.5", input)
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, compliance.StatusNotApplicable, result.Status)
+		// No keywords matched — should be non-compliant
+		assert.Equal(t, compliance.StatusNonCompliant, result.Status)
 	})
 }
 

@@ -12,7 +12,7 @@
 //   - Framework:     "soc2"
 //   - Version:       "2.0"
 //   - Required tier: Developer+ (gated via pkg/compliance/gating.go)
-//   - Controls:      64 total (32 automated, 32 manual)
+//   - Controls:      64 total (40 automated, 24 manual)
 //
 // Coverage by category:
 //   - Security (Common Criteria): 40 controls (20 automated)
@@ -172,7 +172,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Externally communicates security matters to relevant stakeholders",
 		Category:    "Security (Common Criteria)",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkExternalComm,
 		References:  []string{"AICPA TSC 2017 CC2.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -369,7 +370,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Restricts access to authorized users through authentication mechanisms",
 		Category:    "Security (Common Criteria)",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAccessRestriction,
 		References:  []string{"AICPA TSC 2017 CC6.4"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -378,7 +380,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Implements least privilege access controls",
 		Category:    "Security (Common Criteria)",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLeastPrivilege,
 		References:  []string{"AICPA TSC 2017 CC6.5"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -407,7 +410,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Detects and prevents use of unauthorized software",
 		Category:    "Security (Common Criteria)",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkUnauthorizedSoftware,
 		References:  []string{"AICPA TSC 2017 CC6.8"},
 	})
 
@@ -420,7 +424,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Manages infrastructure and software to support system operations",
 		Category:    "Security (Common Criteria)",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInfraManagement,
 		References:  []string{"AICPA TSC 2017 CC7.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -574,7 +579,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Tests recovery plan procedures periodically",
 		Category:    "Availability",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRecoveryTesting,
 		References:  []string{"AICPA TSC 2017 A1.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -667,7 +673,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Obtains, processes, and reports data that are valid, complete, and accurate",
 		Category:    "Processing Integrity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkProcessingValidity,
 		References:  []string{"AICPA TSC 2017 PI1.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -686,7 +693,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Corrects processing errors and recovers from errors",
 		Category:    "Processing Integrity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkProcessingErrorCorrection,
 		References:  []string{"AICPA TSC 2017 PI1.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -748,7 +756,8 @@ func (m *SOC2Module) registerControls() {
 		Description: "Establishes governance framework for AI/ML models",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIModelGovernance,
 		References:  []string{"AICPA TSC 2017 (AI Extension)"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1356,6 +1365,80 @@ func (m *SOC2Module) checkAIIncidentResponse(ctx context.Context, input []byte) 
 		compliance.SeverityCritical,
 		[]string{"ai_incident", "model_incident", "ai_anomaly"},
 		"Implement AI-specific incident response procedures for model incidents and AI anomalies")
+}
+
+// ── P1 Compliance Automation Expansion: Additional automated controls ──
+
+// checkExternalComm verifies external communication of security matters (CC2.2).
+func (m *SOC2Module) checkExternalComm(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-CC2.2", "External communication of security matters",
+		compliance.SeverityMedium,
+		[]string{"security_notification", "external_comm", "stakeholder_notification", "security_advisory"},
+		"Implement external security communication channels for stakeholders and regulators")
+}
+
+// checkAccessRestriction verifies access restriction to authorized users (CC6.4).
+func (m *SOC2Module) checkAccessRestriction(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-CC6.4", "Restrict access to authorized users",
+		compliance.SeverityCritical,
+		[]string{"access_control", "rbac", "authorized_users", "authentication"},
+		"Implement access controls restricting system access to authorized users only")
+}
+
+// checkLeastPrivilege verifies least privilege access (CC6.5).
+func (m *SOC2Module) checkLeastPrivilege(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-CC6.5", "Least privilege access",
+		compliance.SeverityCritical,
+		[]string{"least_privilege", "rbac", "role_based", "minimize_access"},
+		"Implement least privilege access controls ensuring users have minimum necessary permissions")
+}
+
+// checkUnauthorizedSoftware verifies unauthorized software detection (CC6.8).
+func (m *SOC2Module) checkUnauthorizedSoftware(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-CC6.8", "Unauthorized software detection",
+		compliance.SeverityHigh,
+		[]string{"unauthorized_software", "software_inventory", "application_whitelist", "software_monitoring"},
+		"Implement unauthorized software detection and prevention controls")
+}
+
+// checkInfraManagement verifies infrastructure and software management (CC7.1).
+func (m *SOC2Module) checkInfraManagement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-CC7.1", "Infrastructure and software management",
+		compliance.SeverityHigh,
+		[]string{"infrastructure_management", "asset_management", "configuration_management", "patch_management"},
+		"Implement infrastructure and software management with asset tracking and configuration management")
+}
+
+// checkRecoveryTesting verifies recovery testing (A1.3).
+func (m *SOC2Module) checkRecoveryTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-A1.3", "Recovery testing",
+		compliance.SeverityCritical,
+		[]string{"recovery_test", "disaster_recovery_test", "rto_testing", "failover_test"},
+		"Implement periodic recovery testing with documented results and RTO/RPO validation")
+}
+
+// checkProcessingValidity verifies processing validity and completeness (PI1.1).
+func (m *SOC2Module) checkProcessingValidity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-PI1.1", "Processing validity and completeness",
+		compliance.SeverityHigh,
+		[]string{"data_validation", "processing_integrity", "completeness_check", "data_quality"},
+		"Implement data validation and processing integrity controls ensuring completeness and accuracy")
+}
+
+// checkProcessingErrorCorrection verifies processing error correction (PI1.3).
+func (m *SOC2Module) checkProcessingErrorCorrection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-PI1.3", "Processing error correction",
+		compliance.SeverityHigh,
+		[]string{"error_correction", "error_handling", "processing_error", "error_recovery"},
+		"Implement processing error correction and recovery procedures")
+}
+
+// checkAIModelGovernance verifies AI model governance (AI-04).
+func (m *SOC2Module) checkAIModelGovernance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	return m.checkKeywords(ctx, input, "SOC2-AI-04", "AI model governance",
+		compliance.SeverityHigh,
+		[]string{"model_governance", "ai_governance", "model_validation", "model_approval"},
+		"Establish AI model governance framework with validation, approval, and oversight processes")
 }
 
 // Dependencies returns required modules. The SOC 2 module depends on

@@ -46,8 +46,8 @@ func TestGDPRModule_AutomatedControls(t *testing.T) {
 			auto++
 		}
 	}
-	if auto != 12 {
-		t.Errorf("Expected 12 automated controls with CheckFunc, got %d", auto)
+	if auto != 27 {
+		t.Errorf("Expected 27 automated controls with CheckFunc, got %d", auto)
 	}
 }
 
@@ -68,8 +68,8 @@ func TestGDPRModule_CheckAllAutomated(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckAll failed: %v", err)
 	}
-	if len(results) != 12 {
-		t.Errorf("Expected 12 results from automated controls, got %d", len(results))
+	if len(results) != 27 {
+		t.Errorf("Expected 27 results from automated controls, got %d", len(results))
 	}
 }
 
