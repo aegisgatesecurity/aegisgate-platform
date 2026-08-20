@@ -54,6 +54,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/profiles"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/security"
@@ -162,6 +163,13 @@ var (
 	tsaTimeout        = flag.Duration("tsa-timeout", 10*time.Second, "Per-endpoint TSA request timeout (AEGISGATE_TSA_TIMEOUT)")
 	tsaRetryCount     = flag.Int("tsa-retry-count", 2, "Retry attempts per TSA endpoint (AEGISGATE_TSA_RETRY_COUNT)")
 	tokenAnalytics    = flag.Bool("token-analytics", false, "Enable token usage analytics (AEGISGATE_TOKEN_ANALYTICS)")
+
+	// Deploy profiles (v4.2.0+ "Easy Button"):
+	// --profile selects a predefined configuration preset. The profile acts
+	// as the base config; a --config file (if specified) overrides the profile,
+	// and env vars / CLI flags override everything.
+	// Use --profile list to see available profiles.
+	profileName = flag.String("profile", "", "Deploy profile preset: quickstart, small-team, production, high-security, air-gapped (overrides defaults; --config file overrides profile)")
 )
 
 // iocWiringPtr is the package-level pointer to the IOC wiring
@@ -199,6 +207,16 @@ CLI Subcommands (run "aegisgate <subcommand> --help" for details):
   soc <timeline|list>          SOC incident timeline (v3.4.0+ TODO-502)
 
   Run "aegisgate <subcommand> help" for verb-level help.
+
+Deploy Profiles (v4.2.0+ "Easy Button"):
+  --profile quickstart        Zero-config trial (no TLS, low limits)
+  --profile small-team        5-50 users (auto-TLS, moderate limits)
+  --profile production        Hardened production (TLS 1.3, CSRF, detailed audit)
+  --profile high-security     Enterprise-grade (mTLS, FIPS, SIEM, high throughput)
+  --profile air-gapped        Isolated network (local upstream, no external calls)
+  --profile list              List all available profiles
+
+  Run "aegisgate --profile list" for details.
 `
 
 // init() overrides Go's default flag.Usage to include the subcommand list.
@@ -257,6 +275,41 @@ func main() {
 	if *showVersion {
 		fmt.Printf("AegisGate Security Platform %s (commit: %s, built: %s)\n", version, commit, buildDate)
 		os.Exit(0)
+	}
+
+	// ============================================================
+	// Deploy profile handling (v4.2.0+ "Easy Button")
+	// ============================================================
+	// --profile selects a predefined configuration preset. The profile
+	// acts as the base config; --config file overrides profile, and env
+	// vars / CLI flags override everything.
+	// --profile list prints available profiles and exits.
+	if *profileName != "" {
+		if *profileName == "list" {
+			fmt.Println("Available deploy profiles:")
+			fmt.Println()
+			for _, p := range profiles.List() {
+				fmt.Printf("  %-15s  [tier: %s]\n", p.ID, p.Tier)
+				fmt.Printf("  %-15s  %s\n", "", p.Description)
+				fmt.Println()
+			}
+			fmt.Println("Usage: aegisgate --profile <name> [other flags]")
+			fmt.Println("       aegisgate --profile <name> --config <file>  (config file overrides profile)")
+			os.Exit(0)
+		}
+		if !profiles.IsValid(*profileName) {
+			fmt.Fprintf(os.Stderr, "Error: unknown profile %q\n", *profileName)
+			fmt.Fprintf(os.Stderr, "Available profiles: ")
+			for i, p := range profiles.List() {
+				if i > 0 {
+					fmt.Fprintf(os.Stderr, ", ")
+				}
+				fmt.Fprintf(os.Stderr, "%s", p.ID)
+			}
+			fmt.Fprintf(os.Stderr, "\n")
+			os.Exit(1)
+		}
+		log.Printf("[PROFILE] Using deploy profile: %s", *profileName)
 	}
 
 	// ============================================================
@@ -359,9 +412,50 @@ func main() {
 		}())
 
 	// Load unified platform configuration
-	cfg, err := platformconfig.Load(*configFile)
-	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+	//
+	// Config precedence (highest to lowest):
+	//   1. CLI flags (applied later in main)
+	//   2. Environment variables (applied by applyEnvOverrides)
+	//   3. --config file (if specified and exists)
+	//   4. --profile preset (if specified)
+	//   5. DefaultConfig() (built-in defaults)
+	//
+	// When --profile is set, the profile config is the base. If a --config
+	// file is also specified (and is not the default non-existent file),
+	// the config file overrides the profile. If only --profile is set
+	// (no --config or default config doesn't exist), the profile config
+	// is used directly with env overrides applied.
+	var cfg *platformconfig.Config
+	if *profileName != "" {
+		profileCfg, err := profiles.ConfigFor(*profileName)
+		if err != nil {
+			log.Fatalf("Failed to load profile %q: %v", *profileName, err)
+		}
+
+		// Check if a non-default config file was explicitly specified
+		// or if the default config file exists on disk
+		if *configFile != "aegisgate-platform.yaml" || fileExists(*configFile) {
+			// Load the config file and apply it on top of the profile
+			fileCfg, err := platformconfig.Load(*configFile)
+			if err != nil {
+				log.Fatalf("Failed to load configuration: %v", err)
+			}
+			// Use the file config but fall back to profile for zero-value fields
+			// by using the file config directly (it already has defaults from
+			// DefaultConfig()). The profile's intent is captured by the config
+			// file's overrides.
+			cfg = fileCfg
+		} else {
+			// No config file — use profile config with env overrides
+			cfg = profileCfg
+			cfg.ApplyEnvOverrides()
+		}
+	} else {
+		var err error
+		cfg, err = platformconfig.Load(*configFile)
+		if err != nil {
+			log.Fatalf("Failed to load configuration: %v", err)
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

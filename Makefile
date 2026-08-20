@@ -1,4 +1,4 @@
-.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise lens-build lens-test lens-harness-test lens-testlab-test lens-e2e lens-privacy-test lens-backend-test lens-clean help
+.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise run-quickstart run-small-team run-production run-high-security run-air-gapped profiles-list lens-build lens-test lens-harness-test lens-testlab-test lens-e2e lens-privacy-test lens-backend-test lens-clean help
 
 # =========================================================================
 # AegisGate Security Platform — Makefile
@@ -52,6 +52,24 @@ run-enterprise: build ## Run with Enterprise tier config (requires AEGISGATE_LIC
 
 run-quick: build ## Quick start with defaults (Community tier, no config file)
 	./$(BINARY) --embedded-mcp
+
+run-quickstart: build ## Run with quickstart deploy profile (zero-config trial)
+	./$(BINARY) --profile quickstart --embedded-mcp
+
+run-small-team: build ## Run with small-team deploy profile (5-50 users)
+	./$(BINARY) --profile small-team --embedded-mcp
+
+run-production: build ## Run with production deploy profile (hardened, TLS 1.3)
+	./$(BINARY) --profile production --embedded-mcp
+
+run-high-security: build ## Run with high-security deploy profile (mTLS, FIPS, SIEM)
+	./$(BINARY) --profile high-security --embedded-mcp
+
+run-air-gapped: build ## Run with air-gapped deploy profile (isolated network)
+	./$(BINARY) --profile air-gapped --embedded-mcp
+
+profiles-list: build ## List all available deploy profiles
+	./$(BINARY) --profile list
 
 run-licensed: build ## Run with explicit license key (set LICENSE_KEY env var)
 	./$(BINARY) --license="$(LICENSE_KEY)" --embedded-mcp

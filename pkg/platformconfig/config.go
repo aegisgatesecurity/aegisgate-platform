@@ -595,6 +595,13 @@ func Load(path string) (*Config, error) {
 	return LoadFromFile(path)
 }
 
+// ApplyEnvOverrides is the exported wrapper for applyEnvOverrides.
+// It allows external callers (e.g., the profile system in main) to apply
+// environment variable overrides to a Config instance.
+func (c *Config) ApplyEnvOverrides() {
+	c.applyEnvOverrides()
+}
+
 // applyEnvOverrides applies environment variable overrides to the config.
 // Environment variables take precedence over YAML for deployment flexibility
 // (e.g., Kubernetes secrets injected as env vars, not written to config files).
