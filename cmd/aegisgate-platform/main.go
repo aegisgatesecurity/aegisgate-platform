@@ -50,6 +50,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/maintenance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
@@ -209,6 +210,8 @@ CLI Subcommands (run "aegisgate <subcommand> --help" for details):
   config <validate|show|profiles>  Config validation and inspection (v4.2.0+)
 
   setup                       Interactive setup wizard (v4.2.0+)
+
+  maintenance <enable|disable|status|schedule>  Maintenance window control (v4.2.0+)
 
   Run "aegisgate <subcommand> help" for verb-level help.
 
@@ -950,6 +953,12 @@ func main() {
 	// Create mux for AegisGate proxy + management endpoints
 	proxyMux := http.NewServeMux()
 
+	// Maintenance window middleware: returns 503 for all proxy traffic
+	// when maintenance mode is active. Health/version/maintenance endpoints
+	// are always allowed through.
+	maintenanceState := maintenance.New()
+	log.Printf("Maintenance: middleware initialized (inactive)")
+
 	// -------------------
 	// Federated IOC Library endpoints (v3.5.0+ Track 6)
 	// -------------------
@@ -1193,6 +1202,8 @@ func main() {
 	// the global ring buffer for compliance evidence packages.
 	var innerHandler http.Handler = proxyRecorderMiddleware(
 		security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)))
+	// Wrap with maintenance middleware: returns 503 when maintenance is active
+	innerHandler = maintenanceState.Middleware(innerHandler)
 	proxyHandler := http.MaxBytesHandler(rejectDangerousMethods(innerHandler), int64(10<<20))
 
 	// F-DOS-1 (D25 pentest): Add ReadHeaderTimeout to prevent
@@ -2247,6 +2258,12 @@ func main() {
 			}
 		}))
 	}
+
+	// Maintenance window API: GET (status), POST (enable), DELETE (disable), PUT (schedule)
+	// No auth required — the endpoint controls platform availability, not data access.
+	// In production, the dashboard port should be behind a firewall or VPN.
+	dashMux.Handle("/api/v1/maintenance", maintenanceState.Handler())
+	log.Printf("Maintenance: API endpoint mounted at /api/v1/maintenance")
 
 	// Policy info endpoint — requires auth to prevent unauthenticated
 	// disclosure of security policy configuration and tier details.
