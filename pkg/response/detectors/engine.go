@@ -4,7 +4,7 @@
 // =========================================================================
 //
 // Shared detection engine that compiles PatternDef slices into regexp.Regexp
-// and scans text for matches. This is the core runtime that all 7 detector
+// and scans text for matches. This is the core runtime that all 8 detector
 // packages use.
 // =========================================================================
 
@@ -93,6 +93,7 @@ func DetectAll(text string) []Match {
 	all = append(all, DetectPIIFinancial(text)...)
 	all = append(all, DetectPIIInternational(text)...)
 	all = append(all, DetectCompliance(text)...)
+	all = append(all, DetectOTProtocols(text)...)
 
 	// Sort all matches by index
 	sort.Slice(all, func(i, j int) bool {
@@ -113,6 +114,7 @@ func DetectAllWithResults(text string) ([]Match, []DetectionResult) {
 		detectWithResult(text, CompiledPIIFinancialPatterns, CategoryPIIFinancial),
 		detectWithResult(text, CompiledPIIInternationalPatterns, CategoryPIIInternational),
 		detectWithResult(text, CompiledCompliancePatterns, CategoryCompliance),
+		detectWithResult(text, CompiledOTProtocolPatterns, CategoryOTProtocols),
 	}
 
 	all := DetectAll(text)

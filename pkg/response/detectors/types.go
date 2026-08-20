@@ -30,6 +30,7 @@ const (
 	CategoryPIIInternational Category = "pii-international"
 	CategoryXSS              Category = "xss"
 	CategoryCompliance       Category = "compliance"
+	CategoryOTProtocols      Category = "ot-protocols"
 )
 
 // Match represents a single regex detection match.

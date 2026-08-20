@@ -451,8 +451,8 @@ func TestDetectAll_Empty(t *testing.T) {
 func TestDetectAllWithResults(t *testing.T) {
 	text := "AKIAIOSFODNN7EXAMPLE"
 	_, results := DetectAllWithResults(text)
-	if len(results) != 7 {
-		t.Errorf("expected 7 category results, got %d", len(results))
+	if len(results) != 8 {
+		t.Errorf("expected 8 category results, got %d", len(results))
 	}
 	for _, r := range results {
 		if r.PatternCount == 0 {
