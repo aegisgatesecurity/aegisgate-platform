@@ -21,6 +21,10 @@
 package eu_ai_act
 
 import (
+	"context"
+	"strings"
+	"time"
+
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 )
 
@@ -334,7 +338,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 10(5): Possible Biases Identification",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIBiasIdent,
 		References:  []string{"EU AI Act Article 10(5)"},
 	})
 
@@ -355,7 +360,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 10(2)(a): Bias Examination Documentation and Record-Keeping",
 		Category:    "Data Governance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIBiasDoc,
 		References:  []string{"EU AI Act Article 10(2)(a)"},
 	})
 
@@ -476,7 +482,7 @@ func (m *EUAIModule) registerControls() {
 		Category:    "Record Keeping",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkLogRetention,
+		CheckFunc:   m.checkEUAILogRetention,
 		References:  []string{"EU AI Act Article 12(3)"},
 	})
 
@@ -507,7 +513,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 12(3): Log Retention Period Appropriate Duration",
 		Category:    "Record Keeping",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkEUAILogRetention,
 		References:  []string{"EU AI Act Article 12(3)"},
 	})
 
@@ -517,7 +524,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 12(4): Log Access Controls and Permissions",
 		Category:    "Record Keeping",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLogAccessControls,
 		References:  []string{"EU AI Act Article 12(4)"},
 	})
 
@@ -688,7 +696,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 14(6): Override Capability for Automated Decisions",
 		Category:    "Human Oversight",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIOverrideCap,
 		References:  []string{"EU AI Act Article 14(6)"},
 	})
 
@@ -752,7 +761,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(4): Performance Monitoring in Operation",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIPerfMonitor,
 		References:  []string{"EU AI Act Article 15(4)"},
 	})
 
@@ -762,7 +772,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5): Cybersecurity Measures Appropriate",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAICyberMeasures,
 		References:  []string{"EU AI Act Article 15(5)"},
 	})
 
@@ -772,7 +783,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5)(a): Protection Against Unauthorized Access",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIUnauthAccess,
 		References:  []string{"EU AI Act Article 15(5)(a)"},
 	})
 
@@ -793,7 +805,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5)(c): Model Poisoning Mitigation",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkModelPoisoning,
 		References:  []string{"EU AI Act Article 15(5)(c)"},
 	})
 
@@ -803,7 +816,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5)(d): Adversarial Attack Mitigation",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAdversarialAttack,
 		References:  []string{"EU AI Act Article 15(5)(d)"},
 	})
 
@@ -813,7 +827,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 15(5)(e): Training Data Confidentiality",
 		Category:    "Accuracy and Robustness",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTrainingDataConf,
 		References:  []string{"EU AI Act Article 15(5)(e)"},
 	})
 
@@ -890,7 +905,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 51(1)(c): Copyright Compliance Policy",
 		Category:    "GPAI Models",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCopyrightPolicy,
 		References:  []string{"EU AI Act Article 51(1)(c)"},
 	})
 
@@ -980,7 +996,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 51(1)(c): GPAI Copyright Compliance Policy and Procedures",
 		Category:    "GPAI Models",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkGPAICopyright,
 		References:  []string{"EU AI Act Article 51(1)(c)"},
 	})
 
@@ -1070,7 +1087,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act AegisGate extension: AI Model Red Team Testing",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIRedTeam,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
@@ -1102,7 +1120,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act AegisGate extension: AI Model Sandboxing for Safe Deployment",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAISandboxing,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
@@ -1112,7 +1131,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act AegisGate extension: AI Red Team Testing Program",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAIRedTeamProgram,
 		References:  []string{"EU AI Act Article AegisGate extension"},
 	})
 
@@ -1165,7 +1185,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 72(1): Post-Market Monitoring System",
 		Category:    "Governance and Compliance",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPostMarketMonitor,
 		References:  []string{"EU AI Act Article 72(1)"},
 	})
 
@@ -1175,7 +1196,8 @@ func (m *EUAIModule) registerControls() {
 		Description: "EU AI Act 73(1): Serious Incident Reporting to Market Surveillance Authorities",
 		Category:    "Governance and Compliance",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSeriousIncidentReport,
 		References:  []string{"EU AI Act Article 73(1)"},
 	})
 
@@ -1302,4 +1324,150 @@ func (m *EUAIModule) registerControls() {
 		References:  []string{"EU AI Act Article 85(1)"},
 	})
 
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *EUAIModule) checkModelPoisoning(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "model_poisoning") || strings.Contains(inputStr, "poisoning_mitigation") || strings.Contains(inputStr, "training_data_poisoning") || strings.Contains(inputStr, "poisoning_detection") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-008", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Model poisoning mitigation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-008", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical, Message: "Model poisoning mitigation not configured", Timestamp: time.Now(), Remediation: "Implement model poisoning mitigation"}, nil
+}
+
+func (m *EUAIModule) checkAdversarialAttack(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "adversarial_attack") || strings.Contains(inputStr, "adversarial_mitigation") || strings.Contains(inputStr, "attack_mitigation") || strings.Contains(inputStr, "adversarial_robustness") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Adversarial attack mitigation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical, Message: "Adversarial attack mitigation not configured", Timestamp: time.Now(), Remediation: "Implement adversarial attack mitigation"}, nil
+}
+
+func (m *EUAIModule) checkTrainingDataConf(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "training_data_confidentiality") || strings.Contains(inputStr, "training_data_protection") || strings.Contains(inputStr, "data_confidentiality") || strings.Contains(inputStr, "training_data_security") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-010", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Training data confidentiality detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-010", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Training data confidentiality not configured", Timestamp: time.Now(), Remediation: "Protect training data confidentiality"}, nil
+}
+
+func (m *EUAIModule) checkAIRedTeam(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "red_team") || strings.Contains(inputStr, "red_teaming") || strings.Contains(inputStr, "ai_red_team") || strings.Contains(inputStr, "adversarial_testing") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-AI-008", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI red team testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-AI-008", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI red team testing not configured", Timestamp: time.Now(), Remediation: "Implement AI model red team testing"}, nil
+}
+
+func (m *EUAIModule) checkAISandboxing(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "ai_sandboxing") || strings.Contains(inputStr, "model_sandbox") || strings.Contains(inputStr, "sandbox_environment") || strings.Contains(inputStr, "isolated_testing") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-AI-011", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "AI sandboxing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-AI-011", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "AI sandboxing not configured", Timestamp: time.Now(), Remediation: "Implement AI model sandboxing"}, nil
+}
+
+func (m *EUAIModule) checkAIRedTeamProgram(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "red_team_program") || strings.Contains(inputStr, "red_team_testing_program") || strings.Contains(inputStr, "adversarial_test_program") || strings.Contains(inputStr, "ai_red_team_program") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-AI-012", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI red team testing program detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-AI-012", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI red team testing program not configured", Timestamp: time.Now(), Remediation: "Implement AI red team testing program"}, nil
+}
+
+func (m *EUAIModule) checkEUAILogRetention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "log_retention") || strings.Contains(inputStr, "log_retention_period") || strings.Contains(inputStr, "audit_retention") || strings.Contains(inputStr, "log_retention_policy") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art12-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Log retention detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art12-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Log retention not configured", Timestamp: time.Now(), Remediation: "Configure log retention period"}, nil
+}
+
+func (m *EUAIModule) checkLogAccessControls(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "log_access_control") || strings.Contains(inputStr, "log_access") || strings.Contains(inputStr, "audit_log_access") || strings.Contains(inputStr, "log_authorization") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art12-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Log access controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art12-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Log access controls not configured", Timestamp: time.Now(), Remediation: "Configure log access controls"}, nil
+}
+
+func (m *EUAIModule) checkAIPerfMonitor(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "ai_performance_monitoring") || strings.Contains(inputStr, "performance_monitoring") || strings.Contains(inputStr, "ai_monitoring") || strings.Contains(inputStr, "model_performance") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-004", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI performance monitoring detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-004", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI performance monitoring not configured", Timestamp: time.Now(), Remediation: "Implement AI performance monitoring"}, nil
+}
+
+func (m *EUAIModule) checkAICyberMeasures(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "ai_cybersecurity") || strings.Contains(inputStr, "ai_security_measures") || strings.Contains(inputStr, "ai_cyber_measures") || strings.Contains(inputStr, "model_cybersecurity") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-005", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI cybersecurity measures detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-005", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI cybersecurity measures not configured", Timestamp: time.Now(), Remediation: "Implement appropriate AI cybersecurity measures"}, nil
+}
+
+func (m *EUAIModule) checkAIUnauthAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "ai_unauthorized_access") || strings.Contains(inputStr, "model_access_control") || strings.Contains(inputStr, "ai_access_protection") || strings.Contains(inputStr, "model_protection") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI unauthorized access protection detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art15-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI unauthorized access protection not configured", Timestamp: time.Now(), Remediation: "Protect against unauthorized access to AI systems"}, nil
+}
+
+func (m *EUAIModule) checkAIBiasIdent(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "bias_identification") || strings.Contains(inputStr, "bias_detection") || strings.Contains(inputStr, "possible_bias") || strings.Contains(inputStr, "bias_scan") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art10-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Bias identification detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art10-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Bias identification not configured", Timestamp: time.Now(), Remediation: "Identify possible biases in AI systems"}, nil
+}
+
+func (m *EUAIModule) checkAIBiasDoc(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "bias_examination") || strings.Contains(inputStr, "bias_documentation") || strings.Contains(inputStr, "bias_documented") || strings.Contains(inputStr, "bias_report") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art10-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Bias examination documentation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art10-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Bias examination documentation not configured", Timestamp: time.Now(), Remediation: "Document bias examination results"}, nil
+}
+
+func (m *EUAIModule) checkAIOverrideCap(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "override_capability") || strings.Contains(inputStr, "human_override") || strings.Contains(inputStr, "ai_override") || strings.Contains(inputStr, "manual_override") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art14-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Override capability detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art14-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Override capability not configured", Timestamp: time.Now(), Remediation: "Implement override capability for automated decisions"}, nil
+}
+
+func (m *EUAIModule) checkPostMarketMonitor(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "post_market_monitoring") || strings.Contains(inputStr, "post_market") || strings.Contains(inputStr, "post_deployment_monitoring") || strings.Contains(inputStr, "market_monitoring") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-GC-005", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Post-market monitoring detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-GC-005", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Post-market monitoring not configured", Timestamp: time.Now(), Remediation: "Implement post-market monitoring system"}, nil
+}
+
+func (m *EUAIModule) checkSeriousIncidentReport(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "serious_incident") || strings.Contains(inputStr, "incident_reporting") || strings.Contains(inputStr, "serious_incident_reporting") || strings.Contains(inputStr, "ai_incident_report") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-GC-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Serious incident reporting detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-GC-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Serious incident reporting not configured", Timestamp: time.Now(), Remediation: "Implement serious incident reporting"}, nil
+}
+
+func (m *EUAIModule) checkCopyrightPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "copyright_policy") || strings.Contains(inputStr, "copyright_compliance") || strings.Contains(inputStr, "copyright") || strings.Contains(inputStr, "ip_policy") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art51-003", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Copyright compliance policy detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-Art51-003", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Copyright compliance policy not configured", Timestamp: time.Now(), Remediation: "Implement copyright compliance policy"}, nil
+}
+
+func (m *EUAIModule) checkGPAICopyright(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "gpai_copyright") || strings.Contains(inputStr, "copyright_compliance") || strings.Contains(inputStr, "copyright_policy") || strings.Contains(inputStr, "ip_compliance") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-GPAI-012", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "GPAI copyright compliance detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "EUAIAct-GPAI-012", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "GPAI copyright compliance not configured", Timestamp: time.Now(), Remediation: "Implement GPAI copyright compliance"}, nil
 }

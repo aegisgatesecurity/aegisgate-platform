@@ -123,7 +123,8 @@ func (m *HITRUSTModule) registerBCControls() {
 		Description: "HITRUST CSF v11.2 BC-08: Alternate communications — backup communications during disruptions",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAlternateComms,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CP-8"},
 	})
 
@@ -146,7 +147,8 @@ func (m *HITRUSTModule) registerBCControls() {
 		Description: "HITRUST CSF v11.2 BC-10: Long-term storage — long-term retention of backup data",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTLongTermStorage,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CP-9(2)"},
 	})
 }
@@ -208,7 +210,8 @@ func (m *HITRUSTModule) registerRAControls() {
 		Description: "HITRUST CSF v11.2 RA-05: Plan of action and milestones — POA&M for remediation of findings",
 		Category:    "Regulatory Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTPOAM,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CA-5"},
 	})
 
@@ -383,7 +386,8 @@ func (m *HITRUSTModule) registerCAControls() {
 		Description: "HITRUST CSF v11.2 CA-10: Software usage and restrictions — controls on software installation and usage",
 		Category:    "Change Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTSoftwareUsage,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 }
@@ -739,4 +743,42 @@ func (m *HITRUSTModule) checkLeastFunctionality(ctx context.Context, input []byt
 		violations = append(violations, "enforcement not configured")
 	}
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-07", ControlName: "Least Functionality", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Least functionality gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure least functionality with service restrictions and enforcement"}, nil
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *HITRUSTModule) checkHITRUSTSoftwareUsage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSoftwareUsage := strings.Contains(inputStr, "software_usage") || strings.Contains(inputStr, "software_restriction") || strings.Contains(inputStr, "software_whitelist") || strings.Contains(inputStr, "application_whitelist")
+	if hasSoftwareUsage {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-10", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Software usage and restrictions detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-10", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Software usage restrictions not configured", Timestamp: time.Now(), Remediation: "Implement software usage restrictions and controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAlternateComms(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAltComms := strings.Contains(inputStr, "alternate_communication") || strings.Contains(inputStr, "backup_communication") || strings.Contains(inputStr, "emergency_communication") || strings.Contains(inputStr, "alt_comms")
+	if hasAltComms {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-08", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Alternate communications detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-08", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Alternate communications not configured", Timestamp: time.Now(), Remediation: "Implement alternate communications during disruptions"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTLongTermStorage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLongTerm := strings.Contains(inputStr, "long_term_storage") || strings.Contains(inputStr, "archive_storage") || strings.Contains(inputStr, "long_term_retention") || strings.Contains(inputStr, "archive_retention")
+	if hasLongTerm {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-10", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Long-term storage detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-10", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Long-term storage not configured", Timestamp: time.Now(), Remediation: "Implement long-term storage for backup data"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTPOAM(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPOAM := strings.Contains(inputStr, "poam") || strings.Contains(inputStr, "plan_of_action") || strings.Contains(inputStr, "milestones") || strings.Contains(inputStr, "remediation_plan")
+	if hasPOAM {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-RA-05", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Plan of action and milestones detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-RA-05", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "POA&M not configured", Timestamp: time.Now(), Remediation: "Implement plan of action and milestones for remediation"}, nil
 }

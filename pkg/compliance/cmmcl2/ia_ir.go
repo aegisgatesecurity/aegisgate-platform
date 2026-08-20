@@ -90,7 +90,8 @@ func (m *CMMCL2Module) registerIAControls() {
 		Description: "CMMC L2 IA.2.004: Authenticate using cryptographic modules (FIPS 140). AegisGate generates the cryptographic authentication evidence for the customer's CMMC assessment.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCCryptoAuth,
 		References:  []string{"CMMC L2 IA.2.004", "NIST SP 800-171 §3.5.12"},
 	})
 
@@ -125,7 +126,8 @@ func (m *CMMCL2Module) registerIAControls() {
 		Description: "CMMC L2 IA.2.007: Manage user identifiers and assign unique identifiers. AegisGate generates the identifier management evidence for the customer's CMMC assessment.",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCIdentifierMgmt,
 		References:  []string{"CMMC L2 IA.2.007", "NIST SP 800-171 §3.5.8"},
 	})
 }

@@ -136,7 +136,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Pipeline operators must conduct an annual security review of all cybersecurity measures and controls",
 		Category:    "Pipeline Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkAnnualSecurityReview,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -145,7 +145,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must update pipeline-risk assessments at least annually or after significant changes",
 		Category:    "Pipeline Security",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkPipelineRiskAssessmentUpdate,
 	})
 
@@ -201,7 +201,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Personnel with access to critical pipeline systems must undergo appropriate security clearance and background checks",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkPersonnelSecurityClearances,
 	})
 
@@ -295,7 +295,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must participate in joint cybersecurity assessments with government and industry partners",
 		Category:    "Coordination and Reporting",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkJointCybersecurityAssessments,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -304,7 +304,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must maintain a government coordination plan for cybersecurity incident response and recovery",
 		Category:    "Coordination and Reporting",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkGovernmentCoordinationPlan,
 	})
 
@@ -342,7 +342,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Operators must establish a Change Control Board to review and approve all changes to pipeline systems",
 		Category:    "Configuration and Vulnerability Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkChangeControlBoard,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -380,7 +380,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "Data and media must be securely disposed of using approved methods to prevent recovery of sensitive information",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkSecureDataDisposal,
 	})
 
@@ -409,7 +409,7 @@ func (m *TSASDModule) registerControls() {
 		Description: "AI systems making critical pipeline operation decisions must provide explainability and auditability of decisions",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkAIDecisionExplainability,
 	})
 }

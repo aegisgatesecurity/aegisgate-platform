@@ -157,7 +157,8 @@ func (m *CMMCL2Module) registerACControls() {
 		Description: "CMMC L2 AC.2.010: Restrict mobile device access to CUI. AegisGate generates the mobile device policy evidence for the customer's CMMC assessment.",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCMobileDevice,
 		References:  []string{"CMMC L2 AC.2.010", "NIST SP 800-171 §3.1.18"},
 	})
 

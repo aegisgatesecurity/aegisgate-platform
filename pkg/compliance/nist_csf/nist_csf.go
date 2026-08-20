@@ -547,7 +547,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "PR.DS-06", Name: "Transmission media protected",
 		Description: "Transmission media are protected.",
 		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
-		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-06"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFTransmissionMedia, References: []string{"NIST CSF 2.0 PR.DS-06"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "PR.DS-07", Name: "Data managed throughout lifecycle",
@@ -573,7 +574,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "PR.DS-10", Name: "Network and communication protocols protected",
 		Description: "Network and communication protocols are protected.",
 		Category:    "PR.DS (Data Security)", Severity: compliance.SeverityCritical,
-		Automated: false, References: []string{"NIST CSF 2.0 PR.DS-10"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFNetworkProtocols, References: []string{"NIST CSF 2.0 PR.DS-10"},
 	})
 
 	// PR.PS (Platform Security) — 6
@@ -587,7 +589,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "PR.PS-02", Name: "Software lifecycle managed",
 		Description: "Software lifecycle is managed.",
 		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
-		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-02"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFSoftwareLifecycle, References: []string{"NIST CSF 2.0 PR.PS-02"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "PR.PS-03", Name: "Platforms hardened and managed",
@@ -599,7 +602,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "PR.PS-04", Name: "Platforms removed when no longer needed",
 		Description: "Platforms are removed when no longer needed.",
 		Category:    "PR.PS (Platform Security)", Severity: compliance.SeverityMedium,
-		Automated: false, References: []string{"NIST CSF 2.0 PR.PS-04"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFPlatformRemoval, References: []string{"NIST CSF 2.0 PR.PS-04"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "PR.PS-05", Name: "Platforms protected from manipulation",
@@ -619,7 +623,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "PR.IR-01", Name: "Backups protected and managed",
 		Description: "Backups are protected and managed.",
 		Category:    "PR.IR (Technology Infrastructure Resilience)", Severity: compliance.SeverityMedium,
-		Automated: false, References: []string{"NIST CSF 2.0 PR.IR-01"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFBackupsProtected, References: []string{"NIST CSF 2.0 PR.IR-01"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "PR.IR-02", Name: "Monitoring performed and reported",
@@ -631,7 +636,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "PR.IR-03", Name: "Technologies tested and validated",
 		Description: "Technologies are tested and validated.",
 		Category:    "PR.IR (Technology Infrastructure Resilience)", Severity: compliance.SeverityMedium,
-		Automated: false, References: []string{"NIST CSF 2.0 PR.IR-03"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFTechValidated, References: []string{"NIST CSF 2.0 PR.IR-03"},
 	})
 
 	// ── Function DE (Detect) — 19 subcategories, 2 categories ──
@@ -692,7 +698,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "DE.CM-09", Name: "Unauthorized mobile code monitored",
 		Description: "Unauthorized mobile code is monitored.",
 		Category:    "DE.CM (Continuous Monitoring)", Severity: compliance.SeverityHigh,
-		Automated: false, References: []string{"NIST CSF 2.0 DE.CM-09"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFMobileCodeMonitor, References: []string{"NIST CSF 2.0 DE.CM-09"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "DE.CM-10", Name: "Unauthorized physical access monitored",
@@ -811,7 +818,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "RS.AN-03", Name: "Forensics performed",
 		Description: "Forensics are performed.",
 		Category:    "RS.AN (Analysis)", Severity: compliance.SeverityHigh,
-		Automated: false, References: []string{"NIST CSF 2.0 RS.AN-03"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFForensics, References: []string{"NIST CSF 2.0 RS.AN-03"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "RS.AN-04", Name: "Investigations scoped",
@@ -877,7 +885,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "RS.MI-04", Name: "Newly identified vulnerabilities mitigated",
 		Description: "Newly identified vulnerabilities are mitigated.",
 		Category:    "RS.MI (Mitigation, Response, and Recovery)", Severity: compliance.SeverityHigh,
-		Automated: false, References: []string{"NIST CSF 2.0 RS.MI-04"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFVulnMitigated, References: []string{"NIST CSF 2.0 RS.MI-04"},
 	})
 
 	// ── Function RC (Recover) — 10 subcategories, 2 categories ──
@@ -913,7 +922,8 @@ func (m *NISTCSFModule) registerControls() {
 		ID: "RC.RP-05", Name: "Recovery plan tested",
 		Description: "Recovery plan is tested.",
 		Category:    "RC.RP (Recovery Plan)", Severity: compliance.SeverityMedium,
-		Automated: false, References: []string{"NIST CSF 2.0 RC.RP-05"},
+		Automated: true,
+		CheckFunc: m.checkNISTCSFRecoveryTest, References: []string{"NIST CSF 2.0 RC.RP-05"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
 		ID: "RC.RP-06", Name: "Recovery plan coordinated with parties",
@@ -1647,4 +1657,86 @@ func (m *NISTCSFModule) checkIncidentResolved(ctx context.Context, input []byte)
 // Dependencies returns required modules.
 func (m *NISTCSFModule) Dependencies() []string {
 	return []string{"scanner", "auth", "persistence", "ioc", "trust"}
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *NISTCSFModule) checkNISTCSFTransmissionMedia(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "transmission_media_protected") || strings.Contains(inputStr, "media_protection") || strings.Contains(inputStr, "cable_protection") || strings.Contains(inputStr, "transmission_security") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.DS-06", Status: compliance.StatusCompliant, Severity: compliance.SeverityCritical, Message: "Transmission media protection detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.DS-06", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityCritical, Message: "Transmission media protection not configured", Timestamp: time.Now(), Remediation: "Protect transmission media"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFNetworkProtocols(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "network_protocol_protection") || strings.Contains(inputStr, "protocol_security") || strings.Contains(inputStr, "communication_protocol_protected") || strings.Contains(inputStr, "secure_protocol") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.DS-10", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Network protocol protection detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.DS-10", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Network protocol protection not configured", Timestamp: time.Now(), Remediation: "Protect network and communication protocols"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFSoftwareLifecycle(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "software_lifecycle") || strings.Contains(inputStr, "software_lifecycle_managed") || strings.Contains(inputStr, "sdlc") || strings.Contains(inputStr, "lifecycle_management") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.PS-02", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Software lifecycle management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.PS-02", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Software lifecycle management not configured", Timestamp: time.Now(), Remediation: "Manage software lifecycle"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFPlatformRemoval(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "platform_removal") || strings.Contains(inputStr, "decommission_platform") || strings.Contains(inputStr, "platform_decommissioned") || strings.Contains(inputStr, "removed_platform") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.PS-04", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Platform removal detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.PS-04", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Platform removal not configured", Timestamp: time.Now(), Remediation: "Remove platforms when no longer needed"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFBackupsProtected(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "backup_protected") || strings.Contains(inputStr, "backup_managed") || strings.Contains(inputStr, "backup_security") || strings.Contains(inputStr, "protected_backup") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.IR-01", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Backups protected and managed detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.IR-01", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Backup protection not configured", Timestamp: time.Now(), Remediation: "Protect and manage backups"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFTechValidated(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "tech_validated") || strings.Contains(inputStr, "technology_tested") || strings.Contains(inputStr, "tech_test") || strings.Contains(inputStr, "validation_testing") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.IR-03", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Technology testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PR.IR-03", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Technology testing not configured", Timestamp: time.Now(), Remediation: "Test and validate technologies"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFMobileCodeMonitor(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "mobile_code_monitor") || strings.Contains(inputStr, "mobile_code_detection") || strings.Contains(inputStr, "unauthorized_code_monitor") || strings.Contains(inputStr, "code_monitoring") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "DE.CM-09", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Mobile code monitoring detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "DE.CM-09", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Mobile code monitoring not configured", Timestamp: time.Now(), Remediation: "Monitor for unauthorized mobile code"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFForensics(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "forensics") || strings.Contains(inputStr, "forensic_capability") || strings.Contains(inputStr, "digital_forensics") || strings.Contains(inputStr, "forensic_analysis") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "RS.AN-03", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Forensics capability detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "RS.AN-03", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Forensics capability not configured", Timestamp: time.Now(), Remediation: "Perform forensics during incident response"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFVulnMitigated(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "vuln_mitigated") || strings.Contains(inputStr, "vulnerability_mitigated") || strings.Contains(inputStr, "vuln_remediated") || strings.Contains(inputStr, "vulnerability_remediation") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "RS.MI-04", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Vulnerability mitigation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "RS.MI-04", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Vulnerability mitigation not configured", Timestamp: time.Now(), Remediation: "Mitigate newly identified vulnerabilities"}, nil
+}
+
+func (m *NISTCSFModule) checkNISTCSFRecoveryTest(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "recovery_plan_test") || strings.Contains(inputStr, "recovery_test") || strings.Contains(inputStr, "dr_test") || strings.Contains(inputStr, "disaster_recovery_test") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "RC.RP-05", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Recovery plan testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "RC.RP-05", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Recovery plan testing not configured", Timestamp: time.Now(), Remediation: "Test recovery plan"}, nil
 }

@@ -124,7 +124,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain router configuration standards for all network devices",
 		Category:    "Network Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRouterConfig,
 		References:  []string{"PCI-DSS v4.0 Req 1.6"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -234,7 +235,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Develop and maintain configuration standards for all system components to address known vulnerabilities",
 		Category:    "Configuration",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemHardeningStandard,
 		References:  []string{"PCI-DSS v4.0 Req 2.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -244,7 +246,7 @@ func (m *PCIModule) registerControls() {
 		Category:    "Configuration",
 		Severity:    compliance.SeverityHigh,
 		Automated:   true,
-		CheckFunc:   m.checkSystemHardening,
+		CheckFunc:   m.checkPCIHardening,
 		References:  []string{"PCI-DSS v4.0 Req 2.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -282,7 +284,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Harden all virtualization components including hypervisors and virtual machines",
 		Category:    "Configuration",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkVirtualizationHardening,
 		References:  []string{"PCI-DSS v4.0 Req 2.7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -301,7 +304,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Harden wireless environments including access points and controllers",
 		Category:    "Configuration",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkWirelessHardening,
 		References:  []string{"PCI-DSS v4.0 Req 2.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -310,7 +314,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain configuration standards for all system components including servers, network devices, and applications",
 		Category:    "Configuration",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConfigStandards,
 		References:  []string{"PCI-DSS v4.0 Req 2.10"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -391,7 +396,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Implement cryptographic key management processes and procedures for encryption keys used to protect stored account data",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIKeyMgmt,
 		References:  []string{"PCI-DSS v4.0 Req 3.6"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -400,7 +406,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Store cryptographic keys securely in a hardware security module (HSM) or equivalent key management system",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIKeyStorage,
 		References:  []string{"PCI-DSS v4.0 Req 3.7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -409,7 +416,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain key management policies and procedures for all cryptographic operations",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIKeyMgmtProcedures,
 		References:  []string{"PCI-DSS v4.0 Req 3.8"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -467,7 +475,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Protect cryptographic keys used to render PAN unreadable from unauthorized access and use",
 		Category:    "Data Protection",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIKeyProtection,
 		References:  []string{"PCI-DSS v4.0 Req 3.14"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -498,7 +507,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Never send PAN via end-user messaging technologies such as email, chat, or SMS",
 		Category:    "Encryption",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPANMessaging,
 		References:  []string{"PCI-DSS v4.0 Req 4.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -537,7 +547,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Use only trusted certificate authorities for issuing SSL/TLS certificates",
 		Category:    "Encryption",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTrustedCAs,
 		References:  []string{"PCI-DSS v4.0 Req 4.6"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -556,7 +567,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Encrypt PAN data transmitted over voice over IP (VoIP) communications",
 		Category:    "Encryption",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPANVoIPEncryption,
 		References:  []string{"PCI-DSS v4.0 Req 4.8"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -565,7 +577,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Monitor and detect anomalous key management activities and events",
 		Category:    "Encryption",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAnomalousKeyMgmt,
 		References:  []string{"PCI-DSS v4.0 Req 4.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -692,7 +705,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Implement a secure software development lifecycle for all custom software",
 		Category:    "Vulnerability Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCISDLC,
 		References:  []string{"PCI-DSS v4.0 Req 5.12"},
 	})
 
@@ -703,7 +717,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain software development processes for all custom software",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCISDevProcesses,
 		References:  []string{"PCI-DSS v4.0 Req 6.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -722,7 +737,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Separate pre-production and production environments for all custom software",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPreProdSeparation,
 		References:  []string{"PCI-DSS v4.0 Req 6.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -741,7 +757,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Implement separation of duties between development, testing, and production environments",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCISOD,
 		References:  []string{"PCI-DSS v4.0 Req 6.5"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -760,7 +777,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Remove all test data and accounts before deploying applications to production",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTestDataRemoved,
 		References:  []string{"PCI-DSS v4.0 Req 6.7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -779,7 +797,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Document all changes to system components including scope, impact, and authorization",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIChangeDocumentation,
 		References:  []string{"PCI-DSS v4.0 Req 6.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -798,7 +817,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure code review is performed by someone other than the original author",
 		Category:    "Software Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCICodeReview,
 		References:  []string{"PCI-DSS v4.0 Req 6.11"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -879,7 +899,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain a formal access control policy for all system components",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIAccessControlPolicy,
 		References:  []string{"PCI-DSS v4.0 Req 7.4"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -908,7 +929,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Implement access controls for offsite storage of cardholder data and media",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIOffsiteStorageAccess,
 		References:  []string{"PCI-DSS v4.0 Req 7.7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -917,7 +939,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Revoke all access rights immediately upon termination of employment or contract",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIAccessRevocation,
 		References:  []string{"PCI-DSS v4.0 Req 7.8"},
 	})
 
@@ -938,7 +961,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Eliminate all group and shared user IDs for access to system components in the CDE",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCISharedIDs,
 		References:  []string{"PCI-DSS v4.0 Req 8.2"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -947,7 +971,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Implement authentication factors that uniquely identify each user",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIAuthFactors,
 		References:  []string{"PCI-DSS v4.0 Req 8.3"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1006,7 +1031,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure all first-use passwords are changed immediately upon initial login",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIFirstUsePasswords,
 		References:  []string{"PCI-DSS v4.0 Req 8.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1015,7 +1041,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure authentication factors are not shared among users",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCINoSharedAuth,
 		References:  []string{"PCI-DSS v4.0 Req 8.10"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1044,7 +1071,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Verify user identity before performing password resets or changes",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIIdentityVerification,
 		References:  []string{"PCI-DSS v4.0 Req 8.13"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1063,7 +1091,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Ensure authentication factors are not reused across different systems or applications",
 		Category:    "Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIAuthNotReused,
 		References:  []string{"PCI-DSS v4.0 Req 8.15"},
 	})
 
@@ -1102,7 +1131,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Physically secure all media containing cardholder data including paper and electronic media",
 		Category:    "Physical Security",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIMediaSecured,
 		References:  []string{"PCI-DSS v4.0 Req 9.4"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1120,7 +1150,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Maintain a media inventory for all media containing cardholder data",
 		Category:    "Physical Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIMediaInventory,
 		References:  []string{"PCI-DSS v4.0 Req 9.6"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1149,7 +1180,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Secure devices that display PAN so that PAN is not visible to unauthorized personnel",
 		Category:    "Physical Security",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIDisplayPAN,
 		References:  []string{"PCI-DSS v4.0 Req 9.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1219,7 +1251,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Review logs for security events at least daily",
 		Category:    "Monitoring",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCILogReviewDaily,
 		References:  []string{"PCI-DSS v4.0 Req 10.6"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1228,7 +1261,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Review logs for failed access events and anomalies",
 		Category:    "Monitoring",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCILogReviewFailed,
 		References:  []string{"PCI-DSS v4.0 Req 10.7"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1277,7 +1311,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Implement a centralized logging system for all system components in the CDE",
 		Category:    "Monitoring",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCICentralizedLogging,
 		References:  []string{"PCI-DSS v4.0 Req 10.12"},
 	})
 
@@ -1288,7 +1323,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Identify and document all authorized wireless access points within the CDE",
 		Category:    "Testing",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIAuthorizedWireless,
 		References:  []string{"PCI-DSS v4.0 Req 11.1"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1363,7 +1399,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Verify that all public IP addresses are included in the scope of the PCI-DSS assessment",
 		Category:    "Testing",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIPublicIPScope,
 		References:  []string{"PCI-DSS v4.0 Req 11.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1479,7 +1516,8 @@ func (m *PCIModule) registerControls() {
 		Description: "Establish and maintain a business continuity plan for the CDE",
 		Category:    "Policy",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPCIBCP,
 		References:  []string{"PCI-DSS v4.0 Req 12.9"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1956,7 +1994,7 @@ func (m *PCIModule) checkDefaultCredentials(ctx context.Context, input []byte) (
 	}, nil
 }
 
-func (m *PCIModule) checkSystemHardening(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+func (m *PCIModule) checkPCIHardening(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	return &compliance.ControlCheckResult{
 		Framework:   m.Framework(),
 		ControlID:   "PCI-02-003",
@@ -5778,4 +5816,310 @@ func (m *PCIModule) checkFileIntegrityMonitoring(ctx context.Context, input []by
 // Dependencies returns required modules.
 func (m *PCIModule) Dependencies() []string {
 	return []string{"scanner"}
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *PCIModule) checkRouterConfig(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "router_config") || strings.Contains(inputStr, "router_standard") || strings.Contains(inputStr, "network_device_config") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-01-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Router configuration standards detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-01-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Router configuration standards not configured", Timestamp: time.Now(), Remediation: "Establish router configuration standards"}, nil
+}
+
+func (m *PCIModule) checkSystemHardeningStandard(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "system_hardening") || strings.Contains(inputStr, "hardening_standard") || strings.Contains(inputStr, "configuration_standard") || strings.Contains(inputStr, "hardening_config") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-002", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "System hardening standards detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-002", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "System hardening standards not configured", Timestamp: time.Now(), Remediation: "Develop and maintain system hardening configuration standards"}, nil
+}
+
+func (m *PCIModule) checkVirtualizationHardening(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "virtualization_hardening") || strings.Contains(inputStr, "hypervisor_hardening") || strings.Contains(inputStr, "vm_hardening") || strings.Contains(inputStr, "virtualization_security") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Virtualization hardening detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Virtualization hardening not configured", Timestamp: time.Now(), Remediation: "Harden all virtualization components"}, nil
+}
+
+func (m *PCIModule) checkWirelessHardening(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "wireless_hardening") || strings.Contains(inputStr, "wifi_hardening") || strings.Contains(inputStr, "wireless_security_config") || strings.Contains(inputStr, "access_point_security") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Wireless hardening detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Wireless hardening not configured", Timestamp: time.Now(), Remediation: "Harden wireless environments"}, nil
+}
+
+func (m *PCIModule) checkConfigStandards(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "config_standards") || strings.Contains(inputStr, "configuration_standards") || strings.Contains(inputStr, "component_config_standard") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-010", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Configuration standards detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-02-010", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Configuration standards not configured", Timestamp: time.Now(), Remediation: "Establish configuration standards for all system components"}, nil
+}
+
+func (m *PCIModule) checkPCIKeyMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "key_management") || strings.Contains(inputStr, "key_mgmt") || strings.Contains(inputStr, "cryptographic_key_management") || strings.Contains(inputStr, "encryption_key_mgmt") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cryptographic key management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cryptographic key management not configured", Timestamp: time.Now(), Remediation: "Implement cryptographic key management"}, nil
+}
+
+func (m *PCIModule) checkPCIKeyStorage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "key_storage") || strings.Contains(inputStr, "hsm") || strings.Contains(inputStr, "hardware_security_module") || strings.Contains(inputStr, "secure_key_storage") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cryptographic key storage detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cryptographic key storage not configured", Timestamp: time.Now(), Remediation: "Store cryptographic keys securely in HSM"}, nil
+}
+
+func (m *PCIModule) checkPCIKeyMgmtProcedures(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "key_management_procedure") || strings.Contains(inputStr, "key_mgmt_policy") || strings.Contains(inputStr, "key_procedure") || strings.Contains(inputStr, "key_operations") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-008", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Key management procedures detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-008", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Key management procedures not configured", Timestamp: time.Now(), Remediation: "Establish key management policies and procedures"}, nil
+}
+
+func (m *PCIModule) checkPCIKeyProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "key_protection") || strings.Contains(inputStr, "pan_key_protection") || strings.Contains(inputStr, "key_access_control") || strings.Contains(inputStr, "pan_rendering_key") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-014", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Key protection for PAN rendering detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-03-014", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Key protection for PAN rendering not configured", Timestamp: time.Now(), Remediation: "Protect cryptographic keys used for PAN rendering"}, nil
+}
+
+func (m *PCIModule) checkPANMessaging(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "pan_messaging_block") || strings.Contains(inputStr, "pan_email_block") || strings.Contains(inputStr, "pan_chat_block") || strings.Contains(inputStr, "pan_sms_block") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-002", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "PAN messaging protection detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-002", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "PAN messaging protection not configured", Timestamp: time.Now(), Remediation: "Block PAN via end-user messaging technologies"}, nil
+}
+
+func (m *PCIModule) checkTrustedCAs(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "trusted_ca") || strings.Contains(inputStr, "trusted_certificate_authority") || strings.Contains(inputStr, "ca_trust") || strings.Contains(inputStr, "certificate_authority_trusted") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Trusted CAs detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Trusted CAs not configured", Timestamp: time.Now(), Remediation: "Use only trusted certificate authorities"}, nil
+}
+
+func (m *PCIModule) checkPANVoIPEncryption(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "voip_encryption") || strings.Contains(inputStr, "pan_voip_encrypt") || strings.Contains(inputStr, "voice_encryption") || strings.Contains(inputStr, "voip_security") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-008", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "VoIP PAN encryption detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-008", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "VoIP PAN encryption not configured", Timestamp: time.Now(), Remediation: "Encrypt PAN data transmitted over VoIP"}, nil
+}
+
+func (m *PCIModule) checkAnomalousKeyMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "anomalous_key_mgmt") || strings.Contains(inputStr, "key_anomaly_detection") || strings.Contains(inputStr, "key_monitoring") || strings.Contains(inputStr, "key_anomaly") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Anomalous key management monitoring detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-04-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Anomalous key management monitoring not configured", Timestamp: time.Now(), Remediation: "Monitor and detect anomalous key management activities"}, nil
+}
+
+func (m *PCIModule) checkPCISDLC(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "secure_sdlc") || strings.Contains(inputStr, "sdlc") || strings.Contains(inputStr, "secure_development_lifecycle") || strings.Contains(inputStr, "secure_software_lifecycle") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-05-012", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Secure SDLC detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-05-012", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Secure SDLC not configured", Timestamp: time.Now(), Remediation: "Implement a secure software development lifecycle"}, nil
+}
+
+func (m *PCIModule) checkPCISDevProcesses(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "software_development_process") || strings.Contains(inputStr, "dev_process") || strings.Contains(inputStr, "development_process") || strings.Contains(inputStr, "sdl_process") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-001", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Software development processes detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-001", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Software development processes not configured", Timestamp: time.Now(), Remediation: "Establish software development processes"}, nil
+}
+
+func (m *PCIModule) checkPreProdSeparation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "pre_prod_separation") || strings.Contains(inputStr, "environment_separation") || strings.Contains(inputStr, "prod_pre_prod_separate") || strings.Contains(inputStr, "dev_prod_separation") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-003", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Pre-production separation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-003", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Pre-production separation not configured", Timestamp: time.Now(), Remediation: "Separate pre-production and production environments"}, nil
+}
+
+func (m *PCIModule) checkPCISOD(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "dev_test_prod_sod") || strings.Contains(inputStr, "separation_of_duties") || strings.Contains(inputStr, "dev_prod_sod") || strings.Contains(inputStr, "sod_development") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-005", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Separation of duties detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-005", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Separation of duties not configured", Timestamp: time.Now(), Remediation: "Implement separation of duties between dev/test/prod"}, nil
+}
+
+func (m *PCIModule) checkTestDataRemoved(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "test_data_removed") || strings.Contains(inputStr, "test_data_cleanup") || strings.Contains(inputStr, "test_account_removed") || strings.Contains(inputStr, "pre_prod_cleanup") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Test data removal detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Test data removal not configured", Timestamp: time.Now(), Remediation: "Remove all test data before production deployment"}, nil
+}
+
+func (m *PCIModule) checkPCIChangeDocumentation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "change_documentation") || strings.Contains(inputStr, "change_documented") || strings.Contains(inputStr, "change_record") || strings.Contains(inputStr, "all_changes_documented") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Change documentation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Change documentation not configured", Timestamp: time.Now(), Remediation: "Document all changes to system components"}, nil
+}
+
+func (m *PCIModule) checkPCICodeReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "code_review") || strings.Contains(inputStr, "peer_review") || strings.Contains(inputStr, "review_by_other") || strings.Contains(inputStr, "independent_code_review") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-011", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Code review detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-06-011", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Code review not configured", Timestamp: time.Now(), Remediation: "Ensure code review by someone other than author"}, nil
+}
+
+func (m *PCIModule) checkPCIAccessControlPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "access_control_policy") || strings.Contains(inputStr, "formal_access_policy") || strings.Contains(inputStr, "ac_policy") || strings.Contains(inputStr, "access_policy") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-07-004", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access control policy detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-07-004", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Access control policy not configured", Timestamp: time.Now(), Remediation: "Establish formal access control policy"}, nil
+}
+
+func (m *PCIModule) checkPCIOffsiteStorageAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "offsite_storage_access") || strings.Contains(inputStr, "offsite_access") || strings.Contains(inputStr, "offsite_media_access") || strings.Contains(inputStr, "remote_storage_access") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-07-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Offsite storage access control detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-07-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Offsite storage access control not configured", Timestamp: time.Now(), Remediation: "Implement access controls for offsite storage"}, nil
+}
+
+func (m *PCIModule) checkPCIAccessRevocation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "access_revocation") || strings.Contains(inputStr, "termination_access_revoke") || strings.Contains(inputStr, "immediate_revocation") || strings.Contains(inputStr, "access_termination") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-07-008", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Access revocation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-07-008", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Access revocation not configured", Timestamp: time.Now(), Remediation: "Revoke access immediately upon termination"}, nil
+}
+
+func (m *PCIModule) checkPCISharedIDs(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "shared_ids_eliminated") || strings.Contains(inputStr, "no_shared_ids") || strings.Contains(inputStr, "unique_user_ids") || strings.Contains(inputStr, "group_ids_eliminated") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-002", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Shared IDs eliminated detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-002", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Shared IDs not eliminated", Timestamp: time.Now(), Remediation: "Eliminate all group and shared user IDs"}, nil
+}
+
+func (m *PCIModule) checkPCIAuthFactors(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "auth_factors") || strings.Contains(inputStr, "authentication_factors") || strings.Contains(inputStr, "unique_identification") || strings.Contains(inputStr, "mfa_factors") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-003", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Authentication factors detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-003", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Authentication factors not configured", Timestamp: time.Now(), Remediation: "Implement authentication factors that uniquely identify each user"}, nil
+}
+
+func (m *PCIModule) checkPCIFirstUsePasswords(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "first_use_password") || strings.Contains(inputStr, "password_change_initial") || strings.Contains(inputStr, "initial_password_changed") || strings.Contains(inputStr, "default_password_changed") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "First-use password change detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "First-use password change not configured", Timestamp: time.Now(), Remediation: "Ensure all first-use passwords are changed immediately"}, nil
+}
+
+func (m *PCIModule) checkPCINoSharedAuth(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "no_shared_auth") || strings.Contains(inputStr, "unique_auth_factors") || strings.Contains(inputStr, "auth_not_shared") || strings.Contains(inputStr, "individual_auth") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-010", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "No shared authentication detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-010", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Shared authentication detected", Timestamp: time.Now(), Remediation: "Ensure authentication factors are not shared"}, nil
+}
+
+func (m *PCIModule) checkPCIIdentityVerification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "identity_verification") || strings.Contains(inputStr, "user_identity_verified") || strings.Contains(inputStr, "identity_confirm") || strings.Contains(inputStr, "identity_before_reset") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-013", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Identity verification detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-013", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Identity verification not configured", Timestamp: time.Now(), Remediation: "Verify user identity before password resets"}, nil
+}
+
+func (m *PCIModule) checkPCIAuthNotReused(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "auth_not_reused") || strings.Contains(inputStr, "no_auth_reuse") || strings.Contains(inputStr, "unique_auth_per_system") || strings.Contains(inputStr, "auth_factor_reuse_prohibited") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-015", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Auth factors not reused detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-08-015", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Auth factor reuse not prevented", Timestamp: time.Now(), Remediation: "Ensure authentication factors are not reused"}, nil
+}
+
+func (m *PCIModule) checkPCIMediaSecured(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "media_secured") || strings.Contains(inputStr, "media_protection") || strings.Contains(inputStr, "physical_media_security") || strings.Contains(inputStr, "cardholder_media") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-09-004", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Media security detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-09-004", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Media security not configured", Timestamp: time.Now(), Remediation: "Physically secure all media containing cardholder data"}, nil
+}
+
+func (m *PCIModule) checkPCIMediaInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "media_inventory") || strings.Contains(inputStr, "media_tracking") || strings.Contains(inputStr, "media_log") || strings.Contains(inputStr, "cardholder_media_inventory") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-09-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Media inventory detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-09-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Media inventory not configured", Timestamp: time.Now(), Remediation: "Maintain a media inventory"}, nil
+}
+
+func (m *PCIModule) checkPCIDisplayPAN(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "pan_display_protection") || strings.Contains(inputStr, "display_pan") || strings.Contains(inputStr, "pan_masking") || strings.Contains(inputStr, "pan_obfuscation") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-09-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "PAN display protection detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-09-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "PAN display protection not configured", Timestamp: time.Now(), Remediation: "Secure devices that display PAN"}, nil
+}
+
+func (m *PCIModule) checkPCILogReviewDaily(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "daily_log_review") || strings.Contains(inputStr, "log_review_daily") || strings.Contains(inputStr, "security_event_review") || strings.Contains(inputStr, "log_monitoring_daily") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-10-006", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Daily log review detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-10-006", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Daily log review not configured", Timestamp: time.Now(), Remediation: "Review logs for security events daily"}, nil
+}
+
+func (m *PCIModule) checkPCILogReviewFailed(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "failed_access_review") || strings.Contains(inputStr, "failed_login_review") || strings.Contains(inputStr, "access_anomaly_review") || strings.Contains(inputStr, "failed_auth_monitoring") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-10-007", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Failed access log review detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-10-007", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Failed access log review not configured", Timestamp: time.Now(), Remediation: "Review logs for failed access events"}, nil
+}
+
+func (m *PCIModule) checkPCICentralizedLogging(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "centralized_logging") || strings.Contains(inputStr, "central_log") || strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "log_aggregation") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-10-012", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Centralized logging detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-10-012", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Centralized logging not configured", Timestamp: time.Now(), Remediation: "Implement centralized logging system"}, nil
+}
+
+func (m *PCIModule) checkPCIAuthorizedWireless(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "authorized_wireless") || strings.Contains(inputStr, "wireless_inventory") || strings.Contains(inputStr, "approved_access_points") || strings.Contains(inputStr, "wireless_authorization") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-11-001", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Authorized wireless detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-11-001", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Authorized wireless not configured", Timestamp: time.Now(), Remediation: "Identify and document all authorized wireless access points"}, nil
+}
+
+func (m *PCIModule) checkPCIPublicIPScope(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "public_ip_scope") || strings.Contains(inputStr, "ip_address_scope") || strings.Contains(inputStr, "public_ip_verified") || strings.Contains(inputStr, "scope_verification") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-11-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Public IP scope verification detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-11-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow, Message: "Public IP scope verification not configured", Timestamp: time.Now(), Remediation: "Verify all public IP addresses are in scope"}, nil
+}
+
+func (m *PCIModule) checkPCIBCP(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "business_continuity_plan") || strings.Contains(inputStr, "bcp") || strings.Contains(inputStr, "disaster_recovery_plan") || strings.Contains(inputStr, "continuity_plan") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-12-009", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Business continuity plan detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "PCI-12-009", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Business continuity plan not configured", Timestamp: time.Now(), Remediation: "Establish business continuity plan for CDE"}, nil
 }

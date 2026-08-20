@@ -55,7 +55,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 AC.2.010: Permitted actions are restricted based on user role and context",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCPermittedActions,
 		References:  []string{"CMMC L2 AC.2.010"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -64,7 +65,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 AC.2.011: Security functions are isolated from non-security functions",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCSecFuncIsolation,
 		References:  []string{"CMMC L2 AC.2.011"},
 	})
 
@@ -119,7 +121,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 AU.2.012: Non-repudiation safeguards protect audit records from tampering",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCNonRepudiation,
 		References:  []string{"CMMC L2 AU.2.012"},
 	})
 
@@ -165,7 +168,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 CM.2.012: Software usage is monitored and restricted to authorized installations",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCSWUsage,
 		References:  []string{"CMMC L2 CM.2.012"},
 	})
 
@@ -212,7 +216,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 IR.2.008: Incident response procedures are tested on a regular basis",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCIRTesting,
 		References:  []string{"CMMC L2 IR.2.008", "NIST SP 800-171 §3.6.1"},
 	})
 
@@ -326,7 +331,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 RA.2.005: Risk responses and remediation activities are documented and tracked",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCRiskResponse,
 		References:  []string{"CMMC L2 RA.2.005"},
 	})
 
@@ -417,7 +423,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 CUI.004: CUI storage and disposal follows NIST SP 800-88 sanitization guidelines",
 		Category:    "CUI Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCCUIStorageDisposal,
 		References:  []string{"NIST SP 800-88", "32 CFR 2002"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -1011,4 +1018,102 @@ func (m *CMMCL2Module) checkCUIIdentification(ctx context.Context, input []byte)
 		violations = append(violations, "enforcement not configured")
 	}
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CUI-01", ControlName: "CUI Identification & Marking", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "CUI identification gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure CUI marking with data labels and access enforcement"}, nil
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *CMMCL2Module) checkCMMCSecImpact(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "security_impact") || strings.Contains(inputStr, "change_impact_analysis") || strings.Contains(inputStr, "config_impact") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-08", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security impact analysis detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-08", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security impact analysis not configured", Timestamp: time.Now(), Remediation: "Analyze security impact of configuration changes"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCSecFuncIsolation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "security_function_isolation") || strings.Contains(inputStr, "function_isolation") || strings.Contains(inputStr, "security_isolation") || strings.Contains(inputStr, "isolated_security_functions") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AC-26", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Security function isolation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AC-26", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Security function isolation not configured", Timestamp: time.Now(), Remediation: "Isolate security functions from non-security functions"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCSWUsage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "software_usage_restriction") || strings.Contains(inputStr, "software_restriction") || strings.Contains(inputStr, "software_whitelist") || strings.Contains(inputStr, "application_control") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-12", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Software usage restrictions detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-12", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Software usage restrictions not configured", Timestamp: time.Now(), Remediation: "Monitor and restrict software usage"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCIRTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "ir_testing") || strings.Contains(inputStr, "incident_response_test") || strings.Contains(inputStr, "ir_test") || strings.Contains(inputStr, "incident_test") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IR-08", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident response testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IR-08", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Incident response testing not configured", Timestamp: time.Now(), Remediation: "Test incident response procedures"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCNonRepudiation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "non_repudiation") || strings.Contains(inputStr, "audit_non_repudiation") || strings.Contains(inputStr, "tamper_protection") || strings.Contains(inputStr, "audit_protection") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AU-12", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Non-repudiation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AU-12", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Non-repudiation not configured", Timestamp: time.Now(), Remediation: "Implement non-repudiation safeguards for audit records"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCRiskResponse(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "risk_response") || strings.Contains(inputStr, "risk_remediation") || strings.Contains(inputStr, "remediation_activity") || strings.Contains(inputStr, "risk_treatment") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-RA-05", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Risk response and remediation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-RA-05", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk response not configured", Timestamp: time.Now(), Remediation: "Document risk responses and remediation activities"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCCUIStorageDisposal(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "cui_storage") || strings.Contains(inputStr, "cui_disposal") || strings.Contains(inputStr, "cui_media_storage") || strings.Contains(inputStr, "controlled_storage") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CUI-04", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "CUI storage and disposal detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CUI-04", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "CUI storage and disposal not configured", Timestamp: time.Now(), Remediation: "Implement CUI storage and disposal controls"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCMobileDevice(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "mobile_device_restriction") || strings.Contains(inputStr, "mobile_access_control") || strings.Contains(inputStr, "mobile_device_policy") || strings.Contains(inputStr, "mobile_restriction") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AC-11", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Mobile device restrictions detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AC-11", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Mobile device restrictions not configured", Timestamp: time.Now(), Remediation: "Restrict mobile device access to CUI"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCPermittedActions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "permitted_actions") || strings.Contains(inputStr, "action_restriction") || strings.Contains(inputStr, "role_based_action") || strings.Contains(inputStr, "context_restriction") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AC-25", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Permitted actions restrictions detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AC-25", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Permitted actions restrictions not configured", Timestamp: time.Now(), Remediation: "Restrict permitted actions based on role and context"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCSessionAudit(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "session_audit") || strings.Contains(inputStr, "session_establishment") || strings.Contains(inputStr, "session_termination_audit") || strings.Contains(inputStr, "session_monitoring") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AU-09", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Session audit detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-AU-09", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Session audit not configured", Timestamp: time.Now(), Remediation: "Audit session establishment and termination"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCCryptoAuth(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "cryptographic_module_auth") || strings.Contains(inputStr, "crypto_auth") || strings.Contains(inputStr, "hardware_auth") || strings.Contains(inputStr, "module_authentication") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IA-05", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cryptographic module authentication detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IA-05", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cryptographic module authentication not configured", Timestamp: time.Now(), Remediation: "Authenticate using cryptographic modules"}, nil
+}
+
+func (m *CMMCL2Module) checkCMMCIdentifierMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	if strings.Contains(inputStr, "identifier_management") || strings.Contains(inputStr, "unique_identifier") || strings.Contains(inputStr, "user_id_management") || strings.Contains(inputStr, "account_identifier") {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IA-08", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Identifier management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IA-08", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Identifier management not configured", Timestamp: time.Now(), Remediation: "Manage user identifiers and assign unique IDs"}, nil
 }

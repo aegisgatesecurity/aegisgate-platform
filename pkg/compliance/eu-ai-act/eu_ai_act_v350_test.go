@@ -443,7 +443,7 @@ func TestEUAIModule_V350AutomatedCount(t *testing.T) {
 			automated++
 		}
 	}
-	if automated != 37 {
-		t.Errorf("Automated count = %d, want 37 (9 v3.3.0 + 8 v3.5.0+ + 20 v3.5.1+)", automated)
+	if automated != 55 {
+		t.Errorf("Automated count = %d, want 55", automated)
 	}
 }

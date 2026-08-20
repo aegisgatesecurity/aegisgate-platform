@@ -28,7 +28,8 @@ func (m *NIST800171Module) registerSCControls() {
 		Description: "NIST 800-171 SC-4 (3.13.4): Information sharing controlled between systems",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTransmissionIntegrity,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.13.4", "NIST SP 800-53 Rev. 5 SC-4"},
 	})
 

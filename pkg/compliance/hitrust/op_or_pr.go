@@ -89,7 +89,8 @@ func (m *HITRUSTModule) registerOPControls() {
 		Description: "HITRUST CSF v11.2 OP-05: Access restrictions for change — access to change tools and environments restricted",
 		Category:    "Operations",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTChangeAccessRestrictions,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-5"},
 	})
 
@@ -1092,4 +1093,15 @@ func (m *HITRUSTModule) checkRiskMonitoring(ctx context.Context, input []byte) (
 		violations = append(violations, "alerting not configured")
 	}
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OR-07", ControlName: "Risk Monitoring", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk monitoring gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure risk monitoring with assessment and alerting"}, nil
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *HITRUSTModule) checkHITRUSTChangeAccessRestrictions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChangeAccess := strings.Contains(inputStr, "change_access") || strings.Contains(inputStr, "change_restriction") || strings.Contains(inputStr, "change_tool_access") || strings.Contains(inputStr, "change_control_access")
+	if hasChangeAccess {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-05", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Access restrictions for change detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-05", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Access restrictions for change not configured", Timestamp: time.Now(), Remediation: "Implement access restrictions for change tools"}, nil
 }

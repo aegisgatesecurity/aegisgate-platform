@@ -4,7 +4,7 @@
 // HITRUST CSF v11.2 — 200 in-scope controls.
 // Test coverage target: 80%+ per pkg/compliance coverage floor.
 //
-// Total controls: 200 (80 automated + 120 manual)
+// Total controls: 200 (112 automated + 88 manual)
 //   AM: 25 (14 automated + 11 manual)
 //   ID: 10 ( 7 automated +  3 manual)
 //   IP: 25 (15 automated + 10 manual)
@@ -59,11 +59,11 @@ func TestHITRUST_AutomatedCount(t *testing.T) {
 			manual++
 		}
 	}
-	if automated != 80 {
-		t.Errorf("automated controls = %d, want 80", automated)
+	if automated != 112 {
+		t.Errorf("automated controls = %d, want 112", automated)
 	}
-	if manual != 120 {
-		t.Errorf("manual controls = %d, want 120", manual)
+	if manual != 88 {
+		t.Errorf("manual controls = %d, want 88", manual)
 	}
 }
 
@@ -80,8 +80,8 @@ func TestHITRUST_ManualControlsHaveNoCheckFunc(t *testing.T) {
 			}
 		}
 	}
-	if manualCount != 120 {
-		t.Errorf("manual control count = %d, want 120", manualCount)
+	if manualCount != 88 {
+		t.Errorf("manual control count = %d, want 88", manualCount)
 	}
 }
 
@@ -98,8 +98,8 @@ func TestHITRUST_AutomatedControlsHaveCheckFunc(t *testing.T) {
 			}
 		}
 	}
-	if autoCount != 80 {
-		t.Errorf("automated control count = %d, want 80", autoCount)
+	if autoCount != 112 {
+		t.Errorf("automated control count = %d, want 112", autoCount)
 	}
 }
 
@@ -589,7 +589,137 @@ const fullyCompliantConfig = `{
 	"essential_services": true,
 	"minimal_services": true,
 	"automatic": true,
-	"validated": true
+	"validated": true,
+	"ai_governance": true,
+	"model_governance": true,
+	"governance_framework": true,
+	"ai_model_governance": true,
+	"model_lifecycle": true,
+	"ai_policy": true,
+	"ai_output_validation": true,
+	"output_validation": true,
+	"output_filter": true,
+	"output_safety": true,
+	"training_data_quality": true,
+	"training_data_integrity": true,
+	"training_data_security": true,
+	"data_quality": true,
+	"ai_model_inventory": true,
+	"model_inventory": true,
+	"model_registry": true,
+	"ai_model_registry": true,
+	"bias_testing": true,
+	"bias_detection": true,
+	"fairness_testing": true,
+	"ai_bias": true,
+	"model_retention": true,
+	"ai_model_retention": true,
+	"model_disposal": true,
+	"ai_retention": true,
+	"ai_privacy_impact": true,
+	"ai_privacy": true,
+	"ai_privacy_assessment": true,
+	"privacy_impact_ai": true,
+	"ai_third_party": true,
+	"ai_vendor": true,
+	"ai_supplier": true,
+	"ai_external": true,
+	"developer_config": true,
+	"development_config": true,
+	"source_config": true,
+	"dev_config_management": true,
+	"developer_security_test": true,
+	"dev_sec": true,
+	"security_testing_development": true,
+	"dev_security_testing": true,
+	"ir_test": true,
+	"incident_response_test": true,
+	"ir_plan_test": true,
+	"incident_test": true,
+	"evidence_preservation": true,
+	"evidentiary": true,
+	"forensic_preservation": true,
+	"evidence_retention": true,
+	"incident_communication": true,
+	"incident_notification": true,
+	"incident_alert": true,
+	"ir_communication": true,
+	"forensic_analysis": true,
+	"digital_forensics": true,
+	"forensic_investigation": true,
+	"forensic_capability": true,
+	"incident_recovery": true,
+	"recovery_procedure": true,
+	"system_recovery": true,
+	"ir_recovery": true,
+	"post_incident": true,
+	"lessons_learned": true,
+	"incident_review": true,
+	"post_incident_review": true,
+	"automated_marking": true,
+	"security_labels": true,
+	"data_labeling": true,
+	"information_marking": true,
+	"content_filter": true,
+	"security_filter": true,
+	"data_inspection": true,
+	"web_filter": true,
+	"wireless_access": true,
+	"wifi_security": true,
+	"wireless_auth": true,
+	"wireless_control": true,
+	"mobile_code": true,
+	"code_execution": true,
+	"script_execution": true,
+	"code_signing": true,
+	"external_system": true,
+	"external_access": true,
+	"remote_system": true,
+	"external_use": true,
+	"information_sharing": true,
+	"data_sharing": true,
+	"info_exchange": true,
+	"data_exchange": true,
+	"data_mining_prevention": true,
+	"anti_mining": true,
+	"mining_prevention": true,
+	"aggregation_prevention": true,
+	"endpoint_security": true,
+	"endpoint_hardening": true,
+	"device_security": true,
+	"endpoint_policy": true,
+	"privacy_controls": true,
+	"data_privacy": true,
+	"privacy_protection": true,
+	"privacy_measures": true,
+	"information_spillage": true,
+	"data_spill": true,
+	"spillage_response": true,
+	"spill_prevention": true,
+	"media_sanitization": true,
+	"disposal": true,
+	"decommission": true,
+	"disposal_procedure": true,
+	"change_access": true,
+	"change_restriction": true,
+	"change_tool_access": true,
+	"change_control_access": true,
+	"software_usage": true,
+	"software_restriction": true,
+	"software_whitelist": true,
+	"application_whitelist": true,
+	"alternate_communication": true,
+	"backup_communication": true,
+	"emergency_communication": true,
+	"alt_comms": true,
+	"long_term_storage": true,
+	"archive_storage": true,
+	"long_term_retention": true,
+	"archive_retention": true,
+	"poam": true,
+	"plan_of_action": true,
+	"milestones": true,
+	"remediation_plan": true
 }`
 
 func TestHITRUST_CheckAllAutomated_Compliant(t *testing.T) {
@@ -601,8 +731,8 @@ func TestHITRUST_CheckAllAutomated_Compliant(t *testing.T) {
 		t.Fatalf("CheckAll failed: %v", err)
 	}
 
-	if len(results) != 80 {
-		t.Fatalf("CheckAll returned %d results, want 80", len(results))
+	if len(results) != 112 {
+		t.Fatalf("CheckAll returned %d results, want 112", len(results))
 	}
 
 	for _, r := range results {

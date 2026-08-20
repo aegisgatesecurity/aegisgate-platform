@@ -129,7 +129,8 @@ func (m *CMMCL2Module) registerAUControls() {
 		Description: "CMMC L2 AU.2.008: Audit session establishment and termination for CUI system access. AegisGate generates the session audit evidence for the customer's CMMC assessment.",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCSessionAudit,
 		References:  []string{"CMMC L2 AU.2.008", "NIST SP 800-171 §3.3.10"},
 	})
 }

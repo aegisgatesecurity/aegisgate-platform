@@ -123,7 +123,8 @@ func (m *NIST800171Module) registerAdditionalACControls() {
 		Description: "NIST 800-171 AC-20 (3.1.20): Use of external systems with approved connections and risk acceptance",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkExternalSystems,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.1.20", "NIST SP 800-53 Rev. 5 AC-20"},
 	})
 
@@ -301,7 +302,8 @@ func (m *NIST800171Module) registerAdditionalIAControls() {
 		Description: "NIST 800-171 IA-6 (3.5.9): Authenticator feedback obscured during entry — no display of passwords",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuthenticatorFeedback,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.5.9", "NIST SP 800-53 Rev. 5 IA-6"},
 	})
 
@@ -324,7 +326,8 @@ func (m *NIST800171Module) registerAdditionalIAControls() {
 		Description: "NIST 800-171 IA-9 (3.5.11): Non-organizational users identified and authenticated per organizational policy",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentResponseAssistance,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.5.11", "NIST SP 800-53 Rev. 5 IA-9"},
 	})
 
@@ -335,7 +338,8 @@ func (m *NIST800171Module) registerAdditionalIAControls() {
 		Description: "NIST 800-171 IA-11: Re-authentication required for privileged actions and role changes",
 		Category:    "Identification and Authentication",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkReAuthentication,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.5", "NIST SP 800-53 Rev. 5 IA-11"},
 	})
 }
@@ -378,7 +382,8 @@ func (m *NIST800171Module) registerAdditionalRAControls() {
 		Description: "NIST 800-171 RA-6: Risk response documented and implemented with accepted risk tracked",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskMonitoring,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.11", "NIST SP 800-53 Rev. 5 RA-6"},
 	})
 }
@@ -405,7 +410,8 @@ func (m *NIST800171Module) registerAdditionalSCControls() {
 		Description: "NIST 800-171 SC-6 (3.13.6): Resource priority with protected system resources for critical functions",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDoSProtection,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.13.6", "NIST SP 800-53 Rev. 5 SC-6"},
 	})
 
@@ -440,7 +446,8 @@ func (m *NIST800171Module) registerAdditionalSCControls() {
 		Description: "NIST 800-171 SC-11 (3.13.11): Trustworthy computing with verified hardware and software",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSoftwareIntegrity,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.13.11", "NIST SP 800-53 Rev. 5 SC-11"},
 	})
 
@@ -451,7 +458,8 @@ func (m *NIST800171Module) registerAdditionalSCControls() {
 		Description: "NIST 800-171 SC-15 (3.13.15): Collaborative computing with remote activation controls disabled",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecureNameResolution,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.13.15", "NIST SP 800-53 Rev. 5 SC-15"},
 	})
 
@@ -474,7 +482,8 @@ func (m *NIST800171Module) registerAdditionalSCControls() {
 		Description: "NIST 800-171 SC-18 (3.13.18): Mobile code controlled and digitally signed",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMaliciousCodeProtection,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.13.18", "NIST SP 800-53 Rev. 5 SC-18"},
 	})
 
@@ -536,7 +545,8 @@ func (m *NIST800171Module) registerAdditionalCPMAControls() {
 		Description: "NIST 800-171 MA-4 (3.7.4): Maintenance personnel authorized and supervised with need-to-know",
 		Category:    "Maintenance",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkMaintenanceTools,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.7.4", "NIST SP 800-53 Rev. 5 MA-4"},
 	})
 

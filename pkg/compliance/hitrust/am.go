@@ -172,7 +172,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-11: Wireless access controls — authentication, encryption, and monitoring for wireless networks",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTWirelessAccess,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-18"},
 	})
 
@@ -206,7 +207,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-14: Access controls for mobile code — execution policies and sandboxing of mobile code technologies",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTMobileCode,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-20"},
 	})
 
@@ -217,7 +219,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-15: Controls for use of external systems — restrictions and requirements for accessing organizational data from external systems",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTExternalSystems,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-20"},
 	})
 
@@ -228,7 +231,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-16: Information sharing controls — policies and procedures for sharing data with external partners",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTInfoSharing,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-21"},
 	})
 
@@ -251,7 +255,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-18: Automated marking of information — security labels applied to data assets",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAutomatedMarking,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-16"},
 	})
 
@@ -310,7 +315,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-23: Security filters — content filtering and inspection at network boundaries",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTSecurityFilters,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-4(7)"},
 	})
 
@@ -932,4 +938,60 @@ func (m *HITRUSTModule) checkConcurrentSessionControl(ctx context.Context, input
 		Message: "Concurrent session control gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(),
 		Remediation: "Configure concurrent session limits with authentication and enforcement",
 	}, nil
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *HITRUSTModule) checkHITRUSTAutomatedMarking(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMarking := strings.Contains(inputStr, "automated_marking") || strings.Contains(inputStr, "security_labels") || strings.Contains(inputStr, "data_labeling") || strings.Contains(inputStr, "information_marking")
+	if hasMarking {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-18", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Automated marking detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-18", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow, Message: "Automated marking not configured", Timestamp: time.Now(), Remediation: "Implement automated data marking and security labels"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTSecurityFilters(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFilter := strings.Contains(inputStr, "content_filter") || strings.Contains(inputStr, "security_filter") || strings.Contains(inputStr, "data_inspection") || strings.Contains(inputStr, "web_filter")
+	if hasFilter {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-23", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security filters detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-23", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security filters not configured", Timestamp: time.Now(), Remediation: "Implement content filtering and security inspection"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTWirelessAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasWireless := strings.Contains(inputStr, "wireless_access") || strings.Contains(inputStr, "wifi_security") || strings.Contains(inputStr, "wireless_auth") || strings.Contains(inputStr, "wireless_control")
+	if hasWireless {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-11", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Wireless access controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-11", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Wireless access controls not configured", Timestamp: time.Now(), Remediation: "Implement wireless access controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTMobileCode(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMobileCode := strings.Contains(inputStr, "mobile_code") || strings.Contains(inputStr, "code_execution") || strings.Contains(inputStr, "script_execution") || strings.Contains(inputStr, "code_signing")
+	if hasMobileCode {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-14", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Mobile code controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-14", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Mobile code controls not configured", Timestamp: time.Now(), Remediation: "Implement mobile code execution controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTExternalSystems(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasExternal := strings.Contains(inputStr, "external_system") || strings.Contains(inputStr, "external_access") || strings.Contains(inputStr, "remote_system") || strings.Contains(inputStr, "external_use")
+	if hasExternal {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-15", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "External system controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-15", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "External system controls not configured", Timestamp: time.Now(), Remediation: "Implement controls for use of external systems"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTInfoSharing(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSharing := strings.Contains(inputStr, "information_sharing") || strings.Contains(inputStr, "data_sharing") || strings.Contains(inputStr, "info_exchange") || strings.Contains(inputStr, "data_exchange")
+	if hasSharing {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-16", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Information sharing controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AM-16", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Information sharing controls not configured", Timestamp: time.Now(), Remediation: "Implement information sharing controls"}, nil
 }

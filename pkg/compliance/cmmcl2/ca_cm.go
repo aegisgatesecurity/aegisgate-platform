@@ -162,7 +162,8 @@ func (m *CMMCL2Module) registerCMControls() {
 		Description: "CMMC L2 CM.2.007: Analyze security impact of configuration changes. AegisGate generates the impact analysis evidence for the customer's CMMC assessment.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMMCSecImpact,
 		References:  []string{"CMMC L2 CM.2.007", "NIST SP 800-171 §3.4.11"},
 	})
 

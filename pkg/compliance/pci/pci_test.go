@@ -133,7 +133,7 @@ func TestSystemHardeningCheck(t *testing.T) {
 
 	t.Run("CompliantConfig", func(t *testing.T) {
 		input := []byte("hardened_system configuration")
-		result, err := m.checkSystemHardening(context.Background(), input)
+		result, err := m.checkPCIHardening(context.Background(), input)
 		require.NoError(t, err)
 		assert.Equal(t, compliance.StatusCompliant, result.Status)
 	})

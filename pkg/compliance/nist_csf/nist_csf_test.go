@@ -53,8 +53,8 @@ func TestNISTCSF_AutomatedCount(t *testing.T) {
 			automated++
 		}
 	}
-	if automated != 48 {
-		t.Errorf("automated controls = %d, want 48", automated)
+	if automated != 58 {
+		t.Errorf("automated controls = %d, want 58", automated)
 	}
 }
 
@@ -217,6 +217,45 @@ func TestNISTCSF_CheckAllAutomated_Compliant(t *testing.T) {
 		"incident_management": true,
 		"incident_mitigation": true,
 		"incident_resolution": true
+		"transmission_media_protected": true,
+		"media_protection": true,
+		"cable_protection": true,
+		"transmission_security": true,
+		"network_protocol_protection": true,
+		"protocol_security": true,
+		"communication_protocol_protected": true,
+		"secure_protocol": true,
+		"software_lifecycle": true,
+		"software_lifecycle_managed": true,
+		"lifecycle_management": true,
+		"platform_removal": true,
+		"decommission_platform": true,
+		"platform_decommissioned": true,
+		"removed_platform": true,
+		"backup_protected": true,
+		"backup_managed": true,
+		"backup_security": true,
+		"protected_backup": true,
+		"tech_validated": true,
+		"technology_tested": true,
+		"tech_test": true,
+		"validation_testing": true,
+		"mobile_code_monitor": true,
+		"mobile_code_detection": true,
+		"unauthorized_code_monitor": true,
+		"code_monitoring": true,
+		"forensics": true,
+		"forensic_capability": true,
+		"digital_forensics": true,
+		"forensic_analysis": true,
+		"vuln_mitigated": true,
+		"vulnerability_mitigated": true,
+		"vuln_remediated": true,
+		"vulnerability_remediation": true,
+		"recovery_plan_test": true,
+		"recovery_test": true,
+		"dr_test": true,
+		"disaster_recovery_test": true
 	}`)
 
 	controls := m.Controls()

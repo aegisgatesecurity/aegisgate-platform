@@ -368,7 +368,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-15: Information spillage controls — procedures to respond to data spills and cross-domain contamination",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTInfoSpillage,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-5"},
 	})
 
@@ -379,7 +380,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-16: Data mining prevention — controls to prevent unauthorized data mining and aggregation",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTDataMiningPrevention,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -584,7 +586,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 PE-09: Endpoint security policy — device hardening, patching, and configuration management documented",
 		Category:    "Privacy and Endpoint",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTEndpointSecurity,
 		References:  []string{"HITRUST CSF v11.2 04.i", "NIST SP 800-53 Rev. 5 CM-1"},
 	})
 
@@ -639,7 +642,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 PE-14: Disposal and sanitization — media sanitization and decommissioning procedures documented and verified",
 		Category:    "Privacy and Endpoint",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTDisposal,
 		References:  []string{"HITRUST CSF v11.2 04.n", "NIST SP 800-53 Rev. 5 MP-6"},
 	})
 
@@ -696,7 +700,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 PE-19: Data privacy controls — technical and organizational measures to protect personal data",
 		Category:    "Privacy and Endpoint",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTDataPrivacyControls,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -1810,4 +1815,51 @@ func (m *HITRUSTModule) checkTransmissionGuard(ctx context.Context, input []byte
 		violations = append(violations, "authentication not configured")
 	}
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-25", ControlName: "Transmission Guard", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Transmission guard gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure transmission guard with TLS and authentication"}, nil
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *HITRUSTModule) checkHITRUSTDataMiningPrevention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMiningPrev := strings.Contains(inputStr, "data_mining_prevention") || strings.Contains(inputStr, "anti_mining") || strings.Contains(inputStr, "mining_prevention") || strings.Contains(inputStr, "aggregation_prevention")
+	if hasMiningPrev {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-16", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data mining prevention detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-16", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Data mining prevention not configured", Timestamp: time.Now(), Remediation: "Implement data mining prevention controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTEndpointSecurity(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEndpointSec := strings.Contains(inputStr, "endpoint_security") || strings.Contains(inputStr, "endpoint_hardening") || strings.Contains(inputStr, "device_security") || strings.Contains(inputStr, "endpoint_policy")
+	if hasEndpointSec {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-PE-09", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Endpoint security detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-PE-09", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Endpoint security not configured", Timestamp: time.Now(), Remediation: "Implement endpoint security policy and hardening"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTDataPrivacyControls(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPrivacyControls := strings.Contains(inputStr, "privacy_controls") || strings.Contains(inputStr, "data_privacy") || strings.Contains(inputStr, "privacy_protection") || strings.Contains(inputStr, "privacy_measures")
+	if hasPrivacyControls {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-PE-19", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Data privacy controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-PE-19", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Data privacy controls not configured", Timestamp: time.Now(), Remediation: "Implement data privacy controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTInfoSpillage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSpillage := strings.Contains(inputStr, "information_spillage") || strings.Contains(inputStr, "data_spill") || strings.Contains(inputStr, "spillage_response") || strings.Contains(inputStr, "spill_prevention")
+	if hasSpillage {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-15", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Information spillage controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-15", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Information spillage controls not configured", Timestamp: time.Now(), Remediation: "Implement information spillage controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTDisposal(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDisposal := strings.Contains(inputStr, "media_sanitization") || strings.Contains(inputStr, "disposal") || strings.Contains(inputStr, "decommission") || strings.Contains(inputStr, "disposal_procedure")
+	if hasDisposal {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-PE-14", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Disposal and sanitization detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-PE-14", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Disposal and sanitization not configured", Timestamp: time.Now(), Remediation: "Implement media sanitization and disposal procedures"}, nil
 }

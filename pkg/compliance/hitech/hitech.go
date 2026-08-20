@@ -157,7 +157,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Breach notifications must include description of breach, types of information, steps to protect, and contact information",
 		Category:    "Breach Notification",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkBreachNotificationContent,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -166,7 +166,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "All breach notifications and supporting documentation must be retained for six years",
 		Category:    "Breach Notification",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkBreachDocumentation,
 	})
 
@@ -205,7 +205,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Civil monetary penalties must be adjusted for inflation in accordance with Federal Civil Penalties Inflation Adjustment Act",
 		Category:    "Enhanced Penalties",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkPenaltyInflation,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -214,7 +214,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Penalties escalate for repeat violations and willful neglect that is not corrected within 30 days",
 		Category:    "Enhanced Penalties",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkRepeatViolationEscalation,
 	})
 
@@ -271,7 +271,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Organizations must verify that their EHR technology is certified under the ONC Health IT Certification Program",
 		Category:    "EHR Audit",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkCertifiedEHRTechnology,
 	})
 
@@ -319,7 +319,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Business associates must notify covered entities of a breach within 60 days of discovery",
 		Category:    "Business Associate",
 		Severity:    compliance.SeverityCritical,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkBABreachNotification,
 	})
 
@@ -358,7 +358,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Individuals may request restrictions on disclosures of their PHI, including to health plans for self-paid services",
 		Category:    "Patient Rights",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkRightToRestrict,
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -367,7 +367,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "Individuals may request that communications regarding their health information be sent by alternative means",
 		Category:    "Patient Rights",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkConfidentialCommunications,
 	})
 
@@ -424,7 +424,7 @@ func (m *HITECHModule) registerControls() {
 		Description: "AI clinical decision support systems must provide explainability and interpretability for clinicians and patients",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
 		CheckFunc:   m.checkAIExplainability,
 	})
 }

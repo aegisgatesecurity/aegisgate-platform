@@ -100,7 +100,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-06: Incident response plan testing — regular testing of the IR plan",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTIRPlanTesting,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 IR-4"},
 	})
 
@@ -135,7 +136,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-09: Evidentiary preservation — preservation of evidence for investigations",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTEvidencePreservation,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -146,7 +148,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-10: Incident communication — procedures for communicating during incidents",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTIncidentComms,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -157,7 +160,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-11: Forensic analysis — procedures for forensic analysis of incidents",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTForensicAnalysis,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -180,7 +184,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-13: Recovery — procedures for recovering from security incidents",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTRecovery,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -191,7 +196,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-14: Post-incident review — review of incidents to improve response",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTPostIncidentReview,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -273,7 +279,8 @@ func (m *HITRUSTModule) registerSDControls() {
 		Description: "HITRUST CSF v11.2 SD-06: Developer configuration management — CM requirements for developers",
 		Category:    "Supplier/Development",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTDevConfigMgmt,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 SA-10"},
 	})
 
@@ -284,7 +291,8 @@ func (m *HITRUSTModule) registerSDControls() {
 		Description: "HITRUST CSF v11.2 SD-07: Developer security testing — security testing requirements for developers",
 		Category:    "Supplier/Development",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTDevSecurityTesting,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 SA-11"},
 	})
 
@@ -413,7 +421,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-03: AI model governance — governance framework for AI model development and deployment",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIModelGovernance,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -424,7 +433,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-04: AI output validation — validation of AI model outputs for accuracy and safety",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIOutputValidation,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -435,7 +445,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-05: AI training data controls — controls for the quality, integrity, and security of training data",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAITrainingData,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -446,7 +457,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-06: AI model inventory — comprehensive inventory of AI models in use",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIModelInventory,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -457,7 +469,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-07: AI bias testing — testing for bias in AI model outputs and decisions",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIBiasTesting,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -468,7 +481,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-08: AI model retention — retention policies for AI models and training data",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIModelRetention,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -479,7 +493,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-09: AI privacy impact — assessment of privacy impacts from AI model usage",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIPrivacyImpact,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 
@@ -490,7 +505,8 @@ func (m *HITRUSTModule) registerAIControls() {
 		Description: "HITRUST CSF v11.2 AI-10: AI third-party risk — management of risks from third-party AI services and models",
 		Category:    "AI Controls",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkHITRUSTAIThirdPartyRisk,
 		References:  []string{"HITRUST CSF v11.2 AI Supplement"},
 	})
 }
@@ -819,4 +835,151 @@ func (m *HITRUSTModule) checkIncidentMitigation(ctx context.Context, input []byt
 		violations = append(violations, "audit logging not configured")
 	}
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-12", ControlName: "Incident Mitigation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Incident mitigation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure incident mitigation with auto-containment and audit logging"}, nil
+}
+
+// ===== P5 Comprehensive Review: Additional CheckFunc implementations =====
+
+func (m *HITRUSTModule) checkHITRUSTAIModelGovernance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasGovernance := strings.Contains(inputStr, "ai_governance") || strings.Contains(inputStr, "model_governance") || strings.Contains(inputStr, "ai_model_governance")
+	hasFramework := strings.Contains(inputStr, "governance_framework") || strings.Contains(inputStr, "ai_policy") || strings.Contains(inputStr, "model_lifecycle")
+	if hasGovernance && hasFramework {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-03", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI model governance framework detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-03", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI model governance not configured", Timestamp: time.Now(), Remediation: "Implement AI model governance framework"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAIOutputValidation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasValidation := strings.Contains(inputStr, "ai_output_validation") || strings.Contains(inputStr, "output_validation") || strings.Contains(inputStr, "output_filter") || strings.Contains(inputStr, "output_safety")
+	if hasValidation {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-04", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI output validation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-04", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI output validation not configured", Timestamp: time.Now(), Remediation: "Implement AI output validation controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAITrainingData(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTrainingData := strings.Contains(inputStr, "training_data_quality") || strings.Contains(inputStr, "training_data_integrity") || strings.Contains(inputStr, "training_data_security") || strings.Contains(inputStr, "data_quality")
+	if hasTrainingData {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-05", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI training data controls detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-05", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI training data controls not configured", Timestamp: time.Now(), Remediation: "Implement AI training data quality and security controls"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAIModelInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInventory := strings.Contains(inputStr, "ai_model_inventory") || strings.Contains(inputStr, "model_inventory") || strings.Contains(inputStr, "model_registry") || strings.Contains(inputStr, "ai_model_registry")
+	if hasInventory {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-06", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "AI model inventory detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-06", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "AI model inventory not configured", Timestamp: time.Now(), Remediation: "Implement AI model inventory and registry"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAIBiasTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBiasTest := strings.Contains(inputStr, "bias_testing") || strings.Contains(inputStr, "bias_detection") || strings.Contains(inputStr, "fairness_testing") || strings.Contains(inputStr, "ai_bias")
+	if hasBiasTest {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-07", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "AI bias testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-07", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "AI bias testing not configured", Timestamp: time.Now(), Remediation: "Implement AI bias testing and fairness evaluation"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAIModelRetention(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRetention := strings.Contains(inputStr, "model_retention") || strings.Contains(inputStr, "ai_model_retention") || strings.Contains(inputStr, "model_disposal") || strings.Contains(inputStr, "ai_retention")
+	if hasRetention {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-08", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "AI model retention detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-08", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "AI model retention not configured", Timestamp: time.Now(), Remediation: "Implement AI model retention policies"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAIPrivacyImpact(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPrivacyImpact := strings.Contains(inputStr, "ai_privacy_impact") || strings.Contains(inputStr, "ai_privacy") || strings.Contains(inputStr, "ai_privacy_assessment") || strings.Contains(inputStr, "privacy_impact_ai")
+	if hasPrivacyImpact {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-09", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "AI privacy impact assessment detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-09", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "AI privacy impact assessment not configured", Timestamp: time.Now(), Remediation: "Implement AI privacy impact assessment"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTAIThirdPartyRisk(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasThirdParty := strings.Contains(inputStr, "ai_third_party") || strings.Contains(inputStr, "ai_vendor") || strings.Contains(inputStr, "ai_supplier") || strings.Contains(inputStr, "ai_external")
+	if hasThirdParty {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-10", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "AI third-party risk management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-AI-10", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "AI third-party risk management not configured", Timestamp: time.Now(), Remediation: "Implement AI third-party risk management"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTDevConfigMgmt(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDevCM := strings.Contains(inputStr, "developer_config") || strings.Contains(inputStr, "development_config") || strings.Contains(inputStr, "source_config") || strings.Contains(inputStr, "dev_config_management")
+	if hasDevCM {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-SD-06", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Developer configuration management detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-SD-06", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Developer configuration management not configured", Timestamp: time.Now(), Remediation: "Implement developer configuration management"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTDevSecurityTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDevSecTest := strings.Contains(inputStr, "developer_security_test") || strings.Contains(inputStr, "dev_sec") || strings.Contains(inputStr, "security_testing_development") || strings.Contains(inputStr, "dev_security_testing")
+	if hasDevSecTest {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-SD-07", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Developer security testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-SD-07", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Developer security testing not configured", Timestamp: time.Now(), Remediation: "Implement developer security testing requirements"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTIRPlanTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasIRTest := strings.Contains(inputStr, "ir_test") || strings.Contains(inputStr, "incident_response_test") || strings.Contains(inputStr, "ir_plan_test") || strings.Contains(inputStr, "incident_test")
+	if hasIRTest {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-06", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident response plan testing detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-06", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Incident response plan testing not configured", Timestamp: time.Now(), Remediation: "Implement incident response plan testing"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTEvidencePreservation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasEvidence := strings.Contains(inputStr, "evidence_preservation") || strings.Contains(inputStr, "evidentiary") || strings.Contains(inputStr, "forensic_preservation") || strings.Contains(inputStr, "evidence_retention")
+	if hasEvidence {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-09", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Evidentiary preservation detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-09", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Evidentiary preservation not configured", Timestamp: time.Now(), Remediation: "Implement evidentiary preservation procedures"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTIncidentComms(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasComms := strings.Contains(inputStr, "incident_communication") || strings.Contains(inputStr, "incident_notification") || strings.Contains(inputStr, "incident_alert") || strings.Contains(inputStr, "ir_communication")
+	if hasComms {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-10", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident communication detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-10", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Incident communication not configured", Timestamp: time.Now(), Remediation: "Implement incident communication procedures"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTForensicAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasForensic := strings.Contains(inputStr, "forensic_analysis") || strings.Contains(inputStr, "digital_forensics") || strings.Contains(inputStr, "forensic_investigation") || strings.Contains(inputStr, "forensic_capability")
+	if hasForensic {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-11", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Forensic analysis detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-11", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Forensic analysis not configured", Timestamp: time.Now(), Remediation: "Implement forensic analysis capabilities"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTRecovery(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRecovery := strings.Contains(inputStr, "incident_recovery") || strings.Contains(inputStr, "recovery_procedure") || strings.Contains(inputStr, "system_recovery") || strings.Contains(inputStr, "ir_recovery")
+	if hasRecovery {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-13", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident recovery detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-13", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Incident recovery not configured", Timestamp: time.Now(), Remediation: "Implement incident recovery procedures"}, nil
+}
+
+func (m *HITRUSTModule) checkHITRUSTPostIncidentReview(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPostIncident := strings.Contains(inputStr, "post_incident") || strings.Contains(inputStr, "lessons_learned") || strings.Contains(inputStr, "incident_review") || strings.Contains(inputStr, "post_incident_review")
+	if hasPostIncident {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-14", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Post-incident review detected", Timestamp: time.Now()}, nil
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-14", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow, Message: "Post-incident review not configured", Timestamp: time.Now(), Remediation: "Implement post-incident review procedures"}, nil
 }
