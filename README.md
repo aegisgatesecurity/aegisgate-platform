@@ -9,7 +9,7 @@
 [![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-8000+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-83.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![EU AI Act](https://img.shields.io/badge/EU_AI_Act-82_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
+[![EU AI Act](https://img.shields.io/badge/EU_AI_Act-120_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![SIEM](https://img.shields.io/badge/SIEM-Pro+_only-9333ea?logo=splunk)](#tier-gated-features)
 [![ML Detection](https://img.shields.io/badge/ML_Detection-Pro+_only-22c55e?logo=tensorflow)](#tier-gated-features)
 [![Lens](https://img.shields.io/badge/Lens-Browser_Extension-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
@@ -37,8 +37,8 @@ AegisGate is **open-core**: the community edition is Apache 2.0 open source, and
 |---------|---------|----------|
 | **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 176 detection patterns, 4 community compliance frameworks, in-memory + file persistence |
 | **Developer** ($79/mo) | Proprietary | + 6 regulatory frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR), PostgreSQL persistence, SSO |
-| **Professional** ($499/mo) | Proprietary | + 11 industry frameworks (EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, SIEM (11 platforms), ML threat detection, federated IOC, PostgreSQL |
-| **Enterprise** (custom) | Proprietary | + 5 regulated frameworks (HITRUST, TISAX, CMMC L2, NIST 800-171, ISO 42001), HSM, FIPS mode, air-gapped, K8s clustering, custom ML, 24×7 support |
+| **Professional** ($499/mo) | Proprietary | + 16 frameworks (4 security foundation + 12 industry) (EU AI Act, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, SIEM (11 platforms), ML threat detection, federated IOC, PostgreSQL |
+| **Enterprise** (custom) | Proprietary | + 5 regulated frameworks (FedRAMP, CMMC L2, NIST 800-171, HITRUST, TISAX), HSM, FIPS mode, air-gapped, K8s clustering, custom ML, 24×7 support |
 
 Enterprise features are gated via `//go:build enterprise` build tags and tier checks in `pkg/tier/tier.go`. The community edition compiles standalone (CGO_ENABLED=0, no ONNX Runtime) and returns clear `ErrEnterpriseOnly` / `codes.Unimplemented` responses when features above the licensed tier are invoked. See [Pricing →](https://aegisgatesecurity.io/pricing/)
 
@@ -154,8 +154,8 @@ result, _ := guard.Scan(ctx, text)
 |------|-------|------------------------|---------------|------------|--------------|
 | **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 176 detection patterns, in-memory persistence |
 | **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
-| **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, FedRAMP, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
-| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
+| **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
+| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + FedRAMP, HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
 
 ### Vertical Bundles
 
@@ -197,7 +197,7 @@ See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 | ISO 27001 | Developer | `pkg/compliance/iso27001/` |
 | CCPA | Developer | `pkg/compliance/ccpa/` |
 | EU AI Act | Professional | `pkg/compliance/eu-ai-act/` |
-| FedRAMP (NIST 800-53) | Professional | `pkg/compliance/fedramp/` |
+| FedRAMP (NIST 800-53) | Enterprise | `pkg/compliance/fedramp/` |
 | NIST CSF | Professional | `pkg/compliance/nist_csf/` |
 | NIST 800-171 | Professional | `pkg/compliance/nist800171/` |
 | FIPS 140-2 | Professional | `pkg/compliance/fips/` |
