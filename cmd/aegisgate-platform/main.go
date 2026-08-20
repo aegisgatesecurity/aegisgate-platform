@@ -208,6 +208,8 @@ CLI Subcommands (run "aegisgate <subcommand> --help" for details):
 
   config <validate|show|profiles>  Config validation and inspection (v4.2.0+)
 
+  setup                       Interactive setup wizard (v4.2.0+)
+
   Run "aegisgate <subcommand> help" for verb-level help.
 
 Deploy Profiles (v4.2.0+ "Easy Button"):

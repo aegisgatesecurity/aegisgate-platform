@@ -1,4 +1,4 @@
-.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise run-quickstart run-small-team run-production run-high-security run-air-gapped profiles-list lens-build lens-test lens-harness-test lens-testlab-test lens-e2e lens-privacy-test lens-backend-test lens-clean help
+.PHONY: build test lint clean docker run-community run-developer run-professional run-enterprise run-quickstart run-small-team run-production run-high-security run-air-gapped profiles-list setup setup-quick lens-build lens-test lens-harness-test lens-testlab-test lens-e2e lens-privacy-test lens-backend-test lens-clean help
 
 # =========================================================================
 # AegisGate Security Platform — Makefile
@@ -71,7 +71,11 @@ run-air-gapped: build ## Run with air-gapped deploy profile (isolated network)
 profiles-list: build ## List all available deploy profiles
 	./$(BINARY) --profile list
 
-run-licensed: build ## Run with explicit license key (set LICENSE_KEY env var)
+setup: build ## Run the setup wizard (interactive)
+	./$(BINARY) setup
+
+setup-quick: build ## Run setup non-interactively with auto-detected profile
+	./$(BINARY) setup --non-interactive
 	./$(BINARY) --license="$(LICENSE_KEY)" --embedded-mcp
 
 clean: ## Remove build artifacts
