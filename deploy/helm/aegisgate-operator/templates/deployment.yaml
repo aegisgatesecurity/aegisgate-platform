@@ -22,12 +22,20 @@ spec:
       serviceAccountName: {{ include "aegisgate-operator.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: operator
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+            seccompProfile:
+              type: RuntimeDefault
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: health
               containerPort: 9443

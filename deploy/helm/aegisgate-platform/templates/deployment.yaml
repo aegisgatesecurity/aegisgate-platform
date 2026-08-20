@@ -28,6 +28,10 @@ spec:
         - name: aegisgate-platform
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
             - "--proxy-port={{ .Values.ports.proxy }}"
             - "--mcp-port={{ .Values.ports.mcp }}"

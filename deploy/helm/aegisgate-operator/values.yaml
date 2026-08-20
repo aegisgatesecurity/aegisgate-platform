@@ -11,6 +11,11 @@ image:
   tag: "v3.6.1"
   pullPolicy: IfNotPresent
 
+# -- Image pull secrets for private registry authentication
+# Configure to restrict pulls to authenticated, trusted registries (KSV-0125).
+imagePullSecrets: []
+# - name: ghcr-pull-secret
+
 # -- Service account for operator RBAC
 serviceAccount:
   create: true
@@ -30,11 +35,15 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   runAsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 # -- Container security context
 securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
   capabilities:
     drop:
       - ALL

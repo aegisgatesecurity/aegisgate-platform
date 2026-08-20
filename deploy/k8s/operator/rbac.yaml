@@ -45,7 +45,7 @@ rules:
       - aegisgatedeployments/finalizers
     verbs:
       - update
-  # Deployments
+  # Deployments — operator creates/manages platform Deployments (KSV-0048: required)
   - apiGroups:
       - apps
     resources:
@@ -58,7 +58,7 @@ rules:
       - update
       - patch
       - delete
-  # Services
+  # Services — operator creates platform Services (KSV-0056: required for operator function)
   - apiGroups:
       - ""
     resources:
@@ -71,7 +71,7 @@ rules:
       - update
       - patch
       - delete
-  # ConfigMaps
+  # ConfigMaps — operator creates platform ConfigMaps (KSV-0049: required for operator function)
   - apiGroups:
       - ""
     resources:
@@ -84,7 +84,8 @@ rules:
       - update
       - patch
       - delete
-  # Secrets
+  # Secrets — read-only: operator reads license keys, never creates/deletes
+  # (KSV-0041: intentional, scoped to read-only)
   - apiGroups:
       - ""
     resources:
@@ -93,7 +94,7 @@ rules:
       - get
       - list
       - watch
-  # Pods (for status reads)
+  # Pods — operator reads Pod status for health reporting (KSV-0048: required, read-only)
   - apiGroups:
       - ""
     resources:

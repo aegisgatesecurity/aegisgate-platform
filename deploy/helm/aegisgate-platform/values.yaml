@@ -20,6 +20,11 @@ image:
   pullPolicy: IfNotPresent
   # pullSecrets: []
 
+# -- Image pull secrets for private registry authentication
+# Configure to restrict pulls to authenticated, trusted registries (KSV-0125).
+imagePullSecrets: []
+# - name: ghcr-pull-secret
+
 # -- Replica count (adjust based on load)
 replicaCount: 1
 

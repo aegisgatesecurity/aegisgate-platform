@@ -249,3 +249,4 @@ pkg/compliance/premium/
 # Trust portal HTTP wire (proprietary)
 cmd/aegisgate-platform/trust_portal_http.go
 cmd/aegisgate-platform/trust_portal_http_test.go
+.plans/

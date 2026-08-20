@@ -50,6 +50,8 @@ spec:
         - name: aegisgate-platform
           image: ghcr.io/aegisgatesecurity/aegisgate-platform:4.0.0
           imagePullPolicy: IfNotPresent
+          # imagePullSecrets:
+          #   - name: ghcr-pull-secret
           args:
             - "--proxy-port=8080"
             - "--mcp-port=8081"

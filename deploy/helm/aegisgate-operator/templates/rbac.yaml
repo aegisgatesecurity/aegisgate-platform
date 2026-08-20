@@ -16,18 +16,27 @@ metadata:
     app.kubernetes.io/name: aegisgate-operator
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
+  # CRD management — operator reconciles AegisGateDeployment resources (KSV-0048: required)
   - apiGroups: ["aegisgate.io"]
     resources: ["aegisgatedeployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["aegisgate.io"]
     resources: ["aegisgatedeployments/status"]
     verbs: ["get", "update", "patch"]
+  # Deployments — operator creates/manages platform Deployments (KSV-0048: required)
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Services, ConfigMaps, Pods — operator creates platform Service/ConfigMap
+  # and reads Pod status (KSV-0048, KSV-0049, KSV-0056: required for operator function)
   - apiGroups: [""]
-    resources: ["services", "configmaps", "secrets", "pods"]
+    resources: ["services", "configmaps", "pods"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Secrets — read-only: operator reads license keys, never creates/deletes
+  # (KSV-0041: intentional, scoped to read-only)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: ["autoscaling"]
     resources: ["horizontalpodautoscalers"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

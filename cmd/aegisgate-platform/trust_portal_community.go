@@ -27,7 +27,7 @@ func wireTrustPortalHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/trust", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status":  "enterprise_required",
 			"message": "Trust Framework requires enterprise license — see https://aegisgate.dev/pricing for details",
 		})
