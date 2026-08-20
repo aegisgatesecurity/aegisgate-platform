@@ -6,11 +6,11 @@
 // HITRUST CSF v11.2 — Business Continuity (BC), Regulatory Assessment (RA),
 // and Change Management (CA) families.
 //
-// In-scope controls (30 total: 4 automated + 26 manual):
+// In-scope controls (30 total: 12 automated + 18 manual):
 //
-//   BC (Business Continuity): 10 controls (1 automated + 9 manual)
+//   BC (Business Continuity): 10 controls (5 automated + 5 manual)
 //   RA (Regulatory Assessment): 10 controls (2 automated + 8 manual)
-//   CA (Change Management): 10 controls (1 automated + 9 manual)
+//   CA (Change Management): 10 controls (5 automated + 5 manual)
 //
 // =========================================================================
 
@@ -75,7 +75,8 @@ func (m *HITRUSTModule) registerBCControls() {
 		Description: "HITRUST CSF v11.2 BC-04: Contingency plan testing — regular testing of contingency plans",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkContingencyTest,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CP-4"},
 	})
 
@@ -86,7 +87,8 @@ func (m *HITRUSTModule) registerBCControls() {
 		Description: "HITRUST CSF v11.2 BC-05: Alternate storage — backup data stored at alternate location",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAlternateStorage,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CP-9(1)"},
 	})
 
@@ -109,7 +111,8 @@ func (m *HITRUSTModule) registerBCControls() {
 		Description: "HITRUST CSF v11.2 BC-07: System recovery and reconstitution — procedures for recovery after disruption",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSystemRecovery,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CP-10"},
 	})
 
@@ -131,7 +134,8 @@ func (m *HITRUSTModule) registerBCControls() {
 		Description: "HITRUST CSF v11.2 BC-09: Alternate processing — backup processing site for continuity",
 		Category:    "Business Continuity",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAlternateProcessing,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CP-7"},
 	})
 
@@ -286,7 +290,8 @@ func (m *HITRUSTModule) registerCAControls() {
 		Description: "HITRUST CSF v11.2 CA-02: Configuration baseline — documented baseline configurations",
 		Category:    "Change Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConfigBaseline,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-2"},
 	})
 
@@ -319,7 +324,8 @@ func (m *HITRUSTModule) registerCAControls() {
 		Description: "HITRUST CSF v11.2 CA-05: Access restrictions for change — access controls for change processes",
 		Category:    "Change Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeAccessRestrictions,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-5"},
 	})
 
@@ -330,7 +336,8 @@ func (m *HITRUSTModule) registerCAControls() {
 		Description: "HITRUST CSF v11.2 CA-06: Configuration settings — security configuration settings documented",
 		Category:    "Change Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCAConfigSettings,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-6"},
 	})
 
@@ -341,7 +348,8 @@ func (m *HITRUSTModule) registerCAControls() {
 		Description: "HITRUST CSF v11.2 CA-07: Least functionality — systems restricted to essential functions",
 		Category:    "Change Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLeastFunctionality,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-7"},
 	})
 
@@ -553,4 +561,182 @@ func (m *HITRUSTModule) checkCAComponentInventory(ctx context.Context, input []b
 		Timestamp:   time.Now(),
 		Remediation: "Configure component inventory with change tracking and audit logging",
 	}, nil
+}
+
+// ── P3 Promotion CheckFuncs ────────────────────────────────────────
+
+// checkContingencyTest verifies contingency plan testing config. Maps to HITRUST BC-04.
+func (m *HITRUSTModule) checkContingencyTest(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTest := strings.Contains(inputStr, "recovery_test") || strings.Contains(inputStr, "dr_test") || strings.Contains(inputStr, "contingency_test")
+	hasSchedule := strings.Contains(inputStr, "scheduled") || strings.Contains(inputStr, "periodic") || strings.Contains(inputStr, "schedule")
+	hasRecovery := strings.Contains(inputStr, "recovery") || strings.Contains(inputStr, "disaster_recovery") || strings.Contains(inputStr, "backup")
+	if hasTest && hasSchedule && hasRecovery {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-04", ControlName: "Contingency Plan Testing", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Contingency plan testing verified (test + schedule + recovery)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasTest {
+		violations = append(violations, "contingency testing not configured")
+	}
+	if !hasSchedule {
+		violations = append(violations, "testing schedule not configured")
+	}
+	if !hasRecovery {
+		violations = append(violations, "recovery procedures not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-04", ControlName: "Contingency Plan Testing", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Contingency plan testing gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure periodic contingency plan testing with recovery procedures"}, nil
+}
+
+// checkAlternateStorage verifies alternate storage config. Maps to HITRUST BC-05.
+func (m *HITRUSTModule) checkAlternateStorage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasOffsite := strings.Contains(inputStr, "offsite") || strings.Contains(inputStr, "alternate_storage") || strings.Contains(inputStr, "off_site_storage")
+	hasBackup := strings.Contains(inputStr, "backup") || strings.Contains(inputStr, "data_backup") || strings.Contains(inputStr, "system_backup")
+	hasEncryption := m.hasEncryption(inputStr)
+	if hasOffsite && hasBackup && hasEncryption {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-05", ControlName: "Alternate Storage", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Alternate storage verified (offsite + backup + encryption)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasOffsite {
+		violations = append(violations, "offsite storage not configured")
+	}
+	if !hasBackup {
+		violations = append(violations, "backup not configured")
+	}
+	if !hasEncryption {
+		violations = append(violations, "encryption not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-05", ControlName: "Alternate Storage", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Alternate storage gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure offsite backup storage with encryption"}, nil
+}
+
+// checkSystemRecovery verifies system recovery config. Maps to HITRUST BC-07.
+func (m *HITRUSTModule) checkSystemRecovery(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRecovery := strings.Contains(inputStr, "system_recovery") || strings.Contains(inputStr, "recovery_procedures") || strings.Contains(inputStr, "disaster_recovery")
+	hasReconstitution := strings.Contains(inputStr, "reconstitution") || strings.Contains(inputStr, "recovery") || strings.Contains(inputStr, "restoration")
+	hasTested := strings.Contains(inputStr, "recovery_test") || strings.Contains(inputStr, "tested") || strings.Contains(inputStr, "dr_test")
+	if hasRecovery && hasReconstitution && hasTested {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-07", ControlName: "System Recovery and Reconstitution", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "System recovery verified (recovery + reconstitution + tested)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRecovery {
+		violations = append(violations, "recovery procedures not configured")
+	}
+	if !hasReconstitution {
+		violations = append(violations, "reconstitution not configured")
+	}
+	if !hasTested {
+		violations = append(violations, "recovery testing not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-07", ControlName: "System Recovery and Reconstitution", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "System recovery gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure system recovery with reconstitution procedures and testing"}, nil
+}
+
+// checkAlternateProcessing verifies alternate processing config. Maps to HITRUST BC-09.
+func (m *HITRUSTModule) checkAlternateProcessing(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAlternate := strings.Contains(inputStr, "alternate_processing") || strings.Contains(inputStr, "failover") || strings.Contains(inputStr, "backup_site")
+	hasAuto := strings.Contains(inputStr, "automated_failover") || strings.Contains(inputStr, "auto_failover") || strings.Contains(inputStr, "automatic")
+	hasTested := strings.Contains(inputStr, "failover_test") || strings.Contains(inputStr, "tested") || strings.Contains(inputStr, "recovery_test")
+	if hasAlternate && hasAuto && hasTested {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-09", ControlName: "Alternate Processing", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Alternate processing verified (alternate + auto failover + tested)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasAlternate {
+		violations = append(violations, "alternate processing site not configured")
+	}
+	if !hasAuto {
+		violations = append(violations, "automated failover not configured")
+	}
+	if !hasTested {
+		violations = append(violations, "failover testing not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-BC-09", ControlName: "Alternate Processing", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Alternate processing gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure alternate processing site with automated failover and testing"}, nil
+}
+
+// checkConfigBaseline verifies configuration baseline. Maps to HITRUST CA-02.
+func (m *HITRUSTModule) checkConfigBaseline(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBaseline := strings.Contains(inputStr, "baseline_configuration") || strings.Contains(inputStr, "config_baseline") || strings.Contains(inputStr, "baseline")
+	hasDoc := strings.Contains(inputStr, "configuration_documentation") || strings.Contains(inputStr, "documentation") || strings.Contains(inputStr, "config_settings")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "drift_detection")
+	if hasBaseline && hasDoc && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-02", ControlName: "Configuration Baseline", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Configuration baseline verified (baseline + documentation + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasBaseline {
+		violations = append(violations, "configuration baseline not configured")
+	}
+	if !hasDoc {
+		violations = append(violations, "configuration documentation not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-02", ControlName: "Configuration Baseline", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Configuration baseline gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure baseline with documentation and drift detection enforcement"}, nil
+}
+
+// checkChangeAccessRestrictions verifies access restrictions for change. Maps to HITRUST CA-05.
+func (m *HITRUSTModule) checkChangeAccessRestrictions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRestriction := strings.Contains(inputStr, "change_access_restriction") || strings.Contains(inputStr, "change_control") || strings.Contains(inputStr, "change_approval")
+	hasRBAC := m.hasRBAC(inputStr)
+	hasAudit := m.hasAudit(inputStr)
+	if hasRestriction && hasRBAC && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-05", ControlName: "Access Restrictions for Change", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Change access restrictions verified (restriction + RBAC + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRestriction {
+		violations = append(violations, "change access restriction not configured")
+	}
+	if !hasRBAC {
+		violations = append(violations, "RBAC not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-05", ControlName: "Access Restrictions for Change", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Change access restriction gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure change access restrictions with RBAC and audit logging"}, nil
+}
+
+// checkCAConfigSettings verifies configuration settings. Maps to HITRUST CA-06.
+func (m *HITRUSTModule) checkCAConfigSettings(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSettings := strings.Contains(inputStr, "configuration_settings") || strings.Contains(inputStr, "config_settings") || strings.Contains(inputStr, "security_settings")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "settings_enforced")
+	hasDoc := strings.Contains(inputStr, "documentation") || strings.Contains(inputStr, "config_documentation") || strings.Contains(inputStr, "configuration_documentation")
+	if hasSettings && hasEnforcement && hasDoc {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-06", ControlName: "Configuration Settings", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Configuration settings verified (settings + enforcement + documentation)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasSettings {
+		violations = append(violations, "configuration settings not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	if !hasDoc {
+		violations = append(violations, "documentation not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-06", ControlName: "Configuration Settings", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Configuration settings gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure security settings with enforcement and documentation"}, nil
+}
+
+// checkLeastFunctionality verifies least functionality. Maps to HITRUST CA-07.
+func (m *HITRUSTModule) checkLeastFunctionality(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLeast := strings.Contains(inputStr, "least_functionality") || strings.Contains(inputStr, "essential_services") || strings.Contains(inputStr, "minimal_services")
+	hasRestriction := strings.Contains(inputStr, "functionality_restriction") || strings.Contains(inputStr, "service_restrictions") || strings.Contains(inputStr, "software_restrictions")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || m.hasRBAC(inputStr)
+	if hasLeast && hasRestriction && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-07", ControlName: "Least Functionality", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Least functionality verified (least + restriction + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasLeast {
+		violations = append(violations, "least functionality not configured")
+	}
+	if !hasRestriction {
+		violations = append(violations, "service restrictions not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-CA-07", ControlName: "Least Functionality", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Least functionality gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure least functionality with service restrictions and enforcement"}, nil
 }

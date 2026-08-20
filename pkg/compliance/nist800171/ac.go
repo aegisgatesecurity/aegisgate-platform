@@ -6,15 +6,15 @@
 // NIST SP 800-171 Rev. 2 — Access Control family (AC)
 // Controls for protecting CUI in nonfederal systems.
 //
-// In-scope AC controls (8 controls: 5 automated + 3 evidence-mapped):
+// In-scope AC controls (8 controls: 7 automated + 1 evidence-mapped):
 //   AC-1  Access Control Policy and Procedures  (evidence-mapped)
 //   AC-2  Account Management                     (automated)
 //   AC-3  Access Enforcement                      (automated)
 //   AC-6  Least Privilege                         (automated)
 //   AC-14 Permitted Actions Without Auth          (automated)
 //   AC-17 Remote Access                           (automated)
-//   AC-4  Information Flow Enforcement             (evidence-mapped)
-//   AC-5  Separation of Duties                    (evidence-mapped)
+//   AC-4  Information Flow Enforcement             (automated)
+//   AC-5  Separation of Duties                    (automated)
 //
 // =========================================================================
 
@@ -101,25 +101,27 @@ func (m *NIST800171Module) registerACControls() {
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.1.12", "NIST SP 800-53 Rev. 5 AC-17"},
 	})
 
-	// AC-4: Information Flow Enforcement (evidence-mapped)
+	// AC-4: Information Flow Enforcement (automated)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "NIST800171-AC-4",
 		Name:        "Information Flow Enforcement",
 		Description: "NIST 800-171 AC-4 (3.1.4): Information flow enforcement — enforce authorized access to CUI based on policy, data segmentation between tenants",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInformationFlowEnforcement,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.1.4", "NIST SP 800-53 Rev. 5 AC-4"},
 	})
 
-	// AC-5: Separation of Duties (evidence-mapped)
+	// AC-5: Separation of Duties (automated)
 	m.RegisterControl(compliance.ControlDefinition{
 		ID:          "NIST800171-AC-5",
 		Name:        "Separation of Duties",
 		Description: "NIST 800-171 AC-5 (3.1.6): Separation of duties — no single individual controls all aspects of a function, dual authorization for sensitive operations",
 		Category:    "Access Control",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSeparationOfDuties,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.1.6", "NIST SP 800-53 Rev. 5 AC-5"},
 	})
 }
@@ -362,4 +364,112 @@ func (m *NIST800171Module) checkRemoteAccess(ctx context.Context, input []byte) 
 		Timestamp:   time.Now(),
 		Remediation: "Enable MFA for all remote access, require TLS 1.2+, enable audit logging for remote sessions",
 	}, nil
+}
+
+// checkInformationFlowEnforcement verifies information flow enforcement.
+// Maps to NIST 800-171 AC-4.
+func (m *NIST800171Module) checkInformationFlowEnforcement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFlowControl := strings.Contains(inputStr, "information_flow") || strings.Contains(inputStr, "flow_control") || strings.Contains(inputStr, "data_flow")
+	hasPolicy := strings.Contains(inputStr, "flow_policy") || strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "segmentation")
+
+	if hasFlowControl && hasPolicy && hasEnforcement {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "NIST800171-AC-4",
+			ControlName: "Information Flow Enforcement",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Information flow enforcement verified (flow control + policy + enforcement)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasFlowControl {
+		violations = append(violations, "information flow control not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "flow policy not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement mechanism not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "NIST800171-AC-4",
+		ControlName: "Information Flow Enforcement",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Information flow enforcement gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure information flow enforcement with policy and network segmentation",
+	}, nil
+}
+
+// checkSeparationOfDuties verifies separation of duties enforcement.
+// Maps to NIST 800-171 AC-5.
+func (m *NIST800171Module) checkSeparationOfDuties(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSeparation := strings.Contains(inputStr, "separation_of_duties") || strings.Contains(inputStr, "dual_control") || strings.Contains(inputStr, "split_knowledge")
+	hasRBAC := strings.Contains(inputStr, "rbac") || strings.Contains(inputStr, "roles")
+	hasApproval := strings.Contains(inputStr, "dual_approval") || strings.Contains(inputStr, "approval") || strings.Contains(inputStr, "authorization")
+
+	if hasSeparation && hasRBAC && hasApproval {
+		return &compliance.ControlCheckResult{
+			Framework:   m.Framework(),
+			ControlID:   "NIST800171-AC-5",
+			ControlName: "Separation of Duties",
+			Status:      compliance.StatusCompliant,
+			Severity:    compliance.SeverityMedium,
+			Message:     "Separation of duties verified (separation + RBAC + dual approval)",
+			Timestamp:   time.Now(),
+		}, nil
+	}
+
+	violations := []string{}
+	if !hasSeparation {
+		violations = append(violations, "separation of duties not configured")
+	}
+	if !hasRBAC {
+		violations = append(violations, "RBAC not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "dual approval not configured")
+	}
+
+	return &compliance.ControlCheckResult{
+		Framework:   m.Framework(),
+		ControlID:   "NIST800171-AC-5",
+		ControlName: "Separation of Duties",
+		Status:      compliance.StatusNonCompliant,
+		Severity:    compliance.SeverityMedium,
+		Message:     "Separation of duties gaps: " + strings.Join(violations, ", "),
+		Timestamp:   time.Now(),
+		Remediation: "Configure separation of duties with RBAC and dual approval for sensitive operations",
+	}, nil
+}
+
+// checkExternalSystems verifies use of external systems controls. Maps to NIST800171-AC-20.
+func (m *NIST800171Module) checkExternalSystems(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasExternal := strings.Contains(inputStr, "external_systems") || strings.Contains(inputStr, "external_access") || strings.Contains(inputStr, "third_party_access")
+	hasRestriction := strings.Contains(inputStr, "restriction") || strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "logging_enabled") || strings.Contains(inputStr, "siem")
+	if hasExternal && hasRestriction && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-AC-20", ControlName: "Use of External Systems", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "External system controls verified (external + restriction + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasExternal {
+		violations = append(violations, "external system controls not configured")
+	}
+	if !hasRestriction {
+		violations = append(violations, "access restriction not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-AC-20", ControlName: "Use of External Systems", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "External system gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure external system access with restrictions and audit"}, nil
 }

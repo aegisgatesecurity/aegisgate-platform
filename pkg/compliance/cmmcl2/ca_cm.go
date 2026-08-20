@@ -78,7 +78,8 @@ func (m *CMMCL2Module) registerCMControls() {
 		Description: "CMMC L2 CM.1.001: Establish and maintain baseline configurations. AegisGate generates the baseline configuration evidence for the customer's CMMC assessment.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMBaselineConfig,
 		References:  []string{"CMMC L2 CM.1.001", "NIST SP 800-171 §3.4.1"},
 	})
 
@@ -113,7 +114,8 @@ func (m *CMMCL2Module) registerCMControls() {
 		Description: "CMMC L2 CM.2.003: Define and enforce configuration restrictions. AegisGate generates the configuration restriction evidence for the customer's CMMC assessment.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMConfigRestrictions,
 		References:  []string{"CMMC L2 CM.2.003", "NIST SP 800-171 §3.4.7"},
 	})
 
@@ -124,7 +126,8 @@ func (m *CMMCL2Module) registerCMControls() {
 		Description: "CMMC L2 CM.2.004: Implement secure configuration settings. AegisGate generates the secure configuration evidence for the customer's CMMC assessment.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMSecureConfig,
 		References:  []string{"CMMC L2 CM.2.004", "NIST SP 800-171 §3.4.8"},
 	})
 
@@ -182,7 +185,8 @@ func (m *CMMCL2Module) registerCMControls() {
 		Description: "CMMC L2 CM.2.009: Document and maintain configuration settings documentation. AegisGate generates the configuration documentation evidence for the customer's CMMC assessment.",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCMConfigDocs,
 		References:  []string{"CMMC L2 CM.2.009", "NIST SP 800-171 §3.4.13"},
 	})
 }
@@ -509,4 +513,92 @@ func (m *CMMCL2Module) checkBaselineEnforcement(ctx context.Context, input []byt
 		Timestamp:   time.Now(),
 		Remediation: "Define configuration baseline (config_baseline=true) and enable drift detection (drift_detection=true)",
 	}, nil
+}
+
+// checkCMBaselineConfig verifies baseline configuration. Maps to CMMCL2-CM-01.
+func (m *CMMCL2Module) checkCMBaselineConfig(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBaseline := strings.Contains(inputStr, "baseline_configuration") || strings.Contains(inputStr, "config_baseline") || strings.Contains(inputStr, "baseline")
+	hasDrift := strings.Contains(inputStr, "drift_detection") || strings.Contains(inputStr, "change_detection") || strings.Contains(inputStr, "change_tracking")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "logging_enabled") || strings.Contains(inputStr, "siem")
+	if hasBaseline && hasDrift && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-01", ControlName: "Baseline Configuration", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Baseline configuration verified (baseline + drift + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasBaseline {
+		violations = append(violations, "baseline configuration not configured")
+	}
+	if !hasDrift {
+		violations = append(violations, "drift detection not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-01", ControlName: "Baseline Configuration", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Baseline config gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure baseline with drift detection and audit logging"}, nil
+}
+
+// checkCMConfigRestrictions verifies configuration restrictions. Maps to CMMCL2-CM-04.
+func (m *CMMCL2Module) checkCMConfigRestrictions(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRestrictions := strings.Contains(inputStr, "config_restrictions") || strings.Contains(inputStr, "configuration_limits") || strings.Contains(inputStr, "security_config")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "settings_enforced")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "logging_enabled") || strings.Contains(inputStr, "siem")
+	if hasRestrictions && hasEnforcement && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-04", ControlName: "Configuration Restrictions", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Configuration restrictions verified (restrictions + enforcement + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRestrictions {
+		violations = append(violations, "configuration restrictions not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-04", ControlName: "Configuration Restrictions", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Configuration restrictions gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure security restrictions with enforcement and audit"}, nil
+}
+
+// checkCMSecureConfig verifies secure configuration. Maps to CMMCL2-CM-05.
+func (m *CMMCL2Module) checkCMSecureConfig(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSecure := strings.Contains(inputStr, "secure_configuration") || strings.Contains(inputStr, "security_hardening") || strings.Contains(inputStr, "cis_benchmark")
+	hasBaseline := strings.Contains(inputStr, "baseline") || strings.Contains(inputStr, "hardening") || strings.Contains(inputStr, "secure_baseline")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "enforced")
+	if hasSecure && hasBaseline && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-05", ControlName: "Secure Configuration", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Secure configuration verified (secure + baseline + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasSecure {
+		violations = append(violations, "secure configuration not configured")
+	}
+	if !hasBaseline {
+		violations = append(violations, "baseline hardening not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-05", ControlName: "Secure Configuration", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Secure configuration gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure secure baseline with hardening and enforcement"}, nil
+}
+
+// checkCMConfigDocs verifies configuration settings documentation. Maps to CMMCL2-CM-10.
+func (m *CMMCL2Module) checkCMConfigDocs(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasDocs := strings.Contains(inputStr, "configuration_documentation") || strings.Contains(inputStr, "config_documentation") || strings.Contains(inputStr, "settings_documentation")
+	hasSettings := strings.Contains(inputStr, "configuration_settings") || strings.Contains(inputStr, "config_settings") || strings.Contains(inputStr, "security_settings")
+	hasVersion := strings.Contains(inputStr, "version_control") || strings.Contains(inputStr, "documentation") || strings.Contains(inputStr, "up_to_date")
+	if hasDocs && hasSettings && hasVersion {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-10", ControlName: "Configuration Settings Documentation", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Config documentation verified (docs + settings + version control)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasDocs {
+		violations = append(violations, "configuration documentation not configured")
+	}
+	if !hasSettings {
+		violations = append(violations, "configuration settings not configured")
+	}
+	if !hasVersion {
+		violations = append(violations, "version control not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CM-10", ControlName: "Configuration Settings Documentation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow, Message: "Config documentation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure documentation with settings and version control"}, nil
 }

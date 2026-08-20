@@ -6,9 +6,9 @@
 // HITRUST CSF v11.2 — Incident Response (IR), Supplier/Development (SD),
 // and AI Controls (AI) families.
 //
-// In-scope controls (40 total: 6 automated + 34 manual):
+// In-scope controls (40 total: 9 automated + 31 manual):
 //
-//   IR (Incident Response): 15 controls (3 automated + 12 manual)
+//   IR (Incident Response): 15 controls (6 automated + 9 manual)
 //   SD (Supplier/Development): 15 controls (1 automated + 14 manual)
 //   AI (AI Controls): 10 controls (2 automated + 8 manual)
 //
@@ -88,7 +88,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-05: Incident reporting — procedures for reporting security incidents",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentReporting,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 IR-6"},
 	})
 
@@ -122,7 +123,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-08: Incident information collection — systematic collection of incident data",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentInfoCollection,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -166,7 +168,8 @@ func (m *HITRUSTModule) registerIRControls() {
 		Description: "HITRUST CSF v11.2 IR-12: Incident mitigation — procedures for mitigating incident impact",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIncidentMitigation,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -748,4 +751,72 @@ func (m *HITRUSTModule) checkAIAuditTrail(ctx context.Context, input []byte) (*c
 		Timestamp:   time.Now(),
 		Remediation: "Configure AI audit trail with logging and usage tracking",
 	}, nil
+}
+
+// ── P3 Promotion CheckFuncs ────────────────────────────────────────
+
+// checkIncidentReporting verifies incident reporting config. Maps to HITRUST IR-05.
+func (m *HITRUSTModule) checkIncidentReporting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReporting := strings.Contains(inputStr, "incident_reporting") || strings.Contains(inputStr, "incident_report") || strings.Contains(inputStr, "reporting_procedure")
+	hasIR := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "incident_handling") || strings.Contains(inputStr, "incident")
+	hasAudit := m.hasAudit(inputStr)
+	if hasReporting && hasIR && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-05", ControlName: "Incident Reporting", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident reporting verified (reporting + IR + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasReporting {
+		violations = append(violations, "incident reporting not configured")
+	}
+	if !hasIR {
+		violations = append(violations, "incident response not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-05", ControlName: "Incident Reporting", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Incident reporting gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure incident reporting with IR procedures and audit logging"}, nil
+}
+
+// checkIncidentInfoCollection verifies incident info collection. Maps to HITRUST IR-08.
+func (m *HITRUSTModule) checkIncidentInfoCollection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCollection := strings.Contains(inputStr, "incident_collection") || strings.Contains(inputStr, "evidence_collection") || strings.Contains(inputStr, "incident_data")
+	hasIR := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "incident_handling") || strings.Contains(inputStr, "incident")
+	hasAudit := m.hasAudit(inputStr)
+	if hasCollection && hasIR && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-08", ControlName: "Incident Information Collection", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Incident info collection verified (collection + IR + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCollection {
+		violations = append(violations, "incident collection not configured")
+	}
+	if !hasIR {
+		violations = append(violations, "incident response not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-08", ControlName: "Incident Information Collection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Incident info collection gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure incident info collection with IR procedures and audit logging"}, nil
+}
+
+// checkIncidentMitigation verifies incident mitigation config. Maps to HITRUST IR-12.
+func (m *HITRUSTModule) checkIncidentMitigation(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMitigation := strings.Contains(inputStr, "incident_mitigation") || strings.Contains(inputStr, "auto_containment") || strings.Contains(inputStr, "isolation")
+	hasIR := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "incident_handling") || strings.Contains(inputStr, "incident")
+	hasAudit := m.hasAudit(inputStr)
+	if hasMitigation && hasIR && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-12", ControlName: "Incident Mitigation", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Incident mitigation verified (mitigation + IR + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMitigation {
+		violations = append(violations, "incident mitigation not configured")
+	}
+	if !hasIR {
+		violations = append(violations, "incident response not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IR-12", ControlName: "Incident Mitigation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Incident mitigation gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure incident mitigation with auto-containment and audit logging"}, nil
 }

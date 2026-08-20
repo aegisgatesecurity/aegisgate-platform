@@ -4,18 +4,18 @@
 // HITRUST CSF v11.2 — 200 in-scope controls.
 // Test coverage target: 80%+ per pkg/compliance coverage floor.
 //
-// Total controls: 200 (50 automated + 150 manual)
-//   AM: 25 (9 automated + 16 manual)
-//   ID: 10 ( 4 automated +  6 manual)
-//   IP: 25 ( 9 automated + 16 manual)
+// Total controls: 200 (80 automated + 120 manual)
+//   AM: 25 (14 automated + 11 manual)
+//   ID: 10 ( 7 automated +  3 manual)
+//   IP: 25 (15 automated + 10 manual)
 //   PE: 25 ( 5 automated + 20 manual)
-//   OP: 20 ( 5 automated + 15 manual)
-//   OR: 10 ( 3 automated +  7 manual)
+//   OP: 20 ( 8 automated + 12 manual)
+//   OR: 10 ( 5 automated +  5 manual)
 //   PR: 15 ( 2 automated + 13 manual)
-//   BC: 10 ( 1 automated +  9 manual)
+//   BC: 10 ( 5 automated +  5 manual)
 //   RA: 10 ( 2 automated +  8 manual)
-//   CA: 10 ( 1 automated +  9 manual)
-//   IR: 15 ( 3 automated + 12 manual)
+//   CA: 10 ( 5 automated +  5 manual)
+//   IR: 15 ( 6 automated +  9 manual)
 //   SD: 15 ( 1 automated + 14 manual)
 //   AI: 10 ( 2 automated +  8 manual)
 
@@ -59,11 +59,11 @@ func TestHITRUST_AutomatedCount(t *testing.T) {
 			manual++
 		}
 	}
-	if automated != 50 {
-		t.Errorf("automated controls = %d, want 50", automated)
+	if automated != 80 {
+		t.Errorf("automated controls = %d, want 80", automated)
 	}
-	if manual != 150 {
-		t.Errorf("manual controls = %d, want 150", manual)
+	if manual != 120 {
+		t.Errorf("manual controls = %d, want 120", manual)
 	}
 }
 
@@ -80,8 +80,8 @@ func TestHITRUST_ManualControlsHaveNoCheckFunc(t *testing.T) {
 			}
 		}
 	}
-	if manualCount != 150 {
-		t.Errorf("manual control count = %d, want 150", manualCount)
+	if manualCount != 120 {
+		t.Errorf("manual control count = %d, want 120", manualCount)
 	}
 }
 
@@ -98,8 +98,8 @@ func TestHITRUST_AutomatedControlsHaveCheckFunc(t *testing.T) {
 			}
 		}
 	}
-	if autoCount != 50 {
-		t.Errorf("automated control count = %d, want 50", autoCount)
+	if autoCount != 80 {
+		t.Errorf("automated control count = %d, want 80", autoCount)
 	}
 }
 
@@ -487,7 +487,109 @@ const fullyCompliantConfig = `{
 	"model_logging": true,
 	"ai_usage_tracking": true,
 	"usage_tracking": true,
-	"decision_tracking": true
+	"decision_tracking": true,
+	"public_access": true,
+	"restricted_access": true,
+	"access_restriction": true,
+	"shared_account_prohibition": true,
+	"shared_account": true,
+	"individual_account": true,
+	"unique_user": true,
+	"information_flow": true,
+	"data_flow": true,
+	"flow_control": true,
+	"flow_policy": true,
+	"privileged_account_inventory": true,
+	"admin_inventory": true,
+	"pam_inventory": true,
+	"concurrent_session": true,
+	"max_sessions": true,
+	"session_limit": true,
+	"contingency_test": true,
+	"alternate_storage": true,
+	"off_site_storage": true,
+	"system_recovery": true,
+	"recovery_procedures": true,
+	"reconstitution": true,
+	"restoration": true,
+	"alternate_processing": true,
+	"failover": true,
+	"backup_site": true,
+	"automated_failover": true,
+	"auto_failover": true,
+	"failover_test": true,
+	"config_baseline": true,
+	"configuration_documentation": true,
+	"config_documentation": true,
+	"change_access_restriction": true,
+	"functionality_restriction": true,
+	"service_restrictions": true,
+	"software_restrictions": true,
+	"cryptographic_module": true,
+	"crypto_auth": true,
+	"module_auth": true,
+	"authenticator_type": true,
+	"token_protection": true,
+	"secure_token": true,
+	"token_encryption": true,
+	"authenticator_policy": true,
+	"hardware_token": true,
+	"data_classification": true,
+	"classification_labels": true,
+	"data_labeling": true,
+	"labeling": true,
+	"labels": true,
+	"logging_monitoring": true,
+	"log_monitoring": true,
+	"audit_monitoring": true,
+	"data_boundary": true,
+	"boundary_protection": true,
+	"data_border": true,
+	"data_retention": true,
+	"retention_policy": true,
+	"retention_period": true,
+	"disposal_policy": true,
+	"sanitization": true,
+	"data_disposal": true,
+	"protected_storage": true,
+	"secure_storage": true,
+	"storage_encryption": true,
+	"transmission_guard": true,
+	"data_transmission": true,
+	"secure_transfer": true,
+	"incident_reporting": true,
+	"incident_report": true,
+	"reporting_procedure": true,
+	"incident_collection": true,
+	"evidence_collection": true,
+	"incident_data": true,
+	"incident_mitigation": true,
+	"change_monitoring": true,
+	"change_detection": true,
+	"automated_change": true,
+	"change_automation": true,
+	"ci_cd": true,
+	"capacity_planning": true,
+	"capacity_monitoring": true,
+	"resource_monitoring": true,
+	"threshold": true,
+	"capacity_threshold": true,
+	"resource_limit": true,
+	"security_categorization": true,
+	"impact_level": true,
+	"fips_199": true,
+	"categorization": true,
+	"categorization_policy": true,
+	"risk_monitoring": true,
+	"risk_tracking": true,
+	"risk_dashboard": true,
+	"risk_analysis": true,
+	"valid": true,
+	"least_functionality": true,
+	"essential_services": true,
+	"minimal_services": true,
+	"automatic": true,
+	"validated": true
 }`
 
 func TestHITRUST_CheckAllAutomated_Compliant(t *testing.T) {
@@ -499,8 +601,8 @@ func TestHITRUST_CheckAllAutomated_Compliant(t *testing.T) {
 		t.Fatalf("CheckAll failed: %v", err)
 	}
 
-	if len(results) != 50 {
-		t.Fatalf("CheckAll returned %d results, want 50", len(results))
+	if len(results) != 80 {
+		t.Fatalf("CheckAll returned %d results, want 80", len(results))
 	}
 
 	for _, r := range results {

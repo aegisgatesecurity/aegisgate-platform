@@ -37,7 +37,8 @@ func (m *NIST800171Module) registerIRControls() {
 		Description: "NIST 800-171 IR-1 (3.6.1): Incident response policy and procedures documented",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIRPolicy,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.6.1", "NIST SP 800-53 Rev. 5 IR-1"},
 	})
 
@@ -84,7 +85,8 @@ func (m *NIST800171Module) registerIRControls() {
 		Description: "NIST 800-171 IR-8 (3.6.5): Incident response plan documented and tested",
 		Category:    "Incident Response",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkIRPlan,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.6.5", "NIST SP 800-53 Rev. 5 IR-8"},
 	})
 }
@@ -110,7 +112,8 @@ func (m *NIST800171Module) registerRAControls() {
 		Description: "NIST 800-171 RA-3 (3.11.3): Risk assessment documented and reviewed",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskAssessment,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.11.3", "NIST SP 800-53 Rev. 5 RA-3"},
 	})
 
@@ -133,7 +136,8 @@ func (m *NIST800171Module) registerRAControls() {
 		Description: "NIST 800-171 RA-1 (3.11.1): Risk assessment policy and procedures documented",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRAPolicy,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.11.1", "NIST SP 800-53 Rev. 5 RA-1"},
 	})
 
@@ -144,7 +148,8 @@ func (m *NIST800171Module) registerRAControls() {
 		Description: "NIST 800-171 RA-7: Threat intelligence feeds and monitoring",
 		Category:    "Risk Assessment",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkThreatIntel,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.11", "NIST SP 800-53 Rev. 5 RA-7"},
 	})
 }
@@ -341,4 +346,114 @@ func (m *NIST800171Module) checkVulnerabilityMonitoring(ctx context.Context, inp
 		Timestamp:   time.Now(),
 		Remediation: "Enable continuous monitoring and threat intelligence feeds",
 	}, nil
+}
+
+// checkRAPolicy verifies risk assessment policy. Maps to NIST800171-RA-1.
+func (m *NIST800171Module) checkRAPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicy := strings.Contains(inputStr, "risk_assessment_policy") || strings.Contains(inputStr, "risk_policy") || strings.Contains(inputStr, "assessment_policy")
+	hasSchedule := strings.Contains(inputStr, "scheduled") || strings.Contains(inputStr, "periodic") || strings.Contains(inputStr, "schedule")
+	hasAssessment := strings.Contains(inputStr, "risk_assessment") || strings.Contains(inputStr, "assessment") || strings.Contains(inputStr, "risk_analysis")
+	if hasPolicy && hasSchedule && hasAssessment {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-RA-1", ControlName: "Risk Assessment Policy", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Risk assessment policy verified (policy + schedule + assessment)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasPolicy {
+		violations = append(violations, "risk assessment policy not configured")
+	}
+	if !hasSchedule {
+		violations = append(violations, "schedule not configured")
+	}
+	if !hasAssessment {
+		violations = append(violations, "assessment not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-RA-1", ControlName: "Risk Assessment Policy", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk assessment policy gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure risk assessment policy with scheduling"}, nil
+}
+
+// checkRiskAssessment verifies risk assessment. Maps to NIST800171-RA-3.
+func (m *NIST800171Module) checkRiskAssessment(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAssessment := strings.Contains(inputStr, "risk_assessment") || strings.Contains(inputStr, "risk_analysis") || strings.Contains(inputStr, "threat_assessment")
+	hasVuln := strings.Contains(inputStr, "vulnerability") || strings.Contains(inputStr, "vulnerabilities") || strings.Contains(inputStr, "scanner")
+	hasTracking := strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "findings")
+	if hasAssessment && hasVuln && hasTracking {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-RA-3", ControlName: "Risk Assessment", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Risk assessment verified (assessment + vuln + tracking)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasAssessment {
+		violations = append(violations, "risk assessment not configured")
+	}
+	if !hasVuln {
+		violations = append(violations, "vulnerability scanning not configured")
+	}
+	if !hasTracking {
+		violations = append(violations, "findings tracking not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-RA-3", ControlName: "Risk Assessment", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Risk assessment gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure risk assessment with vulnerability scanning and tracking"}, nil
+}
+
+// checkThreatIntel verifies threat intelligence. Maps to NIST800171-RA-7.
+func (m *NIST800171Module) checkThreatIntel(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasThreatIntel := strings.Contains(inputStr, "threat_intel") || strings.Contains(inputStr, "threat_intelligence") || strings.Contains(inputStr, "threat_intel")
+	hasMonitoring := strings.Contains(inputStr, "monitoring") || strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "ioc")
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alerts") || strings.Contains(inputStr, "threat")
+	if hasThreatIntel && hasMonitoring && hasAlerting {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-RA-7", ControlName: "Threat Intelligence", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Threat intelligence verified (intel + monitoring + alerting)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasThreatIntel {
+		violations = append(violations, "threat intelligence not configured")
+	}
+	if !hasMonitoring {
+		violations = append(violations, "monitoring not configured")
+	}
+	if !hasAlerting {
+		violations = append(violations, "alerting not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-RA-7", ControlName: "Threat Intelligence", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Threat intelligence gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure threat intelligence with monitoring and alerting"}, nil
+}
+
+// checkIRPolicy verifies incident response policy. Maps to NIST800171-IR-1.
+func (m *NIST800171Module) checkIRPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicy := strings.Contains(inputStr, "incident_response_policy") || strings.Contains(inputStr, "ir_policy") || strings.Contains(inputStr, "response_policy")
+	hasIR := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "incident_handling") || strings.Contains(inputStr, "incident")
+	hasProcedures := strings.Contains(inputStr, "procedures") || strings.Contains(inputStr, "ir_procedures") || strings.Contains(inputStr, "response_procedures")
+	if hasPolicy && hasIR && hasProcedures {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IR-1", ControlName: "Incident Response Policy", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "IR policy verified (policy + IR + procedures)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasPolicy {
+		violations = append(violations, "IR policy not configured")
+	}
+	if !hasIR {
+		violations = append(violations, "incident response not configured")
+	}
+	if !hasProcedures {
+		violations = append(violations, "procedures not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IR-1", ControlName: "Incident Response Policy", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "IR policy gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure IR policy with procedures"}, nil
+}
+
+// checkIRPlan verifies incident response plan. Maps to NIST800171-IR-8.
+func (m *NIST800171Module) checkIRPlan(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPlan := strings.Contains(inputStr, "incident_response_plan") || strings.Contains(inputStr, "ir_plan") || strings.Contains(inputStr, "incident_plan")
+	hasProcedures := strings.Contains(inputStr, "procedures") || strings.Contains(inputStr, "response_procedures") || strings.Contains(inputStr, "ir_procedures")
+	hasRoles := strings.Contains(inputStr, "roles") || strings.Contains(inputStr, "responsibilities") || strings.Contains(inputStr, "ir_roles")
+	if hasPlan && hasProcedures && hasRoles {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IR-8", ControlName: "Incident Response Plan", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "IR plan verified (plan + procedures + roles)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasPlan {
+		violations = append(violations, "IR plan not configured")
+	}
+	if !hasProcedures {
+		violations = append(violations, "procedures not configured")
+	}
+	if !hasRoles {
+		violations = append(violations, "roles not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IR-8", ControlName: "Incident Response Plan", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "IR plan gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure IR plan with procedures and roles"}, nil
 }

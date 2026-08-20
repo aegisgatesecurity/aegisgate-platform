@@ -7,7 +7,7 @@
 // 25 controls covering authentication, authorization, access review,
 // wireless/mobile access, remote access, and network access control.
 //
-// In-scope AM controls (25 total: 9 automated + 16 manual):
+// In-scope AM controls (25 total: 14 automated + 11 manual):
 //   AM-01  Access Control Policy            (manual)
 //   AM-02  User Authentication               (automated)
 //   AM-03  Logical Access                     (automated)
@@ -239,7 +239,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-17: Public access controls — restrictions and monitoring for publicly accessible systems",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPublicAccess,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-22"},
 	})
 
@@ -273,7 +274,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-20: Shared and group account prohibition — individual accountability enforced",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSharedAccountProhibition,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-2(2)"},
 	})
 
@@ -296,7 +298,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-22: Information flow enforcement — policies and controls to regulate data flow between systems",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkInfoFlowEnforcement,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-4"},
 	})
 
@@ -318,7 +321,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-24: Privileged account inventory — comprehensive tracking and review of privileged accounts",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkPrivilegedAccountInventory,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-2(7)"},
 	})
 
@@ -329,7 +333,8 @@ func (m *HITRUSTModule) registerAMControls() {
 		Description: "HITRUST CSF v11.2 AM-25: Concurrent session control — limits on simultaneous sessions per user",
 		Category:    "Access Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkConcurrentSessionControl,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-10"},
 	})
 }
@@ -764,5 +769,167 @@ func (m *HITRUSTModule) checkNAC(ctx context.Context, input []byte) (*compliance
 		Message:     "Network access control gaps: " + strings.Join(violations, ", "),
 		Timestamp:   time.Now(),
 		Remediation: "Deploy NAC with authentication and policy compliance enforcement",
+	}, nil
+}
+
+// ── AM Family Automated Checks (P3 promotions) ─────────────────────
+
+// checkPublicAccess verifies public access restrictions. Maps to HITRUST AM-17.
+func (m *HITRUSTModule) checkPublicAccess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRestriction := strings.Contains(inputStr, "public_access") || strings.Contains(inputStr, "restricted_access") || strings.Contains(inputStr, "access_restriction")
+	hasMonitoring := m.hasAudit(inputStr) || strings.Contains(inputStr, "monitoring")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled")
+
+	if hasRestriction && hasMonitoring && hasAuth {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "HITRUST-AM-17", ControlName: "Public Access",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Public access controls verified (restriction + monitoring + auth)", Timestamp: time.Now(),
+		}, nil
+	}
+	violations := []string{}
+	if !hasRestriction {
+		violations = append(violations, "public access restriction not configured")
+	}
+	if !hasMonitoring {
+		violations = append(violations, "monitoring not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "HITRUST-AM-17", ControlName: "Public Access",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "Public access gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(),
+		Remediation: "Configure public access restrictions with monitoring and authentication",
+	}, nil
+}
+
+// checkSharedAccountProhibition verifies shared account prohibition. Maps to HITRUST AM-20.
+func (m *HITRUSTModule) checkSharedAccountProhibition(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasProhibition := strings.Contains(inputStr, "shared_account_prohibition") || strings.Contains(inputStr, "shared_account") || strings.Contains(inputStr, "individual_account")
+	hasUniqueUser := strings.Contains(inputStr, "unique_user") || strings.Contains(inputStr, "user_id") || strings.Contains(inputStr, "unique_id")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "rbac")
+
+	if hasProhibition && hasUniqueUser && hasEnforcement {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "HITRUST-AM-20", ControlName: "Shared/Group Account Prohibition",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Shared account prohibition verified (prohibition + unique users + enforcement)", Timestamp: time.Now(),
+		}, nil
+	}
+	violations := []string{}
+	if !hasProhibition {
+		violations = append(violations, "shared account prohibition not configured")
+	}
+	if !hasUniqueUser {
+		violations = append(violations, "unique user identification not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "HITRUST-AM-20", ControlName: "Shared/Group Account Prohibition",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "Shared account prohibition gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(),
+		Remediation: "Configure shared account prohibition with unique user IDs and enforcement",
+	}, nil
+}
+
+// checkInfoFlowEnforcement verifies information flow enforcement. Maps to HITRUST AM-22.
+func (m *HITRUSTModule) checkInfoFlowEnforcement(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFlowControl := strings.Contains(inputStr, "information_flow") || strings.Contains(inputStr, "data_flow") || strings.Contains(inputStr, "flow_control")
+	hasPolicy := strings.Contains(inputStr, "flow_policy") || strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "segmentation")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || m.hasRBAC(inputStr)
+
+	if hasFlowControl && hasPolicy && hasEnforcement {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "HITRUST-AM-22", ControlName: "Information Flow Enforcement",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Information flow enforcement verified (flow control + policy + enforcement)", Timestamp: time.Now(),
+		}, nil
+	}
+	violations := []string{}
+	if !hasFlowControl {
+		violations = append(violations, "information flow control not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "flow policy not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "HITRUST-AM-22", ControlName: "Information Flow Enforcement",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "Information flow enforcement gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(),
+		Remediation: "Configure information flow enforcement with policy and network segmentation",
+	}, nil
+}
+
+// checkPrivilegedAccountInventory verifies privileged account inventory. Maps to HITRUST AM-24.
+func (m *HITRUSTModule) checkPrivilegedAccountInventory(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasInventory := strings.Contains(inputStr, "privileged_account_inventory") || strings.Contains(inputStr, "admin_inventory") || strings.Contains(inputStr, "pam_inventory")
+	hasTracking := strings.Contains(inputStr, "inventory") || strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "asset_tracking")
+	hasAudit := m.hasAudit(inputStr)
+
+	if hasInventory && hasTracking && hasAudit {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "HITRUST-AM-24", ControlName: "Privileged Account Inventory",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium,
+			Message: "Privileged account inventory verified (inventory + tracking + audit)", Timestamp: time.Now(),
+		}, nil
+	}
+	violations := []string{}
+	if !hasInventory {
+		violations = append(violations, "privileged account inventory not configured")
+	}
+	if !hasTracking {
+		violations = append(violations, "tracking not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "HITRUST-AM-24", ControlName: "Privileged Account Inventory",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium,
+		Message: "Privileged account inventory gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(),
+		Remediation: "Configure privileged account inventory with tracking and audit logging",
+	}, nil
+}
+
+// checkConcurrentSessionControl verifies concurrent session limits. Maps to HITRUST AM-25.
+func (m *HITRUSTModule) checkConcurrentSessionControl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasSessionLimit := strings.Contains(inputStr, "concurrent_session") || strings.Contains(inputStr, "max_sessions") || strings.Contains(inputStr, "session_limit")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "session_timeout")
+
+	if hasSessionLimit && hasAuth && hasEnforcement {
+		return &compliance.ControlCheckResult{
+			Framework: m.Framework(), ControlID: "HITRUST-AM-25", ControlName: "Concurrent Session Control",
+			Status: compliance.StatusCompliant, Severity: compliance.SeverityLow,
+			Message: "Concurrent session control verified (session limit + auth + enforcement)", Timestamp: time.Now(),
+		}, nil
+	}
+	violations := []string{}
+	if !hasSessionLimit {
+		violations = append(violations, "concurrent session limit not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{
+		Framework: m.Framework(), ControlID: "HITRUST-AM-25", ControlName: "Concurrent Session Control",
+		Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow,
+		Message: "Concurrent session control gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(),
+		Remediation: "Configure concurrent session limits with authentication and enforcement",
 	}, nil
 }

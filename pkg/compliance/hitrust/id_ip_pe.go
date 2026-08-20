@@ -6,7 +6,7 @@
 // HITRUST CSF v11.2 — Identity Management, Information Protection,
 // and Privacy & Endpoint families.
 //
-// In-scope controls (60 total: 18 automated + 42 manual):
+// In-scope controls (60 total: 29 automated + 31 manual):
 //
 //   ID (Identity Management): 10 controls (4 automated + 6 manual)
 //     ID-01  Identity Management Policy     (manual)
@@ -164,7 +164,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 ID-08: Cryptographic module authentication — authentication of cryptographic modules per NIST SP 800-53 IA-9",
 		Category:    "Identity Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCryptoModuleAuth,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 IA-9"},
 	})
 
@@ -175,7 +176,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 ID-09: Authenticator type requirements — types of authenticators allowed and complexity requirements",
 		Category:    "Identity Management",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuthenticatorType,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 IA-5(1)"},
 	})
 
@@ -186,7 +188,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 ID-10: Authentication token protection — secure storage and transmission of authentication tokens",
 		Category:    "Identity Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuthTokenProtection,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 IA-5(4)"},
 	})
 
@@ -199,7 +202,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-01: Data classification policy — information assets classified by sensitivity and criticality",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataClassification,
 		References:  []string{"HITRUST CSF v11.2 03.a", "NIST SP 800-53 Rev. 5 MP-2"},
 	})
 
@@ -328,7 +332,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-12: Security event logging and monitoring — centralized log collection, SIEM integration, and alerting",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkLoggingMonitoring,
 		References:  []string{"HITRUST CSF v11.2 03.l", "NIST SP 800-53 Rev. 5 AU-6"},
 	})
 
@@ -408,7 +413,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-19: Data boundary protection — controls to prevent data from crossing trust boundaries",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataBoundary,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 AC-4(21)"},
 	})
 
@@ -419,7 +425,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-20: Data retention and disposal — retention periods and secure disposal procedures",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkDataRetentionDisposal,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 SI-12"},
 	})
 
@@ -463,7 +470,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-24: Protected storage — storage of sensitive data in protected storage locations",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkProtectedStorage,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 MP-4"},
 	})
 
@@ -474,7 +482,8 @@ func (m *HITRUSTModule) registerIDIPPEControls() {
 		Description: "HITRUST CSF v11.2 IP-25: Transmission guard — protection of data in transit using guard mechanisms",
 		Category:    "Information Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkTransmissionGuard,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 SC-8"},
 	})
 
@@ -1601,4 +1610,204 @@ func (m *HITRUSTModule) checkPatchManagement(ctx context.Context, input []byte) 
 		Timestamp:   time.Now(),
 		Remediation: "Configure automated patch management with deployment and verification",
 	}, nil
+}
+
+// ── P3 Promotion CheckFuncs ────────────────────────────────────────
+
+// checkCryptoModuleAuth verifies cryptographic module authentication. Maps to HITRUST ID-08.
+func (m *HITRUSTModule) checkCryptoModuleAuth(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCryptoModule := strings.Contains(inputStr, "cryptographic_module") || strings.Contains(inputStr, "crypto_auth") || strings.Contains(inputStr, "fips_140")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled") || strings.Contains(inputStr, "module_auth")
+	hasValidation := strings.Contains(inputStr, "cmvp") || strings.Contains(inputStr, "validated") || strings.Contains(inputStr, "fips_mode")
+	if hasCryptoModule && hasAuth && hasValidation {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-ID-08", ControlName: "Cryptographic Module Authentication", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Cryptographic module auth verified (module + auth + validation)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCryptoModule {
+		violations = append(violations, "cryptographic module not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	if !hasValidation {
+		violations = append(violations, "validation not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-ID-08", ControlName: "Cryptographic Module Authentication", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Cryptographic module auth gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure FIPS-validated cryptographic module with authentication"}, nil
+}
+
+// checkAuthenticatorType verifies authenticator types. Maps to HITRUST ID-09.
+func (m *HITRUSTModule) checkAuthenticatorType(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasType := strings.Contains(inputStr, "authenticator_type") || strings.Contains(inputStr, "token") || strings.Contains(inputStr, "hardware_token")
+	hasMFA := m.hasMFA(inputStr)
+	hasPolicy := strings.Contains(inputStr, "authenticator_policy") || strings.Contains(inputStr, "password_policy") || strings.Contains(inputStr, "policy")
+	if hasType && hasMFA && hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-ID-09", ControlName: "Authenticator Type", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Authenticator type verified (type + MFA + policy)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasType {
+		violations = append(violations, "authenticator type not configured")
+	}
+	if !hasMFA {
+		violations = append(violations, "MFA not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "authenticator policy not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-ID-09", ControlName: "Authenticator Type", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Authenticator type gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure authenticator types with MFA and policy"}, nil
+}
+
+// checkAuthTokenProtection verifies authentication token protection. Maps to HITRUST ID-10.
+func (m *HITRUSTModule) checkAuthTokenProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasProtection := strings.Contains(inputStr, "token_protection") || strings.Contains(inputStr, "secure_token") || strings.Contains(inputStr, "token_encryption")
+	hasEncryption := m.hasEncryption(inputStr)
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled") || strings.Contains(inputStr, "token")
+	if hasProtection && hasEncryption && hasAuth {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-ID-10", ControlName: "Authentication Token Protection", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Token protection verified (protection + encryption + auth)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasProtection {
+		violations = append(violations, "token protection not configured")
+	}
+	if !hasEncryption {
+		violations = append(violations, "encryption not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-ID-10", ControlName: "Authentication Token Protection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Token protection gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure token protection with encryption and authentication"}, nil
+}
+
+// checkDataClassification verifies data classification config. Maps to HITRUST IP-01.
+func (m *HITRUSTModule) checkDataClassification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasClassification := strings.Contains(inputStr, "data_classification") || strings.Contains(inputStr, "classification_labels") || strings.Contains(inputStr, "data_labeling")
+	hasLabeling := strings.Contains(inputStr, "labeling") || strings.Contains(inputStr, "labels") || strings.Contains(inputStr, "pii") || strings.Contains(inputStr, "sensitive_data")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "access_control")
+	if hasClassification && hasLabeling && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-01", ControlName: "Data Classification", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data classification verified (classification + labeling + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasClassification {
+		violations = append(violations, "data classification not configured")
+	}
+	if !hasLabeling {
+		violations = append(violations, "data labeling not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-01", ControlName: "Data Classification", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Data classification gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure data classification with labeling and access enforcement"}, nil
+}
+
+// checkLoggingMonitoring verifies logging and monitoring config. Maps to HITRUST IP-12.
+func (m *HITRUSTModule) checkLoggingMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasLogging := strings.Contains(inputStr, "logging_monitoring") || strings.Contains(inputStr, "log_monitoring") || strings.Contains(inputStr, "audit_monitoring")
+	hasAudit := m.hasAudit(inputStr)
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alerts") || strings.Contains(inputStr, "siem")
+	if hasLogging && hasAudit && hasAlerting {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-12", ControlName: "Logging and Monitoring", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Logging and monitoring verified (logging + audit + alerting)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasLogging {
+		violations = append(violations, "logging monitoring not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	if !hasAlerting {
+		violations = append(violations, "alerting not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-12", ControlName: "Logging and Monitoring", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Logging and monitoring gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure logging monitoring with audit and alerting"}, nil
+}
+
+// checkDataBoundary verifies data boundary protection. Maps to HITRUST IP-19.
+func (m *HITRUSTModule) checkDataBoundary(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBoundary := strings.Contains(inputStr, "data_boundary") || strings.Contains(inputStr, "boundary_protection") || strings.Contains(inputStr, "data_border")
+	hasSeg := strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "segmentation") || strings.Contains(inputStr, "dmz")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || m.hasFirewall(inputStr)
+	if hasBoundary && hasSeg && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-19", ControlName: "Data Boundary Protection", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data boundary verified (boundary + segmentation + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasBoundary {
+		violations = append(violations, "data boundary not configured")
+	}
+	if !hasSeg {
+		violations = append(violations, "network segmentation not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-19", ControlName: "Data Boundary Protection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Data boundary gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure data boundary with segmentation and firewall enforcement"}, nil
+}
+
+// checkDataRetentionDisposal verifies data retention and disposal config. Maps to HITRUST IP-20.
+func (m *HITRUSTModule) checkDataRetentionDisposal(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasRetention := strings.Contains(inputStr, "data_retention") || strings.Contains(inputStr, "retention_policy") || strings.Contains(inputStr, "retention_period")
+	hasDisposal := strings.Contains(inputStr, "disposal_policy") || strings.Contains(inputStr, "sanitization") || strings.Contains(inputStr, "data_disposal")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "policy")
+	if hasRetention && hasDisposal && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-20", ControlName: "Data Retention and Disposal", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Data retention and disposal verified (retention + disposal + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasRetention {
+		violations = append(violations, "data retention not configured")
+	}
+	if !hasDisposal {
+		violations = append(violations, "disposal policy not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-20", ControlName: "Data Retention and Disposal", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Data retention and disposal gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure data retention with disposal policy and enforcement"}, nil
+}
+
+// checkProtectedStorage verifies protected storage. Maps to HITRUST IP-24.
+func (m *HITRUSTModule) checkProtectedStorage(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasStorage := strings.Contains(inputStr, "protected_storage") || strings.Contains(inputStr, "secure_storage") || strings.Contains(inputStr, "storage_encryption")
+	hasEncryption := m.hasEncryption(inputStr)
+	hasAccess := strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac") || m.hasAudit(inputStr)
+	if hasStorage && hasEncryption && hasAccess {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-24", ControlName: "Protected Storage", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Protected storage verified (storage + encryption + access control)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasStorage {
+		violations = append(violations, "protected storage not configured")
+	}
+	if !hasEncryption {
+		violations = append(violations, "encryption not configured")
+	}
+	if !hasAccess {
+		violations = append(violations, "access control not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-24", ControlName: "Protected Storage", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Protected storage gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure protected storage with encryption and access control"}, nil
+}
+
+// checkTransmissionGuard verifies transmission guard. Maps to HITRUST IP-25.
+func (m *HITRUSTModule) checkTransmissionGuard(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasGuard := strings.Contains(inputStr, "transmission_guard") || strings.Contains(inputStr, "data_transmission") || strings.Contains(inputStr, "secure_transfer")
+	hasTLS := strings.Contains(inputStr, "tls") || strings.Contains(inputStr, "https") || m.hasEncryption(inputStr)
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled") || strings.Contains(inputStr, "access_control")
+	if hasGuard && hasTLS && hasAuth {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-25", ControlName: "Transmission Guard", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Transmission guard verified (guard + TLS + auth)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasGuard {
+		violations = append(violations, "transmission guard not configured")
+	}
+	if !hasTLS {
+		violations = append(violations, "TLS not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-IP-25", ControlName: "Transmission Guard", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Transmission guard gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure transmission guard with TLS and authentication"}, nil
 }

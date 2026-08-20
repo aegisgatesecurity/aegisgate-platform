@@ -48,7 +48,8 @@ func (m *NIST800171Module) registerCMSIControls() {
 		Description: "NIST 800-171 CM-3 (3.4.2): Configuration change control — proposed changes reviewed, approved, and documented before implementation",
 		Category:    "Configuration Management",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeControlImpl,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.4.2", "NIST SP 800-53 Rev. 5 CM-3"},
 	})
 
@@ -317,4 +318,26 @@ func (m *NIST800171Module) checkMaliciousCodeProtection(ctx context.Context, inp
 		Timestamp:   time.Now(),
 		Remediation: "Enable malware scanning (scanner.enabled=true) and IOC/prompt injection detection for AI workloads",
 	}, nil
+}
+
+// checkChangeControlImpl verifies configuration change control. Maps to NIST800171-CM-3.
+func (m *NIST800171Module) checkChangeControlImpl(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasChange := strings.Contains(inputStr, "configuration_change") || strings.Contains(inputStr, "change_control") || strings.Contains(inputStr, "change_approval")
+	hasReview := strings.Contains(inputStr, "review") || strings.Contains(inputStr, "approval") || strings.Contains(inputStr, "change_review")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "logging_enabled") || strings.Contains(inputStr, "siem")
+	if hasChange && hasReview && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-CM-3", ControlName: "Configuration Change Control", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Change control verified (change + review + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasChange {
+		violations = append(violations, "change control not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "review not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-CM-3", ControlName: "Configuration Change Control", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Change control gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure change control with review and audit logging"}, nil
 }

@@ -34,7 +34,8 @@ func (m *NIST800171Module) registerAUControls() {
 		Description: "NIST 800-171 AU-1 (3.3.1): Audit and accountability policy and procedures documented, reviewed, and disseminated",
 		Category:    "Audit and Accountability",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAuditPolicy,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.3.1", "NIST SP 800-53 Rev. 5 AU-1"},
 	})
 
@@ -312,4 +313,26 @@ func (m *NIST800171Module) checkAuditProtection(ctx context.Context, input []byt
 		Timestamp:   time.Now(),
 		Remediation: "Enable both hash-chain integrity (persistence.log_integrity=true) AND RBAC on audit log access",
 	}, nil
+}
+
+// checkAuditPolicy verifies audit and accountability policy. Maps to NIST800171-AU-1.
+func (m *NIST800171Module) checkAuditPolicy(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasPolicy := strings.Contains(inputStr, "audit_policy") || strings.Contains(inputStr, "accountability_policy") || strings.Contains(inputStr, "audit_procedures")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "logging_enabled") || strings.Contains(inputStr, "siem")
+	hasReview := strings.Contains(inputStr, "review") || strings.Contains(inputStr, "audit_review") || strings.Contains(inputStr, "log_review")
+	if hasPolicy && hasAudit && hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-AU-1", ControlName: "Audit and Accountability Policy", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Audit policy verified (policy + audit + review)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasPolicy {
+		violations = append(violations, "audit policy not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "audit review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-AU-1", ControlName: "Audit and Accountability Policy", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Audit policy gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure audit policy with logging and review"}, nil
 }

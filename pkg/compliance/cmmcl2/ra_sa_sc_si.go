@@ -217,7 +217,8 @@ func (m *CMMCL2Module) registerSIControls() {
 		Description: "CMMC L2 SI.2.006: Information handling and retention policies. AegisGate generates the information handling evidence for the customer's CMMC assessment.",
 		Category:    "System and Information Integrity",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSIInfoHandling,
 		References:  []string{"CMMC L2 SI.2.006"},
 	})
 }
@@ -597,4 +598,48 @@ func (m *CMMCL2Module) checkSecurityAlerts(ctx context.Context, input []byte) (*
 		Timestamp:   time.Now(),
 		Remediation: "Configure security alerts (security_alerts=true) and advisory notification processing",
 	}, nil
+}
+
+// checkRARiskResponse verifies risk response & remediation. Maps to CMMCL2-RA-05.
+func (m *CMMCL2Module) checkRARiskResponse(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasResponse := strings.Contains(inputStr, "risk_response") || strings.Contains(inputStr, "remediation_tracking") || strings.Contains(inputStr, "risk_remediation")
+	hasAssessment := strings.Contains(inputStr, "risk_assessment") || strings.Contains(inputStr, "risk_analysis") || strings.Contains(inputStr, "assessment")
+	hasTracking := strings.Contains(inputStr, "tracking") || strings.Contains(inputStr, "remediation") || strings.Contains(inputStr, "poam")
+	if hasResponse && hasAssessment && hasTracking {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-RA-05", ControlName: "Risk Response & Remediation", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Risk response verified (response + assessment + tracking)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasResponse {
+		violations = append(violations, "risk response not configured")
+	}
+	if !hasAssessment {
+		violations = append(violations, "risk assessment not configured")
+	}
+	if !hasTracking {
+		violations = append(violations, "remediation tracking not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-RA-05", ControlName: "Risk Response & Remediation", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk response gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure risk response with assessment and remediation tracking"}, nil
+}
+
+// checkSIInfoHandling verifies information handling. Maps to CMMCL2-SI-06.
+func (m *CMMCL2Module) checkSIInfoHandling(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasHandling := strings.Contains(inputStr, "information_handling") || strings.Contains(inputStr, "data_handling") || strings.Contains(inputStr, "handling_rules")
+	hasPolicy := strings.Contains(inputStr, "policy") || strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "siem")
+	if hasHandling && hasPolicy && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SI-06", ControlName: "Information Handling", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Information handling verified (handling + policy + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasHandling {
+		violations = append(violations, "information handling not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "policy not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SI-06", ControlName: "Information Handling", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Information handling gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure information handling rules with policy and enforcement"}, nil
 }

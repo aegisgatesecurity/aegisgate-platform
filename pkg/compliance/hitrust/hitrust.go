@@ -19,7 +19,7 @@
 //   - Required tier: Enterprise+ (gated via pkg/compliance/gating.go)
 //   - Monthly price: $799/mo (founder-locked 2026-07-22)
 //   - Baseline:    HITRUST CSF v11.2
-//   - Controls:    200 (50 automated + 150 manual)
+//   - Controls:    200 (80 automated + 120 manual)
 //
 // IMPORTANT — Self-attested posture (same as EU AI Act + FIPS + FedRAMP):
 //   AegisGate is NOT a HITRUST-authorized External Assessor (EA). The
@@ -44,20 +44,20 @@
 //                   (SD-01..15), AI Controls (AI-01..10) families
 //
 // Control families (13 families, 200 controls):
-//   AM = Access Management          (25 controls: 9 automated + 16 manual)
-//   ID = Identity Management        (10 controls:  4 automated +  6 manual)
-//   IP = Information Protection     (25 controls:  9 automated + 16 manual)
+//   AM = Access Management          (25 controls: 14 automated + 11 manual)
+//   ID = Identity Management        (10 controls:  7 automated +  3 manual)
+//   IP = Information Protection     (25 controls: 15 automated + 10 manual)
 //   PE = Privacy and Endpoint       (25 controls:  5 automated + 20 manual)
-//   OP = Operations                 (20 controls:  5 automated + 15 manual)
-//   OR = Organizational Risk        (10 controls:  3 automated +  7 manual)
+//   OP = Operations                 (20 controls:  8 automated + 12 manual)
+//   OR = Organizational Risk        (10 controls:  5 automated +  5 manual)
 //   PR = Program                    (15 controls:  2 automated + 13 manual)
-//   BC = Business Continuity        (10 controls:  1 automated +  9 manual)
+//   BC = Business Continuity        (10 controls:  5 automated +  5 manual)
 //   RA = Regulatory Assessment      (10 controls:  2 automated +  8 manual)
-//   CA = Change Management          (10 controls:  1 automated +  9 manual)
-//   IR = Incident Response          (15 controls:  3 automated + 12 manual)
+//   CA = Change Management          (10 controls:  5 automated +  5 manual)
+//   IR = Incident Response          (15 controls: 6 automated + 9 manual)
 //   SD = Supplier/Development       (15 controls:  1 automated + 14 manual)
 //   AI = AI Controls                (10 controls:  2 automated +  8 manual)
-//   Total: 200 controls (50 automated + 150 manual)
+//   Total: 200 controls (80 automated + 120 manual)
 //
 // Reference: HITRUST CSF v11.2
 //            https://hitrustalliance.net/csf-license-agreement/

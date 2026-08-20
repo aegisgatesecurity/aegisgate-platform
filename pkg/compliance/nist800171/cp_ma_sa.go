@@ -75,7 +75,8 @@ func (m *NIST800171Module) registerMAControls() {
 		Description: "NIST 800-171 MA-2 (3.7.1): Controlled maintenance of system components",
 		Category:    "Maintenance",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkControlledMaintenance,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.7.1", "NIST SP 800-53 Rev. 5 MA-2"},
 	})
 }
@@ -89,7 +90,8 @@ func (m *NIST800171Module) registerSAControls() {
 		Description: "NIST 800-171 SA-4 (3.12.1): Acquisition process includes security requirements",
 		Category:    "System and Services Acquisition",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAcquisitionProcess,
 		References:  []string{"NIST SP 800-171 Rev. 2 §3.12.1", "NIST SP 800-53 Rev. 5 SA-4"},
 	})
 
@@ -189,4 +191,48 @@ func (m *NIST800171Module) checkExternalSystemServices(ctx context.Context, inpu
 		Timestamp:   time.Now(),
 		Remediation: "Configure trust boundaries and external system monitoring",
 	}, nil
+}
+
+// checkControlledMaintenance verifies controlled maintenance. Maps to NIST800171-MA-2.
+func (m *NIST800171Module) checkControlledMaintenance(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMaintenance := strings.Contains(inputStr, "controlled_maintenance") || strings.Contains(inputStr, "maintenance_schedule") || strings.Contains(inputStr, "scheduled_maintenance")
+	hasApproval := strings.Contains(inputStr, "approval") || strings.Contains(inputStr, "authorized") || strings.Contains(inputStr, "maintenance_approval")
+	hasAudit := strings.Contains(inputStr, "audit_log") || strings.Contains(inputStr, "logging_enabled") || strings.Contains(inputStr, "siem")
+	if hasMaintenance && hasApproval && hasAudit {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-MA-2", ControlName: "Controlled Maintenance", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Controlled maintenance verified (maintenance + approval + audit)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMaintenance {
+		violations = append(violations, "controlled maintenance not configured")
+	}
+	if !hasApproval {
+		violations = append(violations, "approval not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-MA-2", ControlName: "Controlled Maintenance", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Controlled maintenance gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure controlled maintenance with approval and audit"}, nil
+}
+
+// checkAcquisitionProcess verifies acquisition process. Maps to NIST800171-SA-4.
+func (m *NIST800171Module) checkAcquisitionProcess(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAcquisition := strings.Contains(inputStr, "acquisition_security") || strings.Contains(inputStr, "security_requirements") || strings.Contains(inputStr, "supply_chain_security")
+	hasPolicy := strings.Contains(inputStr, "policy") || strings.Contains(inputStr, "acquisition_policy") || strings.Contains(inputStr, "procurement")
+	hasReview := strings.Contains(inputStr, "review") || strings.Contains(inputStr, "assessment") || strings.Contains(inputStr, "evaluation")
+	if hasAcquisition && hasPolicy && hasReview {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-SA-4", ControlName: "Acquisition Process", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Acquisition process verified (acquisition + policy + review)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasAcquisition {
+		violations = append(violations, "acquisition security not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "policy not configured")
+	}
+	if !hasReview {
+		violations = append(violations, "review not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-SA-4", ControlName: "Acquisition Process", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Acquisition process gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure acquisition security with policy and review"}, nil
 }

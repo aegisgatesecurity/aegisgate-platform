@@ -6,10 +6,10 @@
 // HITRUST CSF v11.2 — Operations (OP), Organizational Risk (OR),
 // and Program (PR) families.
 //
-// In-scope controls (45 total: 10 automated + 35 manual):
+// In-scope controls (45 total: 15 automated + 30 manual):
 //
-//   OP (Operations): 20 controls (5 automated + 15 manual)
-//   OR (Organizational Risk): 10 controls (3 automated + 7 manual)
+//   OP (Operations): 20 controls (8 automated + 12 manual)
+//   OR (Organizational Risk): 10 controls (5 automated + 5 manual)
 //   PR (Program): 15 controls (2 automated + 13 manual)
 //
 // =========================================================================
@@ -77,7 +77,8 @@ func (m *HITRUSTModule) registerOPControls() {
 		Description: "HITRUST CSF v11.2 OP-04: Change monitoring — system changes monitored for security impact",
 		Category:    "Operations",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkChangeMonitoring,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-4"},
 	})
 
@@ -145,7 +146,8 @@ func (m *HITRUSTModule) registerOPControls() {
 		Description: "HITRUST CSF v11.2 OP-10: Automated change support — automated tools support change management processes",
 		Category:    "Operations",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkAutomatedChangeSupport,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 CM-3(1)"},
 	})
 
@@ -189,7 +191,8 @@ func (m *HITRUSTModule) registerOPControls() {
 		Description: "HITRUST CSF v11.2 OP-14: Capacity planning — monitoring and planning for system capacity requirements",
 		Category:    "Operations",
 		Severity:    compliance.SeverityLow,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCapacityPlanning,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -283,7 +286,8 @@ func (m *HITRUSTModule) registerORControls() {
 		Description: "HITRUST CSF v11.2 OR-02: Security categorization — systems and information categorized by impact level",
 		Category:    "Organizational Risk",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSecurityCategorization,
 		References:  []string{"HITRUST CSF v11.2", "NIST SP 800-53 RA-2"},
 	})
 
@@ -341,7 +345,8 @@ func (m *HITRUSTModule) registerORControls() {
 		Description: "HITRUST CSF v11.2 OR-07: Risk monitoring — ongoing monitoring of risk levels and trends",
 		Category:    "Organizational Risk",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkRiskMonitoring,
 		References:  []string{"HITRUST CSF v11.2"},
 	})
 
@@ -975,4 +980,116 @@ func (m *HITRUSTModule) checkRoleBasedTraining(ctx context.Context, input []byte
 		Timestamp:   time.Now(),
 		Remediation: "Configure role-based training with role definitions and completion tracking",
 	}, nil
+}
+
+// ── P3 Promotion CheckFuncs ────────────────────────────────────────
+
+// checkChangeMonitoring verifies change monitoring config. Maps to HITRUST OP-04.
+func (m *HITRUSTModule) checkChangeMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "change_monitoring") || strings.Contains(inputStr, "drift_detection") || strings.Contains(inputStr, "change_detection")
+	hasAudit := m.hasAudit(inputStr)
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alerts") || strings.Contains(inputStr, "siem")
+	if hasMonitoring && hasAudit && hasAlerting {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-04", ControlName: "Change Monitoring", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Change monitoring verified (monitoring + audit + alerting)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMonitoring {
+		violations = append(violations, "change monitoring not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	if !hasAlerting {
+		violations = append(violations, "alerting not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-04", ControlName: "Change Monitoring", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Change monitoring gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure change monitoring with audit and alerting"}, nil
+}
+
+// checkAutomatedChangeSupport verifies automated change support. Maps to HITRUST OP-10.
+func (m *HITRUSTModule) checkAutomatedChangeSupport(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasAuto := strings.Contains(inputStr, "automated_change") || strings.Contains(inputStr, "change_automation") || strings.Contains(inputStr, "ci_cd")
+	hasAudit := m.hasAudit(inputStr)
+	hasControl := strings.Contains(inputStr, "change_control") || strings.Contains(inputStr, "change_approval") || strings.Contains(inputStr, "approval")
+	if hasAuto && hasAudit && hasControl {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-10", ControlName: "Automated Change Support", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Automated change support verified (automation + audit + control)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasAuto {
+		violations = append(violations, "automated change not configured")
+	}
+	if !hasAudit {
+		violations = append(violations, "audit logging not configured")
+	}
+	if !hasControl {
+		violations = append(violations, "change control not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-10", ControlName: "Automated Change Support", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Automated change support gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure automated change with audit logging and change control"}, nil
+}
+
+// checkCapacityPlanning verifies capacity planning config. Maps to HITRUST OP-14.
+func (m *HITRUSTModule) checkCapacityPlanning(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCapacity := strings.Contains(inputStr, "capacity_planning") || strings.Contains(inputStr, "capacity_monitoring") || strings.Contains(inputStr, "resource_monitoring")
+	hasMonitoring := strings.Contains(inputStr, "monitoring") || strings.Contains(inputStr, "alerts") || strings.Contains(inputStr, "alerting")
+	hasThreshold := strings.Contains(inputStr, "threshold") || strings.Contains(inputStr, "capacity_threshold") || strings.Contains(inputStr, "resource_limit")
+	if hasCapacity && hasMonitoring && hasThreshold {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-14", ControlName: "Capacity Planning", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Capacity planning verified (capacity + monitoring + threshold)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCapacity {
+		violations = append(violations, "capacity planning not configured")
+	}
+	if !hasMonitoring {
+		violations = append(violations, "monitoring not configured")
+	}
+	if !hasThreshold {
+		violations = append(violations, "threshold not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OP-14", ControlName: "Capacity Planning", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow, Message: "Capacity planning gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure capacity planning with monitoring and threshold alerts"}, nil
+}
+
+// checkSecurityCategorization verifies security categorization. Maps to HITRUST OR-02.
+func (m *HITRUSTModule) checkSecurityCategorization(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasCat := strings.Contains(inputStr, "security_categorization") || strings.Contains(inputStr, "impact_level") || strings.Contains(inputStr, "fips_199")
+	hasLabel := strings.Contains(inputStr, "categorization") || strings.Contains(inputStr, "classification") || strings.Contains(inputStr, "data_classification")
+	hasPolicy := strings.Contains(inputStr, "policy") || strings.Contains(inputStr, "categorization_policy") || strings.Contains(inputStr, "access_control")
+	if hasCat && hasLabel && hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OR-02", ControlName: "Security Categorization", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Security categorization verified (categorization + labeling + policy)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasCat {
+		violations = append(violations, "security categorization not configured")
+	}
+	if !hasLabel {
+		violations = append(violations, "categorization labeling not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "categorization policy not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OR-02", ControlName: "Security Categorization", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Security categorization gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure security categorization with labeling and policy"}, nil
+}
+
+// checkRiskMonitoring verifies risk monitoring config. Maps to HITRUST OR-07.
+func (m *HITRUSTModule) checkRiskMonitoring(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMonitoring := strings.Contains(inputStr, "risk_monitoring") || strings.Contains(inputStr, "risk_tracking") || strings.Contains(inputStr, "risk_dashboard")
+	hasAssessment := strings.Contains(inputStr, "risk_assessment") || strings.Contains(inputStr, "risk_analysis") || strings.Contains(inputStr, "assessment")
+	hasAlerting := strings.Contains(inputStr, "alerting") || strings.Contains(inputStr, "alerts") || strings.Contains(inputStr, "siem")
+	if hasMonitoring && hasAssessment && hasAlerting {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OR-07", ControlName: "Risk Monitoring", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Risk monitoring verified (monitoring + assessment + alerting)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMonitoring {
+		violations = append(violations, "risk monitoring not configured")
+	}
+	if !hasAssessment {
+		violations = append(violations, "risk assessment not configured")
+	}
+	if !hasAlerting {
+		violations = append(violations, "alerting not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "HITRUST-OR-07", ControlName: "Risk Monitoring", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Risk monitoring gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure risk monitoring with assessment and alerting"}, nil
 }

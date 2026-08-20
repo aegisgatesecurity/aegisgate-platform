@@ -93,7 +93,8 @@ func (m *CMMCL2Module) registerSCExtendedControls() {
 		Description: "CMMC L2 SC.2.010: Establish trusted network connections. AegisGate generates the trusted connection evidence for the customer's CMMC assessment.",
 		Category:    "System and Communications Protection",
 		Severity:    compliance.SeverityMedium,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkSCTrustedConnection,
 		References:  []string{"CMMC L2 SC.2.010", "NIST SP 800-171 §3.13.10"},
 	})
 
@@ -558,4 +559,70 @@ func (m *CMMCL2Module) checkCryptographicProtection(ctx context.Context, input [
 		Timestamp:   time.Now(),
 		Remediation: "Configure cryptographic protection (cryptographic_protection=true) and digital signatures (digital_signature=enabled)",
 	}, nil
+}
+
+// checkSCBoundaryProtection verifies boundary protection. Maps to CMMCL2-SC-01.
+func (m *CMMCL2Module) checkSCBoundaryProtection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasBoundary := strings.Contains(inputStr, "boundary_protection") || strings.Contains(inputStr, "network_boundary") || strings.Contains(inputStr, "firewall_boundary")
+	hasFirewall := strings.Contains(inputStr, "firewall") || strings.Contains(inputStr, "waf") || strings.Contains(inputStr, "network_segmentation")
+	hasMonitoring := strings.Contains(inputStr, "monitoring") || strings.Contains(inputStr, "siem") || strings.Contains(inputStr, "audit_log")
+	if hasBoundary && hasFirewall && hasMonitoring {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SC-01", ControlName: "Boundary Protection", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Boundary protection verified (boundary + firewall + monitoring)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasBoundary {
+		violations = append(violations, "boundary protection not configured")
+	}
+	if !hasFirewall {
+		violations = append(violations, "firewall not configured")
+	}
+	if !hasMonitoring {
+		violations = append(violations, "monitoring not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SC-01", ControlName: "Boundary Protection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Boundary protection gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure boundary protection with firewall and monitoring"}, nil
+}
+
+// checkSCNetworkArch verifies network architecture. Maps to CMMCL2-SC-04.
+func (m *CMMCL2Module) checkSCNetworkArch(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasArch := strings.Contains(inputStr, "network_architecture") || strings.Contains(inputStr, "segmentation") || strings.Contains(inputStr, "dmz")
+	hasIsolation := strings.Contains(inputStr, "network_isolation") || strings.Contains(inputStr, "network_segmentation") || strings.Contains(inputStr, "vlan")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "enforced") || strings.Contains(inputStr, "firewall")
+	if hasArch && hasIsolation && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SC-04", ControlName: "Network Architecture", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Network architecture verified (architecture + isolation + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasArch {
+		violations = append(violations, "network architecture not configured")
+	}
+	if !hasIsolation {
+		violations = append(violations, "network isolation not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SC-04", ControlName: "Network Architecture", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Network architecture gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure network segmentation with isolation and firewall enforcement"}, nil
+}
+
+// checkSCTrustedConnection verifies trusted network connection. Maps to CMMCL2-SC-10.
+func (m *CMMCL2Module) checkSCTrustedConnection(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTrusted := strings.Contains(inputStr, "trusted_connection") || strings.Contains(inputStr, "network_authentication") || strings.Contains(inputStr, "802_1x")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled") || strings.Contains(inputStr, "mfa")
+	hasEncryption := strings.Contains(inputStr, "tls") || strings.Contains(inputStr, "encryption") || strings.Contains(inputStr, "encrypted")
+	if hasTrusted && hasAuth && hasEncryption {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SC-10", ControlName: "Trusted Network Connection", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Trusted connection verified (trusted + auth + encryption)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasTrusted {
+		violations = append(violations, "trusted connection not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	if !hasEncryption {
+		violations = append(violations, "encryption not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-SC-10", ControlName: "Trusted Network Connection", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Trusted connection gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure trusted network connection with authentication and encryption"}, nil
 }

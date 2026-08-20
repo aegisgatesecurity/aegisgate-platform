@@ -387,7 +387,8 @@ func (m *CMMCL2Module) registerExpandedControls() {
 		Description: "CMMC L2 CUI.001: CUI is identified, marked, and categorized according to NARA guidelines",
 		Category:    "CUI Protection",
 		Severity:    compliance.SeverityHigh,
-		Automated:   false,
+		Automated:   true,
+		CheckFunc:   m.checkCUIIdentification,
 		References:  []string{"32 CFR 2002", "NARA CUI Registry"},
 	})
 	m.RegisterControl(compliance.ControlDefinition{
@@ -988,4 +989,26 @@ func (m *CMMCL2Module) checkCUIIncidentReporting(ctx context.Context, input []by
 		Message: "No CUI incident reporting", Remediation: "Implement CUI incident reporting to DoD within 72 hours",
 		Timestamp: time.Now(),
 	}, nil
+}
+
+// checkCUIIdentification verifies CUI identification & marking. Maps to CMMCL2-CUI-01.
+func (m *CMMCL2Module) checkCUIIdentification(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasMarking := strings.Contains(inputStr, "cui_marking") || strings.Contains(inputStr, "cui_identification") || strings.Contains(inputStr, "data_labeling")
+	hasLabels := strings.Contains(inputStr, "classification_labels") || strings.Contains(inputStr, "labels") || strings.Contains(inputStr, "cui")
+	hasEnforcement := strings.Contains(inputStr, "enforcement") || strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac")
+	if hasMarking && hasLabels && hasEnforcement {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CUI-01", ControlName: "CUI Identification & Marking", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "CUI identification verified (marking + labels + enforcement)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasMarking {
+		violations = append(violations, "CUI marking not configured")
+	}
+	if !hasLabels {
+		violations = append(violations, "data labels not configured")
+	}
+	if !hasEnforcement {
+		violations = append(violations, "enforcement not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-CUI-01", ControlName: "CUI Identification & Marking", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "CUI identification gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure CUI marking with data labels and access enforcement"}, nil
 }

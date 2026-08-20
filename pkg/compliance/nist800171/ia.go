@@ -221,3 +221,47 @@ func (m *NIST800171Module) checkNonOrgUserIdentification(ctx context.Context, in
 		Remediation: "Enable SSO/federation (sso.enabled=true) or MFA for external/non-organizational users",
 	}, nil
 }
+
+// checkAuthenticatorFeedback verifies authenticator feedback. Maps to NIST800171-IA-6.
+func (m *NIST800171Module) checkAuthenticatorFeedback(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasFeedback := strings.Contains(inputStr, "authenticator_feedback") || strings.Contains(inputStr, "password_masking") || strings.Contains(inputStr, "feedback_protection")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled") || strings.Contains(inputStr, "password_policy")
+	hasPolicy := strings.Contains(inputStr, "policy") || strings.Contains(inputStr, "access_control") || strings.Contains(inputStr, "rbac")
+	if hasFeedback && hasAuth && hasPolicy {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IA-6", ControlName: "Authenticator Feedback", Status: compliance.StatusCompliant, Severity: compliance.SeverityLow, Message: "Authenticator feedback verified (feedback + auth + policy)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasFeedback {
+		violations = append(violations, "authenticator feedback not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	if !hasPolicy {
+		violations = append(violations, "policy not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IA-6", ControlName: "Authenticator Feedback", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityLow, Message: "Authenticator feedback gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure authenticator feedback with auth and policy"}, nil
+}
+
+// checkReAuthentication verifies re-authentication config. Maps to NIST800171-IA-11.
+func (m *NIST800171Module) checkReAuthentication(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasReAuth := strings.Contains(inputStr, "re_authentication") || strings.Contains(inputStr, "reauth") || strings.Contains(inputStr, "session_reauth")
+	hasAuth := strings.Contains(inputStr, "authentication") || strings.Contains(inputStr, "auth_enabled") || strings.Contains(inputStr, "mfa")
+	hasTimeout := strings.Contains(inputStr, "session_timeout") || strings.Contains(inputStr, "idle_timeout") || strings.Contains(inputStr, "reauth_timeout")
+	if hasReAuth && hasAuth && hasTimeout {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IA-11", ControlName: "Re-authentication", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "Re-authentication verified (reauth + auth + timeout)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasReAuth {
+		violations = append(violations, "re-authentication not configured")
+	}
+	if !hasAuth {
+		violations = append(violations, "authentication not configured")
+	}
+	if !hasTimeout {
+		violations = append(violations, "timeout not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "NIST800171-IA-11", ControlName: "Re-authentication", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "Re-authentication gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure re-authentication with session timeout"}, nil
+}

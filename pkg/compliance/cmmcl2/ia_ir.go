@@ -586,3 +586,25 @@ func (m *CMMCL2Module) checkSessionLock(ctx context.Context, input []byte) (*com
 		Remediation: "Configure automatic session lock after inactivity (session_timeout=900, auto_lock=true)",
 	}, nil
 }
+
+// checkIRTesting verifies incident response testing. Maps to CMMCL2-IR-08.
+func (m *CMMCL2Module) checkIRTesting(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
+	inputStr := string(input)
+	hasTesting := strings.Contains(inputStr, "ir_testing") || strings.Contains(inputStr, "incident_test") || strings.Contains(inputStr, "response_testing")
+	hasIR := strings.Contains(inputStr, "incident_response") || strings.Contains(inputStr, "ir_plan") || strings.Contains(inputStr, "incident_plan")
+	hasSchedule := strings.Contains(inputStr, "scheduled") || strings.Contains(inputStr, "periodic") || strings.Contains(inputStr, "testing_schedule")
+	if hasTesting && hasIR && hasSchedule {
+		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IR-08", ControlName: "Incident Response Testing", Status: compliance.StatusCompliant, Severity: compliance.SeverityMedium, Message: "IR testing verified (testing + IR plan + schedule)", Timestamp: time.Now()}, nil
+	}
+	violations := []string{}
+	if !hasTesting {
+		violations = append(violations, "IR testing not configured")
+	}
+	if !hasIR {
+		violations = append(violations, "incident response not configured")
+	}
+	if !hasSchedule {
+		violations = append(violations, "testing schedule not configured")
+	}
+	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "CMMCL2-IR-08", ControlName: "Incident Response Testing", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityMedium, Message: "IR testing gaps: " + strings.Join(violations, ", "), Timestamp: time.Now(), Remediation: "Configure IR testing with incident response plan and schedule"}, nil
+}

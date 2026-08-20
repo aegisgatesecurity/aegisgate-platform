@@ -36,18 +36,18 @@ func TestCMMCL2ControlCount(t *testing.T) {
 	if total != 150 {
 		t.Errorf("Controls() returned %d controls, want 150", total)
 	}
-	if automated != 89 {
-		t.Errorf("Automated controls = %d, want 89", automated)
+	if automated != 106 {
+		t.Errorf("Automated controls = %d, want 106", automated)
 	}
-	if evidenceMapped != 61 {
-		t.Errorf("Evidence-mapped controls = %d, want 61", evidenceMapped)
+	if evidenceMapped != 44 {
+		t.Errorf("Evidence-mapped controls = %d, want 44", evidenceMapped)
 	}
 }
 
 func TestCMMCL2AutomatedChecks(t *testing.T) {
 	m := NewCMMCL2Module()
 	ctx := context.Background()
-	compliantConfig := `{"rbac": true, "mfa": true, "authentication": true, "auth_enabled": true, "roles": true, "least_privilege": true, "session_timeout": true, "audit_log": true, "logging_enabled": true, "encryption": true, "tls": true, "fips_140": true, "vulnerability": true, "patching": true, "monitoring": true, "siem": true, "ioc": true, "incident_response": true, "physical_access": true, "maintenance": true, "sanitization": true, "threat_intel": true, "hash_chain": true, "scanner": true, "access_control": true, "media_access": true, "password_policy": true, "key_management": true, "encryption_at_rest": true, "data_encrypted": true, "lockout": true, "concurrent": true}`
+	compliantConfig := `{"rbac": true, "mfa": true, "authentication": true, "auth_enabled": true, "roles": true, "least_privilege": true, "session_timeout": true, "audit_log": true, "logging_enabled": true, "encryption": true, "tls": true, "fips_140": true, "vulnerability": true, "patching": true, "monitoring": true, "siem": true, "ioc": true, "incident_response": true, "physical_access": true, "maintenance": true, "sanitization": true, "threat_intel": true, "hash_chain": true, "scanner": true, "access_control": true, "media_access": true, "password_policy": true, "key_management": true, "encryption_at_rest": true, "data_encrypted": true, "lockout": true, "concurrent": true, "audit_review": true, "log_review": true, "audit_analysis": true, "review": true, "audit_protection": true, "log_protection": true, "audit_integrity": true, "log_integrity": true, "authorized_access": true, "audit_reduction": true, "log_aggregation": true, "reporting": true, "report_generation": true, "audit_monitoring": true, "log_monitoring": true, "logging_monitoring": true, "baseline_configuration": true, "config_baseline": true, "baseline": true, "drift_detection": true, "change_detection": true, "change_tracking": true, "config_restrictions": true, "configuration_limits": true, "security_config": true, "settings_enforced": true, "secure_configuration": true, "security_hardening": true, "cis_benchmark": true, "secure_baseline": true, "hardening": true, "configuration_documentation": true, "config_documentation": true, "settings_documentation": true, "configuration_settings": true, "config_settings": true, "security_settings": true, "version_control": true, "documentation": true, "up_to_date": true, "boundary_protection": true, "network_boundary": true, "firewall_boundary": true, "firewall": true, "waf": true, "network_segmentation": true, "segmentation": true, "dmz": true, "network_isolation": true, "vlan": true, "network_architecture": true, "trusted_connection": true, "network_authentication": true, "802_1x": true, "encrypted": true, "risk_response": true, "remediation_tracking": true, "risk_remediation": true, "risk_assessment": true, "risk_analysis": true, "assessment": true, "tracking": true, "remediation": true, "poam": true, "information_handling": true, "data_handling": true, "handling_rules": true, "policy": true, "enforcement": true, "enforced": true, "ir_testing": true, "incident_test": true, "response_testing": true, "ir_plan": true, "incident_plan": true, "scheduled": true, "periodic": true, "testing_schedule": true, "cui_marking": true, "cui_identification": true, "data_labeling": true, "classification_labels": true, "labels": true, "cui": true, "information_sharing": true, "data_sharing": true, "sharing_policy": true, "disk_encryption": true}`
 
 	automatedIDs := []string{}
 	for _, c := range m.Controls() {
