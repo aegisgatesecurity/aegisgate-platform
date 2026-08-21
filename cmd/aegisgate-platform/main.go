@@ -165,7 +165,7 @@ var (
 	tsaRetryCount     = flag.Int("tsa-retry-count", 2, "Retry attempts per TSA endpoint (AEGISGATE_TSA_RETRY_COUNT)")
 	tokenAnalytics    = flag.Bool("token-analytics", false, "Enable token usage analytics (AEGISGATE_TOKEN_ANALYTICS)")
 
-	// Deploy profiles (v4.2.0+ "Easy Button"):
+	// Deploy profiles (v4.2.0+ "Guided Setup"):
 	// --profile selects a predefined configuration preset. The profile acts
 	// as the base config; a --config file (if specified) overrides the profile,
 	// and env vars / CLI flags override everything.
@@ -215,7 +215,7 @@ CLI Subcommands (run "aegisgate <subcommand> --help" for details):
 
   Run "aegisgate <subcommand> help" for verb-level help.
 
-Deploy Profiles (v4.2.0+ "Easy Button"):
+Deploy Profiles (v4.2.0+ "Guided Setup"):
   --profile quickstart        Zero-config trial (no TLS, low limits)
   --profile small-team        5-50 users (auto-TLS, moderate limits)
   --profile production        Hardened production (TLS 1.3, CSRF, detailed audit)
@@ -285,7 +285,7 @@ func main() {
 	}
 
 	// ============================================================
-	// Deploy profile handling (v4.2.0+ "Easy Button")
+	// Deploy profile handling (v4.2.0+ "Guided Setup")
 	// ============================================================
 	// --profile selects a predefined configuration preset. The profile
 	// acts as the base config; --config file overrides profile, and env

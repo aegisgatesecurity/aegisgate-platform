@@ -253,7 +253,7 @@ above the licensed tier.
 
 ## Quick Start
 
-### 30-Second Quickstart (Easy Button)
+### 30-Second Quickstart (Guided Setup)
 
 ```bash
 # Build the binary
