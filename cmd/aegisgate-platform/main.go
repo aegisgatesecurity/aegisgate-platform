@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -63,6 +64,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/soar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tracing"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 )
@@ -241,6 +243,17 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	// ============================================================
+	// OpenTelemetry distributed tracing (v4.2.0+)
+	// ============================================================
+	// Opt-in via AEGISGATE_TRACING_ENABLED=true. Exports spans via
+	// OTLP gRPC (default) or stdout. No-op when disabled.
+	traceCleanup, traceErr := tracing.InitTracing(context.Background(), slog.Default())
+	if traceErr != nil {
+		log.Printf("[TRACING] Failed to initialize tracing: %v (continuing without traces)", traceErr)
+	}
+	defer traceCleanup(context.Background())
 
 	// ============================================================
 	// Cluster node identity (v3.4.1 clustering support)

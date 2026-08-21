@@ -211,6 +211,13 @@ jobs:
             # unit-tested without external infrastructure. Exempted; this is
             # test infrastructure, not production code.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/testdb"
+            # pkg/tracing: ~39% coverage. OpenTelemetry initialization with
+            # OTLP exporter requires a running collector (e.g., Jaeger) to
+            # test the real exporter path. No-op tracer, middleware
+            # pass-through, sanitizePath, StartSpan, and statusWriter are
+            # fully tested. The OTLP/stdout exporter creation paths are
+            # integration-test territory (require external services).
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/tracing"
             # pkg/a2a: 91.2% without -race, drops to ~34% with -race due to
             # goroutine synchronization paths (channel sends/receives, select
             # with multiple cases, context cancellation) that the race detector
