@@ -1,3 +1,43 @@
+## [4.3.0] - 2026-08-21 - Security Hardening, Observability, Multi-Tenant Foundation 🔒
+
+> **v4.3.0** delivers a comprehensive security and observability upgrade based on a deep-dive audit of the existing codebase. 11 genuinely missing items were identified and implemented across auth hardening, distributed tracing, multi-tenant infrastructure, and compliance tooling.
+
+### Security Hardening (Items 1-5)
+
+- **security: enforce auth on all API routes** — 6 previously unauthenticated routes wrapped with `RequireAuth`: `/api/v1/maintenance` (with tier-gated mutations), `/api/v1/tier`, `/api/v1/license/status`, `/api/v1/sla`, `/api/v1/compliance/`, `/api/v1/compliance/evidence`
+- **security: RBAC permissions on routes** — Replaced tier-based `AdminOnly` with role-based `RequirePermission` on 4 endpoints: `/api/v1/config` (config:read + config:write), `/api/v1/profiles` (config:read), `/api/v1/profiles/apply` (config:write), `/api/v1/compliance` (compliance:read)
+- **docs: SECURITY.md version table** — Updated stale version table (v3.x → v4.3.x), coverage ref, threat model, ATLAS-RAG status → mitigated, added v4.2.0 auth hardening note
+- **security: SAML audience restriction enforcement** — Enforced destination validation and audience restriction when `StrictAudience=true` (was placeholder `_ = found`). Default config has `StrictAudience=true`.
+- **security: OIDC access token introspection** — Implemented `validateAccessToken()` per RFC 7662. Auto-discovers `introspection_endpoint` from OIDC discovery doc, falls back to constructed URL, fail-open on network errors.
+
+### Observability (Items 6, 10)
+
+- **feat(tracing): OpenTelemetry distributed tracing** — New `pkg/tracing/` package with OTLP gRPC + stdout exporters, W3C Trace Context propagation, `TraceIDRatioBased` sampling, HTTP middleware. Opt-in via `AEGISGATE_TRACING_ENABLED=true`. Wired around both proxy and dashboard HTTP servers.
+- **feat(observability): 2 new Grafana dashboards** — `aegisgate-security.json` (12 panels: MTTD/MTTR, incidents, detection latency, scan pipeline, ML shadow predictions) and `aegisgate-mcp-agents.json` (12 panels: MCP sessions, tool invocations, A2A failures, capability denials, requests by tier). Total: 3 dashboards, 34 panels.
+
+### Multi-Tenant Infrastructure (Items 7, 8, 9)
+
+- **feat(tenant): tenant management API** — New `pkg/tenant/` package with CRUD Manager + REST handler. `Tenant` struct with ID, Name, LicenseTier, MaxUsers, MaxAgents. `tnt_` prefixed auto-generated IDs. Endpoints: `GET/POST /api/v1/tenants`, `GET/PUT/DELETE /api/v1/tenants/{id}`.
+- **feat(auth): scoped API tokens** — `ScopedToken` struct with role, tier, and optional tenant_id. `AEGISGATE_SCOPED_TOKENS` env var (format: `token:role:tier[:tenant_id]`). Least-privilege precedence over legacy admin token. Backward compatible.
+- **feat(db): PostgreSQL Row-Level Security** — Migration `008_rls_tenant_isolation.sql` with `ENABLE ROW LEVEL SECURITY` + `CREATE POLICY` on 6 tenant-scoped tables. Uses `app.tenant_id` and `app.is_admin` session variables. RLS enabled but not FORCE'd (gradual rollout).
+- **feat(db): tenant context helpers** — `pkg/ioc/tenant_rls.go` with `SetTenantContext`, `WithTenantContext`, `SetTenantContextOnConn`, `ClearTenantContextOnConn` for setting PostgreSQL session variables before queries.
+- **feat(auth): tenant context in request context** — `ContextKeyTenantID` and `ContextKeyIsAdmin` added to auth middleware. Populated during SSO, JWT, and API token authentication. `GetTenantID()` and `IsAdmin()` helper functions.
+
+### Compliance Tooling (Item 11)
+
+- **feat(compliance): live infrastructure scanning** — New `pkg/compliancelive/` package with 10 real-time config checks mapped to NIST CSF controls: TLS, auth enforcement, audit logging, security headers, rate limiting, RBAC, SSO, maintenance windows, data retention, ML detection. `GET /api/v1/compliance/live` endpoint.
+
+### Stats
+
+- 5 commits, 44 files changed, ~5,000 lines added
+- 3 new packages (`pkg/tracing`, `pkg/tenant`, `pkg/compliancelive`)
+- 13 new files, ~40 new tests
+- 24 new Grafana panels (2 new dashboards)
+- 6 new API endpoints
+- All 6 CI workflows green
+
+---
+
 ## [4.2.0] - 2026-08-21 - Guided Setup, Dashboard Polish, Documentation Overhaul 🚀
 
 > **v4.2.0** delivers the complete "Guided Setup" initiative — making AegisGate easy to deploy and operate for users without Kubernetes or DevOps expertise. All 5 deliverables are complete, the dashboard has been overhauled, and documentation has been rewritten across 3 repositories.

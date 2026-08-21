@@ -248,6 +248,15 @@ jobs:
             # crypto subsystems. Control registration and metadata fully
             # tested; crypto-verification paths are integration-test only.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fips"
+            # pkg/ioc: 79.7% coverage. PostgresStore (~660 LOC) requires a
+            # running PostgreSQL instance. In-memory store, fingerprint
+            # matching, canonicalization, and manifest logic are fully
+            # tested. The SQL execution paths (Observe, Get, Query, Batch,
+            # Snapshot, Prune, migrate) are integration-test territory.
+            # tenant_rls.go helpers require a live PostgreSQL instance to
+            # test SET LOCAL and RLS policy enforcement. Exempted; same
+            # pattern as pkg/rbac, pkg/persistence, pkg/incident.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
             # pkg/compliance/iso42001: 69.4% coverage. 38-control AI
             # management framework with data-provenance and deep-risk
             # assessment paths requiring external data catalogs. Control

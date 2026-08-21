@@ -4,7 +4,8 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
-| v4.2.x  | ✅ Yes    | Current release |
+| v4.3.x  | ✅ Yes    | Current release |
+| v4.2.x  | ✅ Yes    | Active |
 | v4.1.x  | ✅ Yes    | Active support |
 | v4.0.x  | ✅ Yes    | Active support |
 | v3.6.x  | ✅ Yes    | Active support |
@@ -39,9 +40,9 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **MCP Registration Logging** (v1.3.6) |
 | ✅ | **Tool Call Limits** (v1.3.6) |
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
-| ✅ | **87.4% Test Coverage** (v4.2.0) |
+| ✅ | **87.4% Test Coverage** (v4.3.0) |
 
-## Threat Model (v4.2.0+)
+## Threat Model (v4.3.0+)
 
 Comprehensive threat analysis for all six security pillars:
 
@@ -63,6 +64,10 @@ Comprehensive threat analysis for all six security pillars:
 > (5 endpoints now RequireAuth), localhost-only metrics, and CSP
 > hardening (unsafe-eval removed). v4.2.0 adds RBAC permission enforcement
 > on config/compliance/profiles endpoints and auth on all /api/v1/ routes.
+> v4.3.0 adds SAML audience restriction enforcement, OIDC token
+> introspection (RFC 7662), scoped API tokens with tenant context,
+> PostgreSQL Row-Level Security, OpenTelemetry tracing, and live
+> infrastructure compliance scanning.
 
 ### CVSS Score Distribution
 

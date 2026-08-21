@@ -2,8 +2,8 @@ apiVersion: v2
 name: aegisgate-platform
 description: AegisGate Security Platform — unified AI API security gateway (proxy + MCP + dashboard + cross-protocol evidence + federated IOC library)
 type: application
-version: 1.9.0
-appVersion: "v4.0.0"
+version: 2.0.0
+appVersion: "v4.3.0"
 home: https://github.com/aegisgatesecurity/aegisgate-platform
 keywords:
   - security

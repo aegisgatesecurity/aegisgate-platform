@@ -103,7 +103,7 @@ func (a *tsaSignerAdapter) Endpoints() []string {
 }
 
 var (
-	version    = "4.2.0"
+	version    = "4.3.0"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -247,7 +247,7 @@ func main() {
 	flag.Parse()
 
 	// ============================================================
-	// OpenTelemetry distributed tracing (v4.2.0+)
+	// OpenTelemetry distributed tracing (v4.3.0+)
 	// ============================================================
 	// Opt-in via AEGISGATE_TRACING_ENABLED=true. Exports spans via
 	// OTLP gRPC (default) or stdout. No-op when disabled.
@@ -1219,6 +1219,8 @@ func main() {
 		security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)))
 	// Wrap with maintenance middleware: returns 503 when maintenance is active
 	innerHandler = maintenanceState.Middleware(innerHandler)
+	// Wrap with OpenTelemetry tracing middleware (no-op when tracing disabled)
+	innerHandler = tracing.Middleware("proxy", innerHandler)
 	proxyHandler := http.MaxBytesHandler(rejectDangerousMethods(innerHandler), int64(10<<20))
 
 	// F-DOS-1 (D25 pentest): Add ReadHeaderTimeout to prevent
@@ -2784,9 +2786,14 @@ func main() {
 		fmt.Fprintf(w, `{"version":"%s","component":"aegisgate-platform"}`, version)
 	})
 
+	// Wrap dashboard mux with OpenTelemetry tracing (no-op when disabled)
+	dashHandler := tracing.Middleware("dashboard",
+		cluster.InstanceIdMiddleware(clusterNode, clusterMode,
+			rejectDangerousMethods(security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux)))))
+
 	dashHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *dashPort),
-		Handler:      cluster.InstanceIdMiddleware(clusterNode, clusterMode, rejectDangerousMethods(security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux)))),
+		Handler:      dashHandler,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

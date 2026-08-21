@@ -4,6 +4,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -410,5 +411,47 @@ func TestParseScopedTokens(t *testing.T) {
 	}
 	if result["svc-mon"].Role != rbac.UserRoleViewer {
 		t.Errorf("svc-mon role: got %q, want %q", result["svc-mon"].Role, rbac.UserRoleViewer)
+	}
+	// v4.3.0+: tenant_id field (4th colon-separated field)
+	if result["svc-mon"].TenantID != "" {
+		t.Errorf("svc-mon tenant: got %q, want empty (no 4th field)", result["svc-mon"].TenantID)
+	}
+}
+
+// TestParseScopedTokensWithTenant tests the 4th field (tenant_id) parsing
+func TestParseScopedTokensWithTenant(t *testing.T) {
+	result := parseScopedTokens("svc-acme:analyst:professional:tnt_acme123,svc-glob:admin:enterprise:")
+	if len(result) != 2 {
+		t.Fatalf("expected 2 scoped tokens, got %d", len(result))
+	}
+	if result["svc-acme"].TenantID != "tnt_acme123" {
+		t.Errorf("svc-acme tenant: got %q, want %q", result["svc-acme"].TenantID, "tnt_acme123")
+	}
+	if result["svc-glob"].TenantID != "" {
+		t.Errorf("svc-glob tenant: got %q, want empty", result["svc-glob"].TenantID)
+	}
+}
+
+// TestGetTenantID verifies the context helper functions
+func TestGetTenantID(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ContextKeyTenantID, "tnt_test123")
+	if got := GetTenantID(ctx); got != "tnt_test123" {
+		t.Errorf("GetTenantID: got %q, want %q", got, "tnt_test123")
+	}
+	// Empty context returns empty string
+	if got := GetTenantID(context.Background()); got != "" {
+		t.Errorf("GetTenantID with empty ctx: got %q, want empty", got)
+	}
+}
+
+// TestIsAdmin verifies the IsAdmin context helper
+func TestIsAdmin(t *testing.T) {
+	ctx := context.WithValue(context.Background(), ContextKeyIsAdmin, true)
+	if !IsAdmin(ctx) {
+		t.Error("IsAdmin: got false, want true")
+	}
+	// Empty context returns false
+	if IsAdmin(context.Background()) {
+		t.Error("IsAdmin with empty ctx: got true, want false")
 	}
 }

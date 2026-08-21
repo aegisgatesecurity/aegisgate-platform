@@ -33,17 +33,34 @@ const (
 	ContextKeyAuthType    contextKey = "auth_type"
 	ContextKeyUserRole    contextKey = "auth_user_role"
 	ContextKeyPermissions contextKey = "auth_permissions"
+	ContextKeyTenantID    contextKey = "auth_tenant_id"
+	ContextKeyIsAdmin     contextKey = "auth_is_admin"
 	AuthTypeJWT           string     = "jwt"
 	AuthTypeAPIToken      string     = "api_token"
 )
+
+// GetTenantID extracts the tenant ID from the request context.
+// Returns empty string if not set (single-tenant or admin mode).
+func GetTenantID(ctx context.Context) string {
+	v, _ := ctx.Value(ContextKeyTenantID).(string)
+	return v
+}
+
+// IsAdmin checks if the authenticated user has admin privileges
+// for tenant context purposes.
+func IsAdmin(ctx context.Context) bool {
+	v, _ := ctx.Value(ContextKeyIsAdmin).(bool)
+	return v
+}
 
 // ScopedToken represents an API token with a restricted role and tier.
 // Scoped tokens allow service-to-service calls with least-privilege
 // instead of the blanket admin role assigned to the legacy single token.
 type ScopedToken struct {
-	Token string
-	Role  rbac.UserRole
-	Tier  string
+	Token    string
+	Role     rbac.UserRole
+	Tier     string
+	TenantID string // Optional: for multi-tenant scoped tokens
 }
 
 // Config holds authentication configuration
@@ -109,8 +126,9 @@ func ConfigFromEnv() *Config {
 	return cfg
 }
 
-// parseScopedTokens parses "token:role:tier,token2:role2:tier2" format.
+// parseScopedTokens parses "token:role:tier[:tenant_id]" format.
 // Invalid entries are silently skipped (fail-safe).
+// The tenant_id field is optional (4th colon-separated field).
 func parseScopedTokens(s string) map[string]ScopedToken {
 	result := make(map[string]ScopedToken)
 	for _, entry := range strings.Split(s, ",") {
@@ -118,17 +136,21 @@ func parseScopedTokens(s string) map[string]ScopedToken {
 		if entry == "" {
 			continue
 		}
-		parts := strings.SplitN(entry, ":", 3)
-		if len(parts) != 3 {
+		parts := strings.SplitN(entry, ":", 4)
+		if len(parts) < 3 {
 			continue
 		}
 		token := strings.TrimSpace(parts[0])
 		role := rbac.ParseUserRole(strings.TrimSpace(parts[1]))
 		tier := strings.TrimSpace(parts[2])
+		tenantID := ""
+		if len(parts) >= 4 {
+			tenantID = strings.TrimSpace(parts[3])
+		}
 		if token == "" || role == "" {
 			continue
 		}
-		result[token] = ScopedToken{Token: token, Role: role, Tier: tier}
+		result[token] = ScopedToken{Token: token, Role: role, Tier: tier, TenantID: tenantID}
 	}
 	return result
 }
@@ -197,6 +219,8 @@ func (m *Middleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			ctx = context.WithValue(ctx, ContextKeyAuthType, "none")
 			ctx = SetUserRole(ctx, rbac.UserRoleViewer)
 			ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(rbac.UserRoleViewer))
+			// Dev mode: admin context for local testing (no RLS filtering)
+			ctx = context.WithValue(ctx, ContextKeyIsAdmin, true)
 			next(w, r.WithContext(ctx))
 			return
 		}
@@ -302,6 +326,9 @@ func (m *Middleware) handleSSOToken(w http.ResponseWriter, r *http.Request, next
 
 	// Set permissions based on user role
 	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(platformRole))
+	// Set tenant context for RLS (v4.3.0+)
+	// Admin role bypasses tenant filtering; other roles get empty tenant (single-tenant default)
+	ctx = context.WithValue(ctx, ContextKeyIsAdmin, platformRole == rbac.UserRoleAdmin)
 
 	next(w, r.WithContext(ctx))
 	return nil
@@ -341,6 +368,8 @@ func (m *Middleware) handleJWT(w http.ResponseWriter, r *http.Request, tokenStri
 	userRole := rbac.ParseUserRole(claims.Tier)
 	ctx = SetUserRole(ctx, userRole)
 	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(userRole))
+	// Set tenant context for RLS (v4.3.0+)
+	ctx = context.WithValue(ctx, ContextKeyIsAdmin, userRole == rbac.UserRoleAdmin)
 
 	next(w, r.WithContext(ctx))
 }
@@ -365,6 +394,13 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 				ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeAPIToken)
 				ctx = SetUserRole(ctx, scoped.Role)
 				ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(scoped.Role))
+				// Set tenant context for RLS (v4.3.0+)
+				if scoped.Role == rbac.UserRoleAdmin {
+					ctx = context.WithValue(ctx, ContextKeyIsAdmin, true)
+				} else {
+					ctx = context.WithValue(ctx, ContextKeyTenantID, scoped.TenantID)
+					ctx = context.WithValue(ctx, ContextKeyIsAdmin, false)
+				}
 				next(w, r.WithContext(ctx))
 				return
 			}
@@ -381,6 +417,13 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 			ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeAPIToken)
 			ctx = SetUserRole(ctx, scoped.Role)
 			ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(scoped.Role))
+			// Set tenant context for RLS (v4.3.0+)
+			if scoped.Role == rbac.UserRoleAdmin {
+				ctx = context.WithValue(ctx, ContextKeyIsAdmin, true)
+			} else {
+				ctx = context.WithValue(ctx, ContextKeyTenantID, scoped.TenantID)
+				ctx = context.WithValue(ctx, ContextKeyIsAdmin, false)
+			}
 			next(w, r.WithContext(ctx))
 			return
 		}
@@ -393,6 +436,8 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 	// API tokens get admin role with full permissions
 	ctx = SetUserRole(ctx, rbac.UserRoleAdmin)
 	ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(rbac.UserRoleAdmin))
+	// Admin API tokens bypass tenant filtering
+	ctx = context.WithValue(ctx, ContextKeyIsAdmin, true)
 
 	next(w, r.WithContext(ctx))
 }
