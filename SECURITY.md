@@ -4,14 +4,13 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
-| v3.6.x  | ✅ Yes    | Current release |
-| v3.5.x  | ✅ Yes    | Active support |
-| v3.4.x  | ✅ Yes    | Active support |
-| v3.3.x  | ✅ Yes    | Active support |
-| v3.2.x  | ✅ Yes    | Active support |
-| v3.1.x  | ⚠️ Limited | Critical only |
-| v3.0.x  | ⚠️ Limited | Critical only |
-| < v3.0  | ❌ No      | Please upgrade |
+| v4.2.x  | ✅ Yes    | Current release |
+| v4.1.x  | ✅ Yes    | Active support |
+| v4.0.x  | ✅ Yes    | Active support |
+| v3.6.x  | ✅ Yes    | Active support |
+| v3.5.x  | ⚠️ Limited | Critical only |
+| v3.4.x  | ⚠️ Limited | Critical only |
+| < v3.4  | ❌ No      | Please upgrade |
 
 ## Security Features
 
@@ -40,9 +39,9 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **MCP Registration Logging** (v1.3.6) |
 | ✅ | **Tool Call Limits** (v1.3.6) |
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
-| ✅ | **87.4% Test Coverage** (v3.6.0) |
+| ✅ | **87.4% Test Coverage** (v4.2.0) |
 
-## Threat Model (v3.6.0+)
+## Threat Model (v4.2.0+)
 
 Comprehensive threat analysis for all six security pillars:
 
@@ -62,7 +61,8 @@ Comprehensive threat analysis for all six security pillars:
 > Framework was promoted to first-class 6th pillar in v3.2.0+ and expanded
 > in v3.4.0+ with the envelope primitive. v3.5.0 adds auth hardening
 > (5 endpoints now RequireAuth), localhost-only metrics, and CSP
-> hardening (unsafe-eval removed).
+> hardening (unsafe-eval removed). v4.2.0 adds RBAC permission enforcement
+> on config/compliance/profiles endpoints and auth on all /api/v1/ routes.
 
 ### CVSS Score Distribution
 
@@ -79,7 +79,7 @@ Comprehensive threat analysis for all six security pillars:
 | ATLAS-MCP | 4 | ✅ All mitigated |
 | ATLAS-A2A | 10 | ✅ All mitigated |
 | ATLAS-LLM | 8 | ✅ All mitigated |
-| ATLAS-RAG | 3 | 🔜 v4.0 planning |
+| ATLAS-RAG | 3 | ✅ All mitigated |
 
 ## Reporting a Vulnerability
 

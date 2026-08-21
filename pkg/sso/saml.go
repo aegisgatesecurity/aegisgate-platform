@@ -364,10 +364,9 @@ func (p *SAMLProvider) validateResponse(response *Response) error {
 		return NewSSOError(ErrInvalidAssertion, fmt.Sprintf("SAML response status: %s", response.Status.StatusCode.Value))
 	}
 
-	// Validate destination
-	// StrictAudience check disabled
-	if response.Destination != "" && response.Destination != p.samlConfig.ACSURL {
-		// Would return error if StrictAudience was enabled
+	// Validate destination (v4.2.0+ — now enforced when StrictAudience is true)
+	if response.Destination != "" && p.config.StrictAudience && response.Destination != p.samlConfig.ACSURL {
+		return NewSSOError(ErrInvalidAssertion, fmt.Sprintf("response destination mismatch: expected %q, got %q", p.samlConfig.ACSURL, response.Destination))
 	}
 
 	// Validate issuer
@@ -393,8 +392,7 @@ func (p *SAMLProvider) validateResponse(response *Response) error {
 			return NewSSOError(ErrExpiredToken, "assertion has expired")
 		}
 
-		// Validate audience
-		// StrictAudience check disabled
+		// Validate audience (v4.2.0+ — now enforced when StrictAudience is true)
 		if assertion.Conditions.AudienceRestriction != nil {
 			found := false
 			for _, aud := range assertion.Conditions.AudienceRestriction.Audience {
@@ -403,8 +401,9 @@ func (p *SAMLProvider) validateResponse(response *Response) error {
 					break
 				}
 			}
-			_ = found // avoid unused variable error
-			// audience check would go here
+			if !found && p.config.StrictAudience {
+				return NewSSOError(ErrInvalidAssertion, fmt.Sprintf("audience restriction failed: expected %q, got %v", p.samlConfig.EntityID, assertion.Conditions.AudienceRestriction.Audience))
+			}
 		}
 	}
 

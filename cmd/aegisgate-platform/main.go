@@ -1569,7 +1569,9 @@ func main() {
 		log.Printf("[I18N] Initialized with %d locales: %v", len(loadedLocales), loadedLocales)
 	}
 
-	dashMux.Handle("/api/v1/compliance/", complianceAPI)
+	dashMux.Handle("/api/v1/compliance/", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		complianceAPI.ServeHTTP(w, r)
+	}))
 
 	// Evidence Package API (v3.3.0+ Track 2). Constructed from the live
 	// Scanner + License manager + a persistent signing key. The API
@@ -1586,7 +1588,9 @@ func main() {
 	if evErr != nil {
 		log.Printf("[EVIDENCE] Failed to initialize evidence API: %v", evErr)
 	} else {
-		dashMux.Handle("/api/v1/compliance/evidence", evidenceHandler)
+		dashMux.Handle("/api/v1/compliance/evidence", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			evidenceHandler.ServeHTTP(w, r)
+		}))
 		// Well-known public key handler. Mounted on the dashboard
 		// mux (NOT /api/v1/) so it's reachable at the canonical
 		// /.well-known/aegisgate-evidence-pubkey.pem URL. v3.4.0
@@ -1890,8 +1894,8 @@ func main() {
 		}
 	}))
 
-	// Tier information endpoint
-	dashMux.HandleFunc("/api/v1/tier", func(w http.ResponseWriter, r *http.Request) {
+	// Tier information endpoint (auth required v4.2.0+)
+	dashMux.HandleFunc("/api/v1/tier", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		featureCount := len(tier.AllFeatures(platformTier))
 		fmt.Fprintf(w, `{"tier":"%s","display_name":"%s","rate_limit_proxy":%d,"rate_limit_mcp":%d,"max_users":%d,"max_agents":%d,"features":%d,"log_retention_days":%d,"mcp_concurrent":%d,"mcp_tools_per_session":%d,"mcp_exec_timeout_s":%d,"mcp_sandbox_mem_mb":%d,"support":"%s"}`,
@@ -1902,10 +1906,10 @@ func main() {
 			platformTier.MaxConcurrentMCP(), platformTier.MaxMCPToolsPerSession(),
 			platformTier.MCPExecTimeoutSeconds(), platformTier.MaxMCPSandboxMemoryMB(),
 			platformTier.SupportLevel())
-	})
+	}))
 
-	// License status endpoint — show current license and tier info
-	dashMux.HandleFunc("/api/v1/license/status", func(w http.ResponseWriter, r *http.Request) {
+	// License status endpoint — show current license and tier info (auth required v4.2.0+)
+	dashMux.HandleFunc("/api/v1/license/status", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		currentResult := licenseMgr.Validate(licenseMgr.GetLicenseKey())
 		featureCount := len(tier.AllFeatures(currentResult.Tier))
@@ -1934,10 +1938,10 @@ func main() {
 			return
 		}
 		writeBytes(w, data)
-	})
+	}))
 
-	// SLA/SLO endpoint — show service level objectives for the current tier
-	dashMux.HandleFunc("/api/v1/sla", func(w http.ResponseWriter, r *http.Request) {
+	// SLA/SLO endpoint — show service level objectives for the current tier (auth required v4.2.0+)
+	dashMux.HandleFunc("/api/v1/sla", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		currentSLA := sla.GetSLA(platformTier)
 
@@ -1970,7 +1974,7 @@ func main() {
 			return
 		}
 		writeBytes(w, data)
-	})
+	}))
 
 	// Audit log endpoint — query persisted audit entries
 	dashMux.HandleFunc("/api/v1/audit", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -2015,7 +2019,7 @@ func main() {
 	}))
 
 	// Compliance export endpoint — secure audit*
-	dashMux.HandleFunc("/api/v1/compliance", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/compliance", authMiddleware.RequirePermission(rbac.Permission{Resource: rbac.ResourceCompliance, Action: rbac.ActionRead}, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if !persistenceMgr.IsEnabled() {
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -2260,14 +2264,45 @@ func main() {
 	}
 
 	// Maintenance window API: GET (status), POST (enable), DELETE (disable), PUT (schedule)
-	// No auth required — the endpoint controls platform availability, not data access.
-	// In production, the dashboard port should be behind a firewall or VPN.
-	dashMux.Handle("/api/v1/maintenance", maintenanceState.Handler())
+	// Auth required (v4.2.0+) — toggling maintenance mode affects platform availability.
+	// GET (status) is available to any authenticated user; mutations require admin tier.
+	dashMux.Handle("/api/v1/maintenance", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			tierVal := auth.GetTier(r.Context())
+			if tierVal != "enterprise" && tierVal != "professional" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprintf(w, `{"error":"forbidden","message":"admin access required to modify maintenance mode"}`)
+				return
+			}
+		}
+		maintenanceState.Handler().ServeHTTP(w, r)
+	}))
 
 	// ============================================================
 	// Configuration API (v4.2.0+) — GET current config, apply profiles
+	// Role-based access control (v4.2.0+): config:write for mutations,
+	// config:read for GET. Both require authentication.
 	// ============================================================
-	dashMux.HandleFunc("/api/v1/config", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/config", authMiddleware.RequirePermission(rbac.Permission{Resource: rbac.ResourceConfig, Action: rbac.ActionRead}, func(w http.ResponseWriter, r *http.Request) {
+		// For write operations, require config:write permission
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			permissions := auth.GetPermissions(r.Context())
+			required := rbac.Permission{Resource: rbac.ResourceConfig, Action: rbac.ActionWrite}
+			hasWrite := false
+			for _, p := range permissions {
+				if p == required || (p.Resource == required.Resource && p.Action == "*") || (p.Resource == "*" && p.Action == "*") {
+					hasWrite = true
+					break
+				}
+			}
+			if !hasWrite {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprintf(w, `{"error":"forbidden","message":"config:write permission required"}`)
+				return
+			}
+		}
 		w.Header().Set("Content-Type", "application/json")
 		switch r.Method {
 		case http.MethodGet:
@@ -2315,7 +2350,7 @@ func main() {
 	// ============================================================
 	// Profiles API (v4.2.0+) — list, inspect, apply
 	// ============================================================
-	dashMux.HandleFunc("/api/v1/profiles", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/profiles", authMiddleware.RequirePermission(rbac.Permission{Resource: rbac.ResourceConfig, Action: rbac.ActionRead}, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.Method {
 		case http.MethodGet:
@@ -2342,7 +2377,7 @@ func main() {
 		}
 	}))
 
-	dashMux.HandleFunc("/api/v1/profiles/apply", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+	dashMux.HandleFunc("/api/v1/profiles/apply", authMiddleware.RequirePermission(rbac.Permission{Resource: rbac.ResourceConfig, Action: rbac.ActionWrite}, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.Method {
 		case http.MethodPost:

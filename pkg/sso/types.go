@@ -401,6 +401,7 @@ type OIDCDiscoveryDocument struct {
 	IDTokenSigningAlgValuesSupported []string
 	ClaimsSupported                  []string
 	EndSessionEndpoint               string
+	IntrospectionEndpoint            string
 }
 
 // OIDCToken represents an OIDC token response

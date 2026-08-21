@@ -418,10 +418,61 @@ func (p *OIDCProvider) getUserInfo(accessToken string) (map[string]interface{}, 
 	return userInfo, nil
 }
 
-// validateAccessToken validates an access token with the provider
+// validateAccessToken validates an access token with the provider's
+// introspection endpoint (RFC 7662). Falls back to nil (no validation)
+// when no introspection endpoint is available.
 func (p *OIDCProvider) validateAccessToken(accessToken string) error {
-	// For now, we rely on token expiry checks
-	// In production, you would call the introspection endpoint
+	// Determine the introspection endpoint URL
+	introspectionURL := ""
+	if p.discovery != nil && p.discovery.IntrospectionEndpoint != "" {
+		introspectionURL = p.discovery.IntrospectionEndpoint
+	}
+	// Fallback: construct from issuer URL (common convention)
+	if introspectionURL == "" && p.oidcConfig != nil && p.oidcConfig.IssuerURL != "" {
+		introspectionURL = strings.TrimSuffix(p.oidcConfig.IssuerURL, "/") + "/oauth2/introspect"
+	}
+	if introspectionURL == "" {
+		// No introspection endpoint available — rely on token expiry checks only
+		return nil
+	}
+
+	// Build introspection request per RFC 7662
+	form := url.Values{}
+	form.Set("token", accessToken)
+	req, err := http.NewRequest("POST", introspectionURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return NewSSOError(ErrInvalidToken, fmt.Sprintf("failed to create introspection request: %v", err))
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if p.oidcConfig.ClientID != "" {
+		req.SetBasicAuth(p.oidcConfig.ClientID, p.oidcConfig.ClientSecret)
+	}
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		// Network error — fail open (don't block access on infra issues)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Non-200 — fail open (provider may not support introspection)
+		return nil
+	}
+
+	var result struct {
+		Active   bool   `json:"active"`
+		Error    string `json:"error"`
+		Username string `json:"username"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return NewSSOError(ErrInvalidToken, fmt.Sprintf("failed to decode introspection response: %v", err))
+	}
+
+	if !result.Active {
+		return NewSSOError(ErrInvalidToken, "access token is not active (revoked or expired)")
+	}
+
 	return nil
 }
 
