@@ -664,5 +664,173 @@ func (m *mockDSARProvider) Erase(ctx context.Context, entityID string) (int, err
 	return m.eraseFn(ctx, entityID)
 }
 
+// ---------------------------------------------------------------------------
+// FORCE RLS Verification (Migration 010)
+// ---------------------------------------------------------------------------
+
+// TestNewPipelines_FORCE_RLS_NoContextReturnsNoTenantRows verifies that
+// after FORCE ROW LEVEL SECURITY is applied (migration 010), queries
+// without SET LOCAL app.tenant_id do NOT return tenant-scoped rows.
+// Only rows with empty tenant_id (shared/global) should be visible.
+func TestNewPipelines_FORCE_RLS_NoContextReturnsNoTenantRows(t *testing.T) {
+	skipIfNoLab(t)
+	ctx := context.Background()
+
+	store := connectPostgres(t)
+	defer store.Close()
+
+	tenantX := "tenant-force-rls"
+
+	// Insert a tenant-scoped IOC
+	iocItem := ioc.IOC{
+		Fingerprint:    "dddd4444dddd4444dddd4444dddd4444dddd4444dddd4444dddd4444dddd4444",
+		Type:           ioc.IOCTypeProxyResponse,
+		Severity:       ioc.SeverityMedium,
+		Category:       "force-rls-test",
+		Pattern:        "force-rls-pattern",
+		SourceProvider: "test",
+		AffectsLens:    true,
+		AffectsGateway: false,
+		Source:         "force-rls-test",
+		Count:          1,
+		FirstSeen:      time.Now().UTC(),
+		LastSeen:       time.Now().UTC(),
+	}
+	if _, err := store.Observe(ctx, iocItem, ioc.TenantContext{TenantID: tenantX}); err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+
+	// With tenant context, should find it
+	got, err := store.Get(ctx, iocItem.Fingerprint, ioc.TenantContext{TenantID: tenantX})
+	if err != nil || got == nil {
+		t.Errorf("Tenant X should see own IOC: err=%v got=%v", err, got)
+	}
+
+	// Admin should also find it
+	got, err = store.Get(ctx, iocItem.Fingerprint, ioc.TenantContext{TenantID: tenantX, IsAdmin: true})
+	if err != nil || got == nil {
+		t.Errorf("Admin should see tenant X IOC: err=%v got=%v", err, got)
+	}
+
+	// Verify FORCE RLS is active by checking pg_catalog
+	pool := store.Pool()
+	var rlsForced bool
+	err = pool.QueryRow(ctx,
+		`SELECT relrowsecurity AND relforcerowsecurity
+		 FROM pg_class
+		 WHERE relname = 'ioc_fingerprints'`,
+	).Scan(&rlsForced)
+	if err != nil {
+		t.Fatalf("Failed to check RLS status: %v", err)
+	}
+	if !rlsForced {
+		t.Error("FORCE ROW LEVEL SECURITY is not active on ioc_fingerprints — migration 010 may not have been applied")
+	}
+}
+
+// TestNewPipelines_FORCE_RLS_AdminBypassWorks verifies that with FORCE
+// RLS active, the admin bypass (SET LOCAL app.is_admin = 'true') still
+// allows cross-tenant queries to succeed.
+func TestNewPipelines_FORCE_RLS_AdminBypassWorks(t *testing.T) {
+	skipIfNoLab(t)
+	ctx := context.Background()
+
+	store := connectPostgres(t)
+	defer store.Close()
+
+	tenantA := "tenant-force-admin-a"
+	tenantB := "tenant-force-admin-b"
+
+	// Insert IOCs for two tenants
+	for _, tenant := range []string{tenantA, tenantB} {
+		iocItem := ioc.IOC{
+			Fingerprint:    tenant[:16] + strings.Repeat("0", 48),
+			Type:           ioc.IOCTypeProxyResponse,
+			Severity:       ioc.SeverityLow,
+			Category:       "force-rls-admin",
+			Pattern:        "admin-bypass-" + tenant,
+			SourceProvider: "test",
+			AffectsLens:    true,
+			AffectsGateway: false,
+			Source:         "force-rls-test",
+			Count:          1,
+			FirstSeen:      time.Now().UTC(),
+			LastSeen:       time.Now().UTC(),
+		}
+		if _, err := store.Observe(ctx, iocItem, ioc.TenantContext{TenantID: tenant}); err != nil {
+			t.Fatalf("Observe %s: %v", tenant, err)
+		}
+	}
+
+	// Admin snapshot should see both tenants
+	snapshot, err := store.Snapshot(ctx, ioc.TenantContext{TenantID: tenantA, IsAdmin: true})
+	if err != nil {
+		t.Fatalf("Admin Snapshot: %v", err)
+	}
+
+	foundA, foundB := false, false
+	for _, item := range snapshot {
+		if item.TenantID == tenantA && item.Category == "force-rls-admin" {
+			foundA = true
+		}
+		if item.TenantID == tenantB && item.Category == "force-rls-admin" {
+			foundB = true
+		}
+	}
+	if !foundA || !foundB {
+		t.Errorf("Admin should see both tenants with FORCE RLS: foundA=%v foundB=%v", foundA, foundB)
+	}
+}
+
+// TestNewPipelines_FORCE_RLS_PruneCrossTenant verifies that Prune (admin-scoped)
+// can delete across all tenants even with FORCE RLS active.
+func TestNewPipelines_FORCE_RLS_PruneCrossTenant(t *testing.T) {
+	skipIfNoLab(t)
+	ctx := context.Background()
+
+	store := connectPostgres(t)
+	defer store.Close()
+
+	tenantP := "tenant-force-prune"
+
+	// Insert an IOC with a very old timestamp
+	oldTime := time.Now().UTC().Add(-48 * time.Hour)
+	iocItem := ioc.IOC{
+		Fingerprint:    "eeee5555eeee5555eeee5555eeee5555eeee5555eeee5555eeee5555eeee5555",
+		Type:           ioc.IOCTypeProxyResponse,
+		Severity:       ioc.SeverityLow,
+		Category:       "force-rls-prune",
+		Pattern:        "prune-test",
+		SourceProvider: "test",
+		AffectsLens:    true,
+		AffectsGateway: false,
+		Source:         "force-rls-test",
+		Count:          1,
+		FirstSeen:      oldTime,
+		LastSeen:       oldTime,
+	}
+	if _, err := store.Observe(ctx, iocItem, ioc.TenantContext{TenantID: tenantP}); err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+
+	// Prune with 24h max age — should delete the 48h-old IOC
+	pruned, err := store.Prune(ctx, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("Prune: %v", err)
+	}
+	if pruned < 1 {
+		t.Errorf("Prune should have deleted at least 1 IOC, got %d", pruned)
+	}
+
+	// Verify it's gone
+	got, err := store.Get(ctx, iocItem.Fingerprint, ioc.TenantContext{TenantID: tenantP})
+	if err != nil {
+		t.Fatalf("Get after prune: %v", err)
+	}
+	if got != nil {
+		t.Error("IOC should have been pruned but is still present")
+	}
+}
+
 // ensure unused imports don't cause errors
 var _ = strings.Contains

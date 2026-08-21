@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
@@ -239,7 +240,13 @@ func (s *PostgresRBACStore) UpdateAgent(ctx context.Context, agentID string, upd
 		argIdx,
 	)
 
-	tag, err := s.pool.Exec(ctx, sql, args...)
+	// Admin-scoped: RLS admin bypass allows cross-tenant agent updates.
+	var tag pgconn.CommandTag
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var execErr error
+		tag, execErr = q.Exec(ctx, sql, args...)
+		return execErr
+	})
 	if err != nil {
 		return fmt.Errorf("postgres update agent: %w", err)
 	}
@@ -256,7 +263,12 @@ func (s *PostgresRBACStore) UnregisterAgent(ctx context.Context, agentID string)
 	}
 
 	const sql = `DELETE FROM rbac_agents WHERE id = $1`
-	tag, err := s.pool.Exec(ctx, sql, agentID)
+	var tag pgconn.CommandTag
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var execErr error
+		tag, execErr = q.Exec(ctx, sql, agentID)
+		return execErr
+	})
 	if err != nil {
 		return fmt.Errorf("postgres unregister agent: %w", err)
 	}
@@ -415,7 +427,13 @@ func (s *PostgresRBACStore) RefreshAgentSession(ctx context.Context, sessionID s
 		SET expires_at = NOW() + $1, last_activity = NOW()
 		WHERE id = $2 AND active = TRUE`
 
-	tag, err := s.pool.Exec(ctx, sql, duration, sessionID)
+	// Admin-scoped: session refresh is a system operation.
+	var tag pgconn.CommandTag
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var execErr error
+		tag, execErr = q.Exec(ctx, sql, duration, sessionID)
+		return execErr
+	})
 	if err != nil {
 		return fmt.Errorf("postgres refresh agent session: %w", err)
 	}
@@ -432,7 +450,10 @@ func (s *PostgresRBACStore) InvalidateAgentSession(ctx context.Context, sessionI
 	}
 
 	const sql = `UPDATE rbac_agent_sessions SET active = FALSE WHERE id = $1`
-	_, err := s.pool.Exec(ctx, sql, sessionID)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql, sessionID)
+		return err
+	})
 	if err != nil {
 		return fmt.Errorf("postgres invalidate agent session: %w", err)
 	}
@@ -446,7 +467,12 @@ func (s *PostgresRBACStore) InvalidateAgentSessions(ctx context.Context, agentID
 	}
 
 	const sql = `UPDATE rbac_agent_sessions SET active = FALSE WHERE agent_id = $1 AND active = TRUE`
-	tag, err := s.pool.Exec(ctx, sql, agentID)
+	var tag pgconn.CommandTag
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var execErr error
+		tag, execErr = q.Exec(ctx, sql, agentID)
+		return execErr
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres invalidate agent sessions: %w", err)
 	}
@@ -465,7 +491,13 @@ func (s *PostgresRBACStore) GetAgentSessions(ctx context.Context, agentID string
 		WHERE agent_id = $1 AND active = TRUE AND expires_at > NOW()
 		ORDER BY created_at DESC`
 
-	rows, err := s.pool.Query(ctx, sql, agentID)
+	// Admin-scoped: system query for session management.
+	var rows pgx.Rows
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var queryErr error
+		rows, queryErr = q.Query(ctx, sql, agentID)
+		return queryErr
+	})
 	if err != nil {
 		return nil, fmt.Errorf("postgres get agent sessions: %w", err)
 	}
@@ -604,7 +636,10 @@ func (s *PostgresRBACStore) InvalidateUserSession(ctx context.Context, sessionID
 	}
 
 	const sql = `UPDATE rbac_user_sessions SET active = FALSE WHERE id = $1`
-	_, err := s.pool.Exec(ctx, sql, sessionID)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql, sessionID)
+		return err
+	})
 	if err != nil {
 		return fmt.Errorf("postgres invalidate user session: %w", err)
 	}
@@ -622,13 +657,24 @@ func (s *PostgresRBACStore) PruneExpiredSessions(ctx context.Context) (int, erro
 		return 0, fmt.Errorf("postgres RBAC store is closed")
 	}
 
-	agentTag, err := s.pool.Exec(ctx, `DELETE FROM rbac_agent_sessions WHERE expires_at < NOW() OR active = FALSE`)
+	// Admin-scoped: prune is a system-wide cleanup operation.
+	var agentTag pgconn.CommandTag
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var execErr error
+		agentTag, execErr = q.Exec(ctx, `DELETE FROM rbac_agent_sessions WHERE expires_at < NOW() OR active = FALSE`)
+		return execErr
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres prune agent sessions: %w", err)
 	}
 	agentPruned := int(agentTag.RowsAffected())
 
-	userTag, err := s.pool.Exec(ctx, `DELETE FROM rbac_user_sessions WHERE expires_at < NOW() OR active = FALSE`)
+	var userTag pgconn.CommandTag
+	err = ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		var execErr error
+		userTag, execErr = q.Exec(ctx, `DELETE FROM rbac_user_sessions WHERE expires_at < NOW() OR active = FALSE`)
+		return execErr
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres prune user sessions: %w", err)
 	}
@@ -648,8 +694,11 @@ func (s *PostgresRBACStore) CountAgents(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("postgres RBAC store is closed")
 	}
 
+	// Admin-scoped: system metric counting all agents.
 	var count int
-	err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM rbac_agents WHERE enabled = TRUE`).Scan(&count)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, `SELECT COUNT(*) FROM rbac_agents WHERE enabled = TRUE`).Scan(&count)
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres count agents: %w", err)
 	}
@@ -662,11 +711,14 @@ func (s *PostgresRBACStore) CountActiveSessions(ctx context.Context, agentID str
 		return 0, fmt.Errorf("postgres RBAC store is closed")
 	}
 
+	// Admin-scoped: system metric counting active sessions.
 	var count int
-	err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM rbac_agent_sessions WHERE agent_id = $1 AND active = TRUE AND expires_at > NOW()`,
-		agentID,
-	).Scan(&count)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx,
+			`SELECT COUNT(*) FROM rbac_agent_sessions WHERE agent_id = $1 AND active = TRUE AND expires_at > NOW()`,
+			agentID,
+		).Scan(&count)
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres count agent sessions: %w", err)
 	}
