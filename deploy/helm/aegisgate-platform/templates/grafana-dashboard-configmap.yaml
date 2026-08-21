@@ -16,4 +16,8 @@ metadata:
 data:
   aegisgate-overview.json: |
 {{ .Files.Get "dashboards/aegisgate-overview.json" | indent 4 }}
+  aegisgate-security.json: |
+{{ .Files.Get "dashboards/aegisgate-security.json" | indent 4 }}
+  aegisgate-mcp-agents.json: |
+{{ .Files.Get "dashboards/aegisgate-mcp-agents.json" | indent 4 }}
 {{- end }}

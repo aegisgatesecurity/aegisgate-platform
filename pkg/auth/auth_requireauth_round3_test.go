@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 )
 
 // =============================================================================
@@ -334,5 +336,79 @@ func TestRequireAuth_APIWithJWTKey(t *testing.T) {
 		if rr.Code == http.StatusOK {
 			t.Errorf("expected non-200 for similar token %q, got %d", token, rr.Code)
 		}
+	}
+}
+
+// TestScopedAPIToken verifies that scoped API tokens get the correct
+// role and tier instead of blanket admin.
+func TestScopedAPIToken(t *testing.T) {
+	m := NewMiddleware(&Config{
+		JWTSigningKey:    []byte("test-key"),
+		APIAuthToken:     "legacy-admin-token",
+		RequireAuth:      true,
+		TokenExpiryHours: 1,
+		ScopedTokens: map[string]ScopedToken{
+			"viewer-token":        {Token: "viewer-token", Role: rbac.UserRoleViewer, Tier: "community"},
+			"analyst-token":       {Token: "analyst-token", Role: rbac.UserRoleAnalyst, Tier: "developer"},
+			"compliance-token":    {Token: "compliance-token", Role: rbac.UserRoleComplianceOfficer, Tier: "professional"},
+		},
+	})
+
+	tests := []struct {
+		name      string
+		token     string
+		wantRole  rbac.UserRole
+		wantTier  string
+		wantStatus int
+	}{
+		{"scoped viewer", "Token viewer-token", rbac.UserRoleViewer, "community", 200},
+		{"scoped analyst", "Token analyst-token", rbac.UserRoleAnalyst, "developer", 200},
+		{"scoped compliance", "Token compliance-token", rbac.UserRoleComplianceOfficer, "professional", 200},
+		{"invalid token", "Token bogus-token", "", "", 401},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/api/v1/test", nil)
+			req.Header.Set("Authorization", tt.token)
+
+			var gotRole rbac.UserRole
+			var gotTier string
+			m.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+				gotRole = GetUserRole(r.Context())
+				gotTier = GetTier(r.Context())
+				w.WriteHeader(200)
+			})(rec, req)
+
+			if rec.Code != tt.wantStatus {
+				t.Errorf("status: got %d, want %d", rec.Code, tt.wantStatus)
+			}
+			if tt.wantStatus == 200 {
+				if gotRole != tt.wantRole {
+					t.Errorf("role: got %q, want %q", gotRole, tt.wantRole)
+				}
+				if gotTier != tt.wantTier {
+					t.Errorf("tier: got %q, want %q", gotTier, tt.wantTier)
+				}
+			}
+		})
+	}
+}
+
+// TestParseScopedTokens tests the env var parser
+func TestParseScopedTokens(t *testing.T) {
+	result := parseScopedTokens("svc-mon:viewer:community,svc-comp:compliance_officer:professional,invalid,,bad:")
+	if len(result) != 2 {
+		t.Fatalf("expected 2 scoped tokens, got %d", len(result))
+	}
+	if _, ok := result["svc-mon"]; !ok {
+		t.Error("missing svc-mon token")
+	}
+	if _, ok := result["svc-comp"]; !ok {
+		t.Error("missing svc-comp token")
+	}
+	if result["svc-mon"].Role != rbac.UserRoleViewer {
+		t.Errorf("svc-mon role: got %q, want %q", result["svc-mon"].Role, rbac.UserRoleViewer)
 	}
 }

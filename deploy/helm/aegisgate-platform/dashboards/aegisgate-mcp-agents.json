@@ -1,0 +1,145 @@
+{
+  "title": "AegisGate MCP & Agent Activity",
+  "uid": "aegisgate-mcp-agents",
+  "schemaVersion": 38,
+  "version": 1,
+  "tags": ["aegisgate", "mcp", "agents"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Active MCP Sessions",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(aegisgate_mcp_connections)", "legendFormat": "MCP Sessions"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 2,
+      "title": "MCP Tool Invocations (rate)",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 8, "x": 8, "y": 0},
+      "targets": [{"expr": "sum(rate(aegisgate_mcp_requests_total[5m]))", "legendFormat": "invocations/s"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 3,
+      "title": "A2A Auth Failures (Total)",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 8, "x": 16, "y": 0},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green"}, {"color": "red", "value": 1}]}}},
+      "targets": [{"expr": "sum(aegisgate_a2a_auth_failures_total)", "legendFormat": "Auth Failures"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 4,
+      "title": "MCP Connections Over Time",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 20, "stacking": {"mode": "normal"}}}},
+      "targets": [{"expr": "aegisgate_mcp_connections", "legendFormat": "sessions"}]
+    },
+    {
+      "id": 5,
+      "title": "MCP Tool Invocations by Tool",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [{"expr": "sum(rate(aegisgate_mcp_requests_total[5m])) by (tool)", "legendFormat": "{{tool}}"}]
+    },
+    {
+      "id": 6,
+      "title": "MCP Tool Results (Success vs Failure)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [{"expr": "sum(rate(aegisgate_mcp_requests_total[5m])) by (result)", "legendFormat": "{{result}}"}]
+    },
+    {
+      "id": 7,
+      "title": "A2A Integrity Failures by Agent",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green"}, {"color": "red", "value": 1}]}, "custom": {"drawStyle": "bars", "fillOpacity": 50}}},
+      "targets": [{"expr": "sum(rate(aegisgate_a2a_integrity_failures_total[5m])) by (agent)", "legendFormat": "{{agent}}"}]
+    },
+    {
+      "id": 8,
+      "title": "A2A Capability Denials by Agent",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green"}, {"color": "orange", "value": 1}]}, "custom": {"drawStyle": "bars", "fillOpacity": 50}}},
+      "targets": [{"expr": "sum(rate(aegisgate_a2a_capability_denials_total[5m])) by (agent, capability)", "legendFormat": "{{agent}} / {{capability}}"}]
+    },
+    {
+      "id": 9,
+      "title": "A2A License Failures by Agent",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green"}, {"color": "red", "value": 1}]}, "custom": {"drawStyle": "bars", "fillOpacity": 50}}},
+      "targets": [{"expr": "sum(rate(aegisgate_a2a_license_failures_total[5m])) by (agent)", "legendFormat": "{{agent}}"}]
+    },
+    {
+      "id": 10,
+      "title": "Requests by Tier",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "stacking": {"mode": "normal"}}}},
+      "targets": [{"expr": "sum(rate(aegisgate_tier_requests_total[5m])) by (tier)", "legendFormat": "{{tier}}"}]
+    },
+    {
+      "id": 11,
+      "title": "ML Inference Duration",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(aegisgate_ml_inference_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50 ML"},
+        {"expr": "histogram_quantile(0.95, sum(rate(aegisgate_ml_inference_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95 ML"}
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Regex Scan Duration",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(aegisgate_regex_scan_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50 regex"},
+        {"expr": "histogram_quantile(0.95, sum(rate(aegisgate_regex_scan_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95 regex"}
+      ]
+    }
+  ]
+}

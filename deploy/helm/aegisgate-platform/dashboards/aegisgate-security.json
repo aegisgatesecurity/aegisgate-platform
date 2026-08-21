@@ -1,0 +1,148 @@
+{
+  "title": "AegisGate Security Operations",
+  "uid": "aegisgate-security",
+  "schemaVersion": 38,
+  "version": 1,
+  "tags": ["aegisgate", "security"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Security Scans by Result",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green"}, {"color": "red", "value": 1}]}}},
+      "targets": [{"expr": "sum(aegisgate_security_scans_total{result=\"blocked\"})", "legendFormat": "Blocked"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 2,
+      "title": "Total Audit Events",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "sum(aegisgate_audit_events_total)", "legendFormat": "Audit Events"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 3,
+      "title": "Active Connections",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "targets": [{"expr": "sum(aegisgate_active_connections)", "legendFormat": "Active"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 4,
+      "title": "Rate Limit Hits (Total)",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "targets": [{"expr": "sum(rate(aegisgate_rate_limit_hits_total[5m]))", "legendFormat": "Rate Limit Hits/s"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}}
+    },
+    {
+      "id": 5,
+      "title": "Security Scans Over Time",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [{"expr": "sum(rate(aegisgate_security_scans_total[5m])) by (result)", "legendFormat": "{{result}}"}]
+    },
+    {
+      "id": 6,
+      "title": "MTTD (Mean Time to Detect)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(aegisgate_mttd_seconds_bucket[5m])) by (le))", "legendFormat": "p50 MTTD"},
+        {"expr": "histogram_quantile(0.95, sum(rate(aegisgate_mttd_seconds_bucket[5m])) by (le))", "legendFormat": "p95 MTTD"},
+        {"expr": "histogram_quantile(0.99, sum(rate(aegisgate_mttd_seconds_bucket[5m])) by (le))", "legendFormat": "p99 MTTD"}
+      ]
+    },
+    {
+      "id": 7,
+      "title": "MTTR (Mean Time to Respond)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(aegisgate_mttr_seconds_bucket[5m])) by (le))", "legendFormat": "p50 MTTR"},
+        {"expr": "histogram_quantile(0.95, sum(rate(aegisgate_mttr_seconds_bucket[5m])) by (le))", "legendFormat": "p95 MTTR"}
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Incidents by Severity",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "bars", "fillOpacity": 50}}},
+      "targets": [{"expr": "sum(rate(aegisgate_incident_total[5m])) by (severity)", "legendFormat": "{{severity}}"}]
+    },
+    {
+      "id": 9,
+      "title": "Detection Latency by Framework",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(aegisgate_detection_latency_seconds_bucket[5m])) by (le, framework))", "legendFormat": "{{framework}} p95"}]
+    },
+    {
+      "id": 10,
+      "title": "Incident Status Distribution",
+      "type": "piechart",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "targets": [{"expr": "sum(aegisgate_incident_total) by (status)", "legendFormat": "{{status}}"}]
+    },
+    {
+      "id": 11,
+      "title": "Scan Pipeline Duration",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "fieldConfig": {"defaults": {"unit": "s", "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(aegisgate_scan_pipeline_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50 scan"},
+        {"expr": "histogram_quantile(0.95, sum(rate(aegisgate_scan_pipeline_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95 scan"}
+      ]
+    },
+    {
+      "id": 12,
+      "title": "ML Shadow Predictions",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 36},
+      "fieldConfig": {"defaults": {"custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}}},
+      "targets": [{"expr": "sum(rate(aegisgate_shadow_prediction_total[5m])) by (result)", "legendFormat": "{{result}}"}]
+    }
+  ]
+}

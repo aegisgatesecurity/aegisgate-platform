@@ -37,12 +37,27 @@ const (
 	AuthTypeAPIToken      string     = "api_token"
 )
 
+// ScopedToken represents an API token with a restricted role and tier.
+// Scoped tokens allow service-to-service calls with least-privilege
+// instead of the blanket admin role assigned to the legacy single token.
+type ScopedToken struct {
+	Token string
+	Role  rbac.UserRole
+	Tier  string
+}
+
 // Config holds authentication configuration
 type Config struct {
 	JWTSigningKey    []byte
 	APIAuthToken     string
 	TokenExpiryHours int
 	RequireAuth      bool
+
+	// ScopedTokens maps token strings to ScopedToken entries with
+	// restricted roles/tiers. If a token matches both the legacy
+	// APIAuthToken and a scoped token, the scoped entry takes
+	// precedence (least-privilege).
+	ScopedTokens map[string]ScopedToken
 
 	// SSO Configuration
 	SSOConfig *sso.SSOConfig
@@ -73,6 +88,15 @@ func ConfigFromEnv() *Config {
 	if token := os.Getenv("API_AUTH_TOKEN"); token != "" {
 		cfg.APIAuthToken = token
 	}
+
+	// Parse scoped API tokens from AEGISGATE_SCOPED_TOKENS env var.
+	// Format: "token1:role1:tier1,token2:role2:tier2,..."
+	// Example: "svc-monitor:viewer:community,svc-compliance:compliance_officer:professional"
+	// Roles: viewer, analyst, compliance_officer, admin
+	// Tiers: community, developer, professional, enterprise
+	if scopedStr := os.Getenv("AEGISGATE_SCOPED_TOKENS"); scopedStr != "" {
+		cfg.ScopedTokens = parseScopedTokens(scopedStr)
+	}
 	// REQUIRE_AUTH=false explicitly disables auth (secure override)
 	// REQUIRE_AUTH=true explicitly enables auth (same as default)
 	// Missing REQUIRE_AUTH uses default (true - security-first)
@@ -83,6 +107,30 @@ func ConfigFromEnv() *Config {
 	}
 
 	return cfg
+}
+
+// parseScopedTokens parses "token:role:tier,token2:role2:tier2" format.
+// Invalid entries are silently skipped (fail-safe).
+func parseScopedTokens(s string) map[string]ScopedToken {
+	result := make(map[string]ScopedToken)
+	for _, entry := range strings.Split(s, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		parts := strings.SplitN(entry, ":", 3)
+		if len(parts) != 3 {
+			continue
+		}
+		token := strings.TrimSpace(parts[0])
+		role := rbac.ParseUserRole(strings.TrimSpace(parts[1]))
+		tier := strings.TrimSpace(parts[2])
+		if token == "" || role == "" {
+			continue
+		}
+		result[token] = ScopedToken{Token: token, Role: role, Tier: tier}
+	}
+	return result
 }
 
 // Claims represents JWT claims
@@ -309,8 +357,33 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 	}
 
 	if subtle.ConstantTimeCompare([]byte(token), []byte(expectedToken)) != 1 {
+		// Check scoped tokens (v4.2.0+)
+		if m.config.ScopedTokens != nil {
+			if scoped, ok := m.config.ScopedTokens[token]; ok {
+				ctx := context.WithValue(r.Context(), ContextKeyUserID, "api-scoped")
+				ctx = context.WithValue(ctx, ContextKeyTier, scoped.Tier)
+				ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeAPIToken)
+				ctx = SetUserRole(ctx, scoped.Role)
+				ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(scoped.Role))
+				next(w, r.WithContext(ctx))
+				return
+			}
+		}
 		m.unauthorized(w, "invalid api token")
 		return
+	}
+
+	// Check if the legacy token also has a scoped entry (scoped takes precedence)
+	if m.config.ScopedTokens != nil {
+		if scoped, ok := m.config.ScopedTokens[expectedToken]; ok {
+			ctx := context.WithValue(r.Context(), ContextKeyUserID, "api-scoped")
+			ctx = context.WithValue(ctx, ContextKeyTier, scoped.Tier)
+			ctx = context.WithValue(ctx, ContextKeyAuthType, AuthTypeAPIToken)
+			ctx = SetUserRole(ctx, scoped.Role)
+			ctx = SetPermissions(ctx, rbac.GetPermissionsForUserRole(scoped.Role))
+			next(w, r.WithContext(ctx))
+			return
+		}
 	}
 
 	ctx := context.WithValue(r.Context(), ContextKeyUserID, "api-service")
