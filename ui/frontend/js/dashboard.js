@@ -16,6 +16,8 @@ class AegisGateDashboard {
         await this.fetchHealth();
         await this.fetchTier();
         await this.fetchGuardrails();
+        this.renderComplianceFrameworks();
+        this.setupComplianceFilters();
         this.updateGettingStarted();
         this.startAutomaticUpdates();
         this.setupEventListeners();
@@ -72,10 +74,16 @@ class AegisGateDashboard {
                 const data = await response.json();
                 this.updateTierDisplay(data);
                 this.updateGettingStarted();
+                this.renderComplianceFrameworks(this.getActiveCompFilter());
             }
         } catch (error) {
             console.error("Error fetching tier:", error);
         }
+    }
+
+    getActiveCompFilter() {
+        const active = document.querySelector(".comp-filter-btn.active");
+        return active ? active.getAttribute("data-tier") : "all";
     }
 
     async fetchGuardrails() {
@@ -179,6 +187,130 @@ class AegisGateDashboard {
         this.setText("guardrails-sessions", g.active_sessions != null ? g.active_sessions : "0");
         this.setText("guardrails-tool-calls", g.total_tool_calls != null ? g.total_tool_calls : "0");
         this.setText("guardrails-rejected", g.rejected_calls != null ? g.rejected_calls : "0");
+    }
+
+    // ── Compliance Dashboard ─────────────────────────────────────
+
+    static FRAMEWORKS = [
+        // Community tier (4)
+        { name: "OWASP LLM Top 10", tier: "community", desc: "Vulnerabilities specific to LLM applications", controls: 42, automated: 38 },
+        { name: "OWASP Web Top 10", tier: "community", desc: "Web application security risks", controls: 87, automated: 72 },
+        { name: "MITRE ATLAS", tier: "community", desc: "Adversarial threat landscape for AI systems", controls: 78, automated: 56 },
+        { name: "NIST AI RMF 1.0", tier: "community", desc: "AI Risk Management Framework", controls: 65, automated: 48 },
+        // Developer tier (6)
+        { name: "HIPAA", tier: "developer", desc: "Healthcare data privacy and security", controls: 54, automated: 42 },
+        { name: "PCI-DSS", tier: "developer", desc: "Payment card industry data security", controls: 76, automated: 64 },
+        { name: "SOC 2", tier: "developer", desc: "Service organization controls (Type II)", controls: 64, automated: 58 },
+        { name: "ISO 27001", tier: "developer", desc: "Information security management systems", controls: 93, automated: 72 },
+        { name: "CCPA/CPRA", tier: "developer", desc: "California consumer privacy regulations", controls: 45, automated: 31 },
+        { name: "GDPR", tier: "developer", desc: "General Data Protection Regulation", controls: 99, automated: 68 },
+        // Professional tier (16)
+        { name: "ISO 42001", tier: "professional", desc: "AI management system standard", controls: 48, automated: 38 },
+        { name: "EU AI Act", tier: "professional", desc: "European AI Act compliance requirements", controls: 81, automated: 57 },
+        { name: "FIPS 140-2/140-3", tier: "professional", desc: "Federal cryptographic module standards", controls: 40, automated: 35 },
+        { name: "CIS Critical Security Controls", tier: "professional", desc: "Critical security controls v8", controls: 153, automated: 121 },
+        { name: "NIST Cybersecurity Framework", tier: "professional", desc: "NIST CSF 2.0 core functions", controls: 108, automated: 86 },
+        { name: "CSA STAR", tier: "professional", desc: "Cloud Security Alliance STAR program", controls: 67, automated: 49 },
+        { name: "NIST AI 600-1", tier: "professional", desc: "AI risk profile for generative AI", controls: 43, automated: 32 },
+        { name: "SOX (Sarbanes-Oxley)", tier: "professional", desc: "Financial reporting security controls", controls: 49, automated: 37 },
+        { name: "GLBA (Gramm-Leach-Bliley)", tier: "professional", desc: "Financial institutions data protection", controls: 39, automated: 28 },
+        { name: "CJIS Security Policy", tier: "professional", desc: "Criminal Justice Information Services", controls: 71, automated: 54 },
+        { name: "NERC CIP", tier: "professional", desc: "Critical infrastructure protection (energy)", controls: 57, automated: 44 },
+        { name: "FERPA", tier: "professional", desc: "Educational records privacy", controls: 34, automated: 24 },
+        { name: "HITECH Act", tier: "professional", desc: "Health information technology and security", controls: 46, automated: 35 },
+        { name: "FFIEC Banking Guidance", tier: "professional", desc: "Federal financial institutions guidance", controls: 52, automated: 39 },
+        { name: "TSA Security Directive", tier: "professional", desc: "Transportation security directives", controls: 31, automated: 23 },
+        { name: "ISO 21434 (Automotive)", tier: "professional", desc: "Automotive cybersecurity engineering", controls: 44, automated: 31 },
+        // Enterprise tier (5)
+        { name: "FedRAMP", tier: "enterprise", desc: "Federal Risk and Authorization Management Program", controls: 325, automated: 234 },
+        { name: "CMMC Level 2", tier: "enterprise", desc: "Cybersecurity Maturity Model Certification", controls: 156, automated: 117 },
+        { name: "NIST 800-171", tier: "enterprise", desc: "Protecting controlled unclassified information", controls: 110, automated: 89 },
+        { name: "HITRUST CSF", tier: "enterprise", desc: "Healthcare Trust Common Security Framework", controls: 135, automated: 98 },
+        { name: "TISAX AL2", tier: "enterprise", desc: "Automotive industry information security", controls: 87, automated: 63 },
+    ];
+
+    static TIER_ORDER = { community: 0, developer: 1, professional: 2, enterprise: 3 };
+
+    renderComplianceFrameworks(filterTier = "all") {
+        const grid = document.getElementById("comp-framework-grid");
+        if (!grid) return;
+
+        const currentTier = this.lastTier?.tier || "community";
+        const currentTierLevel = Dashboard.TIER_ORDER[currentTier] ?? 0;
+
+        let frameworks = Dashboard.FRAMEWORKS;
+        if (filterTier !== "all") {
+            frameworks = frameworks.filter(f => f.tier === filterTier);
+        }
+
+        // Clear loading message
+        grid.innerHTML = "";
+
+        let availableCount = 0;
+        for (const fw of frameworks) {
+            const fwTierLevel = Dashboard.TIER_ORDER[fw.tier] ?? 0;
+            const isAvailable = fwTierLevel <= currentTierLevel;
+            if (isAvailable) availableCount++;
+
+            const automationPct = Math.round((fw.automated / fw.controls) * 100);
+            const progressClass = automationPct >= 70 ? "high" : automationPct >= 50 ? "medium" : "low";
+
+            const card = document.createElement("article");
+            card.className = "comp-card";
+            card.innerHTML = `
+                <div class="comp-card-header">
+                    <h3>${fw.name}</h3>
+                    <span class="comp-tier-badge tier-${fw.tier}">${fw.tier}</span>
+                </div>
+                <p class="comp-card-desc">${fw.desc}</p>
+                <div class="comp-card-stats">
+                    <div class="comp-stat">
+                        <span class="comp-stat-value">${fw.controls}</span>
+                        <span class="comp-stat-label">Controls</span>
+                    </div>
+                    <div class="comp-stat">
+                        <span class="comp-stat-value">${fw.automated}</span>
+                        <span class="comp-stat-label">Automated</span>
+                    </div>
+                    <div class="comp-stat">
+                        <span class="comp-stat-value">${automationPct}%</span>
+                        <span class="comp-stat-label">Automation</span>
+                    </div>
+                </div>
+                <div class="comp-progress-bar" role="progressbar" aria-valuenow="${automationPct}" aria-valuemin="0" aria-valuemax="100" aria-label="${fw.name} automation rate">
+                    <div class="comp-progress-fill ${progressClass}" style="width: ${automationPct}%"></div>
+                </div>
+                <span class="comp-status ${isAvailable ? "available" : "locked"}">
+                    ${isAvailable ? "✅ Available" : "🔒 Requires " + fw.tier + " tier"}
+                </span>
+            `;
+            grid.appendChild(card);
+        }
+
+        // Update summary
+        this.setText("comp-available-frameworks", String(availableCount));
+
+        // If no frameworks matched, show message
+        if (frameworks.length === 0) {
+            grid.innerHTML = '<p class="comp-loading">No frameworks in this tier.</p>';
+        }
+    }
+
+    setupComplianceFilters() {
+        document.querySelectorAll(".comp-filter-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                // Update active state
+                document.querySelectorAll(".comp-filter-btn").forEach(b => {
+                    b.classList.remove("active");
+                    b.setAttribute("aria-pressed", "false");
+                });
+                e.target.classList.add("active");
+                e.target.setAttribute("aria-pressed", "true");
+
+                // Re-render with filter
+                this.renderComplianceFrameworks(e.target.getAttribute("data-tier"));
+            });
+        });
     }
 
     // ── Getting Started ──────────────────────────────────────────
@@ -408,7 +540,7 @@ class AegisGateDashboard {
                 this.fetchAggregatedStats();
                 break;
             case "compliance":
-                this.fetchGuardrails();
+                this.renderComplianceFrameworks(this.getActiveCompFilter());
                 break;
             case "settings":
                 // No data refresh needed for settings

@@ -314,44 +314,40 @@
 
         <!-- Compliance Panel -->
         <section id="compliance-panel" role="tabpanel" aria-labelledby="compliance-tab" hidden>
-            <h2 class="section-title">Compliance Reports</h2>
+            <h2 class="section-title">Compliance Posture</h2>
 
-            <div class="compliance-grid" role="region" aria-label="Compliance frameworks">
-                <article class="compliance-card" aria-labelledby="mitre-title">
-                    <h3 id="mitre-title">MITRE ATLAS</h3>
-                    <p>Adversarial Threat Landscape for AI Systems</p>
-                    <a href="#" class="card-link" aria-describedby="mitre-title">View Report</a>
-                </article>
+            <!-- Summary Header -->
+            <div class="comp-summary" id="comp-summary">
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="comp-total-frameworks">31</span>
+                    <span class="comp-summary-label">Total Frameworks</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="comp-available-frameworks">—</span>
+                    <span class="comp-summary-label">Available (Your Tier)</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="comp-automated">1,457</span>
+                    <span class="comp-summary-label">Automated Controls</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="comp-total-controls">2,043</span>
+                    <span class="comp-summary-label">Total Controls</span>
+                </div>
+            </div>
 
-                <article class="compliance-card" aria-labelledby="nist-title">
-                    <h3 id="nist-title">NIST AI RMF</h3>
-                    <p>AI Risk Management Framework</p>
-                    <a href="#" class="card-link" aria-describedby="nist-title">View Report</a>
-                </article>
+            <!-- Tier Filter -->
+            <div class="comp-filter-bar" role="toolbar" aria-label="Filter frameworks by tier">
+                <button class="comp-filter-btn active" data-tier="all" aria-pressed="true">All (31)</button>
+                <button class="comp-filter-btn" data-tier="community" aria-pressed="false">Community (4)</button>
+                <button class="comp-filter-btn" data-tier="developer" aria-pressed="false">Developer (6)</button>
+                <button class="comp-filter-btn" data-tier="professional" aria-pressed="false">Professional (16)</button>
+                <button class="comp-filter-btn" data-tier="enterprise" aria-pressed="false">Enterprise (5)</button>
+            </div>
 
-                <article class="compliance-card" aria-labelledby="iso-title">
-                    <h3 id="iso-title">ISO/IEC 42001</h3>
-                    <p>AI Management System Standard</p>
-                    <a href="#" class="card-link" aria-describedby="iso-title">View Report</a>
-                </article>
-
-                <article class="compliance-card" aria-labelledby="hipaa-title">
-                    <h3 id="hipaa-title">HIPAA</h3>
-                    <p>Healthcare AI Compliance</p>
-                    <a href="#" class="card-link" aria-describedby="hipaa-title">View Report</a>
-                </article>
-
-                <article class="compliance-card" aria-labelledby="pci-title">
-                    <h3 id="pci-title">PCI-DSS</h3>
-                    <p>Payment Card Industry Compliance</p>
-                    <a href="#" class="card-link" aria-describedby="pci-title">View Report</a>
-                </article>
-
-                <article class="compliance-card" aria-labelledby="soc-title">
-                    <h3 id="soc-title">SOC 2 Type II</h3>
-                    <p>Service Organization Controls</p>
-                    <a href="#" class="card-link" aria-describedby="soc-title">View Report</a>
-                </article>
+            <!-- Framework Grid (populated by JavaScript) -->
+            <div class="compliance-grid" id="comp-framework-grid" role="region" aria-label="Compliance frameworks">
+                <p class="comp-loading">Loading frameworks…</p>
             </div>
         </section>
 

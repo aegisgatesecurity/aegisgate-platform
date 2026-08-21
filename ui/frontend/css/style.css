@@ -411,6 +411,185 @@ tbody tr:focus-within {
     gap: var(--spacing-lg);
 }
 
+/* Compliance Summary Header */
+.comp-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.comp-summary-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    text-align: center;
+}
+
+.comp-summary-value {
+    display: block;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.comp-summary-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+
+/* Tier Filter Bar */
+.comp-filter-bar {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.comp-filter-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.comp-filter-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.comp-filter-btn.active {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-color: var(--color-primary);
+}
+
+/* Framework Cards */
+.comp-loading {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: var(--spacing-xl);
+    grid-column: 1 / -1;
+}
+
+.comp-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.comp-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.comp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.comp-card h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 0;
+}
+
+.comp-tier-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.comp-tier-badge.tier-community { background: #e6f7ff; color: #0066cc; }
+.comp-tier-badge.tier-developer { background: #f0fff4; color: #2f855a; }
+.comp-tier-badge.tier-professional { background: #fffaf0; color: #c05621; }
+.comp-tier-badge.tier-enterprise { background: #fff5f5; color: #c53030; }
+
+.comp-card-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.4;
+}
+
+.comp-card-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+.comp-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.comp-stat-value {
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.comp-stat-label {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+}
+
+/* Progress Bar */
+.comp-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: var(--spacing-xs);
+}
+
+.comp-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.comp-progress-fill.high { background: var(--color-success); }
+.comp-progress-fill.medium { background: var(--color-warning); }
+.comp-progress-fill.low { background: var(--color-danger); }
+
+/* Status badges */
+.comp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: var(--spacing-sm);
+}
+
+.comp-status.available { background: var(--color-success-bg); color: var(--color-success); }
+.comp-status.locked { background: var(--color-border); color: var(--color-text-muted); }
+
+@media (max-width: 768px) {
+    .comp-filter-bar { flex-direction: column; }
+    .comp-card-header { flex-direction: column; gap: 0.5rem; }
+}
+
 .compliance-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
