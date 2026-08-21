@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -60,6 +61,12 @@ type Server struct {
 	licenseGen   LicenseGenerator
 	emailService EmailService
 	logger       *log.Logger
+
+	// processedEvents tracks Stripe event IDs that have been
+	// successfully processed, preventing duplicate billing when
+	// Stripe retries a webhook delivery. Entries expire after 30 days.
+	processedEvents map[string]time.Time
+	eventMu         sync.RWMutex
 }
 
 // LicenseGenerator interface for license key generation
@@ -157,9 +164,10 @@ func NewWebhookServer(port string) *Server {
 	secret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 
 	return &Server{
-		port:   port,
-		secret: secret,
-		logger: log.Default(),
+		port:            port,
+		secret:          secret,
+		logger:          log.Default(),
+		processedEvents: make(map[string]time.Time),
 	}
 }
 
@@ -233,6 +241,22 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Printf("Received webhook: %s (ID: %s)", event.Type, event.ID)
 
+	// Idempotency check: if this event ID was already processed,
+	// return 200 OK without re-processing. Stripe retries webhooks
+	// on failure, so without this check duplicate events would
+	// be processed (e.g., double billing for the same checkout).
+	if event.ID != "" {
+		s.eventMu.RLock()
+		_, processed := s.processedEvents[event.ID]
+		s.eventMu.RUnlock()
+		if processed {
+			s.logger.Printf("Duplicate event %s ignored (idempotent)", event.ID)
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"received":true,"duplicate":true}`))
+			return
+		}
+	}
+
 	var processErr error
 	switch event.Type {
 	case "checkout.session.completed":
@@ -253,6 +277,20 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		s.logger.Printf("Error processing %s: %v", event.Type, processErr)
 		http.Error(w, "Processing error", http.StatusInternalServerError)
 		return
+	}
+
+	// Mark event as processed (idempotency).
+	if event.ID != "" && s.processedEvents != nil {
+		s.eventMu.Lock()
+		s.processedEvents[event.ID] = time.Now()
+		// Prune entries older than 30 days.
+		cutoff := time.Now().Add(-30 * 24 * time.Hour)
+		for id, ts := range s.processedEvents {
+			if ts.Before(cutoff) {
+				delete(s.processedEvents, id)
+			}
+		}
+		s.eventMu.Unlock()
 	}
 
 	w.WriteHeader(http.StatusOK)
