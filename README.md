@@ -53,7 +53,7 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, Response, and Trust — no patchwork of point products.
 - **176 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time.
-- **25 compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
+- **31 compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
 
 ## Security Posture
 
@@ -143,7 +143,7 @@ result, _ := guard.Scan(ctx, text)
 | Cryptographic attestation | ✅ Native | ❌ Not available |
 | Self-hosted, zero dependencies | ✅ Single binary | ❌ Requires external services |
 | Fail-closed by default | ✅ | ⚠️ Often fail-open |
-| 25 compliance frameworks | ✅ | ⚠️ 3–5 typical |
+| 31 compliance frameworks | ✅ | ⚠️ 3–5 typical |
 | PostgreSQL + file persistence | ✅ | ⚠️ Cloud-locked |
 | HA clustering | ✅ Enterprise+ | ⚠️ Enterprise add-on |
 | Open-core (Apache 2.0 community) | ✅ | ❌ Proprietary |
@@ -155,7 +155,7 @@ result, _ := guard.Scan(ctx, text)
 | **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 176 detection patterns, in-memory persistence |
 | **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
 | **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
-| **Enterprise** | Custom | Unlimited | Unlimited | 25 frameworks | + FedRAMP, HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
+| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + FedRAMP, HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
 
 ### Vertical Bundles
 
@@ -182,9 +182,9 @@ See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 | Response | `pkg/response/detectors/` | 176-pattern detection (secrets, XSS, PII, compliance) |
 | Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
 
-## Compliance Coverage (25 Frameworks)
+## Compliance Coverage (31 Frameworks)
 
-2,043 total controls across 25 frameworks. **1,457 automated** (71.3%), 586 manual (28.7% — organizational, legal, physical, HR, governance, and policy controls that require human processes).
+2,043 total controls across 31 frameworks. **1,457 automated** (71.3%), 586 manual (28.7% — organizational, legal, physical, HR, governance, and policy controls that require human processes).
 
 Automation methods: Config State Verification, Audit Trail Evidence, Detection Engine State, Cross-Framework Mapping.
 
@@ -339,7 +339,7 @@ pkg/
 ├── audit/                  # Audit logging + SIEM dispatcher (enterprise: full SIEM)
 ├── audit/soc2/             # SOC 2 evidence collection
 ├── bridge/                 # Platform bridge for Lens integration
-├── compliance/             # 25 framework modules across 33 subdirectories
+├── compliance/             # 31 framework modules across 33 subdirectories
 ├── cluster/                # HA clustering & distributed rate limiting
 ├── correlation/            # Event correlation engine
 ├── cve/                    # CVE-for-AI feed
