@@ -58,11 +58,11 @@ type LiveCheckResult struct {
 
 // LiveScanReport is the full result of a live infrastructure scan.
 type LiveScanReport struct {
-	Timestamp  time.Time          `json:"timestamp"`
-	Summary    map[string]int     `json:"summary"`
-	Results    []LiveCheckResult  `json:"results"`
-	Duration   string             `json:"duration"`
-	PassRate   float64            `json:"passRate"`
+	Timestamp time.Time         `json:"timestamp"`
+	Summary   map[string]int    `json:"summary"`
+	Results   []LiveCheckResult `json:"results"`
+	Duration  string            `json:"duration"`
+	PassRate  float64           `json:"passRate"`
 }
 
 // Scanner checks live platform state against compliance controls.
@@ -118,10 +118,10 @@ func (s *Scanner) Scan(ctx context.Context) *LiveScanReport {
 
 func (s *Scanner) checkTLS() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "tls-001",
-		Name:     "TLS Encryption Enabled",
-		Category: "encryption",
-		Control:  "SC-8",
+		ID:        "tls-001",
+		Name:      "TLS Encryption Enabled",
+		Category:  "encryption",
+		Control:   "SC-8",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -148,10 +148,10 @@ func (s *Scanner) checkTLS() LiveCheckResult {
 
 func (s *Scanner) checkAuthEnforcement() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "auth-001",
-		Name:     "Authentication Enforcement",
-		Category: "access_control",
-		Control:  "AC-2",
+		ID:        "auth-001",
+		Name:      "Authentication Enforcement",
+		Category:  "access_control",
+		Control:   "AC-2",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -172,10 +172,10 @@ func (s *Scanner) checkAuthEnforcement() LiveCheckResult {
 
 func (s *Scanner) checkAuditLogging() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "audit-001",
-		Name:     "Audit Logging Configuration",
-		Category: "audit",
-		Control:  "AU-2",
+		ID:        "audit-001",
+		Name:      "Audit Logging Configuration",
+		Category:  "audit",
+		Control:   "AU-2",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -195,10 +195,10 @@ func (s *Scanner) checkAuditLogging() LiveCheckResult {
 
 func (s *Scanner) checkSecurityHeaders() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "sec-001",
-		Name:     "Security Headers",
-		Category: "security",
-		Control:  "SI-10",
+		ID:        "sec-001",
+		Name:      "Security Headers",
+		Category:  "security",
+		Control:   "SI-10",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -219,10 +219,10 @@ func (s *Scanner) checkSecurityHeaders() LiveCheckResult {
 
 func (s *Scanner) checkRateLimiting() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "rate-001",
-		Name:     "Rate Limiting",
-		Category: "availability",
-		Control:  "SC-5",
+		ID:        "rate-001",
+		Name:      "Rate Limiting",
+		Category:  "availability",
+		Control:   "SC-5",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -243,10 +243,10 @@ func (s *Scanner) checkRateLimiting() LiveCheckResult {
 
 func (s *Scanner) checkRBAC() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "rbac-001",
-		Name:     "RBAC / Access Control",
-		Category: "access_control",
-		Control:  "AC-3",
+		ID:        "rbac-001",
+		Name:      "RBAC / Access Control",
+		Category:  "access_control",
+		Control:   "AC-3",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -267,10 +267,10 @@ func (s *Scanner) checkRBAC() LiveCheckResult {
 
 func (s *Scanner) checkSSO() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "sso-001",
-		Name:     "SSO / SAML / OIDC",
-		Category: "identity",
-		Control:  "IA-2",
+		ID:        "sso-001",
+		Name:      "SSO / SAML / OIDC",
+		Category:  "identity",
+		Control:   "IA-2",
 		Framework: "NIST-CSF",
 	}
 	// SSO is optional — skip if not configured
@@ -281,10 +281,10 @@ func (s *Scanner) checkSSO() LiveCheckResult {
 
 func (s *Scanner) checkMaintenanceWindows() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "maint-001",
-		Name:     "Maintenance Window Configuration",
-		Category: "operations",
-		Control:  "MA-2",
+		ID:        "maint-001",
+		Name:      "Maintenance Window Configuration",
+		Category:  "operations",
+		Control:   "MA-2",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -304,10 +304,10 @@ func (s *Scanner) checkMaintenanceWindows() LiveCheckResult {
 
 func (s *Scanner) checkDataRetention() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "retention-001",
-		Name:     "Data Retention Policy",
-		Category: "data_protection",
-		Control:  "SI-12",
+		ID:        "retention-001",
+		Name:      "Data Retention Policy",
+		Category:  "data_protection",
+		Control:   "SI-12",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {
@@ -330,10 +330,10 @@ func (s *Scanner) checkDataRetention() LiveCheckResult {
 
 func (s *Scanner) checkMLDetection() LiveCheckResult {
 	r := LiveCheckResult{
-		ID:       "ml-001",
-		Name:     "ML Threat Detection",
-		Category: "detection",
-		Control:  "SI-3",
+		ID:        "ml-001",
+		Name:      "ML Threat Detection",
+		Category:  "detection",
+		Control:   "SI-3",
 		Framework: "NIST-CSF",
 	}
 	if s.config == nil {

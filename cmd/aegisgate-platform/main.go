@@ -64,9 +64,9 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sla"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/soar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tracing"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 )

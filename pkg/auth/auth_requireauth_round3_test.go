@@ -348,17 +348,17 @@ func TestScopedAPIToken(t *testing.T) {
 		RequireAuth:      true,
 		TokenExpiryHours: 1,
 		ScopedTokens: map[string]ScopedToken{
-			"viewer-token":        {Token: "viewer-token", Role: rbac.UserRoleViewer, Tier: "community"},
-			"analyst-token":       {Token: "analyst-token", Role: rbac.UserRoleAnalyst, Tier: "developer"},
-			"compliance-token":    {Token: "compliance-token", Role: rbac.UserRoleComplianceOfficer, Tier: "professional"},
+			"viewer-token":     {Token: "viewer-token", Role: rbac.UserRoleViewer, Tier: "community"},
+			"analyst-token":    {Token: "analyst-token", Role: rbac.UserRoleAnalyst, Tier: "developer"},
+			"compliance-token": {Token: "compliance-token", Role: rbac.UserRoleComplianceOfficer, Tier: "professional"},
 		},
 	})
 
 	tests := []struct {
-		name      string
-		token     string
-		wantRole  rbac.UserRole
-		wantTier  string
+		name       string
+		token      string
+		wantRole   rbac.UserRole
+		wantTier   string
 		wantStatus int
 	}{
 		{"scoped viewer", "Token viewer-token", rbac.UserRoleViewer, "community", 200},
