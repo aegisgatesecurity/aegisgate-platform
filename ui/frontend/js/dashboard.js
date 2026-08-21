@@ -1,4 +1,4 @@
-// AegisGate Dashboard JavaScript — v4.1.0 API-aligned
+// AegisGate Dashboard JavaScript — v4.2.0 API-aligned
 // All endpoints use the canonical /api/v1/* routes
 class AegisGateDashboard {
     constructor() {
@@ -11,7 +11,7 @@ class AegisGateDashboard {
     }
 
     async init() {
-        console.log("AegisGate Dashboard v4.1.0 initialized");
+        console.log("AegisGate Dashboard v4.2.0 initialized");
         await this.fetchAggregatedStats();
         await this.fetchHealth();
         await this.fetchTier();
@@ -434,7 +434,7 @@ class AegisGateDashboard {
         const h = this.lastHealth;
         if (!h) return;
 
-        this.setText("cfg-sys-version", h.version ? "v" + h.version : "v4.1.0");
+        this.setText("cfg-sys-version", h.version ? "v" + h.version : "v4.2.0");
         this.setText("cfg-sys-tier", h.tier || "—");
         this.setText("cfg-sys-uptime", h.uptime ? this.formatUptime(h.uptime) : "—");
 

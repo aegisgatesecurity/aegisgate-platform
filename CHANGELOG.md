@@ -1,3 +1,44 @@
+## [4.2.0] - 2026-08-21 - Guided Setup, Dashboard Polish, Documentation Overhaul 🚀
+
+> **v4.2.0** delivers the complete "Guided Setup" initiative — making AegisGate easy to deploy and operate for users without Kubernetes or DevOps expertise. All 5 deliverables are complete, the dashboard has been overhauled, and documentation has been rewritten across 3 repositories.
+
+### Guided Setup (Easy Button) — 5 Deliverables
+
+- **feat: deploy profiles** — 5 presets (quickstart, small-team, production, high-security, air-gapped) in `pkg/profiles/`. Single CLI flag selects a profile with sensible defaults for each deployment scenario.
+- **feat: setup wizard** — Interactive and non-interactive wizard in `pkg/setup/`. Auto-detects Docker/K8s/systemd/bare metal, selects appropriate profile, prompts for customization, generates validated YAML config.
+- **feat: config validation** — 15+ checks in `pkg/platformconfig/validate.go` — port conflicts, TLS path existence, log level validity, rate limit ranges, SIEM endpoint format, data directory writability.
+- **feat: maintenance windows** — `atomic.Bool` lock-free hot path in `pkg/maintenance/`. Returns 503 with Retry-After for all proxy traffic. REST API at `/api/v1/maintenance` (GET status, POST enable, DELETE disable, PUT schedule). CLI command `aegisgate maintenance <enable|disable|status|schedule>`.
+- **feat: dashboard polish** — Complete UI overhaul of `ui/frontend/`:
+  - Version & branding alignment (all files → v4.2.0, shared CSS, correct GitHub links)
+  - Metrics card overhaul (Total Requests, Threats Blocked, Active Sessions, System Health)
+  - Getting Started tab (onboarding checklist, config display, quick commands with copy buttons, doc links)
+  - Compliance status dashboard (all 31 frameworks, tier-aware filtering, progress bars, automation %)
+  - Configuration tab (maintenance windows UI with enable/disable/schedule, system info grid)
+  - Navigation consolidation (unified 8-tab nav across all 7 pages)
+
+### Documentation Overhaul (6 Rounds)
+
+- **docs: core user docs** — Rewrote quickstart, getting-started, configuration, deploy-profiles, README
+- **docs: fixed stale compliance counts** — Corrected 31 frameworks (not 25), 1,457 automated controls (not 1,076), 2,043 total controls (not 1,870) across 14+ pages
+- **docs: new feature docs** — CLI reference (234 lines), maintenance windows guide (169 lines), FAQ rewrite, troubleshooting update
+- **docs: user-friendly polish** — Glossary (73 lines), day-2-operations guide (306 lines), onboarding rewrite
+- **docs: platform repo gap-fill** — 5 user-facing docs (1,209 lines): getting-started, deploy-profiles, compliance-overview, faq, troubleshooting
+- **docs: legacy repo deprecation** — 27 files with deprecation banners, repo archived on GitHub with DEPRECATED description
+- **docs: website deprecation page** — `/deprecated` page with v1.x vs v4.x comparison and migration guidance
+
+### Other Changes
+
+- **refactor: trademark fix** — Renamed "Easy Button" to "Guided Setup" everywhere (Staples U.S. Reg. 3,036,977)
+- **test: pkg/setup coverage** — Added 16 tests, coverage 74.9% → 87.7%
+- **fix: framework count** — Corrected 25 → 31 in README (source of truth: `gating.go`)
+
+### Stats
+
+- **20 commits** across 3 repositories
+- **72+ files** modified/created in documentation
+- **31 compliance frameworks** with 2,043 total controls (1,457 automated, 71.3%)
+- **4 automation methods**: Config State Verification, Audit Trail Evidence, Detection Engine State, Cross-Framework Mapping
+
 ## [4.1.0] - 2026-08-15 - Pricing, Open-Core, CI Fixes 🔒
 
 > **v4.1.0** is a major release that finalizes the pricing/tier structure, implements the open-core model (community edition is Apache 2.0, enterprise features are proprietary), fixes all CI failures, and aligns integration tests with current tier values. 83.1% coverage, 0 failures.

@@ -55,7 +55,7 @@ jobs:
           BUILD_DATE: ${{ github.event.created_at }}
         run: |
           mkdir -p dist
-          # v4.1.0: Community edition uses CGO_ENABLED=0 (no ONNX Runtime).
+          # v4.2.0: Community edition uses CGO_ENABLED=0 (no ONNX Runtime).
           # ML threat detection (ONNX inference) is enterprise-only.
           # The !cgo build path in pkg/ml/ provides regex-only threat detection.
           CGO_ENABLED=0 go build \

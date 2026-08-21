@@ -130,7 +130,7 @@ MCP server embedded
 
 ```bash
 curl http://localhost:8443/health
-# Expected: {"status":"healthy","version":"4.1.0",...}
+# Expected: {"status":"healthy","version":"4.2.0",...}
 ```
 
 ### Open the Dashboard

@@ -1,4 +1,4 @@
-# AegisGate Platform — Helm Chart Enhancements (v4.1.0)
+# AegisGate Platform — Helm Chart Enhancements (v4.2.0)
 
 ## Overview
 
