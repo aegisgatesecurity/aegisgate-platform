@@ -126,6 +126,9 @@ type ToolCall struct {
 	Parameters map[string]interface{}
 	// AgentID identifies the agent making the call.
 	AgentID string
+	// Role is the agent's role (e.g., "restricted", "standard", "privileged", "admin").
+	// Used for role-based rule matching via AuthorizationRule.MatchRole.
+	Role string
 	// SessionID identifies the session in which the call occurs.
 	SessionID string
 }
@@ -230,7 +233,7 @@ func (m *Matrix) Authorize(ctx context.Context, call *ToolCall) (Decision, error
 		// Step 3: Compute risk score.
 		riskScore := m.riskScorer.Score(call)
 
-		// Step 4: Check approval requirement against risk level threshold.
+		// Step 4a: Check approval requirement against risk level threshold.
 		if policy.RequireApproval && riskScore >= riskLevelThreshold[policy.RiskLevel] {
 			return Decision{
 				Allow:       false,
@@ -238,6 +241,25 @@ func (m *Matrix) Authorize(ctx context.Context, call *ToolCall) (Decision, error
 				RiskScore:   riskScore,
 				MatchedRule: call.Name,
 			}, nil
+		}
+
+		// Step 4b: Enforce AllowedRoles if the policy specifies them.
+		if len(policy.AllowedRoles) > 0 {
+			roleMatch := false
+			for _, allowed := range policy.AllowedRoles {
+				if call.Role == allowed {
+					roleMatch = true
+					break
+				}
+			}
+			if !roleMatch {
+				return Decision{
+					Allow:       false,
+					Reason:      "role not permitted for this tool",
+					RiskScore:   riskScore,
+					MatchedRule: call.Name,
+				}, nil
+			}
 		}
 
 		// Step 5: Allow with risk score.
@@ -254,7 +276,7 @@ func (m *Matrix) Authorize(ctx context.Context, call *ToolCall) (Decision, error
 		if rule.MatchTool != "" && rule.MatchTool != call.Name {
 			continue
 		}
-		if rule.MatchRole != "" && rule.MatchRole != call.AgentID {
+		if rule.MatchRole != "" && rule.MatchRole != call.Role {
 			continue
 		}
 		return rule.Decision, nil

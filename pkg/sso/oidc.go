@@ -30,6 +30,7 @@ type OIDCProvider struct {
 	httpClient *http.Client
 	store      RequestStore
 	discovery  *OIDCDiscoveryDocument
+	jwksCache  *jwksCache
 }
 
 // NewOIDCProvider creates a new OIDC provider
@@ -476,12 +477,39 @@ func (p *OIDCProvider) validateAccessToken(accessToken string) error {
 	return nil
 }
 
-// parseIDToken parses and validates an ID token
+// parseIDToken parses and validates an ID token, including JWT signature
+// verification against the issuer's JWKS when a JWKSURL is configured.
 func (p *OIDCProvider) parseIDToken(idToken string) (*OIDCIDTokenClaims, error) {
 	// Split token into parts
 	parts := strings.Split(idToken, ".")
 	if len(parts) != 3 {
 		return nil, NewSSOError(ErrInvalidToken, "invalid ID token format")
+	}
+
+	// Decode the JWT header to extract the key ID (kid).
+	headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, NewSSOError(ErrInvalidToken, "failed to decode ID token header").WithCause(err)
+	}
+	var header jwtHeader
+	if err := json.Unmarshal(headerBytes, &header); err != nil {
+		return nil, NewSSOError(ErrInvalidToken, "failed to parse ID token header").WithCause(err)
+	}
+
+	// Verify JWT signature against JWKS if available.
+	if p.oidcConfig.JWKSURL != "" {
+		if p.jwksCache == nil {
+			p.jwksCache = newJWKSCache(p.oidcConfig.JWKSURL, p.httpClient)
+		}
+
+		jwk, err := p.jwksCache.getKey(header.KeyID)
+		if err != nil {
+			return nil, NewSSOError(ErrInvalidToken, fmt.Sprintf("failed to find JWKS key for kid %q: %v", header.KeyID, err))
+		}
+
+		if err := verifyJWTSignature(idToken, jwk); err != nil {
+			return nil, NewSSOError(ErrInvalidSignature, fmt.Sprintf("ID token signature verification failed: %v", err))
+		}
 	}
 
 	// Decode claims

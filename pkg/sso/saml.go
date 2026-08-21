@@ -439,10 +439,12 @@ func (p *SAMLProvider) validateSignature(response *Response) error {
 		return NewSSOError(ErrInvalidSignature, "missing signed info")
 	}
 
-	// Canonicalize and hash
-	signedInfoBytes, err := xml.Marshal(signedInfo)
+	// Canonicalize the SignedInfo using proper XML c14n (not xml.Marshal).
+	// This is critical for signature interop with external SAML IdPs
+	// (Okta, Azure AD, Ping) — Go's xml.Marshal does NOT produce canonical XML.
+	signedInfoBytes, err := canonicalizeSignedInfo(signedInfo)
 	if err != nil {
-		return NewSSOError(ErrInvalidSignature, "failed to marshal signed info").WithCause(err)
+		return NewSSOError(ErrInvalidSignature, "failed to canonicalize signed info").WithCause(err)
 	}
 
 	// Decode signature

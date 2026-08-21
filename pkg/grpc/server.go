@@ -68,10 +68,12 @@ func NewGRPCServer(deps Dependencies, logger *slog.Logger) (*grpc.Server, error)
 		grpc.ConnectionTimeout(30 * time.Second),
 		grpc.ChainUnaryInterceptor(
 			unaryRecoveryInterceptor(logger),
+			unaryAuthInterceptor(logger, deps.Auth),
 			unaryLoggingInterceptor(logger),
 		),
 		grpc.ChainStreamInterceptor(
 			streamRecoveryInterceptor(logger),
+			streamAuthInterceptor(logger, deps.Auth),
 			streamLoggingInterceptor(logger),
 		),
 	}

@@ -320,7 +320,8 @@ func TestMatrix_Authorize_RuleMatchRole(t *testing.T) {
 	call := &ToolCall{
 		ID:      "1",
 		Name:    "admin_tool",
-		AgentID: "admin",
+		AgentID: "agent-1",
+		Role:    "admin",
 	}
 
 	dec, err := m.Authorize(context.Background(), call)

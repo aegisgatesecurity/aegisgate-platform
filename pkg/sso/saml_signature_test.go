@@ -10,7 +10,6 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/xml"
 	"math/big"
 	"testing"
 )
@@ -208,7 +207,8 @@ func TestValidateSignature_ValidRSA(t *testing.T) {
 		Reference:              &Reference{URI: "#_123"},
 	}
 
-	signedInfoBytes, err := xml.Marshal(signedInfo)
+	// Use canonical XML (c14n) for signing — matches what validateSignature does.
+	signedInfoBytes, err := canonicalizeSignedInfo(signedInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +267,8 @@ func TestValidateSignature_TamperedSignature(t *testing.T) {
 		Reference:              &Reference{URI: "#_123"},
 	}
 
-	signedInfoBytes, err := xml.Marshal(signedInfo)
+	// Use canonical XML (c14n) for signing — matches what validateSignature does.
+	signedInfoBytes, err := canonicalizeSignedInfo(signedInfo)
 	if err != nil {
 		t.Fatal(err)
 	}

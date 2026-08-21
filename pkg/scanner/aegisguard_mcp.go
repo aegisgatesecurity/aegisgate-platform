@@ -12,6 +12,7 @@ package scanner
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -31,6 +32,19 @@ type AegisGuardMCPConfig struct {
 	// Read/write timeouts for MCP protocol
 	ReadTimeout  time.Duration `json:"read_timeout"`
 	WriteTimeout time.Duration `json:"write_timeout"`
+
+	// UseTLS enables TLS-encrypted TCP connections to the MCP server.
+	// When false (default), connections are plaintext TCP (for local deployments).
+	// When true, connections use TLS 1.2+ with ServerName verification.
+	UseTLS bool `json:"use_tls"`
+
+	// TLSServerName overrides the server name used for TLS verification.
+	// If empty, the host portion of Address is used.
+	TLSServerName string `json:"tls_server_name"`
+
+	// TLSInsecureSkipVerify disables TLS certificate verification.
+	// Use ONLY for testing — never in production.
+	TLSInsecureSkipVerify bool `json:"tls_insecure_skip_verify"`
 
 	// Enable verbose logging
 	Debug bool `json:"debug"`
@@ -74,6 +88,37 @@ func DefaultAegisGuardMCPConfig() *AegisGuardMCPConfig {
 	}
 }
 
+// dialMCP connects to the MCP server using TCP or TLS based on config.
+func (s *AegisGuardMCPScanner) dialMCP() (net.Conn, error) {
+	if s.config.UseTLS {
+		serverName := s.config.TLSServerName
+		if serverName == "" {
+			// Extract host from address (strip port)
+			if host, _, err := net.SplitHostPort(s.config.Address); err == nil {
+				serverName = host
+			} else {
+				serverName = s.config.Address
+			}
+		}
+		tlsCfg := &tls.Config{
+			ServerName:         serverName,
+			InsecureSkipVerify: s.config.TLSInsecureSkipVerify, // #nosec G402 -- configurable, default false
+			MinVersion:         tls.VersionTLS12,
+		}
+		dialer := &net.Dialer{Timeout: s.config.Timeout}
+		conn, err := tls.DialWithDialer(dialer, "tcp", s.config.Address, tlsCfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to AegisGuard MCP server (TLS): %w", err)
+		}
+		return conn, nil
+	}
+	conn, err := net.DialTimeout("tcp", s.config.Address, s.config.Timeout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to AegisGuard MCP server: %w", err)
+	}
+	return conn, nil
+}
+
 // Initialize connects to AegisGuard MCP server and performs initialization
 func (s *AegisGuardMCPScanner) Initialize() error {
 	// Already initialized - skip reconnection
@@ -81,8 +126,8 @@ func (s *AegisGuardMCPScanner) Initialize() error {
 		return nil
 	}
 
-	// Connect to MCP server
-	conn, err := net.DialTimeout("tcp", s.config.Address, s.config.Timeout)
+	// Connect to MCP server (TLS or plaintext based on config)
+	conn, err := s.dialMCP()
 	if err != nil {
 		return fmt.Errorf("failed to connect to AegisGuard MCP server: %w", err)
 	}
@@ -215,7 +260,7 @@ func (s *AegisGuardMCPScanner) Scan(ctx context.Context, request *ScanRequest) (
 func (s *AegisGuardMCPScanner) Health() error {
 	// If not initialized, just test connection
 	if !s.initialized {
-		conn, err := net.DialTimeout("tcp", s.config.Address, 5*time.Second)
+		conn, err := s.dialMCP()
 		if err != nil {
 			return fmt.Errorf("health check failed: %w", err)
 		}
