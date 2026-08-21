@@ -51,6 +51,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/legalhold"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
@@ -1765,6 +1766,11 @@ func main() {
 		keyRing:   cbKeyRing,
 		logger:    slog.Default().With("component", "incident-callbacks"),
 	})
+
+	// Legal Hold HTTP endpoints (v4.3.1).
+	legalHoldSvc := legalhold.NewService()
+	wireLegalHoldHandlers(dashMux, authMiddleware, legalHoldSvc)
+	log.Printf("[LEGALHOLD] Legal hold API enabled at /api/v1/legal-holds")
 	// dashboard mux. The generate side is
 	// Professional+ (the digest is a
 	// customer-facing artifact); the verify side
