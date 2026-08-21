@@ -6,6 +6,7 @@
 package anp
 
 import (
+	crypto_rand "crypto/rand"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -249,8 +250,15 @@ func generateID() string {
 func randomString(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, length)
+	if _, err := crypto_rand.Read(b); err != nil {
+		// Fallback to time-based (should never happen)
+		for i := range b {
+			b[i] = charset[int(time.Now().UnixNano())%len(charset)]
+		}
+		return string(b)
+	}
 	for i := range b {
-		b[i] = charset[int(time.Now().UnixNano())%len(charset)]
+		b[i] = charset[int(b[i])%len(charset)]
 	}
 	return string(b)
 }

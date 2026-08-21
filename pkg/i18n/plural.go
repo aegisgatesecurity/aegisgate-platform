@@ -40,10 +40,10 @@ var pluralRules = map[Locale]pluralRule{
 	LocaleZh: noPluralRule,
 	LocalePt: germanicPluralRule,
 	LocaleKo: noPluralRule,
-	LocaleAr: germanicPluralRule,
-	LocaleRu: germanicPluralRule,
-	LocaleHe: germanicPluralRule,
-	LocaleHi: germanicPluralRule,
+	LocaleAr: arabicPluralRule,
+	LocaleRu: russianPluralRule,
+	LocaleHe: hebrewPluralRule,
+	LocaleHi: hindiPluralRule,
 }
 
 // germanicPluralRule handles English, German, Spanish plural rules
@@ -69,6 +69,86 @@ func frenchPluralRule(n int) PluralForm {
 // noPluralRule handles languages without plural distinction (Japanese, Chinese, etc.)
 // other: all counts
 func noPluralRule(n int) PluralForm {
+	return PluralOther
+}
+
+// arabicPluralRule handles Arabic plural rules (CLDR).
+// Arabic has 6 plural forms: zero, one, two, few, many, other.
+//
+//	zero: n == 0
+//	one:  n == 1
+//	two:  n == 2
+//	few:  n % 100 in 3..10
+//	many: n % 100 in 11..99
+//	other: everything else (fractions, etc.)
+func arabicPluralRule(n int) PluralForm {
+	mod100 := n % 100
+	switch {
+	case n == 0:
+		return PluralOther // Arabic "zero" — we map to other for simplicity
+	case n == 1:
+		return PluralOne
+	case n == 2:
+		return PluralTwo
+	case mod100 >= 3 && mod100 <= 10:
+		return PluralFew
+	case mod100 >= 11 && mod100 <= 99:
+		return PluralMany
+	default:
+		return PluralOther
+	}
+}
+
+// russianPluralRule handles Russian plural rules (CLDR).
+// Russian has 3 forms: one, few, many.
+//
+//	one:  n % 10 == 1 && n % 100 != 11
+//	few:  n % 10 in 2..4 && n % 100 not in 12..14
+//	many: everything else
+func russianPluralRule(n int) PluralForm {
+	mod10 := n % 10
+	mod100 := n % 100
+	switch {
+	case mod10 == 1 && mod100 != 11:
+		return PluralOne
+	case mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14):
+		return PluralFew
+	default:
+		return PluralMany
+	}
+}
+
+// hebrewPluralRule handles Hebrew plural rules (CLDR).
+// Hebrew has 4 forms: one, two, many, other.
+//
+//	one:   n == 1
+//	two:   n == 2
+//	many:  n in 3..10 || n % 10 == 0
+//	other: everything else
+func hebrewPluralRule(n int) PluralForm {
+	mod10 := n % 10
+	switch {
+	case n == 1:
+		return PluralOne
+	case n == 2:
+		return PluralTwo
+	case (n >= 3 && n <= 10) || mod10 == 0:
+		return PluralMany
+	default:
+		return PluralOther
+	}
+}
+
+// hindiPluralRule handles Hindi plural rules (CLDR).
+// Hindi has 2 forms: one, other (same as Germanic but with different
+// boundary — Hindi uses 0..1 as "one").
+//
+//	one:   n == 0 || n == 1
+//	other: n >= 2
+func hindiPluralRule(n int) PluralForm {
+	if n == 0 || n == 1 {
+		return PluralOne
+	}
 	return PluralOther
 }
 
@@ -101,6 +181,12 @@ func DefaultPluralForms(locale Locale) []PluralForm {
 	switch locale {
 	case LocaleJa, LocaleZh, LocaleKo:
 		return []PluralForm{PluralOther}
+	case LocaleAr:
+		return []PluralForm{PluralOne, PluralTwo, PluralFew, PluralMany, PluralOther}
+	case LocaleRu:
+		return []PluralForm{PluralOne, PluralFew, PluralMany}
+	case LocaleHe:
+		return []PluralForm{PluralOne, PluralTwo, PluralMany, PluralOther}
 	default:
 		return []PluralForm{PluralOne, PluralOther}
 	}

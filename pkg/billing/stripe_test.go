@@ -11,6 +11,9 @@ package billing
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"testing"
 	"time"
@@ -201,12 +204,9 @@ func TestGetInvoices_MockMode(t *testing.T) {
 func TestVerifyWebhookSignature_NoSecret(t *testing.T) {
 	c := newMockClient()
 	payload := []byte(`{"type":"checkout.session.completed"}`)
-	result, err := c.VerifyWebhookSignature(payload, "sig123")
-	if err != nil {
-		t.Fatalf("VerifyWebhookSignature() error: %v", err)
-	}
-	if string(result) != string(payload) {
-		t.Errorf("result=%s, want %s", result, payload)
+	_, err := c.VerifyWebhookSignature(payload, "sig123")
+	if err == nil {
+		t.Fatal("expected error when webhook secret not configured")
 	}
 }
 
@@ -214,7 +214,15 @@ func TestVerifyWebhookSignature_WithSecret(t *testing.T) {
 	c := newMockClient()
 	c.webhookSecret = "whsec_test_secret"
 	payload := []byte(`{"type":"invoice.paid"}`)
-	result, err := c.VerifyWebhookSignature(payload, "sig123")
+
+	// Build a valid Stripe signature: t=timestamp,v1=HMAC-SHA256
+	timestamp := "1234567890"
+	signedPayload := timestamp + "." + string(payload)
+	mac := hmac.New(sha256.New, []byte(c.webhookSecret))
+	mac.Write([]byte(signedPayload))
+	sig := "t=" + timestamp + ",v1=" + hex.EncodeToString(mac.Sum(nil))
+
+	result, err := c.VerifyWebhookSignature(payload, sig)
 	if err != nil {
 		t.Fatalf("VerifyWebhookSignature() error: %v", err)
 	}

@@ -21,6 +21,8 @@ package ml
 import (
 	"strings"
 	"unicode"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
@@ -51,11 +53,21 @@ func NewCharNormalizer() *CharNormalizer {
 
 // Normalize preprocesses text for model input.
 // Steps:
-// 1. Convert to lowercase
-// 2. Strip leading/trailing whitespace
-// 3. Collapse multiple whitespace
-// 4. Truncate to max length
+//  1. NFKC normalization (Unicode canonical decomposition + composition)
+//     — this maps homoglyphs and compatibility characters to their
+//     canonical forms, so "ⅴ" (U+2174) → "v" (U+0076) and "ﬁ" (U+FB01)
+//     → "fi". Without this, adversarial inputs using Unicode tricks
+//     bypass the model's detection.
+//  2. Convert to lowercase
+//  3. Strip leading/trailing whitespace
+//  4. Collapse multiple whitespace
+//  5. Truncate to max length
 func (cn *CharNormalizer) Normalize(text string) string {
+	// NFKC normalization — canonical decomposition + composition.
+	// This maps compatibility characters and homoglyphs to their
+	// canonical ASCII equivalents where possible.
+	text = norm.NFKC.String(text)
+
 	// Lowercase
 	text = strings.ToLower(text)
 

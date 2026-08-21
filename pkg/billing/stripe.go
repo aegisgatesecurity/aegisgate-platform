@@ -7,6 +7,9 @@ package billing
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -373,13 +376,49 @@ func (c *StripeClient) GetInvoices(ctx context.Context, customerID string) ([]*I
 	return nil, fmt.Errorf("real Stripe integration required")
 }
 
-// VerifyWebhookSignature verifies the Stripe webhook signature
-// This is a placeholder - real implementation requires crypto/hmac
+// VerifyWebhookSignature verifies the Stripe webhook signature using
+// HMAC-SHA256. The signature header format is "t=timestamp,v1=signature".
+// Production webhook handling uses pkg/billing/webhook/server.go which
+// has its own HMAC verification — this method is for direct API calls.
+//
+// Deprecated: Use pkg/billing/webhook/server.go for webhook processing.
+// This method is retained for the StripeClientInterface contract.
 func (c *StripeClient) VerifyWebhookSignature(payload []byte, sig string) ([]byte, error) {
 	if c.webhookSecret == "" {
-		return payload, nil
+		return nil, fmt.Errorf("webhook secret not configured")
 	}
-	// Real implementation would verify HMAC signature here
+
+	// Parse the Stripe signature header: "t=timestamp,v1=signature"
+	sigParts := strings.Split(sig, ",")
+	var timestamp, v1Sig string
+	for _, part := range sigParts {
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		switch kv[0] {
+		case "t":
+			timestamp = kv[1]
+		case "v1":
+			v1Sig = kv[1]
+		}
+	}
+
+	if timestamp == "" || v1Sig == "" {
+		return nil, fmt.Errorf("invalid signature header format")
+	}
+
+	// Compute expected signature: HMAC-SHA256(timestamp + "." + payload, secret)
+	signedPayload := timestamp + "." + string(payload)
+	mac := hmac.New(sha256.New, []byte(c.webhookSecret))
+	mac.Write([]byte(signedPayload))
+	expectedSig := hex.EncodeToString(mac.Sum(nil))
+
+	// Constant-time comparison
+	if !hmac.Equal([]byte(v1Sig), []byte(expectedSig)) {
+		return nil, fmt.Errorf("signature verification failed")
+	}
+
 	return payload, nil
 }
 

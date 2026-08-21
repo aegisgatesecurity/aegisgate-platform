@@ -88,7 +88,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "gdpr",
 		Name:        "GDPR",
-		Tier:        tier.TierCommunity,
+		Tier:        tier.TierDeveloper,
 		Description: "General Data Protection Regulation compliance",
 		Features: []string{
 			"6 core data protection requirements",
@@ -99,7 +99,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "cis",
 		Name:        "CIS Critical Security Controls v8",
-		Tier:        tier.TierCommunity,
+		Tier:        tier.TierProfessional,
 		Description: "CIS Controls for enterprise security baseline",
 		Features: []string{
 			"15 controls across all CIS families",
@@ -110,7 +110,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "nist_csf",
 		Name:        "NIST CSF 2.0",
-		Tier:        tier.TierCommunity,
+		Tier:        tier.TierProfessional,
 		Description: "NIST Cybersecurity Framework 2.0",
 		Features: []string{
 			"6 core functions",
@@ -132,7 +132,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "csa_star",
 		Name:        "CSA STAR Level 1",
-		Tier:        tier.TierCommunity,
+		Tier:        tier.TierProfessional,
 		Description: "Cloud Security Alliance Security, Trust, Assurance, and Risk",
 		Features: []string{
 			"16 CCM domains",
@@ -154,7 +154,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "ccpa",
 		Name:        "CCPA/CPRA",
-		Tier:        tier.TierCommunity,
+		Tier:        tier.TierDeveloper,
 		Description: "California Consumer Privacy Act / California Privacy Rights Act",
 		Features: []string{
 			"12 controls (8 automated + 4 evidence-mapped)",
@@ -214,7 +214,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "iso27001",
 		Name:        "ISO/IEC 27001:2022",
-		Tier:        tier.TierProfessional,
+		Tier:        tier.TierDeveloper,
 		Description: "ISO/IEC 27001 Information Security Management System",
 		Features: []string{
 			"67 Annex A controls, 100% automated",
@@ -225,7 +225,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "fedramp",
 		Name:        "FedRAMP Moderate",
-		Tier:        tier.TierProfessional,
+		Tier:        tier.TierEnterprise,
 		Description: "FedRAMP Moderate (NIST SP 800-53 Rev. 5)",
 		Features: []string{
 			"150 controls across 18 NIST 800-53 families (75 automated + 75 evidence-mapped)",
@@ -260,7 +260,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "cmmcl2",
 		Name:        "CMMC Level 2",
-		Tier:        tier.TierProfessional,
+		Tier:        tier.TierEnterprise,
 		Description: "Cybersecurity Maturity Model Certification Level 2",
 		Features: []string{
 			"57 controls (33 automated + 24 evidence-mapped)",
@@ -271,7 +271,7 @@ func (tm *TierManager) initializeDefaults() {
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "nist800171",
 		Name:        "NIST SP 800-171",
-		Tier:        tier.TierProfessional,
+		Tier:        tier.TierEnterprise,
 		Description: "NIST SP 800-171 CUI protection requirements",
 		Features: []string{
 			"47 controls (28 automated + 19 evidence-mapped)",
@@ -310,6 +310,88 @@ func (tm *TierManager) initializeDefaults() {
 		Description: "Reserved for future Trust Framework module (Phase 4)",
 		Features:    []string{"Reserved"},
 	})
+	// ── Additional frameworks synced from gating.go ──
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "cjis",
+		Name:        "CJIS Security Policy",
+		Tier:        tier.TierProfessional,
+		Description: "Criminal Justice Information Services security policy",
+		Features:    []string{"13 policy areas", "Access control + encryption"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "ferpa",
+		Name:        "FERPA",
+		Tier:        tier.TierProfessional,
+		Description: "Family Educational Rights and Privacy Act",
+		Features:    []string{"Student record privacy", "Data minimization"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "ffiec",
+		Name:        "FFIEC IT Examination",
+		Tier:        tier.TierProfessional,
+		Description: "Federal Financial Institutions Examination Council IT guidance",
+		Features:    []string{"Banking security", "Audit + risk assessment"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "glba",
+		Name:        "GLBA Safeguards Rule",
+		Tier:        tier.TierProfessional,
+		Description: "Gramm-Leach-Bliley Act safeguards rule",
+		Features:    []string{"Financial data protection", "Risk-based controls"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "hitech",
+		Name:        "HITECH Act",
+		Tier:        tier.TierProfessional,
+		Description: "Health Information Technology for Economic and Clinical Health Act",
+		Features:    []string{"Breach notification", "EHR security"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "iso21434",
+		Name:        "ISO 21434",
+		Tier:        tier.TierProfessional,
+		Description: "Road vehicles cybersecurity engineering",
+		Features:    []string{"Automotive cybersecurity", "Threat analysis + risk assessment"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "nerc_cip",
+		Name:        "NERC CIP",
+		Tier:        tier.TierProfessional,
+		Description: "North American Electric Reliability Corporation critical infrastructure protection",
+		Features:    []string{"Bulk electric system", "Critical asset identification"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "nist_ai_600_1",
+		Name:        "NIST AI 600-1",
+		Tier:        tier.TierProfessional,
+		Description: "NIST AI 600-1 generative AI risk profile",
+		Features:    []string{"GenAI-specific risks", "Risk mitigation controls"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "sox",
+		Name:        "Sarbanes-Oxley (SOX)",
+		Tier:        tier.TierProfessional,
+		Description: "Sarbanes-Oxley Act IT general controls",
+		Features:    []string{"Financial reporting integrity", "Change management + access controls"},
+	})
+
+	tm.RegisterFramework(FrameworkTier{
+		FrameworkID: "tsa_sd",
+		Name:        "TSA Security Directives",
+		Tier:        tier.TierProfessional,
+		Description: "Transportation Security Administration security directives",
+		Features:    []string{"Pipeline + rail security", "Cyber risk assessment"},
+	})
+
 }
 
 // RegisterFramework registers a framework with its tier assignment

@@ -126,6 +126,12 @@ func InitTracing(ctx context.Context, logger *slog.Logger) (func(context.Context
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
+	// Store the shutdown function so that Shutdown() can be called
+	// from anywhere in the codebase (e.g., signal handlers).
+	shutdownMu.Lock()
+	globalShutdown = tp.Shutdown
+	shutdownMu.Unlock()
+
 	logger.Info("[TRACING] OpenTelemetry tracing initialized",
 		"service", serviceName, "exporter", exporterType, "sample_ratio", ratio)
 

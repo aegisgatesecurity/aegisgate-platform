@@ -124,9 +124,6 @@ func TestTierManager_FrameworkAccess(t *testing.T) {
 	if !tm.IsFrameworkAllowed("atlas") {
 		t.Error("Community tier should allow atlas")
 	}
-	if !tm.IsFrameworkAllowed("cis") {
-		t.Error("Community tier should allow cis")
-	}
 
 	// Enterprise-only frameworks should not be accessible at Community tier
 	if tm.IsFrameworkAllowed("hitrust") {
@@ -135,8 +132,8 @@ func TestTierManager_FrameworkAccess(t *testing.T) {
 
 	// Professional tier should allow Professional and below
 	tm.SetTier(tier.TierProfessional)
-	if !tm.IsFrameworkAllowed("fedramp") {
-		t.Error("Professional tier should allow fedramp")
+	if !tm.IsFrameworkAllowed("cis") {
+		t.Error("Professional tier should allow cis")
 	}
 	if !tm.IsFrameworkAllowed("atlas") {
 		t.Error("Professional tier should allow atlas")

@@ -23,6 +23,7 @@ type Guard struct {
 
 	// Rate limiting
 	clickRate      map[string]*rateBucket
+	screenshotRate map[string]*rateBucket
 	screenshotLast map[string]time.Time
 	keystrokeRate  map[string]*rateBucket
 
@@ -56,6 +57,7 @@ func NewGuardWithConfig(cfg *Config) *Guard {
 		cfg:            cfg,
 		logger:         slog.Default().With("component", "computer-use-guard"),
 		clickRate:      make(map[string]*rateBucket),
+		screenshotRate: make(map[string]*rateBucket),
 		screenshotLast: make(map[string]time.Time),
 		keystrokeRate:  make(map[string]*rateBucket),
 		recentClicks:   make(map[string][]time.Time),
@@ -305,13 +307,26 @@ func (g *Guard) checkClickRateLimit(agentID string) bool {
 }
 
 func (g *Guard) checkScreenshotRateLimit(agentID string) bool {
-	// Simplified - just check against per-minute limit
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	bucket, exists := g.clickRate[agentID] // Reuse click rate map
+	bucket, exists := g.screenshotRate[agentID]
 	if !exists {
-		return true
+		bucket = &rateBucket{
+			tokens:     g.cfg.MaxScreenshotsPerMinute,
+			lastRefill: time.Now(),
+			maxTokens:  g.cfg.MaxScreenshotsPerMinute,
+			refillRate: 60,
+		}
+		g.screenshotRate[agentID] = bucket
+	}
+
+	// Refill tokens based on elapsed time.
+	elapsed := time.Since(bucket.lastRefill)
+	refill := int(elapsed.Seconds()) * bucket.refillRate / 60
+	if refill > 0 {
+		bucket.tokens = min(bucket.maxTokens, bucket.tokens+refill)
+		bucket.lastRefill = time.Now()
 	}
 
 	if bucket.tokens <= 0 {

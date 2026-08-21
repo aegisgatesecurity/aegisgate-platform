@@ -6,6 +6,7 @@
 package incident
 
 import (
+	crypto_rand "crypto/rand"
 	"fmt"
 	"time"
 )
@@ -213,7 +214,21 @@ type IncidentQuery struct {
 	TenantID  string             `json:"tenant_id"`
 }
 
-// newID generates an ID with a prefix and nanosecond timestamp.
+// newID generates a collision-resistant ID with a prefix, nanosecond
+// timestamp, and a random suffix. The random suffix ensures uniqueness
+// even when two IDs are generated in the same nanosecond.
 func newID(prefix string) string {
-	return fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano())
+	return fmt.Sprintf("%s_%d_%s", prefix, time.Now().UnixNano(), randomHex(4))
+}
+
+// randomHex generates n random bytes as a hex string.
+func randomHex(n int) string {
+	b := make([]byte, n)
+	if _, err := crypto_rand.Read(b); err != nil {
+		// Fallback: use timestamp-derived bytes (should never happen).
+		for i := range b {
+			b[i] = byte(time.Now().UnixNano() >> uint(i*8))
+		}
+	}
+	return fmt.Sprintf("%x", b)
 }
