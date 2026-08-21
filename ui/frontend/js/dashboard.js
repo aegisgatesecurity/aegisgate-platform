@@ -1,4 +1,4 @@
-// AegisGate Dashboard JavaScript — v1.2.0 API-aligned
+// AegisGate Dashboard JavaScript — v4.1.0 API-aligned
 // All endpoints use the canonical /api/v1/* routes
 class AegisGateDashboard {
     constructor() {
@@ -10,7 +10,7 @@ class AegisGateDashboard {
     }
 
     async init() {
-        console.log("AegisGate Dashboard v1.3.2 initialized");
+        console.log("AegisGate Dashboard v4.1.0 initialized");
         await this.fetchStats();
         await this.fetchHealth();
         await this.fetchTier();

@@ -1,4 +1,4 @@
-// AegisGate Compliance Dashboard Client — v3.6.0
+// AegisGate Compliance Dashboard Client — v4.1.0
 // Connects to /api/v1/compliance/* endpoints for real-time compliance posture,
 // residual risk, audit trail, ML metrics, and regression gate status.
 
@@ -10,7 +10,7 @@ class AegisGateComplianceClient {
     }
 
     async init() {
-        console.log("AegisGate Compliance Client v3.6.0 initialized");
+        console.log("AegisGate Compliance Client v4.1.0 initialized");
         await this.fetchScanResults();
         await this.fetchRiskMap();
         await this.fetchAuditTrail();

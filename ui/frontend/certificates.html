@@ -1,144 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AegisGate - Certificates</title>
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Page-specific styles — base styles from style.css */
+        .cert-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 var(--spacing-md);
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            color: #333;
+        .cert-card {
+            background: var(--color-surface);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid var(--color-border);
         }
-        .header {
+        .cert-card h2 {
+            color: var(--color-primary);
+            margin-bottom: var(--spacing-md);
+            font-size: var(--font-size-xl);
+        }
+        .cert-header {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
+            padding: var(--spacing-md) var(--spacing-xl);
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.2);
         }
-        .header h1 {
-            color: white;
+        .cert-header h1 {
+            color: var(--color-text-inverse);
             font-size: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        .header .version {
+        .cert-header .version {
             color: rgba(255,255,255,0.7);
             font-size: 0.9rem;
         }
-        .nav {
+        .cert-nav {
             background: rgba(255,255,255,0.95);
             padding: 0;
             display: flex;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .nav a {
+        .cert-nav a {
             flex: 1;
             text-align: center;
-            padding: 1rem;
+            padding: var(--spacing-md);
             text-decoration: none;
-            color: #666;
+            color: var(--color-text-secondary);
             font-weight: 500;
             transition: all 0.3s;
             border-bottom: 3px solid transparent;
         }
-        .nav a:hover {
+        .cert-nav a:hover {
             background: rgba(30,60,114,0.05);
-            color: #1e3c72;
+            color: var(--color-primary);
         }
-        .nav a.active {
-            color: #1e3c72;
-            border-bottom-color: #1e3c72;
+        .cert-nav a.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
             background: rgba(30,60,114,0.1);
-        }
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .card h2 {
-            color: #1e3c72;
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
             padding: 0.75rem 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--color-border);
         }
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        .info-label {
-            color: #666;
-            font-weight: 500;
-        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--color-text-secondary); font-weight: 500; }
         .info-value {
-            color: #333;
+            color: var(--color-text-primary);
             font-family: monospace;
             text-align: right;
             max-width: 60%;
             word-break: break-all;
         }
-        .btn {
+        .cert-btn {
             padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--border-radius-md);
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 1rem;
+            font-size: var(--font-size-base);
         }
-        .btn-primary {
-            background: #1e3c72;
-            color: white;
+        .cert-btn-primary { background: var(--color-primary); color: var(--color-text-inverse); }
+        .cert-btn-primary:hover { background: var(--color-primary-light); }
+        .cert-btn-secondary { background: var(--color-text-muted); color: var(--color-text-inverse); }
+        .cert-alert {
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            margin-bottom: var(--spacing-md);
         }
-        .btn-primary:hover {
-            background: #2a5298;
-        }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        .alert-success {
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            color: #1b5e20;
-        }
-        .alert-warning {
-            background: #fff3e0;
-            border-left: 4px solid #ff9800;
-            color: #e65100;
+        .cert-alert-warning {
+            background: var(--color-warning-bg);
+            border-left: 4px solid var(--color-warning);
+            color: var(--color-warning);
         }
         .cert-status {
             display: inline-flex;
@@ -149,18 +117,9 @@
             font-weight: 500;
             font-size: 0.9rem;
         }
-        .cert-valid {
-            background: #d4edda;
-            color: #155724;
-        }
-        .cert-warning {
-            background: #fff3e0;
-            color: #856404;
-        }
-        .cert-expired {
-            background: #f8d7da;
-            color: #721c24;
-        }
+        .cert-valid { background: var(--color-success-bg); color: var(--color-success); }
+        .cert-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+        .cert-expired { background: var(--color-danger-bg); color: var(--color-danger); }
         .status-dot {
             width: 8px;
             height: 8px;
@@ -170,7 +129,7 @@
         .expiry-bar {
             width: 100%;
             height: 8px;
-            background: #e0e0e0;
+            background: var(--color-border);
             border-radius: 4px;
             margin-top: 0.5rem;
             overflow: hidden;
@@ -181,39 +140,31 @@
             transition: width 0.3s;
         }
         @media (max-width: 768px) {
-            .nav {
-                flex-direction: column;
-            }
-            .info-row {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            .info-value {
-                text-align: left;
-                max-width: 100%;
-            }
+            .cert-nav { flex-direction: column; }
+            .info-row { flex-direction: column; gap: 0.5rem; }
+            .info-value { text-align: left; max-width: 100%; }
         }
     </style>
 </head>
 <body>
-    <header class="header">
+    <header class="cert-header">
         <h1>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                 <path d="M12 2C9.243 2 7 4.243 7 7v3H5v11h14V10h-2V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3z"/>
             </svg>
             AegisGate Security Gateway
         </h1>
-        <span class="version">v1.3.2</span>
+        <span class="version">v4.1.0</span>
     </header>
 
-    <nav class="nav">
+    <nav class="cert-nav">
         <a href="index.html">Dashboard</a>
         <a href="certificates.html" class="active">Certificates</a>
         <a href="settings.html">Settings</a>
     </nav>
 
-    <div class="container">
-        <div class="card">
+    <div class="cert-container">
+        <div class="cert-card">
             <h2>TLS Certificate Status</h2>
             <div id="certStatus" class="cert-status cert-valid">
                 <span class="status-dot"></span>
@@ -222,12 +173,12 @@
             <div class="expiry-bar">
                 <div class="expiry-progress" id="expiryProgress" style="width: 0%"></div>
             </div>
-            <p style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+            <p style="margin-top: 0.5rem; color: var(--color-text-muted); font-size: 0.9rem;">
                 Certificate expires in <span id="daysRemaining">...</span> days
             </p>
         </div>
 
-        <div class="card">
+        <div class="cert-card">
             <h2>Certificate Details</h2>
             <div class="info-row">
                 <span class="info-label">Subject</span>
@@ -259,20 +210,20 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="cert-card">
             <h2>Certificate Actions</h2>
-            <p style="color: #666; margin-bottom: 1rem;">
+            <p style="color: var(--color-text-muted); margin-bottom: 1rem;">
                 Manage your TLS certificates. Self-signed certificates are automatically generated on first run.
             </p>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <button class="btn btn-primary" id="regenerateBtn">
+                <button class="cert-btn cert-btn-primary" id="regenerateBtn">
                     Generate New Self-Signed Certificate
                 </button>
-                <button class="btn btn-secondary" id="viewCertBtn">
+                <button class="cert-btn cert-btn-secondary" id="viewCertBtn">
                     View Certificate File
                 </button>
             </div>
-            <div class="alert alert-warning" style="margin-top: 1rem;">
+            <div class="cert-alert cert-alert-warning" style="margin-top: 1rem;">
                 <strong>Note:</strong> For production use, consider using certificates from a trusted Certificate Authority (CA).
             </div>
         </div>
