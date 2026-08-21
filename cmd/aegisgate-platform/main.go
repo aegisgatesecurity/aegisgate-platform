@@ -2263,6 +2263,225 @@ func main() {
 	// No auth required — the endpoint controls platform availability, not data access.
 	// In production, the dashboard port should be behind a firewall or VPN.
 	dashMux.Handle("/api/v1/maintenance", maintenanceState.Handler())
+
+	// ============================================================
+	// Configuration API (v4.2.0+) — GET current config, apply profiles
+	// ============================================================
+	dashMux.HandleFunc("/api/v1/config", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodGet:
+			// Return the current platform config (sanitized — no secrets)
+			cfgSnapshot := map[string]interface{}{
+				"proxy": map[string]interface{}{
+					"bind_address":  cfg.Proxy.BindAddress,
+					"upstream":      cfg.Proxy.Upstream,
+					"rate_limit":    cfg.Proxy.RateLimit,
+					"max_body_size": cfg.Proxy.MaxBodySize,
+					"timeout":       cfg.Proxy.Timeout.String(),
+					"log_level":     cfg.Proxy.LogLevel,
+				},
+				"dashboard": map[string]interface{}{
+					"enabled":   cfg.Dashboard.Enabled,
+					"bind_addr": cfg.Dashboard.BindAddr,
+					"port":      cfg.Dashboard.Port,
+				},
+				"tls": map[string]interface{}{
+					"enabled":       cfg.TLS.Enabled,
+					"min_version":   cfg.TLS.MinVersion,
+					"auto_generate": cfg.TLS.AutoGenerate,
+					"cert_file":     cfg.TLS.CertFile,
+					"key_file":      cfg.TLS.KeyFile,
+				},
+				"logging": map[string]interface{}{
+					"level":  cfg.Logging.Level,
+					"format": cfg.Logging.Format,
+				},
+				"security": map[string]interface{}{
+					"security_headers":    cfg.Security.EnableSecurityHeaders,
+					"csrf_protection":     cfg.Security.EnableCSRF,
+					"xss_protection":      cfg.Security.EnableXSS,
+					"ml_threat_detection": cfg.Security.MLThreatDetectionEnabled,
+				},
+			}
+			writeJSON(w, cfgSnapshot)
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			writeJSON(w, map[string]string{"error": "method not allowed"})
+		}
+	}))
+
+	// ============================================================
+	// Profiles API (v4.2.0+) — list, inspect, apply
+	// ============================================================
+	dashMux.HandleFunc("/api/v1/profiles", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodGet:
+			// List all available deploy profiles
+			allProfiles := profiles.List()
+			result := make([]map[string]interface{}, 0, len(allProfiles))
+			for _, p := range allProfiles {
+				result = append(result, map[string]interface{}{
+					"id":          string(p.ID),
+					"name":        p.Name,
+					"description": p.Description,
+					"tier":        p.Tier,
+				})
+			}
+			writeJSON(w, map[string]interface{}{
+				"profiles":    result,
+				"total":       len(result),
+				"valid_names": profiles.ValidNames(),
+			})
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			writeJSON(w, map[string]string{"error": "method not allowed"})
+		}
+	}))
+
+	dashMux.HandleFunc("/api/v1/profiles/apply", authMiddleware.AdminOnly(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodPost:
+			var req struct {
+				Profile    string `json:"profile"`
+				OutputPath string `json:"output_path,omitempty"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				writeJSON(w, map[string]string{"error": "invalid request body"})
+				return
+			}
+			if !profiles.IsValid(req.Profile) {
+				w.WriteHeader(http.StatusBadRequest)
+				writeJSON(w, map[string]string{
+					"error":          "invalid profile",
+					"valid_profiles": profiles.ValidNames(),
+				})
+				return
+			}
+			// Generate config from profile
+			cfg, err := profiles.ConfigFor(req.Profile)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				writeJSON(w, map[string]string{"error": "failed to generate config: " + err.Error()})
+				return
+			}
+			// Validate the generated config
+			result := cfg.Validate()
+			// Determine output path
+			outPath := req.OutputPath
+			if outPath == "" {
+				outPath = "aegisgate-platform.yaml"
+			}
+			// Write config file
+			if err := cfg.SaveToFile(outPath); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				writeJSON(w, map[string]string{"error": "failed to write config: " + err.Error()})
+				return
+			}
+			// Build response
+			resp := map[string]interface{}{
+				"profile":     req.Profile,
+				"output_path": outPath,
+				"applied":     true,
+			}
+			if result.HasErrors() {
+				errs := make([]string, 0)
+				for _, e := range result.Errors() {
+					errs = append(errs, e.Field+": "+e.Message)
+				}
+				resp["validation_errors"] = errs
+			}
+			if result.HasWarnings() {
+				warnings := make([]string, 0)
+				for _, w := range result.Warnings() {
+					warnings = append(warnings, w.Field+": "+w.Message)
+				}
+				resp["validation_warnings"] = warnings
+			}
+			writeJSON(w, resp)
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			writeJSON(w, map[string]string{"error": "method not allowed"})
+		}
+	}))
+
+	// ============================================================
+	// Audit Log SSE Stream (v4.2.0+) — Server-Sent Events
+	// ============================================================
+	dashMux.HandleFunc("/api/v1/audit/stream", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		if !persistenceMgr.IsEnabled() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			writeJSON(w, map[string]string{"error": "persistence disabled"})
+			return
+		}
+		auditLog := persistenceMgr.AuditLog()
+		if auditLog == nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			writeJSON(w, map[string]string{"error": "audit log unavailable"})
+			return
+		}
+
+		// Set SSE headers
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			writeJSON(w, map[string]string{"error": "streaming not supported"})
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Send initial comment to establish connection
+		fmt.Fprintf(w, ": connected\n\n")
+		flusher.Flush()
+
+		// Poll for new audit entries and stream them
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+
+		var lastEntryID string
+		ctx := r.Context()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				filter := opsec.AuditFilter{Limit: 50}
+				entries, err := auditLog.Query(ctx, filter)
+				if err != nil {
+					continue
+				}
+				// Send new entries (reverse order — newest first from query,
+				// but we want to stream in chronological order)
+				for i := len(entries) - 1; i >= 0; i-- {
+					entry := entries[i]
+					if entry.ID == lastEntryID {
+						break // already sent up to this point
+					}
+					data, _ := json.Marshal(entry)
+					fmt.Fprintf(w, "data: %s\n\n", data)
+				}
+				if len(entries) > 0 {
+					lastEntryID = entries[0].ID
+				}
+				flusher.Flush()
+			}
+		}
+	}))
+
 	log.Printf("Maintenance: API endpoint mounted at /api/v1/maintenance")
 
 	// Policy info endpoint — requires auth to prevent unauthenticated

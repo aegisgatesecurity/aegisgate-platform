@@ -8,6 +8,7 @@ class AegisGateDashboard {
         this.lastStats = null;
         this.lastHealth = null;
         this.lastTier = null;
+        this.auditEventSource = null;
     }
 
     async init() {
@@ -668,20 +669,27 @@ class AegisGateDashboard {
             case "getting started":
                 this.fetchHealth();
                 this.updateGettingStarted();
+                this.disconnectAuditStream();
                 break;
             case "dashboard":
                 this.fetchAggregatedStats();
                 this.fetchHealth();
+                this.disconnectAuditStream();
                 break;
             case "audit logs":
-                this.fetchAggregatedStats();
+                this.fetchAuditLogs();
+                this.connectAuditStream();
                 break;
             case "compliance":
                 this.renderComplianceFrameworks(this.getActiveCompFilter());
+                this.disconnectAuditStream();
                 break;
             case "settings":
                 this.fetchMaintenanceStatus();
+                this.fetchConfig();
+                this.fetchProfiles();
                 this.updateSystemInfo();
+                this.disconnectAuditStream();
                 break;
         }
     }
@@ -692,6 +700,236 @@ class AegisGateDashboard {
         this.fetchTier();
         this.fetchGuardrails();
     }
+    // ── Config API ───────────────────────────────────────────────
+
+    async fetchConfig() {
+        try {
+            const response = await fetch(`${this.apiBase}/config`, {
+                headers: { "X-CSRF-Token": this.getCSRFToken() },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                this.updateConfigDisplay(data);
+            }
+        } catch (error) {
+            console.error("Error fetching config:", error);
+        }
+    }
+
+    updateConfigDisplay(config) {
+        // Update the Configuration tab's system info with live config data
+        if (config.proxy) {
+            this.setText("cfg-sys-proxy-addr", config.proxy.bind_address || "—");
+            this.setText("cfg-sys-proxy-upstream", config.proxy.upstream || "—");
+            this.setText("cfg-sys-proxy-ratelimit", config.proxy.rate_limit || "—");
+        }
+        if (config.tls) {
+            const tlsStatus = config.tls.enabled ? "Enabled" : "Disabled";
+            this.setText("cfg-sys-tls", tlsStatus);
+        }
+    }
+
+    // ── Profiles API ─────────────────────────────────────────────
+
+    async fetchProfiles() {
+        try {
+            const response = await fetch(`${this.apiBase}/profiles`);
+            if (response.ok) {
+                const data = await response.json();
+                this.renderProfileSelector(data.profiles || []);
+            }
+        } catch (error) {
+            console.error("Error fetching profiles:", error);
+        }
+    }
+
+    renderProfileSelector(profiles) {
+        const container = document.getElementById("cfg-profile-list");
+        if (!container) return;
+        container.innerHTML = "";
+        profiles.forEach(p => {
+            const card = document.createElement("div");
+            card.className = "profile-card";
+            card.innerHTML = `
+                <div class="profile-header">
+                    <strong>${p.name}</strong>
+                    <span class="profile-tier">${p.tier}</span>
+                </div>
+                <p class="profile-desc">${p.description}</p>
+                <button class="btn btn-sm btn-primary" data-profile="${p.id}">Apply Profile</button>
+            `;
+            card.querySelector("button").addEventListener("click", (e) => {
+                this.applyProfile(e.target.getAttribute("data-profile"));
+            });
+            container.appendChild(card);
+        });
+    }
+
+    async applyProfile(profileId) {
+        if (!confirm(`Apply the "${profileId}" profile? This will generate a new config file.`)) return;
+        try {
+            const response = await fetch(`${this.apiBase}/profiles/apply`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-Token": this.getCSRFToken(),
+                },
+                body: JSON.stringify({ profile: profileId }),
+            });
+            const data = await response.json();
+            if (response.ok && data.applied) {
+                alert(`Profile "${data.profile}" applied successfully. Config written to ${data.output_path}.`);
+                if (data.validation_errors && data.validation_errors.length > 0) {
+                    console.warn("Validation errors:", data.validation_errors);
+                }
+            } else {
+                alert("Failed to apply profile: " + (data.error || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("Error applying profile:", error);
+            alert("Error applying profile: " + error.message);
+        }
+    }
+
+    // ── Compliance Scan Trigger ──────────────────────────────────
+
+    async triggerComplianceScan() {
+        const btn = document.getElementById("comp-scan-btn");
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Scanning...";
+        }
+        try {
+            const response = await fetch("/api/v1/compliance/scan");
+            if (response.ok) {
+                const data = await response.json();
+                this.updateComplianceFromScan(data);
+            }
+        } catch (error) {
+            console.error("Error triggering compliance scan:", error);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Run Compliance Scan";
+            }
+        }
+    }
+
+    updateComplianceFromScan(scanData) {
+        // Update summary header with real scan results
+        if (scanData.overallCompliancePct !== undefined) {
+            const summary = document.getElementById("comp-automated-pct");
+            if (summary) summary.textContent = scanData.overallCompliancePct.toFixed(1) + "%";
+        }
+        if (scanData.overallScore !== undefined) {
+            const score = document.getElementById("comp-overall-score");
+            if (score) score.textContent = scanData.overallScore.toFixed(1);
+        }
+        // Re-render framework cards with real scan data
+        if (scanData.frameworks) {
+            this.renderComplianceFromScanResults(scanData.frameworks);
+        }
+    }
+
+    renderComplianceFromScanResults(frameworks) {
+        // Update existing framework cards with real scores
+        frameworks.forEach(fw => {
+            const card = document.querySelector(`[data-framework="${fw.framework}"]`);
+            if (card) {
+                const scoreEl = card.querySelector(".comp-card-score");
+                if (scoreEl && fw.score !== undefined) {
+                    scoreEl.textContent = fw.score.toFixed(1) + "%";
+                }
+                const statusEl = card.querySelector(".comp-card-status");
+                if (statusEl && fw.status) {
+                    statusEl.textContent = fw.status;
+                }
+            }
+        });
+    }
+
+    // ── Audit Log SSE Streaming ──────────────────────────────────
+
+    connectAuditStream() {
+        if (this.auditEventSource) {
+            this.auditEventSource.close();
+        }
+        try {
+            this.auditEventSource = new EventSource("/api/v1/audit/stream");
+            this.auditEventSource.onmessage = (event) => {
+                const entry = JSON.parse(event.data);
+                this.appendAuditEntry(entry);
+            };
+            this.auditEventSource.onerror = () => {
+                console.warn("Audit SSE connection lost, will retry...");
+                this.auditEventSource.close();
+                // Reconnect after 5 seconds
+                setTimeout(() => this.connectAuditStream(), 5000);
+            };
+        } catch (e) {
+            console.warn("SSE not supported, falling back to polling");
+        }
+    }
+
+    disconnectAuditStream() {
+        if (this.auditEventSource) {
+            this.auditEventSource.close();
+            this.auditEventSource = null;
+        }
+    }
+
+    appendAuditEntry(entry) {
+        const tbody = document.querySelector("#audit-logs-table tbody");
+        if (!tbody) return;
+        const row = document.createElement("tr");
+        const time = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : "—";
+        const level = entry.level || "INFO";
+        const levelClass = level.toLowerCase() === "error" ? "log-error" :
+                          level.toLowerCase() === "warn" ? "log-warn" : "log-info";
+        row.className = "audit-entry-new";
+        row.innerHTML = `
+            <td>${time}</td>
+            <td><span class="log-level ${levelClass}">${level}</span></td>
+            <td>${this.escapeHtml(entry.event_type || "—")}</td>
+            <td>${this.escapeHtml(entry.message || "—")}</td>
+            <td>${this.escapeHtml(entry.source || "—")}</td>
+        `;
+        tbody.insertBefore(row, tbody.firstChild);
+        // Keep max 200 rows
+        while (tbody.children.length > 200) {
+            tbody.removeChild(tbody.lastChild);
+        }
+        // Remove the "new" highlight after 2 seconds
+        setTimeout(() => row.classList.remove("audit-entry-new"), 2000);
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ── Fetch Audit Logs (fallback for non-SSE) ──────────────────
+
+    async fetchAuditLogs() {
+        try {
+            const response = await fetch(`${this.apiBase}/audit?limit=50`);
+            if (response.ok) {
+                const entries = await response.json();
+                this.renderAuditLogs(entries || []);
+            }
+        } catch (error) {
+            console.error("Error fetching audit logs:", error);
+        }
+    }
+
+    renderAuditLogs(entries) {
+        const tbody = document.querySelector("#audit-logs-table tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        entries.forEach(entry => this.appendAuditEntry(entry));
+    }
+
 
     // ── CSRF Protection ──────────────────────────────────────────
 

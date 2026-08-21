@@ -595,6 +595,19 @@ func Load(path string) (*Config, error) {
 	return LoadFromFile(path)
 }
 
+// SaveToFile writes the config to a YAML file at the given path.
+// This is used by the profile-apply API endpoint and the setup wizard.
+func (c *Config) SaveToFile(path string) error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+	return nil
+}
+
 // ApplyEnvOverrides is the exported wrapper for applyEnvOverrides.
 // It allows external callers (e.g., the profile system in main) to apply
 // environment variable overrides to a Config instance.

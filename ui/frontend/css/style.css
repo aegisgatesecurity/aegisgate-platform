@@ -1356,3 +1356,172 @@ tbody tr:focus-within {
     .cfg-maint-buttons { flex-direction: column; }
     .cfg-schedule-form { grid-template-columns: 1fr; }
 }
+
+/* ========================================
+   Dashboard Polish Round 2 — Interactive Features
+   ======================================== */
+
+/* Profile Cards */
+.cfg-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.profile-card {
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-md);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.profile-tier {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+    text-transform: uppercase;
+}
+
+.profile-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.4;
+}
+
+.btn-sm {
+    padding: 4px 12px;
+    font-size: var(--font-size-sm);
+}
+
+/* Compliance Scan Button */
+#comp-scan-btn {
+    margin-left: var(--spacing-sm);
+}
+
+/* Audit Log Controls */
+.audit-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.audit-live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-success);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* Audit Log Table */
+.table-container {
+    overflow-x: auto;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.data-table th {
+    text-align: left;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface);
+    border-bottom: 2px solid var(--color-border);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.data-table td {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody tr:hover {
+    background: var(--color-background);
+}
+
+.audit-entry-new {
+    animation: highlight-new 2s ease-out;
+}
+
+@keyframes highlight-new {
+    0% { background: var(--color-primary-bg); }
+    100% { background: transparent; }
+}
+
+.log-level {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.log-error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.log-warn {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.log-info {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.table-empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: var(--spacing-lg) !important;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .cfg-profile-grid { grid-template-columns: 1fr; }
+    .audit-controls { flex-direction: column; align-items: flex-start; }
+    .data-table { font-size: 0.75rem; }
+    .data-table th, .data-table td { padding: 4px 8px; }
+}

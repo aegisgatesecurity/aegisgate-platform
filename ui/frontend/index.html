@@ -279,46 +279,27 @@
         <!-- Audit Logs Panel -->
         <section id="logs-panel" role="tabpanel" aria-labelledby="logs-tab" hidden>
             <h2 class="section-title">Audit Logs</h2>
-
-            <!-- Search and Filter -->
-            <div class="filter-bar" role="search" aria-label="Filter audit logs">
-                <label for="log-search" class="filter-label">Search logs:</label>
-                <input type="search" id="log-search" class="filter-input"
-                       placeholder="Search by event, severity, or details..."
-                       aria-describedby="search-help">
-                <span id="search-help" class="sr-only">Enter text to filter the audit log entries</span>
-
-                <label for="severity-filter" class="filter-label">Severity:</label>
-                <select id="severity-filter" class="filter-select" aria-label="Filter by severity level">
-                    <option value="all">All Levels</option>
-                    <option value="critical">Critical</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                    <option value="info">Info</option>
-                </select>
-
-                <button type="button" id="apply-filter-btn" class="filter-button">
-                    Apply Filter
+            <div class="audit-controls">
+                <button type="button" class="btn btn-sm btn-secondary" id="audit-refresh" onclick="dashboard.fetchAuditLogs()">
+                    Refresh
                 </button>
+                <span class="audit-live-indicator" id="audit-live-indicator">
+                    <span class="live-dot"></span> Live
+                </span>
             </div>
-
-            <!-- Audit Log Table -->
-            <div class="table-container" role="region" aria-label="Audit log entries" tabindex="0">
-                <table class="audit-table" role="table">
+            <div class="table-container">
+                <table id="audit-logs-table" class="data-table">
                     <thead>
                         <tr>
-                            <th scope="col">Timestamp</th>
+                            <th scope="col">Time</th>
+                            <th scope="col">Level</th>
                             <th scope="col">Event Type</th>
-                            <th scope="col">Severity</th>
-                            <th scope="col">Source IP</th>
-                            <th scope="col">Details</th>
+                            <th scope="col">Message</th>
+                            <th scope="col">Source</th>
                         </tr>
                     </thead>
-                    <tbody id="audit-log-body">
-                        <tr>
-                            <td colspan="5" class="loading-message">Loading audit logs...</td>
-                        </tr>
+                    <tbody>
+                        <tr><td colspan="5" class="table-empty">Switch to this tab to load audit logs (SSE streaming active)...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -483,6 +464,18 @@
                         </button>
                     </div>
                 </details>
+            </div>
+
+            <!-- Profile Management -->
+            <div class="cfg-card">
+                <h3>Deploy Profiles</h3>
+                <p class="cfg-help-text">
+                    Select a profile to generate a new configuration file. The current
+                    deployment will continue running with its existing config until restarted.
+                </p>
+                <div class="cfg-profile-grid" id="cfg-profile-list">
+                    <p class="cfg-help-text">Loading profiles...</p>
+                </div>
             </div>
 
             <!-- System Information -->

@@ -134,6 +134,12 @@ func ConfigFor(id string) (*platformconfig.Config, error) {
 }
 
 // validProfileNames returns a comma-separated list of profile IDs for error messages.
+// ValidNames returns a comma-separated list of valid profile names.
+// This is the exported version of validProfileNames for API use.
+func ValidNames() string {
+	return validProfileNames()
+}
+
 func validProfileNames() string {
 	ids := make([]string, 0, len(registry))
 	for id := range registry {
