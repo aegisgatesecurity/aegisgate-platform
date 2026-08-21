@@ -38,10 +38,22 @@ func (h *Hold) IsActive() bool {
 	return h.ReleasedAt.IsZero()
 }
 
+// Store is the persistence interface for legal holds.
+// Implementations: in-memory (default), PostgresStore (optional).
+type Store interface {
+	Create(ctx context.Context, h *Hold) error
+	Release(ctx context.Context, holdID string) error
+	IsUnderHold(ctx context.Context, entityID string) bool
+	GetActiveHolds(ctx context.Context, entityID string) []*Hold
+	List(ctx context.Context) []*Hold
+	Get(ctx context.Context, holdID string) (*Hold, error)
+}
+
 // Service manages legal holds.
 type Service struct {
 	mu    sync.RWMutex
 	holds map[string]*Hold // hold ID → Hold
+	store Store            // optional persistent backing
 }
 
 // NewService creates a new legal hold service.
@@ -49,6 +61,15 @@ func NewService() *Service {
 	return &Service{
 		holds: make(map[string]*Hold),
 	}
+}
+
+// SetStore sets a persistent backing store (e.g., PostgresStore).
+// When a store is set, all operations delegate to it instead of the
+// in-memory map. The in-memory map is kept as a fallback.
+func (s *Service) SetStore(store Store) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.store = store
 }
 
 // CreateHold places a legal hold on an entity.
@@ -69,6 +90,13 @@ func (s *Service) CreateHold(ctx context.Context, entityID, entityType, reason, 
 		CreatedAt:  time.Now().UTC(),
 	}
 
+	if s.store != nil {
+		if err := s.store.Create(ctx, hold); err != nil {
+			return nil, fmt.Errorf("persist hold: %w", err)
+		}
+		return hold, nil
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.holds[hold.ID] = hold
@@ -77,6 +105,10 @@ func (s *Service) CreateHold(ctx context.Context, entityID, entityType, reason, 
 
 // ReleaseHold releases a legal hold by its ID.
 func (s *Service) ReleaseHold(ctx context.Context, holdID string) error {
+	if s.store != nil {
+		return s.store.Release(ctx, holdID)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -92,6 +124,10 @@ func (s *Service) ReleaseHold(ctx context.Context, holdID string) error {
 // IsUnderHold checks if an entity has any active legal hold.
 // This is the check function called by DSAR erasure and retention pruning.
 func (s *Service) IsUnderHold(ctx context.Context, entityID string) bool {
+	if s.store != nil {
+		return s.store.IsUnderHold(ctx, entityID)
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

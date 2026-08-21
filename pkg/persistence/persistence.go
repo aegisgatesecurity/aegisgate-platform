@@ -91,11 +91,26 @@ type Manager struct {
 	correlationStore correlation.CorrelationStore // nil for file-based persistence
 	attestationStore attestation.AttestationStore // nil for file-based persistence
 	incidentStore    incident.IncidentStore       // nil for file-based persistence
+	holdChecker      LegalHoldChecker             // nil = no legal hold checking
 	cancel           context.CancelFunc
 	done             chan struct{}
 	mu               sync.RWMutex
 	started          bool
 	usePostgres      bool
+}
+
+// LegalHoldChecker checks if an entity is under legal hold.
+// Implemented by pkg/legalhold.Service.
+type LegalHoldChecker interface {
+	IsUnderHold(ctx context.Context, entityID string) bool
+}
+
+// SetLegalHoldChecker sets the legal hold checker for the persistence manager.
+// When set, the prune cycle will skip audit entries for entities under hold.
+func (m *Manager) SetLegalHoldChecker(checker LegalHoldChecker) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.holdChecker = checker
 }
 
 // New creates a new persistence Manager with file-based storage.

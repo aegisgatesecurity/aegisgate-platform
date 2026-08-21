@@ -51,6 +51,8 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/abtest"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/dsar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/legalhold"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -1769,9 +1771,41 @@ func main() {
 
 	// Legal Hold HTTP endpoints (v4.3.1).
 	legalHoldSvc := legalhold.NewService()
+
+	// If PostgreSQL is available, use Postgres-backed legal hold store.
+	if pgStore != nil {
+		lhStore, lhErr := legalhold.NewPostgresStore(pgStore.Pool())
+		if lhErr == nil {
+			legalHoldSvc.SetStore(lhStore)
+			log.Printf("[LEGALHOLD] Using PostgreSQL-backed legal hold store")
+		} else {
+			log.Printf("[LEGALHOLD] PostgreSQL store init failed, using in-memory: %v", lhErr)
+		}
+	}
+
+	// Wire legal hold checking into the persistence manager's prune cycle.
+	persistenceMgr.SetLegalHoldChecker(legalHoldSvc)
+
 	wireLegalHoldHandlers(dashMux, authMiddleware, legalHoldSvc)
 	log.Printf("[LEGALHOLD] Legal hold API enabled at /api/v1/legal-holds")
-	// dashboard mux. The generate side is
+
+	// DSAR (Data Subject Access Request) service — GDPR Articles 15-20.
+	// The DSAR service exports and erases user/agent data across all
+	// registered data providers. Erasure is blocked by legal hold.
+	dsarSvc := dsar.NewService(legalHoldSvc, slog.Default().With("component", "dsar"))
+	registerDSARProviders(dsarSvc, dsarProviderDeps{
+		rbacMgr:    rbacMgr,
+		ssoMgr:     ssoManager,
+		auditRing:  auditRing,
+		incidentEn: incidentEngine,
+	})
+	wireDSARHandlers(dashMux, authMiddleware, dsarSvc)
+	log.Printf("[DSAR] Data Subject Access Request API enabled at /api/v1/dsar/{export,erase}")
+
+	// A/B Testing service — ML model comparison.
+	abtestSvc := abtest.NewService()
+	wireABTestHandlers(dashMux, authMiddleware, abtestSvc)
+	log.Printf("[ABTEST] A/B Testing API enabled at /api/v1/abtest/tests")
 	// Professional+ (the digest is a
 	// customer-facing artifact); the verify side
 	// is free. The source pipeline wires real
