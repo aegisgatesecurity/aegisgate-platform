@@ -827,3 +827,189 @@ tbody tr:focus-within {
 .metric-card-info {
     border-left: 4px solid #4299e1;
 }
+
+/* ========================================
+   Getting Started Panel
+   ======================================== */
+.gs-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.gs-card h3 {
+    color: var(--color-primary);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.gs-welcome-text {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-sm);
+}
+
+.gs-help-text {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Setup Checklist */
+.gs-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.gs-check-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.gs-check-item:last-child {
+    border-bottom: none;
+}
+
+.gs-check-icon {
+    font-size: 1.25rem;
+    width: 1.5rem;
+    text-align: center;
+}
+
+.gs-check-label {
+    flex: 1;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.gs-check-status {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.gs-check-item.gs-pass .gs-check-icon { color: var(--color-success); }
+.gs-check-item.gs-pass .gs-check-status { color: var(--color-success); font-weight: 600; }
+.gs-check-item.gs-fail .gs-check-icon { color: var(--color-danger); }
+.gs-check-item.gs-fail .gs-check-status { color: var(--color-danger); font-weight: 600; }
+
+/* Config Grid */
+.gs-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.gs-config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.gs-config-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.gs-config-value {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+/* Quick Commands */
+.gs-cmd-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.gs-cmd-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-background);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border);
+}
+
+.gs-cmd-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    min-width: 140px;
+}
+
+.gs-cmd-code {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    color: var(--color-primary-dark);
+    background: transparent;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.gs-copy-btn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gs-copy-btn:hover {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-color: var(--color-primary);
+}
+
+.gs-copy-btn:active {
+    transform: scale(0.95);
+}
+
+/* Documentation Links */
+.gs-doc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.gs-doc-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    text-decoration: none;
+    color: var(--color-primary);
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.gs-doc-link:hover {
+    border-color: var(--color-primary);
+    background: rgba(30, 60, 114, 0.05);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .gs-cmd-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .gs-cmd-label {
+        min-width: unset;
+    }
+}

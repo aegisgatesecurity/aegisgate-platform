@@ -32,7 +32,11 @@
     </header>
 
     <nav class="nav" role="navigation" aria-label="Main navigation">
-        <a href="#dashboard" class="nav-link active" role="tab" aria-selected="true" aria-controls="dashboard-panel" id="dashboard-tab">
+        <a href="#getting-started" class="nav-link active" role="tab" aria-selected="true" aria-controls="getting-started-panel" id="getting-started-tab">
+            <span aria-hidden="true">🚀</span>
+            <span>Getting Started</span>
+        </a>
+        <a href="#dashboard" class="nav-link" role="tab" aria-selected="false" aria-controls="dashboard-panel" id="dashboard-tab">
             <span aria-hidden="true">📊</span>
             <span>Dashboard</span>
         </a>
@@ -51,8 +55,136 @@
     </nav>
 
     <main id="main-content" class="main-content" role="main">
+        <!-- Getting Started Panel -->
+        <section id="getting-started-panel" role="tabpanel" aria-labelledby="getting-started-tab">
+            <h2 class="section-title">Getting Started</h2>
+
+            <!-- Welcome Card -->
+            <div class="gs-card">
+                <h3>Welcome to AegisGate</h3>
+                <p class="gs-welcome-text">
+                    AegisGate is your AI security gateway — it sits between your users and AI providers,
+                    inspecting every request and response for threats. This guide will help you verify
+                    your setup is correct and get you operational quickly.
+                </p>
+            </div>
+
+            <!-- Setup Checklist -->
+            <div class="gs-card">
+                <h3>Setup Checklist</h3>
+                <ul class="gs-checklist" id="gs-checklist">
+                    <li class="gs-check-item" id="gs-check-proxy">
+                        <span class="gs-check-icon" aria-hidden="true">⏳</span>
+                        <span class="gs-check-label">Proxy Running</span>
+                        <span class="gs-check-status">Checking…</span>
+                    </li>
+                    <li class="gs-check-item" id="gs-check-scanner">
+                        <span class="gs-check-icon" aria-hidden="true">⏳</span>
+                        <span class="gs-check-label">Scanner Healthy</span>
+                        <span class="gs-check-status">Checking…</span>
+                    </li>
+                    <li class="gs-check-item" id="gs-check-persistence">
+                        <span class="gs-check-icon" aria-hidden="true">⏳</span>
+                        <span class="gs-check-label">Audit Logging Active</span>
+                        <span class="gs-check-status">Checking…</span>
+                    </li>
+                    <li class="gs-check-item" id="gs-check-license">
+                        <span class="gs-check-icon" aria-hidden="true">⏳</span>
+                        <span class="gs-check-label">License Valid</span>
+                        <span class="gs-check-status">Checking…</span>
+                    </li>
+                    <li class="gs-check-item" id="gs-check-tls">
+                        <span class="gs-check-icon" aria-hidden="true">⏳</span>
+                        <span class="gs-check-label">TLS Configured</span>
+                        <span class="gs-check-status">Checking…</span>
+                    </li>
+                    <li class="gs-check-item" id="gs-check-guardrails">
+                        <span class="gs-check-icon" aria-hidden="true">⏳</span>
+                        <span class="gs-check-label">Guardrails Active</span>
+                        <span class="gs-check-status">Checking…</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Current Profile -->
+            <div class="gs-card">
+                <h3>Current Configuration</h3>
+                <div class="gs-config-grid">
+                    <div class="gs-config-item">
+                        <span class="gs-config-label">Tier</span>
+                        <span class="gs-config-value" id="gs-tier">—</span>
+                    </div>
+                    <div class="gs-config-item">
+                        <span class="gs-config-label">Proxy Rate Limit</span>
+                        <span class="gs-config-value" id="gs-proxy-rpm">—</span>
+                    </div>
+                    <div class="gs-config-item">
+                        <span class="gs-config-label">MCP Rate Limit</span>
+                        <span class="gs-config-value" id="gs-mcp-rpm">—</span>
+                    </div>
+                    <div class="gs-config-item">
+                        <span class="gs-config-label">Features</span>
+                        <span class="gs-config-value" id="gs-features">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Commands -->
+            <div class="gs-card">
+                <h3>Quick Commands</h3>
+                <p class="gs-help-text">Common operations from the command line:</p>
+                <div class="gs-cmd-list">
+                    <div class="gs-cmd-item">
+                        <span class="gs-cmd-label">Run setup wizard:</span>
+                        <code class="gs-cmd-code" id="gs-cmd-wizard">aegisgate-platform --setup</code>
+                        <button class="gs-copy-btn" data-copy="aegisgate-platform --setup" aria-label="Copy command">Copy</button>
+                    </div>
+                    <div class="gs-cmd-item">
+                        <span class="gs-cmd-label">Validate config:</span>
+                        <code class="gs-cmd-code">aegisgate-platform --validate-config config.yaml</code>
+                        <button class="gs-copy-btn" data-copy="aegisgate-platform --validate-config config.yaml" aria-label="Copy command">Copy</button>
+                    </div>
+                    <div class="gs-cmd-item">
+                        <span class="gs-cmd-label">List deploy profiles:</span>
+                        <code class="gs-cmd-code">aegisgate-platform --list-profiles</code>
+                        <button class="gs-copy-btn" data-copy="aegisgate-platform --list-profiles" aria-label="Copy command">Copy</button>
+                    </div>
+                    <div class="gs-cmd-item">
+                        <span class="gs-cmd-label">Check health:</span>
+                        <code class="gs-cmd-code">curl -s https://localhost:8082/health | jq .</code>
+                        <button class="gs-copy-btn" data-copy="curl -s https://localhost:8082/health | jq ." aria-label="Copy command">Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation Links -->
+            <div class="gs-card">
+                <h3>Documentation</h3>
+                <div class="gs-doc-grid">
+                    <a href="https://aegisgate.io/docs/getting-started/" class="gs-doc-link" target="_blank" rel="noopener noreferrer">
+                        <span aria-hidden="true">📖</span> Getting Started Guide
+                    </a>
+                    <a href="https://aegisgate.io/docs/deploy-profiles/" class="gs-doc-link" target="_blank" rel="noopener noreferrer">
+                        <span aria-hidden="true">📋</span> Deploy Profiles
+                    </a>
+                    <a href="https://aegisgate.io/docs/configuration/" class="gs-doc-link" target="_blank" rel="noopener noreferrer">
+                        <span aria-hidden="true">⚙️</span> Configuration Reference
+                    </a>
+                    <a href="https://aegisgate.io/docs/cli-reference/" class="gs-doc-link" target="_blank" rel="noopener noreferrer">
+                        <span aria-hidden="true">💻</span> CLI Reference
+                    </a>
+                    <a href="https://aegisgate.io/docs/compliance/" class="gs-doc-link" target="_blank" rel="noopener noreferrer">
+                        <span aria-hidden="true">✅</span> Compliance Overview
+                    </a>
+                    <a href="https://aegisgate.io/docs/troubleshooting/" class="gs-doc-link" target="_blank" rel="noopener noreferrer">
+                        <span aria-hidden="true">🔧</span> Troubleshooting
+                    </a>
+                </div>
+            </div>
+        </section>
+
         <!-- Dashboard Panel -->
-        <section id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab">
+        <section id="dashboard-panel" role="tabpanel" aria-labelledby="dashboard-tab" hidden>
             <h2 class="section-title">Security Dashboard</h2>
 
             <!-- Metrics Summary -->

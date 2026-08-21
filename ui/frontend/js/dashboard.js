@@ -7,6 +7,7 @@ class AegisGateDashboard {
         this.updateTimers = [];
         this.lastStats = null;
         this.lastHealth = null;
+        this.lastTier = null;
     }
 
     async init() {
@@ -15,6 +16,7 @@ class AegisGateDashboard {
         await this.fetchHealth();
         await this.fetchTier();
         await this.fetchGuardrails();
+        this.updateGettingStarted();
         this.startAutomaticUpdates();
         this.setupEventListeners();
     }
@@ -55,6 +57,7 @@ class AegisGateDashboard {
                 const data = await response.json();
                 this.lastHealth = data;
                 this.updateHealthDisplay(data);
+                this.updateGettingStarted();
             }
         } catch (error) {
             console.error("Error fetching health:", error);
@@ -68,6 +71,7 @@ class AegisGateDashboard {
             if (response.ok) {
                 const data = await response.json();
                 this.updateTierDisplay(data);
+                this.updateGettingStarted();
             }
         } catch (error) {
             console.error("Error fetching tier:", error);
@@ -154,6 +158,7 @@ class AegisGateDashboard {
 
     updateTierDisplay(tier) {
         if (!tier) return;
+        this.lastTier = tier;
 
         // Tier badge
         this.setText("tier-name", tier.name || tier.tier || "Community");
@@ -174,6 +179,53 @@ class AegisGateDashboard {
         this.setText("guardrails-sessions", g.active_sessions != null ? g.active_sessions : "0");
         this.setText("guardrails-tool-calls", g.total_tool_calls != null ? g.total_tool_calls : "0");
         this.setText("guardrails-rejected", g.rejected_calls != null ? g.rejected_calls : "0");
+    }
+
+    // ── Getting Started ──────────────────────────────────────────
+
+    updateGettingStarted() {
+        // Populate checklist from health data
+        const checks = this.lastHealth?.checks;
+        if (checks) {
+            this.updateCheckItem("gs-check-proxy", true, "Running");
+            this.updateCheckItem("gs-check-scanner", checks.scanner?.healthy, checks.scanner?.healthy ? "Healthy" : "Unhealthy");
+            this.updateCheckItem("gs-check-persistence", checks.persistence?.healthy, checks.persistence?.started ? "Active" : "Inactive");
+            this.updateCheckItem("gs-check-license", checks.license?.valid, checks.license?.valid ? "Valid" : "Invalid");
+            this.updateCheckItem("gs-check-tls", checks.certificates?.valid, checks.certificates?.valid ? "Configured" : "Missing");
+        } else {
+            this.updateCheckItem("gs-check-proxy", false, "Not reachable");
+        }
+
+        // Guardrails check (from last fetchGuardrails result)
+        const guardrailsActive = document.getElementById("guardrails-status")?.textContent === "Active";
+        this.updateCheckItem("gs-check-guardrails", guardrailsActive, guardrailsActive ? "Active" : "Inactive");
+
+        // Populate config from tier data
+        if (this.lastTier) {
+            this.setText("gs-tier", this.lastTier.name || this.lastTier.tier || "Community");
+            this.setText("gs-proxy-rpm", this.lastTier.proxy_rpm != null ? this.lastTier.proxy_rpm + " RPM" : "—");
+            this.setText("gs-mcp-rpm", this.lastTier.mcp_rpm != null ? this.lastTier.mcp_rpm + " RPM" : "—");
+            this.setText("gs-features", this.lastTier.features != null ? this.lastTier.features + " features" : "—");
+        }
+    }
+
+    updateCheckItem(itemId, passed, statusText) {
+        const item = document.getElementById(itemId);
+        if (!item) return;
+        const icon = item.querySelector(".gs-check-icon");
+        const status = item.querySelector(".gs-check-status");
+
+        if (passed === true) {
+            item.classList.add("gs-pass");
+            item.classList.remove("gs-fail");
+            if (icon) icon.textContent = "✅";
+        } else if (passed === false) {
+            item.classList.add("gs-fail");
+            item.classList.remove("gs-pass");
+            if (icon) icon.textContent = "❌";
+        }
+
+        if (status && statusText) status.textContent = statusText;
     }
 
     // ── Utility Methods ──────────────────────────────────────────
@@ -315,11 +367,39 @@ class AegisGateDashboard {
                 this.startAutomaticUpdates();
             });
         }
+
+        // Copy buttons for Getting Started commands
+        document.querySelectorAll(".gs-copy-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const text = e.target.getAttribute("data-copy");
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        const original = e.target.textContent;
+                        e.target.textContent = "Copied!";
+                        setTimeout(() => { e.target.textContent = original; }, 1500);
+                    }).catch(() => {
+                        // Fallback for older browsers
+                        const textarea = document.createElement("textarea");
+                        textarea.value = text;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        try { document.execCommand("copy"); } catch (err) { /* ignore */ }
+                        document.body.removeChild(textarea);
+                        e.target.textContent = "Copied!";
+                        setTimeout(() => { e.target.textContent = "Copy"; }, 1500);
+                    });
+                }
+            });
+        });
     }
 
     handleNavigation(page) {
         // Refresh data for the active tab
         switch(page) {
+            case "getting started":
+                this.fetchHealth();
+                this.updateGettingStarted();
+                break;
             case "dashboard":
                 this.fetchAggregatedStats();
                 this.fetchHealth();
