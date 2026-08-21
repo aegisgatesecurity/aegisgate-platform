@@ -21,7 +21,7 @@
         <h1>
             <span aria-hidden="true">🔒</span>
             <span class="header-title">AegisGate</span>
-            <span class="version" aria-label="Version 4.2.0">v4.2.0</span>
+            <span class="version" aria-label="Version 4.3.0">v4.3.0</span>
         </h1>
         <nav aria-label="User menu">
             <button id="logout-btn" type="button" aria-label="Logout">
@@ -51,6 +51,14 @@
         <a href="#settings" class="nav-link" role="tab" aria-selected="false" aria-controls="settings-panel" id="settings-tab">
             <span aria-hidden="true">⚙️</span>
             <span>Configuration</span>
+        </a>
+        <a href="#tenants" class="nav-link" role="tab" aria-selected="false" aria-controls="tenants-panel" id="tenants-tab">
+            <span aria-hidden="true">🏢</span>
+            <span>Tenants</span>
+        </a>
+        <a href="#live-scan" class="nav-link" role="tab" aria-selected="false" aria-controls="live-scan-panel" id="live-scan-tab">
+            <span aria-hidden="true">🔍</span>
+            <span>Live Scan</span>
         </a>
         <a href="trust-dashboard.html" class="nav-link nav-link-external" aria-selected="false">
             <span aria-hidden="true">🤖</span>
@@ -484,7 +492,7 @@
                 <div class="cfg-info-grid">
                     <div class="cfg-info-item">
                         <span class="cfg-info-label">Version</span>
-                        <span class="cfg-info-value" id="cfg-sys-version">v4.2.0</span>
+                        <span class="cfg-info-value" id="cfg-sys-version">v4.3.0</span>
                     </div>
                     <div class="cfg-info-item">
                         <span class="cfg-info-label">Tier</span>
@@ -507,6 +515,101 @@
                         <span class="cfg-info-value" id="cfg-sys-tls">—</span>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Tenants Panel (v4.3.0+) -->
+        <section id="tenants-panel" role="tabpanel" aria-labelledby="tenants-tab" hidden>
+            <h2 class="section-title">Tenant Management</h2>
+
+            <!-- Summary -->
+            <div class="comp-summary" id="tenant-summary">
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="tenant-count">—</span>
+                    <span class="comp-summary-label">Total Tenants</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="tenant-active">—</span>
+                    <span class="comp-summary-label">Active</span>
+                </div>
+            </div>
+
+            <!-- Create Tenant Form -->
+            <details class="cfg-schedule-details">
+                <summary>Create New Tenant</summary>
+                <div class="cfg-schedule-form" id="tenant-create-form">
+                    <div class="form-group">
+                        <label for="tenant-name">Name:</label>
+                        <input type="text" id="tenant-name" class="form-input" placeholder="Acme Corp" maxlength="255" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tenant-display-name">Display Name:</label>
+                        <input type="text" id="tenant-display-name" class="form-input" placeholder="Acme Corporation" maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label for="tenant-email">Email:</label>
+                        <input type="email" id="tenant-email" class="form-input" placeholder="admin@acme.com" maxlength="255">
+                    </div>
+                    <div class="form-group">
+                        <label for="tenant-tier">License Tier:</label>
+                        <select id="tenant-tier" class="form-select">
+                            <option value="community">Community</option>
+                            <option value="developer">Developer</option>
+                            <option value="professional" selected>Professional</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tenant-max-users">Max Users:</label>
+                        <input type="number" id="tenant-max-users" class="form-input" value="50" min="0" max="10000">
+                    </div>
+                    <div class="form-group">
+                        <label for="tenant-max-agents">Max Agents:</label>
+                        <input type="number" id="tenant-max-agents" class="form-input" value="10" min="0" max="1000">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="tenant-create-btn">Create Tenant</button>
+                </div>
+            </details>
+
+            <!-- Tenant List -->
+            <div class="compliance-grid" id="tenant-list" role="region" aria-label="Tenant list">
+                <p class="comp-loading">Loading tenants…</p>
+            </div>
+        </section>
+
+        <!-- Live Compliance Scan Panel (v4.3.0+) -->
+        <section id="live-scan-panel" role="tabpanel" aria-labelledby="live-scan-tab" hidden>
+            <h2 class="section-title">Live Infrastructure Scan</h2>
+
+            <!-- Scan Summary -->
+            <div class="comp-summary" id="live-scan-summary">
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="live-scan-passrate">—</span>
+                    <span class="comp-summary-label">Pass Rate</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="live-scan-pass">—</span>
+                    <span class="comp-summary-label">Passed</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="live-scan-fail">—</span>
+                    <span class="comp-summary-label">Failed</span>
+                </div>
+                <div class="comp-summary-item">
+                    <span class="comp-summary-value" id="live-scan-warn">—</span>
+                    <span class="comp-summary-label">Warnings</span>
+                </div>
+            </div>
+
+            <!-- Scan Controls -->
+            <div class="cfg-maint-controls">
+                <button type="button" class="btn btn-primary" id="live-scan-run">Run Scan Now</button>
+                <span class="cfg-status-detail" id="live-scan-timestamp"></span>
+            </div>
+
+            <!-- Scan Results -->
+            <div class="compliance-grid" id="live-scan-results" role="region" aria-label="Live scan results">
+                <p class="comp-loading">Click "Run Scan Now" to check your infrastructure configuration.</p>
             </div>
         </section>
     </main>

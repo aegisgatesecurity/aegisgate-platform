@@ -1,4 +1,4 @@
-// AegisGate Dashboard JavaScript — v4.2.0 API-aligned
+// AegisGate Dashboard JavaScript — v4.3.0 API-aligned
 // All endpoints use the canonical /api/v1/* routes
 class AegisGateDashboard {
     constructor() {
@@ -12,7 +12,7 @@ class AegisGateDashboard {
     }
 
     async init() {
-        console.log("AegisGate Dashboard v4.2.0 initialized");
+        console.log("AegisGate Dashboard v4.3.0 initialized");
         await this.fetchAggregatedStats();
         await this.fetchHealth();
         await this.fetchTier();
@@ -574,6 +574,227 @@ class AegisGateDashboard {
 
     // ── Event Listeners ──────────────────────────────────────────
 
+    // ── Tenant Management API (v4.3.0+) ──────────────────────────
+
+    async fetchTenants() {
+        try {
+            const response = await fetch(`${this.apiBase}/tenants`);
+            if (response.ok) {
+                const data = await response.json();
+                this.renderTenants(data);
+            } else if (response.status === 403) {
+                this.renderTenantsError("Admin permission required to manage tenants");
+            } else {
+                this.renderTenantsError("Unable to load tenants");
+            }
+        } catch (error) {
+            console.error("Error fetching tenants:", error);
+            this.renderTenantsError("Unable to load tenants");
+        }
+    }
+
+    renderTenants(data) {
+        const container = document.getElementById("tenant-list");
+        if (!container) return;
+
+        const tenants = data.tenants || [];
+        const activeCount = tenants.filter(t => t.active).length;
+
+        document.getElementById("tenant-count").textContent = data.count || tenants.length || 0;
+        document.getElementById("tenant-active").textContent = activeCount;
+
+        if (tenants.length === 0) {
+            container.innerHTML = '<p class="comp-loading">No tenants configured. Use the form above to create one.</p>';
+            return;
+        }
+
+        container.innerHTML = tenants.map(t => `
+            <div class="comp-framework-card" data-tenant-id="${escapeHTML(t.id)}">
+                <div class="comp-card-header">
+                    <h3>${escapeHTML(t.displayName || t.name)}</h3>
+                    <span class="comp-status-badge ${t.active ? 'comp-status-pass' : 'comp-status-fail'}">
+                        ${t.active ? 'Active' : 'Inactive'}
+                    </span>
+                </div>
+                <div class="comp-card-body">
+                    <p><strong>ID:</strong> <code>${escapeHTML(t.id)}</code></p>
+                    <p><strong>Name:</strong> ${escapeHTML(t.name)}</p>
+                    ${t.email ? `<p><strong>Email:</strong> ${escapeHTML(t.email)}</p>` : ''}
+                    ${t.licenseTier ? `<p><strong>Tier:</strong> ${escapeHTML(t.licenseTier)}</p>` : ''}
+                    <p><strong>Max Users:</strong> ${t.maxUsers || 0} | <strong>Max Agents:</strong> ${t.maxAgents || 0}</p>
+                    <p><small>Created: ${new Date(t.createdAt).toLocaleDateString()}</small></p>
+                </div>
+                <div class="comp-card-actions">
+                    <button class="btn btn-secondary" onclick="dashboard.toggleTenantActive('${escapeHTML(t.id)}', ${!t.active})">
+                        ${t.active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button class="btn btn-secondary" onclick="dashboard.deleteTenant('${escapeHTML(t.id)}')">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderTenantsError(message) {
+        const container = document.getElementById("tenant-list");
+        if (container) {
+            container.innerHTML = `<p class="comp-loading">${escapeHTML(message)}</p>`;
+        }
+        document.getElementById("tenant-count").textContent = "—";
+        document.getElementById("tenant-active").textContent = "—";
+    }
+
+    async createTenant() {
+        const name = document.getElementById("tenant-name").value.trim();
+        if (!name) {
+            alert("Tenant name is required");
+            return;
+        }
+        const data = {
+            name: name,
+            displayName: document.getElementById("tenant-display-name").value.trim(),
+            email: document.getElementById("tenant-email").value.trim(),
+            licenseTier: document.getElementById("tenant-tier").value,
+            maxUsers: parseInt(document.getElementById("tenant-max-users").value) || 0,
+            maxAgents: parseInt(document.getElementById("tenant-max-agents").value) || 0,
+        };
+        try {
+            const response = await this.safePost(`${this.apiBase}/tenants`, data);
+            if (response.ok) {
+                document.getElementById("tenant-name").value = "";
+                document.getElementById("tenant-display-name").value = "";
+                document.getElementById("tenant-email").value = "";
+                this.fetchTenants();
+            } else if (response.status === 403) {
+                alert("Admin permission required to create tenants");
+            } else {
+                const err = await response.json().catch(() => ({}));
+                alert(err.error || "Failed to create tenant");
+            }
+        } catch (error) {
+            console.error("Error creating tenant:", error);
+            alert("Failed to create tenant");
+        }
+    }
+
+    async toggleTenantActive(id, makeActive) {
+        try {
+            const csrfToken = this.getCSRFToken();
+            const headers = { "Content-Type": "application/json" };
+            if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+            const response = await fetch(`${this.apiBase}/tenants/${encodeURIComponent(id)}`, {
+                method: "PUT",
+                headers: headers,
+                body: JSON.stringify({ active: makeActive }),
+            });
+            if (response.ok) {
+                this.fetchTenants();
+            } else if (response.status === 403) {
+                alert("Admin permission required to modify tenants");
+            }
+        } catch (error) {
+            console.error("Error updating tenant:", error);
+        }
+    }
+
+    async deleteTenant(id) {
+        if (!confirm(`Delete tenant ${id}? This removes the tenant metadata but does NOT delete tenant data.`)) return;
+        try {
+            const response = await fetch(`${this.apiBase}/tenants/${encodeURIComponent(id)}`, {
+                method: "DELETE",
+                headers: { "X-CSRF-Token": this.getCSRFToken() },
+            });
+            if (response.ok || response.status === 204) {
+                this.fetchTenants();
+            } else if (response.status === 403) {
+                alert("Admin permission required to delete tenants");
+            }
+        } catch (error) {
+            console.error("Error deleting tenant:", error);
+        }
+    }
+
+    // ── Live Compliance Scan API (v4.3.0+) ───────────────────────
+
+    async runLiveScan() {
+        const container = document.getElementById("live-scan-results");
+        if (container) {
+            container.innerHTML = '<p class="comp-loading">Running scan…</p>';
+        }
+        try {
+            const response = await fetch(`${this.apiBase}/compliance/live`);
+            if (response.ok) {
+                const data = await response.json();
+                this.renderLiveScan(data);
+            } else if (response.status === 403) {
+                this.renderLiveScanError("Compliance read permission required");
+            } else {
+                this.renderLiveScanError("Unable to run live scan");
+            }
+        } catch (error) {
+            console.error("Error running live scan:", error);
+            this.renderLiveScanError("Unable to run live scan");
+        }
+    }
+
+    renderLiveScan(data) {
+        const container = document.getElementById("live-scan-results");
+        if (!container) return;
+
+        const summary = data.summary || {};
+        const results = data.results || [];
+        const passRate = data.passRate !== undefined ? data.passRate.toFixed(1) + "%" : "—";
+
+        document.getElementById("live-scan-passrate").textContent = passRate;
+        document.getElementById("live-scan-pass").textContent = summary.pass || 0;
+        document.getElementById("live-scan-fail").textContent = summary.fail || 0;
+        document.getElementById("live-scan-warn").textContent = summary.warning || 0;
+
+        const tsEl = document.getElementById("live-scan-timestamp");
+        if (tsEl && data.timestamp) {
+            tsEl.textContent = `Last scan: ${new Date(data.timestamp).toLocaleString()}`;
+        }
+
+        if (results.length === 0) {
+            container.innerHTML = '<p class="comp-loading">No checks available.</p>';
+            return;
+        }
+
+        const statusColors = {
+            pass: "comp-status-pass",
+            fail: "comp-status-fail",
+            warning: "comp-status-warn",
+            skip: "comp-status-skip",
+        };
+        const statusIcons = { pass: "✅", fail: "❌", warning: "⚠️", skip: "⏭️" };
+
+        container.innerHTML = results.map(r => `
+            <div class="comp-framework-card">
+                <div class="comp-card-header">
+                    <h3>${statusIcons[r.status] || "❓"} ${escapeHTML(r.name)}</h3>
+                    <span class="comp-status-badge ${statusColors[r.status] || ""}">${escapeHTML(r.status)}</span>
+                </div>
+                <div class="comp-card-body">
+                    <p>${escapeHTML(r.message)}</p>
+                    ${r.remediation ? `<p><strong>Remediation:</strong> ${escapeHTML(r.remediation)}</p>` : ''}
+                    <p><small><strong>Control:</strong> ${escapeHTML(r.control || 'N/A')} (${escapeHTML(r.framework || 'NIST CSF')})</small></p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderLiveScanError(message) {
+        const container = document.getElementById("live-scan-results");
+        if (container) {
+            container.innerHTML = `<p class="comp-loading">${escapeHTML(message)}</p>`;
+        }
+        ["live-scan-passrate", "live-scan-pass", "live-scan-fail", "live-scan-warn"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "—";
+        });
+    }
+
     setupEventListeners() {
         // Navigation buttons
         const navButtons = document.querySelectorAll(".nav-btn");
@@ -661,6 +882,18 @@ class AegisGateDashboard {
                 }
             });
         });
+
+        // Tenant create button (v4.3.0+)
+        const tenantCreateBtn = document.getElementById("tenant-create-btn");
+        if (tenantCreateBtn) {
+            tenantCreateBtn.addEventListener("click", () => this.createTenant());
+        }
+
+        // Live scan run button (v4.3.0+)
+        const liveScanRunBtn = document.getElementById("live-scan-run");
+        if (liveScanRunBtn) {
+            liveScanRunBtn.addEventListener("click", () => this.runLiveScan());
+        }
     }
 
     handleNavigation(page) {
@@ -689,6 +922,14 @@ class AegisGateDashboard {
                 this.fetchConfig();
                 this.fetchProfiles();
                 this.updateSystemInfo();
+                this.disconnectAuditStream();
+                break;
+            case "tenants":
+                this.fetchTenants();
+                this.disconnectAuditStream();
+                break;
+            case "live scan":
+                this.runLiveScan();
                 this.disconnectAuditStream();
                 break;
         }
