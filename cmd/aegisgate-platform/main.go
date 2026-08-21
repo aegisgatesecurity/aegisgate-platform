@@ -2422,10 +2422,23 @@ func main() {
 		}
 	})
 
-	// Serve index.html at dashboard root
+	// Serve static frontend files and index.html at dashboard root.
+	// All HTML/CSS/JS files in ui/frontend/ are accessible directly,
+	// enabling standalone pages (trust-dashboard.html, certificates.html,
+	// policy.html) to be linked from the SPA navigation.
 	dashMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
 			http.ServeFile(w, r, "ui/frontend/index.html")
+			return
+		}
+		// Serve static assets (CSS, JS, images, standalone HTML pages)
+		if strings.HasPrefix(r.URL.Path, "/css/") || strings.HasPrefix(r.URL.Path, "/js/") {
+			http.ServeFile(w, r, "ui/frontend"+r.URL.Path)
+			return
+		}
+		// Serve standalone HTML pages (e.g., /trust-dashboard.html)
+		if strings.HasSuffix(r.URL.Path, ".html") {
+			http.ServeFile(w, r, "ui/frontend"+r.URL.Path)
 			return
 		}
 		http.NotFound(w, r)

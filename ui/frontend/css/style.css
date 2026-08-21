@@ -1007,6 +1007,19 @@ tbody tr:focus-within {
     border-left: 4px solid #4299e1;
 }
 
+/* External nav link (standalone pages) */
+.nav-link-external {
+    border-left: 2px solid var(--color-border);
+    padding-left: var(--spacing-sm);
+}
+
+.nav-link-external::after {
+    content: "↗";
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+    opacity: 0.5;
+}
+
 /* ========================================
    Getting Started Panel
    ======================================== */
