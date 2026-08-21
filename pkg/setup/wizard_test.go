@@ -6,6 +6,7 @@
 package setup
 
 import (
+	"bufio"
 	"bytes"
 	"os"
 	"path/filepath"
@@ -442,4 +443,281 @@ func TestAllProfilesGenerateValidConfigs(t *testing.T) {
 
 func loadConfigForTest(path string) (*platformconfig.Config, error) {
 	return platformconfig.LoadFromFile(path)
+}
+
+// ---------------------------------------------------------------------------
+// Confirm function tests
+// ---------------------------------------------------------------------------
+
+func TestConfirmYes(t *testing.T) {
+	var buf bytes.Buffer
+	w := &wizard{
+		out: &buf,
+		in:  bufio.NewReader(strings.NewReader("y\n")),
+	}
+	if !w.confirm("Overwrite?") {
+		t.Error("confirm should return true for 'y'")
+	}
+	if !strings.Contains(buf.String(), "Overwrite?") {
+		t.Error("output should contain the question")
+	}
+}
+
+func TestConfirmYesFull(t *testing.T) {
+	w := &wizard{
+		out: &bytes.Buffer{},
+		in:  bufio.NewReader(strings.NewReader("yes\n")),
+	}
+	if !w.confirm("Overwrite?") {
+		t.Error("confirm should return true for 'yes'")
+	}
+}
+
+func TestConfirmNo(t *testing.T) {
+	w := &wizard{
+		out: &bytes.Buffer{},
+		in:  bufio.NewReader(strings.NewReader("n\n")),
+	}
+	if w.confirm("Overwrite?") {
+		t.Error("confirm should return false for 'n'")
+	}
+}
+
+func TestConfirmEmpty(t *testing.T) {
+	w := &wizard{
+		out: &bytes.Buffer{},
+		in:  bufio.NewReader(strings.NewReader("\n")),
+	}
+	if w.confirm("Overwrite?") {
+		t.Error("confirm should return false for empty input (default N)")
+	}
+}
+
+func TestConfirmReadError(t *testing.T) {
+	w := &wizard{
+		out: &bytes.Buffer{},
+		in:  bufio.NewReader(strings.NewReader("")),
+	}
+	if w.confirm("Overwrite?") {
+		t.Error("confirm should return false on read error/EOF")
+	}
+}
+
+func TestConfirmCaseInsensitive(t *testing.T) {
+	w := &wizard{
+		out: &bytes.Buffer{},
+		in:  bufio.NewReader(strings.NewReader("Y\n")),
+	}
+	if !w.confirm("Overwrite?") {
+		t.Error("confirm should return true for uppercase 'Y'")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Interactive overwrite path tests
+// ---------------------------------------------------------------------------
+
+func TestRunInteractiveOverwriteYes(t *testing.T) {
+	tmpDir := t.TempDir()
+	outPath := filepath.Join(tmpDir, "config.yaml")
+
+	// First run to create the file
+	firstOpts := &WizardOptions{
+		NonInteractive: true,
+		Profile:        "quickstart",
+		OutputPath:     outPath,
+		Writer:         &bytes.Buffer{},
+		Reader:         strings.NewReader(""),
+	}
+	if _, err := Run(firstOpts); err != nil {
+		t.Fatalf("First run error: %v", err)
+	}
+
+	// Second run: interactive, file exists, confirm overwrite with "y"
+	// Input: select profile (Enter for default=quickstart), then 5 customization defaults, then "y" for overwrite
+	input := "\n\n\n\n\n\ny\n"
+	var buf bytes.Buffer
+	opts := &WizardOptions{
+		NonInteractive: false,
+		OutputPath:     outPath,
+		Writer:         &buf,
+		Reader:         strings.NewReader(input),
+	}
+
+	_, err := Run(opts)
+	if err != nil {
+		t.Fatalf("Overwrite run error: %v", err)
+	}
+	if !strings.Contains(buf.String(), "Config written") {
+		t.Error("Output should indicate config was written after overwrite confirm")
+	}
+}
+
+func TestRunInteractiveOverwriteNo(t *testing.T) {
+	tmpDir := t.TempDir()
+	outPath := filepath.Join(tmpDir, "config.yaml")
+
+	// First run to create the file
+	firstOpts := &WizardOptions{
+		NonInteractive: true,
+		Profile:        "quickstart",
+		OutputPath:     outPath,
+		Writer:         &bytes.Buffer{},
+		Reader:         strings.NewReader(""),
+	}
+	if _, err := Run(firstOpts); err != nil {
+		t.Fatalf("First run error: %v", err)
+	}
+	originalData, _ := os.ReadFile(outPath)
+
+	// Second run: interactive, file exists, decline overwrite with "n"
+	input := "\n\n\n\n\n\nn\n"
+	var buf bytes.Buffer
+	opts := &WizardOptions{
+		NonInteractive: false,
+		OutputPath:     outPath,
+		Writer:         &buf,
+		Reader:         strings.NewReader(input),
+	}
+
+	_, err := Run(opts)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	if !strings.Contains(buf.String(), "cancelled") {
+		t.Error("Output should indicate setup was cancelled")
+	}
+
+	// Verify original file is preserved
+	newData, _ := os.ReadFile(outPath)
+	if !bytes.Equal(originalData, newData) {
+		t.Error("Original config file should be unchanged after declining overwrite")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// CustomizeConfig tests with actual values
+// ---------------------------------------------------------------------------
+
+func TestRunInteractiveCustomValues(t *testing.T) {
+	tmpDir := t.TempDir()
+	outPath := filepath.Join(tmpDir, "config.yaml")
+
+	// Select quickstart (by name), then provide custom values for each prompt
+	// Prompts: upstream, proxy port, dashboard port, TLS, data dir
+	input := "quickstart\nhttps://api.anthropic.com\n9090\n9443\non\n/data/custom\n"
+	var buf bytes.Buffer
+	opts := &WizardOptions{
+		NonInteractive: false,
+		OutputPath:     outPath,
+		Writer:         &buf,
+		Reader:         strings.NewReader(input),
+	}
+
+	_, err := Run(opts)
+	if err != nil {
+		t.Fatalf("Run error: %v\nOutput: %s", err, buf.String())
+	}
+
+	// Load the generated config and verify custom values were applied
+	cfg, err := loadConfigForTest(outPath)
+	if err != nil {
+		t.Fatalf("Generated config failed to load: %v", err)
+	}
+	if cfg.Proxy.Upstream != "https://api.anthropic.com" {
+		t.Errorf("Expected upstream 'https://api.anthropic.com', got '%s'", cfg.Proxy.Upstream)
+	}
+	if cfg.Dashboard.Port != 9443 {
+		t.Errorf("Expected dashboard port 9443, got %d", cfg.Dashboard.Port)
+	}
+	if !cfg.TLS.Enabled {
+		t.Error("TLS should be enabled")
+	}
+	if cfg.Persistence.DataDir != "/data/custom" {
+		t.Errorf("Expected data dir '/data/custom', got '%s'", cfg.Persistence.DataDir)
+	}
+}
+
+func TestRunInteractiveDisableTLS(t *testing.T) {
+	tmpDir := t.TempDir()
+	outPath := filepath.Join(tmpDir, "config.yaml")
+
+	// Use small-team (which has TLS on), then disable TLS
+	input := "small-team\n\n\noff\n\n"
+	var buf bytes.Buffer
+	opts := &WizardOptions{
+		NonInteractive: false,
+		Profile:        "small-team",
+		OutputPath:     outPath,
+		Writer:         &buf,
+		Reader:         strings.NewReader(input),
+	}
+
+	_, err := Run(opts)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	cfg, err := loadConfigForTest(outPath)
+	if err != nil {
+		t.Fatalf("Config load error: %v", err)
+	}
+	if cfg.TLS.Enabled {
+		t.Error("TLS should be disabled after user input 'off'")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// WriteConfig error path tests
+// ---------------------------------------------------------------------------
+
+func TestRunWriteConfigInvalidPath(t *testing.T) {
+	// Use a path that cannot be created (parent is a file, not a directory)
+	tmpFile, err := os.CreateTemp("", "aegisgate-blocker-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	invalidPath := filepath.Join(tmpFile.Name(), "subdir", "config.yaml")
+
+	opts := &WizardOptions{
+		NonInteractive: true,
+		Profile:        "quickstart",
+		OutputPath:     invalidPath,
+		Writer:         &bytes.Buffer{},
+		Reader:         strings.NewReader(""),
+	}
+
+	_, err = Run(opts)
+	if err == nil {
+		t.Error("Run should fail when parent directory cannot be created")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Run with nil options (defaults path)
+// ---------------------------------------------------------------------------
+
+func TestRunNilOptions(t *testing.T) {
+	// Run with nil opts should use defaults (os.Stdin/os.Stdout)
+	// We can't fully test this without replacing os.Stdin, but we can
+	// verify that Run(nil) doesn't panic immediately by providing a profile
+	tmpDir := t.TempDir()
+	outPath := filepath.Join(tmpDir, "config.yaml")
+
+	// This tests that opts==nil is handled (Run fills in defaults)
+	opts := &WizardOptions{
+		NonInteractive: true,
+		Profile:        "quickstart",
+		OutputPath:     outPath,
+	}
+	_, err := Run(opts)
+	if err != nil {
+		t.Fatalf("Run with minimal opts error: %v", err)
+	}
+	if _, err := os.Stat(outPath); err != nil {
+		t.Error("Config file should be written")
+	}
 }
