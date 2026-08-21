@@ -3,7 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/aegisgatesecurity/aegisgate-platform/sdk/go.svg)](https://pkg.go.dev/github.com/aegisgatesecurity/aegisgate-platform/sdk/go)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-The official Go SDK for the **AegisGate v3.6.0** platform API.
+The official Go SDK for the **AegisGate v4.3.1** platform API.
 
 ## Installation
 
@@ -367,6 +367,72 @@ sla, err := client.SLA.Get(ctx)
 
 ```go
 status, err := client.TSA.Status(ctx)
+```
+
+### DSAR (GDPR Data Subject Access Requests)
+
+```go
+// Export all data for an entity (GDPR Article 15)
+bundle, err := client.DSAR.Export(ctx, "user-123")
+
+// Erase all data for an entity (GDPR Article 17)
+// Returns EraseResult with BlockedBy="legal_hold" if under hold
+result, err := client.DSAR.Erase(ctx, "user-123")
+```
+
+### Legal Hold (E-Discovery)
+
+```go
+// Create a legal hold
+hold, err := client.LegalHold.CreateHold(ctx, &aegisgate.LegalHoldCreateRequest{
+    EntityID:   "user-123",
+    EntityType: "user",
+    Reason:     "Case #2026-001",
+    IssuedBy:   "admin@company.com",
+})
+
+// Check if entity is under hold
+underHold, _ := client.LegalHold.CheckUnderHold(ctx, "user-123")
+
+// List all holds
+holds, _ := client.LegalHold.ListHolds(ctx)
+
+// Release a hold
+err = client.LegalHold.ReleaseHold(ctx, hold.ID)
+```
+
+### A/B Testing v4.3.0 (Variant-based)
+
+```go
+// Create a test with named variants
+test, err := client.ABTestV4.CreateTest(ctx, &aegisgate.ABTestV4CreateRequest{
+    Name:        "model-comparison",
+    Description: "Compare v4.2 vs v4.3",
+    Variants: []aegisgate.ABTestV4Variant{
+        {Name: "champion", Weight: 50, ModelRef: "model-v4.2"},
+        {Name: "challenger", Weight: 50, ModelRef: "model-v4.3"},
+    },
+})
+
+// Start the test
+err = client.ABTestV4.StartTest(ctx, test.ID)
+
+// Assign a request to a variant (deterministic FNV hashing)
+variant, _ := client.ABTestV4.AssignVariant(ctx, test.ID, "req-123")
+
+// Record a result
+err = client.ABTestV4.RecordResult(ctx, test.ID, &aegisgate.ABTestV4ResultRequest{
+    VariantName:   variant,
+    Detected:      true,
+    FalsePositive: false,
+    LatencyMs:     38.7,
+})
+
+// Get metrics
+metrics, _ := client.ABTestV4.GetMetrics(ctx, test.ID)
+
+// Stop the test
+err = client.ABTestV4.StopTest(ctx, test.ID)
 ```
 
 ## Error Handling

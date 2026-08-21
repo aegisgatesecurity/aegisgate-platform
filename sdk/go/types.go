@@ -3,7 +3,7 @@
 // AegisGate Platform Go SDK — Request & Response Types (v3.6.0)
 // =========================================================================
 //
-// types.go defines all request and response types for the AegisGate v3.6.0
+// types.go defines all request and response types for the AegisGate v4.3.1
 // platform API. Types are organised by service domain.
 // =========================================================================
 
@@ -808,4 +808,115 @@ type EvasionPatternMatch struct {
 	Name     string  `json:"name"`
 	Category string  `json:"category"`
 	Severity float64 `json:"severity"`
+}
+
+// =========================================================================
+// DSAR (Data Subject Access Request) — GDPR Articles 15-20
+// =========================================================================
+
+// dsarExportRequest is the internal request payload for POST /api/v1/dsar/export.
+type dsarExportRequest struct {
+	EntityID string `json:"entity_id"`
+}
+
+// dsarEraseRequest is the internal request payload for POST /api/v1/dsar/erase.
+type dsarEraseRequest struct {
+	EntityID string `json:"entity_id"`
+}
+
+// DSARExportBundle is the structured data export produced by DSAR.
+// Implements GDPR Article 15 (right of access) and Article 20 (portability).
+type DSARExportBundle struct {
+	EntityID   string                 `json:"entity_id"`
+	ExportedAt time.Time              `json:"exported_at"`
+	Providers  map[string]interface{} `json:"providers"`
+}
+
+// DSAREraseResult records the outcome of an erasure request.
+// Implements GDPR Article 17 (right to erasure).
+type DSAREraseResult struct {
+	EntityID        string         `json:"entity_id"`
+	ErasedAt        time.Time      `json:"erased_at"`
+	RecordsAffected int            `json:"records_affected"`
+	Providers       map[string]int `json:"providers"`
+	BlockedBy       string         `json:"blocked_by,omitempty"` // "legal_hold" if blocked
+}
+
+// =========================================================================
+// Legal Hold — E-Discovery Compliance
+// =========================================================================
+
+// LegalHold represents a legal hold on a specific entity.
+type LegalHold struct {
+	ID         string    `json:"id"`
+	EntityID   string    `json:"entity_id"`
+	EntityType string    `json:"entity_type"`
+	Reason     string    `json:"reason"`
+	IssuedBy   string    `json:"issued_by"`
+	CreatedAt  time.Time `json:"created_at"`
+	ReleasedAt time.Time `json:"released_at,omitempty"`
+}
+
+// LegalHoldCreateRequest is the payload for POST /api/v1/legal-holds.
+type LegalHoldCreateRequest struct {
+	EntityID   string `json:"entity_id"`
+	EntityType string `json:"entity_type"`
+	Reason     string `json:"reason"`
+	IssuedBy   string `json:"issued_by"`
+}
+
+// =========================================================================
+// A/B Testing v4.3.0 — Variant-based ML model testing
+// =========================================================================
+
+// ABTestV4Variant defines a variant in an A/B test.
+type ABTestV4Variant struct {
+	Name     string `json:"name"`
+	Weight   int    `json:"weight"`
+	ModelRef string `json:"model_ref"`
+}
+
+// ABTestV4CreateRequest is the payload for POST /api/v1/abtest/tests.
+type ABTestV4CreateRequest struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Variants    []ABTestV4Variant `json:"variants"`
+}
+
+// ABTestV4Test represents an A/B test.
+type ABTestV4Test struct {
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Variants    []ABTestV4Variant `json:"variants"`
+	Status      string            `json:"status"` // "created", "running", "stopped"
+	CreatedAt   time.Time         `json:"created_at"`
+}
+
+// ABTestV4ListResponse is the response from GET /api/v1/abtest/tests.
+type ABTestV4ListResponse struct {
+	Tests []*ABTestV4Test `json:"tests"`
+	Count int             `json:"count"`
+}
+
+// ABTestV4VariantMetrics holds per-variant metrics.
+type ABTestV4VariantMetrics struct {
+	VariantName    string  `json:"variant_name"`
+	TotalRequests  int     `json:"total_requests"`
+	Detections     int     `json:"detections"`
+	FalsePositives int     `json:"false_positives"`
+	AvgLatencyMs   float64 `json:"avg_latency_ms"`
+}
+
+// abTestV4AssignRequest is the internal request payload for assign.
+type abTestV4AssignRequest struct {
+	RequestID string `json:"request_id"`
+}
+
+// ABTestV4ResultRequest is the payload for POST /api/v1/abtest/tests/{id}/result.
+type ABTestV4ResultRequest struct {
+	VariantName   string  `json:"variant_name"`
+	Detected      bool    `json:"detected"`
+	FalsePositive bool    `json:"false_positive"`
+	LatencyMs     float64 `json:"latency_ms"`
 }

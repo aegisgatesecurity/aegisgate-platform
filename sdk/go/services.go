@@ -4,7 +4,7 @@
 // =========================================================================
 //
 // services.go defines every service struct and its methods that map 1:1 to
-// the AegisGate v3.6.0 platform API endpoints. All methods accept a
+// the AegisGate v4.3.1 platform API endpoints. All methods accept a
 // context.Context as their first parameter for cancellation and deadlines.
 // =========================================================================
 
@@ -765,4 +765,148 @@ func (s *EvasionService) Detect(ctx context.Context, req *EvasionDetectRequest) 
 	var resp EvasionDetectResult
 	err := s.client.do(ctx, "POST", "/api/v1/ml/evasion/detect", req, &resp)
 	return &resp, err
+}
+
+// =========================================================================
+// DSAR (Data Subject Access Request) — GDPR Articles 15-20
+// =========================================================================
+
+// DSARService handles GDPR data subject access request endpoints.
+// All methods require admin permission on the server side.
+type DSARService struct{ client *Client }
+
+// Export produces a data export bundle for the given entity.
+// This implements GDPR Article 15 (right of access) and Article 20
+// (right to data portability).
+// POST /api/v1/dsar/export
+func (s *DSARService) Export(ctx context.Context, entityID string) (*DSARExportBundle, error) {
+	var resp DSARExportBundle
+	err := s.client.do(ctx, "POST", "/api/v1/dsar/export", &dsarExportRequest{
+		EntityID: entityID,
+	}, &resp)
+	return &resp, err
+}
+
+// Erase deletes all data for the entity. If the entity is under legal
+// hold, the erasure is blocked and the result will have BlockedBy set
+// to "legal_hold".
+// POST /api/v1/dsar/erase
+func (s *DSARService) Erase(ctx context.Context, entityID string) (*DSAREraseResult, error) {
+	var resp DSAREraseResult
+	err := s.client.do(ctx, "POST", "/api/v1/dsar/erase", &dsarEraseRequest{
+		EntityID: entityID,
+	}, &resp)
+	return &resp, err
+}
+
+// =========================================================================
+// Legal Hold — E-Discovery Compliance
+// =========================================================================
+
+// LegalHoldService handles legal hold endpoints.
+type LegalHoldService struct{ client *Client }
+
+// CreateHold places a legal hold on an entity.
+// POST /api/v1/legal-holds
+func (s *LegalHoldService) CreateHold(ctx context.Context, req *LegalHoldCreateRequest) (*LegalHold, error) {
+	var resp LegalHold
+	err := s.client.do(ctx, "POST", "/api/v1/legal-holds", req, &resp)
+	return &resp, err
+}
+
+// ListHolds returns all legal holds (active and released).
+// GET /api/v1/legal-holds
+func (s *LegalHoldService) ListHolds(ctx context.Context) ([]LegalHold, error) {
+	var resp struct {
+		Holds []LegalHold `json:"holds"`
+	}
+	err := s.client.do(ctx, "GET", "/api/v1/legal-holds", nil, &resp)
+	return resp.Holds, err
+}
+
+// GetHold retrieves a single hold by ID.
+// GET /api/v1/legal-holds/{id}
+func (s *LegalHoldService) GetHold(ctx context.Context, holdID string) (*LegalHold, error) {
+	var resp LegalHold
+	err := s.client.do(ctx, "GET", "/api/v1/legal-holds/"+url.PathEscape(holdID), nil, &resp)
+	return &resp, err
+}
+
+// ReleaseHold releases a legal hold.
+// DELETE /api/v1/legal-holds/{id}
+func (s *LegalHoldService) ReleaseHold(ctx context.Context, holdID string) error {
+	return s.client.do(ctx, "DELETE", "/api/v1/legal-holds/"+url.PathEscape(holdID), nil, nil)
+}
+
+// CheckUnderHold checks if an entity is currently under legal hold.
+// GET /api/v1/legal-holds/check/{entityID}
+func (s *LegalHoldService) CheckUnderHold(ctx context.Context, entityID string) (bool, error) {
+	var resp struct {
+		UnderHold bool `json:"under_hold"`
+	}
+	err := s.client.do(ctx, "GET", "/api/v1/legal-holds/check/"+url.PathEscape(entityID), nil, &resp)
+	return resp.UnderHold, err
+}
+
+// =========================================================================
+// A/B Testing v4.3.0 — Variant-based ML model testing
+// =========================================================================
+
+// ABTestV4Service handles the v4.3.0 variant-based A/B testing endpoints.
+// This is separate from the legacy ABTestService which uses the older
+// champion/challenger model path API.
+type ABTestV4Service struct{ client *Client }
+
+// CreateTest creates a new A/B test with named variants.
+// POST /api/v1/abtest/tests
+func (s *ABTestV4Service) CreateTest(ctx context.Context, req *ABTestV4CreateRequest) (*ABTestV4Test, error) {
+	var resp ABTestV4Test
+	err := s.client.do(ctx, "POST", "/api/v1/abtest/tests", req, &resp)
+	return &resp, err
+}
+
+// ListTests returns all A/B tests.
+// GET /api/v1/abtest/tests
+func (s *ABTestV4Service) ListTests(ctx context.Context) (*ABTestV4ListResponse, error) {
+	var resp ABTestV4ListResponse
+	err := s.client.do(ctx, "GET", "/api/v1/abtest/tests", nil, &resp)
+	return &resp, err
+}
+
+// StartTest starts a test.
+// POST /api/v1/abtest/tests/{id}/start
+func (s *ABTestV4Service) StartTest(ctx context.Context, testID string) error {
+	return s.client.do(ctx, "POST", "/api/v1/abtest/tests/"+url.PathEscape(testID)+"/start", nil, nil)
+}
+
+// StopTest stops a test.
+// POST /api/v1/abtest/tests/{id}/stop
+func (s *ABTestV4Service) StopTest(ctx context.Context, testID string) error {
+	return s.client.do(ctx, "POST", "/api/v1/abtest/tests/"+url.PathEscape(testID)+"/stop", nil, nil)
+}
+
+// GetMetrics returns metrics for a test.
+// GET /api/v1/abtest/tests/{id}/metrics
+func (s *ABTestV4Service) GetMetrics(ctx context.Context, testID string) ([]ABTestV4VariantMetrics, error) {
+	var resp []ABTestV4VariantMetrics
+	err := s.client.do(ctx, "GET", "/api/v1/abtest/tests/"+url.PathEscape(testID)+"/metrics", nil, &resp)
+	return resp, err
+}
+
+// AssignVariant assigns a request to a variant using FNV hashing.
+// POST /api/v1/abtest/tests/{id}/assign
+func (s *ABTestV4Service) AssignVariant(ctx context.Context, testID, requestID string) (string, error) {
+	var resp struct {
+		Variant string `json:"variant"`
+		TestID  string `json:"test_id"`
+	}
+	err := s.client.do(ctx, "POST", "/api/v1/abtest/tests/"+url.PathEscape(testID)+"/assign",
+		&abTestV4AssignRequest{RequestID: requestID}, &resp)
+	return resp.Variant, err
+}
+
+// RecordResult records a detection result for a variant.
+// POST /api/v1/abtest/tests/{id}/result
+func (s *ABTestV4Service) RecordResult(ctx context.Context, testID string, req *ABTestV4ResultRequest) error {
+	return s.client.do(ctx, "POST", "/api/v1/abtest/tests/"+url.PathEscape(testID)+"/result", req, nil)
 }

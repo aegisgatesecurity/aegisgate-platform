@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Platform Go SDK — v3.6.1
+// AegisGate Platform Go SDK — v4.3.1
 // =========================================================================
 //
-// Package aegisgate provides a Go client SDK for the AegisGate v3.6.1
+// Package aegisgate provides a Go client SDK for the AegisGate v4.3.1
 // platform API. It offers typed access to all platform services including
 // authentication, compliance, trust scoring, scanning, guardrails, analytics,
 // IOC, SIEM, ML metrics, audit, policy, cluster, bridge, attestation, AI-BOM,
 // A2A intent, digest, incident management, evaluator, persistence,
-// certificates, licensing, SLA, TSA, and health/version endpoints.
+// certificates, licensing, SLA, TSA, health/version, DSAR (GDPR data subject
+// access requests), legal hold (e-discovery), and A/B testing endpoints.
 //
 // Basic usage:
 //
@@ -33,7 +34,7 @@ import (
 )
 
 // Version is the semantic version of this SDK.
-const Version = "3.6.1"
+const Version = "4.3.1"
 
 // Client is the top-level AegisGate API client. It holds the HTTP client,
 // configuration, and references to every service namespace.
@@ -74,6 +75,9 @@ type Client struct {
 	Evidence     *EvidenceService
 	ABTest       *ABTestService
 	Evasion      *EvasionService
+	DSAR         *DSARService
+	LegalHold    *LegalHoldService
+	ABTestV4     *ABTestV4Service
 }
 
 // NewClient creates a new AegisGate client from the provided configuration.
@@ -136,6 +140,9 @@ func NewClient(cfg *Config) (*Client, error) {
 	c.Evidence = &EvidenceService{client: c}
 	c.ABTest = &ABTestService{client: c}
 	c.Evasion = &EvasionService{client: c}
+	c.DSAR = &DSARService{client: c}
+	c.LegalHold = &LegalHoldService{client: c}
+	c.ABTestV4 = &ABTestV4Service{client: c}
 
 	return c, nil
 }

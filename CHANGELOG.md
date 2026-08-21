@@ -1,3 +1,55 @@
+## [4.3.1] - 2026-08-21 - Compliance Pipelines, RLS Enforcement, SDK v4.3.1
+
+> **v4.3.1** completes the 8-step development plan: DSAR (GDPR Articles 15-20), A/B testing, legal hold PostgreSQL backing, RLS defense-in-depth wiring, FORCE RLS migration, integration tests, and Go SDK v4.3.1 with gRPC client connector.
+
+### DSAR — GDPR Data Subject Access Requests
+
+- **feat(dsar): data export and erasure** — New `pkg/dsar/` package with `DataProvider` interface (`Name`, `Export`, `Erase`), `Service` with `RegisterProvider`, `Export` (Article 15), and `Erase` (Article 17). Erasure blocked by legal hold.
+- **feat(dsar): HTTP endpoints** — `POST /api/v1/dsar/export` (admin), `POST /api/v1/dsar/erase` (admin, 409 if blocked).
+- **feat(dsar): platform data providers** — `dsar_providers.go` registers RBAC, audit, IOC, and SSO stores as DSAR data providers.
+
+### A/B Testing — ML Model Evaluation
+
+- **feat(abtest): variant-based testing** — New `pkg/abtest/` package with `Variant` struct (Name, Weight, ModelRef), FNV hash-based `AssignVariant`, `RecordResult` (6-arg), per-variant metrics, lifecycle (create → start → stop).
+- **feat(abtest): HTTP endpoints** — `POST/GET /api/v1/abtest/tests`, `POST .../{id}/start|stop|assign|result`, `GET .../{id}/metrics`. All admin-gated.
+
+### Legal Hold — E-Discovery Compliance
+
+- **feat(legalhold): legal hold service** — New `pkg/legalhold/` package with `Hold` struct, `Service` (in-memory + optional Postgres backing), `CreateHold`, `ReleaseHold`, `IsUnderHold`, `ListHolds`, `GetHold`.
+- **feat(legalhold): PostgreSQL backing** — `postgres_store.go` with `legal_holds` table, persistent across restarts. `SetStore` for wiring.
+- **feat(legalhold): HTTP endpoints** — `POST/GET /api/v1/legal-holds`, `GET/DELETE /api/v1/legal-holds/{id}`, `GET /api/v1/legal-holds/check/{entityID}`. Authenticated.
+
+### RLS Defense-in-Depth (Steps 4, 7)
+
+- **feat(rls): WithTenantContextOrPool wiring** — All 19 query methods across IOC (8), RBAC (7), and License (4) stores wrapped with `WithTenantContextOrPool`. Sets `SET LOCAL app.tenant_id / app.is_admin` via transaction when tenant context present, uses pool directly when absent. `DBQuerier` interface for pool/tx abstraction.
+- **feat(rls): FORCE ROW LEVEL SECURITY** — Migration `010_force_rls.sql` applies `ALTER TABLE ... FORCE ROW LEVEL SECURITY` on all 6 tenant-scoped tables. Even table owner is now subject to RLS policies.
+- **feat(rls): remaining RBAC methods wrapped** — 10 additional RBAC methods (UpdateAgent, UnregisterAgent, RefreshAgentSession, InvalidateAgentSession/S, GetAgentSessions, InvalidateUserSession, PruneExpiredSessions, CountAgents, CountActiveSessions) wrapped with admin-scoped `WithTenantContextOrPool`.
+
+### Integration Tests (Step 6)
+
+- **test: 13 integration tests** — `testlab/new_pipelines_integration_test.go` with legal hold CRUD, DSAR + legal hold interaction, A/B testing lifecycle, variant distribution, RBAC cross-pipeline, RLS tenant isolation, FORCE RLS verification (pg_catalog check, admin bypass, cross-tenant prune). All gated behind `//go:build lab` + `LAB_ENABLED=1`.
+
+### Go SDK v4.3.1 (Step 8)
+
+- **feat(sdk): DSAR service** — `DSARService` with `Export` and `Erase` methods.
+- **feat(sdk): LegalHold service** — `LegalHoldService` with `CreateHold`, `ListHolds`, `GetHold`, `ReleaseHold`, `CheckUnderHold`.
+- **feat(sdk): ABTest v4 service** — `ABTestV4Service` with `CreateTest`, `ListTests`, `StartTest`, `StopTest`, `GetMetrics`, `AssignVariant`, `RecordResult`. Separate from legacy `ABTestService`.
+- **feat(sdk): gRPC client connector** — `GRPCClient` with auth interceptor, TLS/insecure transport, connection lifecycle. For the 7 existing gRPC services.
+- **feat(sdk): API documentation** — `docs/api-reference-v4.3.md` with full endpoint reference for all new pipelines.
+- **feat(sdk): README updated** — DSAR, Legal Hold, A/B Testing v4 usage examples.
+
+### Stats
+
+- 6 commits (e429d44 → 182f6a0 + this step)
+- 5 new packages (`pkg/dsar`, `pkg/abtest`, `pkg/legalhold` + `legalhold/postgres_store.go`)
+- 10 migrations (008-010), 6 with RLS, 6 with FORCE RLS
+- 13 integration tests (lab-gated)
+- 29 store methods wrapped with RLS context
+- SDK: 4 new services, 1 new gRPC client, 20+ new types
+- All 101 packages pass, all 5 CI workflows green
+
+---
+
 ## [4.3.0] - 2026-08-21 - Security Hardening, Observability, Multi-Tenant Foundation 🔒
 
 > **v4.3.0** delivers a comprehensive security and observability upgrade based on a deep-dive audit of the existing codebase. 11 genuinely missing items were identified and implemented across auth hardening, distributed tracing, multi-tenant infrastructure, and compliance tooling.
