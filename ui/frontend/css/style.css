@@ -1192,3 +1192,154 @@ tbody tr:focus-within {
         min-width: unset;
     }
 }
+/* ========================================
+   Configuration Tab
+   ======================================== */
+.cfg-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.cfg-card h3 {
+    color: var(--color-primary);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.cfg-help-text {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+}
+
+/* Form inputs */
+.form-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-base);
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-color: var(--color-primary);
+}
+
+/* Maintenance Status */
+.cfg-status-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-background);
+    border-radius: var(--border-radius-sm);
+}
+
+.cfg-status-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.cfg-status-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.cfg-status-badge.cfg-status-active {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.cfg-status-badge.cfg-status-inactive {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.cfg-status-badge.cfg-status-scheduled {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.cfg-status-detail {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* Maintenance Controls */
+.cfg-maint-controls {
+    margin-bottom: var(--spacing-md);
+}
+
+.cfg-maint-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+/* Schedule Details */
+.cfg-schedule-details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.cfg-schedule-details summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-primary);
+    padding: var(--spacing-xs) 0;
+}
+
+.cfg-schedule-form {
+    margin-top: var(--spacing-md);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* System Info Grid */
+.cfg-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.cfg-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-background);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border);
+}
+
+.cfg-info-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.cfg-info-value {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+    .cfg-maint-buttons { flex-direction: column; }
+    .cfg-schedule-form { grid-template-columns: 1fr; }
+}

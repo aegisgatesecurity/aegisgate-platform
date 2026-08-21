@@ -353,62 +353,156 @@
 
         <!-- Settings Panel -->
         <section id="settings-panel" role="tabpanel" aria-labelledby="settings-tab" hidden>
-            <h2 class="section-title">Settings</h2>
+            <h2 class="section-title">Configuration</h2>
 
-            <form class="settings-form" aria-label="Dashboard settings">
-                <!-- Language Selection -->
-                <div class="form-group">
-                    <label for="language-select" id="language-label">Language:</label>
-                    <select id="language-select" class="form-select"
-                            aria-labelledby="language-label"
-                            aria-describedby="language-help">
-                        <option value="en" selected>English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                        <option value="zh">中文</option>
-                        <option value="ja">日本語</option>
-                    </select>
-                    <span id="language-help" class="form-help">Select your preferred display language</span>
-                </div>
-
-                <!-- Auto-refresh Toggle -->
-                <fieldset class="form-group">
-                    <legend>Auto-refresh</legend>
-                    <div class="toggle-container">
-                        <input type="checkbox" id="auto-refresh" class="toggle-input"
-                               aria-describedby="refresh-help" checked>
-                        <label for="auto-refresh" class="toggle-label">
-                            <span class="toggle-text">Enable automatic data refresh</span>
-                        </label>
+            <!-- Dashboard Preferences -->
+            <div class="cfg-card">
+                <h3>Dashboard Preferences</h3>
+                <form class="settings-form" aria-label="Dashboard settings">
+                    <div class="form-group">
+                        <label for="language-select" id="language-label">Language:</label>
+                        <select id="language-select" class="form-select"
+                                aria-labelledby="language-label"
+                                aria-describedby="language-help">
+                            <option value="en" selected>English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="zh">中文</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                        <span id="language-help" class="form-help">Select your preferred display language</span>
                     </div>
-                    <span id="refresh-help" class="form-help">
-                        Automatically update dashboard data every 5 seconds
-                    </span>
+
+                    <fieldset class="form-group">
+                        <legend>Auto-refresh</legend>
+                        <div class="toggle-container">
+                            <input type="checkbox" id="auto-refresh" class="toggle-input"
+                                   aria-describedby="refresh-help" checked>
+                            <label for="auto-refresh" class="toggle-label">
+                                <span class="toggle-text">Enable automatic data refresh</span>
+                            </label>
+                        </div>
+                        <span id="refresh-help" class="form-help">
+                            Automatically update dashboard data every 5 seconds
+                        </span>
+                    </fieldset>
+
+                    <div class="form-group" id="refresh-interval-group">
+                        <label for="refresh-interval" id="interval-label">Refresh Interval:</label>
+                        <select id="refresh-interval" class="form-select"
+                                aria-labelledby="interval-label"
+                                aria-describedby="interval-help">
+                            <option value="1000">1 second</option>
+                            <option value="5000" selected>5 seconds</option>
+                            <option value="10000">10 seconds</option>
+                            <option value="30000">30 seconds</option>
+                            <option value="60000">1 minute</option>
+                        </select>
+                        <span id="interval-help" class="form-help">
+                            How often to refresh dashboard data
+                        </span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <button type="reset" class="btn btn-secondary">Reset to Defaults</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Maintenance Windows -->
+            <div class="cfg-card">
+                <h3>Maintenance Windows</h3>
+                <p class="cfg-help-text">
+                    When maintenance mode is active, all proxy traffic receives a 503 Service Unavailable
+                    response with a Retry-After header. Health checks and the dashboard remain accessible.
+                </p>
+
+                <!-- Current Status -->
+                <div class="cfg-status-row" id="cfg-maint-status-row">
+                    <span class="cfg-status-label">Current Status:</span>
+                    <span class="cfg-status-badge cfg-status-inactive" id="cfg-maint-badge">Inactive</span>
+                    <span class="cfg-status-detail" id="cfg-maint-detail"></span>
                 </div>
 
-                <!-- Refresh Interval (conditionally shown) -->
-                <div class="form-group" id="refresh-interval-group">
-                    <label for="refresh-interval" id="interval-label">Refresh Interval:</label>
-                    <select id="refresh-interval" class="form-select"
-                            aria-labelledby="interval-label"
-                            aria-describedby="interval-help">
-                        <option value="1000">1 second</option>
-                        <option value="5000" selected>5 seconds</option>
-                        <option value="10000">10 seconds</option>
-                        <option value="30000">30 seconds</option>
-                        <option value="60000">1 minute</option>
-                    </select>
-                    <span id="interval-help" class="form-help">
-                        How often to refresh dashboard data
-                    </span>
+                <!-- Enable/Disable Controls -->
+                <div class="cfg-maint-controls">
+                    <div class="form-group">
+                        <label for="cfg-maint-message">Maintenance Message (optional):</label>
+                        <input type="text" id="cfg-maint-message" class="form-input"
+                               placeholder="Scheduled maintenance in progress"
+                               maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="cfg-maint-retry">Retry-After (seconds):</label>
+                        <input type="number" id="cfg-maint-retry" class="form-input"
+                               value="300" min="1" max="86400">
+                    </div>
+                    <div class="cfg-maint-buttons">
+                        <button type="button" class="btn btn-primary" id="cfg-maint-enable">
+                            Enable Maintenance Mode
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="cfg-maint-disable" disabled>
+                            Disable Maintenance Mode
+                        </button>
+                    </div>
                 </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Settings</button>
-                    <button type="reset" class="btn btn-secondary">Reset to Defaults</button>
+                <!-- Schedule Maintenance -->
+                <details class="cfg-schedule-details">
+                    <summary>Schedule a Maintenance Window</summary>
+                    <div class="cfg-schedule-form">
+                        <div class="form-group">
+                            <label for="cfg-maint-start">Start Time:</label>
+                            <input type="datetime-local" id="cfg-maint-start" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="cfg-maint-end">End Time:</label>
+                            <input type="datetime-local" id="cfg-maint-end" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="cfg-maint-reason">Reason:</label>
+                            <input type="text" id="cfg-maint-reason" class="form-input"
+                                   placeholder="Database upgrade" maxlength="200">
+                        </div>
+                        <button type="button" class="btn btn-primary" id="cfg-maint-schedule">
+                            Schedule Window
+                        </button>
+                    </div>
+                </details>
+            </div>
+
+            <!-- System Information -->
+            <div class="cfg-card">
+                <h3>System Information</h3>
+                <div class="cfg-info-grid">
+                    <div class="cfg-info-item">
+                        <span class="cfg-info-label">Version</span>
+                        <span class="cfg-info-value" id="cfg-sys-version">v4.1.0</span>
+                    </div>
+                    <div class="cfg-info-item">
+                        <span class="cfg-info-label">Tier</span>
+                        <span class="cfg-info-value" id="cfg-sys-tier">—</span>
+                    </div>
+                    <div class="cfg-info-item">
+                        <span class="cfg-info-label">Uptime</span>
+                        <span class="cfg-info-value" id="cfg-sys-uptime">—</span>
+                    </div>
+                    <div class="cfg-info-item">
+                        <span class="cfg-info-label">Scanner</span>
+                        <span class="cfg-info-value" id="cfg-sys-scanner">—</span>
+                    </div>
+                    <div class="cfg-info-item">
+                        <span class="cfg-info-label">Persistence</span>
+                        <span class="cfg-info-value" id="cfg-sys-persistence">—</span>
+                    </div>
+                    <div class="cfg-info-item">
+                        <span class="cfg-info-label">TLS Certificates</span>
+                        <span class="cfg-info-value" id="cfg-sys-tls">—</span>
+                    </div>
                 </div>
-            </form>
+            </div>
         </section>
     </main>
 

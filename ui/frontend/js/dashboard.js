@@ -18,6 +18,8 @@ class AegisGateDashboard {
         await this.fetchGuardrails();
         this.renderComplianceFrameworks();
         this.setupComplianceFilters();
+        this.fetchMaintenanceStatus();
+        this.setupMaintenanceControls();
         this.updateGettingStarted();
         this.startAutomaticUpdates();
         this.setupEventListeners();
@@ -60,6 +62,7 @@ class AegisGateDashboard {
                 this.lastHealth = data;
                 this.updateHealthDisplay(data);
                 this.updateGettingStarted();
+                this.updateSystemInfo();
             }
         } catch (error) {
             console.error("Error fetching health:", error);
@@ -313,6 +316,139 @@ class AegisGateDashboard {
         });
     }
 
+    // ── Maintenance & System Info ────────────────────────────────
+
+    async fetchMaintenanceStatus() {
+        try {
+            const response = await fetch(`${this.apiBase}/maintenance`);
+            if (response.ok) {
+                const data = await response.json();
+                this.updateMaintenanceDisplay(data);
+            }
+        } catch (error) {
+            console.error("Error fetching maintenance status:", error);
+        }
+    }
+
+    updateMaintenanceDisplay(status) {
+        const badge = document.getElementById("cfg-maint-badge");
+        const detail = document.getElementById("cfg-maint-detail");
+        const enableBtn = document.getElementById("cfg-maint-enable");
+        const disableBtn = document.getElementById("cfg-maint-disable");
+        if (!badge) return;
+
+        // Reset classes
+        badge.classList.remove("cfg-status-active", "cfg-status-inactive", "cfg-status-scheduled");
+
+        if (status.active) {
+            badge.classList.add("cfg-status-active");
+            badge.textContent = "Active";
+            detail.textContent = status.message || "Maintenance in progress";
+            if (enableBtn) enableBtn.disabled = true;
+            if (disableBtn) disableBtn.disabled = false;
+        } else if (status.scheduled) {
+            badge.classList.add("cfg-status-scheduled");
+            badge.textContent = "Scheduled";
+            const start = status.start_time ? new Date(status.start_time).toLocaleString() : "—";
+            const end = status.end_time ? new Date(status.end_time).toLocaleString() : "—";
+            detail.textContent = `${start} → ${end}`;
+            if (enableBtn) enableBtn.disabled = false;
+            if (disableBtn) disableBtn.disabled = false;
+        } else {
+            badge.classList.add("cfg-status-inactive");
+            badge.textContent = "Inactive";
+            detail.textContent = "";
+            if (enableBtn) enableBtn.disabled = false;
+            if (disableBtn) disableBtn.disabled = true;
+        }
+    }
+
+    setupMaintenanceControls() {
+        const enableBtn = document.getElementById("cfg-maint-enable");
+        if (enableBtn) {
+            enableBtn.addEventListener("click", async () => {
+                const msg = document.getElementById("cfg-maint-message")?.value || "";
+                const retry = parseInt(document.getElementById("cfg-maint-retry")?.value || "300", 10);
+                try {
+                    const response = await fetch(`${this.apiBase}/maintenance`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: msg, retry_after_seconds: retry }),
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateMaintenanceDisplay(data);
+                    }
+                } catch (err) {
+                    console.error("Error enabling maintenance:", err);
+                }
+            });
+        }
+
+        const disableBtn = document.getElementById("cfg-maint-disable");
+        if (disableBtn) {
+            disableBtn.addEventListener("click", async () => {
+                try {
+                    const response = await fetch(`${this.apiBase}/maintenance`, { method: "DELETE" });
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateMaintenanceDisplay(data);
+                    }
+                } catch (err) {
+                    console.error("Error disabling maintenance:", err);
+                }
+            });
+        }
+
+        const scheduleBtn = document.getElementById("cfg-maint-schedule");
+        if (scheduleBtn) {
+            scheduleBtn.addEventListener("click", async () => {
+                const startEl = document.getElementById("cfg-maint-start");
+                const endEl = document.getElementById("cfg-maint-end");
+                const reasonEl = document.getElementById("cfg-maint-reason");
+                if (!startEl?.value || !endEl?.value) return;
+
+                // Convert datetime-local to RFC3339
+                const startTime = new Date(startEl.value).toISOString();
+                const endTime = new Date(endEl.value).toISOString();
+                const reason = reasonEl?.value || "";
+
+                try {
+                    const response = await fetch(`${this.apiBase}/maintenance`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ start_time: startTime, end_time: endTime, reason }),
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateMaintenanceDisplay(data);
+                    }
+                } catch (err) {
+                    console.error("Error scheduling maintenance:", err);
+                }
+            });
+        }
+    }
+
+    updateSystemInfo() {
+        const h = this.lastHealth;
+        if (!h) return;
+
+        this.setText("cfg-sys-version", h.version ? "v" + h.version : "v4.1.0");
+        this.setText("cfg-sys-tier", h.tier || "—");
+        this.setText("cfg-sys-uptime", h.uptime ? this.formatUptime(h.uptime) : "—");
+
+        const checks = h.checks || {};
+        this.setText("cfg-sys-scanner", checks.scanner?.healthy ? "Healthy" : "Unhealthy");
+        const persistText = checks.persistence?.started ? "Active" : "Inactive";
+        this.setText("cfg-sys-persistence", persistText);
+        this.setText("cfg-sys-tls", checks.certificates?.valid ? "Valid" : "Missing");
+
+        if (this.lastTier) {
+            this.setText("cfg-sys-tier", this.lastTier.display_name || this.lastTier.tier || "—");
+        }
+    }
+
     // ── Getting Started ──────────────────────────────────────────
 
     updateGettingStarted() {
@@ -426,6 +562,7 @@ class AegisGateDashboard {
         this.updateTimers.push(setInterval(() => {
             this.fetchAggregatedStats();
             this.fetchHealth();
+            this.fetchMaintenanceStatus();
         }, this.refreshInterval));
     }
 
@@ -543,7 +680,8 @@ class AegisGateDashboard {
                 this.renderComplianceFrameworks(this.getActiveCompFilter());
                 break;
             case "settings":
-                // No data refresh needed for settings
+                this.fetchMaintenanceStatus();
+                this.updateSystemInfo();
                 break;
         }
     }
