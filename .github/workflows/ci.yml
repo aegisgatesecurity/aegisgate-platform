@@ -257,6 +257,13 @@ jobs:
             # test SET LOCAL and RLS policy enforcement. Exempted; same
             # pattern as pkg/rbac, pkg/persistence, pkg/incident.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+            # pkg/tenant: 45.4% coverage. PostgresManager (~300 LOC) requires
+            # a running PostgreSQL instance for CRUD tests. In-memory Manager
+            # and handler tests are fully covered. The SQL execution paths
+            # (Create, Get, List, Update, Delete, Count with pgxpool) are
+            # integration-test territory. Exempted; same pattern as pkg/rbac,
+            # pkg/persistence, pkg/incident, pkg/ioc.
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
             # pkg/compliance/iso42001: 69.4% coverage. 38-control AI
             # management framework with data-provenance and deep-risk
             # assessment paths requiring external data catalogs. Control

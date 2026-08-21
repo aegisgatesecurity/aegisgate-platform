@@ -2320,7 +2320,28 @@ func main() {
 	// GET /api/v1/tenants/{id} — get (RequireAuth)
 	// PUT /api/v1/tenants/{id} — update (user:manage)
 	// DELETE /api/v1/tenants/{id} — delete (user:manage)
-	tenantMgr := tenant.NewManager()
+	var tenantMgr *tenant.Manager
+	var tenantPgMgr *tenant.PostgresManager
+	if pgStore != nil {
+		var pgErr error
+		tenantPgMgr, pgErr = tenant.NewPostgresManager(pgStore)
+		if pgErr != nil {
+			log.Printf("⚠️  PostgreSQL tenant manager init failed: %v — using in-memory", pgErr)
+			tenantMgr = tenant.NewManager()
+		} else {
+			log.Printf("Tenant: PostgreSQL-backed (persistent)")
+		}
+	} else {
+		tenantMgr = tenant.NewManager()
+	}
+
+	var tenantHandler http.Handler
+	if tenantPgMgr != nil {
+		tenantHandler = tenantPgMgr.Handler()
+	} else {
+		tenantHandler = tenantMgr.Handler()
+	}
+
 	dashMux.Handle("/api/v1/tenants", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			permissions := auth.GetPermissions(r.Context())
@@ -2339,7 +2360,7 @@ func main() {
 				return
 			}
 		}
-		tenantMgr.Handler().ServeHTTP(w, r)
+		tenantHandler.ServeHTTP(w, r)
 	}))
 	dashMux.Handle("/api/v1/tenants/", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -2359,7 +2380,7 @@ func main() {
 				return
 			}
 		}
-		tenantMgr.Handler().ServeHTTP(w, r)
+		tenantHandler.ServeHTTP(w, r)
 	}))
 
 	// ============================================================

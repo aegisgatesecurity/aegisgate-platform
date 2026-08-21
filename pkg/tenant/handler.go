@@ -6,12 +6,15 @@
 package tenant
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 )
 
-// Handler returns an http.Handler for the tenant management API.
+// NewHandler returns an http.Handler for the tenant management API that
+// works with any Store implementation (in-memory Manager or PostgresManager).
+//
 // All methods require authentication (enforced by the caller wrapping
 // with authMiddleware.RequireAuth or RequirePermission). Write operations
 // (POST/PUT/DELETE) should additionally be wrapped with AdminOnly or
@@ -24,24 +27,26 @@ import (
 //	GET    /api/v1/tenants/{id}     — get a tenant by ID
 //	PUT    /api/v1/tenants/{id}     — update a tenant
 //	DELETE /api/v1/tenants/{id}     — delete a tenant
-func (m *Manager) Handler() http.Handler {
+func NewHandler(s Store) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		path := strings.TrimPrefix(r.URL.Path, "/api/v1/tenants")
 		path = strings.TrimPrefix(path, "/")
 
+		ctx := r.Context()
+
 		switch {
 		case path == "" && r.Method == http.MethodGet:
-			m.handleList(w, r)
+			handlerList(ctx, w, s)
 		case path == "" && r.Method == http.MethodPost:
-			m.handleCreate(w, r)
+			handlerCreate(ctx, w, r, s)
 		case path != "" && r.Method == http.MethodGet:
-			m.handleGet(w, r, path)
+			handlerGet(ctx, w, s, path)
 		case path != "" && r.Method == http.MethodPut:
-			m.handleUpdate(w, r, path)
+			handlerUpdate(ctx, w, r, s, path)
 		case path != "" && r.Method == http.MethodDelete:
-			m.handleDelete(w, r, path)
+			handlerDelete(ctx, w, s, path)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
@@ -49,15 +54,20 @@ func (m *Manager) Handler() http.Handler {
 	})
 }
 
-func (m *Manager) handleList(w http.ResponseWriter, _ *http.Request) {
-	tenants := m.List()
+func handlerList(ctx context.Context, w http.ResponseWriter, s Store) {
+	tenants, err := s.List(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
 	if tenants == nil {
 		tenants = []*Tenant{}
 	}
 	json.NewEncoder(w).Encode(map[string]interface{}{"tenants": tenants, "count": len(tenants)})
 }
 
-func (m *Manager) handleCreate(w http.ResponseWriter, r *http.Request) {
+func handlerCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, s Store) {
 	var req struct {
 		Name        string `json:"name"`
 		DisplayName string `json:"displayName"`
@@ -71,7 +81,7 @@ func (m *Manager) handleCreate(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	tnt, err := m.Create(req.Name, req.DisplayName, req.Email, req.LicenseTier, req.MaxUsers, req.MaxAgents)
+	tnt, err := s.Create(ctx, req.Name, req.DisplayName, req.Email, req.LicenseTier, req.MaxUsers, req.MaxAgents)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -81,8 +91,8 @@ func (m *Manager) handleCreate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tnt)
 }
 
-func (m *Manager) handleGet(w http.ResponseWriter, _ *http.Request, id string) {
-	tnt, err := m.Get(id)
+func handlerGet(ctx context.Context, w http.ResponseWriter, s Store, id string) {
+	tnt, err := s.Get(ctx, id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -91,14 +101,14 @@ func (m *Manager) handleGet(w http.ResponseWriter, _ *http.Request, id string) {
 	json.NewEncoder(w).Encode(tnt)
 }
 
-func (m *Manager) handleUpdate(w http.ResponseWriter, r *http.Request, id string) {
+func handlerUpdate(ctx context.Context, w http.ResponseWriter, r *http.Request, s Store, id string) {
 	var updates map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	tnt, err := m.Update(id, updates)
+	tnt, err := s.Update(ctx, id, updates)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -107,11 +117,57 @@ func (m *Manager) handleUpdate(w http.ResponseWriter, r *http.Request, id string
 	json.NewEncoder(w).Encode(tnt)
 }
 
-func (m *Manager) handleDelete(w http.ResponseWriter, _ *http.Request, id string) {
-	if err := m.Delete(id); err != nil {
+func handlerDelete(ctx context.Context, w http.ResponseWriter, s Store, id string) {
+	if err := s.Delete(ctx, id); err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ========================================================================
+// In-memory Manager adapter for the Store interface
+// ========================================================================
+// The in-memory Manager has context-free methods (Create, Get, List, etc.)
+// that don't match the Store interface signatures. The memStore adapter
+// wraps *Manager and implements Store by ignoring the context parameter
+// and delegating to the existing methods. This preserves backward
+// compatibility — existing callers that use the non-context methods
+// continue to work unchanged.
+
+type memStore struct {
+	m *Manager
+}
+
+func (ms *memStore) Create(_ context.Context, name, displayName, email, licenseTier string, maxUsers, maxAgents int) (*Tenant, error) {
+	return ms.m.Create(name, displayName, email, licenseTier, maxUsers, maxAgents)
+}
+
+func (ms *memStore) Get(_ context.Context, id string) (*Tenant, error) {
+	return ms.m.Get(id)
+}
+
+func (ms *memStore) List(_ context.Context) ([]*Tenant, error) {
+	return ms.m.List(), nil
+}
+
+func (ms *memStore) Update(_ context.Context, id string, updates map[string]interface{}) (*Tenant, error) {
+	return ms.m.Update(id, updates)
+}
+
+func (ms *memStore) Delete(_ context.Context, id string) error {
+	return ms.m.Delete(id)
+}
+
+func (ms *memStore) Count(_ context.Context) (int, error) {
+	return ms.m.Count(), nil
+}
+
+// Handler returns an http.Handler for the tenant management API.
+// This is the backward-compatible method on the in-memory Manager.
+// It delegates to NewHandler via the memStore adapter so the routing
+// logic is shared between in-memory and PostgreSQL backends.
+func (m *Manager) Handler() http.Handler {
+	return NewHandler(&memStore{m: m})
 }
