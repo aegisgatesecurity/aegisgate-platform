@@ -47,7 +47,9 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliancelive"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
@@ -128,6 +130,7 @@ var (
 	}
 	mcpPort       = flag.Int("mcp-port", 8081, "AegisGuard MCP port")
 	dashPort      = flag.Int("dashboard-port", 8443, "Admin dashboard port")
+	grpcAddr      = flag.String("grpc-addr", "", "gRPC server address (e.g. :50051). Empty = disabled (AEGISGATE_GRPC_ADDR)")
 	targetURL     = flag.String("target", "https://api.openai.com", "Upstream LLM provider URL")
 	licenseKey    = flag.String("license", "", "License key (overrides AEGISGATE_LICENSE_KEY env var)")
 	licensePubKey = flag.String("license-public-key", "", "Path to alternative public key PEM (dev/test only; production uses embedded key)")
@@ -1519,7 +1522,20 @@ func main() {
 
 	dashMux := http.NewServeMux()
 
-	// Cluster health endpoint (v3.4.1 clustering support)
+	// CSRF middleware: created early so the token endpoint can be
+	// registered on the mux before the handler chain is wrapped.
+	var csrfMiddleware *security.CSRFMiddleware
+	if cfg != nil && cfg.Security.EnableCSRF {
+		csrfConfig := security.DefaultCSRFConfig()
+		if *profileName == "development" || *profileName == "test" {
+			csrfConfig.CookieSecure = false
+			csrfConfig.CookieSameSite = http.SameSiteLaxMode
+		}
+		csrfMiddleware = security.NewCSRFMiddleware(csrfConfig)
+		log.Printf("CSRF: enabled (token cookie: %s, header: %s)", csrfConfig.CookieName, csrfConfig.HeaderName)
+	} else {
+		log.Printf("CSRF: disabled (enable in config: security.enable_csrf)")
+	}
 	clusterMode := "standalone"
 	if pgStore != nil {
 		clusterMode = "clustered"
@@ -1714,8 +1730,41 @@ func main() {
 	wireSOCHandlers(dashMux, authMiddleware)
 	log.Printf("[SOC] SOC Timeline HTTP API enabled at /api/v1/soc/incidents/:id/timeline")
 
-	// CISO Posture Digest HTTP endpoint
-	// (v3.6.0+ TODO-601+602). Mounted on the
+	// Incident Response HTTP endpoint (v3.8).
+	// Incident response is FREE (no tier gate).
+	// Auth middleware ensures the caller is authenticated.
+	// Uses PostgreSQL-backed stores when available, falls back
+	// to in-memory. Default playbooks and detection rules are
+	// loaded in both cases.
+	var incidentEngine *incident.Engine
+	if pgStore != nil {
+		is := incident.NewPostgresIncidentStore(pgStore.Pool())
+		ps := incident.NewPostgresPlaybookStore(pgStore.Pool())
+		rs := incident.NewPostgresDetectionRuleStore(pgStore.Pool())
+		incidentEngine = incident.NewEngine(is, ps, rs)
+		log.Printf("Incident engine: PostgreSQL-backed")
+	} else {
+		incidentEngine = newIncidentEngine()
+		log.Printf("Incident engine: in-memory")
+	}
+	wireIncidentHandlers(dashMux, authMiddleware, incidentEngine)
+	log.Printf("[INCIDENT] Incident Response HTTP API enabled at /api/v1/incidents")
+
+	// Wire incident engine callbacks to platform subsystems.
+	// This connects playbook actions (notify, block, isolate,
+	// collect evidence, compliance check, attestation) to real
+	// SOAR, RBAC, audit, and attestation subsystems.
+	var cbKeyRing *ioc.KeyRing
+	if iocW != nil {
+		cbKeyRing = iocW.KeyRing
+	}
+	wireIncidentCallbacks(incidentEngine, incidentCallbackDeps{
+		soarMgr:   soarMgr,
+		rbacMgr:   rbacMgr,
+		auditRing: auditRing,
+		keyRing:   cbKeyRing,
+		logger:    slog.Default().With("component", "incident-callbacks"),
+	})
 	// dashboard mux. The generate side is
 	// Professional+ (the digest is a
 	// customer-facing artifact); the verify side
@@ -1871,7 +1920,23 @@ func main() {
 		}
 	})
 
-	// D28 (scanner perf): cap r.Body read size at the HTTP layer for
+	// CSRF token endpoint: returns a fresh CSRF token to the caller.
+	// The token is set as a cookie and returned in the JSON body for
+	// JavaScript clients to include in subsequent state-changing
+	// requests via the X-CSRF-Token header.
+	if csrfMiddleware != nil {
+		dashMux.HandleFunc("/api/v1/csrf-token", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			token := csrfMiddleware.GenerateToken(w, r)
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"token":  token,
+				"header": "X-CSRF-Token",
+				"cookie": "csrf_token",
+			})
+		}))
+		log.Printf("[CSRF] Token endpoint enabled at /api/v1/csrf-token")
+	}
 	// /api/v1/scan. The body itself is not used by this handler (the
 	// scanner creates an empty ScanRequest), but the HTTP server still
 	// reads up to Content-Length, which on a 5MB body can take 100s+
@@ -2812,6 +2877,12 @@ func main() {
 		cluster.InstanceIdMiddleware(clusterNode, clusterMode,
 			rejectDangerousMethods(security.DashboardHeadersMiddleware(metrics.WrapHandler("dashboard", dashMux)))))
 
+	// CSRF protection: wraps the dashboard handler with the
+	// double-submit cookie CSRF middleware (created earlier).
+	if csrfMiddleware != nil {
+		dashHandler = csrfMiddleware.Handler(dashHandler)
+	}
+
 	dashHTTPServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", *dashPort),
 		Handler:      dashHandler,
@@ -2837,8 +2908,43 @@ func main() {
 	if err := <-dashReady; err != nil {
 		log.Fatalf("Dashboard startup failed: %v", err)
 	}
+	if csrfMiddleware != nil {
+		defer csrfMiddleware.Stop()
+	}
 
-	// ============================================================
+	// gRPC server (v4.3.1): wire the gRPC server with auth backend
+	// adapter, compliance, and metrics backends. The gRPC server
+	// runs on a separate port from the HTTP dashboard. When
+	// --grpc-addr is empty (or AEGISGATE_GRPC_ADDR env is unset),
+	// the gRPC server is disabled.
+	grpcAddrStr := *grpcAddr
+	if grpcAddrStr == "" {
+		grpcAddrStr = os.Getenv("AEGISGATE_GRPC_ADDR")
+	}
+	if grpcAddrStr != "" {
+		grpcDeps := grpc.Dependencies{}
+		if ssoManager != nil {
+			grpcDeps.Auth = newSSOAuthBackend(ssoManager, slog.Default().With("component", "grpc-auth"))
+		}
+		// When ssoManager is nil, Auth is nil — the gRPC server
+		// will use UnimplementedAuthServiceServer and the auth
+		// interceptor will fail-closed (deny all except exempt methods).
+		grpcServer, grpcErr := grpc.NewGRPCServer(grpcDeps, slog.Default().With("component", "grpc-server"))
+		if grpcErr != nil {
+			log.Printf("⚠️  gRPC server creation failed: %v", grpcErr)
+		} else {
+			go func() {
+				log.Printf("gRPC server listening on %s", grpcAddrStr)
+				if err := grpc.Serve(grpcServer, grpcAddrStr); err != nil {
+					log.Printf("gRPC server error: %v", err)
+				}
+			}()
+			defer grpc.GracefulStop(grpcServer, 10*time.Second)
+		}
+	} else {
+		log.Printf("gRPC: disabled (set --grpc-addr or AEGISGATE_GRPC_ADDR to enable)")
+	}
+
 	// Ready
 	// ============================================================
 	bridgeStatus := "disabled"

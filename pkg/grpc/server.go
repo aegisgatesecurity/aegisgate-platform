@@ -107,6 +107,12 @@ func NewGRPCServer(deps Dependencies, logger *slog.Logger) (*grpc.Server, error)
 func registerAllServices(server *grpc.Server, deps Dependencies, logger *slog.Logger) {
 	rh := &RegisterHelper{Server: server}
 
+	// Build MethodDesc entries for all services using reflection.
+	// This must happen BEFORE RegisterService calls, because
+	// grpc.Server.RegisterService copies the MethodDesc slice at
+	// registration time.
+	replaceServiceDescs(server, deps, logger)
+
 	// Auth service
 	if deps.Auth != nil {
 		rh.RegisterAuthService(NewAuthService(deps.Auth, logger))
