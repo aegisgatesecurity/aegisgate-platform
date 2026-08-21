@@ -11,7 +11,7 @@ class AegisGateDashboard {
 
     async init() {
         console.log("AegisGate Dashboard v4.1.0 initialized");
-        await this.fetchStats();
+        await this.fetchAggregatedStats();
         await this.fetchHealth();
         await this.fetchTier();
         await this.fetchGuardrails();
@@ -21,17 +21,30 @@ class AegisGateDashboard {
 
     // ── API Fetch Methods ────────────────────────────────────────
 
+    async fetchAggregatedStats() {
+        try {
+            const response = await fetch(`${this.apiBase}/stats`);
+            if (response.ok) {
+                const data = await response.json();
+                this.lastStats = data;
+                this.updateMetricsDisplay(data);
+            }
+        } catch (error) {
+            console.error("Error fetching stats:", error);
+            this.showError("stats", "Unable to load statistics");
+        }
+    }
+
     async fetchStats() {
+        // Legacy persistence endpoint — kept for backward compat
         try {
             const response = await fetch(`${this.apiBase}/persistence`);
             if (response.ok) {
                 const data = await response.json();
                 this.lastStats = data;
-                this.updateStatsDisplay(data);
             }
         } catch (error) {
-            console.error("Error fetching stats:", error);
-            this.showError("stats", "Unable to load statistics");
+            console.error("Error fetching persistence stats:", error);
         }
     }
 
@@ -75,28 +88,65 @@ class AegisGateDashboard {
 
     // ── Display Update Methods ───────────────────────────────────
 
-    updateStatsDisplay(stats) {
-        // Metrics cards — Dashboard panel
-        this.setText("metric-requests-value", stats.total_entries != null ? stats.total_entries : "—");
-        this.setText("metric-blocked-value", stats.disabled ? "Disabled" : "Active");
-        this.setText("metric-threats-value", stats.pruned_count != null ? stats.pruned_count : "0");
-        this.setText("metric-uptime-value", stats.audit_dir != null ? stats.audit_dir : "—");
+    updateMetricsDisplay(payload) {
+        const d = payload?.data || payload;
+        if (!d) return;
+
+        // Total Requests — from persistence total_entries
+        const totalReqs = d.persistence?.total_entries ?? d.total_entries ?? "—";
+        this.setText("metric-requests-value", this.formatNumber(totalReqs));
+
+        // Threats Blocked — from guardrails rejected_calls
+        const g = d.guardrails;
+        const rejected = g?.rejected_calls ?? g?.RejectedCalls ?? "—";
+        this.setText("metric-threats-value", this.formatNumber(rejected));
+
+        // Active Sessions — from guardrails active_sessions
+        const sessions = g?.active_sessions ?? g?.ActiveSessions ?? "—";
+        this.setText("metric-sessions-value", this.formatNumber(sessions));
+
+        // System Health — from health data (fetched separately)
+        // Uptime is set by updateHealthDisplay
+        if (d.uptime_seconds != null) {
+            this.setText("metric-health-detail", "Uptime: " + this.formatUptime(d.uptime_seconds));
+        }
     }
 
     updateHealthDisplay(health) {
-        // Health status
+        // System Health card
+        const healthValue = health.status === "healthy" ? "Healthy" :
+                           health.status === "degraded" ? "Degraded" :
+                           health.status ? health.status : "—";
+        this.setText("metric-health-value", healthValue);
+
+        // Update health card color based on status
+        const healthCard = document.querySelector(".metric-card-info");
+        if (healthCard) {
+            if (health.status === "healthy") {
+                healthCard.classList.remove("metric-card-warning", "metric-card-danger");
+                healthCard.classList.add("metric-card-success");
+            } else if (health.status === "degraded") {
+                healthCard.classList.remove("metric-card-success", "metric-card-danger");
+                healthCard.classList.add("metric-card-warning");
+            } else {
+                healthCard.classList.remove("metric-card-success", "metric-card-warning");
+                healthCard.classList.add("metric-card-danger");
+            }
+        }
+
+        // Uptime detail
+        if (health.uptime) {
+            this.setText("metric-health-detail", "Uptime: " + this.formatUptime(health.uptime));
+        }
+
+        // Legacy health status element (if present)
         const statusEl = document.getElementById("last-scan");
         if (statusEl) {
             statusEl.textContent = health.status || "Unknown";
             statusEl.className = "health-status " + (health.status === "healthy" ? "status-healthy" : "status-unhealthy");
         }
 
-        // Uptime
-        if (health.uptime) {
-            this.setText("uptime-value", this.formatUptime(health.uptime));
-        }
-
-        // Version
+        // Version display (if element exists)
         if (health.version) {
             this.setText("version-display", "v" + health.version);
         }
@@ -140,6 +190,15 @@ class AegisGateDashboard {
         return Math.round(seconds / 86400) + "d";
     }
 
+    formatNumber(n) {
+        if (n === null || n === undefined || n === "—") return "—";
+        const num = Number(n);
+        if (isNaN(num)) return String(n);
+        if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
+        if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+        return String(num);
+    }
+
     showError(section, message) {
         console.warn(`[${section}] ${message}`);
     }
@@ -181,7 +240,7 @@ class AegisGateDashboard {
 
     startAutomaticUpdates() {
         this.updateTimers.push(setInterval(() => {
-            this.fetchStats();
+            this.fetchAggregatedStats();
             this.fetchHealth();
         }, this.refreshInterval));
     }
@@ -262,11 +321,11 @@ class AegisGateDashboard {
         // Refresh data for the active tab
         switch(page) {
             case "dashboard":
-                this.fetchStats();
+                this.fetchAggregatedStats();
                 this.fetchHealth();
                 break;
             case "audit logs":
-                this.fetchStats();
+                this.fetchAggregatedStats();
                 break;
             case "compliance":
                 this.fetchGuardrails();
@@ -278,7 +337,7 @@ class AegisGateDashboard {
     }
 
     refreshNow() {
-        this.fetchStats();
+        this.fetchAggregatedStats();
         this.fetchHealth();
         this.fetchTier();
         this.fetchGuardrails();

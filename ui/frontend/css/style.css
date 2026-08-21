@@ -273,6 +273,12 @@ body {
     color: var(--color-text-secondary);
 }
 
+.metric-detail {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+
 .metric-card-warning {
     border-left: 4px solid var(--color-warning);
     background: var(--color-warning-bg);
