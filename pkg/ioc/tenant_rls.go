@@ -35,8 +35,25 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// DBQuerier is the common interface satisfied by both *pgxpool.Pool and
+// pgx.Tx. It allows query methods to work with either a direct pool
+// connection or a tenant-scoped transaction with RLS context set.
+//
+// When tenant context is available, WithTenantContextOrPool wraps queries
+// in a transaction that sets SET LOCAL app.tenant_id and app.is_admin,
+// causing the RLS policies from migration 008 to fire. When no tenant
+// context is available, queries run directly on the pool (RLS policies
+// won't fire, but application-layer filtering handles isolation).
+type DBQuerier interface {
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+}
 
 // SetTenantContext sets the app.tenant_id and app.is_admin session
 // variables on a specific connection (within a transaction). Use this
@@ -98,6 +115,39 @@ func WithTenantContext(ctx context.Context, pool *pgxpool.Pool, tenantID string,
 	}
 
 	return tx.Commit(ctx)
+}
+
+// WithTenantContextOrPool is the primary entry point for RLS
+// defense-in-depth wiring. It executes the provided function with a
+// DBQuerier that has tenant RLS context set when tenant information is
+// available, or directly on the pool when it is not.
+//
+// When tenantID is non-empty OR isAdmin is true:
+//   - Acquires a connection, begins a transaction
+//   - Sets SET LOCAL app.tenant_id and app.is_admin
+//   - Calls fn with the transaction (RLS policies fire)
+//   - Commits if fn returns nil, rolls back otherwise
+//
+// When tenantID is empty AND isAdmin is false:
+//   - Calls fn with the pool directly (RLS policies don't fire,
+//     but application-layer filtering handles isolation)
+//
+// This design ensures backward compatibility for single-tenant
+// deployments while providing defense-in-depth for multi-tenant ones.
+func WithTenantContextOrPool(ctx context.Context, pool *pgxpool.Pool, tenantID string, isAdmin bool, fn func(DBQuerier) error) error {
+	if pool == nil {
+		panic("pgxpool.Pool is nil")
+	}
+	if tenantID == "" && !isAdmin {
+		// No tenant context — use pool directly. RLS policies won't
+		// fire (table owner bypasses RLS anyway until FORCE is applied),
+		// but application-layer filtering handles isolation.
+		return fn(pool)
+	}
+	// Tenant context provided — wrap in transaction with RLS context.
+	return WithTenantContext(ctx, pool, tenantID, isAdmin, func(tx pgx.Tx) error {
+		return fn(tx)
+	})
 }
 
 // SetTenantContextOnConn sets tenant context variables directly on a

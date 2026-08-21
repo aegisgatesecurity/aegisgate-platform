@@ -68,6 +68,7 @@ func NewPostgresLicenseCache(pgStore *ioc.PostgresStore) (*PostgresLicenseCache,
 
 // Get retrieves a cached validation result by license key and tenant context.
 // Returns nil if the cache entry is expired or not found.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (c *PostgresLicenseCache) Get(ctx context.Context, licenseKey string, tenantCtx ...LicenseTenantContext) *ValidationResult {
 	if c.closed {
 		return nil
@@ -101,52 +102,56 @@ func (c *PostgresLicenseCache) Get(ctx context.Context, licenseKey string, tenan
 		args = []interface{}{tenantID, licenseKey}
 	}
 
-	var tierStr, message, errorMsg string
-	var valid, expired, gracePeriod bool
-	var payloadJSON []byte
-	var validatedAt, expiresAt time.Time
+	var result *ValidationResult
+	_ = ioc.WithTenantContextOrPool(ctx, c.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		var tierStr, message, errorMsg string
+		var valid, expired, gracePeriod bool
+		var payloadJSON []byte
+		var validatedAt, expiresAt time.Time
 
-	err := c.pool.QueryRow(ctx, sql, args...).Scan(
-		&tierStr, &valid, &expired, &gracePeriod,
-		&payloadJSON, &message, &errorMsg,
-		&validatedAt, &expiresAt,
-	)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil // cache miss
+		err := q.QueryRow(ctx, sql, args...).Scan(
+			&tierStr, &valid, &expired, &gracePeriod,
+			&payloadJSON, &message, &errorMsg,
+			&validatedAt, &expiresAt,
+		)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil // cache miss
+			}
+			log.Printf("PostgreSQL license cache get error: %v", err)
+			return nil // fall back to re-validation
 		}
-		log.Printf("PostgreSQL license cache get error: %v", err)
-		return nil // fall back to re-validation
-	}
 
-	licenseTier, err := tier.ParseTier(tierStr)
-	if err != nil {
-		licenseTier = tier.TierCommunity
-	}
+		licenseTier, err := tier.ParseTier(tierStr)
+		if err != nil {
+			licenseTier = tier.TierCommunity
+		}
 
-	var payload LicensePayload
-	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
-		payload = LicensePayload{}
-	}
+		var payload LicensePayload
+		if err := json.Unmarshal(payloadJSON, &payload); err != nil {
+			payload = LicensePayload{}
+		}
 
-	result := &ValidationResult{
-		Valid:       valid,
-		Expired:     expired,
-		GracePeriod: gracePeriod,
-		Tier:        licenseTier,
-		Payload:     payload,
-		Message:     message,
-		ValidatedAt: validatedAt,
-	}
+		result = &ValidationResult{
+			Valid:       valid,
+			Expired:     expired,
+			GracePeriod: gracePeriod,
+			Tier:        licenseTier,
+			Payload:     payload,
+			Message:     message,
+			ValidatedAt: validatedAt,
+		}
 
-	if errorMsg != "" {
-		result.Error = fmt.Errorf("%s", errorMsg)
-	}
-
+		if errorMsg != "" {
+			result.Error = fmt.Errorf("%s", errorMsg)
+		}
+		return nil
+	})
 	return result
 }
 
 // Set stores a validation result in the cache with the given TTL and tenant context.
+// When tenant context is provided, runs in a transaction with RLS context.
 func (c *PostgresLicenseCache) Set(ctx context.Context, licenseKey string, result *ValidationResult, ttl time.Duration, tenantCtx ...LicenseTenantContext) error {
 	if c.closed {
 		return fmt.Errorf("postgres license cache is closed")
@@ -157,8 +162,10 @@ func (c *PostgresLicenseCache) Set(ctx context.Context, licenseKey string, resul
 
 	// Extract tenant context (optional, backward compatible)
 	var tenantID string
+	isAdmin := false
 	if len(tenantCtx) > 0 {
 		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
 	}
 
 	payloadJSON, err := json.Marshal(result.Payload)
@@ -190,19 +197,21 @@ func (c *PostgresLicenseCache) Set(ctx context.Context, licenseKey string, resul
 			validated_at = EXCLUDED.validated_at,
 			expires_at = EXCLUDED.expires_at`
 
-	_, err = c.pool.Exec(ctx, sql,
-		tenantID, licenseKey, result.Tier.String(), result.Valid, result.Expired, result.GracePeriod,
-		payloadJSON, result.Message, errorMsg,
-		result.ValidatedAt, expiresAt,
-	)
-	if err != nil {
-		return fmt.Errorf("postgres license cache set: %w", err)
-	}
-
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, c.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql,
+			tenantID, licenseKey, result.Tier.String(), result.Valid, result.Expired, result.GracePeriod,
+			payloadJSON, result.Message, errorMsg,
+			result.ValidatedAt, expiresAt,
+		)
+		if err != nil {
+			return fmt.Errorf("postgres license cache set: %w", err)
+		}
+		return nil
+	})
 }
 
 // Invalidate removes a cached validation result by tenant and license key.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (c *PostgresLicenseCache) Invalidate(ctx context.Context, licenseKey string, tenantCtx ...LicenseTenantContext) error {
 	if c.closed {
 		return fmt.Errorf("postgres license cache is closed")
@@ -229,15 +238,18 @@ func (c *PostgresLicenseCache) Invalidate(ctx context.Context, licenseKey string
 		args = []interface{}{tenantID, licenseKey}
 	}
 
-	_, err := c.pool.Exec(ctx, sql, args...)
-	if err != nil {
-		return fmt.Errorf("postgres license cache invalidate: %w", err)
-	}
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, c.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql, args...)
+		if err != nil {
+			return fmt.Errorf("postgres license cache invalidate: %w", err)
+		}
+		return nil
+	})
 }
 
 // PruneExpired removes all expired cache entries.
 // Called by the persistence Manager's background goroutine.
+// Runs as admin (bypasses RLS) since pruning is a platform-level operation.
 func (c *PostgresLicenseCache) PruneExpired(ctx context.Context, tenantCtx ...LicenseTenantContext) (int, error) {
 	if c.closed {
 		return 0, fmt.Errorf("postgres license cache is closed")
@@ -263,12 +275,18 @@ func (c *PostgresLicenseCache) PruneExpired(ctx context.Context, tenantCtx ...Li
 		sql = `DELETE FROM license_cache WHERE expires_at < NOW()`
 	}
 
-	tag, err := c.pool.Exec(ctx, sql, args...)
+	var pruned int
+	err := ioc.WithTenantContextOrPool(ctx, c.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, sql, args...)
+		if err != nil {
+			return fmt.Errorf("postgres license cache prune: %w", err)
+		}
+		pruned = int(tag.RowsAffected())
+		return nil
+	})
 	if err != nil {
-		return 0, fmt.Errorf("postgres license cache prune: %w", err)
+		return 0, err
 	}
-
-	pruned := int(tag.RowsAffected())
 	if pruned > 0 {
 		log.Printf("PostgreSQL license cache prune: removed %d expired entries", pruned)
 	}

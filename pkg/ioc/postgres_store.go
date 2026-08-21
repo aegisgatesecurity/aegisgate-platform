@@ -167,6 +167,8 @@ func NewPostgresStore(ctx context.Context, cfg DatabaseConfig) (*PostgresStore, 
 }
 
 // Observe records a new observation of an IOC using INSERT ... ON CONFLICT (upsert).
+// When tenant context is provided, the query runs inside a transaction with
+// RLS session variables set (defense-in-depth on top of app-layer filtering).
 func (s *PostgresStore) Observe(ctx context.Context, ioc IOC, tenantCtx ...TenantContext) (*IOC, error) {
 	if !ioc.Valid() {
 		return nil, fmt.Errorf("invalid IOC")
@@ -184,39 +186,43 @@ func (s *PostgresStore) Observe(ctx context.Context, ioc IOC, tenantCtx ...Tenan
 
 	// Extract tenant context (optional, defaults to empty string for backward compatibility)
 	tenantID := ""
+	isAdmin := false
 	if len(tenantCtx) > 0 {
 		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
 	}
 
 	var result IOC
-	err := s.pool.QueryRow(ctx,
-		`INSERT INTO ioc_fingerprints (
-			fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		ON CONFLICT (fingerprint) DO UPDATE SET
-			count = ioc_fingerprints.count + 1,
-			last_seen = GREATEST(ioc_fingerprints.last_seen, EXCLUDED.last_seen),
-			first_seen = LEAST(ioc_fingerprints.first_seen, EXCLUDED.first_seen),
-			severity = CASE
-				WHEN ioc_fingerprints.severity = 'critical' OR EXCLUDED.severity = 'critical' THEN 'critical'
-				WHEN ioc_fingerprints.severity = 'high' OR EXCLUDED.severity = 'high' THEN 'high'
-				WHEN ioc_fingerprints.severity = 'medium' OR EXCLUDED.severity = 'medium' THEN 'medium'
-				WHEN ioc_fingerprints.severity = 'low' OR EXCLUDED.severity = 'low' THEN 'low'
-				ELSE ioc_fingerprints.severity
-			END,
-			updated_at = NOW()
-		RETURNING fingerprint, type, severity, category, pattern, source_provider,
-			affects_lens, affects_gateway, source, count, first_seen, last_seen`,
-		ioc.Fingerprint, string(ioc.Type), string(ioc.Severity), ioc.Category,
-		ioc.Pattern, ioc.SourceProvider, ioc.AffectsLens, ioc.AffectsGateway,
-		ioc.Source, 1, firstSeen, lastSeen, tenantID,
-	).Scan(
-		&result.Fingerprint, &result.Type, &result.Severity, &result.Category,
-		&result.Pattern, &result.SourceProvider, &result.AffectsLens,
-		&result.AffectsGateway, &result.Source, &result.Count,
-		&result.FirstSeen, &result.LastSeen,
-	)
+	err := WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		return q.QueryRow(ctx,
+			`INSERT INTO ioc_fingerprints (
+				fingerprint, type, severity, category, pattern, source_provider,
+				affects_lens, affects_gateway, source, count, first_seen, last_seen, tenant_id
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			ON CONFLICT (fingerprint) DO UPDATE SET
+				count = ioc_fingerprints.count + 1,
+				last_seen = GREATEST(ioc_fingerprints.last_seen, EXCLUDED.last_seen),
+				first_seen = LEAST(ioc_fingerprints.first_seen, EXCLUDED.first_seen),
+				severity = CASE
+					WHEN ioc_fingerprints.severity = 'critical' OR EXCLUDED.severity = 'critical' THEN 'critical'
+					WHEN ioc_fingerprints.severity = 'high' OR EXCLUDED.severity = 'high' THEN 'high'
+					WHEN ioc_fingerprints.severity = 'medium' OR EXCLUDED.severity = 'medium' THEN 'medium'
+					WHEN ioc_fingerprints.severity = 'low' OR EXCLUDED.severity = 'low' THEN 'low'
+					ELSE ioc_fingerprints.severity
+				END,
+				updated_at = NOW()
+			RETURNING fingerprint, type, severity, category, pattern, source_provider,
+				affects_lens, affects_gateway, source, count, first_seen, last_seen`,
+			ioc.Fingerprint, string(ioc.Type), string(ioc.Severity), ioc.Category,
+			ioc.Pattern, ioc.SourceProvider, ioc.AffectsLens, ioc.AffectsGateway,
+			ioc.Source, 1, firstSeen, lastSeen, tenantID,
+		).Scan(
+			&result.Fingerprint, &result.Type, &result.Severity, &result.Category,
+			&result.Pattern, &result.SourceProvider, &result.AffectsLens,
+			&result.AffectsGateway, &result.Source, &result.Count,
+			&result.FirstSeen, &result.LastSeen,
+		)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("observe ioc: %w", err)
 	}
@@ -224,6 +230,8 @@ func (s *PostgresStore) Observe(ctx context.Context, ioc IOC, tenantCtx ...Tenan
 }
 
 // ObserveBatch records multiple IOCs in a single batch using pgx.Batch.
+// When tenant context is provided, the batch runs inside a transaction with
+// RLS session variables set (defense-in-depth).
 func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC, tenantCtx ...TenantContext) error {
 	if len(iocs) == 0 {
 		return nil
@@ -231,11 +239,12 @@ func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC, tenantCtx 
 
 	// Extract tenant context (optional, defaults to empty string)
 	tenantID := ""
+	isAdmin := false
 	if len(tenantCtx) > 0 {
 		tenantID = tenantCtx[0].TenantID
+		isAdmin = tenantCtx[0].IsAdmin
 	}
 
-	batch := &pgx.Batch{}
 	now := time.Now().UTC()
 
 	const upsertSQL = `INSERT INTO ioc_fingerprints (
@@ -255,40 +264,49 @@ func (s *PostgresStore) ObserveBatch(ctx context.Context, iocs []IOC, tenantCtx 
 		END,
 		updated_at = NOW()`
 
-	for i := range iocs {
-		if !iocs[i].Valid() {
-			continue
-		}
-		ioc := iocs[i]
-		firstSeen := ioc.FirstSeen
-		lastSeen := ioc.LastSeen
-		if firstSeen.IsZero() {
-			firstSeen = now
-		}
-		if lastSeen.IsZero() {
-			lastSeen = now
+	return WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		batch := &pgx.Batch{}
+
+		for i := range iocs {
+			if !iocs[i].Valid() {
+				continue
+			}
+			ioc := iocs[i]
+			firstSeen := ioc.FirstSeen
+			lastSeen := ioc.LastSeen
+			if firstSeen.IsZero() {
+				firstSeen = now
+			}
+			if lastSeen.IsZero() {
+				lastSeen = now
+			}
+
+			batch.Queue(upsertSQL,
+				ioc.Fingerprint, string(ioc.Type), string(ioc.Severity), ioc.Category,
+				ioc.Pattern, ioc.SourceProvider, ioc.AffectsLens, ioc.AffectsGateway,
+				ioc.Source, 1, firstSeen, lastSeen, tenantID,
+			)
 		}
 
-		batch.Queue(upsertSQL,
-			ioc.Fingerprint, string(ioc.Type), string(ioc.Severity), ioc.Category,
-			ioc.Pattern, ioc.SourceProvider, ioc.AffectsLens, ioc.AffectsGateway,
-			ioc.Source, 1, firstSeen, lastSeen, tenantID,
-		)
-	}
-
-	results := s.pool.SendBatch(ctx, batch)
-	defer results.Close()
-
-	for i := 0; i < batch.Len(); i++ {
-		if _, err := results.Exec(); err != nil {
-			_ = err // individual failures are acceptable in batch
+		if batch.Len() == 0 {
+			return nil
 		}
-	}
-	return nil
+
+		results := q.SendBatch(ctx, batch)
+		defer results.Close()
+
+		for i := 0; i < batch.Len(); i++ {
+			if _, err := results.Exec(); err != nil {
+				_ = err // individual failures are acceptable in batch
+			}
+		}
+		return nil
+	})
 }
 
 // Get returns the IOC with the given fingerprint, or nil if not found.
 // If tenantCtx is provided and IsAdmin is false, verifies tenant ownership.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (s *PostgresStore) Get(ctx context.Context, fingerprint string, tenantCtx ...TenantContext) (*IOC, error) {
 	// Extract tenant context (optional)
 	var tenantID string
@@ -311,12 +329,16 @@ func (s *PostgresStore) Get(ctx context.Context, fingerprint string, tenantCtx .
 	}
 
 	var ioc IOC
-	err := s.pool.QueryRow(ctx, query, args...).Scan(
-		&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
-		&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
-		&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-		&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
-	)
+	var scanErr error
+	err := WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		scanErr = q.QueryRow(ctx, query, args...).Scan(
+			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
+			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
+			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
+			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
+		)
+		return scanErr
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -328,6 +350,7 @@ func (s *PostgresStore) Get(ctx context.Context, fingerprint string, tenantCtx .
 
 // Size returns the number of IOCs in the store.
 // If tenantCtx is provided and IsAdmin is false, returns only tenant's IOC count.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (s *PostgresStore) Size(ctx context.Context, tenantCtx ...TenantContext) (int, error) {
 	// Extract tenant context (optional)
 	var tenantID string
@@ -347,7 +370,9 @@ func (s *PostgresStore) Size(ctx context.Context, tenantCtx ...TenantContext) (i
 	}
 
 	var count int
-	err := s.pool.QueryRow(ctx, query, args...).Scan(&count)
+	err := WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		return q.QueryRow(ctx, query, args...).Scan(&count)
+	})
 	if err != nil {
 		return 0, fmt.Errorf("count iocs: %w", err)
 	}
@@ -356,6 +381,7 @@ func (s *PostgresStore) Size(ctx context.Context, tenantCtx ...TenantContext) (i
 
 // Snapshot returns all IOCs sorted by LastSeen descending.
 // If tenantCtx is provided and IsAdmin is false, returns only tenant's IOCs.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (s *PostgresStore) Snapshot(ctx context.Context, tenantCtx ...TenantContext) ([]IOC, error) {
 	// Extract tenant context (optional)
 	var tenantID string
@@ -378,30 +404,37 @@ func (s *PostgresStore) Snapshot(ctx context.Context, tenantCtx ...TenantContext
 
 	query += " ORDER BY last_seen DESC"
 
-	rows, err := s.pool.Query(ctx, query, args...)
+	var iocs []IOC
+	err := WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		rows, err := q.Query(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var ioc IOC
+			if err := rows.Scan(
+				&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
+				&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
+				&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
+				&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
+			); err != nil {
+				return err
+			}
+			iocs = append(iocs, ioc)
+		}
+		return rows.Err()
+	})
 	if err != nil {
 		return nil, fmt.Errorf("snapshot iocs: %w", err)
-	}
-	defer rows.Close()
-
-	var iocs []IOC
-	for rows.Next() {
-		var ioc IOC
-		if err := rows.Scan(
-			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
-			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
-			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
-		); err != nil {
-			return nil, fmt.Errorf("scan ioc: %w", err)
-		}
-		iocs = append(iocs, ioc)
 	}
 	return iocs, nil
 }
 
 // SnapshotSince returns IOCs with LastSeen >= since, sorted by LastSeen descending.
 // If tenantCtx is provided and IsAdmin is false, returns only tenant's IOCs.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (s *PostgresStore) SnapshotSince(ctx context.Context, since time.Time, tenantCtx ...TenantContext) ([]IOC, error) {
 	// Extract tenant context (optional)
 	var tenantID string
@@ -426,30 +459,37 @@ func (s *PostgresStore) SnapshotSince(ctx context.Context, since time.Time, tena
 
 	query += " ORDER BY last_seen DESC"
 
-	rows, err := s.pool.Query(ctx, query, args...)
+	var iocs []IOC
+	err := WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		rows, err := q.Query(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var ioc IOC
+			if err := rows.Scan(
+				&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
+				&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
+				&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
+				&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
+			); err != nil {
+				return err
+			}
+			iocs = append(iocs, ioc)
+		}
+		return rows.Err()
+	})
 	if err != nil {
 		return nil, fmt.Errorf("snapshot since: %w", err)
-	}
-	defer rows.Close()
-
-	var iocs []IOC
-	for rows.Next() {
-		var ioc IOC
-		if err := rows.Scan(
-			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
-			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
-			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
-		); err != nil {
-			return nil, fmt.Errorf("scan ioc: %w", err)
-		}
-		iocs = append(iocs, ioc)
 	}
 	return iocs, nil
 }
 
 // Query returns IOCs matching the given filter criteria using indexed lookups.
 // If tenantCtx is provided and IsAdmin is false, results are filtered by tenant_id.
+// RLS policies provide defense-in-depth on top of the app-layer WHERE clause.
 func (s *PostgresStore) Query(ctx context.Context, filter IOCQuery, tenantCtx ...TenantContext) ([]IOC, error) {
 	// Extract tenant context (optional)
 	var tenantID string
@@ -529,40 +569,55 @@ func (s *PostgresStore) Query(ctx context.Context, filter IOCQuery, tenantCtx ..
 		argIdx++
 	}
 
-	rows, err := s.pool.Query(ctx, query, args...)
+	var iocs []IOC
+	err := WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q DBQuerier) error {
+		rows, err := q.Query(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var ioc IOC
+			if err := rows.Scan(
+				&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
+				&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
+				&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
+				&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
+			); err != nil {
+				return err
+			}
+			iocs = append(iocs, ioc)
+		}
+		return rows.Err()
+	})
 	if err != nil {
 		return nil, fmt.Errorf("query iocs: %w", err)
-	}
-	defer rows.Close()
-
-	var iocs []IOC
-	for rows.Next() {
-		var ioc IOC
-		if err := rows.Scan(
-			&ioc.Fingerprint, &ioc.Type, &ioc.Severity, &ioc.Category,
-			&ioc.Pattern, &ioc.SourceProvider, &ioc.AffectsLens,
-			&ioc.AffectsGateway, &ioc.Source, &ioc.Count,
-			&ioc.FirstSeen, &ioc.LastSeen, &ioc.TenantID,
-		); err != nil {
-			return nil, fmt.Errorf("scan ioc: %w", err)
-		}
-		iocs = append(iocs, ioc)
 	}
 	return iocs, nil
 }
 
 // Prune removes IOCs older than maxAge and returns the count removed.
+// Runs as admin (bypasses RLS) since pruning is a platform-level operation.
 func (s *PostgresStore) Prune(ctx context.Context, maxAge time.Duration) (int, error) {
 	cutoff := time.Now().UTC().Add(-maxAge)
 
-	result, err := s.pool.Exec(ctx,
-		`DELETE FROM ioc_fingerprints WHERE last_seen < $1`,
-		cutoff,
-	)
+	var rowsAffected int64
+	err := WithTenantContextOrPool(ctx, s.pool, "", true, func(q DBQuerier) error {
+		result, err := q.Exec(ctx,
+			`DELETE FROM ioc_fingerprints WHERE last_seen < $1`,
+			cutoff,
+		)
+		if err != nil {
+			return err
+		}
+		rowsAffected = result.RowsAffected()
+		return nil
+	})
 	if err != nil {
 		return 0, fmt.Errorf("prune iocs: %w", err)
 	}
-	return int(result.RowsAffected()), nil
+	return int(rowsAffected), nil
 }
 
 // Flush is a no-op for PostgresStore. WAL handles persistence.
