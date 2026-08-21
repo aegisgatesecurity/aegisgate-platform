@@ -27,6 +27,10 @@ aegisgate-platform-*
 /tools/build-lens-extension/build-lens-extension.exe
 /tools/test-extension/test-extension
 /tools/test-extension/test-extension.exe
+
+# Compiled CLI tool binaries (should not be committed)
+/cmd/licensegen/licensegen
+/cmd/test-email/test-email
 # Ignore stray README docs (old or competition versions)
 README-OLD.md
 README_COMPETITION.md
