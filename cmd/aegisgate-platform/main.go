@@ -46,6 +46,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliancelive"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/lensbackend"
@@ -65,6 +66,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tracing"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 )
@@ -2031,6 +2033,22 @@ func main() {
 		writeBytes(w, data)
 	}))
 
+	// Live infrastructure compliance scan (v4.2.0+)
+	// GET /api/v1/compliance/live — runs real-time checks against
+	// the running platform config (TLS, auth, audit, headers, etc.)
+	dashMux.HandleFunc("/api/v1/compliance/live", authMiddleware.RequirePermission(rbac.Permission{Resource: rbac.ResourceCompliance, Action: rbac.ActionRead}, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		scanner := compliancelive.NewScanner(cfg)
+		report := scanner.Scan(r.Context())
+		data, err := json.Marshal(report)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"marshal failed"}`)
+			return
+		}
+		writeBytes(w, data)
+	}))
+
 	// Compliance export endpoint — secure audit*
 	dashMux.HandleFunc("/api/v1/compliance", authMiddleware.RequirePermission(rbac.Permission{Resource: rbac.ResourceCompliance, Action: rbac.ActionRead}, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -2290,6 +2308,56 @@ func main() {
 			}
 		}
 		maintenanceState.Handler().ServeHTTP(w, r)
+	}))
+
+	// ============================================================
+	// Tenant Management API (v4.2.0+) — CRUD for multi-tenant
+	// ============================================================
+	// GET /api/v1/tenants — list (RequireAuth)
+	// POST /api/v1/tenants — create (user:manage)
+	// GET /api/v1/tenants/{id} — get (RequireAuth)
+	// PUT /api/v1/tenants/{id} — update (user:manage)
+	// DELETE /api/v1/tenants/{id} — delete (user:manage)
+	tenantMgr := tenant.NewManager()
+	dashMux.Handle("/api/v1/tenants", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			permissions := auth.GetPermissions(r.Context())
+			required := rbac.Permission{Resource: rbac.ResourceUser, Action: rbac.ActionManage}
+			hasManage := false
+			for _, p := range permissions {
+				if p == required || (p.Resource == required.Resource && p.Action == "*") || (p.Resource == "*" && p.Action == "*") {
+					hasManage = true
+					break
+				}
+			}
+			if !hasManage {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprintf(w, `{"error":"forbidden","message":"user:manage permission required"}`)
+				return
+			}
+		}
+		tenantMgr.Handler().ServeHTTP(w, r)
+	}))
+	dashMux.Handle("/api/v1/tenants/", authMiddleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			permissions := auth.GetPermissions(r.Context())
+			required := rbac.Permission{Resource: rbac.ResourceUser, Action: rbac.ActionManage}
+			hasManage := false
+			for _, p := range permissions {
+				if p == required || (p.Resource == required.Resource && p.Action == "*") || (p.Resource == "*" && p.Action == "*") {
+					hasManage = true
+					break
+				}
+			}
+			if !hasManage {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprintf(w, `{"error":"forbidden","message":"user:manage permission required"}`)
+				return
+			}
+		}
+		tenantMgr.Handler().ServeHTTP(w, r)
 	}))
 
 	// ============================================================
