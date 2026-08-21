@@ -683,15 +683,60 @@ func toFrameworkEvidence(scan *compliance.FrameworkScanResult, assessment *compl
 	return ev
 }
 
-// toAssessment is currently a no-op because pkg/compliance has TWO
-// competing FrameworkAssessment type declarations (a known tech-debt
-// item in the platform). Once that is resolved, this function can be
-// extended to copy per-control details into evidence.Assessment.
+// toAssessment converts a compliance.FrameworkAssessment into an
+// evidence.Assessment, preserving per-control results. Previously
+// this was a no-op that dropped all per-control evidence.
 //
-// For v0.1, the evidence package intentionally drops the per-control
-// Assessment field on the manifest - it is set to nil by the caller.
-// The framework-aggregate counts (Score, ControlsTotal,
-// ControlsEnforced) are still copied from FrameworkScanResult above.
-func toAssessment(_ *compliance.FrameworkAssessment) *Assessment {
-	return nil
+// The mapping is:
+//   - compliance.ControlCheckResult.ControlID   → ControlResult.ControlID
+//   - compliance.ControlCheckResult.ControlName → ControlResult.Description
+//   - compliance.ControlCheckResult.Status       → ControlResult.Passed (compliant = true)
+//   - compliance.ControlCheckResult.Evidence     → ControlResult.Evidence (joined)
+//   - compliance.ControlCheckResult.Message      → appended to Evidence
+func toAssessment(assessment *compliance.FrameworkAssessment) *Assessment {
+	if assessment == nil {
+		return nil
+	}
+
+	result := &Assessment{
+		Controls: make([]ControlResult, 0, len(assessment.Results)),
+	}
+
+	for _, r := range assessment.Results {
+		if r == nil {
+			continue
+		}
+
+		// Map status to passed boolean.
+		passed := r.Status == compliance.StatusCompliant
+
+		// Join evidence strings + message into a single evidence field.
+		var evidenceParts []string
+		if r.Message != "" {
+			evidenceParts = append(evidenceParts, r.Message)
+		}
+		evidenceParts = append(evidenceParts, r.Evidence...)
+		evidenceStr := ""
+		if len(evidenceParts) > 0 {
+			evidenceStr = evidenceParts[0]
+			for i := 1; i < len(evidenceParts); i++ {
+				evidenceStr += "; " + evidenceParts[i]
+			}
+		}
+
+		result.Controls = append(result.Controls, ControlResult{
+			ControlID:   r.ControlID,
+			Description: r.ControlName,
+			Passed:      passed,
+			Evidence:    evidenceStr,
+		})
+
+		if passed {
+			result.OverallPass++
+		} else {
+			result.OverallFail++
+		}
+	}
+
+	return result
 }
