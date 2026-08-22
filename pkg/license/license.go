@@ -422,7 +422,13 @@ func (m *Manager) validateInternal(licenseKey string) ValidationResult {
 	}
 
 	// Check expiration
-	expired := now.After(payload.ExpiresAt)
+	// A zero-value ExpiresAt means perpetual (never expires).
+	var expired bool
+	if payload.ExpiresAt.IsZero() {
+		expired = false
+	} else {
+		expired = now.After(payload.ExpiresAt)
+	}
 	inGracePeriod := false
 
 	if expired {

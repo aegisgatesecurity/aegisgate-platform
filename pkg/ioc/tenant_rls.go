@@ -33,6 +33,7 @@ package ioc
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -72,14 +73,18 @@ type DBQuerier interface {
 //	    return tx.Commit(ctx)
 //	})
 func SetTenantContext(ctx context.Context, tx pgx.Tx, tenantID string, isAdmin bool) error {
-	if _, err := tx.Exec(ctx, "SET LOCAL app.tenant_id = $1", tenantID); err != nil {
+	// PostgreSQL SET LOCAL does not support parameterized queries ($1).
+	// We must use string literals. Single quotes in tenantID are escaped
+	// by doubling them (standard SQL escaping).
+	escapedTenant := strings.ReplaceAll(tenantID, "'", "''")
+	if _, err := tx.Exec(ctx, fmt.Sprintf("SET LOCAL app.tenant_id = '%s'", escapedTenant)); err != nil {
 		return fmt.Errorf("set app.tenant_id: %w", err)
 	}
 	isAdminStr := "false"
 	if isAdmin {
 		isAdminStr = "true"
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.is_admin = $1", isAdminStr); err != nil {
+	if _, err := tx.Exec(ctx, fmt.Sprintf("SET LOCAL app.is_admin = '%s'", isAdminStr)); err != nil {
 		return fmt.Errorf("set app.is_admin: %w", err)
 	}
 	return nil
@@ -161,14 +166,15 @@ func WithTenantContextOrPool(ctx context.Context, pool *pgxpool.Pool, tenantID s
 // WithTenantContext (transaction-scoped) unless you have a specific
 // reason to use session-level.
 func SetTenantContextOnConn(ctx context.Context, conn *pgxpool.Conn, tenantID string, isAdmin bool) error {
-	if _, err := conn.Exec(ctx, "SET app.tenant_id = $1", tenantID); err != nil {
+	escapedTenant := strings.ReplaceAll(tenantID, "'", "''")
+	if _, err := conn.Exec(ctx, fmt.Sprintf("SET app.tenant_id = '%s'", escapedTenant)); err != nil {
 		return fmt.Errorf("set app.tenant_id on conn: %w", err)
 	}
 	isAdminStr := "false"
 	if isAdmin {
 		isAdminStr = "true"
 	}
-	if _, err := conn.Exec(ctx, "SET app.is_admin = $1", isAdminStr); err != nil {
+	if _, err := conn.Exec(ctx, fmt.Sprintf("SET app.is_admin = '%s'", isAdminStr)); err != nil {
 		return fmt.Errorf("set app.is_admin on conn: %w", err)
 	}
 	return nil

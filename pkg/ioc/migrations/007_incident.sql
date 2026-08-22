@@ -49,13 +49,13 @@ CREATE TABLE IF NOT EXISTS incidents (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_incidents_status ON incidents(status);
-CREATE INDEX idx_incidents_severity ON incidents(severity);
-CREATE INDEX idx_incidents_agent ON incidents(agent_id);
-CREATE INDEX idx_incidents_session ON incidents(session_id);
-CREATE INDEX idx_incidents_created ON incidents(created_at DESC);
-CREATE INDEX idx_incidents_tenant ON incidents(tenant_id);
-CREATE INDEX idx_incidents_source ON incidents(source);
+CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+CREATE INDEX IF NOT EXISTS idx_incidents_agent ON incidents(agent_id);
+CREATE INDEX IF NOT EXISTS idx_incidents_session ON incidents(session_id);
+CREATE INDEX IF NOT EXISTS idx_incidents_created ON incidents(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_incidents_tenant ON incidents(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_incidents_source ON incidents(source);
 
 -- Playbook runs table: tracks playbook execution per incident.
 CREATE TABLE IF NOT EXISTS playbook_runs (
@@ -73,9 +73,9 @@ CREATE TABLE IF NOT EXISTS playbook_runs (
     tenant_id TEXT DEFAULT ''
 );
 
-CREATE INDEX idx_playbook_runs_incident ON playbook_runs(incident_id);
-CREATE INDEX idx_playbook_runs_status ON playbook_runs(status);
-CREATE INDEX idx_playbook_runs_playbook ON playbook_runs(playbook_id);
+CREATE INDEX IF NOT EXISTS idx_playbook_runs_incident ON playbook_runs(incident_id);
+CREATE INDEX IF NOT EXISTS idx_playbook_runs_status ON playbook_runs(status);
+CREATE INDEX IF NOT EXISTS idx_playbook_runs_playbook ON playbook_runs(playbook_id);
 
 -- Detection rules table: automated detection rule definitions.
 CREATE TABLE IF NOT EXISTS detection_rules (
@@ -107,9 +107,9 @@ CREATE TABLE IF NOT EXISTS detection_rules (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_detection_rules_enabled ON detection_rules(enabled);
-CREATE INDEX idx_detection_rules_severity ON detection_rules(severity);
-CREATE INDEX idx_detection_rules_source ON detection_rules(source);
+CREATE INDEX IF NOT EXISTS idx_detection_rules_enabled ON detection_rules(enabled);
+CREATE INDEX IF NOT EXISTS idx_detection_rules_severity ON detection_rules(severity);
+CREATE INDEX IF NOT EXISTS idx_detection_rules_source ON detection_rules(source);
 
 -- Playbooks table: incident response playbook templates.
 CREATE TABLE IF NOT EXISTS playbooks (
@@ -129,5 +129,9 @@ CREATE TABLE IF NOT EXISTS playbooks (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_playbooks_severity ON playbooks(severity);
-CREATE INDEX idx_playbooks_source ON playbooks(source);
+CREATE INDEX IF NOT EXISTS idx_playbooks_severity ON playbooks(severity);
+CREATE INDEX IF NOT EXISTS idx_playbooks_source ON playbooks(source);
+-- Record this migration
+INSERT INTO ioc_schema_migrations (version, description, applied_at)
+VALUES (7, 'Incidents, playbooks, detection rules tables', NOW())
+ON CONFLICT (version) DO NOTHING;

@@ -1559,13 +1559,19 @@ func main() {
 	// Metrics endpoint (Prometheus) — restrict to localhost to prevent
 	// unauthenticated disclosure of internal system metrics, connection
 	// pool details, and goroutine counts.
+	//
+	// In test/synthetic environments, set AEGISGATE_METRICS_ALLOW_EXTERNAL=true
+	// to allow Prometheus in a Docker network to scrape /metrics.
+	metricsAllowExternal := os.Getenv("AEGISGATE_METRICS_ALLOW_EXTERNAL") == "true"
 	dashMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		// Allow only localhost connections to /metrics
-		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil || (host != "127.0.0.1" && host != "::1" && host != "localhost") {
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, `{"error":"metrics endpoint restricted to localhost"}`)
-			return
+		if !metricsAllowExternal {
+			// Allow only localhost connections to /metrics
+			host, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil || (host != "127.0.0.1" && host != "::1" && host != "localhost") {
+				w.WriteHeader(http.StatusForbidden)
+				fmt.Fprintf(w, `{"error":"metrics endpoint restricted to localhost"}`)
+				return
+			}
 		}
 		metrics.Handler().ServeHTTP(w, r)
 	})
