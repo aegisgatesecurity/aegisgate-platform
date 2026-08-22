@@ -1,6 +1,56 @@
-## [4.3.1] - 2026-08-21 - Compliance Pipelines, RLS Enforcement, SDK v4.3.1
+## [4.3.1] - 2026-08-22 - Production Hardening, Security Observability, Protocol Validation 🔒
 
-> **v4.3.1** completes the 8-step development plan: DSAR (GDPR Articles 15-20), A/B testing, legal hold PostgreSQL backing, RLS defense-in-depth wiring, FORCE RLS migration, integration tests, and Go SDK v4.3.1 with gRPC client connector.
+> **v4.3.1** completes Phase V4.3.1 with production-ready hardening: RLS enforcement validation, security event categorization (10 block reasons), MCP protocol validation (TCP JSON-RPC), A2A configuration, Ollama horizontal scaling, and 8-hour endurance testing (2.2M requests, 0 errors).
+
+### Security Event Categorization
+
+- **feat(metrics): security block reasons** — New `aegisgate_security_blocks_total` counter with `reason` label. 10 bounded cardinality reasons: `secrets`, `multiturn`, `injection`, `ml_threat`, `atlas`, `pii`, `malware`, `rate_limit`, `policy`, `unknown`.
+- **feat(metrics): block reason constants** — `pkg/metrics/labels.go` with `LabelReason` and 10 reason constants following Prometheus naming conventions.
+- **feat(proxy): metrics integration** — 6 block locations instrumented in `upstream/aegisgate/pkg/proxy/proxy.go`: cached scanner blocks (ReasonSecrets), cached ATLAS blocks (ReasonAtlas), live ATLAS blocks (ReasonAtlas), live scanner blocks (ReasonSecrets), ML neural threat blocks (ReasonMLThreat), multi-turn attack blocks (ReasonMultiTurn).
+- **feat(grafana): security dashboard panels** — 3 new panels in `aegisgate-security.json`: Panel 13 (Security Blocks by Reason - pie chart), Panel 14 (Block Rate by Reason 5m - bar chart), Panel 15 (Security Blocks Over Time - stacked area).
+
+### RLS Enforcement Validation
+
+- **test(ioc): RLS enforcement integration test** — `TestPostgresStore_RLS_Enforcement` verifies PostgreSQL RLS policies fire at database level (not just app-layer filtering). Tests: non-owner role (`aegisgate_app`) cannot bypass RLS, unscoped queries return 0 rows, tenant-scoped queries return only tenant's data, admin context sees all data across tenants.
+- **migration: FORCE RLS applied** — Migration 010 already applied `ALTER TABLE ... FORCE ROW LEVEL SECURITY` on 6 tenant-scoped tables, preventing table owner bypass.
+
+### MCP Protocol Validation
+
+- **feat(testlab): MCP TCP client** — Native TCP-based JSON-RPC 2.0 client (`testlab/mcp-client/main.go`, 406 lines). Discovers 17 tools from aegisguard MCP server. Validates AegisGate's custom MCP protocol (JSON-RPC over raw TCP, not HTTP).
+- **docs: MCP client documentation** — `testlab/mcp-client/README.md` with usage examples, protocol details, tool discovery, and invocation patterns.
+
+### A2A Configuration
+
+- **feat(a2a): testlab configuration** — `testlab/data/a2a_config.json` with 2 synthetic agents (Alpha, Beta), intent signing (ECDSA-SHA256), delegation (max depth 3), audit logging (30-day retention), testlab-specific settings (skip TLS, mock external agents).
+- **feat(docker): A2A volume mount** — `testlab/docker-compose.synth.yml` updated to mount A2A config and pass `--a2a-config` flag.
+
+### Ollama Horizontal Scaling
+
+- **feat(scaling): production architecture** — Nginx load balancer + scaled Ollama instances for horizontal LLM inference scaling. `testlab/nginx-ollama-lb.conf` with round-robin upstream configuration.
+- **docs: scaling guide** — `testlab/OLLAMA-SCALING-GUIDE.md` (298 lines) with architecture diagram, deployment procedures, expected performance (3 instances = 3x capacity), Kubernetes/GPU deployment guidance.
+- **feat(docker): scaling configs** — `testlab/docker-compose.synth-ollama-scale.yml` (production scaling), `testlab/docker-compose.ollama-test.yml` (parallel test stack).
+
+### Endurance Testing
+
+- **test(endurance): 8-hour validation** — k6 endurance test at 100 VUs for 8 hours. Results: 2.2M+ requests, 0 errors, stable memory (195MB), consistent throughput (4.6K req/min), zero panics/OOM/connection exhaustion.
+- **test(day-in-life): 30-minute traffic curve** — 5-phase traffic simulation (ramp-up → steady → spike → recovery → ramp-down) at 1000 VUs peak. Results: 8,254 requests, 7.43% block rate (expected security behavior), 67.56% error rate (Ollama saturation expected), platform stable with no crashes.
+
+### Infrastructure & Documentation
+
+- **docs: test reports** — 8 comprehensive test reports in `testlab/reports/` documenting RLS status, security categorization, MCP/Ollama testing, endurance results, and phase completion.
+- **ci: security workflow fix** — Resolved Go formatting issues in `pkg/metrics/metrics.go`, `pkg/ioc/postgres_integration_test.go`, `testlab/mcp-client/main.go` to pass `go vet` and `gofmt` checks.
+
+### Stats
+
+- 5 files modified (225 lines added)
+- 12 testlab files created (MCP client, scaling configs, documentation)
+- 8 test reports generated
+- 3 Grafana panels added
+- 10 block reason constants defined
+- 6 metrics integration points
+- 1 RLS enforcement test
+- CI workflows: 6/6 green
+- Endurance test: 2.2M requests, 0 errors
 
 ### DSAR — GDPR Data Subject Access Requests
 
