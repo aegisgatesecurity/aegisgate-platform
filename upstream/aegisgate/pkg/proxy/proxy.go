@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
+	"github.com/aegisgatesecurity/aegisgate/pkg/metrics"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 	"github.com/aegisgatesecurity/aegisgate/pkg/resilience"
@@ -412,6 +413,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						"path", req.URL.Path,
 						"patterns", strings.Join(violationNames, ", "),
 					)
+					metrics.RecordSecurityBlock(metrics.ReasonSecrets)
 					w.WriteHeader(http.StatusForbidden)
 					w.Write([]byte(fmt.Sprintf("Content blocked: %s", strings.Join(violationNames, ", "))))
 					return
@@ -423,6 +425,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						"path", req.URL.Path,
 						"techniques", strings.Join(techniqueIDs, ", "),
 					)
+					metrics.RecordSecurityBlock(metrics.ReasonAtlas)
 					w.WriteHeader(http.StatusForbidden)
 					w.Write([]byte(fmt.Sprintf("Request blocked: MITRE ATLAS violation detected (%s)", strings.Join(techniqueIDs, ", "))))
 					return
@@ -487,6 +490,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 								"path", req.URL.Path,
 								"techniques", strings.Join(techniqueIDs, ", "),
 							)
+							metrics.RecordSecurityBlock(metrics.ReasonAtlas)
 							w.WriteHeader(http.StatusForbidden)
 							w.Write([]byte(fmt.Sprintf("Request blocked: MITRE ATLAS violation detected (%s)", strings.Join(techniqueIDs, ", "))))
 							return
@@ -502,6 +506,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						"path", req.URL.Path,
 						"patterns", strings.Join(violationNames, ", "),
 					)
+					metrics.RecordSecurityBlock(metrics.ReasonSecrets)
 					w.WriteHeader(http.StatusForbidden)
 					w.Write([]byte(fmt.Sprintf("Content blocked: %s", strings.Join(violationNames, ", "))))
 					return
@@ -530,6 +535,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 							"variant", threatResult.Variant,
 							"model", threatResult.ModelVersion,
 						)
+						metrics.RecordSecurityBlock(metrics.ReasonMLThreat)
 						w.WriteHeader(http.StatusForbidden)
 						w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
 						return
@@ -582,6 +588,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						"escalation", mtResult.EscalationDetected,
 						"repetition", mtResult.RepetitionDetected,
 					)
+					metrics.RecordSecurityBlock(metrics.ReasonMultiTurn)
 					w.WriteHeader(http.StatusForbidden)
 					chainInfo := ""
 					if len(mtResult.ChainDetails) > 0 {

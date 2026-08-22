@@ -22,11 +22,14 @@ package ioc_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/testdb"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // testIOC returns a valid IOC suitable for insertion. Each call with a
@@ -702,4 +705,137 @@ func TestPostgresStore_RoundTrip(t *testing.T) {
 	if finalSize != 0 {
 		t.Errorf("Size after prune: got %d, want 0", finalSize)
 	}
+}
+
+// TestPostgresStore_RLS_Enforcement verifies that RLS policies actually fire
+// at the database level, not just application-layer filtering.
+// This test requires:
+//  1. PostgreSQL with migration 008 applied (RLS enabled on ioc_fingerprints)
+//  2. aegisgate_app role that is NOT the table owner (table owner bypasses RLS)
+func TestPostgresStore_RLS_Enforcement(t *testing.T) {
+	ctx := context.Background()
+	store, cleanup := setupStore(t)
+	defer cleanup()
+
+	// Get database URL from store (DSN method)
+	databaseURL := store.DSN()
+	if databaseURL == "" {
+		t.Skip("DATABASE_URL not available")
+	}
+
+	// Create aegisgate_app role in test database (testcontainers starts fresh)
+	// Use same password as testcontainers default for simplicity
+	_, err := store.Pool().Exec(ctx, `
+		DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aegisgate_app') THEN
+				CREATE ROLE aegisgate_app LOGIN PASSWORD 'aegisgate_test_password' NOSUPERUSER NOBYPASSRLS;
+			END IF;
+		END $$;
+		GRANT USAGE ON SCHEMA public TO aegisgate_app;
+		GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO aegisgate_app;
+	`)
+	if err != nil {
+		t.Fatalf("Create aegisgate_app role: %v", err)
+	}
+
+	// Insert IOCs for two tenants using app-layer filtering
+	tenantACtx := ioc.TenantContext{TenantID: "tenant-a", IsAdmin: false}
+	tenantBCtx := ioc.TenantContext{TenantID: "tenant-b", IsAdmin: false}
+
+	iocA := testIOC("rls-enforcement-a")
+	iocB := testIOC("rls-enforcement-b")
+
+	_, err = store.Observe(ctx, iocA, tenantACtx)
+	if err != nil {
+		t.Fatalf("Observe tenant-a: %v", err)
+	}
+
+	_, err = store.Observe(ctx, iocB, tenantBCtx)
+	if err != nil {
+		t.Fatalf("Observe tenant-b: %v", err)
+	}
+
+	// Verify app-layer filtering works (tenant A sees only their IOC)
+	resultsA, err := store.Query(ctx, ioc.IOCQuery{}, tenantACtx)
+	if err != nil {
+		t.Fatalf("Query as tenant-a: %v", err)
+	}
+	if len(resultsA) != 1 {
+		t.Errorf("Tenant A should see 1 IOC (app-layer), got %d", len(resultsA))
+	}
+
+	// Now test RLS enforcement by connecting as aegisgate_app role
+	// (non-owner, subject to RLS policies)
+	appRoleURL := strings.Replace(databaseURL,
+		"aegisgate:aegisgate_test_password",
+		"aegisgate_app:aegisgate_test_password",
+		1)
+
+	appPool, err := pgxpool.New(ctx, appRoleURL)
+	if err != nil {
+		t.Fatalf("Create app role pool: %v", err)
+	}
+	defer appPool.Close()
+
+	// Test 1: Query without tenant context (should see NOTHING due to RLS)
+	// RLS policy: USING (tenant_id::text = current_setting('app.tenant_id'::text) OR current_setting('app.is_admin'::text) = 'true')
+	// With empty tenant_id and is_admin=false, policy denies access
+	var countWithoutContext int
+	err = appPool.QueryRow(ctx, "SELECT COUNT(*) FROM ioc_fingerprints").Scan(&countWithoutContext)
+	if err != nil {
+		t.Fatalf("Query without context: %v", err)
+	}
+	if countWithoutContext != 0 {
+		t.Errorf("RLS should block unscoped queries, got %d rows", countWithoutContext)
+	}
+
+	// Test 2: Query WITH tenant context (should see only tenant's data)
+	// This uses WithTenantContext to set session variables
+	var countWithContext int
+	err = ioc.WithTenantContext(ctx, appPool, "tenant-a", false, func(tx pgx.Tx) error {
+		return tx.QueryRow(ctx, "SELECT COUNT(*) FROM ioc_fingerprints").Scan(&countWithContext)
+	})
+	if err != nil {
+		t.Fatalf("Query with tenant context: %v", err)
+	}
+	if countWithContext != 1 {
+		t.Errorf("RLS should allow tenant-a to see 1 IOC, got %d", countWithContext)
+	}
+
+	// Test 3: Verify tenant-b sees different data
+	var countTenantB int
+	err = ioc.WithTenantContext(ctx, appPool, "tenant-b", false, func(tx pgx.Tx) error {
+		return tx.QueryRow(ctx, "SELECT COUNT(*) FROM ioc_fingerprints").Scan(&countTenantB)
+	})
+	if err != nil {
+		t.Fatalf("Query as tenant-b: %v", err)
+	}
+	if countTenantB != 1 {
+		t.Errorf("RLS should allow tenant-b to see 1 IOC, got %d", countTenantB)
+	}
+
+	// Test 4: Admin context sees ALL IOCs
+	var countAdmin int
+	err = ioc.WithTenantContext(ctx, appPool, "", true, func(tx pgx.Tx) error {
+		return tx.QueryRow(ctx, "SELECT COUNT(*) FROM ioc_fingerprints").Scan(&countAdmin)
+	})
+	if err != nil {
+		t.Fatalf("Query as admin: %v", err)
+	}
+	if countAdmin != 2 {
+		t.Errorf("Admin should see all 2 IOCs, got %d", countAdmin)
+	}
+
+	t.Logf("✅ RLS enforcement verified: policies fire correctly for aegisgate_app role")
+}
+
+// TestPostgresStore_RLS_TableOwnerBypass verifies that table owners bypass RLS
+// (expected PostgreSQL behavior). This is why we need FORCE ROW LEVEL SECURITY
+// after app compatibility testing.
+func TestPostgresStore_RLS_TableOwnerBypass(t *testing.T) {
+	// This test is documented but skipped - it requires a more complex setup
+	// to verify table owner bypass vs. forced RLS. The TestPostgresStore_RLS_Enforcement
+	// test already proves RLS policies fire correctly for non-owner roles.
+	t.Skip("Table owner bypass test requires separate database setup")
 }

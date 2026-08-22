@@ -52,6 +52,10 @@ const (
 	// Cardinality: Low (~6 values: vuln, secret, dependency, sbom, config, runtime)
 	LabelScanType = "scan_type"
 
+	// LabelReason represents the security block reason
+	// Cardinality: Low (~9 values: injection, pii, secrets, malware, multiturn, ml_threat, atlas, rate_limit, policy)
+	LabelReason = "reason"
+
 	// LabelDirection represents traffic direction
 	// Cardinality: Low (inbound, outbound)
 	LabelDirection = "direction"
@@ -153,6 +157,18 @@ const (
 	ScanSBOM       = "sbom"
 	ScanConfig     = "config"
 	ScanRuntime    = "runtime"
+
+	// Block reasons
+	ReasonInjection = "injection"
+	ReasonPII       = "pii"
+	ReasonSecrets   = "secrets"
+	ReasonMalware   = "malware"
+	ReasonMultiTurn = "multiturn"
+	ReasonMLThreat  = "ml_threat"
+	ReasonAtlas     = "atlas"
+	ReasonRateLimit = "rate_limit"
+	ReasonPolicy    = "policy"
+	ReasonUnknown   = "unknown"
 
 	// Cache outcomes
 	CacheHit     = "hit"

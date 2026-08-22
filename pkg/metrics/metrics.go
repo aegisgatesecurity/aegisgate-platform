@@ -30,6 +30,7 @@ const (
 	MetricActiveConnections   = "aegisgate_active_connections"
 	MetricRateLimitHits       = "aegisgate_rate_limit_hits_total"
 	MetricSecurityScansTotal  = "aegisgate_security_scans_total"
+	MetricSecurityBlocksTotal = "aegisgate_security_blocks_total"
 	MetricMCPConnections      = "aegisgate_mcp_connections"
 	MetricMCPRequestsTotal    = "aegisgate_mcp_requests_total"
 	MetricTierRequests        = "aegisgate_tier_requests_total"
@@ -83,6 +84,18 @@ var (
 			Help: "Total security scans performed, partitioned by scan type and result.",
 		},
 		[]string{LabelScanType, LabelResult},
+	)
+
+	// Security block metrics — tracks blocked requests by reason.
+	// Block reasons use bounded enumeration (BlockReason* constants) to prevent
+	// cardinality explosion. This enables security teams to understand WHY requests
+	// are blocked (injection vs PII vs secrets vs multi-turn attacks, etc.).
+	securityBlocksTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: MetricSecurityBlocksTotal,
+			Help: "Total security blocks, partitioned by block reason (injection, pii, secrets, multiturn, ml_threat, atlas, rate_limit, policy).",
+		},
+		[]string{LabelReason},
 	)
 
 	// MCP connection gauge — current number of active MCP sessions.
@@ -139,6 +152,7 @@ func init() {
 		activeConnections,
 		rateLimitHits,
 		securityScansTotal,
+		securityBlocksTotal,
 		mcpConnections,
 		mcpRequestsTotal,
 		tierRequests,
@@ -195,6 +209,18 @@ func RecordRateLimitHit(service, client string) {
 // scanType should use one of the Scan* constants (ScanVuln, ScanSecret, etc.).
 func RecordSecurityScan(scanType, result string) {
 	securityScansTotal.WithLabelValues(scanType, result).Inc()
+}
+
+// RecordSecurityBlock records a security block with reason categorization.
+// reason should use one of the BlockReason* constants (BlockReasonInjection,
+// BlockReasonPII, BlockReasonSecrets, etc.) to ensure bounded cardinality.
+//
+// Example usage:
+//
+//	metrics.RecordSecurityBlock(metrics.BlockReasonInjection)
+//	metrics.RecordSecurityBlock(metrics.BlockReasonMultiTurn)
+func RecordSecurityBlock(reason string) {
+	securityBlocksTotal.WithLabelValues(reason).Inc()
 }
 
 // SetMCPConnections sets the MCP connection count gauge to an absolute value.

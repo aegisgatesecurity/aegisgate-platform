@@ -22,6 +22,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // MetricType represents the type of metric being recorded.
@@ -973,4 +975,42 @@ func (s Stats) String() string {
 		s.SeverityCounts.Low,
 		s.SeverityCounts.Info,
 	)
+}
+
+// =========================================================================
+// Security Block Metrics - Prometheus Integration
+// Added: 2026-08-22 for security event categorization
+// =========================================================================
+
+// Block reason constants for security categorization
+const (
+	ReasonInjection = "injection"
+	ReasonPII       = "pii"
+	ReasonSecrets   = "secrets"
+	ReasonMalware   = "malware"
+	ReasonMultiTurn = "multiturn"
+	ReasonMLThreat  = "ml_threat"
+	ReasonAtlas     = "atlas"
+	ReasonRateLimit = "rate_limit"
+	ReasonPolicy    = "policy"
+	ReasonUnknown   = "unknown"
+)
+
+// securityBlocksTotal tracks security blocks by reason
+var securityBlocksTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "aegisgate_security_blocks_total",
+		Help: "Total security blocks, partitioned by block reason",
+	},
+	[]string{"reason"},
+)
+
+func init() {
+	// Register security blocks metric with Prometheus
+	prometheus.MustRegister(securityBlocksTotal)
+}
+
+// RecordSecurityBlock records a security block with reason categorization
+func RecordSecurityBlock(reason string) {
+	securityBlocksTotal.WithLabelValues(reason).Inc()
 }
