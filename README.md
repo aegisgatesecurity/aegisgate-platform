@@ -4,11 +4,11 @@
 
 **Secure every AI interaction. Six pillars. One gateway. Zero external dependencies.**
 
-[![Version](https://img.shields.io/badge/Version-v4.3.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.3.0)
+[![Version](https://img.shields.io/badge/Version-v4.3.1-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.3.1)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-8000+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-83.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Coverage](https://img.shields.io/badge/Coverage-81.5%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-120_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![SIEM](https://img.shields.io/badge/SIEM-Pro+_only-9333ea?logo=splunk)](#tier-gated-features)
 [![ML Detection](https://img.shields.io/badge/ML_Detection-Pro+_only-22c55e?logo=tensorflow)](#tier-gated-features)
@@ -375,7 +375,7 @@ pkg/
 ## Testing
 
 ```bash
-# Unit tests (83.1% coverage, 8000+ tests across 441 files)
+# Unit tests (81.5% coverage, 8200+ tests across 441 files)
 go test ./...
 
 # Integration tests (requires Docker for PostgreSQL testcontainers)

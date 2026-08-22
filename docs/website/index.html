@@ -173,7 +173,7 @@
 </head>
 <body>
     <div class="test-mode-banner">
-        🟢 <strong>v3.6.2 — PostgreSQL Persistence, 24 Compliance Frameworks, 11,200+ Tests</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v3.6.2</code>.
+        🟢 <strong>v4.3.1 — DSAR, Legal Hold, A/B Testing, FORCE RLS, Go SDK v4.3.1, 8200+ Tests</strong> &nbsp;|&nbsp; Production-ready. Docker image available at <code>ghcr.io/aegisgatesecurity/aegisgate-platform:v4.3.1</code>.
     </div>
     <header>
         <div class="container">
@@ -199,7 +199,7 @@
                     <p>Average Latency</p>
                 </div>
                 <div class="metric">
-                    <h3>11,200+</h3>
+                    <h3>8,200+</h3>
                     <p>Tests Passing</p>
                 </div>
                 <div class="metric">
@@ -249,7 +249,7 @@
 
     <section class="features" style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
         <div class="container">
-            <h2>🆕 v3.6.2: PostgreSQL Persistence, 24 Frameworks, SIEM Integration</h2>
+            <h2>🆕 v4.3.1: DSAR, Legal Hold, A/B Testing, FORCE RLS, SDK v4.3.1</h2>
             <div style="max-width: 800px; margin: 0 auto; text-align: center; margin-bottom: 40px;">
                 <p style="font-size: 1.2rem; color: #4a5568;">
                     AegisGate is the first AI security gateway with <strong>full EU AI Act (Regulation 2024/1689) coverage</strong>.
@@ -260,7 +260,7 @@
                     <a href="https://aegisgatesecurity.io/pricing" style="color: #667eea;">💳 See pricing</a> &nbsp;|&nbsp;
                     <a href="https://github.com/aegisgatesecurity/aegisgate-platform" style="color: #667eea;">📦 View on GitHub</a>
                 </p>
-                <p style="font-size: 1rem; color: #718096; margin-top: 10px;">v3.6.2 adds PostgreSQL persistence for audit/compliance/incident data, SIEM integration (CEF/Syslog/JSON), 12-locale i18n, CJIS framework, and 0 gosec findings.</p>
+                <p style="font-size: 1rem; color: #718096; margin-top: 10px;">v4.3.1 adds GDPR DSAR (Articles 15-20), legal hold with PostgreSQL backing, ML A/B testing with FNV variant assignment, FORCE ROW LEVEL SECURITY on all tenant-scoped tables, Go SDK v4.3.1 with gRPC client connector, and 13 integration tests. 101 packages, 0 failures, all CI green.</p>
             </div>
             <div class="feature-grid" style="margin-top: 20px;">
                 <div class="feature-card">
@@ -294,13 +294,13 @@
   -p 8081:8081 \
   -p 8443:8443 \
   -v $(pwd)/data:/data \
-  aegisgatesecurity/aegisgate-platform:v3.6.2 \
+  aegisgatesecurity/aegisgate-platform:v4.3.1 \
   --embedded-mcp --tier=community</code>
             </div>
 
             <h3>One-Line Install</h3>
             <div class="code-block">
-                <code>docker run -d -p 8443:8443 ghcr.io/aegisgatesecurity/aegisgate-platform:v3.6.2</code>
+                <code>docker run -d -p 8443:8443 ghcr.io/aegisgatesecurity/aegisgate-platform:v4.3.1</code>
             </div>
 
             <h3>Verify</h3>

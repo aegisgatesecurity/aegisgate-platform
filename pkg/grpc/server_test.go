@@ -239,15 +239,17 @@ func TestNewGRPCServer_NilLogger(t *testing.T) {
 }
 
 func TestServiceCount(t *testing.T) {
-	if ServiceCount() != 7 {
-		t.Errorf("ServiceCount() = %d, want 7", ServiceCount())
+	// 7 original + 3 v4.3.1 (DSAR, LegalHold, ABTest) = 10
+	if ServiceCount() != 10 {
+		t.Errorf("ServiceCount() = %d, want 10", ServiceCount())
 	}
 }
 
 func TestMethodCount(t *testing.T) {
 	// 10 (auth) + 8 (proxy) + 5 (compliance) + 5 (siem) + 9 (webhook) + 9 (core) + 4 (tls) = 50
-	if MethodCount() != 50 {
-		t.Errorf("MethodCount() = %d, want 50", MethodCount())
+	// + 2 (DSAR) + 5 (LegalHold) + 7 (ABTest) = 64
+	if MethodCount() != 64 {
+		t.Errorf("MethodCount() = %d, want 64", MethodCount())
 	}
 }
 

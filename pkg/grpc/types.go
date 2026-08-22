@@ -1164,7 +1164,7 @@ var (
 // ServiceCount returns the total number of gRPC service descriptors registered.
 // Used in tests to verify all services are registered.
 func ServiceCount() int {
-	return 7
+	return 10
 }
 
 // MethodCount returns the total number of gRPC method descriptors across all services.
@@ -1176,6 +1176,8 @@ func MethodCount() int {
 		ComplianceService_ServiceDesc, SIEMService_ServiceDesc,
 		WebhookService_ServiceDesc, CoreService_ServiceDesc,
 		TLSSvc_ServiceDesc,
+		DSARService_ServiceDesc, LegalHoldService_ServiceDesc,
+		ABTestService_ServiceDesc,
 	} {
 		total += len(desc.Methods)
 	}

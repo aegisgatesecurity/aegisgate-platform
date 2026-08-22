@@ -9,7 +9,7 @@
 # All defaults are embedded. Override with --config, --tier, or env vars.
 # Data persistence: mount /data volume for audit logs, certificates, etc.
 #
-# v4.3.0: Community edition build (CGO_ENABLED=0, no ONNX Runtime).
+# v4.3.1: Community edition build (CGO_ENABLED=0, no ONNX Runtime).
 # ML threat detection (ONNX inference) is an enterprise-only feature.
 # The community edition uses regex-only scanning via the !cgo build path.
 # Enterprise builds use a separate Dockerfile.enterprise with CGO_ENABLED=1

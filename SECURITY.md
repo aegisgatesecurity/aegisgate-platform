@@ -40,9 +40,9 @@ AegisGate Platform implements comprehensive security scanning:
 | ✅ | **MCP Registration Logging** (v1.3.6) |
 | ✅ | **Tool Call Limits** (v1.3.6) |
 | ✅ | **Risk-Based Authorization** (v1.3.6) |
-| ✅ | **87.4% Test Coverage** (v4.3.0) |
+| ✅ | **81.5% Test Coverage** (v4.3.1) |
 
-## Threat Model (v4.3.0+)
+## Threat Model (v4.3.1+)
 
 Comprehensive threat analysis for all six security pillars:
 
@@ -67,7 +67,11 @@ Comprehensive threat analysis for all six security pillars:
 > v4.3.0 adds SAML audience restriction enforcement, OIDC token
 > introspection (RFC 7662), scoped API tokens with tenant context,
 > PostgreSQL Row-Level Security, OpenTelemetry tracing, and live
-> infrastructure compliance scanning.
+> infrastructure compliance scanning. v4.3.1 adds DSAR (GDPR Articles
+> 15-20), legal hold with PostgreSQL backing, A/B testing for ML model
+> evaluation, FORCE ROW LEVEL SECURITY on all 6 tenant-scoped tables,
+> Go SDK v4.3.1 with gRPC client connector, and full RLS wiring of all
+> 29 store methods across IOC, RBAC, and License stores.
 
 ### CVSS Score Distribution
 
@@ -112,7 +116,7 @@ All critical OpenAI/X security concerns addressed:
 | Hard-Enforced Memory Limits | ✅ | Sessions terminated when exceeding quota |
 | Tool Call Limits | ✅ | 20 tools/session enforced with proper error feedback |
 | Risk-Based Authorization | ✅ | All tool calls checked against authorization matrix |
-| Test Coverage | ✅ | 87.4% overall (93.9% RBAC, 96.2% ToolAuth, 88.3% MCP, 100% security headers) |
+| Test Coverage | ✅ | 81.5% overall (93.9% RBAC, 96.2% ToolAuth, 88.3% MCP, 100% security headers) |
 
 ### Code Security
 

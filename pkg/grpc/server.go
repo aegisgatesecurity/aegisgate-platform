@@ -49,6 +49,11 @@ type Dependencies struct {
 	Webhook    WebhookBackend
 	Metrics    MetricsBackend
 	TLS        TLSBackend
+
+	// v4.3.1 pipelines
+	DSAR      DSARBackend
+	LegalHold LegalHoldBackend
+	ABTest    ABTestBackend
 }
 
 // NewGRPCServer creates a fully configured gRPC server with all seven
@@ -95,6 +100,9 @@ func NewGRPCServer(deps Dependencies, logger *slog.Logger) (*grpc.Server, error)
 	healthServer.SetServingStatus(WebhookService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus(CoreService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
 	healthServer.SetServingStatus(TLSSvc_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(DSARService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(LegalHoldService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(ABTestService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// Enable server reflection for grpcurl and other tools.
 	reflection.Register(server)
@@ -160,6 +168,27 @@ func registerAllServices(server *grpc.Server, deps Dependencies, logger *slog.Lo
 		rh.RegisterTLSSvc(NewTLSSvc(deps.TLS, logger))
 	} else {
 		rh.RegisterTLSSvc(&UnimplementedTLSSvcServer{})
+	}
+
+	// v4.3.1: DSAR service
+	if deps.DSAR != nil {
+		rh.RegisterDSARService(NewDSARService(deps.DSAR, logger))
+	} else {
+		rh.RegisterDSARService(&UnimplementedDSARServiceServer{})
+	}
+
+	// v4.3.1: Legal Hold service
+	if deps.LegalHold != nil {
+		rh.RegisterLegalHoldService(NewLegalHoldService(deps.LegalHold, logger))
+	} else {
+		rh.RegisterLegalHoldService(&UnimplementedLegalHoldServiceServer{})
+	}
+
+	// v4.3.1: A/B Testing service
+	if deps.ABTest != nil {
+		rh.RegisterABTestService(NewABTestService(deps.ABTest, logger))
+	} else {
+		rh.RegisterABTestService(&UnimplementedABTestServiceServer{})
 	}
 }
 

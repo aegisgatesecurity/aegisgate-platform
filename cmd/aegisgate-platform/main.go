@@ -108,7 +108,7 @@ func (a *tsaSignerAdapter) Endpoints() []string {
 }
 
 var (
-	version    = "4.3.0"
+	version    = "4.3.1"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -971,6 +971,11 @@ func main() {
 
 	proxyServer := proxy.New(proxyOpts)
 
+	// A/B Testing service — declared early so the proxy middleware can
+	// reference it. The HTTP handlers are wired later after the dashboard
+	// mux is created.
+	var abtestSvc *abtest.Service
+
 	// Create mux for AegisGate proxy + management endpoints
 	proxyMux := http.NewServeMux()
 
@@ -1223,6 +1228,8 @@ func main() {
 	// the global ring buffer for compliance evidence packages.
 	var innerHandler http.Handler = proxyRecorderMiddleware(
 		security.APIHeadersMiddleware(metrics.WrapHandler("proxy", proxyMux)))
+	// Wrap with A/B testing middleware (no-op when no active test)
+	innerHandler = abtestMiddleware(innerHandler, abtestSvc)
 	// Wrap with maintenance middleware: returns 503 when maintenance is active
 	innerHandler = maintenanceState.Middleware(innerHandler)
 	// Wrap with OpenTelemetry tracing middleware (no-op when tracing disabled)
@@ -1803,7 +1810,7 @@ func main() {
 	log.Printf("[DSAR] Data Subject Access Request API enabled at /api/v1/dsar/{export,erase}")
 
 	// A/B Testing service — ML model comparison.
-	abtestSvc := abtest.NewService()
+	abtestSvc = abtest.NewService()
 	wireABTestHandlers(dashMux, authMiddleware, abtestSvc)
 	log.Printf("[ABTEST] A/B Testing API enabled at /api/v1/abtest/tests")
 	// Professional+ (the digest is a

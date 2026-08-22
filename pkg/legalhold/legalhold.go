@@ -31,6 +31,7 @@ type Hold struct {
 	IssuedBy   string    `json:"issued_by"`   // admin who placed the hold
 	CreatedAt  time.Time `json:"created_at"`
 	ReleasedAt time.Time `json:"released_at,omitempty"` // zero = active
+	TenantID   string    `json:"tenant_id,omitempty"`   // tenant scope
 }
 
 // IsActive returns true if the hold has not been released.
