@@ -1010,7 +1010,7 @@ func init() {
 	prometheus.MustRegister(securityBlocksTotal)
 }
 
-// RecordSecurityBlock records a security block with reason categorization
+// RecordSecurityBlock records a security block with the specified reason
 func RecordSecurityBlock(reason string) {
 	securityBlocksTotal.WithLabelValues(reason).Inc()
 }
