@@ -87,16 +87,10 @@ var (
 	)
 
 	// Security block metrics — tracks blocked requests by reason.
-	// Block reasons use bounded enumeration (BlockReason* constants) to prevent
-	// cardinality explosion. This enables security teams to understand WHY requests
-	// are blocked (injection vs PII vs secrets vs multi-turn attacks, etc.).
-	securityBlocksTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: MetricSecurityBlocksTotal,
-			Help: "Total security blocks, partitioned by block reason (injection, pii, secrets, multiturn, ml_threat, atlas, rate_limit, policy).",
-		},
-		[]string{LabelReason},
-	)
+	// securityBlocksTotal is registered in upstream/aegisgate/pkg/metrics/metrics.go
+	// because the proxy (which calls RecordSecurityBlock) imports that package.
+	// This variable is kept for reference but not used.
+	// securityBlocksTotal = prometheus.NewCounterVec(...)
 
 	// MCP connection gauge — current number of active MCP sessions.
 	mcpConnections = prometheus.NewGauge(
@@ -152,7 +146,7 @@ func init() {
 		activeConnections,
 		rateLimitHits,
 		securityScansTotal,
-		securityBlocksTotal,
+		// securityBlocksTotal registered in upstream package (used by proxy)
 		mcpConnections,
 		mcpRequestsTotal,
 		tierRequests,
@@ -211,16 +205,12 @@ func RecordSecurityScan(scanType, result string) {
 	securityScansTotal.WithLabelValues(scanType, result).Inc()
 }
 
-// RecordSecurityBlock records a security block with reason categorization.
-// reason should use one of the BlockReason* constants (BlockReasonInjection,
-// BlockReasonPII, BlockReasonSecrets, etc.) to ensure bounded cardinality.
-//
-// Example usage:
-//
-//	metrics.RecordSecurityBlock(metrics.BlockReasonInjection)
-//	metrics.RecordSecurityBlock(metrics.BlockReasonMultiTurn)
+// RecordSecurityBlock is a no-op stub.
+// The actual implementation is in upstream/aegisgate/pkg/metrics/metrics.go
+// because the proxy (which calls this function) imports that package.
+// This stub exists for API compatibility.
 func RecordSecurityBlock(reason string) {
-	securityBlocksTotal.WithLabelValues(reason).Inc()
+	// No-op: upstream package handles actual metrics recording
 }
 
 // SetMCPConnections sets the MCP connection count gauge to an absolute value.
