@@ -2979,6 +2979,16 @@ func main() {
 		if ssoManager != nil {
 			grpcDeps.Auth = newSSOAuthBackend(ssoManager, slog.Default().With("component", "grpc-auth"))
 		}
+		// v4.3.1: Wire DSAR, LegalHold, and ABTest backends for gRPC
+		if dsarSvc != nil {
+			grpcDeps.DSAR = newDSARBackend(dsarSvc)
+		}
+		if legalHoldSvc != nil {
+			grpcDeps.LegalHold = newLegalHoldBackend(legalHoldSvc)
+		}
+		if abtestSvc != nil {
+			grpcDeps.ABTest = newABTestBackend(abtestSvc)
+		}
 		// When ssoManager is nil, Auth is nil — the gRPC server
 		// will use UnimplementedAuthServiceServer and the auth
 		// interceptor will fail-closed (deny all except exempt methods).
