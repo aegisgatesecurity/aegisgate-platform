@@ -31,7 +31,7 @@ spec:
                   default: 1
                 image:
                   type: string
-                  default: "ghcr.io/aegisgatesecurity/aegisgate-platform:v4.3.2"
+                  default: "ghcr.io/aegisgatesecurity/aegisgate-platform:v4.3.3"
                 tier:
                   type: string
                   enum: ["community", "professional", "enterprise"]

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Platform Go SDK — v4.3.2
+// AegisGate Platform Go SDK — v4.3.3
 // =========================================================================
 //
-// Package aegisgate provides a Go client SDK for the AegisGate v4.3.2
+// Package aegisgate provides a Go client SDK for the AegisGate v4.3.3
 // platform API. It offers typed access to all platform services including
 // authentication, compliance, trust scoring, scanning, guardrails, analytics,
 // IOC, SIEM, ML metrics, audit, policy, cluster, bridge, attestation, AI-BOM,

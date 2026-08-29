@@ -48,7 +48,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: aegisgate-platform
-          image: ghcr.io/aegisgatesecurity/aegisgate-platform:v4.3.2
+          image: ghcr.io/aegisgatesecurity/aegisgate-platform:v4.3.3
           imagePullPolicy: IfNotPresent
           # imagePullSecrets:
           #   - name: ghcr-pull-secret

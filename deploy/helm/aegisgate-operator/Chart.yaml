@@ -3,7 +3,7 @@ name: aegisgate-operator
 description: AegisGate Security Platform — Kubernetes Operator for automated deployment and lifecycle management
 type: application
 version: 0.1.0
-appVersion: "v4.3.2"
+appVersion: "v4.3.3"
 home: https://github.com/aegisgatesecurity/aegisgate-platform
 keywords:
   - security

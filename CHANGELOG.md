@@ -1,3 +1,16 @@
+## [4.3.3] - 2026-08-29 - SSRF Remediation (HIGH-2) 🔒
+
+> **v4.3.3** remediates the final HIGH finding from the adversarial security audit: SSRF via MCP `http_request` tool. The `validateURL` function now blocks private IPs, loopback, link-local addresses, cloud metadata endpoints, and non-http(s) schemes. A custom HTTP transport dialer provides SSRF-safe DNS resolution to prevent DNS rebinding attacks. 60+ comprehensive test cases cover all attack vectors.
+
+### Security Fixes
+- **HIGH-2**: SSRF via MCP `http_request` — replaced simplified string-based URL parser with `net/url.Parse`, added private IP blocking (10.x, 172.16-31.x, 192.168.x, 127.x, ::1), link-local blocking (169.254.x, fe80::/10), cloud metadata hostname blocking (metadata.google.internal, 169.254.169.254, metadata.aws.internal, metadata.azure.com), non-http(s) scheme blocking, and SSRF-safe custom dialer for DNS rebinding prevention.
+
+### Adversarial Audit Status (All Findings Resolved)
+- ✅ CRITICAL-1: SAML signature validation defaults to TRUE (fixed in v4.3.2)
+- ✅ HIGH-1: A2A replay protection with nonce + timestamp (fixed in v4.3.2)
+- ✅ HIGH-2: SSRF via MCP http_request (fixed in v4.3.3)
+- ✅ HIGH-3: All 7 stores wired with RLS via WithTenantContextOrPool (fixed in v4.3.2)
+
 ## [4.3.2] - 2026-08-29 - Security Audit Remediation 🔒
 
 > **v4.3.2** resolves all 28 findings from the comprehensive 5-phase security audit (reconnaissance, automated scanning, manual white-box review, remediation, verification). Includes SAML signature validation enforcement, SSRF mitigation, RLS enforcement gaps, replay protection, and hardening across auth, RBAC, and infrastructure.
