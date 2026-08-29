@@ -3,7 +3,7 @@
 // AegisGate Platform Go SDK — Request & Response Types (v3.6.0)
 // =========================================================================
 //
-// types.go defines all request and response types for the AegisGate v4.3.1
+// types.go defines all request and response types for the AegisGate v4.3.2
 // platform API. Types are organised by service domain.
 // =========================================================================
 

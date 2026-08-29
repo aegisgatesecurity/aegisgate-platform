@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // =========================================================================
-// AegisGate Platform Go SDK — gRPC Client (v4.3.1)
+// AegisGate Platform Go SDK — gRPC Client (v4.3.2)
 // =========================================================================
 //
 // grpc_client.go provides a gRPC client connector for the AegisGate

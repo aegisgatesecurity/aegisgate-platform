@@ -4,7 +4,7 @@
 // =========================================================================
 //
 // services.go defines every service struct and its methods that map 1:1 to
-// the AegisGate v4.3.1 platform API endpoints. All methods accept a
+// the AegisGate v4.3.2 platform API endpoints. All methods accept a
 // context.Context as their first parameter for cancellation and deadlines.
 // =========================================================================
 

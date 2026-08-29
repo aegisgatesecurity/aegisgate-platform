@@ -16,7 +16,7 @@
 # -- Image configuration
 image:
   repository: ghcr.io/aegisgatesecurity/aegisgate-platform
-  tag: "v4.3.1"
+  tag: "v4.3.2"
   pullPolicy: IfNotPresent
   # pullSecrets: []
 

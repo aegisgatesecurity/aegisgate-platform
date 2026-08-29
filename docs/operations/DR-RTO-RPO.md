@@ -1,6 +1,6 @@
 # Disaster Recovery, RTO, and RPO
 
-**Version:** 4.3.1  
+**Version:** 4.3.2  
 **Last Tested:** 2026-08-23  
 **Status:** ✅ VALIDATED
 
