@@ -104,7 +104,7 @@ func (p *OIDCProvider) discover() error {
 		return NewSSOError(ErrMissingDiscovery, fmt.Sprintf("discovery returned status %d", resp.StatusCode))
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // 10MB limit
 	if err != nil {
 		return NewSSOError(ErrMissingDiscovery, "failed to read discovery document").WithCause(err)
 	}
@@ -406,7 +406,7 @@ func (p *OIDCProvider) getUserInfo(accessToken string) (map[string]interface{}, 
 		return nil, NewSSOError(ErrInvalidToken, fmt.Sprintf("userinfo returned status %d", resp.StatusCode))
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // 10MB limit
 	if err != nil {
 		return nil, NewSSOError(ErrInvalidRequest, "failed to read userinfo response").WithCause(err)
 	}

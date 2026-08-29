@@ -59,12 +59,20 @@ func (r *readSeekCloser) Close() error { return nil }
 // signedRequestWithCert combines TLS cert auth + valid HMAC + capability.
 // Constructs request from scratch so body+TLS are set in one place (avoids
 // order-of-operations bugs from helper chaining).
+// SECURITY: Includes A2A-Timestamp and A2A-Nonce headers for replay protection.
+// The timestamp and nonce are included in the HMAC signature.
 func signedRequestWithCert(secret []byte, payload []byte, capName string, cn string) *http.Request {
 	mac := hmac.New(sha256.New, secret)
 	mac.Write(payload)
+	timestamp := fmt.Sprintf("%d", time.Now().Unix())
+	nonce := fmt.Sprintf("test-nonce-%d", time.Now().UnixNano())
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte(nonce))
 	sigB64 := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	r, _ := http.NewRequest(http.MethodPost, "http://localhost/a2a/echo", &readSeekCloser{bytes.NewBuffer(payload)})
 	r.Header.Set("A2A-Signature", sigB64)
+	r.Header.Set("A2A-Timestamp", timestamp)
+	r.Header.Set("A2A-Nonce", nonce)
 	if capName != "" {
 		r.Header.Set("A2A-Capability", capName)
 	}
@@ -156,10 +164,16 @@ func TestMiddleware_Auth_MissingCert(t *testing.T) {
 	payload := []byte(`{}`)
 	mac := hmac.New(sha256.New, secret)
 	mac.Write(payload)
+	timestamp := fmt.Sprintf("%d", time.Now().Unix())
+	nonce := fmt.Sprintf("missing-cert-nonce-%d", time.Now().UnixNano())
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte(nonce))
 	sigB64 := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	r := &http.Request{
 		Header: http.Header{
 			"A2A-Signature":  []string{sigB64},
+			"A2A-Timestamp":  []string{timestamp},
+			"A2A-Nonce":      []string{nonce},
 			"A2A-Capability": []string{"read"},
 		},
 		Body: &readSeekCloser{bytes.NewBuffer(payload)},
@@ -873,10 +887,17 @@ func TestIntegrityVerifier_EmptyBody(t *testing.T) {
 	verifier := NewIntegrityVerifier([]byte("secret"))
 	req := httptest.NewRequest(http.MethodPost, "/a2a/echo", bytes.NewReader([]byte{}))
 	// Empty body is valid — create valid signature for empty body
+	// SECURITY: Include timestamp and nonce in HMAC for replay protection
 	mac := hmac.New(sha256.New, []byte("secret"))
 	mac.Write([]byte{})
+	timestamp := fmt.Sprintf("%d", time.Now().Unix())
+	nonce := fmt.Sprintf("empty-nonce-%d", time.Now().UnixNano())
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte(nonce))
 	sig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	req.Header.Set("A2A-Signature", sig)
+	req.Header.Set("A2A-Timestamp", timestamp)
+	req.Header.Set("A2A-Nonce", nonce)
 	err := verifier.Verify(req)
 	if err != nil {
 		t.Errorf("unexpected error for empty body: %v", err)
@@ -890,10 +911,16 @@ func TestIntegrityVerifier_LargeBody(t *testing.T) {
 	largePayload := bytes.Repeat([]byte("x"), 1024)
 	mac := hmac.New(sha256.New, []byte("secret"))
 	mac.Write(largePayload)
+	timestamp := fmt.Sprintf("%d", time.Now().Unix())
+	nonce := fmt.Sprintf("large-nonce-%d", time.Now().UnixNano())
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte(nonce))
 	sig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
 	req := httptest.NewRequest(http.MethodPost, "/a2a/echo", bytes.NewReader(largePayload))
 	req.Header.Set("A2A-Signature", sig)
+	req.Header.Set("A2A-Timestamp", timestamp)
+	req.Header.Set("A2A-Nonce", nonce)
 	err := verifier.Verify(req)
 	if err != nil {
 		t.Errorf("unexpected error for large body: %v", err)

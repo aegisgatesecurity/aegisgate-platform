@@ -31,6 +31,14 @@
 //   its own connection lifecycle. The caller does NOT need to hold any
 //   additional locks.
 //
+// RLS (Row-Level Security):
+//
+//   All pool access is wrapped with ioc.WithTenantContextOrPool so that
+//   PostgreSQL RLS policies fire when tenant context is available.
+//   Tenant context is extracted from the request context via the auth
+//   package, or from the domain object (e.g. incident.TenantID) when
+//   the caller already carries it.
+//
 // Tier gating: FeaturePostgreSQL is required (Professional/Enterprise).
 // Community/Developer continue using the in-memory stores.
 //
@@ -48,6 +56,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 )
 
 // Compile-time interface compliance checks.
@@ -114,39 +125,43 @@ func (s *PostgresIncidentStore) CreateIncident(ctx context.Context, incident *In
 		return fmt.Errorf("incident: marshal metadata: %w", err)
 	}
 
-	_, err = s.pool.Exec(ctx,
-		`INSERT INTO incidents (
-			id, title, description, severity, status, source,
-			session_id, agent_id, playbook_id,
-			escalation_policy_id, escalated_to, assignee,
-			escalated_at, resolved_at, closed_at,
-			tags, metadata, tenant_id,
-			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
-		incident.ID, incident.Title, incident.Description,
-		string(incident.Severity), string(incident.Status), string(incident.Source),
-		incident.SessionID, incident.AgentID, incident.PlaybookID,
-		incident.EscalationPolicyID, incident.EscalatedTo, incident.Assignee,
-		nullTime(incident.EscalatedAt), nullTime(incident.ResolvedAt), nullTime(incident.ClosedAt),
-		tagsArray, metadataJSON, incident.TenantID,
-		incident.CreatedAt, incident.UpdatedAt,
-	)
-	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "violates unique constraint") {
-			return fmt.Errorf("incident: CreateIncident: incident %s already exists", incident.ID)
+	tenantID := incident.TenantID
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx,
+			`INSERT INTO incidents (
+				id, title, description, severity, status, source,
+				session_id, agent_id, playbook_id,
+				escalation_policy_id, escalated_to, assignee,
+				escalated_at, resolved_at, closed_at,
+				tags, metadata, tenant_id,
+				created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+			incident.ID, incident.Title, incident.Description,
+			string(incident.Severity), string(incident.Status), string(incident.Source),
+			incident.SessionID, incident.AgentID, incident.PlaybookID,
+			incident.EscalationPolicyID, incident.EscalatedTo, incident.Assignee,
+			nullTime(incident.EscalatedAt), nullTime(incident.ResolvedAt), nullTime(incident.ClosedAt),
+			tagsArray, metadataJSON, incident.TenantID,
+			incident.CreatedAt, incident.UpdatedAt,
+		)
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "violates unique constraint") {
+				return fmt.Errorf("incident: CreateIncident: incident %s already exists", incident.ID)
+			}
+			return fmt.Errorf("incident: CreateIncident: %w", err)
 		}
-		return fmt.Errorf("incident: CreateIncident: %w", err)
-	}
 
-	// Persist playbook runs as separate rows if any are present.
-	for _, run := range incident.PlaybookRuns {
-		if err := s.createPlaybookRun(ctx, run, incident.ID, incident.TenantID); err != nil {
-			// Log but don't fail — incident is already persisted.
-			_ = err
+		// Persist playbook runs as separate rows if any are present.
+		for _, run := range incident.PlaybookRuns {
+			if err := s.createPlaybookRun(ctx, q, run, incident.ID, incident.TenantID); err != nil {
+				// Log but don't fail — incident is already persisted.
+				_ = err
+			}
 		}
-	}
 
-	return nil
+		return nil
+	})
 }
 
 // GetIncident retrieves an incident by ID. Returns nil if not found.
@@ -155,35 +170,45 @@ func (s *PostgresIncidentStore) GetIncident(ctx context.Context, id string) (*In
 		return nil, fmt.Errorf("incident: GetIncident: empty ID")
 	}
 
-	row := s.pool.QueryRow(ctx,
-		`SELECT id, title, description, severity, status, source,
-			session_id, agent_id, playbook_id,
-			escalation_policy_id, escalated_to, assignee,
-			escalated_at, resolved_at, closed_at,
-			tags, metadata, tenant_id,
-			created_at, updated_at
-		FROM incidents WHERE id = $1`,
-		id,
-	)
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	var result *Incident
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		row := q.QueryRow(ctx,
+			`SELECT id, title, description, severity, status, source,
+				session_id, agent_id, playbook_id,
+				escalation_policy_id, escalated_to, assignee,
+				escalated_at, resolved_at, closed_at,
+				tags, metadata, tenant_id,
+				created_at, updated_at
+			FROM incidents WHERE id = $1`,
+			id,
+		)
 
-	inc, err := scanIncident(row)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
+		inc, err := scanIncident(row)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil
+			}
+			return fmt.Errorf("incident: GetIncident: %w", err)
 		}
-		return nil, fmt.Errorf("incident: GetIncident: %w", err)
-	}
 
-	// Load playbook runs for this incident.
-	runs, err := s.listPlaybookRunsByIncident(ctx, id)
+		// Load playbook runs for this incident.
+		runs, err := s.listPlaybookRunsByIncident(ctx, q, id)
+		if err != nil {
+			// Non-fatal: return the incident without runs.
+			inc.PlaybookRuns = []*PlaybookRun{}
+		} else {
+			inc.PlaybookRuns = runs
+		}
+
+		result = inc
+		return nil
+	})
 	if err != nil {
-		// Non-fatal: return the incident without runs.
-		inc.PlaybookRuns = []*PlaybookRun{}
-	} else {
-		inc.PlaybookRuns = runs
+		return nil, err
 	}
-
-	return inc, nil
+	return result, nil
 }
 
 // UpdateIncident updates an existing incident. Returns an error if
@@ -219,31 +244,35 @@ func (s *PostgresIncidentStore) UpdateIncident(ctx context.Context, incident *In
 		return fmt.Errorf("incident: marshal metadata: %w", err)
 	}
 
-	tag, err := s.pool.Exec(ctx,
-		`UPDATE incidents SET
-			title = $2, description = $3, severity = $4, status = $5, source = $6,
-			session_id = $7, agent_id = $8, playbook_id = $9,
-			escalation_policy_id = $10, escalated_to = $11, assignee = $12,
-			escalated_at = $13, resolved_at = $14, closed_at = $15,
-			tags = $16, metadata = $17, tenant_id = $18,
-			updated_at = $19
-		WHERE id = $1`,
-		incident.ID, incident.Title, incident.Description,
-		string(incident.Severity), string(incident.Status), string(incident.Source),
-		incident.SessionID, incident.AgentID, incident.PlaybookID,
-		incident.EscalationPolicyID, incident.EscalatedTo, incident.Assignee,
-		nullTime(incident.EscalatedAt), nullTime(incident.ResolvedAt), nullTime(incident.ClosedAt),
-		tagsArray, metadataJSON, incident.TenantID,
-		incident.UpdatedAt,
-	)
-	if err != nil {
-		return fmt.Errorf("incident: UpdateIncident: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("incident: UpdateIncident: incident %s not found", incident.ID)
-	}
+	tenantID := incident.TenantID
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx,
+			`UPDATE incidents SET
+				title = $2, description = $3, severity = $4, status = $5, source = $6,
+				session_id = $7, agent_id = $8, playbook_id = $9,
+				escalation_policy_id = $10, escalated_to = $11, assignee = $12,
+				escalated_at = $13, resolved_at = $14, closed_at = $15,
+				tags = $16, metadata = $17, tenant_id = $18,
+				updated_at = $19
+			WHERE id = $1`,
+			incident.ID, incident.Title, incident.Description,
+			string(incident.Severity), string(incident.Status), string(incident.Source),
+			incident.SessionID, incident.AgentID, incident.PlaybookID,
+			incident.EscalationPolicyID, incident.EscalatedTo, incident.Assignee,
+			nullTime(incident.EscalatedAt), nullTime(incident.ResolvedAt), nullTime(incident.ClosedAt),
+			tagsArray, metadataJSON, incident.TenantID,
+			incident.UpdatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("incident: UpdateIncident: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("incident: UpdateIncident: incident %s not found", incident.ID)
+		}
 
-	return nil
+		return nil
+	})
 }
 
 // ListIncidents queries incidents using filter criteria.
@@ -350,22 +379,34 @@ func (s *PostgresIncidentStore) ListIncidents(ctx context.Context, query *Incide
 		argIdx++
 	}
 
-	rows, err := s.pool.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, fmt.Errorf("incident: ListIncidents: %w", err)
+	tenantID := query.TenantID
+	if tenantID == "" {
+		tenantID = auth.GetTenantID(ctx)
 	}
-	defer rows.Close()
-
+	isAdmin := auth.IsAdmin(ctx)
 	var incidents []*Incident
-	for rows.Next() {
-		inc, err := scanIncidentFromRows(rows)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, sql, args...)
 		if err != nil {
-			return nil, fmt.Errorf("incident: scan incident: %w", err)
+			return fmt.Errorf("incident: ListIncidents: %w", err)
 		}
-		incidents = append(incidents, inc)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("incident: ListIncidents rows: %w", err)
+		defer rows.Close()
+
+		for rows.Next() {
+			inc, err := scanIncidentFromRows(rows)
+			if err != nil {
+				return fmt.Errorf("incident: scan incident: %w", err)
+			}
+			incidents = append(incidents, inc)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("incident: ListIncidents rows: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	if incidents == nil {
@@ -384,7 +425,9 @@ func (s *PostgresIncidentStore) Close() error { return nil }
 // =====================================================================
 
 // createPlaybookRun persists a single playbook run for an incident.
-func (s *PostgresIncidentStore) createPlaybookRun(ctx context.Context, run *PlaybookRun, incidentID, tenantID string) error {
+// The q parameter allows the caller to pass a tenant-scoped DBQuerier
+// (from WithTenantContextOrPool) so that RLS policies fire consistently.
+func (s *PostgresIncidentStore) createPlaybookRun(ctx context.Context, q ioc.DBQuerier, run *PlaybookRun, incidentID, tenantID string) error {
 	if run == nil {
 		return nil
 	}
@@ -393,7 +436,7 @@ func (s *PostgresIncidentStore) createPlaybookRun(ctx context.Context, run *Play
 		stepResultsJSON = []byte("[]")
 	}
 
-	_, err = s.pool.Exec(ctx,
+	_, err = q.Exec(ctx,
 		`INSERT INTO playbook_runs (
 			id, playbook_id, incident_id, status, error,
 			started_at, completed_at, step_results, tenant_id
@@ -408,8 +451,10 @@ func (s *PostgresIncidentStore) createPlaybookRun(ctx context.Context, run *Play
 }
 
 // listPlaybookRunsByIncident loads all playbook runs for an incident.
-func (s *PostgresIncidentStore) listPlaybookRunsByIncident(ctx context.Context, incidentID string) ([]*PlaybookRun, error) {
-	rows, err := s.pool.Query(ctx,
+// The q parameter allows the caller to pass a tenant-scoped DBQuerier
+// (from WithTenantContextOrPool) so that RLS policies fire consistently.
+func (s *PostgresIncidentStore) listPlaybookRunsByIncident(ctx context.Context, q ioc.DBQuerier, incidentID string) ([]*PlaybookRun, error) {
+	rows, err := q.Query(ctx,
 		`SELECT id, playbook_id, incident_id, status, error,
 			started_at, completed_at, step_results
 		FROM playbook_runs WHERE incident_id = $1
@@ -487,23 +532,27 @@ func (s *PostgresPlaybookStore) CreatePlaybook(ctx context.Context, playbook *Pl
 		tagsArray = []string{}
 	}
 
-	_, err = s.pool.Exec(ctx,
-		`INSERT INTO playbooks (
-			id, name, description, severity, source, tags, steps, auto_execute,
-			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-		playbook.ID, playbook.Name, playbook.Description,
-		string(playbook.Severity), string(playbook.Source),
-		tagsArray, stepsJSON, playbook.AutoExecute,
-		playbook.CreatedAt, playbook.UpdatedAt,
-	)
-	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "violates unique constraint") {
-			return fmt.Errorf("incident: CreatePlaybook: playbook %s already exists", playbook.ID)
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx,
+			`INSERT INTO playbooks (
+				id, name, description, severity, source, tags, steps, auto_execute,
+				created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			playbook.ID, playbook.Name, playbook.Description,
+			string(playbook.Severity), string(playbook.Source),
+			tagsArray, stepsJSON, playbook.AutoExecute,
+			playbook.CreatedAt, playbook.UpdatedAt,
+		)
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "violates unique constraint") {
+				return fmt.Errorf("incident: CreatePlaybook: playbook %s already exists", playbook.ID)
+			}
+			return fmt.Errorf("incident: CreatePlaybook: %w", err)
 		}
-		return fmt.Errorf("incident: CreatePlaybook: %w", err)
-	}
-	return nil
+		return nil
+	})
 }
 
 // GetPlaybook retrieves a playbook by ID.
@@ -512,21 +561,31 @@ func (s *PostgresPlaybookStore) GetPlaybook(ctx context.Context, id string) (*Pl
 		return nil, fmt.Errorf("incident: GetPlaybook: empty ID")
 	}
 
-	row := s.pool.QueryRow(ctx,
-		`SELECT id, name, description, severity, source, tags, steps, auto_execute,
-			created_at, updated_at
-		FROM playbooks WHERE id = $1`,
-		id,
-	)
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	var result *Playbook
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		row := q.QueryRow(ctx,
+			`SELECT id, name, description, severity, source, tags, steps, auto_execute,
+				created_at, updated_at
+			FROM playbooks WHERE id = $1`,
+			id,
+		)
 
-	pb, err := scanPlaybook(row)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
+		pb, err := scanPlaybook(row)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil
+			}
+			return fmt.Errorf("incident: GetPlaybook: %w", err)
 		}
-		return nil, fmt.Errorf("incident: GetPlaybook: %w", err)
+		result = pb
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return pb, nil
+	return result, nil
 }
 
 // ListPlaybooks lists playbooks filtered by severity and source.
@@ -556,22 +615,31 @@ func (s *PostgresPlaybookStore) ListPlaybooks(ctx context.Context, severity Inci
 		strings.Join(where, " AND "),
 	)
 
-	rows, err := s.pool.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, fmt.Errorf("incident: ListPlaybooks: %w", err)
-	}
-	defer rows.Close()
-
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
 	var playbooks []*Playbook
-	for rows.Next() {
-		pb, err := scanPlaybookFromRows(rows)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, sql, args...)
 		if err != nil {
-			return nil, fmt.Errorf("incident: scan playbook: %w", err)
+			return fmt.Errorf("incident: ListPlaybooks: %w", err)
 		}
-		playbooks = append(playbooks, pb)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("incident: ListPlaybooks rows: %w", err)
+		defer rows.Close()
+
+		for rows.Next() {
+			pb, err := scanPlaybookFromRows(rows)
+			if err != nil {
+				return fmt.Errorf("incident: scan playbook: %w", err)
+			}
+			playbooks = append(playbooks, pb)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("incident: ListPlaybooks rows: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	if playbooks == nil {
@@ -598,24 +666,28 @@ func (s *PostgresPlaybookStore) UpdatePlaybook(ctx context.Context, playbook *Pl
 		tagsArray = []string{}
 	}
 
-	tag, err := s.pool.Exec(ctx,
-		`UPDATE playbooks SET
-			name = $2, description = $3, severity = $4, source = $5,
-			tags = $6, steps = $7, auto_execute = $8,
-			updated_at = $9
-		WHERE id = $1`,
-		playbook.ID, playbook.Name, playbook.Description,
-		string(playbook.Severity), string(playbook.Source),
-		tagsArray, stepsJSON, playbook.AutoExecute,
-		playbook.UpdatedAt,
-	)
-	if err != nil {
-		return fmt.Errorf("incident: UpdatePlaybook: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("incident: UpdatePlaybook: playbook %s not found", playbook.ID)
-	}
-	return nil
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx,
+			`UPDATE playbooks SET
+				name = $2, description = $3, severity = $4, source = $5,
+				tags = $6, steps = $7, auto_execute = $8,
+				updated_at = $9
+			WHERE id = $1`,
+			playbook.ID, playbook.Name, playbook.Description,
+			string(playbook.Severity), string(playbook.Source),
+			tagsArray, stepsJSON, playbook.AutoExecute,
+			playbook.UpdatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("incident: UpdatePlaybook: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("incident: UpdatePlaybook: playbook %s not found", playbook.ID)
+		}
+		return nil
+	})
 }
 
 // DeletePlaybook removes a playbook by ID.
@@ -624,14 +696,18 @@ func (s *PostgresPlaybookStore) DeletePlaybook(ctx context.Context, id string) e
 		return fmt.Errorf("incident: DeletePlaybook: empty ID")
 	}
 
-	tag, err := s.pool.Exec(ctx, `DELETE FROM playbooks WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("incident: DeletePlaybook: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("incident: DeletePlaybook: playbook %s not found", id)
-	}
-	return nil
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, `DELETE FROM playbooks WHERE id = $1`, id)
+		if err != nil {
+			return fmt.Errorf("incident: DeletePlaybook: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("incident: DeletePlaybook: playbook %s not found", id)
+		}
+		return nil
+	})
 }
 
 // Close is a no-op. The pool is shared.
@@ -674,29 +750,33 @@ func (s *PostgresDetectionRuleStore) CreateRule(ctx context.Context, rule *Detec
 		return fmt.Errorf("incident: marshal compliance_mappings: %w", err)
 	}
 
-	_, err = s.pool.Exec(ctx,
-		`INSERT INTO detection_rules (
-			id, name, description, source, severity,
-			patterns, event_types, min_events, time_window,
-			playbook_id, auto_create, auto_execute,
-			compliance_mappings, enabled,
-			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-		rule.ID, rule.Name, rule.Description,
-		string(rule.Source), string(rule.Severity),
-		patternsArray, eventTypesArray,
-		rule.MinEvents, rule.TimeWindow,
-		rule.PlaybookID, rule.AutoCreate, rule.AutoExecute,
-		complianceMappingsJSON, rule.Enabled,
-		rule.CreatedAt, rule.UpdatedAt,
-	)
-	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "violates unique constraint") {
-			return fmt.Errorf("incident: CreateRule: rule %s already exists", rule.ID)
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx,
+			`INSERT INTO detection_rules (
+				id, name, description, source, severity,
+				patterns, event_types, min_events, time_window,
+				playbook_id, auto_create, auto_execute,
+				compliance_mappings, enabled,
+				created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+			rule.ID, rule.Name, rule.Description,
+			string(rule.Source), string(rule.Severity),
+			patternsArray, eventTypesArray,
+			rule.MinEvents, rule.TimeWindow,
+			rule.PlaybookID, rule.AutoCreate, rule.AutoExecute,
+			complianceMappingsJSON, rule.Enabled,
+			rule.CreatedAt, rule.UpdatedAt,
+		)
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "violates unique constraint") {
+				return fmt.Errorf("incident: CreateRule: rule %s already exists", rule.ID)
+			}
+			return fmt.Errorf("incident: CreateRule: %w", err)
 		}
-		return fmt.Errorf("incident: CreateRule: %w", err)
-	}
-	return nil
+		return nil
+	})
 }
 
 // GetRule retrieves a detection rule by ID.
@@ -705,24 +785,34 @@ func (s *PostgresDetectionRuleStore) GetRule(ctx context.Context, id string) (*D
 		return nil, fmt.Errorf("incident: GetRule: empty ID")
 	}
 
-	row := s.pool.QueryRow(ctx,
-		`SELECT id, name, description, source, severity,
-			patterns, event_types, min_events, time_window,
-			playbook_id, auto_create, auto_execute,
-			compliance_mappings, enabled,
-			created_at, updated_at
-		FROM detection_rules WHERE id = $1`,
-		id,
-	)
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	var result *DetectionRule
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		row := q.QueryRow(ctx,
+			`SELECT id, name, description, source, severity,
+				patterns, event_types, min_events, time_window,
+				playbook_id, auto_create, auto_execute,
+				compliance_mappings, enabled,
+				created_at, updated_at
+			FROM detection_rules WHERE id = $1`,
+			id,
+		)
 
-	rule, err := scanDetectionRule(row)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
+		rule, err := scanDetectionRule(row)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return nil
+			}
+			return fmt.Errorf("incident: GetRule: %w", err)
 		}
-		return nil, fmt.Errorf("incident: GetRule: %w", err)
+		result = rule
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return rule, nil
+	return result, nil
 }
 
 // ListRules lists detection rules. If enabledOnly is true, only
@@ -741,22 +831,31 @@ func (s *PostgresDetectionRuleStore) ListRules(ctx context.Context, enabledOnly 
 
 	query += " ORDER BY name ASC"
 
-	rows, err := s.pool.Query(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("incident: ListRules: %w", err)
-	}
-	defer rows.Close()
-
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
 	var rules []*DetectionRule
-	for rows.Next() {
-		rule, err := scanDetectionRuleFromRows(rows)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, query)
 		if err != nil {
-			return nil, fmt.Errorf("incident: scan rule: %w", err)
+			return fmt.Errorf("incident: ListRules: %w", err)
 		}
-		rules = append(rules, rule)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("incident: ListRules rows: %w", err)
+		defer rows.Close()
+
+		for rows.Next() {
+			rule, err := scanDetectionRuleFromRows(rows)
+			if err != nil {
+				return fmt.Errorf("incident: scan rule: %w", err)
+			}
+			rules = append(rules, rule)
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("incident: ListRules rows: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	if rules == nil {
@@ -787,29 +886,33 @@ func (s *PostgresDetectionRuleStore) UpdateRule(ctx context.Context, rule *Detec
 		return fmt.Errorf("incident: marshal compliance_mappings: %w", err)
 	}
 
-	tag, err := s.pool.Exec(ctx,
-		`UPDATE detection_rules SET
-			name = $2, description = $3, source = $4, severity = $5,
-			patterns = $6, event_types = $7, min_events = $8, time_window = $9,
-			playbook_id = $10, auto_create = $11, auto_execute = $12,
-			compliance_mappings = $13, enabled = $14,
-			updated_at = $15
-		WHERE id = $1`,
-		rule.ID, rule.Name, rule.Description,
-		string(rule.Source), string(rule.Severity),
-		patternsArray, eventTypesArray,
-		rule.MinEvents, rule.TimeWindow,
-		rule.PlaybookID, rule.AutoCreate, rule.AutoExecute,
-		complianceMappingsJSON, rule.Enabled,
-		rule.UpdatedAt,
-	)
-	if err != nil {
-		return fmt.Errorf("incident: UpdateRule: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("incident: UpdateRule: rule %s not found", rule.ID)
-	}
-	return nil
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx,
+			`UPDATE detection_rules SET
+				name = $2, description = $3, source = $4, severity = $5,
+				patterns = $6, event_types = $7, min_events = $8, time_window = $9,
+				playbook_id = $10, auto_create = $11, auto_execute = $12,
+				compliance_mappings = $13, enabled = $14,
+				updated_at = $15
+			WHERE id = $1`,
+			rule.ID, rule.Name, rule.Description,
+			string(rule.Source), string(rule.Severity),
+			patternsArray, eventTypesArray,
+			rule.MinEvents, rule.TimeWindow,
+			rule.PlaybookID, rule.AutoCreate, rule.AutoExecute,
+			complianceMappingsJSON, rule.Enabled,
+			rule.UpdatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("incident: UpdateRule: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("incident: UpdateRule: rule %s not found", rule.ID)
+		}
+		return nil
+	})
 }
 
 // DeleteRule removes a detection rule by ID.
@@ -818,14 +921,18 @@ func (s *PostgresDetectionRuleStore) DeleteRule(ctx context.Context, id string) 
 		return fmt.Errorf("incident: DeleteRule: empty ID")
 	}
 
-	tag, err := s.pool.Exec(ctx, `DELETE FROM detection_rules WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("incident: DeleteRule: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("incident: DeleteRule: rule %s not found", id)
-	}
-	return nil
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, `DELETE FROM detection_rules WHERE id = $1`, id)
+		if err != nil {
+			return fmt.Errorf("incident: DeleteRule: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("incident: DeleteRule: rule %s not found", id)
+		}
+		return nil
+	})
 }
 
 // Close is a no-op. The pool is shared.

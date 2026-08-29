@@ -15,6 +15,9 @@
 //   - JSONB storage for Data and Metadata fields
 //   - Retention pruning via Prune method
 //   - Close is a no-op (pool lifecycle is managed externally)
+//   - All pool access is wrapped with ioc.WithTenantContextOrPool so that
+//     PostgreSQL Row-Level Security (RLS) policies enforce tenant isolation
+//     at the database level (defense-in-depth).
 //
 // Lifecycle:
 //
@@ -40,6 +43,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -75,19 +79,22 @@ func (s *PostgresCorrelationStore) RecordEvent(ctx context.Context, event *Event
 		return fmt.Errorf("correlation: marshal metadata: %w", err)
 	}
 
-	_, err = s.pool.Exec(ctx,
-		`INSERT INTO correlation_events (
-			id, protocol, agent_id, session_id, event_type, severity,
-			decision, data, metadata, event_time, tenant_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-		event.ID, event.Protocol, event.AgentID, event.SessionID,
-		event.EventType, event.Severity, event.Decision,
-		dataJSON, metadataJSON, event.Timestamp, "",
-	)
-	if err != nil {
-		return fmt.Errorf("correlation: record event: %w", err)
-	}
-	return nil
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx,
+			`INSERT INTO correlation_events (
+				id, protocol, agent_id, session_id, event_type, severity,
+				decision, data, metadata, event_time, tenant_id
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+			event.ID, event.Protocol, event.AgentID, event.SessionID,
+			event.EventType, event.Severity, event.Decision,
+			dataJSON, metadataJSON, event.Timestamp, tenantID,
+		)
+		if err != nil {
+			return fmt.Errorf("correlation: record event: %w", err)
+		}
+		return nil
+	})
 }
 
 // ListEventsBySession returns events for the given session ID, ordered by
@@ -97,20 +104,28 @@ func (s *PostgresCorrelationStore) ListEventsBySession(ctx context.Context, sess
 		return nil, fmt.Errorf("correlation: ListEventsBySession: sessionID is required")
 	}
 
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, protocol, agent_id, session_id, event_type, severity,
-			decision, data, metadata, event_time
-		FROM correlation_events
-		WHERE session_id = $1
-		ORDER BY event_time ASC`,
-		sessionID,
-	)
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	var events []*Event
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx,
+			`SELECT id, protocol, agent_id, session_id, event_type, severity,
+				decision, data, metadata, event_time
+			FROM correlation_events
+			WHERE session_id = $1
+			ORDER BY event_time ASC`,
+			sessionID,
+		)
+		if err != nil {
+			return fmt.Errorf("correlation: list events by session: %w", err)
+		}
+		defer rows.Close()
+		events, err = scanEvents(rows)
+		return err
+	})
 	if err != nil {
-		return nil, fmt.Errorf("correlation: list events by session: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	return scanEvents(rows)
+	return events, nil
 }
 
 // ListEventsByAgent returns events for the given agent ID, ordered by
@@ -120,20 +135,28 @@ func (s *PostgresCorrelationStore) ListEventsByAgent(ctx context.Context, agentI
 		return nil, fmt.Errorf("correlation: ListEventsByAgent: agentID is required")
 	}
 
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, protocol, agent_id, session_id, event_type, severity,
-			decision, data, metadata, event_time
-		FROM correlation_events
-		WHERE agent_id = $1
-		ORDER BY event_time ASC`,
-		agentID,
-	)
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	var events []*Event
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx,
+			`SELECT id, protocol, agent_id, session_id, event_type, severity,
+				decision, data, metadata, event_time
+			FROM correlation_events
+			WHERE agent_id = $1
+			ORDER BY event_time ASC`,
+			agentID,
+		)
+		if err != nil {
+			return fmt.Errorf("correlation: list events by agent: %w", err)
+		}
+		defer rows.Close()
+		events, err = scanEvents(rows)
+		return err
+	})
 	if err != nil {
-		return nil, fmt.Errorf("correlation: list events by agent: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	return scanEvents(rows)
+	return events, nil
 }
 
 // ListEventsByAgentAndSession returns events for the given agent and session,
@@ -146,20 +169,28 @@ func (s *PostgresCorrelationStore) ListEventsByAgentAndSession(ctx context.Conte
 		return nil, fmt.Errorf("correlation: ListEventsByAgentAndSession: sessionID is required")
 	}
 
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, protocol, agent_id, session_id, event_type, severity,
-			decision, data, metadata, event_time
-		FROM correlation_events
-		WHERE agent_id = $1 AND session_id = $2
-		ORDER BY event_time ASC`,
-		agentID, sessionID,
-	)
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	var events []*Event
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx,
+			`SELECT id, protocol, agent_id, session_id, event_type, severity,
+				decision, data, metadata, event_time
+			FROM correlation_events
+			WHERE agent_id = $1 AND session_id = $2
+			ORDER BY event_time ASC`,
+			agentID, sessionID,
+		)
+		if err != nil {
+			return fmt.Errorf("correlation: list events by agent and session: %w", err)
+		}
+		defer rows.Close()
+		events, err = scanEvents(rows)
+		return err
+	})
 	if err != nil {
-		return nil, fmt.Errorf("correlation: list events by agent and session: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	return scanEvents(rows)
+	return events, nil
 }
 
 // Analyze returns recent events for the given agent and session within
@@ -175,20 +206,28 @@ func (s *PostgresCorrelationStore) Analyze(ctx context.Context, agentID, session
 
 	cutoff := time.Now().UTC().Add(-window)
 
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, protocol, agent_id, session_id, event_type, severity,
-			decision, data, metadata, event_time
-		FROM correlation_events
-		WHERE agent_id = $1 AND session_id = $2 AND event_time > $3
-		ORDER BY event_time ASC`,
-		agentID, sessionID, cutoff,
-	)
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	var events []*Event
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx,
+			`SELECT id, protocol, agent_id, session_id, event_type, severity,
+				decision, data, metadata, event_time
+			FROM correlation_events
+			WHERE agent_id = $1 AND session_id = $2 AND event_time > $3
+			ORDER BY event_time ASC`,
+			agentID, sessionID, cutoff,
+		)
+		if err != nil {
+			return fmt.Errorf("correlation: analyze: %w", err)
+		}
+		defer rows.Close()
+		events, err = scanEvents(rows)
+		return err
+	})
 	if err != nil {
-		return nil, fmt.Errorf("correlation: analyze: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	return scanEvents(rows)
+	return events, nil
 }
 
 // Prune removes correlation events older than maxAge and returns the count removed.
@@ -196,14 +235,23 @@ func (s *PostgresCorrelationStore) Analyze(ctx context.Context, agentID, session
 func (s *PostgresCorrelationStore) Prune(ctx context.Context, maxAge time.Duration) (int, error) {
 	cutoff := time.Now().UTC().Add(-maxAge)
 
-	result, err := s.pool.Exec(ctx,
-		`DELETE FROM correlation_events WHERE event_time < $1`,
-		cutoff,
-	)
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	var count int
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		result, err := q.Exec(ctx,
+			`DELETE FROM correlation_events WHERE event_time < $1`,
+			cutoff,
+		)
+		if err != nil {
+			return fmt.Errorf("correlation: prune events: %w", err)
+		}
+		count = int(result.RowsAffected())
+		return nil
+	})
 	if err != nil {
-		return 0, fmt.Errorf("correlation: prune events: %w", err)
+		return 0, err
 	}
-	return int(result.RowsAffected()), nil
+	return count, nil
 }
 
 // Close is a no-op. The pool is shared and its lifecycle is managed

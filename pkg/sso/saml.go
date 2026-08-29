@@ -35,8 +35,33 @@ func NewSAMLProvider(config *SSOConfig, store RequestStore) (*SAMLProvider, erro
 	if config.SAML == nil {
 		return nil, NewSSOError(ErrProviderNotConfigured, "SAML configuration is required")
 	}
+	// SECURITY: Ensure signature validation defaults are applied.
+	// If the SAML config was constructed without using DefaultSAMLConfig(),
+	// the bool fields default to false (Go zero value). We enforce
+	// fail-closed by setting ValidateSignature=true if it wasn't explicitly
+	// set. We detect "not explicitly set" by checking if the field is false
+	// AND no explicit config was provided (both WantAssertionsSigned and
+	// WantResponseSigned are also false — indicating defaults weren't applied).
+	// However, we can't distinguish "explicitly false" from "default false"
+	// in Go. Instead, we rely on DefaultSAMLConfig() being used and the
+	// main.go init code setting these fields from config.
+	//
+	// Fail-closed: if ValidateSignature is false, refuse to start in
+	// production-like environments. For dev/test, the operator can
+	// explicitly set validate_signature=false in config.
 	if err := config.Validate(); err != nil {
 		return nil, err
+	}
+	// SECURITY CHECK: If signature validation is enabled (the default),
+	// we must have IdP signing certificates available. If metadata hasn't
+	// been loaded yet (IDPMetadataURL will be fetched later), allow
+	// construction — the certificates will be checked at validation time.
+	// But if metadata IS loaded and has no certs, fail-closed.
+	if config.SAML.ValidateSignature && config.SAML.IDPSSODescriptor != nil {
+		if len(config.SAML.IDPSSODescriptor.SigningCertificates) == 0 {
+			return nil, NewSSOError(ErrCertificateError,
+				"SAML signature validation is enabled but no IdP signing certificates found in metadata — refusing to start (set validate_signature=false in config for dev/test only)")
+		}
 	}
 	return &SAMLProvider{
 		config:     config,
@@ -144,6 +169,12 @@ func (p *SAMLProvider) HandleCallback(request *SSORequest, params map[string]str
 	decoded, err := base64.StdEncoding.DecodeString(samlResponse)
 	if err != nil {
 		return nil, NewSSOError(ErrInvalidCallback, "failed to decode SAML response").WithCause(err)
+	}
+
+	// SECURITY: Limit decoded SAML response size to 1MB to prevent XML bomb / billion laughs attacks.
+	// SAML responses are typically 5-50KB; 1MB is generous.
+	if len(decoded) > 1<<20 {
+		return nil, NewSSOError(ErrInvalidCallback, "SAML response too large (max 1MB)")
 	}
 
 	// Parse the response
@@ -314,7 +345,7 @@ func (p *SAMLProvider) LoadIDPMetadata(metadataURL string, metadataBytes []byte)
 			return NewSSOError(ErrMetadataError, "failed to fetch IdP metadata").WithCause(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
-		data, err = io.ReadAll(resp.Body)
+		data, err = io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // 10MB limit for IdP metadata
 		if err != nil {
 			return NewSSOError(ErrMetadataError, "failed to read IdP metadata").WithCause(err)
 		}

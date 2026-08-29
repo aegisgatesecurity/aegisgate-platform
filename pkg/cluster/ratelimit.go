@@ -48,6 +48,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/time/rate"
 )
@@ -124,25 +125,30 @@ func (drl *DistributedRateLimiter) allowDistributed(key string) bool {
 
 	window := time.Now().Truncate(time.Second).Unix()
 
-	// Increment this node's counter for the current window
-	_, err := drl.pgPool.Exec(ctx,
-		`INSERT INTO cluster_rate_limits (key, window, node_id, count)
-		 VALUES ($1, $2, $3, 1)
-		 ON CONFLICT (key, window, node_id)
-		 DO UPDATE SET count = cluster_rate_limits.count + 1`,
-		key, window, drl.nodeID,
-	)
-	if err != nil {
-		drl.logger.Warn("distributed rate limit DB error, falling back to local", "key", key, "err", err)
-		return drl.allowLocal(key)
-	}
-
-	// Sum all nodes' counters for this window
+	// SECURITY (H-3): Wrap pool access with WithTenantContextOrPool for RLS.
+	// cluster_rate_limits is a system-wide table (not tenant-scoped), so we
+	// use isAdmin=true with empty tenantID. This satisfies RLS policies
+	// that allow admins to see all rows.
 	var total int
-	err = drl.pgPool.QueryRow(ctx,
-		`SELECT COALESCE(SUM(count), 0) FROM cluster_rate_limits WHERE key = $1 AND window = $2`,
-		key, window,
-	).Scan(&total)
+	err := ioc.WithTenantContextOrPool(ctx, drl.pgPool, "", true, func(q ioc.DBQuerier) error {
+		// Increment this node's counter for the current window
+		_, err := q.Exec(ctx,
+			`INSERT INTO cluster_rate_limits (key, window, node_id, count)
+			 VALUES ($1, $2, $3, 1)
+			 ON CONFLICT (key, window, node_id)
+			 DO UPDATE SET count = cluster_rate_limits.count + 1`,
+			key, window, drl.nodeID,
+		)
+		if err != nil {
+			return err
+		}
+
+		// Sum all nodes' counters for this window
+		return q.QueryRow(ctx,
+			`SELECT COALESCE(SUM(count), 0) FROM cluster_rate_limits WHERE key = $1 AND window = $2`,
+			key, window,
+		).Scan(&total)
+	})
 	if err != nil {
 		drl.logger.Warn("distributed rate limit query error, falling back to local", "key", key, "err", err)
 		return drl.allowLocal(key)
@@ -160,22 +166,25 @@ func (drl *DistributedRateLimiter) initSchema(ctx context.Context) {
 	if drl.pgPool == nil {
 		return
 	}
-	_, err := drl.pgPool.Exec(ctx,
-		`CREATE TABLE IF NOT EXISTS cluster_rate_limits (
-			key       TEXT    NOT NULL,
-			window    BIGINT NOT NULL,
-			node_id   TEXT    NOT NULL,
-			count     INT    NOT NULL DEFAULT 1,
-			PRIMARY KEY (key, window, node_id)
-		)`)
-	if err != nil {
-		drl.logger.Error("failed to create cluster_rate_limits table", "err", err)
-		return
-	}
+	// SECURITY (H-3): Wrap with WithTenantContextOrPool for RLS.
+	err := ioc.WithTenantContextOrPool(ctx, drl.pgPool, "", true, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx,
+			`CREATE TABLE IF NOT EXISTS cluster_rate_limits (
+				key       TEXT    NOT NULL,
+				window    BIGINT NOT NULL,
+				node_id   TEXT    NOT NULL,
+				count     INT    NOT NULL DEFAULT 1,
+				PRIMARY KEY (key, window, node_id)
+			)`)
+		if err != nil {
+			return err
+		}
 
-	// Auto-expire old windows (keep only last 2 seconds)
-	_, err = drl.pgPool.Exec(ctx,
-		`CREATE INDEX IF NOT EXISTS idx_cluster_rate_limits_window ON cluster_rate_limits (window)`)
+		// Auto-expire old windows (keep only last 2 seconds)
+		_, err = q.Exec(ctx,
+			`CREATE INDEX IF NOT EXISTS idx_cluster_rate_limits_window ON cluster_rate_limits (window)`)
+		return err
+	})
 	if err != nil {
 		drl.logger.Warn("failed to create rate limits window index", "err", err)
 	}
@@ -188,14 +197,23 @@ func (drl *DistributedRateLimiter) Cleanup(ctx context.Context) {
 		return
 	}
 	cutoff := time.Now().Add(-5 * time.Second).Unix()
-	result, err := drl.pgPool.Exec(ctx,
-		`DELETE FROM cluster_rate_limits WHERE window < $1`, cutoff)
+	// SECURITY (H-3): Wrap with WithTenantContextOrPool for RLS.
+	var rowsAffected int64
+	err := ioc.WithTenantContextOrPool(ctx, drl.pgPool, "", true, func(q ioc.DBQuerier) error {
+		result, err := q.Exec(ctx,
+			`DELETE FROM cluster_rate_limits WHERE window < $1`, cutoff)
+		if err != nil {
+			return err
+		}
+		rowsAffected = result.RowsAffected()
+		return nil
+	})
 	if err != nil {
 		drl.logger.Warn("rate limit cleanup error", "err", err)
 		return
 	}
-	if result.RowsAffected() > 0 {
-		drl.logger.Debug("rate limit cleanup", "rows_removed", result.RowsAffected())
+	if rowsAffected > 0 {
+		drl.logger.Debug("rate limit cleanup", "rows_removed", rowsAffected)
 	}
 }
 

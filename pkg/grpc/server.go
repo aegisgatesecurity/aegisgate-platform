@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"crypto/tls"
 	"net"
 	"os"
 	"os/signal"
@@ -194,12 +195,32 @@ func registerAllServices(server *grpc.Server, deps Dependencies, logger *slog.Lo
 
 // Serve starts the gRPC server on the given address (e.g. ":50051").
 // Blocks until the server stops. Returns the listener error.
+// For TLS-encrypted gRPC, use ServeTLS instead.
 func Serve(server *grpc.Server, addr string) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("grpc: listen %s: %w", addr, err)
 	}
 	return server.Serve(lis)
+}
+
+// ServeTLS starts the gRPC server on the given address with TLS encryption.
+// certFile and keyFile are PEM-encoded certificate and private key paths.
+// This ensures gRPC auth tokens are encrypted in transit.
+func ServeTLS(server *grpc.Server, addr, certFile, keyFile string) error {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return fmt.Errorf("grpc: load TLS cert/key: %w", err)
+	}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("grpc: listen %s: %w", addr, err)
+	}
+	return server.Serve(tls.NewListener(lis, tlsConfig))
 }
 
 // GracefulStop gracefully stops the gRPC server with a timeout.

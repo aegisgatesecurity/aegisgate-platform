@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // AegisGate Platform - License PostgreSQL Cache Panic-Recovery Unit Tests
 //
-// Tests pool-call paths via panic recovery to maximize coverage without
+// Tests pool-call paths via error/nil returns to maximize coverage without
 // requiring a live PostgreSQL connection.
 //go:build !integration
 
@@ -17,24 +17,16 @@ import (
 )
 
 // --------------------------------------------------------------------
-// Panic-recovery tests (exercise code paths up to pool access)
+// Nil-pool error tests (exercise code paths up to pool access)
 // --------------------------------------------------------------------
 
 func TestPostgresLicenseCache_Get_NilPool(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Get(ctx, "test-key")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	result := c.Get(ctx, "test-key")
+	if result != nil {
+		t.Error("expected nil result on nil pool")
 	}
 }
 
@@ -42,17 +34,9 @@ func TestPostgresLicenseCache_Get_NilPoolWithTenantCtx(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Get(ctx, "test-key", LicenseTenantContext{TenantID: "t1", IsAdmin: false})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool with tenant ctx")
+	result := c.Get(ctx, "test-key", LicenseTenantContext{TenantID: "t1", IsAdmin: false})
+	if result != nil {
+		t.Error("expected nil result on nil pool with tenant ctx")
 	}
 }
 
@@ -68,17 +52,9 @@ func TestPostgresLicenseCache_Set_NilPool(t *testing.T) {
 		ValidatedAt: time.Now(),
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Set(ctx, "test-key", result, 5*time.Minute)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Set")
+	err := c.Set(ctx, "test-key", result, 5*time.Minute)
+	if err == nil {
+		t.Error("expected error on nil pool in Set")
 	}
 }
 
@@ -94,17 +70,9 @@ func TestPostgresLicenseCache_Set_NilPoolWithTenantCtx(t *testing.T) {
 		ValidatedAt: time.Now(),
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Set(ctx, "test-key", result, 5*time.Minute, LicenseTenantContext{TenantID: "t1", IsAdmin: false})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Set with tenant ctx")
+	err := c.Set(ctx, "test-key", result, 5*time.Minute, LicenseTenantContext{TenantID: "t1", IsAdmin: false})
+	if err == nil {
+		t.Error("expected error on nil pool in Set with tenant ctx")
 	}
 }
 
@@ -121,17 +89,9 @@ func TestPostgresLicenseCache_Set_NilPool_WithResultError(t *testing.T) {
 		ValidatedAt: time.Now(),
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Set(ctx, "test-key", result, 5*time.Minute)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Set with result.Error")
+	err := c.Set(ctx, "test-key", result, 5*time.Minute)
+	if err == nil {
+		t.Error("expected error on nil pool in Set with result.Error")
 	}
 }
 
@@ -145,17 +105,9 @@ func TestPostgresLicenseCache_Set_NilPool_ZeroValidatedAt(t *testing.T) {
 		Payload: LicensePayload{},
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Set(ctx, "test-key", result, 5*time.Minute)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Set with zero ValidatedAt")
+	err := c.Set(ctx, "test-key", result, 5*time.Minute)
+	if err == nil {
+		t.Error("expected error on nil pool in Set with zero ValidatedAt")
 	}
 }
 
@@ -163,17 +115,9 @@ func TestPostgresLicenseCache_Invalidate_NilPool(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Invalidate(ctx, "test-key")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Invalidate")
+	err := c.Invalidate(ctx, "test-key")
+	if err == nil {
+		t.Error("expected error on nil pool in Invalidate")
 	}
 }
 
@@ -181,17 +125,9 @@ func TestPostgresLicenseCache_Invalidate_NilPoolWithTenantCtx(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Invalidate(ctx, "test-key", LicenseTenantContext{TenantID: "t1", IsAdmin: false})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Invalidate with tenant ctx")
+	err := c.Invalidate(ctx, "test-key", LicenseTenantContext{TenantID: "t1", IsAdmin: false})
+	if err == nil {
+		t.Error("expected error on nil pool in Invalidate with tenant ctx")
 	}
 }
 
@@ -199,17 +135,9 @@ func TestPostgresLicenseCache_Invalidate_NilPoolAdminTenantCtx(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = c.Invalidate(ctx, "test-key", LicenseTenantContext{TenantID: "t1", IsAdmin: true})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Invalidate with admin tenant ctx")
+	err := c.Invalidate(ctx, "test-key", LicenseTenantContext{TenantID: "t1", IsAdmin: true})
+	if err == nil {
+		t.Error("expected error on nil pool in Invalidate with admin tenant ctx")
 	}
 }
 
@@ -217,17 +145,12 @@ func TestPostgresLicenseCache_PruneExpired_NilPool(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = c.PruneExpired(ctx)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in PruneExpired")
+	count, err := c.PruneExpired(ctx)
+	if err == nil {
+		t.Error("expected error on nil pool in PruneExpired")
+	}
+	if count != 0 {
+		t.Error("expected 0 count on nil pool in PruneExpired")
 	}
 }
 
@@ -235,17 +158,12 @@ func TestPostgresLicenseCache_PruneExpired_NilPoolWithTenantCtx(t *testing.T) {
 	c := &PostgresLicenseCache{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = c.PruneExpired(ctx, LicenseTenantContext{TenantID: "t1", IsAdmin: false})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in PruneExpired with tenant ctx")
+	count, err := c.PruneExpired(ctx, LicenseTenantContext{TenantID: "t1", IsAdmin: false})
+	if err == nil {
+		t.Error("expected error on nil pool in PruneExpired with tenant ctx")
+	}
+	if count != 0 {
+		t.Error("expected 0 count on nil pool in PruneExpired with tenant ctx")
 	}
 }
 

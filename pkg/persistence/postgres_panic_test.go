@@ -78,7 +78,7 @@ func TestPostgresBackend_VerifyIntegrity_ClosedState(t *testing.T) {
 	}
 }
 
-func TestPostgresBackend_Write_PanicsOnNilPool(t *testing.T) {
+func TestPostgresBackend_Write_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
@@ -91,71 +91,39 @@ func TestPostgresBackend_Write_PanicsOnNilPool(t *testing.T) {
 		Source:    "test-source",
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = b.Write(ctx, entry)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Write")
+	err := b.Write(ctx, entry)
+	if err == nil {
+		t.Error("expected error on nil pool in Write")
 	}
 }
 
-func TestPostgresBackend_Read_PanicsOnNilPool(t *testing.T) {
+func TestPostgresBackend_Read_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = b.Read(ctx, "test-id")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Read")
+	_, err := b.Read(ctx, "test-id")
+	if err == nil {
+		t.Error("expected error on nil pool in Read")
 	}
 }
 
-func TestPostgresBackend_Query_PanicsOnNilPool(t *testing.T) {
+func TestPostgresBackend_Query_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = b.Query(ctx, opsec.AuditFilter{})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Query")
+	_, err := b.Query(ctx, opsec.AuditFilter{})
+	if err == nil {
+		t.Error("expected error on nil pool in Query")
 	}
 }
 
-func TestPanicUnit_Delete_PanicsOnNilPool(t *testing.T) {
+func TestPanicUnit_Delete_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = b.Delete(ctx, "test-id")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Delete")
+	err := b.Delete(ctx, "test-id")
+	if err == nil {
+		t.Error("expected error on nil pool in Delete")
 	}
 }
 
@@ -187,57 +155,33 @@ func TestPostgresBackend_PruneExpired_ZeroRetention(t *testing.T) {
 	}
 }
 
-func TestPostgresBackend_PruneExpired_PanicsOnNilPool(t *testing.T) {
+func TestPostgresBackend_PruneExpired_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = b.PruneExpired(ctx, 30)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in PruneExpired")
+	_, err := b.PruneExpired(ctx, 30)
+	if err == nil {
+		t.Error("expected error on nil pool in PruneExpired")
 	}
 }
 
-func TestPostgresBackend_Count_PanicsOnNilPool(t *testing.T) {
+func TestPostgresBackend_Count_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = b.Count(ctx)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in Count")
+	_, err := b.Count(ctx)
+	if err == nil {
+		t.Error("expected error on nil pool in Count")
 	}
 }
 
-func TestPostgresBackend_VerifyIntegrity_PanicsOnNilPool(t *testing.T) {
+func TestPostgresBackend_VerifyIntegrity_ErrorsOnNilPool(t *testing.T) {
 	b := &postgresStorageBackend{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _, _ = b.VerifyIntegrity(ctx)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in VerifyIntegrity")
+	_, _, err := b.VerifyIntegrity(ctx)
+	if err == nil {
+		t.Error("expected error on nil pool in VerifyIntegrity")
 	}
 }
 
@@ -439,17 +383,9 @@ func TestPanicUnit_Write_WithEntry(t *testing.T) {
 		ComplianceTags: []string{"gdpr", "sox"},
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = b.Write(ctx, entry)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	err := b.Write(ctx, entry)
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }
 

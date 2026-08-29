@@ -38,6 +38,33 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 )
 
+// ssoContextKey mirrors pkg/auth's unexported contextKey type.  We cannot
+// import pkg/auth directly because it imports pkg/sso (SSOConfig/Manager),
+// creating an import cycle.  The string values match those used by
+// auth.ContextKeyTenantID and auth.ContextKeyIsAdmin so that context lookups
+// succeed when a real request context is threaded through.
+type ssoContextKey string
+
+const (
+	ssoCtxKeyTenantID ssoContextKey = "auth_tenant_id"
+	ssoCtxKeyIsAdmin  ssoContextKey = "auth_is_admin"
+)
+
+// getTenantID extracts the tenant ID from the context, mirroring
+// auth.GetTenantID.  Returns empty string when no tenant context is set
+// (e.g. context.Background()).
+func getTenantID(ctx context.Context) string {
+	v, _ := ctx.Value(ssoCtxKeyTenantID).(string)
+	return v
+}
+
+// isAdmin checks whether the context carries admin privileges, mirroring
+// auth.IsAdmin.  Returns false when no admin flag is set.
+func isAdmin(ctx context.Context) bool {
+	v, _ := ctx.Value(ssoCtxKeyIsAdmin).(bool)
+	return v
+}
+
 // PostgresSessionStore persists SSO sessions to PostgreSQL.
 // It shares the connection pool from an existing ioc.PostgresStore instance.
 type PostgresSessionStore struct {
@@ -150,12 +177,13 @@ VALUES (
 ) ON CONFLICT (version) DO NOTHING;
 `
 
-	if _, err := s.pool.Exec(ctx, schema); err != nil {
-		return fmt.Errorf("create sso schema: %w", err)
-	}
-
-	log.Println("PostgreSQL SSO session store: schema migration complete")
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
+		if _, err := q.Exec(ctx, schema); err != nil {
+			return fmt.Errorf("create sso schema: %w", err)
+		}
+		log.Println("PostgreSQL SSO session store: schema migration complete")
+		return nil
+	})
 }
 
 // ============================================================================
@@ -173,6 +201,8 @@ func (s *PostgresSessionStore) Create(session *SSOSession) error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
 	userJSON, err := json.Marshal(session.User) // #nosec G117 -- AccessToken is a SSO token field name, not a leaked secret
 	if err != nil {
@@ -228,21 +258,22 @@ func (s *PostgresSessionStore) Create(session *SSOSession) error {
 			metadata = EXCLUDED.metadata
 	`
 
-	_, err = s.pool.Exec(ctx, sql,
-		session.ID, session.UserID, session.SessionID,
-		string(session.Provider), session.ProviderName,
-		session.InitialIDP, session.NameID, session.SessionIndex,
-		session.IPAddress, session.UserAgent,
-		session.AccessToken, session.RefreshToken, session.IDToken,
-		session.Active, session.CreatedAt, session.ExpiresAt,
-		session.LastActivity, session.LastRefreshed, session.TokenExpiresAt,
-		userJSON, flagsJSON, metadataJSON,
-	)
-	if err != nil {
-		return fmt.Errorf("postgres create sso session: %w", err)
-	}
-
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql,
+			session.ID, session.UserID, session.SessionID,
+			string(session.Provider), session.ProviderName,
+			session.InitialIDP, session.NameID, session.SessionIndex,
+			session.IPAddress, session.UserAgent,
+			session.AccessToken, session.RefreshToken, session.IDToken,
+			session.Active, session.CreatedAt, session.ExpiresAt,
+			session.LastActivity, session.LastRefreshed, session.TokenExpiresAt,
+			userJSON, flagsJSON, metadataJSON,
+		)
+		if err != nil {
+			return fmt.Errorf("postgres create sso session: %w", err)
+		}
+		return nil
+	})
 }
 
 // Get retrieves an SSO session by ID from PostgreSQL.
@@ -253,8 +284,13 @@ func (s *PostgresSessionStore) Get(id string) (*SSOSession, error) {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	session, err := scanSession(s.pool.QueryRow(ctx, `
+	var session *SSOSession
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		var err error
+		session, err = scanSession(q.QueryRow(ctx, `
 		SELECT id, user_id, session_id, provider, provider_name,
 		       initial_idp, name_id, session_index,
 		       ip_address, user_agent,
@@ -264,6 +300,8 @@ func (s *PostgresSessionStore) Get(id string) (*SSOSession, error) {
 		       user_data, flags, metadata
 		FROM sso_sessions WHERE id = $1
 	`, id))
+		return err
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -284,6 +322,8 @@ func (s *PostgresSessionStore) Update(session *SSOSession) error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
 	userJSON, err := json.Marshal(session.User) // #nosec G117 -- AccessToken is a SSO token field name, not a leaked secret
 	if err != nil {
@@ -298,7 +338,8 @@ func (s *PostgresSessionStore) Update(session *SSOSession) error {
 		metadataJSON = []byte("{}")
 	}
 
-	tag, err := s.pool.Exec(ctx, `
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, `
 		UPDATE sso_sessions SET
 			user_id = $2, session_id = $3, provider = $4, provider_name = $5,
 			initial_idp = $6, name_id = $7, session_index = $8,
@@ -309,24 +350,24 @@ func (s *PostgresSessionStore) Update(session *SSOSession) error {
 			user_data = $19, flags = $20, metadata = $21
 		WHERE id = $1
 	`,
-		session.ID, session.UserID, session.SessionID,
-		string(session.Provider), session.ProviderName,
-		session.InitialIDP, session.NameID, session.SessionIndex,
-		session.IPAddress, session.UserAgent,
-		session.AccessToken, session.RefreshToken, session.IDToken,
-		session.Active, session.ExpiresAt,
-		session.LastActivity, session.LastRefreshed, session.TokenExpiresAt,
-		userJSON, flagsJSON, metadataJSON,
-	)
-	if err != nil {
-		return fmt.Errorf("postgres update sso session: %w", err)
-	}
+			session.ID, session.UserID, session.SessionID,
+			string(session.Provider), session.ProviderName,
+			session.InitialIDP, session.NameID, session.SessionIndex,
+			session.IPAddress, session.UserAgent,
+			session.AccessToken, session.RefreshToken, session.IDToken,
+			session.Active, session.ExpiresAt,
+			session.LastActivity, session.LastRefreshed, session.TokenExpiresAt,
+			userJSON, flagsJSON, metadataJSON,
+		)
+		if err != nil {
+			return fmt.Errorf("postgres update sso session: %w", err)
+		}
 
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("session not found: %s", session.ID)
-	}
-
-	return nil
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("session not found: %s", session.ID)
+		}
+		return nil
+	})
 }
 
 // Delete removes an SSO session by ID from PostgreSQL.
@@ -336,13 +377,16 @@ func (s *PostgresSessionStore) Delete(id string) error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	_, err := s.pool.Exec(ctx, `DELETE FROM sso_sessions WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("postgres delete sso session: %w", err)
-	}
-
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, `DELETE FROM sso_sessions WHERE id = $1`, id)
+		if err != nil {
+			return fmt.Errorf("postgres delete sso session: %w", err)
+		}
+		return nil
+	})
 }
 
 // GetByUserID returns all active sessions for a given user from PostgreSQL.
@@ -352,8 +396,12 @@ func (s *PostgresSessionStore) GetByUserID(userID string) ([]*SSOSession, error)
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	rows, err := s.pool.Query(ctx, `
+	var sessions []*SSOSession
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, `
 		SELECT id, user_id, session_id, provider, provider_name,
 		       initial_idp, name_id, session_index,
 		       ip_address, user_agent,
@@ -365,22 +413,26 @@ func (s *PostgresSessionStore) GetByUserID(userID string) ([]*SSOSession, error)
 		WHERE user_id = $1 AND active = TRUE AND expires_at > NOW()
 		ORDER BY last_activity DESC
 	`, userID)
-	if err != nil {
-		return nil, fmt.Errorf("postgres get sso sessions by user: %w", err)
-	}
-	defer rows.Close()
-
-	var sessions []*SSOSession
-	for rows.Next() {
-		session, err := scanSessionRow(rows)
 		if err != nil {
-			return nil, fmt.Errorf("postgres scan sso session: %w", err)
+			return fmt.Errorf("postgres get sso sessions by user: %w", err)
 		}
-		sessions = append(sessions, session)
-	}
+		defer rows.Close()
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("postgres iterate sso sessions: %w", err)
+		for rows.Next() {
+			session, err := scanSessionRow(rows)
+			if err != nil {
+				return fmt.Errorf("postgres scan sso session: %w", err)
+			}
+			sessions = append(sessions, session)
+		}
+
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("postgres iterate sso sessions: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return sessions, nil
@@ -393,18 +445,21 @@ func (s *PostgresSessionStore) DeleteByUserID(userID string) error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	tag, err := s.pool.Exec(ctx, `DELETE FROM sso_sessions WHERE user_id = $1`, userID)
-	if err != nil {
-		return fmt.Errorf("postgres delete sso sessions by user: %w", err)
-	}
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, `DELETE FROM sso_sessions WHERE user_id = $1`, userID)
+		if err != nil {
+			return fmt.Errorf("postgres delete sso sessions by user: %w", err)
+		}
 
-	count := tag.RowsAffected()
-	if count > 0 {
-		log.Printf("PostgreSQL SSO: deleted %d sessions for user %s", count, userID)
-	}
-
-	return nil
+		count := tag.RowsAffected()
+		if count > 0 {
+			log.Printf("PostgreSQL SSO: deleted %d sessions for user %s", count, userID)
+		}
+		return nil
+	})
 }
 
 // Cleanup removes expired sessions from PostgreSQL.
@@ -415,26 +470,29 @@ func (s *PostgresSessionStore) Cleanup() error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	tag, err := s.pool.Exec(ctx, `DELETE FROM sso_sessions WHERE expires_at < NOW() OR active = FALSE`)
-	if err != nil {
-		return fmt.Errorf("postgres cleanup sso sessions: %w", err)
-	}
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, `DELETE FROM sso_sessions WHERE expires_at < NOW() OR active = FALSE`)
+		if err != nil {
+			return fmt.Errorf("postgres cleanup sso sessions: %w", err)
+		}
 
-	count := tag.RowsAffected()
-	if count > 0 {
-		log.Printf("PostgreSQL SSO: cleaned up %d expired sessions", count)
-	}
+		count := tag.RowsAffected()
+		if count > 0 {
+			log.Printf("PostgreSQL SSO: cleaned up %d expired sessions", count)
+		}
 
-	// Also clean up expired SSO requests
-	reqTag, err := s.pool.Exec(ctx, `DELETE FROM sso_requests WHERE expires_at < NOW()`)
-	if err != nil {
-		log.Printf("PostgreSQL SSO: failed to clean up expired requests: %v", err)
-	} else if reqTag.RowsAffected() > 0 {
-		log.Printf("PostgreSQL SSO: cleaned up %d expired requests", reqTag.RowsAffected())
-	}
-
-	return nil
+		// Also clean up expired SSO requests
+		reqTag, err := q.Exec(ctx, `DELETE FROM sso_requests WHERE expires_at < NOW()`)
+		if err != nil {
+			log.Printf("PostgreSQL SSO: failed to clean up expired requests: %v", err)
+		} else if reqTag.RowsAffected() > 0 {
+			log.Printf("PostgreSQL SSO: cleaned up %d expired requests", reqTag.RowsAffected())
+		}
+		return nil
+	})
 }
 
 // Close marks the store as closed. Does NOT close the pool (PostgresStore owns it).
@@ -492,8 +550,11 @@ func (s *PostgresRequestStore) Create(request *SSORequest) error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	_, err := s.pool.Exec(ctx, `
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, `
 		INSERT INTO sso_requests (
 			id, provider, saml_request, relay_state, destination,
 			protocol_binding, state, code_verifier, nonce,
@@ -518,16 +579,16 @@ func (s *PostgresRequestStore) Create(request *SSORequest) error {
 			user_agent = EXCLUDED.user_agent,
 			expires_at = EXCLUDED.expires_at
 	`, request.ID, request.Provider, request.SAMLRequest, request.RelayState,
-		request.Destination, request.ProtocolBinding, request.State,
-		request.CodeVerifier, request.Nonce, request.RedirectURL,
-		request.IPAddress, request.UserAgent,
-		request.CreatedAt, request.ExpiresAt,
-	)
-	if err != nil {
-		return fmt.Errorf("postgres create sso request: %w", err)
-	}
-
-	return nil
+			request.Destination, request.ProtocolBinding, request.State,
+			request.CodeVerifier, request.Nonce, request.RedirectURL,
+			request.IPAddress, request.UserAgent,
+			request.CreatedAt, request.ExpiresAt,
+		)
+		if err != nil {
+			return fmt.Errorf("postgres create sso request: %w", err)
+		}
+		return nil
+	})
 }
 
 // Get retrieves an SSO request by ID from PostgreSQL.
@@ -537,21 +598,26 @@ func (s *PostgresRequestStore) Get(id string) (*SSORequest, error) {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
 	var req SSORequest
-	err := s.pool.QueryRow(ctx, `
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		err := q.QueryRow(ctx, `
 		SELECT id, provider, saml_request, relay_state, destination,
 		       protocol_binding, state, code_verifier, nonce,
 		       redirect_url, ip_address, user_agent,
 		       created_at, expires_at
 		FROM sso_requests WHERE id = $1
 	`, id).Scan(
-		&req.ID, &req.Provider, &req.SAMLRequest, &req.RelayState,
-		&req.Destination, &req.ProtocolBinding, &req.State,
-		&req.CodeVerifier, &req.Nonce, &req.RedirectURL,
-		&req.IPAddress, &req.UserAgent,
-		&req.CreatedAt, &req.ExpiresAt,
-	)
+			&req.ID, &req.Provider, &req.SAMLRequest, &req.RelayState,
+			&req.Destination, &req.ProtocolBinding, &req.State,
+			&req.CodeVerifier, &req.Nonce, &req.RedirectURL,
+			&req.IPAddress, &req.UserAgent,
+			&req.CreatedAt, &req.ExpiresAt,
+		)
+		return err
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -569,21 +635,26 @@ func (s *PostgresRequestStore) GetByState(state string) (*SSORequest, error) {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
 	var req SSORequest
-	err := s.pool.QueryRow(ctx, `
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		err := q.QueryRow(ctx, `
 		SELECT id, provider, saml_request, relay_state, destination,
 		       protocol_binding, state, code_verifier, nonce,
 		       redirect_url, ip_address, user_agent,
 		       created_at, expires_at
 		FROM sso_requests WHERE state = $1
 	`, state).Scan(
-		&req.ID, &req.Provider, &req.SAMLRequest, &req.RelayState,
-		&req.Destination, &req.ProtocolBinding, &req.State,
-		&req.CodeVerifier, &req.Nonce, &req.RedirectURL,
-		&req.IPAddress, &req.UserAgent,
-		&req.CreatedAt, &req.ExpiresAt,
-	)
+			&req.ID, &req.Provider, &req.SAMLRequest, &req.RelayState,
+			&req.Destination, &req.ProtocolBinding, &req.State,
+			&req.CodeVerifier, &req.Nonce, &req.RedirectURL,
+			&req.IPAddress, &req.UserAgent,
+			&req.CreatedAt, &req.ExpiresAt,
+		)
+		return err
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -601,13 +672,16 @@ func (s *PostgresRequestStore) Delete(id string) error {
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	_, err := s.pool.Exec(ctx, `DELETE FROM sso_requests WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("postgres delete sso request: %w", err)
-	}
-
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, `DELETE FROM sso_requests WHERE id = $1`, id)
+		if err != nil {
+			return fmt.Errorf("postgres delete sso request: %w", err)
+		}
+		return nil
+	})
 }
 
 // CloseRequestStore marks the request store as closed.
@@ -723,13 +797,17 @@ func (s *PostgresSessionStore) StatsPostgres() (activeCount int, totalCount int,
 	}
 
 	ctx := context.Background()
+	tenantID := getTenantID(ctx)
+	isAdmin := isAdmin(ctx)
 
-	err = s.pool.QueryRow(ctx, `
+	err = ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, `
 		SELECT
 			COUNT(*) FILTER (WHERE active = TRUE AND expires_at > NOW()),
 			COUNT(*)
 		FROM sso_sessions
 	`).Scan(&activeCount, &totalCount)
+	})
 	if err != nil {
 		return 0, 0, fmt.Errorf("postgres sso session stats: %w", err)
 	}

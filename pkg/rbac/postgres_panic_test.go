@@ -2,7 +2,7 @@
 // AegisGate Platform - RBAC PostgreSQL Store Panic-Recovery Unit Tests
 //
 // Tests input validation paths, closed-state paths, and pool-call paths
-// via panic recovery without requiring a live PostgreSQL connection.
+// via error returns without requiring a live PostgreSQL connection.
 //go:build !integration
 
 package rbac
@@ -207,10 +207,10 @@ func TestRBACCreateAgentSession_NilSession(t *testing.T) {
 }
 
 // --------------------------------------------------------------------
-// Panic-recovery tests (exercise code paths up to pool access)
+// Nil-pool error tests (exercise code paths up to pool access)
 // --------------------------------------------------------------------
 
-func TestRBACRegisterAgent_PanicsOnNilPool(t *testing.T) {
+func TestRBACRegisterAgent_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
@@ -219,21 +219,13 @@ func TestRBACRegisterAgent_PanicsOnNilPool(t *testing.T) {
 		Name: "Test Agent",
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = s.RegisterAgent(ctx, agent)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	err := s.RegisterAgent(ctx, agent)
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }
 
-func TestRBACRegisterAgent_WithTenantCtx(t *testing.T) {
+func TestRBACRegisterAgent_WithTenantCtx_NilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
@@ -242,93 +234,53 @@ func TestRBACRegisterAgent_WithTenantCtx(t *testing.T) {
 		Name: "Test Agent",
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = s.RegisterAgent(ctx, agent, RBACTenantContext{TenantID: "t1", IsAdmin: false})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool with tenant ctx")
+	err := s.RegisterAgent(ctx, agent, RBACTenantContext{TenantID: "t1", IsAdmin: false})
+	if err == nil {
+		t.Error("expected error on nil pool with tenant ctx")
 	}
 }
 
-func TestRBACGetAgent_PanicsOnNilPool(t *testing.T) {
+func TestRBACGetAgent_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = s.GetAgent(ctx, "test-agent")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in GetAgent")
+	_, err := s.GetAgent(ctx, "test-agent")
+	if err == nil {
+		t.Error("expected error on nil pool in GetAgent")
 	}
 }
 
-func TestRBACGetAgent_WithTenantCtx(t *testing.T) {
+func TestRBACGetAgent_WithTenantCtx_NilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = s.GetAgent(ctx, "test-agent", RBACTenantContext{TenantID: "t1", IsAdmin: true})
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in GetAgent with tenant ctx")
+	_, err := s.GetAgent(ctx, "test-agent", RBACTenantContext{TenantID: "t1", IsAdmin: true})
+	if err == nil {
+		t.Error("expected error on nil pool in GetAgent with tenant ctx")
 	}
 }
 
-func TestRBACUnregisterAgent_PanicsOnNilPool(t *testing.T) {
+func TestRBACUnregisterAgent_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = s.UnregisterAgent(ctx, "test-agent")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in UnregisterAgent")
+	err := s.UnregisterAgent(ctx, "test-agent")
+	if err == nil {
+		t.Error("expected error on nil pool in UnregisterAgent")
 	}
 }
 
-func TestRBACListAgents_PanicsOnNilPool(t *testing.T) {
+func TestRBACListAgents_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = s.ListAgents(ctx)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in ListAgents")
+	_, err := s.ListAgents(ctx)
+	if err == nil {
+		t.Error("expected error on nil pool in ListAgents")
 	}
 }
 
-func TestRBACCreateAgentSession_PanicsOnNilPool(t *testing.T) {
+func TestRBACCreateAgentSession_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
@@ -337,53 +289,29 @@ func TestRBACCreateAgentSession_PanicsOnNilPool(t *testing.T) {
 		AgentID: "test-agent",
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = s.CreateAgentSession(ctx, session)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in CreateAgentSession")
+	err := s.CreateAgentSession(ctx, session)
+	if err == nil {
+		t.Error("expected error on nil pool in CreateAgentSession")
 	}
 }
 
-func TestRBACRefreshAgentSession_PanicsOnNilPool(t *testing.T) {
+func TestRBACRefreshAgentSession_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = s.RefreshAgentSession(ctx, "test-session", time.Hour)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in RefreshAgentSession")
+	err := s.RefreshAgentSession(ctx, "test-session", time.Hour)
+	if err == nil {
+		t.Error("expected error on nil pool in RefreshAgentSession")
 	}
 }
 
-func TestRBACInvalidateAgentSession_PanicsOnNilPool(t *testing.T) {
+func TestRBACInvalidateAgentSession_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = s.InvalidateAgentSession(ctx, "test-session")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in InvalidateAgentSession")
+	err := s.InvalidateAgentSession(ctx, "test-session")
+	if err == nil {
+		t.Error("expected error on nil pool in InvalidateAgentSession")
 	}
 }
 
@@ -407,38 +335,22 @@ func TestRBACClose_AlreadyClosed(t *testing.T) {
 	}
 }
 
-func TestRBACCountAgents_PanicsOnNilPool(t *testing.T) {
+func TestRBACCountAgents_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = s.CountAgents(ctx)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in CountAgents")
+	_, err := s.CountAgents(ctx)
+	if err == nil {
+		t.Error("expected error on nil pool in CountAgents")
 	}
 }
 
-func TestRBACCountActiveSessions_PanicsOnNilPool(t *testing.T) {
+func TestRBACCountActiveSessions_ReturnsErrorOnNilPool(t *testing.T) {
 	s := &PostgresRBACStore{closed: false, pool: nil}
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = s.CountActiveSessions(ctx, "test-agent")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool in CountActiveSessions")
+	_, err := s.CountActiveSessions(ctx, "test-agent")
+	if err == nil {
+		t.Error("expected error on nil pool in CountActiveSessions")
 	}
 }

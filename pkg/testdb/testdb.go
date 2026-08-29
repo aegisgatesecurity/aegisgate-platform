@@ -57,6 +57,9 @@ func startPostgresContainer(t *testing.T, ctx context.Context) (testcontainers.C
 		"postgres:16-alpine",
 		postgres.WithDatabase("aegisgate_test"),
 		postgres.WithUsername("aegisgate"),
+		// #nosec G101 -- this is a test-only password for ephemeral containers.
+		// The container is destroyed after the test; this password never appears
+		// in production code or deployments.
 		postgres.WithPassword("aegisgate_test_password"),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").

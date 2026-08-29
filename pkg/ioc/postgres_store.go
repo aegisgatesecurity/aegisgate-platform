@@ -37,7 +37,9 @@ import (
 	"embed"
 	"fmt"
 	"math"
+	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -116,6 +118,32 @@ func NewPostgresStore(ctx context.Context, cfg DatabaseConfig) (*PostgresStore, 
 	poolConfig, err := pgxpool.ParseConfig(cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parse database URL: %w", err)
+	}
+
+	// SECURITY: Enforce TLS on database connections in production mode.
+	// If the connection string doesn't specify sslmode, default to "require"
+	// so queries and credentials are encrypted in transit.
+	// "prefer" or "disable" are only acceptable in dev/test mode.
+	prodMode := os.Getenv("AEGISGATE_MODE")
+	if prodMode == "" {
+		prodMode = os.Getenv("AEGISGATE_ENV")
+	}
+	if prodMode == "production" || prodMode == "prod" {
+		lowerURL := strings.ToLower(cfg.URL)
+		if !strings.Contains(lowerURL, "sslmode=") {
+			// Append sslmode=require for production
+			sep := "?"
+			if strings.Contains(cfg.URL, "?") {
+				sep = "&"
+			}
+			cfg.URL = cfg.URL + sep + "sslmode=require"
+			poolConfig, err = pgxpool.ParseConfig(cfg.URL)
+			if err != nil {
+				return nil, fmt.Errorf("parse database URL with sslmode=require: %w", err)
+			}
+		} else if strings.Contains(lowerURL, "sslmode=disable") || strings.Contains(lowerURL, "sslmode=prefer") {
+			return nil, fmt.Errorf("database sslmode=disable or sslmode=prefer is not allowed in production mode — use sslmode=require or sslmode=verify-full")
+		}
 	}
 
 	// G115 (int -> int32 overflow) — clamp MaxConns / MinConns to

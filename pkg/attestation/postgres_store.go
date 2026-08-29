@@ -14,6 +14,9 @@
 //   - Automatic migration via the shared migration runner (006_attestation.sql)
 //   - Tier-based pruning of expired envelopes (Community: never, Developer: 30d,
 //     Professional: 90d, Enterprise: configurable)
+//   - All pool access is wrapped with ioc.WithTenantContextOrPool so that
+//     PostgreSQL Row-Level Security (RLS) policies enforce tenant isolation
+//     at the database level (defense-in-depth).
 //
 // Thread safety:
 //
@@ -32,6 +35,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -70,31 +74,34 @@ func (s *PostgresAttestationStore) Store(ctx context.Context, envelope *Envelope
 		validUntil = envelope.ValidUntil
 	}
 
-	_, err = s.pool.Exec(ctx,
-		`INSERT INTO attestation_envelopes (
-			id, type, subject, issuer, issued_at, valid_until,
-			payload, sig_algorithm, sig_key_id, sig_value,
-			sig_public_key, sig_signed_at, tenant_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		ON CONFLICT (id) DO NOTHING`,
-		envelope.ID,
-		string(envelope.Type),
-		envelope.Subject,
-		envelope.Issuer,
-		envelope.IssuedAt,
-		validUntil,
-		payload,
-		envelope.Signature.Algorithm,
-		envelope.Signature.KeyID,
-		envelope.Signature.Value,
-		envelope.Signature.PublicKey,
-		envelope.Signature.SignedAt,
-		"", // tenant_id: empty for single-tenant
-	)
-	if err != nil {
-		return fmt.Errorf("attestation: Store: %w", err)
-	}
-	return nil
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	return ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx,
+			`INSERT INTO attestation_envelopes (
+				id, type, subject, issuer, issued_at, valid_until,
+				payload, sig_algorithm, sig_key_id, sig_value,
+				sig_public_key, sig_signed_at, tenant_id
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			ON CONFLICT (id) DO NOTHING`,
+			envelope.ID,
+			string(envelope.Type),
+			envelope.Subject,
+			envelope.Issuer,
+			envelope.IssuedAt,
+			validUntil,
+			payload,
+			envelope.Signature.Algorithm,
+			envelope.Signature.KeyID,
+			envelope.Signature.Value,
+			envelope.Signature.PublicKey,
+			envelope.Signature.SignedAt,
+			tenantID,
+		)
+		if err != nil {
+			return fmt.Errorf("attestation: Store: %w", err)
+		}
+		return nil
+	})
 }
 
 // Get retrieves an envelope by its ID. Returns nil if not found.
@@ -103,6 +110,7 @@ func (s *PostgresAttestationStore) Get(ctx context.Context, id string) (*Envelop
 		return nil, fmt.Errorf("attestation: Get: empty id")
 	}
 
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
 	var env Envelope
 	var sigAlgo, sigKeyID string
 	var sigValue, sigPubKey []byte
@@ -110,26 +118,28 @@ func (s *PostgresAttestationStore) Get(ctx context.Context, id string) (*Envelop
 	var validUntil *time.Time
 	var rawPayload []byte
 
-	err := s.pool.QueryRow(ctx,
-		`SELECT id, type, subject, issuer, issued_at, valid_until,
-			payload, sig_algorithm, sig_key_id, sig_value,
-			sig_public_key, sig_signed_at
-		FROM attestation_envelopes WHERE id = $1`,
-		id,
-	).Scan(
-		&env.ID,
-		&env.Type,
-		&env.Subject,
-		&env.Issuer,
-		&env.IssuedAt,
-		&validUntil,
-		&rawPayload,
-		&sigAlgo,
-		&sigKeyID,
-		&sigValue,
-		&sigPubKey,
-		&sigSignedAt,
-	)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx,
+			`SELECT id, type, subject, issuer, issued_at, valid_until,
+				payload, sig_algorithm, sig_key_id, sig_value,
+				sig_public_key, sig_signed_at
+			FROM attestation_envelopes WHERE id = $1`,
+			id,
+		).Scan(
+			&env.ID,
+			&env.Type,
+			&env.Subject,
+			&env.Issuer,
+			&env.IssuedAt,
+			&validUntil,
+			&rawPayload,
+			&sigAlgo,
+			&sigKeyID,
+			&sigValue,
+			&sigPubKey,
+			&sigSignedAt,
+		)
+	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return nil, nil
@@ -235,24 +245,36 @@ func (s *PostgresAttestationStore) ListByTimeRange(ctx context.Context, from, to
 // time. Returns the count of removed envelopes. Envelopes with
 // valid_until = NULL (no expiration) are never pruned.
 func (s *PostgresAttestationStore) PruneExpired(ctx context.Context, cutoff time.Time) (int, error) {
-	result, err := s.pool.Exec(ctx,
-		`DELETE FROM attestation_envelopes
-		WHERE valid_until IS NOT NULL AND valid_until < $1`,
-		cutoff,
-	)
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+	var count int
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		result, err := q.Exec(ctx,
+			`DELETE FROM attestation_envelopes
+			WHERE valid_until IS NOT NULL AND valid_until < $1`,
+			cutoff,
+		)
+		if err != nil {
+			return fmt.Errorf("attestation: PruneExpired: %w", err)
+		}
+		count = int(result.RowsAffected())
+		return nil
+	})
 	if err != nil {
-		return 0, fmt.Errorf("attestation: PruneExpired: %w", err)
+		return 0, err
 	}
-	return int(result.RowsAffected()), nil
+	return count, nil
 }
 
 // CountByType returns the number of envelopes of a specific type.
 func (s *PostgresAttestationStore) CountByType(ctx context.Context, attestationType Type) (int, error) {
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
 	var count int
-	err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM attestation_envelopes WHERE type = $1`,
-		string(attestationType),
-	).Scan(&count)
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx,
+			`SELECT COUNT(*) FROM attestation_envelopes WHERE type = $1`,
+			string(attestationType),
+		).Scan(&count)
+	})
 	if err != nil {
 		return 0, fmt.Errorf("attestation: CountByType: %w", err)
 	}
@@ -267,51 +289,57 @@ func (s *PostgresAttestationStore) Close() error {
 // queryEnvelopes is a helper that executes a query and scans the results
 // into a slice of Envelope pointers.
 func (s *PostgresAttestationStore) queryEnvelopes(ctx context.Context, query string, args []interface{}) ([]*Envelope, error) {
-	rows, err := s.pool.Query(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("attestation: query envelopes: %w", err)
-	}
-	defer rows.Close()
-
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
 	var envelopes []*Envelope
-	for rows.Next() {
-		var env Envelope
-		var sigAlgo, sigKeyID string
-		var sigValue, sigPubKey []byte
-		var sigSignedAt time.Time
-		var validUntil *time.Time
-		var rawPayload []byte
+	err := ioc.WithTenantContextOrPool(ctx, s.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, query, args...)
+		if err != nil {
+			return fmt.Errorf("attestation: query envelopes: %w", err)
+		}
+		defer rows.Close()
 
-		if err := rows.Scan(
-			&env.ID,
-			&env.Type,
-			&env.Subject,
-			&env.Issuer,
-			&env.IssuedAt,
-			&validUntil,
-			&rawPayload,
-			&sigAlgo,
-			&sigKeyID,
-			&sigValue,
-			&sigPubKey,
-			&sigSignedAt,
-		); err != nil {
-			return nil, fmt.Errorf("attestation: scan envelope: %w", err)
-		}
+		for rows.Next() {
+			var env Envelope
+			var sigAlgo, sigKeyID string
+			var sigValue, sigPubKey []byte
+			var sigSignedAt time.Time
+			var validUntil *time.Time
+			var rawPayload []byte
 
-		if validUntil != nil {
-			env.ValidUntil = *validUntil
+			if err := rows.Scan(
+				&env.ID,
+				&env.Type,
+				&env.Subject,
+				&env.Issuer,
+				&env.IssuedAt,
+				&validUntil,
+				&rawPayload,
+				&sigAlgo,
+				&sigKeyID,
+				&sigValue,
+				&sigPubKey,
+				&sigSignedAt,
+			); err != nil {
+				return fmt.Errorf("attestation: scan envelope: %w", err)
+			}
+
+			if validUntil != nil {
+				env.ValidUntil = *validUntil
+			}
+			env.RawPayload = json.RawMessage(rawPayload)
+			env.Signature = Signature{
+				Algorithm: sigAlgo,
+				KeyID:     sigKeyID,
+				Value:     sigValue,
+				PublicKey: sigPubKey,
+				SignedAt:  sigSignedAt,
+			}
+			envelopes = append(envelopes, &env)
 		}
-		env.RawPayload = json.RawMessage(rawPayload)
-		env.Signature = Signature{
-			Algorithm: sigAlgo,
-			KeyID:     sigKeyID,
-			Value:     sigValue,
-			PublicKey: sigPubKey,
-			SignedAt:  sigSignedAt,
-		}
-		envelopes = append(envelopes, &env)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-
 	return envelopes, nil
 }

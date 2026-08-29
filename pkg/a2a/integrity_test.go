@@ -5,20 +5,29 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // helper creates a request with an HMAC‑SHA256 signature header
+// SECURITY: Includes timestamp and nonce for replay protection
 func newSignedRequest(secret []byte, payload []byte) *http.Request {
 	mac := hmac.New(sha256.New, secret)
 	mac.Write(payload)
+	timestamp := fmt.Sprintf("%d", time.Now().Unix())
+	nonce := fmt.Sprintf("test-nonce-%d", time.Now().UnixNano())
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte(nonce))
 	sig := mac.Sum(nil)
 	sigB64 := base64.StdEncoding.EncodeToString(sig)
 	r := &http.Request{Header: http.Header{}}
 	r.Body = io.NopCloser(bytes.NewReader(payload))
 	r.Header.Set("A2A-Signature", sigB64)
+	r.Header.Set("A2A-Timestamp", timestamp)
+	r.Header.Set("A2A-Nonce", nonce)
 	return r
 }
 

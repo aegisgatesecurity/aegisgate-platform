@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"log/slog"
@@ -27,6 +28,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -108,7 +110,7 @@ func (a *tsaSignerAdapter) Endpoints() []string {
 }
 
 var (
-	version    = "4.3.1"
+	version    = "4.3.2"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -1015,19 +1017,31 @@ func main() {
 	//   GET  /api/v1/lens/stats
 	//   GET  /api/v1/lens/healthz
 	if lensServer != nil {
-		lensMux := lensServer.Mux()
-		proxyMux.Handle("/api/v1/lens/", lensMux)
-		log.Printf("Lens backend: handler mounted at /api/v1/lens/")
+		// SECURITY: Refuse to mount Lens routes on the proxy mux (internet-facing)
+		// if no bearer token is configured. Without a token, all non-healthz
+		// endpoints return 503, but we go further and don't mount at all to
+		// prevent any exposure of the Lens telemetry endpoints to the internet.
+		lensBearer := *lensBearerToken
+		if lensBearer == "" {
+			lensBearer = os.Getenv("AEGISGATE_LENS_BEARER_TOKEN")
+		}
+		if lensBearer == "" {
+			log.Printf("⚠️  Lens backend: refusing to mount on proxy port — AEGISGATE_LENS_BEARER_TOKEN is empty (security: no unauthenticated exposure)")
+		} else {
+			lensMux := lensServer.Mux()
+			proxyMux.Handle("/api/v1/lens/", lensMux)
+			log.Printf("Lens backend: handler mounted at /api/v1/lens/")
 
-		// Compatibility route: the Lens extension constructs the
-		// backend URL as <backend>/lens/telemetry/fp-report. When
-		// the backend is the Platform (not the Cloudflare Worker),
-		// the extension's constructed path (/lens/...) does not
-		// match the Platform's /api/v1/lens/... routes. Mounting
-		// the same mux at /lens/ makes both paths work without
-		// requiring any changes to the Lens extension's URL logic.
-		proxyMux.Handle("/lens/", lensMux)
-		log.Printf("Lens backend: compatibility route mounted at /lens/")
+			// Compatibility route: the Lens extension constructs the
+			// backend URL as <backend>/lens/telemetry/fp-report. When
+			// the backend is the Platform (not the Cloudflare Worker),
+			// the extension's constructed path (/lens/...) does not
+			// match the Platform's /api/v1/lens/... routes. Mounting
+			// the same mux at /lens/ makes both paths work without
+			// requiring any changes to the Lens extension's URL logic.
+			proxyMux.Handle("/lens/", lensMux)
+			log.Printf("Lens backend: compatibility route mounted at /lens/")
+		}
 	}
 
 	// IOC admin API (v3.5.0+ Track 6 Task 5): mount on the
@@ -1187,25 +1201,56 @@ func main() {
 			code = http.StatusServiceUnavailable
 		}
 
-		// Build JSON response manually for deterministic field order
+		// SECURITY: Reduce information disclosure to unauthenticated requests.
+		// Unauthenticated callers only get status (healthy/unhealthy) — no tier,
+		// version, license, cert, or SIEM details. Authenticated callers (via
+		// dashboard auth or API token) get the full health report.
+		isAuthenticated := false
+		if authHeader := r.Header.Get("Authorization"); authHeader != "" {
+			isAuthenticated = true
+		}
+		if apiToken := r.Header.Get("X-API-Token"); apiToken != "" {
+			isAuthenticated = true
+		}
+
 		w.WriteHeader(code)
-		fmt.Fprintf(w, `{"status":"%s","tier":"%s","version":"%s","checks":{"proxy":{"enabled":%v,"healthy":%v},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"siem":{"enabled":%v,"healthy":%v,"platforms":%d,"events_forwarded":%d,"events_dropped":%d}}}`,
-			status, platformTier.String(), version,
-			proxyEnabled, proxyEnabled,
-			persistenceMgr.IsEnabled(), persistStarted, persistStarted,
-			licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
-			certHealthy, certHealthy,
-			siemEnabledFlag, siemHealthy, siemPlatforms, siemStats.EventsForwarded, siemStats.EventsDropped)
+		if !isAuthenticated {
+			// Minimal response — just status, no operational details
+			fmt.Fprintf(w, `{"status":"%s"}`, status)
+		} else {
+			// Full health report for authenticated callers
+			fmt.Fprintf(w, `{"status":"%s","tier":"%s","version":"%s","checks":{"proxy":{"enabled":%v,"healthy":%v},"persistence":{"enabled":%v,"started":%v,"healthy":%v},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"siem":{"enabled":%v,"healthy":%v,"platforms":%d,"events_forwarded":%d,"events_dropped":%d}}}`,
+				status, platformTier.String(), version,
+				proxyEnabled, proxyEnabled,
+				persistenceMgr.IsEnabled(), persistStarted, persistStarted,
+				licenseResult.Valid, licenseResult.Tier.String(), licenseResult.Valid,
+				certHealthy, certHealthy,
+				siemEnabledFlag, siemHealthy, siemPlatforms, siemStats.EventsForwarded, siemStats.EventsDropped)
+		}
 	})
 
 	proxyMux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"version":"%s","component":"aegisgate-proxy"}`, version)
+		// SECURITY: Reduce fingerprinting — only return "ok" status
+		// without version or component name for unauthenticated requests.
+		fmt.Fprintf(w, `{"status":"ok"}`)
 	})
 
 	proxyMux.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
-		stats := proxyServer.GetStats()
 		w.Header().Set("Content-Type", "application/json")
+		// SECURITY: Unauthenticated callers get minimal response only.
+		isAuthenticated := false
+		if authHeader := r.Header.Get("Authorization"); strings.HasPrefix(authHeader, "Bearer ") {
+			isAuthenticated = true
+		}
+		if token := r.Header.Get("X-API-Token"); token != "" {
+			isAuthenticated = true
+		}
+		if !isAuthenticated {
+			fmt.Fprintf(w, `{"status":"ok"}`)
+			return
+		}
+		stats := proxyServer.GetStats()
 		reqCount, _ := stats["request_count"].(int64)
 		fmt.Fprintf(w, `{"request_count":%d,"component":"aegisgate-proxy"}`, reqCount)
 	})
@@ -1252,7 +1297,7 @@ func main() {
 	// Start proxy server with proper synchronization
 	proxyReady := make(chan error, 1)
 	go func() {
-		proxyListener, err := net.Listen("tcp", proxyHTTPServer.Addr)
+		proxyListener, err := createTLSListener(proxyHTTPServer.Addr, &cfg.TLS, certResult)
 		if err != nil {
 			proxyReady <- fmt.Errorf("failed to bind proxy: %w", err)
 			return
@@ -1273,7 +1318,11 @@ func main() {
 	// The bridge routes LLM API calls from AegisGuard through
 	// AegisGate for defense-in-depth security scanning.
 
-	platformBridge, bridgeErr := bridge.NewPlatformBridge(fmt.Sprintf("http://localhost:%d", *proxyPort))
+	bridgeScheme := "http"
+	if cfg.TLS.Enabled {
+		bridgeScheme = "https"
+	}
+	platformBridge, bridgeErr := bridge.NewPlatformBridge(fmt.Sprintf("%s://localhost:%d", bridgeScheme, *proxyPort))
 	if bridgeErr != nil {
 
 		// ============================================================
@@ -1414,6 +1463,20 @@ func main() {
 	// Initialize authentication middleware from environment
 	authConfig := auth.ConfigFromEnv()
 
+	// SECURITY: Refuse to start in production with insecure default keys.
+	// This prevents accidental deployment with the dev/test signing keys.
+	if err := authConfig.ValidateProduction(); err != nil {
+		log.Fatalf("🚨 SECURITY: %v", err)
+	}
+
+	// SECURITY: Refuse to start in production mode with TLS disabled.
+	// The platform must encrypt all traffic (tokens, API keys, passwords)
+	// at the application level, not just rely on a reverse proxy.
+	if normalizedMode == "production" && !cfg.TLS.Enabled {
+		log.Fatalf("🚨 SECURITY: TLS is disabled (tls.enabled=false) in production mode — refusing to start. " +
+			"Set tls.enabled=true in config or use --profile production (which enables TLS with auto-generated certs).")
+	}
+
 	// Initialize SSO Manager with configuration from YAML file
 	var ssoManager *sso.Manager
 	var ssoErr error
@@ -1467,7 +1530,9 @@ func main() {
 
 				// Parse saml section
 				if samlMap, ok := configMap["saml"].(map[string]interface{}); ok {
-					samlConfig := &sso.SAMLConfig{}
+					// SECURITY: Start from secure defaults (signature validation ON).
+					// Config can explicitly override for dev/test.
+					samlConfig := sso.DefaultSAMLConfig()
 					if idpMetadataURL, ok := samlMap["idp_metadata_url"].(string); ok {
 						samlConfig.IDPMetadataURL = idpMetadataURL
 					}
@@ -1485,6 +1550,20 @@ func main() {
 					}
 					if keyFile, ok := samlMap["key_file"].(string); ok {
 						samlConfig.KeyFile = keyFile
+					}
+					// SECURITY: Allow explicit override of signature validation
+					// for dev/test environments. Default is ON (fail-closed).
+					if vs, ok := samlMap["validate_signature"].(bool); ok {
+						samlConfig.ValidateSignature = vs
+						if !vs {
+							log.Printf("⚠️  SAML signature validation DISABLED via config — this is insecure and should only be used in dev/test")
+						}
+					}
+					if was, ok := samlMap["want_assertions_signed"].(bool); ok {
+						samlConfig.WantAssertionsSigned = was
+					}
+					if wrs, ok := samlMap["want_response_signed"].(bool); ok {
+						samlConfig.WantResponseSigned = wrs
 					}
 					ssoConfig.SAML = samlConfig
 				}
@@ -1540,6 +1619,11 @@ func main() {
 		if *profileName == "development" || *profileName == "test" {
 			csrfConfig.CookieSecure = false
 			csrfConfig.CookieSameSite = http.SameSiteLaxMode
+		}
+		// SECURITY: In production mode, always force Secure flag on CSRF cookie
+		// so it's never sent over plaintext HTTP.
+		if normalizedMode == "production" {
+			csrfConfig.CookieSecure = true
 		}
 		csrfMiddleware = security.NewCSRFMiddleware(csrfConfig)
 		log.Printf("CSRF: enabled (token cookie: %s, header: %s)", csrfConfig.CookieName, csrfConfig.HeaderName)
@@ -1878,6 +1962,17 @@ func main() {
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		// SECURITY (M-2 expanded): Unauthenticated callers get only a minimal
+		// status response. Full health details (scanner, bridge, persistence,
+		// license tier, certificates, A2A status) require authentication.
+		isAuthenticated := false
+		if authHeader := r.Header.Get("Authorization"); strings.HasPrefix(authHeader, "Bearer ") {
+			isAuthenticated = true
+		}
+		if token := r.Header.Get("X-API-Token"); token != "" {
+			isAuthenticated = true
+		}
+
 		checks := map[string]map[string]interface{}{}
 		allHealthy := true
 
@@ -1950,6 +2045,13 @@ func main() {
 			code = http.StatusServiceUnavailable
 		}
 
+		// SECURITY: Unauthenticated callers get minimal response only.
+		if !isAuthenticated {
+			w.WriteHeader(code)
+			fmt.Fprintf(w, `{"status":"%s"}`, status)
+			return
+		}
+
 		w.WriteHeader(code)
 		fmt.Fprintf(w, `{"status":"%s","version":"%s","tier":"%s","node_id":"%s","cluster_mode":"%s","checks":{"scanner":{"healthy":%v},"bridge":{"status":"%s","healthy":true},"persistence":{"enabled":%v,"started":%v,"healthy":%v,"backend":"%s"},"license":{"valid":%v,"tier":"%s","healthy":%v},"certificates":{"valid":%v,"healthy":%v},"a2a":{"status":"%s","healthy":%v}},"uptime":%.0f,"timestamp":"%s"}`,
 			status, version, platformTier.String(), safeNodeID(clusterNode.ID), clusterMode,
@@ -1963,13 +2065,14 @@ func main() {
 
 	dashMux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		// SECURITY: Unauthenticated callers get minimal readiness status only.
 		scannerHealthy := mcpScanner.Health() == nil
 		if scannerHealthy {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, `{"ready":true,"scanner":"connected"}`)
+			fmt.Fprintf(w, `{"ready":true}`)
 		} else {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			fmt.Fprintf(w, `{"ready":false,"scanner":"disconnected"}`)
+			fmt.Fprintf(w, `{"ready":false}`)
 		}
 	})
 
@@ -2823,7 +2926,7 @@ func main() {
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error":"failed to initiate SSO login: %v"}`, err)
+			fmt.Fprintf(w, `{"error":"failed to initiate SSO login"}`)
 			return
 		}
 
@@ -2850,7 +2953,7 @@ func main() {
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, `{"error":"SSO callback failed: %v"}`, err)
+			fmt.Fprintf(w, `{"error":"SSO callback failed"}`)
 			return
 		}
 
@@ -2887,7 +2990,7 @@ func main() {
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, `{"error":"SSO logout failed: %v"}`, err)
+			fmt.Fprintf(w, `{"error":"SSO logout failed"}`)
 			return
 		}
 
@@ -2907,14 +3010,23 @@ func main() {
 			http.ServeFile(w, r, "ui/frontend/index.html")
 			return
 		}
+		// SECURITY: Path traversal protection — reject any path containing
+		// ".." or that doesn't start with a forward slash. Clean the path
+		// before joining with the static directory to prevent directory
+		// traversal attacks (e.g., /css/../../../etc/passwd).
+		cleanPath := path.Clean(r.URL.Path)
+		if !strings.HasPrefix(cleanPath, "/") || strings.Contains(cleanPath, "..") {
+			http.NotFound(w, r)
+			return
+		}
 		// Serve static assets (CSS, JS, images, standalone HTML pages)
-		if strings.HasPrefix(r.URL.Path, "/css/") || strings.HasPrefix(r.URL.Path, "/js/") {
-			http.ServeFile(w, r, "ui/frontend"+r.URL.Path)
+		if strings.HasPrefix(cleanPath, "/css/") || strings.HasPrefix(cleanPath, "/js/") {
+			http.ServeFile(w, r, filepath.Join("ui/frontend", cleanPath))
 			return
 		}
 		// Serve standalone HTML pages (e.g., /trust-dashboard.html)
-		if strings.HasSuffix(r.URL.Path, ".html") {
-			http.ServeFile(w, r, "ui/frontend"+r.URL.Path)
+		if strings.HasSuffix(cleanPath, ".html") {
+			http.ServeFile(w, r, filepath.Join("ui/frontend", cleanPath))
 			return
 		}
 		http.NotFound(w, r)
@@ -2922,7 +3034,9 @@ func main() {
 
 	dashMux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"version":"%s","component":"aegisgate-platform"}`, version)
+		// SECURITY: Reduce fingerprinting — return "ok" without version details.
+		// Authenticated callers can get version from the dashboard API.
+		fmt.Fprintf(w, `{"status":"ok"}`)
 	})
 
 	// Wrap dashboard mux with OpenTelemetry tracing (no-op when disabled)
@@ -2947,7 +3061,7 @@ func main() {
 	// Start dashboard server with proper synchronization
 	dashReady := make(chan error, 1)
 	go func() {
-		dashListener, err := net.Listen("tcp", dashHTTPServer.Addr)
+		dashListener, err := createTLSListener(dashHTTPServer.Addr, &cfg.TLS, certResult)
 		if err != nil {
 			dashReady <- fmt.Errorf("failed to bind dashboard: %w", err)
 			return
@@ -2997,9 +3111,28 @@ func main() {
 			log.Printf("⚠️  gRPC server creation failed: %v", grpcErr)
 		} else {
 			go func() {
-				log.Printf("gRPC server listening on %s", grpcAddrStr)
-				if err := grpc.Serve(grpcServer, grpcAddrStr); err != nil {
-					log.Printf("gRPC server error: %v", err)
+				if cfg.TLS.Enabled {
+					certDir := cfg.TLS.CertDir
+					if certDir == "" { certDir = "./certs" }
+					certFile := cfg.TLS.CertFile
+					if certFile == "" { certFile = "server.crt" }
+					keyFile := cfg.TLS.KeyFile
+					if keyFile == "" { keyFile = "server.key" }
+					certPath := filepath.Join(certDir, certFile)
+					keyPath := filepath.Join(certDir, keyFile)
+					if certResult != nil && certResult.ServerCertPath != "" {
+						certPath = certResult.ServerCertPath
+						keyPath = certResult.ServerKeyPath
+					}
+					log.Printf("gRPC server listening on %s (TLS enabled)", grpcAddrStr)
+					if err := grpc.ServeTLS(grpcServer, grpcAddrStr, certPath, keyPath); err != nil {
+						log.Printf("gRPC server error: %v", err)
+					}
+				} else {
+					log.Printf("gRPC server listening on %s (no TLS)", grpcAddrStr)
+					if err := grpc.Serve(grpcServer, grpcAddrStr); err != nil {
+						log.Printf("gRPC server error: %v", err)
+					}
 				}
 			}()
 			defer grpc.GracefulStop(grpcServer, 10*time.Second)
@@ -3093,6 +3226,68 @@ func main() {
 	}
 
 	log.Println("Platform stopped gracefully")
+}
+
+// createTLSListener creates a network listener with optional TLS.
+// If tlsConfig is nil, returns a plain TCP listener.
+// If tlsConfig is enabled, returns a TLS listener with the configured
+// certificates and minimum TLS version.
+//
+// SECURITY: This ensures that when cfg.TLS.Enabled is true, the server
+// actually uses TLS — not just generating certs that sit on disk unused.
+func createTLSListener(addr string, tlsCfg *platformconfig.TLSConfig, certResult *certinit.Result) (net.Listener, error) {
+	baseListener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	if tlsCfg == nil || !tlsCfg.Enabled {
+		return baseListener, nil
+	}
+
+	// Resolve cert paths
+	certDir := tlsCfg.CertDir
+	if certDir == "" {
+		certDir = "./certs"
+	}
+	certFile := tlsCfg.CertFile
+	if certFile == "" {
+		certFile = "server.crt"
+	}
+	keyFile := tlsCfg.KeyFile
+	if keyFile == "" {
+		keyFile = "server.key"
+	}
+	certPath := filepath.Join(certDir, certFile)
+	keyPath := filepath.Join(certDir, keyFile)
+
+	// If certinit already generated and has paths, use those
+	if certResult != nil && certResult.ServerCertPath != "" {
+		certPath = certResult.ServerCertPath
+		keyPath = certResult.ServerKeyPath
+	}
+
+	// Load certificate + key
+	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load TLS cert/key (%s, %s): %w", certPath, keyPath, err)
+	}
+
+	minVersion := uint16(tls.VersionTLS12)
+	switch tlsCfg.MinVersion {
+	case "1.3":
+		minVersion = tls.VersionTLS13
+	case "1.2", "":
+		minVersion = tls.VersionTLS12
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{certificate},
+		MinVersion:   minVersion,
+	}
+
+	log.Printf("🔒 TLS enabled (min version: %s) — certs from %s", tlsCfg.MinVersion, certPath)
+	return tls.NewListener(baseListener, tlsConfig), nil
 }
 
 // isSafeRedirectURL validates that a redirect URL is same-origin or a safe path.

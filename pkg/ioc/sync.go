@@ -54,6 +54,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -154,6 +155,9 @@ type Sync struct {
 
 	// httpClient is shared across all peer fetches.
 	httpClient *http.Client
+
+	// rateLimiter tracks per-IP request counts for the manifest endpoint.
+	rateLimiter *iocRateLimiter
 }
 
 // NewSync creates a Sync from the given config. Returns an
@@ -187,6 +191,7 @@ func NewSync(cfg SyncConfig) (*Sync, error) {
 		httpClient: &http.Client{
 			Timeout: cfg.ClientTimeout,
 		},
+		rateLimiter: newIOCRateLimiter(60, time.Minute), // 60 requests per minute per IP
 	}, nil
 }
 
@@ -199,9 +204,70 @@ func NewSync(cfg SyncConfig) (*Sync, error) {
 // consistent.
 func (s *Sync) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/ioc/manifest", s.handleManifest)
+	mux.HandleFunc("/api/v1/ioc/manifest", s.rateLimitedManifest)
 	mux.HandleFunc("/api/v1/ioc/health", s.handleHealth)
 	return mux
+}
+
+// iocRateLimiter implements a simple per-IP token bucket rate limiter
+// for the IOC manifest endpoint to prevent abuse.
+type iocRateLimiter struct {
+	mu        sync.Mutex
+	limit     int
+	window    time.Duration
+	requests  map[string]int // IP -> request count
+	lastReset time.Time
+}
+
+func newIOCRateLimiter(limit int, window time.Duration) *iocRateLimiter {
+	return &iocRateLimiter{
+		limit:     limit,
+		window:    window,
+		requests:  make(map[string]int),
+		lastReset: time.Now(),
+	}
+}
+
+func (rl *iocRateLimiter) allow(ip string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	// Reset window if expired
+	if time.Since(rl.lastReset) >= rl.window {
+		rl.requests = make(map[string]int)
+		rl.lastReset = time.Now()
+	}
+	if rl.requests[ip] >= rl.limit {
+		return false
+	}
+	rl.requests[ip]++
+	return true
+}
+
+// rateLimitedManifest wraps handleManifest with per-IP rate limiting.
+func (s *Sync) rateLimitedManifest(w http.ResponseWriter, r *http.Request) {
+	if !s.IsShare() {
+		http.Error(w, "IOC sharing is not enabled on this instance", http.StatusForbidden)
+		return
+	}
+	// Extract client IP (strip port)
+	ip := r.RemoteAddr
+	if idx := strings.LastIndex(ip, ":"); idx > 0 {
+		ip = ip[:idx]
+	}
+	// Check X-Forwarded-For if behind a proxy (take first IP)
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		if idx := strings.Index(xff, ","); idx > 0 {
+			ip = strings.TrimSpace(xff[:idx])
+		} else {
+			ip = strings.TrimSpace(xff)
+		}
+	}
+	if !s.rateLimiter.allow(ip) {
+		w.Header().Set("Retry-After", "60")
+		http.Error(w, `{"error":"rate_limit_exceeded","message":"too many manifest requests"}`, http.StatusTooManyRequests)
+		return
+	}
+	s.handleManifest(w, r)
 }
 
 // handleManifest serves GET /api/v1/ioc/manifest[?since=...].

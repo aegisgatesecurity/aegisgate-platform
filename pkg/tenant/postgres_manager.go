@@ -25,6 +25,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 )
 
@@ -85,19 +86,23 @@ func (pm *PostgresManager) createTable(ctx context.Context) error {
 		created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 	)`
-	if _, err := pm.pool.Exec(ctx, sql); err != nil {
-		return fmt.Errorf("create tenants table: %w", err)
-	}
 
-	// Create indexes
-	if _, err := pm.pool.Exec(ctx, `CREATE INDEX IF NOT EXISTS idx_tenants_name ON tenants(name)`); err != nil {
-		return fmt.Errorf("create idx_tenants_name: %w", err)
-	}
-	if _, err := pm.pool.Exec(ctx, `CREATE INDEX IF NOT EXISTS idx_tenants_active ON tenants(active)`); err != nil {
-		return fmt.Errorf("create idx_tenants_active: %w", err)
-	}
+	// Schema/migration operations require admin context.
+	return ioc.WithTenantContextOrPool(ctx, pm.pool, "", true, func(q ioc.DBQuerier) error {
+		if _, err := q.Exec(ctx, sql); err != nil {
+			return fmt.Errorf("create tenants table: %w", err)
+		}
 
-	return nil
+		// Create indexes
+		if _, err := q.Exec(ctx, `CREATE INDEX IF NOT EXISTS idx_tenants_name ON tenants(name)`); err != nil {
+			return fmt.Errorf("create idx_tenants_name: %w", err)
+		}
+		if _, err := q.Exec(ctx, `CREATE INDEX IF NOT EXISTS idx_tenants_active ON tenants(active)`); err != nil {
+			return fmt.Errorf("create idx_tenants_active: %w", err)
+		}
+
+		return nil
+	})
 }
 
 // Create inserts a new tenant into PostgreSQL and returns the created record.
@@ -117,13 +122,16 @@ func (pm *PostgresManager) Create(ctx context.Context, name, displayName, email,
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, name, display_name, email, license_tier, max_users, max_agents, active, created_at, updated_at`
 
+	// Tenant creation is an admin operation.
 	var t Tenant
-	err := pm.pool.QueryRow(ctx, sql,
-		id, name, displayName, email, licenseTier, maxUsers, maxAgents, true, now, now,
-	).Scan(
-		&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
-		&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
-	)
+	err := ioc.WithTenantContextOrPool(ctx, pm.pool, "", true, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, sql,
+			id, name, displayName, email, licenseTier, maxUsers, maxAgents, true, now, now,
+		).Scan(
+			&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
+			&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
+		)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("postgres create tenant: %w", err)
 	}
@@ -138,11 +146,16 @@ func (pm *PostgresManager) Get(ctx context.Context, id string) (*Tenant, error) 
 
 	const sql = `SELECT id, name, display_name, email, license_tier, max_users, max_agents, active, created_at, updated_at FROM tenants WHERE id = $1`
 
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+
 	var t Tenant
-	err := pm.pool.QueryRow(ctx, sql, id).Scan(
-		&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
-		&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
-	)
+	err := ioc.WithTenantContextOrPool(ctx, pm.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, sql, id).Scan(
+			&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
+			&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
+		)
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("tenant %q not found", id)
@@ -160,24 +173,33 @@ func (pm *PostgresManager) List(ctx context.Context) ([]*Tenant, error) {
 
 	const sql = `SELECT id, name, display_name, email, license_tier, max_users, max_agents, active, created_at, updated_at FROM tenants ORDER BY created_at`
 
-	rows, err := pm.pool.Query(ctx, sql)
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+
+	var tenants []*Tenant
+	err := ioc.WithTenantContextOrPool(ctx, pm.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, sql)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var t Tenant
+			if err := rows.Scan(
+				&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
+				&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
+			); err != nil {
+				return fmt.Errorf("postgres scan tenant: %w", err)
+			}
+			tenants = append(tenants, &t)
+		}
+		return rows.Err()
+	})
 	if err != nil {
 		return nil, fmt.Errorf("postgres list tenants: %w", err)
 	}
-	defer rows.Close()
-
-	var tenants []*Tenant
-	for rows.Next() {
-		var t Tenant
-		if err := rows.Scan(
-			&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
-			&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("postgres scan tenant: %w", err)
-		}
-		tenants = append(tenants, &t)
-	}
-	return tenants, rows.Err()
+	return tenants, nil
 }
 
 // Update updates tenant fields in PostgreSQL using a dynamic UPDATE.
@@ -243,11 +265,14 @@ func (pm *PostgresManager) Update(ctx context.Context, id string, updates map[st
 		argIdx,
 	)
 
+	// Tenant update is an admin operation.
 	var t Tenant
-	err := pm.pool.QueryRow(ctx, sql, args...).Scan(
-		&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
-		&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
-	)
+	err := ioc.WithTenantContextOrPool(ctx, pm.pool, "", true, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, sql, args...).Scan(
+			&t.ID, &t.Name, &t.DisplayName, &t.Email, &t.LicenseTier,
+			&t.MaxUsers, &t.MaxAgents, &t.Active, &t.CreatedAt, &t.UpdatedAt,
+		)
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("tenant %q not found", id)
@@ -264,12 +289,20 @@ func (pm *PostgresManager) Delete(ctx context.Context, id string) error {
 	}
 
 	const sql = `DELETE FROM tenants WHERE id = $1`
-	tag, err := pm.pool.Exec(ctx, sql, id)
+
+	// Tenant deletion is an admin operation.
+	err := ioc.WithTenantContextOrPool(ctx, pm.pool, "", true, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, sql, id)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("tenant %q not found", id)
+		}
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("postgres delete tenant: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("tenant %q not found", id)
 	}
 	return nil
 }
@@ -280,8 +313,13 @@ func (pm *PostgresManager) Count(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("postgres tenant manager is closed")
 	}
 
+	tenantID := auth.GetTenantID(ctx)
+	isAdmin := auth.IsAdmin(ctx)
+
 	var count int
-	err := pm.pool.QueryRow(ctx, `SELECT COUNT(*) FROM tenants`).Scan(&count)
+	err := ioc.WithTenantContextOrPool(ctx, pm.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, `SELECT COUNT(*) FROM tenants`).Scan(&count)
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres count tenants: %w", err)
 	}
