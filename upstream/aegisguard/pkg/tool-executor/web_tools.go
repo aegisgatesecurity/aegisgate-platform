@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -26,6 +28,30 @@ func NewWebTools(allowedDomains []string, timeout time.Duration) *WebTools {
 		allowedDomains: allowedDomains,
 		client: &http.Client{
 			Timeout: timeout,
+			// SECURITY (H-2): Custom transport with SSRF-safe dialer.
+			// Prevents DNS rebinding by checking the resolved IP immediately
+			// before connecting, blocking private/loopback/link-local IPs.
+			Transport: &http.Transport{
+				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+					host, port, err := net.SplitHostPort(addr)
+					if err != nil {
+						return nil, fmt.Errorf("invalid address: %w", err)
+					}
+					// Resolve hostname to IP(s)
+					ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+					if err != nil {
+						return nil, fmt.Errorf("DNS resolution failed for %s: %w", host, err)
+					}
+					for _, ipAddr := range ips {
+						if isPrivateOrBlockedIP(ipAddr.IP) {
+							return nil, fmt.Errorf("SSRF blocked: %s resolves to private/blocked IP %s", host, ipAddr.IP)
+						}
+					}
+					// All resolved IPs are public — connect to the first one
+					dialer := &net.Dialer{Timeout: 30 * time.Second}
+					return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+				},
+			},
 		},
 		timeout: timeout,
 	}
@@ -149,60 +175,137 @@ func (e *HTTPToolExecutor) Description() string {
 	return "Make HTTP requests"
 }
 
-// validateURL ensures the URL is allowed
+// validateURL ensures the URL is allowed and not targeting private/internal resources.
+// SECURITY (H-2): SSRF protection — always blocks:
+//   - Loopback addresses (127.0.0.0/8, ::1)
+//   - Private networks (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+//   - Link-local addresses (169.254.0.0/16, fe80::/10)
+//   - Cloud metadata endpoints (169.254.169.254, metadata.google.internal, etc.)
+//   - Non-http(s) schemes
+//
+// If an allowlist is configured, only allowlisted domains are permitted.
+// If no allowlist is configured, all public domains are allowed.
 func (e *WebTools) validateURL(urlStr string) error {
-	if len(e.allowedDomains) == 0 {
-		return nil // Allow all if no restrictions
+	if len(urlStr) > 4096 {
+		return errors.New("URL too long")
 	}
 
-	parsed, err := urlParse(urlStr)
+	parsed, err := url.Parse(urlStr)
 	if err != nil {
-		return errors.New("invalid URL")
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	// Enforce http/https scheme only
+	scheme := strings.ToLower(parsed.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return fmt.Errorf("scheme not allowed: %s (only http/https)", scheme)
 	}
 
 	host := parsed.Hostname()
-	for _, domain := range e.allowedDomains {
-		if strings.HasSuffix(host, domain) || host == domain {
-			return nil
+	if host == "" {
+		return errors.New("URL has no host")
+	}
+
+	// Always block known-bad hosts (cloud metadata endpoints, localhost)
+	if isBlockedMetadataHost(host) {
+		return fmt.Errorf("SSRF blocked: cloud metadata endpoint %s", host)
+	}
+	if isBlockedHostname(host) {
+		return fmt.Errorf("SSRF blocked: internal/loopback hostname %s", host)
+	}
+
+	// If the host is a literal IP address, check it against private ranges
+	if ip := net.ParseIP(host); ip != nil {
+		if isPrivateOrBlockedIP(ip) {
+			return fmt.Errorf("SSRF blocked: private/loopback IP %s", host)
 		}
 	}
 
-	return fmt.Errorf("domain not allowed: %s", host)
+	// If allowlist is configured, enforce it
+	if len(e.allowedDomains) > 0 {
+		allowed := false
+		for _, domain := range e.allowedDomains {
+			if host == domain || strings.HasSuffix(host, "."+domain) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fmt.Errorf("domain not in allowlist: %s", host)
+		}
+	}
+
+	return nil
 }
 
-// urlParse is a wrapper for net/url Parse to allow testing
-var urlParse = func(rawURL string) (*urlInfo, error) {
-	// Simple URL parsing without net/url import for isolation
-	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
-		rawURL = "https://" + rawURL
+// isBlockedMetadataHost checks if the host is a known cloud metadata endpoint.
+func isBlockedMetadataHost(host string) bool {
+	lower := strings.ToLower(host)
+	switch lower {
+	case "metadata.google.internal",
+		"metadata",
+		"169.254.169.254",
+		"metadata.aws.internal",
+		"metadata.azure.com",
+		"instance-data",
+		"fd00:ec2::254": // AWS IPv6 metadata
+		return true
 	}
-
-	// Basic validation
-	if len(rawURL) > 4096 {
-		return nil, errors.New("URL too long")
+	// Block any subdomain of metadata endpoints
+	if strings.HasSuffix(lower, ".metadata.google.internal") ||
+		strings.HasSuffix(lower, ".metadata.aws.internal") ||
+		strings.HasSuffix(lower, ".metadata.azure.com") {
+		return true
 	}
-
-	// Extract host (simplified - in production use net/url)
-	host := rawURL
-	if idx := strings.Index(host, "/"); idx > 0 {
-		host = host[:idx]
-	}
-	if idx := strings.Index(host, "?"); idx > 0 {
-		host = host[:idx]
-	}
-	host = strings.TrimPrefix(host, "https://")
-	host = strings.TrimPrefix(host, "http://")
-
-	return &urlInfo{host: host}, nil
+	return false
 }
 
-type urlInfo struct {
-	host string
+// isBlockedHostname checks if the hostname is a known internal/loopback name
+// that should never be accessible from the MCP http_request tool.
+func isBlockedHostname(host string) bool {
+	lower := strings.ToLower(host)
+	switch lower {
+	case "localhost",
+		"localhost.localdomain",
+		"ip6-localhost",
+		"ip6-loopback",
+		"broadcasthost":
+		return true
+	}
+	// Block .local mDNS addresses
+	if strings.HasSuffix(lower, ".local") {
+		return true
+	}
+	return false
 }
 
-// Host returns the host from parsed URL
-func (u *urlInfo) Hostname() string {
-	return u.host
+// isPrivateOrBlockedIP checks if an IP address is private, loopback, link-local,
+// or otherwise should be blocked for SSRF protection.
+func isPrivateOrBlockedIP(ip net.IP) bool {
+	if ip == nil {
+		return true // nil IP = block
+	}
+	// Loopback (127.0.0.0/8, ::1)
+	if ip.IsLoopback() {
+		return true
+	}
+	// Private (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7)
+	if ip.IsPrivate() {
+		return true
+	}
+	// Link-local (169.254.0.0/16, fe80::/10) — includes cloud metadata
+	if ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+	// Unspecified (0.0.0.0, ::)
+	if ip.IsUnspecified() {
+		return true
+	}
+	// Explicitly block AWS metadata IP even if IsLinkLocal doesn't catch it
+	if ip.Equal(net.IPv4(169, 254, 169, 254)) {
+		return true
+	}
+	return false
 }
 
 // WebSearchExecutor handles web search operations
