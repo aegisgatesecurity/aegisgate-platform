@@ -17,9 +17,9 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
-	"crypto/tls"
 	"fmt"
 	"log"
 	"log/slog"
@@ -3113,11 +3113,17 @@ func main() {
 			go func() {
 				if cfg.TLS.Enabled {
 					certDir := cfg.TLS.CertDir
-					if certDir == "" { certDir = "./certs" }
+					if certDir == "" {
+						certDir = "./certs"
+					}
 					certFile := cfg.TLS.CertFile
-					if certFile == "" { certFile = "server.crt" }
+					if certFile == "" {
+						certFile = "server.crt"
+					}
 					keyFile := cfg.TLS.KeyFile
-					if keyFile == "" { keyFile = "server.key" }
+					if keyFile == "" {
+						keyFile = "server.key"
+					}
 					certPath := filepath.Join(certDir, certFile)
 					keyPath := filepath.Join(certDir, keyFile)
 					if certResult != nil && certResult.ServerCertPath != "" {
