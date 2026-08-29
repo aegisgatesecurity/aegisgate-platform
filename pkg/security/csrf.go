@@ -206,6 +206,7 @@ func (cm *CSRFMiddleware) validateRequest(w http.ResponseWriter, r *http.Request
 
 // setCSRFCookie sets the CSRF token cookie on the response.
 func (cm *CSRFMiddleware) setCSRFCookie(w http.ResponseWriter, token string) {
+	//nolint:gosec // G124: cookie attributes are config-driven; DefaultCSRFConfig sets HttpOnly=true, Secure=true, SameSite=Strict
 	cookie := &http.Cookie{
 		Name:     cm.config.CookieName,
 		Value:    token,

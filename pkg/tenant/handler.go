@@ -8,9 +8,18 @@ package tenant
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 )
+
+// writeJSON encodes v as JSON to w and logs any write errors.
+// Satisfies gosec G104 (unhandled errors).
+func writeJSON(w http.ResponseWriter, v interface{}) {
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("tenant handler: json write error: %v", err)
+	}
+}
 
 // NewHandler returns an http.Handler for the tenant management API that
 // works with any Store implementation (in-memory Manager or PostgresManager).
@@ -49,7 +58,7 @@ func NewHandler(s Store) http.Handler {
 			handlerDelete(ctx, w, s, path)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
+			writeJSON(w, map[string]string{"error": "method not allowed"})
 		}
 	})
 }
@@ -58,13 +67,13 @@ func handlerList(ctx context.Context, w http.ResponseWriter, s Store) {
 	tenants, err := s.List(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
 	if tenants == nil {
 		tenants = []*Tenant{}
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"tenants": tenants, "count": len(tenants)})
+	writeJSON(w, map[string]interface{}{"tenants": tenants, "count": len(tenants)})
 }
 
 func handlerCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, s Store) {
@@ -78,49 +87,49 @@ func handlerCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, 
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON body"})
+		writeJSON(w, map[string]string{"error": "invalid JSON body"})
 		return
 	}
 	tnt, err := s.Create(ctx, req.Name, req.DisplayName, req.Email, req.LicenseTier, req.MaxUsers, req.MaxAgents)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(tnt)
+	writeJSON(w, tnt)
 }
 
 func handlerGet(ctx context.Context, w http.ResponseWriter, s Store, id string) {
 	tnt, err := s.Get(ctx, id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
-	json.NewEncoder(w).Encode(tnt)
+	writeJSON(w, tnt)
 }
 
 func handlerUpdate(ctx context.Context, w http.ResponseWriter, r *http.Request, s Store, id string) {
 	var updates map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON body"})
+		writeJSON(w, map[string]string{"error": "invalid JSON body"})
 		return
 	}
 	tnt, err := s.Update(ctx, id, updates)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
-	json.NewEncoder(w).Encode(tnt)
+	writeJSON(w, tnt)
 }
 
 func handlerDelete(ctx context.Context, w http.ResponseWriter, s Store, id string) {
 	if err := s.Delete(ctx, id); err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

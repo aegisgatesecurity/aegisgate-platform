@@ -56,6 +56,7 @@ func discoverONNXRuntimeLib(configPath string) string {
 	// 2. Environment variable
 	if envPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH"); envPath != "" {
 		cleanEnvPath := filepath.Clean(envPath)
+		//nolint:gosec // G703: path from env var, cleaned via filepath.Clean — operator-controlled
 		if _, err := os.Stat(cleanEnvPath); err == nil {
 			return cleanEnvPath
 		}

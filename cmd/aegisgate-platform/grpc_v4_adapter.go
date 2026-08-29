@@ -24,6 +24,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/dsar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/legalhold"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/safecast"
 )
 
 // ====================================================================
@@ -192,7 +193,7 @@ func (b *abtestBackend) CreateTest(ctx context.Context, name, description string
 	for _, v := range test.Variants {
 		testVariants = append(testVariants, grpc.ABTestVariantInfo{
 			Name:     v.Name,
-			Weight:   int32(v.Weight),
+			Weight:   safecast.Int32(v.Weight),
 			ModelRef: v.ModelRef,
 		})
 	}
@@ -215,7 +216,7 @@ func (b *abtestBackend) ListTests(ctx context.Context) ([]*grpc.ABTestInfo, erro
 		for _, v := range test.Variants {
 			testVariants = append(testVariants, grpc.ABTestVariantInfo{
 				Name:     v.Name,
-				Weight:   int32(v.Weight),
+				Weight:   safecast.Int32(v.Weight),
 				ModelRef: v.ModelRef,
 			})
 		}
@@ -250,9 +251,9 @@ func (b *abtestBackend) GetMetrics(ctx context.Context, testID string) ([]*grpc.
 	for _, m := range metrics {
 		result = append(result, &grpc.ABTestVariantMetrics{
 			VariantName:    m.VariantName,
-			TotalRequests:  int32(m.RequestCount),
-			Detections:     int32(m.DetectionCount),
-			FalsePositives: int32(m.FalsePositiveCount),
+			TotalRequests:  safecast.Int32(m.RequestCount),
+			Detections:     safecast.Int32(m.DetectionCount),
+			FalsePositives: safecast.Int32(m.FalsePositiveCount),
 			AvgLatencyMs:   m.AvgLatencyMs,
 		})
 	}

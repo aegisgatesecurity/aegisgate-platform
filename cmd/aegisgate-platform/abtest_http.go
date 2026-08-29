@@ -173,7 +173,7 @@ func svcCreateTestHandler(svc *abtestService) func(http.ResponseWriter, *http.Re
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(test)
+		writeJSON(w, test)
 	}
 }
 

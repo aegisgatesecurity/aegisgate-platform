@@ -12,6 +12,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -56,7 +57,9 @@ func wireDSARHandlers(mux *http.ServeMux, amw *auth.Middleware, svc *dsarService
 
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"dsar-export-%s.json\"", sanitizeFilename(req.EntityID)))
-			json.NewEncoder(w).Encode(bundle)
+			if err := json.NewEncoder(w).Encode(bundle); err != nil {
+				log.Printf("dsar export write error: %v", err)
+			}
 		})(w, r)
 	})
 
@@ -85,7 +88,9 @@ func wireDSARHandlers(mux *http.ServeMux, amw *auth.Middleware, svc *dsarService
 				if result != nil && result.BlockedBy == "legal_hold" {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusConflict)
-					json.NewEncoder(w).Encode(result)
+					if err := json.NewEncoder(w).Encode(result); err != nil {
+						log.Printf("dsar erase write error: %v", err)
+					}
 					return
 				}
 				writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("erase failed: %v", err))
@@ -93,7 +98,9 @@ func wireDSARHandlers(mux *http.ServeMux, amw *auth.Middleware, svc *dsarService
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(result)
+			if err := json.NewEncoder(w).Encode(result); err != nil {
+				log.Printf("dsar erase write error: %v", err)
+			}
 		})(w, r)
 	})
 }

@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/safecast"
 )
 
 // ============================================================
@@ -348,7 +350,7 @@ func (s *ABTestService) ListTests(ctx context.Context, _ *ABTestListRequest) (*A
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
-	return &ABTestListResponse{Tests: tests, Count: int32(len(tests))}, nil
+	return &ABTestListResponse{Tests: tests, Count: safecast.Int32(len(tests))}, nil
 }
 
 func (s *ABTestService) StartTest(ctx context.Context, req *ABTestActionRequest) (*ABTestActionResponse, error) {

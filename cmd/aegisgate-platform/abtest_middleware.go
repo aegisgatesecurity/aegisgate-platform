@@ -94,7 +94,10 @@ func abtestMiddleware(next http.Handler, svc *abtestService) http.Handler {
 		next.ServeHTTP(srw, r)
 		latencyMs := float64(time.Since(start).Microseconds()) / 1000.0
 
-		// Record the result asynchronously to avoid blocking the response
+		// Record the result asynchronously to avoid blocking the response.
+		// Uses context.Background() because the request context is cancelled
+		// after the response is sent, but we still need to persist the result.
+		//nolint:gosec // G118: intentional — request context is cancelled post-response
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()

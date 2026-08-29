@@ -30,6 +30,10 @@ misconfig:
     - Dockerfile
     - docker-compose.yml
     - ".github/workflows/*.yml"
+  # KSV-0125 flags images not from "trusted" registries. ghcr.io is
+  # GitHub's container registry and is trusted — this is a false positive.
+  skip-files:
+    - "deploy/k8s/manifests/03-deployment.yaml"
 
 # Secret scanning
 secret:

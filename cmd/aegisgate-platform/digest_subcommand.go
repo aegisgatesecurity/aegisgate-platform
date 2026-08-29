@@ -185,6 +185,7 @@ func runDigestVerify(args []string) int {
 		return 1
 	}
 	path = cleanPath
+	//nolint:gosec // G703: path is sanitized by safeFilePath (filepath.Clean + ".." rejection)
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "digest verify: read %s: %v\n", path, err)

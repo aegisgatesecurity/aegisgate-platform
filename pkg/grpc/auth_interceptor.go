@@ -43,6 +43,7 @@ const (
 	// ctxKeyUserID stores the authenticated user ID in the context.
 	ctxKeyUserID contextKey = "grpc_auth_user_id"
 	// ctxKeyToken stores the validated token in the context.
+	//nolint:gosec // G101: this is a context key name, not a credential
 	ctxKeyToken contextKey = "grpc_auth_token"
 )
 

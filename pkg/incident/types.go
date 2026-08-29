@@ -9,6 +9,8 @@ import (
 	crypto_rand "crypto/rand"
 	"fmt"
 	"time"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/safecast"
 )
 
 // IncidentSeverity maps to correlation engine severity levels.
@@ -227,7 +229,7 @@ func randomHex(n int) string {
 	if _, err := crypto_rand.Read(b); err != nil {
 		// Fallback: use timestamp-derived bytes (should never happen).
 		for i := range b {
-			b[i] = byte(time.Now().UnixNano() >> uint(i*8))
+			b[i] = safecast.Byte(time.Now().UnixNano() >> uint(i*8))
 		}
 	}
 	return fmt.Sprintf("%x", b)

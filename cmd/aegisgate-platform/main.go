@@ -3019,14 +3019,17 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
+		// Strip leading slash for filepath.Join (Join cleans + joins, and
+		// cleanPath has already been validated against traversal).
+		relPath := strings.TrimPrefix(cleanPath, "/")
 		// Serve static assets (CSS, JS, images, standalone HTML pages)
 		if strings.HasPrefix(cleanPath, "/css/") || strings.HasPrefix(cleanPath, "/js/") {
-			http.ServeFile(w, r, filepath.Join("ui/frontend", cleanPath))
+			http.ServeFile(w, r, filepath.Join("ui/frontend", relPath))
 			return
 		}
 		// Serve standalone HTML pages (e.g., /trust-dashboard.html)
 		if strings.HasSuffix(cleanPath, ".html") {
-			http.ServeFile(w, r, filepath.Join("ui/frontend", cleanPath))
+			http.ServeFile(w, r, filepath.Join("ui/frontend", relPath))
 			return
 		}
 		http.NotFound(w, r)
@@ -3130,11 +3133,13 @@ func main() {
 						certPath = certResult.ServerCertPath
 						keyPath = certResult.ServerKeyPath
 					}
+					//nolint:gosec // G706: grpcAddrStr is from CLI flag/env var, not user input
 					log.Printf("gRPC server listening on %s (TLS enabled)", grpcAddrStr)
 					if err := grpc.ServeTLS(grpcServer, grpcAddrStr, certPath, keyPath); err != nil {
 						log.Printf("gRPC server error: %v", err)
 					}
 				} else {
+					//nolint:gosec // G706: grpcAddrStr is from CLI flag/env var, not user input
 					log.Printf("gRPC server listening on %s (no TLS)", grpcAddrStr)
 					if err := grpc.Serve(grpcServer, grpcAddrStr); err != nil {
 						log.Printf("gRPC server error: %v", err)
