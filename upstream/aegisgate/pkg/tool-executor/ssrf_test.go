@@ -8,9 +8,9 @@ import (
 
 func TestIsBlockedIP(t *testing.T) {
 	tests := []struct {
-		name     string
-		ip       string
-		blocked  bool
+		name    string
+		ip      string
+		blocked bool
 	}{
 		// Loopback
 		{"127.0.0.1", "127.0.0.1", true},
@@ -43,8 +43,8 @@ func TestIsBlockedIP(t *testing.T) {
 		// Public IPs should NOT be blocked
 		{"8.8.8.8", "8.8.8.8", false},
 		{"1.1.1.1", "1.1.1.1", false},
-		{"172.32.0.1", "172.32.0.1", false}, // just outside 172.16/12
-		{"169.255.0.1", "169.255.0.1", false}, // not link-local
+		{"172.32.0.1", "172.32.0.1", false},                     // just outside 172.16/12
+		{"169.255.0.1", "169.255.0.1", false},                   // not link-local
 		{"2606:4700:4700::1111", "2606:4700:4700::1111", false}, // public IPv6
 	}
 

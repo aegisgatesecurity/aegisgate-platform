@@ -246,8 +246,8 @@ func (c *EmailClient) send(to string, msg []byte) error {
 		tlsConfig := c.config.TLSConfig
 		if tlsConfig == nil {
 			tlsConfig = &tls.Config{
-				ServerName:   c.config.Host,
-				MinVersion:   tls.VersionTLS12,
+				ServerName: c.config.Host,
+				MinVersion: tls.VersionTLS12,
 			}
 		}
 

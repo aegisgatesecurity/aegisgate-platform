@@ -21,9 +21,9 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
-	"crypto/tls"
 	"net"
 	"os"
 	"os/signal"
