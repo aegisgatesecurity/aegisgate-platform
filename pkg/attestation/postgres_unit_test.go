@@ -6,8 +6,10 @@
 // postgres_unit_test.go covers the PostgresAttestationStore without a live
 // database connection. It tests input validation paths, constructor behaviour,
 // and the no-op Close method. Methods that require a live pool are tested
-// via panic-recovery to ensure the code paths up to the pool call are
+// via error-assertion to ensure the code paths up to the pool call are
 // exercised for coverage.
+//
+// After L-4 remediation, nil pool returns an error instead of panicking.
 //
 // These tests are excluded from the integration build tag so they always
 // run alongside the rest of the unit suite:
@@ -31,8 +33,8 @@ import (
 )
 
 // newNilPoolStore creates a PostgresAttestationStore with a nil pool.
-// Methods that access the pool will panic; only input-validation and
-// no-op paths can be tested safely.
+// Methods that access the pool will return an error; only input-validation
+// and no-op paths can be tested safely.
 func newNilPoolStore() *PostgresAttestationStore {
 	return NewPostgresAttestationStore(nil)
 }
@@ -98,12 +100,12 @@ func TestPostgresUnit_Get_EmptyID(t *testing.T) {
 }
 
 // --------------------------------------------------------------------
-// Store with valid envelope (nil pool → panic)
-// These tests use recover() to assert that the code reaches the pool
-// call, which exercises json.Marshal and the ValidUntil path.
+// Store with valid envelope (nil pool → error)
+// These tests assert that the code reaches the pool call, which exercises
+// json.Marshal and the ValidUntil path. After L-4, nil pool returns an error.
 // --------------------------------------------------------------------
 
-func TestPostgresUnit_Store_ValidEnvelope_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_Store_ValidEnvelope_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
@@ -125,20 +127,11 @@ func TestPostgresUnit_Store_ValidEnvelope_PanicsOnNilPool(t *testing.T) {
 		},
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = store.Store(ctx, env)
-	}()
-
-	assert.True(t, didPanic, "Store with nil pool should panic")
+	err := store.Store(ctx, env)
+	assert.Error(t, err, "Store with nil pool should return error")
 }
 
-func TestPostgresUnit_Store_ZeroValidUntil_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_Store_ZeroValidUntil_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
@@ -162,196 +155,106 @@ func TestPostgresUnit_Store_ZeroValidUntil_PanicsOnNilPool(t *testing.T) {
 		},
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = store.Store(ctx, env)
-	}()
-
-	assert.True(t, didPanic, "Store with nil pool and zero ValidUntil should panic")
+	err := store.Store(ctx, env)
+	assert.Error(t, err, "Store with nil pool and zero ValidUntil should return error")
 }
 
 // --------------------------------------------------------------------
-// List methods (nil pool → panic)
+// List methods (nil pool → error)
 // These exercise the query-construction and limit/offset logic.
 // --------------------------------------------------------------------
 
-func TestPostgresUnit_ListByType_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListByType_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListByType(ctx, TypeEvidenceManifest, 10, 5)
-	}()
-
-	assert.True(t, didPanic, "ListByType with nil pool should panic")
+	_, err := store.ListByType(ctx, TypeEvidenceManifest, 10, 5)
+	assert.Error(t, err, "ListByType with nil pool should return error")
 }
 
-func TestPostgresUnit_ListByType_NoLimitNoOffset_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListByType_NoLimitNoOffset_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListByType(ctx, TypeEvidenceManifest, 0, 0)
-	}()
-
-	assert.True(t, didPanic, "ListByType with nil pool should panic")
+	_, err := store.ListByType(ctx, TypeEvidenceManifest, 0, 0)
+	assert.Error(t, err, "ListByType with nil pool should return error")
 }
 
-func TestPostgresUnit_ListBySubject_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListBySubject_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListBySubject(ctx, "aegisgate://manifest/test", 10, 5)
-	}()
-
-	assert.True(t, didPanic, "ListBySubject with nil pool should panic")
+	_, err := store.ListBySubject(ctx, "aegisgate://manifest/test", 10, 5)
+	assert.Error(t, err, "ListBySubject with nil pool should return error")
 }
 
-func TestPostgresUnit_ListByIssuer_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListByIssuer_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListByIssuer(ctx, "test-instance:test-key", 10, 5)
-	}()
-
-	assert.True(t, didPanic, "ListByIssuer with nil pool should panic")
+	_, err := store.ListByIssuer(ctx, "test-instance:test-key", 10, 5)
+	assert.Error(t, err, "ListByIssuer with nil pool should return error")
 }
 
-func TestPostgresUnit_ListByTimeRange_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListByTimeRange_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
 	now := time.Now().UTC()
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListByTimeRange(ctx, now.Add(-1*time.Hour), now.Add(1*time.Hour), 10, 5)
-	}()
-
-	assert.True(t, didPanic, "ListByTimeRange with nil pool should panic")
+	_, err := store.ListByTimeRange(ctx, now.Add(-1*time.Hour), now.Add(1*time.Hour), 10, 5)
+	assert.Error(t, err, "ListByTimeRange with nil pool should return error")
 }
 
-func TestPostgresUnit_ListByTimeRange_NoLimitNoOffset_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListByTimeRange_NoLimitNoOffset_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
 	now := time.Now().UTC()
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListByTimeRange(ctx, now.Add(-1*time.Hour), now, 0, 0)
-	}()
-
-	assert.True(t, didPanic, "ListByTimeRange with nil pool should panic")
+	_, err := store.ListByTimeRange(ctx, now.Add(-1*time.Hour), now, 0, 0)
+	assert.Error(t, err, "ListByTimeRange with nil pool should return error")
 }
 
 // --------------------------------------------------------------------
-// PruneExpired (nil pool → panic)
+// PruneExpired (nil pool → error)
 // --------------------------------------------------------------------
 
-func TestPostgresUnit_PruneExpired_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_PruneExpired_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.PruneExpired(ctx, time.Now().UTC())
-	}()
-
-	assert.True(t, didPanic, "PruneExpired with nil pool should panic")
+	_, err := store.PruneExpired(ctx, time.Now().UTC())
+	assert.Error(t, err, "PruneExpired with nil pool should return error")
 }
 
 // --------------------------------------------------------------------
-// CountByType (nil pool → panic)
+// CountByType (nil pool → error)
 // --------------------------------------------------------------------
 
-func TestPostgresUnit_CountByType_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_CountByType_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.CountByType(ctx, TypeEvidenceManifest)
-	}()
-
-	assert.True(t, didPanic, "CountByType with nil pool should panic")
+	_, err := store.CountByType(ctx, TypeEvidenceManifest)
+	assert.Error(t, err, "CountByType with nil pool should return error")
 }
 
 // --------------------------------------------------------------------
-// Get with non-empty ID (nil pool → panic)
+// Get with non-empty ID (nil pool → error)
 // --------------------------------------------------------------------
 
-func TestPostgresUnit_Get_NonEmptyID_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_Get_NonEmptyID_ErrorsOnNilPool(t *testing.T) {
 	t.Parallel()
 	store := newNilPoolStore()
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.Get(ctx, "some-nonempty-id")
-	}()
-
-	assert.True(t, didPanic, "Get with nil pool should panic for non-empty ID")
+	_, err := store.Get(ctx, "some-nonempty-id")
+	assert.Error(t, err, "Get with nil pool should return error for non-empty ID")
 }

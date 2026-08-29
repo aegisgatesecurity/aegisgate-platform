@@ -31,10 +31,9 @@ import (
 // These are methods that must be callable before the caller has a token
 // (e.g., login) or are infrastructure endpoints (health checks).
 var authExemptMethods = map[string]bool{
-	"/grpc.AuthService/Login":         true,
-	"/grpc.health.v1.Health/Check":    true,
-	"/grpc.health.v1.Health/Watch":    true,
-	"/grpc.AuthService/GetAuthConfig": true,
+	"/grpc.AuthService/Login":      true,
+	"/grpc.health.v1.Health/Check": true,
+	"/grpc.health.v1.Health/Watch": true,
 }
 
 // contextKey is a private type for context keys in this package.

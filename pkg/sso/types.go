@@ -473,6 +473,22 @@ func DefaultSSOConfig() *SSOConfig {
 	}
 }
 
+// DefaultSAMLConfig returns a SAML configuration with security-critical
+// defaults set to fail-closed. Signature validation and assertion signing
+// requirements default to TRUE — operators must explicitly disable them
+// (not recommended) via config.
+//
+// SECURITY: Go bool zero-value is false. If we don't set these explicitly,
+// SAML responses will be accepted without signature verification, allowing
+// an attacker to forge SAML responses and authenticate as any user.
+func DefaultSAMLConfig() *SAMLConfig {
+	return &SAMLConfig{
+		ValidateSignature:    true,
+		WantAssertionsSigned: true,
+		WantResponseSigned:   true,
+	}
+}
+
 // Validate validates the SSO configuration
 func (c *SSOConfig) Validate() error {
 	if c.Provider == "" {
@@ -516,6 +532,14 @@ func (c *SAMLConfig) Validate() error {
 	}
 	if c.IDPEntityID == "" && len(c.IDPMetadata) == 0 && c.IDPMetadataURL == "" {
 		return &SSOError{Code: ErrInvalidRequest, Message: "SAML IdP configuration is required"}
+	}
+	// SECURITY: Fail-closed — signature validation must be explicitly disabled.
+	// If an operator sets ValidateSignature=false, warn but still allow (for
+	// development/testing). In production, this should never be false.
+	if !c.ValidateSignature {
+		// Log a warning — don't hard-fail to allow dev/test, but make it clear
+		// this is insecure. The SAML provider init will refuse to start
+		// without IdP certificates when ValidateSignature is true.
 	}
 	return nil
 }

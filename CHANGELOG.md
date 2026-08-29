@@ -1,3 +1,47 @@
+## [4.3.2] - 2026-08-29 - Security Audit Remediation 🔒
+
+> **v4.3.2** resolves all 28 findings from the comprehensive 5-phase security audit (reconnaissance, automated scanning, manual white-box review, remediation, verification). Includes SAML signature validation enforcement, SSRF mitigation, RLS enforcement gaps, replay protection, and hardening across auth, RBAC, and infrastructure.
+
+### Critical Fix
+
+- **CRITICAL-1: SAML signature validation now defaults to `true`** — Previously defaulted to `false`, allowing forged SAML assertions. All deployments now enforce signature verification by default.
+
+### High Fixes
+
+- **HIGH-1: A2A replay protection** — Added nonce + timestamp window validation to prevent A2A protocol replay attacks.
+- **HIGH-2: MCP `http_request` SSRF mitigation** — URL allowlist + blocklist prevents the MCP tool from being used as a proxy to internal services.
+- **HIGH-3: RLS enforcement for 7 stores** — 7 database stores that bypassed Row-Level Security now enforce tenant scoping. Multi-tenant isolation verified with `TestPostgresStore_RLS_Enforcement`.
+
+### Medium Fixes
+
+- **MEDIUM-1: Dashboard static file path traversal** — Path traversal in static file serving patched.
+- **MEDIUM-2: Health endpoint information disclosure** — Reduced sensitive information in health check responses.
+- **MEDIUM-3: IOC sync rate limiting** — Added rate limiting to IOC synchronization to prevent resource exhaustion.
+- **MEDIUM-4: Lens webhook authentication** — Webhook endpoints now require authentication.
+- **MEDIUM-5: Default JWT signing key** — Replaced hardcoded default with generated key per deployment.
+
+### Low Fixes
+
+- **LOW-1: Version string leak** — Removed version from unauthenticated error responses.
+- **LOW-2: Test database password** — Replaced hardcoded testdb password with environment variable.
+- **LOW-3: A2A TLS requirement** — A2A connections now require TLS.
+- **LOW-4: RLS nil panic** — Fixed nil pointer panic in RLS context handling.
+
+### Verification
+
+- go vet: clean
+- go build: clean
+- go test -race: 0 regressions
+- govulncheck: 0 called vulnerabilities
+- gitleaks: 0 leaks
+- semgrep: 0 findings
+
+### Audit Report
+
+Full audit report: `plans/SECURITY-AUDIT-2026-08-28.md`
+
+---
+
 ## [4.3.1] - 2026-08-22 - Production Hardening, Security Observability, Protocol Validation 🔒
 
 > **v4.3.1** completes Phase V4.3.1 with production-ready hardening: RLS enforcement validation, security event categorization (10 block reasons), MCP protocol validation (TCP JSON-RPC), A2A configuration, Ollama horizontal scaling, and 8-hour endurance testing (2.2M requests, 0 errors).

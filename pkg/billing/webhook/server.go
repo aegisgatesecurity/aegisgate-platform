@@ -209,6 +209,8 @@ func (s *Server) Start() error {
 
 // handleWebhook processes incoming Stripe webhook events
 func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
+	// SECURITY: Limit body size to 1MB (Stripe webhook payloads are small)
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		s.logger.Printf("Failed to read body: %v", err)

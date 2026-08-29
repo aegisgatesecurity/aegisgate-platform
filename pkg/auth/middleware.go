@@ -19,13 +19,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ctxkeys"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 // Context keys for request-scoped auth data
-type contextKey string
+// contextKey is a type alias for ctxkeys.Key so that context.Value
+// lookups use the same key type across packages (auth, sso, ioc).
+// This breaks the import cycle: auth imports sso, sso needs ioc's RLS
+// helpers, and ioc needs to read tenant context from the request.
+type contextKey = ctxkeys.Key
 
 const (
 	ContextKeyUserID      contextKey = "auth_user_id"
@@ -93,6 +98,31 @@ func DefaultConfig() *Config {
 		TokenExpiryHours: 24,
 		RequireAuth:      true, // Security-first: auth enabled by default
 	}
+}
+
+// IsUsingDefaultKeys checks if the config is still using insecure default
+// signing keys. This is used to refuse startup in production environments.
+func (c *Config) IsUsingDefaultKeys() bool {
+	return string(c.JWTSigningKey) == "dev-key-change-in-production" ||
+		c.APIAuthToken == "dev-token-change-in-production"
+}
+
+// ValidateProduction checks if the config is safe for production use.
+// Returns an error if default keys are being used in a production environment.
+func (c *Config) ValidateProduction() error {
+	env := strings.ToLower(os.Getenv("AEGISGATE_ENV"))
+	if env == "production" || env == "prod" {
+		if string(c.JWTSigningKey) == "dev-key-change-in-production" {
+			return fmt.Errorf("JWT_SIGNING_KEY is set to insecure default — refusing to start in production (set JWT_SIGNING_KEY env var or config)")
+		}
+		if c.APIAuthToken == "dev-token-change-in-production" {
+			return fmt.Errorf("API_AUTH_TOKEN is set to insecure default — refusing to start in production (set API_AUTH_TOKEN env var or config)")
+		}
+		if len(c.JWTSigningKey) < 32 {
+			return fmt.Errorf("JWT_SIGNING_KEY is too short (%d bytes, minimum 32 for production) — refusing to start in production", len(c.JWTSigningKey))
+		}
+	}
+	return nil
 }
 
 // ConfigFromEnv creates config from environment variables

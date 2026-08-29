@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -50,6 +51,15 @@ const (
 
 	// A2A_ERR_INTEGRITY_MALFORMED indicates the signature header could not be decoded.
 	A2A_ERR_INTEGRITY_MALFORMED = "A2A_INTEGRITY_MALFORMED"
+
+	// A2A_ERR_REPLAY_MISSING indicates timestamp or nonce header is missing.
+	A2A_ERR_REPLAY_MISSING = "A2A_REPLAY_MISSING"
+
+	// A2A_ERR_REPLAY_EXPIRED indicates the timestamp is outside the allowed clock skew.
+	A2A_ERR_REPLAY_EXPIRED = "A2A_REPLAY_EXPIRED"
+
+	// A2A_ERR_REPLAY_DETECTED indicates the nonce was already used (replay attack).
+	A2A_ERR_REPLAY_DETECTED = "A2A_REPLAY_DETECTED"
 
 	// A2A_ERR_CAP_MISSING indicates the A2A-Capability header was not provided.
 	A2A_ERR_CAP_MISSING = "A2A_CAP_MISSING"
@@ -101,6 +111,13 @@ func NewA2AMiddleware(next http.Handler, secret []byte, lm *license.Manager, cap
 // ----- AuthProvider -----
 // Simple mTLS auth that extracts the common name from the client cert.
 // In production this would verify against a certificate store.
+//
+// SECURITY (L-3): This provider fails-closed when TLS is not configured.
+// If r.TLS == nil (no TLS), authentication fails with "no client
+// certificate provided". This is the correct security posture for A2A
+// communication — mTLS is a mandatory transport requirement, not optional.
+// Deployments MUST configure TLS for the A2A endpoint; without it, no
+// A2A requests will be accepted.
 
 type AuthProvider interface {
 	Authenticate(r *http.Request) (string, error) // returns AgentID
@@ -122,14 +139,59 @@ func (a *MTLSAuth) Authenticate(r *http.Request) (string, error) {
 // ----- Message Integrity -----
 // HMAC‑SHA256 signature verification for request bodies.
 // The shared secret would be derived per‑agent in a real system.
+//
+// SECURITY: Includes replay protection via timestamp validation and nonce tracking.
+// Requests must include:
+//   - A2A-Timestamp header (Unix epoch seconds, within ±5 minutes of server time)
+//   - A2A-Nonce header (unique per request, tracked for 10 minutes)
+// The timestamp and nonce are included in the HMAC signature to prevent tampering.
 
 type IntegrityVerifier struct {
-	secret []byte
+	secret     []byte
+	nonceStore *nonceStore
+}
+
+// nonceStore tracks seen nonces to prevent replay attacks.
+// Nonces expire after 10 minutes and are cleaned up on each check.
+type nonceStore struct {
+	mu     sync.Mutex
+	nonces map[string]int64 // nonce -> expiration timestamp (unix seconds)
+}
+
+func newNonceStore() *nonceStore {
+	return &nonceStore{nonces: make(map[string]int64)}
+}
+
+// seen checks if a nonce was already used, and if not, records it.
+// Expired nonces are cleaned up during this call.
+func (ns *nonceStore) seen(nonce string, now int64) bool {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+	// Clean up expired nonces
+	for n, exp := range ns.nonces {
+		if now > exp {
+			delete(ns.nonces, n)
+		}
+	}
+	// Check if nonce already seen
+	if _, exists := ns.nonces[nonce]; exists {
+		return true // replay detected
+	}
+	// Record nonce with 10-minute TTL
+	ns.nonces[nonce] = now + 600
+	return false
 }
 
 func NewIntegrityVerifier(secret []byte) *IntegrityVerifier {
-	return &IntegrityVerifier{secret: secret}
+	return &IntegrityVerifier{
+		secret:     secret,
+		nonceStore: newNonceStore(),
+	}
 }
+
+// maxClockSkew is the maximum allowed difference between the request timestamp
+// and server time. 5 minutes matches SAML/OIDC industry standard.
+const maxClockSkew = 5 * time.Minute
 
 func (v *IntegrityVerifier) Verify(r *http.Request) error {
 	sigHeader := r.Header.Get("A2A-Signature")
@@ -140,13 +202,47 @@ func (v *IntegrityVerifier) Verify(r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("malformed A2A-Signature header: %w", err)
 	}
-	body, err := io.ReadAll(r.Body)
+
+	// SECURITY: Replay protection — validate timestamp
+	timestampStr := r.Header.Get("A2A-Timestamp")
+	if timestampStr == "" {
+		return errors.New("missing A2A-Timestamp header (replay protection required)")
+	}
+	var timestamp int64
+	if _, err := fmt.Sscanf(timestampStr, "%d", &timestamp); err != nil {
+		return fmt.Errorf("malformed A2A-Timestamp header: %w", err)
+	}
+	now := time.Now().Unix()
+	skew := time.Duration(now-timestamp) * time.Second
+	if skew < 0 {
+		skew = -skew
+	}
+	if skew > maxClockSkew {
+		return fmt.Errorf("timestamp outside allowed clock skew (±%v): got %v", maxClockSkew, skew)
+	}
+
+	// SECURITY: Replay protection — validate nonce
+	nonce := r.Header.Get("A2A-Nonce")
+	if nonce == "" {
+		return errors.New("missing A2A-Nonce header (replay protection required)")
+	}
+	if len(nonce) > 256 {
+		return errors.New("A2A-Nonce header too long (max 256 chars)")
+	}
+	if v.nonceStore.seen(nonce, now) {
+		return errors.New("replay detected: nonce already used")
+	}
+
+	body, err := io.ReadAll(http.MaxBytesReader(nil, r.Body, 10<<20)) // 10MB limit
 	if err != nil {
-		return err
+		return fmt.Errorf("read body: %w", err)
 	}
 	r.Body = io.NopCloser(bytes.NewReader(body))
+	// SECURITY: Include timestamp and nonce in HMAC to prevent header stripping
 	mac := hmac.New(sha256.New, v.secret)
 	mac.Write(body)
+	mac.Write([]byte(timestampStr))
+	mac.Write([]byte(nonce))
 	expected := mac.Sum(nil)
 	if !hmac.Equal(sig, expected) {
 		return errors.New("invalid message signature")
@@ -348,6 +444,12 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			code = A2A_ERR_INTEGRITY_MISSING
 		} else if _, decodeErr := base64.StdEncoding.DecodeString(r.Header.Get("A2A-Signature")); decodeErr != nil {
 			code = A2A_ERR_INTEGRITY_MALFORMED
+		} else if r.Header.Get("A2A-Timestamp") == "" || r.Header.Get("A2A-Nonce") == "" {
+			code = A2A_ERR_REPLAY_MISSING
+		} else if strings.Contains(err.Error(), "timestamp outside allowed clock skew") {
+			code = A2A_ERR_REPLAY_EXPIRED
+		} else if strings.Contains(err.Error(), "replay detected") {
+			code = A2A_ERR_REPLAY_DETECTED
 		}
 		metrics.RecordA2AIntegrityFailure(agentID)
 		a2aErrorResponse(w, code, "signature verification failed: "+err.Error(), http.StatusBadRequest)

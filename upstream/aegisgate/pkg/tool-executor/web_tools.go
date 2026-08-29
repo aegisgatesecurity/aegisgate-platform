@@ -8,8 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -26,9 +28,89 @@ func NewWebTools(allowedDomains []string, timeout time.Duration) *WebTools {
 		allowedDomains: allowedDomains,
 		client: &http.Client{
 			Timeout: timeout,
+			Transport: &http.Transport{
+				DialContext: newSSRFSafeDialer(timeout).DialContext,
+			},
 		},
 		timeout: timeout,
 	}
+}
+
+// ssrfSafeDialer wraps net.Dialer with a Control function that checks
+// the resolved IP address AFTER DNS resolution but BEFORE the TCP
+// connection completes. This prevents DNS-rebinding attacks where
+// isBlockedHost() passes on the hostname but the DNS server returns
+// an internal IP.
+type ssrfSafeDialer struct {
+	*net.Dialer
+}
+
+func newSSRFSafeDialer(timeout time.Duration) *ssrfSafeDialer {
+	return &ssrfSafeDialer{
+		Dialer: &net.Dialer{
+			Timeout: timeout,
+			Control: ssrfControl,
+		},
+	}
+}
+
+// ssrfControl is the Dialer.Control callback that fires after DNS
+// resolution. The address parameter contains the resolved IP:port,
+// not the hostname. We parse the IP and reject if it's internal.
+func ssrfControl(network, address string, c syscall.RawConn) error {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return fmt.Errorf("ssrf: failed to parse address %q: %w", address, err)
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return fmt.Errorf("ssrf: failed to parse IP from %q", host)
+	}
+
+	if isBlockedIP(ip) {
+		return fmt.Errorf("blocked: resolved IP %s is internal or reserved (SSRF protection)", ip)
+	}
+
+	return nil
+}
+
+// isBlockedIP checks if a resolved net.IP targets an internal, private,
+// or reserved network range. This is the IP-level equivalent of
+// isBlockedHost() and catches DNS-rebinding attacks where the hostname
+// passes string checks but resolves to an internal address.
+func isBlockedIP(ip net.IP) bool {
+	// Loopback (127.0.0.0/8, ::1)
+	if ip.IsLoopback() {
+		return true
+	}
+
+	// Private ranges (RFC 1918): 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+	if ip.IsPrivate() {
+		return true
+	}
+
+	// Link-local (169.254.0.0/16, fe80::/10) — includes cloud metadata
+	if ip.IsLinkLocalUnicast() {
+		return true
+	}
+
+	// Unspecified (0.0.0.0, ::)
+	if ip.IsUnspecified() {
+		return true
+	}
+
+	// IPv6 unique-local (fc00::/7)
+	if ip.IsPrivate() {
+		return true
+	}
+
+	// Block IPv4-mapped IPv6 addresses (::ffff:127.0.0.1 etc.)
+	if v4 := ip.To4(); v4 != nil && v4.IsLoopback() {
+		return true
+	}
+
+	return false
 }
 
 // HTTPToolExecutor handles HTTP requests
@@ -149,32 +231,140 @@ func (e *HTTPToolExecutor) Description() string {
 	return "Make HTTP requests"
 }
 
-// validateURL ensures the URL is allowed
+// validateURL ensures the URL is allowed and blocks SSRF attacks
+// targeting internal networks, cloud metadata, and localhost.
 func (e *WebTools) validateURL(urlStr string) error {
-	if len(e.allowedDomains) == 0 {
-		return nil // Allow all if no restrictions
-	}
-
+	// SECURITY: Block SSRF — always reject internal/private/metadata URLs
+	// regardless of allowedDomains configuration. This is defense-in-depth
+	// even when allowedDomains is empty (allow-all mode).
 	parsed, err := urlParse(urlStr)
 	if err != nil {
 		return errors.New("invalid URL")
 	}
 
+	// Block non-HTTP schemes
+	scheme := parsed.Scheme()
+	if scheme != "http" && scheme != "https" {
+		return fmt.Errorf("scheme not allowed: %s (only http/https)", scheme)
+	}
+
 	host := parsed.Hostname()
-	for _, domain := range e.allowedDomains {
-		if strings.HasSuffix(host, domain) || host == domain {
-			return nil
+
+	// SECURITY: SSRF protection — block internal/private/metadata hostnames
+	// This runs BEFORE the allowedDomains check so it can't be bypassed.
+	if isBlockedHost(host) {
+		return fmt.Errorf("blocked: target host %q is internal or reserved (SSRF protection)", host)
+	}
+
+	// Check against allowedDomains if configured
+	if len(e.allowedDomains) > 0 {
+		domainAllowed := false
+		for _, domain := range e.allowedDomains {
+			if strings.HasSuffix(host, domain) || host == domain {
+				domainAllowed = true
+				break
+			}
+		}
+		if !domainAllowed {
+			return fmt.Errorf("domain not allowed: %s", host)
 		}
 	}
 
-	return fmt.Errorf("domain not allowed: %s", host)
+	return nil
+}
+
+// isBlockedHost checks if a hostname targets an internal, private, or reserved
+// network range that should be blocked for SSRF protection.
+func isBlockedHost(host string) bool {
+	// Lowercase for comparison
+	host = strings.ToLower(strings.TrimSpace(host))
+
+	// Block localhost variants
+	if host == "localhost" || host == "localhost." {
+		return true
+	}
+	if strings.HasSuffix(host, ".localhost") {
+		return true
+	}
+
+	// Block IPv4/IPv6 loopback
+	if host == "127.0.0.1" || strings.HasPrefix(host, "127.") {
+		return true
+	}
+	if host == "::1" || host == "0:0:0:0:0:0:0:1" {
+		return true
+	}
+
+	// Block cloud metadata endpoints
+	if host == "169.254.169.254" { // AWS/Azure/GCP metadata
+		return true
+	}
+	if host == "metadata.google.internal" { // GCP metadata (also accessible via DNS)
+		return true
+	}
+	if host == "metadata.azure.com" { // Azure metadata
+		return true
+	}
+
+	// Block link-local addresses (169.254.0.0/16)
+	if strings.HasPrefix(host, "169.254.") {
+		return true
+	}
+
+	// Block private IPv4 ranges (RFC 1918)
+	if strings.HasPrefix(host, "10.") {
+		return true
+	}
+	if strings.HasPrefix(host, "172.") {
+		// 172.16.0.0 – 172.31.255.255
+		parts := strings.SplitN(host, ".", 4)
+		if len(parts) >= 2 {
+			if parts[0] == "172" && len(parts[1]) > 0 {
+				second := parts[1]
+				if second >= "16" && second <= "31" {
+					return true
+				}
+			}
+		}
+	}
+	if strings.HasPrefix(host, "192.168.") {
+		return true
+	}
+
+	// Block 0.0.0.0 (unspecified)
+	if host == "0.0.0.0" {
+		return true
+	}
+
+	// Block IPv6 unique-local (fc00::/7, fd00::/7)
+	if strings.HasPrefix(host, "fc") || strings.HasPrefix(host, "fd") {
+		return true
+	}
+	// Block IPv6 link-local (fe80::/10)
+	if strings.HasPrefix(host, "fe80") || strings.HasPrefix(host, "fe8") {
+		return true
+	}
+	// Block IPv6 loopback (::1)
+	if strings.HasPrefix(host, "::") {
+		return true
+	}
+
+	return false
 }
 
 // urlParse is a wrapper for net/url Parse to allow testing
 var urlParse = func(rawURL string) (*urlInfo, error) {
 	// Simple URL parsing without net/url import for isolation
-	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+	scheme := "https"
+	if strings.HasPrefix(rawURL, "http://") {
+		scheme = "http"
+		rawURL = strings.TrimPrefix(rawURL, "http://")
+	} else if strings.HasPrefix(rawURL, "https://") {
+		scheme = "https"
+		rawURL = strings.TrimPrefix(rawURL, "https://")
+	} else {
 		rawURL = "https://" + rawURL
+		rawURL = strings.TrimPrefix(rawURL, "https://")
 	}
 
 	// Basic validation
@@ -190,19 +380,27 @@ var urlParse = func(rawURL string) (*urlInfo, error) {
 	if idx := strings.Index(host, "?"); idx > 0 {
 		host = host[:idx]
 	}
-	host = strings.TrimPrefix(host, "https://")
-	host = strings.TrimPrefix(host, "http://")
+	// Strip port for host validation
+	if idx := strings.Index(host, ":"); idx > 0 {
+		host = host[:idx]
+	}
 
-	return &urlInfo{host: host}, nil
+	return &urlInfo{host: host, scheme: scheme}, nil
 }
 
 type urlInfo struct {
-	host string
+	host   string
+	scheme string
 }
 
 // Host returns the host from parsed URL
 func (u *urlInfo) Hostname() string {
 	return u.host
+}
+
+// Scheme returns the URL scheme
+func (u *urlInfo) Scheme() string {
+	return u.scheme
 }
 
 // WebSearchExecutor handles web search operations

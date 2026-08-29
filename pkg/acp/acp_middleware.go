@@ -62,6 +62,8 @@ func (m *Middleware) WrapHandler(handler http.Handler) http.Handler {
 
 		// Process request body for scanning
 		if r.Body != nil {
+			// SECURITY: Limit body size to 10MB to prevent DoS
+			r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 			bodyBytes, err := io.ReadAll(r.Body)
 			if err != nil {
 				m.logger.Error("Failed to read request body", "error", err)

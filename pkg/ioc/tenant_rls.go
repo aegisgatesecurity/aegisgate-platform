@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ctxkeys"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -54,6 +55,30 @@ type DBQuerier interface {
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
 	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+}
+
+// rlsContextKey uses the shared ctxkeys.Key type so that context.Value
+// lookups match the keys set by the auth middleware. This avoids an
+// import cycle (auth imports sso, sso needs ioc's RLS helpers, ioc
+// can't import auth).
+type rlsContextKey = ctxkeys.Key
+
+const (
+	rlsKeyTenantID rlsContextKey = ctxkeys.TenantID
+	rlsKeyIsAdmin  rlsContextKey = ctxkeys.IsAdmin
+)
+
+// TenantFromContext extracts the tenant ID and admin flag from a
+// request context. This is a convenience function that avoids importing
+// the auth package (which would create an import cycle for packages
+// like sso that auth itself imports).
+//
+// Returns (tenantID string, isAdmin bool). If no tenant context is set,
+// returns ("", false).
+func TenantFromContext(ctx context.Context) (string, bool) {
+	tenantID, _ := ctx.Value(rlsKeyTenantID).(string)
+	isAdmin, _ := ctx.Value(rlsKeyIsAdmin).(bool)
+	return tenantID, isAdmin
 }
 
 // SetTenantContext sets the app.tenant_id and app.is_admin session
@@ -141,7 +166,7 @@ func WithTenantContext(ctx context.Context, pool *pgxpool.Pool, tenantID string,
 // deployments while providing defense-in-depth for multi-tenant ones.
 func WithTenantContextOrPool(ctx context.Context, pool *pgxpool.Pool, tenantID string, isAdmin bool, fn func(DBQuerier) error) error {
 	if pool == nil {
-		panic("pgxpool.Pool is nil")
+		return fmt.Errorf("WithTenantContextOrPool: pgxpool.Pool is nil — database not initialized")
 	}
 	if tenantID == "" && !isAdmin {
 		// No tenant context — use pool directly. RLS policies won't

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// AegisGate Platform - Correlation PostgreSQL Store Panic-Recovery Unit Tests
+// AegisGate Platform - Correlation PostgreSQL Store Error-Handling Unit Tests
 //
-// Tests input validation paths and pool-call paths via panic recovery.
+// Tests input validation paths and pool-call paths. After the L-4 remediation,
+// WithTenantContextOrPool returns an error instead of panicking on nil pool.
 //go:build !integration
 
 package correlation
@@ -96,10 +97,11 @@ func TestPostgresUnit_Analyze_EmptySessionID(t *testing.T) {
 }
 
 // --------------------------------------------------------------------
-// Panic-recovery tests (exercise code paths up to pool access)
+// Error tests (exercise code paths up to pool access)
+// After L-4 remediation, nil pool returns an error, not a panic.
 // --------------------------------------------------------------------
 
-func TestPostgresUnit_RecordEvent_ValidEvent_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_RecordEvent_ValidEvent_ErrorsOnNilPool(t *testing.T) {
 	store := NewPostgresCorrelationStore(nil)
 	ctx := context.Background()
 
@@ -116,17 +118,9 @@ func TestPostgresUnit_RecordEvent_ValidEvent_PanicsOnNilPool(t *testing.T) {
 		Metadata:  map[string]string{"source": "test"},
 	}
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_ = store.RecordEvent(ctx, event)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	err := store.RecordEvent(ctx, event)
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }
 
@@ -163,74 +157,52 @@ func TestPostgresUnit_RecordEvent_InvalidJSONData(t *testing.T) {
 	}
 }
 
-func TestPostgresUnit_Prune_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_Prune_ErrorsOnNilPool(t *testing.T) {
 	store := NewPostgresCorrelationStore(nil)
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.Prune(ctx, time.Hour)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	_, err := store.Prune(ctx, time.Hour)
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }
 
-func TestPostgresUnit_ListEventsBySession_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListEventsBySession_ErrorsOnNilPool(t *testing.T) {
 	store := NewPostgresCorrelationStore(nil)
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListEventsBySession(ctx, "session-1")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	_, err := store.ListEventsBySession(ctx, "session-1")
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }
 
-func TestPostgresUnit_ListEventsByAgent_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_ListEventsByAgent_ErrorsOnNilPool(t *testing.T) {
 	store := NewPostgresCorrelationStore(nil)
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.ListEventsByAgent(ctx, "agent-1")
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	_, err := store.ListEventsByAgent(ctx, "agent-1")
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }
 
-func TestPostgresUnit_Analyze_PanicsOnNilPool(t *testing.T) {
+func TestPostgresUnit_Analyze_ErrorsOnNilPool(t *testing.T) {
 	store := NewPostgresCorrelationStore(nil)
 	ctx := context.Background()
 
-	didPanic := false
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				didPanic = true
-			}
-		}()
-		_, _ = store.Analyze(ctx, "agent-1", "session-1", time.Minute)
-	}()
-	if !didPanic {
-		t.Error("expected panic on nil pool")
+	_, err := store.Analyze(ctx, "agent-1", "session-1", time.Minute)
+	if err == nil {
+		t.Error("expected error on nil pool")
+	}
+}
+
+func TestPostgresUnit_ListEventsByAgentAndSession_ErrorsOnNilPool(t *testing.T) {
+	store := NewPostgresCorrelationStore(nil)
+	ctx := context.Background()
+
+	_, err := store.ListEventsByAgentAndSession(ctx, "agent-1", "session-1")
+	if err == nil {
+		t.Error("expected error on nil pool")
 	}
 }

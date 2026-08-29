@@ -85,6 +85,9 @@ func (b *postgresStorageBackend) Write(ctx context.Context, entry *opsec.AuditEn
 	if entry == nil {
 		return nil
 	}
+	if b.pool == nil {
+		return fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
+	}
 
 	dataJSON, err := json.Marshal(entry.Data)
 	if err != nil {
@@ -127,6 +130,9 @@ func (b *postgresStorageBackend) Read(ctx context.Context, id string) (*opsec.Au
 	if b.closed {
 		return nil, fmt.Errorf("postgres storage backend is closed")
 	}
+	if b.pool == nil {
+		return nil, fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
+	}
 
 	const sql = `
 		SELECT id, timestamp, level, event_type, message, source,
@@ -149,6 +155,9 @@ func (b *postgresStorageBackend) Read(ctx context.Context, id string) (*opsec.Au
 func (b *postgresStorageBackend) Query(ctx context.Context, filter opsec.AuditFilter) ([]*opsec.AuditEntry, error) {
 	if b.closed {
 		return nil, fmt.Errorf("postgres storage backend is closed")
+	}
+	if b.pool == nil {
+		return nil, fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
 	}
 
 	where, args, idx := "", make([]interface{}, 0, 8), 1
@@ -259,6 +268,9 @@ func (b *postgresStorageBackend) Delete(ctx context.Context, id string) error {
 	if b.closed {
 		return fmt.Errorf("postgres storage backend is closed")
 	}
+	if b.pool == nil {
+		return fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
+	}
 
 	const sql = `DELETE FROM audit_entries WHERE id = $1`
 	_, err := b.pool.Exec(ctx, sql, id)
@@ -293,6 +305,9 @@ func (b *postgresStorageBackend) PruneExpired(ctx context.Context, retentionDays
 	if retentionDays <= 0 {
 		return 0, nil // unlimited retention
 	}
+	if b.pool == nil {
+		return 0, fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
+	}
 
 	cutoff := time.Now().UTC().AddDate(0, 0, -retentionDays)
 
@@ -314,6 +329,9 @@ func (b *postgresStorageBackend) Count(ctx context.Context) (int64, error) {
 	if b.closed {
 		return 0, fmt.Errorf("postgres storage backend is closed")
 	}
+	if b.pool == nil {
+		return 0, fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
+	}
 
 	var count int64
 	const sql = `SELECT COUNT(*) FROM audit_entries`
@@ -329,6 +347,9 @@ func (b *postgresStorageBackend) Count(ctx context.Context) (int64, error) {
 func (b *postgresStorageBackend) VerifyIntegrity(ctx context.Context) (bool, []string, error) {
 	if b.closed {
 		return false, nil, fmt.Errorf("postgres storage backend is closed")
+	}
+	if b.pool == nil {
+		return false, nil, fmt.Errorf("postgres storage backend: pool is nil — database not initialized")
 	}
 
 	const sql = `
