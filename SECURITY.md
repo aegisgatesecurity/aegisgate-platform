@@ -4,14 +4,8 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
-| v4.3.x  | ✅ Yes    | Current release |
-| v4.2.x  | ✅ Yes    | Active |
-| v4.1.x  | ✅ Yes    | Active support |
-| v4.0.x  | ✅ Yes    | Active support |
-| v3.6.x  | ✅ Yes    | Active support |
-| v3.5.x  | ⚠️ Limited | Critical only |
-| v3.4.x  | ⚠️ Limited | Critical only |
-| < v3.4  | ❌ No      | Please upgrade |
+| v4.3.x  | ✅ Yes    | Current release (v4.3.3) |
+| < v4.3  | ❌ EOL     | Archived — upgrade to v4.3.3 |
 
 ## Security Features
 
