@@ -430,7 +430,7 @@ func (w *wizard) writeConfig() error {
 
 	content := header + string(data)
 
-	if err := os.WriteFile(w.opts.OutputPath, []byte(content), 0640); err != nil { //nosec G306 — config file readable by owner+group only
+	if err := os.WriteFile(w.opts.OutputPath, []byte(content), 0600); err != nil { //nosec G306 — config file with sensitive settings, owner-only access
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 

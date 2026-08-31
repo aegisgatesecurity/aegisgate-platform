@@ -51,3 +51,9 @@
 # usr/local/bin/aegisgate-platform (Docker binary).
 # Code-scanning alerts: #405, #422, #424, #406.
 CVE-2025-xxxx # golang.org/x/crypto/openpgp — not used, transitive only
+
+# === KSV-0125: Restrict container images to trusted registries ===
+# False positive: ghcr.io IS a trusted registry (GitHub Container Registry).
+# Trivy's KSV rule fires because it can't verify the registry allowlist at scan time.
+# The image ghcr.io/aegisgatesecurity/aegisgate-platform is our own published image.
+KSV-0125 # ghcr.io is trusted — false positive on deploy/k8s/manifests/03-deployment.yaml
