@@ -214,12 +214,18 @@ func (s *State) Middleware(next http.Handler) http.Handler {
 		w.Header().Set("Retry-After", fmt.Sprintf("%d", retryAfter))
 		w.Header().Set("Connection", "close")
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		writeJSON(w, map[string]interface{}{
 			"error":       "maintenance_mode",
 			"message":     s.message.Load().(string),
 			"retry_after": retryAfter,
 		})
 	})
+}
+
+// writeJSON encodes a value as JSON to the response writer, ignoring errors.
+// HTTP response write errors are not actionable after headers are sent.
+func writeJSON(w http.ResponseWriter, v interface{}) { //nosec G104 -- intentional: HTTP response errors not actionable
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 // Handler returns an http.Handler for the /api/v1/maintenance API endpoint.
@@ -230,7 +236,7 @@ func (s *State) Handler() http.Handler {
 
 		switch r.Method {
 		case http.MethodGet:
-			json.NewEncoder(w).Encode(s.Status())
+			writeJSON(w, s.Status())
 
 		case http.MethodPost:
 			// Enable maintenance mode
@@ -241,7 +247,7 @@ func (s *State) Handler() http.Handler {
 			if r.Body != nil {
 				if err := json.NewDecoder(r.Body).Decode(&req); err != nil && err.Error() != "EOF" {
 					w.WriteHeader(http.StatusBadRequest)
-					json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+					writeJSON(w, map[string]string{"error": "invalid request body"})
 					return
 				}
 			}
@@ -254,13 +260,13 @@ func (s *State) Handler() http.Handler {
 				s.SetRetryAfter(req.RetryAfter)
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(s.Status())
+			writeJSON(w, s.Status())
 
 		case http.MethodDelete:
 			// Disable maintenance mode
 			s.Disable()
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(s.Status())
+			writeJSON(w, s.Status())
 
 		case http.MethodPut:
 			// Schedule maintenance window
@@ -271,34 +277,34 @@ func (s *State) Handler() http.Handler {
 			}
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+				writeJSON(w, map[string]string{"error": "invalid request body"})
 				return
 			}
 
 			startTime, err := time.Parse(time.RFC3339, req.StartTime)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "start_time must be RFC3339 format"})
+				writeJSON(w, map[string]string{"error": "start_time must be RFC3339 format"})
 				return
 			}
 			endTime, err := time.Parse(time.RFC3339, req.EndTime)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "end_time must be RFC3339 format"})
+				writeJSON(w, map[string]string{"error": "end_time must be RFC3339 format"})
 				return
 			}
 
 			if err := s.Schedule(startTime, endTime, req.Reason); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				writeJSON(w, map[string]string{"error": err.Error()})
 				return
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(s.Status())
+			writeJSON(w, s.Status())
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
+			writeJSON(w, map[string]string{"error": "method not allowed"})
 		}
 	})
 }
