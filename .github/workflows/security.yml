@@ -227,7 +227,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3.97.0
+        uses: trufflesecurity/trufflehog@v3.97.1
         if: github.event_name == 'pull_request'
         with:
           path: ./
