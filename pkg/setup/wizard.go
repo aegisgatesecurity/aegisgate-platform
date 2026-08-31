@@ -171,6 +171,17 @@ type wizard struct {
 	cfg    *platformconfig.Config
 }
 
+// write is a safe wrapper around w.out.Write that ignores errors.
+// Writing to stdout/stderr has no meaningful error recovery in a CLI wizard.
+func (w *wizard) write(data []byte) { //nosec G104 -- intentional: stdout write errors are not actionable
+	_, _ = w.out.Write(data)
+}
+
+// writeStr is a convenience wrapper for writing strings.
+func (w *wizard) writeStr(s string) { //nosec G104 -- intentional: stdout write errors are not actionable
+	_, _ = w.out.Write([]byte(s))
+}
+
 func (w *wizard) run() (string, error) {
 	w.printBanner()
 	w.printEnvironment()
@@ -211,7 +222,7 @@ func (w *wizard) run() (string, error) {
 	// Step 4: Validate config
 	w.printStep("Validating configuration...")
 	result := w.cfg.Validate()
-	w.out.Write([]byte(result.Summary()))
+	w.write([]byte(result.Summary()))
 	if result.HasErrors() {
 		return "", fmt.Errorf("config validation failed with %d error(s)", len(result.Errors()))
 	}
@@ -221,7 +232,7 @@ func (w *wizard) run() (string, error) {
 		if _, err := os.Stat(w.opts.OutputPath); err == nil {
 			if !w.opts.NonInteractive {
 				if !w.confirm(fmt.Sprintf("Config file %q already exists. Overwrite?", w.opts.OutputPath)) {
-					w.out.Write([]byte("Setup cancelled. Existing config preserved.\n"))
+					w.write([]byte("Setup cancelled. Existing config preserved.\n"))
 					return "", nil
 				}
 			} else {
@@ -242,7 +253,7 @@ func (w *wizard) run() (string, error) {
 }
 
 func (w *wizard) printBanner() {
-	w.out.Write([]byte(`
+	w.write([]byte(`
 ╔══════════════════════════════════════════════════════════════╗
 ║           AegisGate Setup Wizard — v4.2.0                    ║
 ║                                                              ║
@@ -254,34 +265,34 @@ func (w *wizard) printBanner() {
 
 func (w *wizard) printEnvironment() {
 	env := w.env
-	w.out.Write([]byte(fmt.Sprintf("Environment Detection:\n")))
-	w.out.Write([]byte(fmt.Sprintf("  Platform:     %s", "")))
+	w.write([]byte(fmt.Sprintf("Environment Detection:\n")))
+	w.write([]byte(fmt.Sprintf("  Platform:     %s", "")))
 	if env.IsDocker {
-		w.out.Write([]byte("Docker "))
+		w.write([]byte("Docker "))
 	}
 	if env.IsKubernetes {
-		w.out.Write([]byte("Kubernetes "))
+		w.write([]byte("Kubernetes "))
 	}
 	if env.IsSystemd && !env.IsDocker && !env.IsKubernetes {
-		w.out.Write([]byte("systemd "))
+		w.write([]byte("systemd "))
 	}
 	if !env.IsDocker && !env.IsKubernetes && !env.IsSystemd {
-		w.out.Write([]byte("Local/Bare-metal "))
+		w.write([]byte("Local/Bare-metal "))
 	}
 	if env.IsAirGapped {
-		w.out.Write([]byte("(Air-gapped) "))
+		w.write([]byte("(Air-gapped) "))
 	}
-	w.out.Write([]byte("\n"))
+	w.write([]byte("\n"))
 
-	w.out.Write([]byte(fmt.Sprintf("  Hostname:     %s\n", env.Hostname)))
-	w.out.Write([]byte(fmt.Sprintf("  Data dir:     %s\n", env.DataDir)))
-	w.out.Write([]byte(fmt.Sprintf("  TLS certs:    %v\n", env.HasCerts)))
-	w.out.Write([]byte(fmt.Sprintf("  Existing cfg: %v\n", env.HasExistingConfig)))
-	w.out.Write([]byte(fmt.Sprintf("  Recommended:  %s\n\n", env.DetectedProfile)))
+	w.write([]byte(fmt.Sprintf("  Hostname:     %s\n", env.Hostname)))
+	w.write([]byte(fmt.Sprintf("  Data dir:     %s\n", env.DataDir)))
+	w.write([]byte(fmt.Sprintf("  TLS certs:    %v\n", env.HasCerts)))
+	w.write([]byte(fmt.Sprintf("  Existing cfg: %v\n", env.HasExistingConfig)))
+	w.write([]byte(fmt.Sprintf("  Recommended:  %s\n\n", env.DetectedProfile)))
 }
 
 func (w *wizard) printStep(msg string) {
-	w.out.Write([]byte(fmt.Sprintf("\n▸ %s\n", msg)))
+	w.write([]byte(fmt.Sprintf("\n▸ %s\n", msg)))
 }
 
 func (w *wizard) selectProfile() error {
@@ -291,31 +302,31 @@ func (w *wizard) selectProfile() error {
 			return fmt.Errorf("unknown profile %q — run 'aegisgate --profile list' for options", w.opts.Profile)
 		}
 		w.chosen = w.opts.Profile
-		w.out.Write([]byte(fmt.Sprintf("Using profile: %s\n", w.chosen)))
+		w.write([]byte(fmt.Sprintf("Using profile: %s\n", w.chosen)))
 		return nil
 	}
 
 	// Non-interactive: use auto-detected profile
 	if w.opts.NonInteractive {
 		w.chosen = w.env.DetectedProfile
-		w.out.Write([]byte(fmt.Sprintf("Auto-selected profile: %s\n", w.chosen)))
+		w.write([]byte(fmt.Sprintf("Auto-selected profile: %s\n", w.chosen)))
 		return nil
 	}
 
 	// Interactive: show options and prompt
-	w.out.Write([]byte("Available profiles:\n\n"))
+	w.write([]byte("Available profiles:\n\n"))
 	for _, p := range profiles.List() {
 		marker := ""
 		if string(p.ID) == w.env.DetectedProfile {
 			marker = " (recommended)"
 		}
-		w.out.Write([]byte(fmt.Sprintf("  %-15s [tier: %s]%s\n", p.ID, p.Tier, marker)))
-		w.out.Write([]byte(fmt.Sprintf("  %-15s %s\n", "", p.Description)))
-		w.out.Write([]byte("\n"))
+		w.write([]byte(fmt.Sprintf("  %-15s [tier: %s]%s\n", p.ID, p.Tier, marker)))
+		w.write([]byte(fmt.Sprintf("  %-15s %s\n", "", p.Description)))
+		w.write([]byte("\n"))
 	}
 
 	for {
-		w.out.Write([]byte(fmt.Sprintf("Select profile [%s]: ", w.env.DetectedProfile)))
+		w.write([]byte(fmt.Sprintf("Select profile [%s]: ", w.env.DetectedProfile)))
 		input, err := w.readLine()
 		if err != nil {
 			return fmt.Errorf("failed to read input: %w", err)
@@ -328,16 +339,16 @@ func (w *wizard) selectProfile() error {
 			w.chosen = input
 			return nil
 		}
-		w.out.Write([]byte(fmt.Sprintf("Unknown profile %q. Try again or press Enter for default.\n", input)))
+		w.write([]byte(fmt.Sprintf("Unknown profile %q. Try again or press Enter for default.\n", input)))
 	}
 }
 
 func (w *wizard) customizeConfig() error {
 	w.printStep("Configuration customization")
-	w.out.Write([]byte("Press Enter to accept defaults, or type a new value.\n\n"))
+	w.write([]byte("Press Enter to accept defaults, or type a new value.\n\n"))
 
 	// Upstream URL
-	w.out.Write([]byte(fmt.Sprintf("  Upstream LLM URL [%s]: ", w.cfg.Proxy.Upstream)))
+	w.write([]byte(fmt.Sprintf("  Upstream LLM URL [%s]: ", w.cfg.Proxy.Upstream)))
 	if input, err := w.readLine(); err == nil {
 		input = strings.TrimSpace(input)
 		if input != "" {
@@ -346,7 +357,7 @@ func (w *wizard) customizeConfig() error {
 	}
 
 	// Proxy port
-	w.out.Write([]byte(fmt.Sprintf("  Proxy port [%d]: ", w.cfg.ProxyPort())))
+	w.write([]byte(fmt.Sprintf("  Proxy port [%d]: ", w.cfg.ProxyPort())))
 	if input, err := w.readLine(); err == nil {
 		input = strings.TrimSpace(input)
 		if input != "" {
@@ -358,7 +369,7 @@ func (w *wizard) customizeConfig() error {
 	}
 
 	// Dashboard port
-	w.out.Write([]byte(fmt.Sprintf("  Dashboard port [%d]: ", w.cfg.Dashboard.Port)))
+	w.write([]byte(fmt.Sprintf("  Dashboard port [%d]: ", w.cfg.Dashboard.Port)))
 	if input, err := w.readLine(); err == nil {
 		input = strings.TrimSpace(input)
 		if input != "" {
@@ -374,7 +385,7 @@ func (w *wizard) customizeConfig() error {
 	if w.cfg.TLS.Enabled {
 		currentTLS = "on"
 	}
-	w.out.Write([]byte(fmt.Sprintf("  Enable TLS [%s] (on/off): ", currentTLS)))
+	w.write([]byte(fmt.Sprintf("  Enable TLS [%s] (on/off): ", currentTLS)))
 	if input, err := w.readLine(); err == nil {
 		input = strings.TrimSpace(strings.ToLower(input))
 		if input == "on" || input == "true" || input == "yes" {
@@ -385,7 +396,7 @@ func (w *wizard) customizeConfig() error {
 	}
 
 	// Data directory
-	w.out.Write([]byte(fmt.Sprintf("  Data directory [%s]: ", w.cfg.Persistence.DataDir)))
+	w.write([]byte(fmt.Sprintf("  Data directory [%s]: ", w.cfg.Persistence.DataDir)))
 	if input, err := w.readLine(); err == nil {
 		input = strings.TrimSpace(input)
 		if input != "" {
@@ -404,7 +415,7 @@ func (w *wizard) writeConfig() error {
 	// Ensure parent directory exists
 	dir := filepath.Dir(w.opts.OutputPath)
 	if dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil { //nosec G301 — config dir for single-user setup wizard
 			return fmt.Errorf("failed to create config directory: %w", err)
 		}
 	}
@@ -419,16 +430,16 @@ func (w *wizard) writeConfig() error {
 
 	content := header + string(data)
 
-	if err := os.WriteFile(w.opts.OutputPath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(w.opts.OutputPath, []byte(content), 0640); err != nil { //nosec G306 — config file readable by owner+group only
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
-	w.out.Write([]byte(fmt.Sprintf("  ✓ Config written to %s (%d bytes)\n", w.opts.OutputPath, len(content))))
+	w.write([]byte(fmt.Sprintf("  ✓ Config written to %s (%d bytes)\n", w.opts.OutputPath, len(content))))
 	return nil
 }
 
 func (w *wizard) printNextSteps() {
-	w.out.Write([]byte(fmt.Sprintf(`
+	w.write([]byte(fmt.Sprintf(`
 ╔══════════════════════════════════════════════════════════════╗
 ║  Setup Complete!                                             ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -459,7 +470,7 @@ Useful commands:
 }
 
 func (w *wizard) confirm(question string) bool {
-	w.out.Write([]byte(fmt.Sprintf("%s [y/N]: ", question)))
+	w.write([]byte(fmt.Sprintf("%s [y/N]: ", question)))
 	input, err := w.readLine()
 	if err != nil {
 		return false
