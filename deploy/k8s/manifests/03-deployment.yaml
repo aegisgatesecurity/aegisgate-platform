@@ -33,6 +33,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8443"
         prometheus.io/path: "/metrics"
+        # Trusted registry annotation for K8s admission control
+        aegisgate.io/trusted-registry: "ghcr.io/aegisgatesecurity"
     spec:
       serviceAccountName: aegisgate-platform
       securityContext:
