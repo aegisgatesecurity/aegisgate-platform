@@ -12,6 +12,8 @@ package detectors
 import (
 	"strings"
 	"testing"
+
+	scannerpkg "github.com/aegisgatesecurity/aegisgate/pkg/scanner"
 )
 
 // repeatAlphaNum generates a string of exactly n alphanumeric characters.
@@ -466,21 +468,42 @@ func TestDetectAllWithResults(t *testing.T) {
 // ===========================================================================
 
 func TestPatternCountParity(t *testing.T) {
-	// Verify that Go ports have the same number of patterns as Lens
-	// Note: Platform includes additional patterns for SOC relevance (SWIFT/BIC, CPT/HCPCS, OT protocols)
+	// Verify that Go ports have the same number of patterns as Lens.
+	//
+	// XSS and Compliance patterns are now delegated to the upstream
+	// scanner (single source of truth). The XSSPatterns slice contains
+	// only the supplemental xss_polyglot (1 pattern); the remaining 11
+	// are in the scanner. CompliancePatterns is empty; all 35 are in
+	// the scanner. The other 6 categories still have local pattern defs.
+	//
+	// Total = 45 + (1+11) + 26 + 13 + 12 + 24 + (0+35) + 9 = 176
+
+	// Count scanner XSS and Compliance patterns
+	scannerXSSCount := 0
+	scannerComplianceCount := 0
+	for _, p := range scannerpkg.DefaultPatterns() {
+		switch p.Category {
+		case scannerpkg.CategoryXSS:
+			scannerXSSCount++
+		case scannerpkg.CategoryCompliance:
+			scannerComplianceCount++
+		}
+	}
+
 	tests := []struct {
 		name     string
 		count    int
 		expected int
 	}{
 		{"secrets", len(SecretsPatterns), 45},
-		{"xss", len(XSSPatterns), 12},
-		{"pii-us-core", len(PIIUSCorePatterns), 26}, // 15 base + 11 CPT/HCPCS
+		{"xss (local supplemental)", len(XSSPatterns), 1},
+		{"xss (scanner)", scannerXSSCount, 11},
+		{"pii-us-core", len(PIIUSCorePatterns), 26},
 		{"pii-us-extended", len(PIIUSExtendedPatterns), 13},
-		{"pii-financial", len(PIIFinancialPatterns), 12}, // 9 base + 3 SWIFT/BIC
+		{"pii-financial", len(PIIFinancialPatterns), 12},
 		{"pii-international", len(PIIInternationalPatterns), 24},
-		{"compliance", len(CompliancePatterns), 35},
-		{"ot-protocols", len(OTProtocolPatterns), 9}, // NEW: OT/ICS protocols
+		{"compliance (scanner)", scannerComplianceCount, 35},
+		{"ot-protocols", len(OTProtocolPatterns), 9},
 	}
 
 	total := 0

@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"sort"
 	"time"
+
+	scannerpkg "github.com/aegisgatesecurity/aegisgate/pkg/scanner"
 )
 
 // compiledPattern holds a pre-compiled regex pattern with its metadata.
@@ -105,15 +107,34 @@ func DetectAll(text string) []Match {
 
 // DetectAllWithResults scans text with all pattern categories and returns
 // per-category DetectionResult structs plus the combined match list.
+//
+// XSS and Compliance results are sourced from the upstream scanner
+// (single source of truth). The pattern counts include both scanner
+// patterns and any supplemental local patterns (e.g., xss_polyglot).
 func DetectAllWithResults(text string) ([]Match, []DetectionResult) {
+	// Count scanner patterns for XSS and Compliance
+	scannerXSSCount := 0
+	scannerComplianceCount := 0
+	for _, p := range scannerpkg.DefaultPatterns() {
+		switch p.Category {
+		case scannerpkg.CategoryXSS:
+			scannerXSSCount++
+		case scannerpkg.CategoryCompliance:
+			scannerComplianceCount++
+		}
+	}
+
+	xssMatches := DetectXSS(text)
+	complianceMatches := DetectCompliance(text)
+
 	results := []DetectionResult{
 		detectWithResult(text, CompiledSecretPatterns, CategorySecrets),
-		detectWithResult(text, CompiledXSSPatterns, CategoryXSS),
+		{Category: CategoryXSS, Matches: xssMatches, PatternCount: scannerXSSCount + len(CompiledXSSPatterns), ElapsedNS: 0},
 		detectWithResult(text, CompiledPIIUSCorePatterns, CategoryPIIUSCore),
 		detectWithResult(text, CompiledPIIUSExtendedPatterns, CategoryPIIUSExtended),
 		detectWithResult(text, CompiledPIIFinancialPatterns, CategoryPIIFinancial),
 		detectWithResult(text, CompiledPIIInternationalPatterns, CategoryPIIInternational),
-		detectWithResult(text, CompiledCompliancePatterns, CategoryCompliance),
+		{Category: CategoryCompliance, Matches: complianceMatches, PatternCount: scannerComplianceCount, ElapsedNS: 0},
 		detectWithResult(text, CompiledOTProtocolPatterns, CategoryOTProtocols),
 	}
 
