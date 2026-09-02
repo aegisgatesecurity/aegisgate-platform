@@ -51,6 +51,26 @@ func (s *PostgresStore) ensureSchema(ctx context.Context) error {
 			);
 			CREATE INDEX IF NOT EXISTS idx_legal_holds_entity_id ON legal_holds (entity_id);
 			CREATE INDEX IF NOT EXISTS idx_legal_holds_active ON legal_holds (entity_id) WHERE released_at IS NULL;
+
+			-- Enable and FORCE RLS (defensive: migration 011 may have been
+			-- skipped if the table didn't exist during initdb).
+			ALTER TABLE legal_holds ENABLE ROW LEVEL SECURITY;
+			ALTER TABLE legal_holds FORCE ROW LEVEL SECURITY;
+
+			-- Tenant isolation policy: admin bypass OR matching tenant_id.
+			DROP POLICY IF EXISTS legal_holds_tenant_isolation ON legal_holds;
+			CREATE POLICY legal_holds_tenant_isolation ON legal_holds
+				USING (
+					current_setting('app.tenant_id', true) = ''
+					OR tenant_id = current_setting('app.tenant_id', true)
+				);
+
+			-- Admin bypass policy.
+			DROP POLICY IF EXISTS legal_holds_admin_bypass ON legal_holds;
+			CREATE POLICY legal_holds_admin_bypass ON legal_holds
+				USING (
+					current_setting('app.is_admin', true) = 'true'
+				);
 		`)
 		return err
 	})
