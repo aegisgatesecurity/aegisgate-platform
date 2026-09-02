@@ -23,14 +23,8 @@ const (
 type Category string
 
 const (
-	CategorySecrets          Category = "secrets"
-	CategoryPIIUSCore        Category = "pii-us-core"
-	CategoryPIIUSExtended    Category = "pii-us-extended"
-	CategoryPIIFinancial     Category = "pii-financial"
-	CategoryPIIInternational Category = "pii-international"
-	CategoryXSS              Category = "xss"
-	CategoryCompliance       Category = "compliance"
-	CategoryOTProtocols      Category = "ot-protocols"
+	CategoryXSS        Category = "xss"
+	CategoryCompliance Category = "compliance"
 )
 
 // Match represents a single regex detection match.

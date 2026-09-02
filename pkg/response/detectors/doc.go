@@ -3,24 +3,20 @@
 // AegisGate Platform - Regex Detectors Package
 // =========================================================================
 //
-// Port of the AegisGate Lens regex detectors (176 patterns across 8
-// categories) to Go. These patterns are maintained in parity with the
-// Lens JavaScript implementation at:
+// Response-side XSS and compliance detection for the response guard.
 //
-//	aegisgate-lens/src/detectors/regex/
+// XSS (12 patterns) and compliance (35 patterns) are delegated to the
+// upstream scanner package (github.com/aegisgatesecurity/aegisgate/pkg/
+// scanner) as the single source of truth. The scanner_adapter.go file
+// bridges scanner.Finding types to detectors.Match types.
 //
-// Categories:
-//   - secrets (45 patterns)
-//   - pii-us-core (26 patterns)
-//   - pii-us-extended (13 patterns)
-//   - pii-financial (12 patterns)
-//   - pii-international (24 patterns)
-//   - xss (12 patterns)
-//   - compliance (35 patterns)
-//   - ot-protocols (9 patterns)
+// The remaining detection categories (secrets, PII, OT protocols) were
+// removed in favor of the upstream scanner, which already covers them
+// with 200 patterns across 8 categories. The response guard uses its
+// own PIIScanner and SecretDetector for response-side PII/secret
+// detection with validation logic (Luhn checks, SSN range validation,
+// masking/redaction).
 //
-// Each pattern includes a severity level (critical, high, medium, low)
-// and a confidence score. The regex strings are identical to the Lens
-// versions (adapted from JavaScript /g flag to Go regexp.Regexp syntax).
+// Lens parity is maintained via the upstream scanner patterns.
 // =========================================================================
 package detectors

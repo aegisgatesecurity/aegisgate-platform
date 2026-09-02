@@ -85,19 +85,15 @@ func detectWithPatterns(text string, patterns []compiledPattern, category string
 	return matches
 }
 
-// DetectAll scans text with all pattern categories and returns combined results.
+// DetectAll scans text with XSS and compliance patterns and returns
+// combined results. The other 6 categories (secrets, PII, OT) have been
+// removed — they were never called in production and are covered by the
+// upstream scanner. Use the scanner package directly for those.
 func DetectAll(text string) []Match {
 	var all []Match
-	all = append(all, DetectSecrets(text)...)
 	all = append(all, DetectXSS(text)...)
-	all = append(all, DetectPIIUSCore(text)...)
-	all = append(all, DetectPIIUSExtended(text)...)
-	all = append(all, DetectPIIFinancial(text)...)
-	all = append(all, DetectPIIInternational(text)...)
 	all = append(all, DetectCompliance(text)...)
-	all = append(all, DetectOTProtocols(text)...)
 
-	// Sort all matches by index
 	sort.Slice(all, func(i, j int) bool {
 		return all[i].Index < all[j].Index
 	})
@@ -112,7 +108,6 @@ func DetectAll(text string) []Match {
 // (single source of truth). The pattern counts include both scanner
 // patterns and any supplemental local patterns (e.g., xss_polyglot).
 func DetectAllWithResults(text string) ([]Match, []DetectionResult) {
-	// Count scanner patterns for XSS and Compliance
 	scannerXSSCount := 0
 	scannerComplianceCount := 0
 	for _, p := range scannerpkg.DefaultPatterns() {
@@ -128,14 +123,8 @@ func DetectAllWithResults(text string) ([]Match, []DetectionResult) {
 	complianceMatches := DetectCompliance(text)
 
 	results := []DetectionResult{
-		detectWithResult(text, CompiledSecretPatterns, CategorySecrets),
 		{Category: CategoryXSS, Matches: xssMatches, PatternCount: scannerXSSCount + len(CompiledXSSPatterns), ElapsedNS: 0},
-		detectWithResult(text, CompiledPIIUSCorePatterns, CategoryPIIUSCore),
-		detectWithResult(text, CompiledPIIUSExtendedPatterns, CategoryPIIUSExtended),
-		detectWithResult(text, CompiledPIIFinancialPatterns, CategoryPIIFinancial),
-		detectWithResult(text, CompiledPIIInternationalPatterns, CategoryPIIInternational),
 		{Category: CategoryCompliance, Matches: complianceMatches, PatternCount: scannerComplianceCount, ElapsedNS: 0},
-		detectWithResult(text, CompiledOTProtocolPatterns, CategoryOTProtocols),
 	}
 
 	all := DetectAll(text)
