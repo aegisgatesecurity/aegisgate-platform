@@ -195,6 +195,82 @@ func TestDetectAllWithResults(t *testing.T) {
 }
 
 // ============================================================================
+// Scanner Adapter Tests
+// ===========================================================================
+
+func TestDetectXSS_Polyglot(t *testing.T) {
+	// The xss_polyglot pattern matches JS function calls with template
+	// literal interpolation: alert(`${...}`)
+	matches := DetectXSS("alert(`${document.cookie}`)")
+	found := false
+	for _, m := range matches {
+		if m.Category == "xss_polyglot" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected xss_polyglot match for alert(`${document.cookie}`)")
+	}
+}
+
+func TestDetectXSS_Empty(t *testing.T) {
+	matches := DetectXSS("")
+	if matches != nil {
+		t.Errorf("expected nil for empty input, got %v", matches)
+	}
+}
+
+func TestDetectCompliance_Empty(t *testing.T) {
+	matches := DetectCompliance("")
+	if matches != nil {
+		t.Errorf("expected nil for empty input, got %v", matches)
+	}
+}
+
+func TestDetectXSS_MultipleMatches(t *testing.T) {
+	text := `<script>x</script><img onerror="alert(1)">`
+	matches := DetectXSS(text)
+	if len(matches) < 2 {
+		t.Errorf("expected at least 2 matches, got %d", len(matches))
+	}
+	// Verify matches are sorted by index
+	for i := 1; i < len(matches); i++ {
+		if matches[i].Index < matches[i-1].Index {
+			t.Error("matches not sorted by index")
+		}
+	}
+}
+
+func TestScannerSeverityMapping(t *testing.T) {
+	// Verify that scanner severity levels map correctly to detector severity
+	tests := []struct {
+		name     string
+		text     string
+		expected Severity
+	}{
+		{"critical", `<script>alert(1)</script>`, SeverityCritical},
+		{"high", `<img onerror="alert(1)">`, SeverityHigh},
+	}
+	for _, tt := range tests {
+		matches := DetectXSS(tt.text)
+		if len(matches) == 0 {
+			t.Fatalf("%s: no matches", tt.name)
+		}
+		found := false
+		for _, m := range matches {
+			if m.Severity == tt.expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("%s: expected severity %s in matches", tt.name, tt.expected)
+		}
+	}
+}
+
+// ============================================================================
 // Pattern Count Parity Tests
 // ===========================================================================
 

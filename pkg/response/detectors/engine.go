@@ -13,7 +13,6 @@ package detectors
 import (
 	"regexp"
 	"sort"
-	"time"
 
 	scannerpkg "github.com/aegisgatesecurity/aegisgate/pkg/scanner"
 )
@@ -45,44 +44,6 @@ func compilePatterns(defs []PatternDef) []compiledPattern {
 		}
 	}
 	return patterns
-}
-
-// detectWithPatterns scans text using pre-compiled patterns and returns matches.
-func detectWithPatterns(text string, patterns []compiledPattern, category string) []Match {
-	if len(text) == 0 {
-		return nil
-	}
-
-	start := time.Now()
-	var matches []Match
-
-	for _, p := range patterns {
-		indices := p.Compiled.FindAllStringIndex(text, -1)
-		for _, idx := range indices {
-			value := text[idx[0]:idx[1]]
-			// Truncate long matches (mirrors Lens behavior)
-			if len(value) > 200 {
-				value = value[:200] + "..."
-			}
-			matches = append(matches, Match{
-				Category:   p.Name,
-				Severity:   p.Severity,
-				Confidence: p.Confidence,
-				Value:      value,
-				Index:      idx[0],
-				End:        idx[1],
-			})
-		}
-	}
-
-	// Sort by index (mirrors Lens behavior)
-	sort.Slice(matches, func(i, j int) bool {
-		return matches[i].Index < matches[j].Index
-	})
-
-	_ = time.Since(start) // available for future metrics
-
-	return matches
 }
 
 // DetectAll scans text with XSS and compliance patterns and returns
@@ -129,16 +90,4 @@ func DetectAllWithResults(text string) ([]Match, []DetectionResult) {
 
 	all := DetectAll(text)
 	return all, results
-}
-
-// detectWithResult runs detection and returns a DetectionResult.
-func detectWithResult(text string, patterns []compiledPattern, category Category) DetectionResult {
-	start := time.Now()
-	matches := detectWithPatterns(text, patterns, string(category))
-	return DetectionResult{
-		Category:     category,
-		Matches:      matches,
-		PatternCount: len(patterns),
-		ElapsedNS:    time.Since(start).Nanoseconds(),
-	}
 }
