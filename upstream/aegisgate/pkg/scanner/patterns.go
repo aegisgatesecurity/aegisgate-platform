@@ -75,6 +75,14 @@ func DefaultPatterns() []*Pattern {
 		{Name: "JWTToken", Regex: regexp.MustCompile(`\beyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*\b`), Severity: Medium, Category: CategoryCredential, Description: "JWT token"},
 		{Name: "SlackToken", Regex: regexp.MustCompile(`\bxox[baprs]-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*\b`), Severity: High, Category: CategoryCredential, Description: "Slack token"},
 
+		// ADDITIONAL SECRET PATTERNS (Phase 3 gap fix — 2026-09-02)
+		{Name: "StripeAPIKey", Regex: regexp.MustCompile(`\b(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Stripe API key"},
+		{Name: "GoogleAPIKey", Regex: regexp.MustCompile(`\bAIza[0-9A-Za-z_\-]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Google API key"},
+		{Name: "SlackTokenV2", Regex: regexp.MustCompile(`\bxox[abprs]-[A-Za-z0-9-]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Slack token (relaxed format)"},
+		{Name: "GermanTaxID", Regex: regexp.MustCompile(`\b(?:Steuer-?ID|Steuernummer)[:\s]*\d{11}\b`), Severity: High, Category: CategoryPII, Description: "German tax identification number"},
+		{Name: "MastercardSpaced", Regex: regexp.MustCompile(`\b5[1-5]\d{2}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b`), Severity: Critical, Category: CategoryFinancial, Description: "Mastercard credit card (with separators)"},
+		{Name: "AmexSpaced", Regex: regexp.MustCompile(`\b3[47]\d{2}[\s-]?\d{6}[\s-]?\d{5}\b`), Severity: Critical, Category: CategoryFinancial, Description: "Amex credit card (with separators)"},
+
 		// PROMPT INJECTION DETECTION (MITRE ATLAS LLM01)
 		{Name: "PromptInjectionCommand", Regex: regexp.MustCompile(`(?i)(?:ignore\s+(?:all\s+)?(?:previous|prior)\s+(?:instructions?|rules?|constraints?)|disregard\s+(?:your\s+)?(?:instructions?|rules?)|forget\s+(?:everything|all)\s+(?:you|we)\s+(?:have\s+)?told|temporary\s+instructions?)`), Severity: Critical, Category: CategoryPrompt, Description: "Command-style prompt injection"},
 		{Name: "PromptInjectionRolePlay", Regex: regexp.MustCompile(`(?i)(?:act\s+as\s+(?:a|an)|pretend\s+you\s+are\s+(?:a|an)|roleplay\s+(?:as|that)|simulate\s+(?:a|an)|you\s+are\s+now\s+(?:a|an)|new\s+(?:system|instruct))`), Severity: High, Category: CategoryPrompt, Description: "Role-play prompt injection"},
