@@ -8,8 +8,11 @@
 package ml
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -421,5 +424,69 @@ func TestHeuristicHelpers(t *testing.T) {
 				t.Errorf("containsReversed(%q, %q) = %v, want %v", tt.text, tt.word, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestComputeFileHash(t *testing.T) {
+	// Create a temp file with known content and verify SHA-256 hash.
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test-model.onnx")
+
+	content := []byte("fake model content for hash test")
+	if err := os.WriteFile(tmpFile, content, 0644); err != nil {
+		t.Fatalf("failed to write temp file: %v", err)
+	}
+
+	hash, err := computeFileHash(tmpFile)
+	if err != nil {
+		t.Fatalf("computeFileHash failed: %v", err)
+	}
+
+	// Verify format: must be "sha256:<hex>"
+	if !strings.HasPrefix(hash, "sha256:") {
+		t.Fatalf("hash must start with 'sha256:', got: %s", hash)
+	}
+
+	// Verify the hash matches manually computed SHA-256
+	hexPart := strings.TrimPrefix(hash, "sha256:")
+	expected := sha256.Sum256(content)
+	expectedHex := hex.EncodeToString(expected[:])
+	if hexPart != expectedHex {
+		t.Errorf("hash mismatch: computeFileHash returned %s, expected %s", hexPart, expectedHex)
+	}
+}
+
+func TestComputeFileHash_NonexistentFile(t *testing.T) {
+	_, err := computeFileHash("/nonexistent/path/file.onnx")
+	if err == nil {
+		t.Error("computeFileHash should return error for nonexistent file")
+	}
+}
+
+func TestLoadModel_IntegrityCheck(t *testing.T) {
+	// Create a temp file with content that does NOT match ExpectedModelHash.
+	// LoadModel should reject it with an integrity check failure.
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "tampered-model.onnx")
+
+	if err := os.WriteFile(tmpFile, []byte("tampered content"), 0644); err != nil {
+		t.Fatalf("failed to write temp file: %v", err)
+	}
+
+	cfg := DetectorConfig{
+		Enabled:           true,
+		ShadowMode:        false,
+		Threshold:         0.5,
+		MaxSequenceLength: 256,
+		Timeout:           10,
+	}
+	td := NewThreatDetector(cfg)
+
+	err := td.LoadModel(tmpFile)
+	if err == nil {
+		t.Error("LoadModel should fail integrity check for tampered model")
+	}
+	if err != nil && !strings.Contains(err.Error(), "integrity check failed") {
+		t.Errorf("LoadModel should fail with integrity check error, got: %v", err)
 	}
 }
