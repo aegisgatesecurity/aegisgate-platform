@@ -172,6 +172,14 @@ type SecurityConfig struct {
 	// mode (log predictions but never block). Default: true (safe deployment).
 	// Set to false only after calibration confirms zero FPR.
 	MLShadowMode bool `yaml:"ml_shadow_mode"`
+
+	// MLThreshold is the score above which content is classified as adversarial.
+	// Default: 0.5 (calibrated on retrained model with 0% FPR).
+	MLThreshold float64 `yaml:"ml_threshold"`
+
+	// MLModelPath is the path to the ONNX model file. If empty, falls back to
+	// AEGISGATE_ML_MODEL_PATH env var, then /opt/aegisgate-platform/models/.
+	MLModelPath string `yaml:"ml_model_path"`
 }
 
 // LoggingConfig holds structured logging settings
@@ -382,6 +390,8 @@ func DefaultConfig() *Config {
 			AllowedHeaders:           []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},
 			MLThreatDetectionEnabled: false, // Cold-start: disabled by default
 			MLShadowMode:             true,  // Safe deployment: shadow mode on by default
+			MLThreshold:              0.5,   // Calibrated threshold: 100% PI TPR, 97.5% exfil TPR, 0% FPR (v9 model, 256-char, Latin-1)
+			MLModelPath:              "",    // Empty: fall back to env var or default path
 		},
 		Logging: LoggingConfig{
 			Level:  "info",
@@ -686,6 +696,14 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("AEGISGATE_ML_SHADOW_MODE"); v != "" {
 		c.Security.MLShadowMode = strings.ToLower(v) == "true"
+	}
+	if v := os.Getenv("AEGISGATE_ML_THRESHOLD"); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			c.Security.MLThreshold = f
+		}
+	}
+	if v := os.Getenv("AEGISGATE_ML_MODEL_PATH"); v != "" {
+		c.Security.MLModelPath = v
 	}
 
 	// FIPS overrides

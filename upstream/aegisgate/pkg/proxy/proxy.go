@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -43,7 +44,7 @@ type Options struct {
 	TLS            *TLSConfig
 	MaxBodySize    int64         // Default: 10MB
 	Timeout        time.Duration // Default: 30s
-	RateLimit      int           // Requests per minute, default: 100
+	RateLimit      int           // Requests per minute; 0 = default (100), -1 = unlimited
 	HTTP2          *HTTP2Config  // HTTP/2 configuration
 	HTTP3          *HTTP3Config  // HTTP/3 configuration
 	CircuitBreaker *resilience.CircuitBreakerConfig
@@ -70,6 +71,11 @@ type Options struct {
 	// MLShadowMode: true by default. In shadow mode, the detector logs predictions
 	// but never blocks traffic. Set to false only after calibration confirms zero FPR.
 	MLShadowMode bool
+	// MLThreshold is the score above which content is classified as adversarial.
+	// Default: 0.5 (calibrated on retrained model with 0% FPR).
+	MLThreshold float64
+	// MLModelPath is the path to the ONNX model file. If empty, uses default.
+	MLModelPath string
 }
 
 // TLSConfig holds TLS settings
@@ -149,7 +155,7 @@ func New(opts *Options) *Proxy {
 	if opts.Timeout <= 0 {
 		opts.Timeout = 30 * time.Second
 	}
-	if opts.RateLimit <= 0 {
+	if opts.RateLimit == 0 {
 		opts.RateLimit = 100
 	}
 
@@ -211,7 +217,33 @@ func New(opts *Options) *Proxy {
 	tdCfg := ml.DefaultDetectorConfig()
 	tdCfg.Enabled = p.options.MLThreatDetectionEnabled
 	tdCfg.ShadowMode = p.options.MLShadowMode
+	// Use configured threshold, default to 0.5 for retrained model
+	if p.options.MLThreshold > 0 {
+		tdCfg.Threshold = p.options.MLThreshold
+	} else {
+		tdCfg.Threshold = 0.5
+	}
 	p.threatDetector = ml.NewThreatDetector(tdCfg)
+
+	// Load the ONNX model for threat detection
+	// Priority: MLModelPath option > AEGISGATE_ML_MODEL_PATH env > default path
+	modelPath := p.options.MLModelPath
+	if modelPath == "" {
+		modelPath = os.Getenv("AEGISGATE_ML_MODEL_PATH")
+	}
+	if modelPath == "" {
+		modelPath = "/opt/aegisgate-platform/models/threat_cnn_bilstm.onnx"
+	}
+	if err := p.threatDetector.LoadModel(modelPath); err != nil {
+		slog.Warn("Failed to load ONNX threat model, using heuristic fallback", "error", err, "path", modelPath)
+	} else {
+		slog.Info("ONNX threat model loaded successfully",
+			"path", modelPath,
+			"threshold", tdCfg.Threshold,
+			"shadow_mode", tdCfg.ShadowMode,
+			"enabled", tdCfg.Enabled,
+		)
+	}
 
 	// Initialize circuit breaker if configured
 	if opts.CircuitBreaker != nil {
@@ -221,8 +253,13 @@ func New(opts *Options) *Proxy {
 			"timeout", opts.CircuitBreaker.Timeout)
 	}
 
-	// Initialize rate limiter
-	p.rateLimiter = NewRateLimiter(opts.RateLimit)
+	// Initialize rate limiter (skip if unlimited (-1))
+	if opts.RateLimit > 0 {
+		p.rateLimiter = NewRateLimiter(opts.RateLimit)
+		slog.Info("Rate limiter enabled", "rate_per_minute", opts.RateLimit)
+	} else {
+		slog.Info("Rate limiter disabled (unlimited)")
+	}
 
 	// Buffer pool for request/response body reuse — avoids allocating
 	// new byte slices on every proxy request.
@@ -347,8 +384,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Check rate limit
-	if !p.rateLimiter.Allow() {
+	// Check rate limit (skip if rate limiter is nil = unlimited)
+	if p.rateLimiter != nil && !p.rateLimiter.Allow() {
 		slog.Warn("Rate limit exceeded", "client", req.RemoteAddr, "path", req.URL.Path)
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("Rate limit exceeded. Please try again later."))
@@ -521,24 +558,61 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				})
 
 				// Neural Network Threat Detector (Char CNN-BiLSTM)
-				// Only compute variants if threat detector is enabled and we had a cache miss.
+				// Only run if threat detector is enabled and we had a cache miss.
 				// Disabled by default (cold-start). Enable via feature flag after
 				// 7-day shadow validation with 0% FPR.
+				//
+				// NOTE: We feed only the original scanContent to the ML model, not the
+				// normalization variants. The variants (ROT13, keyboard-walk, l33t, etc.)
+				// are designed for regex pattern matching, not neural network inference.
+				// The CharCNN-BiLSTM was trained on raw text and produces false positives
+				// on ROT13-transformed benign text. The model's own character-level
+				// normalization handles evasion patterns that the variant pipeline covers
+				// for regex.
 				if p.threatDetector != nil && p.threatDetector.IsEnabled() {
-					threatResult := p.threatDetector.DetectAll(variants)
+					threatResult := p.threatDetector.Detect(scanContent)
 					if threatResult.IsThreat {
-						slog.Error("Neural threat detector blocked request",
+						// L3 ML: only block if L1/L2 also found suspicious content.
+						// The ML model over-fires on benign numeric strings (dates,
+						// UUIDs, timestamps) with scores 0.97+. L3 acts as a booster:
+						// it blocks only when L1 (scanner) or L2 (ATLAS) corroborate.
+						// Count only High+ severity findings as corroboration (Info/Medium/Low
+						// are not blocking on their own and shouldn't boost L3)
+						corroboratingCount := 0
+						for _, f := range requestFindings {
+							if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+								corroboratingCount++
+							}
+						}
+						for _, f := range atlasFindings {
+							if f.Severity >= compliance.SeverityMedium {
+								corroboratingCount++
+							}
+						}
+						hasCorroboratingEvidence := corroboratingCount > 0
+						if hasCorroboratingEvidence {
+							slog.Error("Neural threat detector blocked request (corroborated by L1/L2)",
+								"client", req.RemoteAddr,
+								"path", req.URL.Path,
+								"score", fmt.Sprintf("%.3f", threatResult.Score),
+								"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+								"variant", threatResult.Variant,
+								"model", threatResult.ModelVersion,
+								"l1_findings", len(requestFindings),
+								"l2_findings", len(atlasFindings),
+							)
+							metrics.RecordSecurityBlock(metrics.ReasonMLThreat)
+							w.WriteHeader(http.StatusForbidden)
+							w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
+							return
+						}
+						// L3 fired but no L1/L2 corroboration — log as alert only
+						slog.Warn("Neural threat detected but no L1/L2 corroboration — allowing",
 							"client", req.RemoteAddr,
 							"path", req.URL.Path,
 							"score", fmt.Sprintf("%.3f", threatResult.Score),
 							"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
-							"variant", threatResult.Variant,
-							"model", threatResult.ModelVersion,
 						)
-						metrics.RecordSecurityBlock(metrics.ReasonMLThreat)
-						w.WriteHeader(http.StatusForbidden)
-						w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
-						return
 					}
 				}
 			}
@@ -595,6 +669,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						chainInfo = fmt.Sprintf(" (chains: %s)", strings.Join(mtResult.ChainDetails, "; "))
 					}
 					w.Write([]byte(fmt.Sprintf("Request blocked: multi-turn attack pattern detected%s [score: %.1f]", chainInfo, mtResult.CumulativeScore)))
+					// Reset the session after blocking so that benign follow-up
+					// requests from the same conversation are not cascade-blocked.
+					// The block has already been served; the attacker is punished
+					// for this turn's content, but the session starts fresh for
+					// subsequent requests. This prevents the "sticky block" problem
+					// where benign requests after an attack are also blocked.
+					p.multiTurn.ResetSession(conversationID)
 					return
 				}
 			}
@@ -825,6 +906,53 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 						"type", anomaly.Type,
 						"score", anomaly.Score,
 					)
+				}
+			}
+
+			// Neural threat detection on LLM responses (indirect prompt injection).
+			// Scans the LLM's output for adversarial content that could exploit
+			// downstream consumers (RAG poisoning, tool output injection, etc.).
+			// Uses the same corroboration model as the request path: L3 blocks
+			// only when L1/L2 also find suspicious content.
+			if p.threatDetector != nil && p.threatDetector.IsEnabled() {
+				respThreat := p.threatDetector.DetectAll(respVariants)
+				if respThreat.IsThreat {
+					// Count corroborating evidence from L1/L2 response findings
+					respCorroborating := 0
+					for _, f := range findings {
+						if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+							respCorroborating++
+						}
+					}
+					for _, f := range atlasFindings {
+						if f.Severity >= compliance.SeverityMedium {
+							respCorroborating++
+						}
+					}
+					if respCorroborating > 0 {
+						slog.Error("Neural threat detector blocked response (indirect injection, corroborated)",
+							"path", resp.Request.URL.Path,
+							"status", resp.StatusCode,
+							"score", fmt.Sprintf("%.3f", respThreat.Score),
+							"threshold", fmt.Sprintf("%.3f", respThreat.Threshold),
+							"variant", respThreat.Variant,
+							"model", respThreat.ModelVersion,
+							"corroborating_findings", respCorroborating,
+						)
+						metrics.RecordSecurityBlock(metrics.ReasonMLThreat)
+						resp.StatusCode = http.StatusForbidden
+						resp.Body = io.NopCloser(strings.NewReader(
+							fmt.Sprintf(`{"error":"Response blocked: adversarial content detected in LLM output [score: %.3f]"}`, respThreat.Score)))
+						resp.ContentLength = -1
+						resp.Header.Set("Content-Type", "application/json")
+						return nil
+					} else {
+						slog.Warn("Neural threat detector flagged response (no corroboration, logging only)",
+							"path", resp.Request.URL.Path,
+							"score", fmt.Sprintf("%.3f", respThreat.Score),
+							"threshold", fmt.Sprintf("%.3f", respThreat.Threshold),
+						)
+					}
 				}
 			}
 

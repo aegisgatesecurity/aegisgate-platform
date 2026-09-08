@@ -513,3 +513,22 @@ func (s *AegisGuardMCPScanner) readJSON(conn net.Conn) (*JSONRPCResponse, error)
 
 	return &resp, nil
 }
+
+// MCPScanner is the interface for MCP-based content scanning.
+type MCPScanner interface {
+	Scan(ctx context.Context, request *ScanRequest) (*ScanResponse, error)
+	Health() error
+	Stats() (*StatsResponse, error)
+	Close() error
+}
+
+// DefaultScannerConfig returns the default scanner configuration.
+func DefaultScannerConfig() *AegisGuardMCPConfig {
+	return DefaultAegisGuardMCPConfig()
+}
+
+// NewScanner creates a new MCPScanner with the given configuration.
+// If config is nil, default configuration is used.
+func NewScanner(config *AegisGuardMCPConfig) MCPScanner {
+	return NewAegisGuardMCPScanner(config)
+}

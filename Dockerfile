@@ -9,23 +9,33 @@
 # All defaults are embedded. Override with --config, --tier, or env vars.
 # Data persistence: mount /data volume for audit logs, certificates, etc.
 #
-# v4.3.1: Community edition build (CGO_ENABLED=0, no ONNX Runtime).
-# ML threat detection (ONNX inference) is an enterprise-only feature.
-# The community edition uses regex-only scanning via the !cgo build path.
-# Enterprise builds use a separate Dockerfile.enterprise with CGO_ENABLED=1
-# and ONNX Runtime v1.27.0 bundled from Microsoft's official release.
+# v9.0: ML-enabled build (CGO_ENABLED=1, ONNX Runtime v1.29.0 included).
+# Includes CNN-BiLSTM threat detector (v9 model) for Professional+ tiers.
+# Community tier falls back to heuristic detection when model not loaded.
+#
+# Uses Debian bookworm-slim base (not Alpine) because onnxruntime prebuilt
+# Linux shared libraries require glibc (ld-linux-x86-64.so.2). Alpine's musl
+# libc cannot load them. The ~67MB size increase over Alpine is acceptable
+# for a production security platform.
 #
 # Hardening:
 #   - Production stage runs as non-root via USER appuser.
 #   - HEALTHCHECK directive is set to hit the dashboard's /health endpoint.
-#   - Only ca-certificates added (minimal attack surface).
+#   - Only ca-certificates and wget added (minimal attack surface).
 # =========================================================================
 
-# Builder stage: Go 1.26.6 on Alpine.
-FROM golang:1.27.0-alpine AS builder
+# Builder stage: Go 1.27.0 on Debian bookworm with ONNX Runtime v1.29.0.
+FROM golang:1.27.0-bookworm AS builder
 
-# CGO dependencies: gcc + musl (needed for some stdlib packages).
-RUN apk add --no-cache git ca-certificates gcc musl-dev
+# Install build tools + download ONNX Runtime v1.29.0
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git ca-certificates gcc wget && \
+    rm -rf /var/lib/apt/lists/* && \
+    wget -q https://github.com/microsoft/onnxruntime/releases/download/v1.29.0/onnxruntime-linux-x64-1.29.0.tgz && \
+    tar -xzf onnxruntime-linux-x64-1.29.0.tgz && \
+    cp onnxruntime-linux-x64-1.29.0/lib/*.so /usr/lib/ && \
+    cp -r onnxruntime-linux-x64-1.29.0/include/* /usr/include/ && \
+    rm -rf onnxruntime-linux-x64-1.29.0.tgz onnxruntime-linux-x64-1.29.0
 
 WORKDIR /build
 
@@ -37,31 +47,30 @@ ARG BUILD_DATE=unknown
 # Copy the self-contained platform source (includes vendored upstream packages)
 COPY . ./aegisgate-platform/
 
-# Build the unified platform binary with version metadata injected via ldflags.
-# CGO_ENABLED=0: community edition uses pure-Go build (no ONNX Runtime).
-# The !cgo build path in pkg/ml/ provides regex-only threat detection.
+# Build with CGO enabled for ONNX Runtime support
 WORKDIR /build/aegisgate-platform
-RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT:0:8} -X main.buildDate=${BUILD_DATE}" \
+ENV CGO_ENABLED=1
+ENV CGO_CFLAGS="-I/usr/include"
+ENV CGO_LDFLAGS="-L/usr/lib -lonnxruntime"
+RUN go build \
+    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
     -o /aegisgate-platform ./cmd/aegisgate-platform
 
-# Production stage: minimal Alpine.
-FROM alpine:3.24
+# Production stage: minimal Debian bookworm-slim with ONNX Runtime.
+FROM debian:bookworm-slim
 
-# Install runtime dependencies: ca-certificates (TLS), wget (healthcheck).
-RUN apk add --no-cache ca-certificates wget && \
-    apk upgrade --no-cache libssl3 libcrypto3 && \
-    adduser -D -g '' appuser
+# Install runtime dependencies: ca-certificates (TLS), wget (healthcheck), libstdc++ (for ONNX).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates wget libstdc++6 && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -m -s /usr/sbin/nologin appuser
 
-# Copy binary and UI assets
+# Copy binary, UI assets, ML model, and ONNX Runtime library
 COPY --from=builder /aegisgate-platform /usr/local/bin/aegisgate-platform
 COPY --from=builder /build/aegisgate-platform/ui/frontend /opt/aegisgate-platform/ui/frontend
-
-# NOTE: ONNX threat detection model (threat_cnn_bilstm.onnx) is proprietary
-# and not included in the community/open-source build. Enterprise builds
-# inject the model via a separate build stage or volume mount. The
-# ThreatDetector gracefully falls back to regex-only scanning when no
-# model file is present.
+COPY --from=builder /build/aegisgate-platform/upstream/aegisgate/pkg/ml/models/threat_cnn_bilstm.onnx /opt/aegisgate-platform/pkg/ml/models/threat_cnn_bilstm.onnx
+COPY --from=builder /usr/lib/libonnxruntime.so* /usr/lib/
+RUN ln -sf /usr/lib/libonnxruntime.so /usr/lib/onnxruntime.so
 
 # Create writable data directories (audits, certs, logs)
 # /data is the single writable volume — everything else is read-only
@@ -71,7 +80,16 @@ RUN mkdir -p /data/certs /data/audit /data/logs /app/certs && \
 # Copy default Community tier config (embedded in binary, but also available on disk)
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
 
-# Run as non-root user
+# Security hardening: purge non-essential packages to reduce attack surface.
+# Removes bash and perl-base — not needed at runtime (appuser shell is nologin,
+# Go binary has no perl dependencies). Reduces image by ~15MB and eliminates
+# two common local privilege escalation vectors.
+RUN apt-get update && \
+    apt-get purge -y --allow-remove-essential bash perl-base && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/*
+
+# Run as non-root user (shell disabled via /usr/sbin/nologin)
 USER appuser
 
 # Expose ports: 8080 (HTTP), 8081 (dashboard), 8443 (HTTPS)

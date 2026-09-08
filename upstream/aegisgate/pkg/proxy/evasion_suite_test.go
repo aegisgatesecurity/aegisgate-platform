@@ -990,6 +990,10 @@ func (d *evasionDetector) detectAll(content string) (scannerHit, atlasHit, mlBlo
 // =====================================================================
 
 func TestEvasionSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("TestEvasionSuite requires ~4min on CPU; skipped in -short mode")
+	}
+
 	detector := newEvasionDetector()
 
 	// All evasion categories and their variants

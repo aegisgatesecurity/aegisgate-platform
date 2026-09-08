@@ -1,3 +1,32 @@
+## [4.4.0] - 2026-09-08 - v9 Neural Threat Detection Model 🔒
+
+> **v4.4.0** upgrades the Char CNN-BiLSTM threat detection model from v4 to v9 across all three products (Platform, Rampart, Lens). The v9 model introduces a larger Latin-1 vocabulary (256 chars), doubled input sequence length (256 chars), and a recalibrated detection threshold (0.5). Docker images switched from Alpine to Debian bookworm-slim to support ONNX Runtime's glibc requirement.
+
+### Security Enhancements
+
+- **v9 Model Upgrade**: Threshold 0.7→0.5, MaxSeqLen 128→256, VocabSize 128→256, Latin-1 character support (0-255). 1,597,570 parameters. SHA-256: `0076b66d...`
+- **ML Model Integrity Verification**: Platform and Rampart now verify SHA-256 hash of ONNX model at load time. Refuses to load tampered models (supply-chain protection, matching Lens's existing weight verification).
+- **ML Crash Isolation**: `inference()` function now has `defer/recover()` to catch ONNX Runtime panics. Falls back to heuristic scoring instead of crashing the proxy process.
+- **Docker: Alpine → Debian bookworm-slim**: ONNX Runtime's prebuilt shared libraries require glibc (`ld-linux-x86-64.so.2`), which Alpine's musl libc cannot load. Debian base enables functional ONNX inference in Docker. Hardened: bash and perl-base purged from production image.
+- **Audit Log Encryption at Rest**: AES-256-GCM encryption for file-based audit logs when `AEGISGATE_AUDIT_ENCRYPTION_KEY` env var is set. Transparent encrypt/decrypt with nonce prepended to ciphertext.
+- **CORS Hardening**: Dashboard SSE endpoint no longer uses wildcard `Access-Control-Allow-Origin: *`. Restricted to same-origin or localhost for staging.
+- **Temporal Query FP Mitigation**: Post-inference regex check downgrades block→warn for temporal queries ("What time is it in...", "What day is...") that trigger false positives in the neural model.
+- **Response-Side ML Detection**: Neural threat detection now runs on LLM responses (indirect prompt injection from RAG/tool outputs) with corroboration model requiring L1/L2 evidence.
+
+### Infrastructure
+
+- **ONNX Runtime upgraded**: v1.27.0 → v1.29.0 in Docker
+- **Testlab Dockerfile**: Added ML env vars, `--mode=staging`, `apt-get` package management
+- **Testlab docker-compose**: Instance 1 fixed with `--mode=staging` flag
+
+### Testing
+
+- All ML unit tests pass (Platform + Rampart, CGO and non-CGO)
+- ONNX inference verified in Docker container: adversarial score 0.867, benign score ~0.00001
+- Self-pentest (10 attack chains): all security controls functioning
+- Adversarial corpus (197 prompts): 18.8% blocked by L1/L2, 12 more caught by ML in enforce mode
+- Benign corpus (56 prompts): 1.8% false positive rate
+
 ## [4.3.3] - 2026-08-29 - SSRF Remediation (HIGH-2) 🔒
 
 > **v4.3.3** remediates the final HIGH finding from the adversarial security audit: SSRF via MCP `http_request` tool. The `validateURL` function now blocks private IPs, loopback, link-local addresses, cloud metadata endpoints, and non-http(s) schemes. A custom HTTP transport dialer provides SSRF-safe DNS resolution to prevent DNS rebinding attacks. 60+ comprehensive test cases cover all attack vectors.

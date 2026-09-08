@@ -33,14 +33,14 @@ func NewHIPAAModule() *HIPAAModule {
 func (m *HIPAAModule) initPHIPatterns() {
 	// HIPAA-defined PHI identifiers
 	m.phiPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`(?i)d{3}-d{2}-d{4}`),                                 // SSN
-		regexp.MustCompile(`(?i)d{10,16}`),                                       // Medical Record Number
-		regexp.MustCompile(`(?i)[A-Z]d{7}`),                                      // Health Plan ID
-		regexp.MustCompile(`(?i)d{2}[/-]d{2}[/-]d{4}`),                           // DOB
-		regexp.MustCompile(`(?i)[A-Z]{2}d{6}`),                                   // Account Number
-		regexp.MustCompile(`(?i)d{3}[-.s]?d{3}[-.s]?d{4}`),                       // Phone
-		regexp.MustCompile(`(?i)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+.[A-Z|a-z]{2,}`), // Email
-		regexp.MustCompile(`(?i)d{5}[-s]?d{4}`),                                  // ZIP+4
+		regexp.MustCompile(`(?i)\d{3}-\d{2}-\d{4}`),                               // SSN
+		regexp.MustCompile(`(?i)\d{10,16}`),                                       // Medical Record Number
+		regexp.MustCompile(`(?i)[A-Z]\d{7}`),                                      // Health Plan ID
+		regexp.MustCompile(`(?i)\d{2}[/-]\d{2}[/-]\d{4}`),                         // DOB
+		regexp.MustCompile(`(?i)[A-Z]{2}\d{6}`),                                   // Account Number
+		regexp.MustCompile(`(?i)\d{3}[-.\s]?\d{3}[-.\s]?\d{4}`),                   // Phone
+		regexp.MustCompile(`(?i)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}`), // Email
+		regexp.MustCompile(`(?i)\d{5}[-\s]?\d{4}`),                                // ZIP+4
 	}
 }
 

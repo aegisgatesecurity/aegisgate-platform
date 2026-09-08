@@ -10,7 +10,7 @@
 // 4. Supporting dynamic threshold adjustment without restart
 //
 // Deployment process:
-//   1. Ship model with threshold=0.7, enabled=false, shadow=true
+//   1. Ship model with threshold=0.5, enabled=false, shadow=true
 //   2. Run calibration: find zero-FPR threshold
 //   3. 7-day shadow validation on production traffic
 //   4. Enable blocking (enabled=true, shadow=false)

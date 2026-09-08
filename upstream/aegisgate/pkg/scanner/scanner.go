@@ -13,6 +13,7 @@ package scanner
 import (
 	"log/slog"
 	"regexp"
+	"strings"
 )
 
 // Finding represents a single detection of sensitive data
@@ -29,8 +30,9 @@ type Config struct {
 	BlockThreshold Severity
 	LogFindings    bool
 	IncludeContext bool
-	ContextSize    int // Characters before and after match to include
-	MaxFindings    int // Maximum number of findings to return per scan
+	ContextSize    int  // Characters before and after match to include
+	MaxFindings    int  // Maximum number of findings to return per scan
+	EduAllowlist   bool // If true, downgrade findings in educational context (How do I, What is, etc.)
 }
 
 // DefaultConfig returns a default scanner configuration
@@ -119,6 +121,13 @@ func (s *Scanner) Scan(content string) []Finding {
 func (s *Scanner) ScanFast(content string) []Finding {
 	var findings []Finding
 
+	// Educational allowlist: if content is an educational question, downgrade
+	// Medium/High findings to Info (non-blocking) to reduce FPs on how-to questions
+	eduContext := false
+	if s.config.EduAllowlist {
+		eduContext = isEducationalContext(content)
+	}
+
 	for _, pattern := range s.config.Patterns {
 		if pattern == nil || pattern.Regex == nil {
 			continue
@@ -135,6 +144,17 @@ func (s *Scanner) ScanFast(content string) []Finding {
 			Pattern:  pattern,
 			Match:    match,
 			Position: loc[0],
+		}
+
+		// Educational allowlist: downgrade non-Critical findings to Info
+		if eduContext && pattern.Severity < Critical {
+			finding.Pattern = &Pattern{
+				Name:        pattern.Name,
+				Regex:       pattern.Regex,
+				Severity:    Info,
+				Category:    pattern.Category,
+				Description: pattern.Description + " (downgraded: educational context)",
+			}
 		}
 
 		// Skip context extraction in fast mode — too expensive for hot path
@@ -328,6 +348,37 @@ func (s *Scanner) GetPattern(name string) *Pattern {
 		}
 	}
 	return nil
+}
+
+// isEducationalContext checks if the content is an educational/how-to question
+// that should not trigger blocking. This reduces false positives on questions like:
+// "How do I implement GDPR right to erasure?" or "What's the difference between GDPR and CCPA?"
+func isEducationalContext(content string) bool {
+	// Trim and get the first 60 characters to check the question pattern
+	trimmed := strings.TrimSpace(content)
+	if len(trimmed) > 60 {
+		trimmed = trimmed[:60]
+	}
+	lower := strings.ToLower(trimmed)
+
+	// Educational question patterns
+	eduPatterns := []string{
+		"how do i ", "how to ", "how does ", "how should ", "how can i ",
+		"what is ", "what's ", "what are ", "what's the ",
+		"explain ", "describe ",
+		"difference between ",
+		"best practices for ",
+		"why is ", "why are ", "why do ",
+		"when should ", "when is ",
+	}
+
+	for _, p := range eduPatterns {
+		if strings.HasPrefix(lower, p) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // CompilePattern compiles a regex pattern and adds it to the scanner

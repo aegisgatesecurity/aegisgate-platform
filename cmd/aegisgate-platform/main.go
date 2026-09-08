@@ -110,7 +110,7 @@ func (a *tsaSignerAdapter) Endpoints() []string {
 }
 
 var (
-	version    = "4.3.2"
+	version    = "4.4.0"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -963,9 +963,13 @@ func main() {
 		EnableMLDetection:              tier.HasFeature(platformTier, tier.FeatureBasicAnomaly),
 		MLSensitivity:                  "medium",
 		EnablePromptInjectionDetection: tier.HasFeature(platformTier, tier.FeaturePromptInjection),
-		PromptInjectionSensitivity:     50, // Medium sensitivity (0-100): blocks severity >= 4 by default
+		PromptInjectionSensitivity:     50,
 		EnableContentAnalysis:          tier.HasFeature(platformTier, tier.FeatureTrafficPattern),
 		EnableBehavioralAnalysis:       tier.HasFeature(platformTier, tier.FeatureMLBehavioral),
+		MLThreatDetectionEnabled:       cfg.Security.MLThreatDetectionEnabled,
+		MLShadowMode:                   cfg.Security.MLShadowMode,
+		MLThreshold:                    cfg.Security.MLThreshold,
+		MLModelPath:                    cfg.Security.MLModelPath,
 		OnRateLimited: func(client string) {
 			metrics.RecordRateLimitHit(metrics.ServiceProxy, client)
 		},
@@ -2801,7 +2805,19 @@ func main() {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Restrict CORS to the dashboard origin. In production, this is the
+		// platform's own HTTPS endpoint. In staging/testlab, fall back to the
+		// request origin if it looks like localhost.
+		origin := r.Header.Get("Origin")
+		if origin == "" || strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1") {
+			if origin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
+		} else {
+			// Only allow same-origin (the dashboard's own host)
+			w.Header().Set("Access-Control-Allow-Origin", "null")
+		}
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		// Send initial comment to establish connection
 		fmt.Fprintf(w, ": connected\n\n")

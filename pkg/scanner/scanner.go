@@ -1,155 +1,400 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
 // =========================================================================
-// AegisGate Platform - Scanner Interface
+// PROPRIETARY - AegisGate Security
+// Copyright (c) 2025-2026 AegisGate Security. All rights reserved.
 // =========================================================================
 //
-// Scanner interface for security scanning services
-// Supports both local processing and remote scanners like AegisGuard
+// This file contains proprietary trade secret information.
+// Unauthorized reproduction, distribution, or reverse engineering is prohibited.
 // =========================================================================
 
 package scanner
 
 import (
-	"context"
-	"fmt"
-	"time"
+	"log/slog"
+	"regexp"
+	"strings"
 )
 
-// ScanRequest represents a request to the security scanner
-type ScanRequest struct {
-	Message  string         `json:"message"`
-	Kind     string         `json:"kind"` // e.g., "chat", "completion", "summarization"
-	ToolName string         `json:"tool_name,omitempty"`
-	Args     map[string]any `json:"args,omitempty"`
-	Prompt   string         `json:"prompt,omitempty"`
+// Finding represents a single detection of sensitive data
+type Finding struct {
+	Pattern  *Pattern
+	Match    string
+	Position int
+	Context  string // Additional context around the match (optional)
 }
 
-// ScanResponse represents a response from the security scanner
-type ScanResponse struct {
-	ScanID       string       `json:"scan_id"`
-	IsCompliant  bool         `json:"is_compliant"`
-	ScanResults  []ScanResult `json:"scan_results"`
-	ProcessingMs int64        `json:"processing_ms"`
-	AuditLog     []AuditEntry `json:"audit_log,omitempty"`
+// Config holds scanner configuration
+type Config struct {
+	Patterns       []*Pattern
+	BlockThreshold Severity
+	LogFindings    bool
+	IncludeContext bool
+	ContextSize    int  // Characters before and after match to include
+	MaxFindings    int  // Maximum number of findings to return per scan
+	EduAllowlist   bool // If true, downgrade findings in educational context (How do I, What is, etc.)
 }
 
-// ScanResult represents a single scan finding
-type ScanResult struct {
-	ID          string  `json:"id"`
-	Type        string  `json:"type"`     // e.g., "api_key", "pii", "secret", "auth_denied"
-	Severity    string  `json:"severity"` // e.g., "critical", "high", "medium", "low"
-	Message     string  `json:"message"`
-	Remediation string  `json:"remediation,omitempty"`
-	Confidence  float64 `json:"confidence"`
-}
-
-// AuditEntry represents an audit log entry
-type AuditEntry struct {
-	Timestamp time.Time `json:"timestamp"`
-	Action    string    `json:"action"` // e.g., "scan", "block", "allow"
-	Message   string    `json:"message"`
-	Context   string    `json:"context,omitempty"`
-}
-
-// StatsResponse represents scanner/proxy statistics
-type StatsResponse struct {
-	TotalRequests   int64 `json:"total_requests"`
-	SuccessfulScans int64 `json:"successful_scans"`
-	FailedScans     int64 `json:"failed_scans"`
-	AvgLatencyMs    int64 `json:"avg_latency_ms"`
-	P95LatencyMs    int64 `json:"p95_latency_ms"`
-	P99LatencyMs    int64 `json:"p99_latency_ms"`
-}
-
-// Scanner is the interface for security scanning services
-//
-// Implementations include:
-// - Local scanner (inline processing)
-// - AegisGuardMCPScanner (remote scanner using MCP protocol)
-// - Future: HTTP-based remote scanner
-type Scanner interface {
-	// Scan processes a request and returns the scan result
-	Scan(ctx context.Context, request *ScanRequest) (*ScanResponse, error)
-
-	// Health returns the health status of the scanner
-	Health() error
-
-	// Stats returns statistics about the scanner
-	Stats() (*StatsResponse, error)
-
-	// Close cleans up resources
-	Close() error
-}
-
-// Option func for scanner configuration
-type Option func(*ScannerConfig)
-
-// ScannerConfig holds configuration for scanner setup
-type ScannerConfig struct {
-	Address      string
-	Timeout      time.Duration
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	Debug        bool
-}
-
-// DefaultScannerConfig returns default scanner configuration
-func DefaultScannerConfig() *ScannerConfig {
-	return &ScannerConfig{
-		Address:      "localhost:8080",
-		Timeout:      30 * time.Second,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		Debug:        false,
+// DefaultConfig returns a default scanner configuration
+func DefaultConfig() *Config {
+	return &Config{
+		Patterns:       DefaultPatterns(),
+		BlockThreshold: Critical,
+		LogFindings:    true,
+		IncludeContext: false,
+		ContextSize:    50,
+		MaxFindings:    100,
 	}
 }
 
-// NewScanner creates a scanner based on configuration
-// Currently only supports AegisGuardMCPScanner
-func NewScanner(config *AegisGuardMCPConfig) Scanner {
+// Scanner represents the content scanning engine
+type Scanner struct {
+	config *Config
+}
+
+// New creates a new Scanner with the given configuration
+func New(config *Config) *Scanner {
 	if config == nil {
-		config = DefaultAegisGuardMCPConfig()
+		config = DefaultConfig()
 	}
-	return NewAegisGuardMCPScanner(config)
-}
-
-// ============================================================================
-// MCP Protocol Types (moved from aegisguard_mcp.go for consistency)
-// ============================================================================
-
-// CallToolResult represents the result of a tool execution
-type CallToolResult struct {
-	Content    []ContentBlock `json:"content"`
-	IsError    bool           `json:"isError,omitempty"`
-	DurationMs int64          `json:"duration_ms,omitempty"`
-}
-
-// ContentBlock represents a content block in MCP response
-type ContentBlock struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
-	Data string `json:"data,omitempty"`
-}
-
-// JSONRPCResponse represents a JSON-RPC 2.0 response
-type JSONRPCResponse struct {
-	JSONRPC string        `json:"jsonrpc"`
-	Result  interface{}   `json:"result,omitempty"`
-	Error   *JSONRPCError `json:"error,omitempty"`
-	ID      interface{}   `json:"id,omitempty"`
-}
-
-// JSONRPCError represents a JSON-RPC error
-type JSONRPCError struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-// Error implements the error interface for JSONRPCError.
-func (e *JSONRPCError) Error() string {
-	if e == nil {
-		return ""
+	return &Scanner{
+		config: config,
 	}
-	return fmt.Sprintf("JSON-RPC error %d: %s", e.Code, e.Message)
+}
+
+// SetConfig updates the scanner configuration
+func (s *Scanner) SetConfig(config *Config) {
+	if config != nil {
+		s.config = config
+	}
+}
+
+// Scan analyzes content against all configured patterns and returns findings
+func (s *Scanner) Scan(content string) []Finding {
+	var findings []Finding
+
+	if s.config.MaxFindings > 0 && len(findings) >= s.config.MaxFindings {
+		return findings
+	}
+
+	for _, pattern := range s.config.Patterns {
+		if pattern == nil || pattern.Regex == nil {
+			continue
+		}
+
+		matches := pattern.Regex.FindAllStringIndex(content, -1)
+
+		for _, matchIdx := range matches {
+			if s.config.MaxFindings > 0 && len(findings) >= s.config.MaxFindings {
+				slog.Warn("Maximum findings limit reached", "limit", s.config.MaxFindings)
+				return findings
+			}
+
+			match := content[matchIdx[0]:matchIdx[1]]
+			finding := Finding{
+				Pattern:  pattern,
+				Match:    match,
+				Position: matchIdx[0],
+			}
+
+			// Capture context if enabled
+			if s.config.IncludeContext {
+				finding.Context = s.extractContext(content, matchIdx[0], matchIdx[1])
+			}
+
+			findings = append(findings, finding)
+
+			// Log the finding
+			if s.config.LogFindings {
+				s.logFinding(finding)
+			}
+		}
+	}
+
+	return findings
+}
+
+// ScanFast performs a fast scan that only finds the first match per pattern.
+// This is significantly faster than Scan() for request-scoped blocking decisions
+// where we only need to know IF a pattern matches, not every occurrence.
+// Use Scan() when you need all matches (e.g., for reporting).
+func (s *Scanner) ScanFast(content string) []Finding {
+	var findings []Finding
+
+	// Educational allowlist: if content is an educational question, downgrade
+	// Medium/High findings to Info (non-blocking) to reduce FPs on how-to questions
+	eduContext := false
+	if s.config.EduAllowlist {
+		eduContext = isEducationalContext(content)
+	}
+
+	for _, pattern := range s.config.Patterns {
+		if pattern == nil || pattern.Regex == nil {
+			continue
+		}
+
+		// Use FindStringIndex for first match only — avoids FindAllStringIndex overhead
+		loc := pattern.Regex.FindStringIndex(content)
+		if loc == nil {
+			continue
+		}
+
+		match := content[loc[0]:loc[1]]
+		finding := Finding{
+			Pattern:  pattern,
+			Match:    match,
+			Position: loc[0],
+		}
+
+		// Educational allowlist: downgrade non-Critical findings to Info
+		if eduContext && pattern.Severity < Critical {
+			finding.Pattern = &Pattern{
+				Name:        pattern.Name,
+				Regex:       pattern.Regex,
+				Severity:    Info,
+				Category:    pattern.Category,
+				Description: pattern.Description + " (downgraded: educational context)",
+			}
+		}
+
+		// Skip context extraction in fast mode — too expensive for hot path
+		findings = append(findings, finding)
+
+		if s.config.LogFindings {
+			s.logFinding(finding)
+		}
+
+		// Early exit: if we found a blocking violation, no need to continue scanning
+		if ShouldBlock(pattern.Severity) {
+			// Found a blocking-level finding — return immediately
+			return findings
+		}
+	}
+
+	return findings
+}
+
+// ScanWithContext analyzes content and returns findings with their surrounding context
+func (s *Scanner) ScanWithContext(content string) []Finding {
+	s.config.IncludeContext = true
+	return s.Scan(content)
+}
+
+// ScanBytes converts bytes to string and scans
+func (s *Scanner) ScanBytes(content []byte) []Finding {
+	return s.Scan(string(content))
+}
+
+// HasViolation checks if any finding meets or exceeds the configured block threshold
+func (s *Scanner) HasViolation(findings []Finding) bool {
+	for _, finding := range findings {
+		if finding.Pattern.Severity >= s.config.BlockThreshold {
+			return true
+		}
+	}
+	return false
+}
+
+// GetCriticalFindings returns only Critical severity findings
+func (s *Scanner) GetCriticalFindings(findings []Finding) []Finding {
+	var critical []Finding
+	for _, f := range findings {
+		if f.Pattern.Severity == Critical {
+			critical = append(critical, f)
+		}
+	}
+	return critical
+}
+
+// GetFindingsByCategory returns findings filtered by category
+func (s *Scanner) GetFindingsByCategory(findings []Finding, category Category) []Finding {
+	var filtered []Finding
+	for _, f := range findings {
+		if f.Pattern.Category == category {
+			filtered = append(filtered, f)
+		}
+	}
+	return filtered
+}
+
+// GetFindingsBySeverity returns findings filtered by minimum severity
+func (s *Scanner) GetFindingsBySeverity(findings []Finding, minSeverity Severity) []Finding {
+	var filtered []Finding
+	for _, f := range findings {
+		if f.Pattern.Severity >= minSeverity {
+			filtered = append(filtered, f)
+		}
+	}
+	return filtered
+}
+
+// ShouldBlock checks if any finding should trigger a block action
+func (s *Scanner) ShouldBlock(findings []Finding) bool {
+	for _, finding := range findings {
+		if ShouldBlock(finding.Pattern.Severity) {
+			return true
+		}
+	}
+	return false
+}
+
+// GetViolationSummary returns a summary of all findings by severity
+func (s *Scanner) GetViolationSummary(findings []Finding) map[Severity]int {
+	summary := make(map[Severity]int)
+	for _, finding := range findings {
+		summary[finding.Pattern.Severity]++
+	}
+	return summary
+}
+
+// GetViolationNames returns the names of patterns that triggered violations
+func (s *Scanner) GetViolationNames(findings []Finding) []string {
+	names := make(map[string]bool)
+	for _, finding := range findings {
+		names[finding.Pattern.Name] = true
+	}
+
+	var result []string
+	for name := range names {
+		result = append(result, name)
+	}
+	return result
+}
+
+// extractContext extracts surrounding text around a match position
+func (s *Scanner) extractContext(content string, start, end int) string {
+	contextSize := s.config.ContextSize
+	if contextSize <= 0 {
+		contextSize = 50
+	}
+
+	// Calculate start position with boundary check
+	ctxStart := start - contextSize
+	if ctxStart < 0 {
+		ctxStart = 0
+	}
+
+	// Calculate end position with boundary check
+	ctxEnd := end + contextSize
+	if ctxEnd > len(content) {
+		ctxEnd = len(content)
+	}
+
+	return content[ctxStart:ctxEnd]
+}
+
+// logFinding logs a finding with appropriate severity
+func (s *Scanner) logFinding(finding Finding) {
+	attrs := []any{
+		"pattern", finding.Pattern.Name,
+		"severity", finding.Pattern.Severity.String(),
+		"category", finding.Pattern.Category,
+	}
+
+	// Mask the match value for logging to avoid exposure
+	maskedMatch := maskMatch(finding.Match)
+	attrs = append(attrs, "match_preview", maskedMatch, "position", finding.Position)
+
+	switch finding.Pattern.Severity {
+	case Critical:
+		slog.Error("Critical data exposure detected", attrs...)
+	case High:
+		slog.Warn("High severity data exposure detected", attrs...)
+	case Medium:
+		slog.Info("Medium severity data exposure detected", attrs...)
+	case Low:
+		slog.Debug("Low severity data exposure detected", attrs...)
+	default:
+		slog.Debug("Data pattern found", attrs...)
+	}
+}
+
+// maskMatch masks the middle portion of a matched value for logging
+func maskMatch(match string) string {
+	if len(match) <= 8 {
+		// For short matches, show first and last char only
+		if len(match) <= 4 {
+			return "****"
+		}
+		return match[:2] + "..." + match[len(match)-2:]
+	}
+	// For longer matches, show first 4 and last 4 chars
+	return match[:4] + "..." + match[len(match)-4:]
+}
+
+// AddPattern adds a custom pattern to the scanner
+func (s *Scanner) AddPattern(pattern *Pattern) {
+	if pattern != nil {
+		s.config.Patterns = append(s.config.Patterns, pattern)
+	}
+}
+
+// RemovePattern removes a pattern by name
+func (s *Scanner) RemovePattern(name string) bool {
+	for i, pattern := range s.config.Patterns {
+		if pattern.Name == name {
+			s.config.Patterns = append(s.config.Patterns[:i], s.config.Patterns[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// GetPattern returns a pattern by name
+func (s *Scanner) GetPattern(name string) *Pattern {
+	for _, pattern := range s.config.Patterns {
+		if pattern.Name == name {
+			return pattern
+		}
+	}
+	return nil
+}
+
+// isEducationalContext checks if the content is an educational/how-to question
+// that should not trigger blocking. This reduces false positives on questions like:
+// "How do I implement GDPR right to erasure?" or "What's the difference between GDPR and CCPA?"
+func isEducationalContext(content string) bool {
+	// Trim and get the first 60 characters to check the question pattern
+	trimmed := strings.TrimSpace(content)
+	if len(trimmed) > 60 {
+		trimmed = trimmed[:60]
+	}
+	lower := strings.ToLower(trimmed)
+
+	// Educational question patterns
+	eduPatterns := []string{
+		"how do i ", "how to ", "how does ", "how should ", "how can i ",
+		"what is ", "what's ", "what are ", "what's the ",
+		"explain ", "describe ",
+		"difference between ",
+		"best practices for ",
+		"why is ", "why are ", "why do ",
+		"when should ", "when is ",
+	}
+
+	for _, p := range eduPatterns {
+		if strings.HasPrefix(lower, p) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// CompilePattern compiles a regex pattern and adds it to the scanner
+func (s *Scanner) CompilePattern(name, pattern string, severity Severity, category Category, description string) error {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return err
+	}
+
+	s.AddPattern(&Pattern{
+		Name:        name,
+		Regex:       re,
+		Severity:    severity,
+		Category:    category,
+		Description: description,
+	})
+
+	return nil
 }

@@ -54,7 +54,7 @@ type DetectorConfig struct {
 	ModelPath string
 
 	// MaxSequenceLength is the maximum number of characters to feed the model.
-	// Longer sequences are truncated. Default: 128.
+	// Longer sequences are truncated. Default: 256.
 	MaxSequenceLength int
 
 	// Timeout is the maximum time for a single inference in milliseconds.
@@ -73,7 +73,7 @@ func DefaultDetectorConfig() DetectorConfig {
 		ShadowMode:        true,  // Shadow mode on by default
 		Threshold:         0.7,   // Will be calibrated
 		ModelPath:         "/opt/aegisgate-platform/models/threat_cnn_bilstm.onnx",
-		MaxSequenceLength: 128,
+		MaxSequenceLength: 256,
 		Timeout:           10,
 	}
 }

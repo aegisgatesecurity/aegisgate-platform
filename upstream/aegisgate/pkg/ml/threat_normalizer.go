@@ -10,8 +10,10 @@
 // Input pipeline:
 //   raw text → normalize → truncate/pad → char IDs → [1, max_len] int32 tensor
 //
-// Character vocabulary: 128 ASCII characters (0-127).
-// Unknown characters are mapped to a special UNK token (id=1).
+// Character vocabulary: 256 Latin-1 characters (0-255).
+// Covers ASCII (0-127) + Latin-1 supplement (128-255) for Western European
+// languages (French, German, Spanish, Italian, Portuguese, Scandinavian).
+// Unknown characters (beyond Latin-1) are mapped to a special UNK token (id=1).
 // Padding is done with a PAD token (id=0).
 //
 // =========================================================================
@@ -25,7 +27,7 @@ import (
 
 const (
 	// MaxSeqLen is the maximum sequence length for the model input.
-	MaxSeqLen = 128
+	MaxSeqLen = 256
 
 	// PadID is the padding token ID.
 	PadID = 0
@@ -34,7 +36,7 @@ const (
 	UnkID = 1
 
 	// VocabSize is the size of the character vocabulary.
-	VocabSize = 128
+	VocabSize = 256
 )
 
 // CharNormalizer preprocesses text into character-level input for the model.
@@ -88,8 +90,9 @@ func (cn *CharNormalizer) Normalize(text string) string {
 }
 
 // Encode converts normalized text to a fixed-length integer array for model input.
-// Characters are mapped to their ASCII code if in range [32, 126] (printable ASCII),
-// otherwise to UNK_ID. Result is padded to maxLen with PAD_ID.
+// Characters are mapped to their code point if in range [32, 126] (printable ASCII)
+// or [128, 255] (Latin-1 supplement), otherwise to UNK_ID.
+// Result is padded to maxLen with PAD_ID.
 func (cn *CharNormalizer) Encode(text string) []int32 {
 	normalized := cn.Normalize(text)
 	runes := []rune(normalized)
@@ -107,11 +110,14 @@ func (cn *CharNormalizer) Encode(text string) []int32 {
 		// Map printable ASCII characters directly
 		if r >= 32 && r <= 126 {
 			result[i] = int32(r)
+		} else if r >= 128 && r <= 255 {
+			// Latin-1 supplement (accented chars, ñ, ü, ç, etc.)
+			result[i] = int32(r)
 		} else if r < 128 {
 			// Non-printable ASCII → UNK
 			result[i] = UnkID
 		} else {
-			// Non-ASCII → UNK
+			// Non-Latin-1 → UNK
 			result[i] = UnkID
 		}
 	}
@@ -141,7 +147,9 @@ func (cn *CharNormalizer) Decode(ids []int32) string {
 			continue
 		}
 		if id >= 32 && id <= 126 {
-			b.WriteRune(rune(id))
+			b.WriteRune(rune(id)) // Printable ASCII
+		} else if id >= 128 && id <= 255 {
+			b.WriteRune(rune(id)) // Latin-1 supplement
 		}
 	}
 	return b.String()

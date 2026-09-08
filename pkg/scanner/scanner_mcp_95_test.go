@@ -40,7 +40,7 @@ func TestNewAegisGuardMCPScanner_NilConfig(t *testing.T) {
 }
 
 func TestAegisGuardMCPScanner_InterfaceCompliance(t *testing.T) {
-	var _ Scanner = (*AegisGuardMCPScanner)(nil)
+	var _ MCPScanner = (*AegisGuardMCPScanner)(nil)
 }
 
 // Test Health() on uninitialized scanner

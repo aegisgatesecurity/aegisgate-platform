@@ -8,16 +8,35 @@ package opsec
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 )
+
+// auditEncryptionKey is loaded once from AEGISGATE_AUDIT_ENCRYPTION_KEY env var.
+// If set, audit entries are encrypted with AES-256-GCM before writing to disk.
+// If not set, entries are written as plaintext JSON (with a warning).
+var auditEncryptionKey []byte
+
+func init() {
+	if key := os.Getenv("AEGISGATE_AUDIT_ENCRYPTION_KEY"); key != "" {
+		// Derive a 32-byte key from the env var via SHA-256
+		h := sha256.Sum256([]byte(key))
+		auditEncryptionKey = h[:]
+		log.Printf("[SECURITY] Audit log encryption enabled (AES-256-GCM)")
+	}
+}
 
 // AuditLevel represents the severity level of an audit entry
 type AuditLevel int
@@ -404,6 +423,14 @@ func (fs *FileStorageBackend) Write(ctx context.Context, entry *AuditEntry) erro
 		return fmt.Errorf("failed to marshal entry: %w", err)
 	}
 
+	// Encrypt data at rest if encryption key is configured
+	if auditEncryptionKey != nil {
+		data, err = encryptAESGCM(data, auditEncryptionKey)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt audit entry: %w", err)
+		}
+	}
+
 	filename := filepath.Join(fs.basePath, fmt.Sprintf("%s.json", entry.ID))
 	if err := os.WriteFile(filename, data, 0600); err != nil {
 		return fmt.Errorf("failed to write entry: %w", err)
@@ -428,6 +455,14 @@ func (fs *FileStorageBackend) Read(ctx context.Context, id string) (*AuditEntry,
 			return nil, fmt.Errorf("entry not found: %s", id)
 		}
 		return nil, fmt.Errorf("failed to read entry: %w", err)
+	}
+
+	// Decrypt if encryption key is configured
+	if auditEncryptionKey != nil {
+		data, err = decryptAESGCM(data, auditEncryptionKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt audit entry: %w", err)
+		}
 	}
 
 	var entry AuditEntry
@@ -515,6 +550,14 @@ func (fs *FileStorageBackend) loadEntries() error {
 		data, err := os.ReadFile(filename)
 		if err != nil {
 			continue
+		}
+
+		// Decrypt if encryption key is configured
+		if auditEncryptionKey != nil {
+			data, err = decryptAESGCM(data, auditEncryptionKey)
+			if err != nil {
+				continue
+			}
 		}
 
 		var auditEntry AuditEntry
@@ -862,4 +905,45 @@ func (cal *ComplianceAuditLog) GetTenantID() string {
 	cal.mu.RLock()
 	defer cal.mu.RUnlock()
 	return cal.tenantID
+}
+
+// encryptAESGCM encrypts data using AES-256-GCM. The nonce is prepended to the ciphertext.
+func encryptAESGCM(plaintext, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := readRandom(nonce); err != nil {
+		return nil, err
+	}
+	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+	return ciphertext, nil
+}
+
+// decryptAESGCM decrypts data encrypted by encryptAESGCM.
+func decryptAESGCM(ciphertext, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+	nonce, ct := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	return gcm.Open(nil, nonce, ct, nil)
+}
+
+// readRandom fills b with cryptographically secure random bytes.
+func readRandom(b []byte) (int, error) {
+	return io.ReadFull(rand.Reader, b)
 }

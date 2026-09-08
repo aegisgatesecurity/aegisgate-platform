@@ -18,6 +18,90 @@ import (
 	"unicode"
 )
 
+// homoglyphMap maps common visually-confusable Unicode characters (Cyrillic,
+// Greek, and other lookalikes) to their Latin ASCII equivalents.
+// This prevents homoglyph-based evasion where attackers substitute visually
+// identical characters from different scripts (e.g., Cyrillic 'а' for Latin 'a').
+var homoglyphMap = map[rune]rune{
+	// Cyrillic → Latin lookalikes
+	'а': 'a', // Cyrillic small a
+	'А': 'a', // Cyrillic capital a
+	'е': 'e', // Cyrillic small e
+	'Е': 'e', // Cyrillic capital e
+	'о': 'o', // Cyrillic small o
+	'О': 'o', // Cyrillic capital o
+	'р': 'p', // Cyrillic small r
+	'Р': 'p', // Cyrillic capital r
+	'с': 'c', // Cyrillic small s
+	'С': 'c', // Cyrillic capital s
+	'х': 'x', // Cyrillic small kh
+	'Х': 'x', // Cyrillic capital kh
+	'у': 'y', // Cyrillic small u
+	'У': 'y', // Cyrillic capital u
+	'і': 'i', // Cyrillic small i (Ukrainian)
+	'І': 'i', // Cyrillic capital i
+	'ј': 'j', // Cyrillic small je
+	'Ј': 'j', // Cyrillic capital je
+	'ѕ': 's', // Cyrillic small dze
+	'Ѕ': 's', // Cyrillic capital dze
+	'қ': 'q', // Cyrillic small q
+	'Џ': 'd', // Cyrillic capital dze (approximate)
+	'в': 'b', // Cyrillic small ve (approximate)
+	'н': 'h', // Cyrillic small en (approximate)
+	'Т': 't', // Cyrillic capital te (approximate)
+
+	// Greek → Latin lookalikes
+	'α': 'a', // Greek small alpha
+	'Α': 'a', // Greek capital alpha
+	'ε': 'e', // Greek small epsilon
+	'Ε': 'e', // Greek capital epsilon
+	'ο': 'o', // Greek small omicron
+	'Ο': 'o', // Greek capital omicron
+	'ν': 'v', // Greek small nu (looks like v)
+	'Ν': 'v', // Greek capital nu
+	'ρ': 'p', // Greek small rho
+	'Ρ': 'p', // Greek capital rho
+	'τ': 't', // Greek small tau (approximate)
+	'Τ': 't', // Greek capital tau
+	'κ': 'k', // Greek small kappa
+	'Κ': 'k', // Greek capital kappa
+	'η': 'n', // Greek small eta (approximate)
+	'μ': 'm', // Greek small mu (approximate)
+	'χ': 'x', // Greek small chi
+	'Χ': 'x', // Greek capital chi
+
+	// Other common confusables
+	'ı': 'i', // Latin small dotless i (Turkish)
+	'ℓ': 'l', // Script small l
+	'ⓘ': 'i', // Circled latin small letter i
+	'ⓞ': 'o', // Circled latin small letter o
+	'①': '1', // Circled digit one
+	'②': '2', // Circled digit two
+	'③': '3', // Circled digit three
+	'⓪': '0', // Circled digit zero
+}
+
+// NormalizeHomoglyphs replaces visually-confusable Unicode characters (Cyrillic,
+// Greek, and other lookalike scripts) with their Latin ASCII equivalents.
+// This is SEMI-DESTRUCTIVE on legitimate non-English text (e.g., actual Russian
+// or Greek content will have characters replaced), so it is a SEPARATE variant
+// used alongside the original text for scanning.
+//
+// This catches evasion attacks like using Cyrillic 'а' (U+0430) instead of
+// Latin 'a' (U+0061) to bypass regex patterns that match on ASCII characters.
+func NormalizeHomoglyphs(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	for _, r := range input {
+		if replacement, ok := homoglyphMap[r]; ok {
+			b.WriteRune(replacement)
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
 // l33tMap maps common l33t-speak substitutions back to their letter equivalents.
 var l33tMap = map[rune]rune{
 	'4': 'a',
@@ -134,6 +218,8 @@ func NormalizeForComparison(input string) string {
 //   - Newline collapse (strips \n/\r between alphanumerics)
 //   - Multi-pass pipeline (URL decode → backslash strip → zero-width → insertions → aggressive l33t → repeating chars → newlines → whitespace)
 //   - Repeating chars aggressive (collapses 2+ identical to 1)
+//   - Homoglyph replacement (Cyrillic/Greek → Latin lookalikes)
+//   - Homoglyph + NormalizeText pipeline
 //   - Sliding ROT13 variants (up to 5, each with a different alphabetic run decoded)
 //
 // Deduplication is applied — if a variant equals the original or already in list, it is omitted.
@@ -148,9 +234,11 @@ func NormalizeAllVariants(input string) []string {
 	multiPass := NormalizeMultiPass(input)
 	repeatingCharsAggressive := NormalizeRepeatingCharsAggressive(input)
 	slidingROT13Variants := NormalizeSlidingROT13(input)
+	homoglyphs := NormalizeHomoglyphs(input)
+	homoglyphNormalized := NormalizeText(NormalizeHomoglyphs(input))
 
 	variants := []string{input}
-	candidates := []string{normalized, keyboardWalk, rot13, repeatingChars, backslashEscapes, aggressiveL33t, newlineCollapse, multiPass, repeatingCharsAggressive}
+	candidates := []string{normalized, keyboardWalk, rot13, repeatingChars, backslashEscapes, aggressiveL33t, newlineCollapse, multiPass, repeatingCharsAggressive, homoglyphs, homoglyphNormalized}
 	candidates = append(candidates, slidingROT13Variants...)
 
 	for _, v := range candidates {

@@ -16,6 +16,7 @@
 package proxy
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -241,21 +242,41 @@ func buildTurnSignals(
 }
 
 // ExtractConversationID derives a conversation identifier from the HTTP request.
-// This uses the X-Conversation-ID header if present, otherwise falls back to
-// a hash of client IP + User-Agent for session tracking.
+// The priority order is:
+//  1. X-Conversation-ID header (explicit, set by client SDK)
+//  2. X-Request-ID header (per-request, set by infra)
+//  3. Authorization header (API key — best implicit session identifier for API proxies)
+//  4. Client IP + User-Agent (last resort — groups requests from the same client)
+//
+// Using the Authorization header as the primary implicit identifier prevents
+// the "cascade FP" problem where all requests from the same IP (e.g., behind
+// a NAT, load tester, or shared developer machine) accumulate into a single
+// multi-turn session. Each distinct API key gets its own session, which is
+// the correct semantic for an API proxy.
 func ExtractConversationID(r *http.Request) string {
-	// Prefer explicit conversation ID header
+	// 1. Prefer explicit conversation ID header (set by client SDKs)
 	if convID := r.Header.Get("X-Conversation-ID"); convID != "" {
 		return convID
 	}
 
-	// Fall back to X-Request-ID
+	// 2. Fall back to X-Request-ID (per-request, but better than IP if present)
 	if reqID := r.Header.Get("X-Request-ID"); reqID != "" {
 		return reqID
 	}
 
-	// Fall back to client IP + User-Agent hash (less ideal but functional)
-	// This groups requests from the same client together
+	// 3. Use Authorization header (API key) — this is the best implicit session
+	// identifier for an API proxy because each API key represents a distinct
+	// client/conversation. This prevents the cascade FP problem where all
+	// requests from the same IP accumulate into one multi-turn session.
+	if auth := r.Header.Get("Authorization"); auth != "" {
+		// Hash the auth header so we don't store raw API keys in session state
+		h := sha256.Sum256([]byte(auth))
+		return "auth:" + fmt.Sprintf("%x", h[:16])
+	}
+
+	// 4. Last resort: client IP + User-Agent
+	// This is the least ideal option because it groups all requests from the
+	// same client (e.g., behind NAT, load tester) into one session.
 	ip := getClientIP(r)
 	ua := r.Header.Get("User-Agent")
 	if ua == "" {

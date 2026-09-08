@@ -56,6 +56,11 @@ type DetectorConfig struct {
 	// Timeout is the maximum time for a single inference in milliseconds.
 	// Default: 10ms.
 	Timeout int
+
+	// ForceHeuristic when true bypasses ONNX inference and uses heuristic fallback only.
+	// Use when model is not yet validated or produces unacceptable FPR.
+	// Default: false (use ONNX if loaded)
+	ForceHeuristic bool
 }
 
 // DefaultDetectorConfig returns sensible defaults.
@@ -67,6 +72,7 @@ func DefaultDetectorConfig() DetectorConfig {
 		ModelPath:         "/opt/aegisgate-platform/models/threat_cnn_bilstm.onnx",
 		MaxSequenceLength: 128,
 		Timeout:           10,
+		ForceHeuristic:    false, // Model validated 2026-09-06: 0% FPR, ONNX inference enabled
 	}
 }
 

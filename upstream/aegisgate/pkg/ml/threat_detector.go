@@ -24,18 +24,39 @@ package ml
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
+
+	"github.com/yalue/onnxruntime_go"
 )
+
+// init initializes the ONNX runtime environment.
+// It discovers the onnxruntime shared library before initialization.
+func init() {
+	// Discover and set the shared library path before initialization
+	libPath := discoverONNXRuntimeLib("")
+	if libPath != "" {
+		onnxruntime_go.SetSharedLibraryPath(libPath)
+	}
+
+	if !onnxruntime_go.IsInitialized() {
+		if err := onnxruntime_go.InitializeEnvironment(); err != nil {
+			// Log but don't fail - will fall back to heuristic
+			fmt.Fprintf(os.Stderr, "Warning: Failed to initialize ONNX runtime: %v\n", err)
+		}
+	}
+}
 
 // ThreatDetector performs neural network-based threat detection.
 type ThreatDetector struct {
-	mu         sync.RWMutex
-	config     DetectorConfig
-	normalizer *CharNormalizer
-	calibrator *CalibrationManager
-	loaded     bool
-	modelHash  string
+	mu             sync.RWMutex
+	config         DetectorConfig
+	normalizer     *CharNormalizer
+	calibrator     *CalibrationManager
+	dynamicSession *onnxruntime_go.DynamicAdvancedSession
+	loaded         bool
+	modelHash      string
 }
 
 // NewThreatDetector creates a new threat detector with the given config.
@@ -154,23 +175,66 @@ func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 }
 
 // inference runs the ONNX model on the encoded input.
-// Currently uses a heuristic fallback until the ONNX model is trained.
-// When the model is ready, this will be replaced with onnxruntime-go inference.
 func (td *ThreatDetector) inference(encoded []int32) float64 {
-	if !td.loaded {
-		// No model loaded — use heuristic fallback
+	// If model not loaded or ForceHeuristic is set, use heuristic fallback
+	if !td.loaded || td.dynamicSession == nil || td.config.ForceHeuristic {
 		return td.heuristicScore(encoded)
 	}
 
-	// TODO: Replace with onnxruntime-go inference when model is trained:
-	//
-	//   session := td.session  // *onnxruntime.Session
-	//   input := onnxruntime.NewTensor(encoded)
-	//   output := session.Run(input)
-	//   return float64(output[0])  // Sigmoid output [0, 1]
-	//
-	// For now, fall back to heuristic
-	return td.heuristicScore(encoded)
+	// Prepare input tensor data (copy encoded to 256-length slice)
+	inputData := make([]int32, MaxSeqLen)
+	copy(inputData, encoded)
+
+	// Create input tensor (int32)
+	inputTensor, err := onnxruntime_go.NewTensor[int32](
+		onnxruntime_go.NewShape(1, MaxSeqLen),
+		inputData,
+	)
+	if err != nil {
+		slog.Warn("Failed to create input tensor", "error", err)
+		return td.heuristicScore(encoded)
+	}
+	defer inputTensor.Destroy()
+
+	// Create output tensor (float32 - model outputs probability directly)
+	// Shape must be [1, 1] to match model output, not [1]
+	outputData := make([]float32, 1)
+	outputTensor, err := onnxruntime_go.NewTensor[float32](
+		onnxruntime_go.NewShape(1, 1),
+		outputData,
+	)
+	if err != nil {
+		slog.Warn("Failed to create output tensor", "error", err)
+		return td.heuristicScore(encoded)
+	}
+	defer outputTensor.Destroy()
+
+	// Run inference with Value interface
+	// DEBUG: ONNX inference starting
+	slog.Info("DEBUG: Running ONNX inference")
+	slog.Error("DEBUG_ML_INFERENCE_START", "text_len", len(encoded))
+	err = td.dynamicSession.Run(
+		[]onnxruntime_go.Value{inputTensor},
+		[]onnxruntime_go.Value{outputTensor},
+	)
+	if err != nil {
+		slog.Warn("ONNX inference failed", "error", err)
+		return td.heuristicScore(encoded)
+	}
+
+	// Get output - model already produces probability [0, 1]
+	score := float64(outputData[0])
+	if score > 1.0 {
+		score = 1.0
+	}
+	if score < 0.0 {
+		score = 0.0
+	}
+	// DEBUG: Log score for analysis
+	if len(encoded) > 0 && encoded[0] != 0 {
+		slog.Info("DEBUG_ML_SCORE", "score", score, "first_char", encoded[0])
+	}
+	return score
 }
 
 // heuristicScore provides a rule-based fallback when no ONNX model is loaded.
@@ -222,7 +286,6 @@ func (td *ThreatDetector) heuristicScore(encoded []int32) float64 {
 }
 
 // LoadModel loads the ONNX model from disk.
-// Currently a no-op until the model is trained.
 func (td *ThreatDetector) LoadModel(path string) error {
 	td.mu.Lock()
 	defer td.mu.Unlock()
@@ -232,18 +295,23 @@ func (td *ThreatDetector) LoadModel(path string) error {
 		return fmt.Errorf("model file not found: %w", err)
 	}
 
-	// TODO: Replace with onnxruntime-go session creation:
-	//
-	//   session, err := onnxruntime.NewSession(path)
-	//   if err != nil {
-	//       return fmt.Errorf("create ONNX session: %w", err)
-	//   }
-	//   td.session = session
-	//
+	// Use DynamicAdvancedSession for mixed int32 input / float32 output
+	session, err := onnxruntime_go.NewDynamicAdvancedSession(
+		path,
+		[]string{"input"},
+		[]string{"threat_score"},
+		nil, // options
+	)
+	if err != nil {
+		return fmt.Errorf("create ONNX session: %w", err)
+	}
+
+	td.dynamicSession = session
 
 	// Compute SHA256 hash for model versioning
 	hash, err := computeFileHash(path)
 	if err != nil {
+		session.Destroy()
 		return fmt.Errorf("compute model hash: %w", err)
 	}
 
@@ -258,19 +326,14 @@ func (td *ThreatDetector) Close() error {
 	td.mu.Lock()
 	defer td.mu.Unlock()
 
-	if !td.loaded {
+	if !td.loaded || td.dynamicSession == nil {
 		return nil
 	}
 
-	// TODO: Replace with onnxruntime-go session cleanup:
-	//
-	//   if td.session != nil {
-	//       return td.session.Close()
-	//   }
-	//
-
+	err := td.dynamicSession.Destroy()
+	td.dynamicSession = nil
 	td.loaded = false
-	return nil
+	return err
 }
 
 // GetCalibrator returns the calibration manager for external configuration.
