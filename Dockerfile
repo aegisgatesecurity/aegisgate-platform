@@ -25,7 +25,7 @@
 # =========================================================================
 
 # Builder stage: Go 1.27.0 on Debian bookworm with ONNX Runtime v1.29.0.
-FROM golang:1.27.0-bookworm AS builder
+FROM golang:1.27.1-bookworm AS builder
 
 # Install build tools + download ONNX Runtime v1.29.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
