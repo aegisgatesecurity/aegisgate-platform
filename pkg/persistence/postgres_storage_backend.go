@@ -99,30 +99,36 @@ func (b *postgresStorageBackend) Write(ctx context.Context, entry *opsec.AuditEn
 		tagsJSON = []byte("[]")
 	}
 
+	// Use the entry's TenantID for RLS. Admin writes (empty tenant)
+	// bypass RLS via the admin flag.
+	tenantID := entry.TenantID
+	isAdmin := tenantID == ""
+
 	const sql = `
 		INSERT INTO audit_entries (id, timestamp, level, event_type, message, source,
 		                           hash, previous_hash, tenant_id, data, compliance_tags)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (id) DO NOTHING`
 
-	_, err = b.pool.Exec(ctx, sql,
-		entry.ID,
-		entry.Timestamp,
-		entry.Level.String(),
-		entry.EventType,
-		entry.Message,
-		entry.Source,
-		entry.Hash,
-		entry.PreviousHash,
-		entry.TenantID,
-		dataJSON,
-		tagsJSON,
-	)
-	if err != nil {
-		return fmt.Errorf("postgres audit write: %w", err)
-	}
-
-	return nil
+	return ioc.WithTenantContextOrPool(ctx, b.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql,
+			entry.ID,
+			entry.Timestamp,
+			entry.Level.String(),
+			entry.EventType,
+			entry.Message,
+			entry.Source,
+			entry.Hash,
+			entry.PreviousHash,
+			entry.TenantID,
+			dataJSON,
+			tagsJSON,
+		)
+		if err != nil {
+			return fmt.Errorf("postgres audit write: %w", err)
+		}
+		return nil
+	})
 }
 
 // Read retrieves a single audit entry by ID.
@@ -139,15 +145,24 @@ func (b *postgresStorageBackend) Read(ctx context.Context, id string) (*opsec.Au
 		       hash, previous_hash, tenant_id, data, compliance_tags
 		FROM audit_entries WHERE id = $1`
 
-	row := b.pool.QueryRow(ctx, sql, id)
-	entry, err := scanAuditEntry(row)
-	if err != nil {
-		if isNoRows(err) {
-			return nil, nil // not found is not an error
+	// RLS: extract tenant from context so non-admin users can only read
+	// audit entries belonging to their tenant.
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+
+	var entry *opsec.AuditEntry
+	err := ioc.WithTenantContextOrPool(ctx, b.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		row := q.QueryRow(ctx, sql, id)
+		e, err := scanAuditEntry(row)
+		if err != nil {
+			if isNoRows(err) {
+				return nil // not found is not an error
+			}
+			return fmt.Errorf("postgres audit read: %w", err)
 		}
-		return nil, fmt.Errorf("postgres audit read: %w", err)
-	}
-	return entry, nil
+		entry = e
+		return nil
+	})
+	return entry, err
 }
 
 // Query returns audit entries matching the given filter.
@@ -243,22 +258,27 @@ func (b *postgresStorageBackend) Query(ctx context.Context, filter opsec.AuditFi
 		ORDER BY timestamp DESC
 		LIMIT $%d`, whereClause, idx)
 
-	rows, err := b.pool.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, fmt.Errorf("postgres audit query: %w", err)
-	}
-	defer rows.Close()
+	// RLS: extract tenant from context for tenant-scoped queries.
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
 
 	var entries []*opsec.AuditEntry
-	for rows.Next() {
-		entry, err := scanAuditEntryFromRows(rows)
+	err := ioc.WithTenantContextOrPool(ctx, b.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, sql, args...)
 		if err != nil {
-			return nil, fmt.Errorf("postgres audit scan: %w", err)
+			return fmt.Errorf("postgres audit query: %w", err)
 		}
-		entries = append(entries, entry)
-	}
+		defer rows.Close()
 
-	return entries, rows.Err()
+		for rows.Next() {
+			entry, err := scanAuditEntryFromRows(rows)
+			if err != nil {
+				return fmt.Errorf("postgres audit scan: %w", err)
+			}
+			entries = append(entries, entry)
+		}
+		return rows.Err()
+	})
+	return entries, err
 }
 
 // Delete removes an audit entry by ID.
@@ -273,11 +293,17 @@ func (b *postgresStorageBackend) Delete(ctx context.Context, id string) error {
 	}
 
 	const sql = `DELETE FROM audit_entries WHERE id = $1`
-	_, err := b.pool.Exec(ctx, sql, id)
-	if err != nil {
-		return fmt.Errorf("postgres audit delete: %w", err)
-	}
-	return nil
+
+	// RLS: only admin or tenant-scoped deletes are allowed.
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+
+	return ioc.WithTenantContextOrPool(ctx, b.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		_, err := q.Exec(ctx, sql, id)
+		if err != nil {
+			return fmt.Errorf("postgres audit delete: %w", err)
+		}
+		return nil
+	})
 }
 
 // Close releases the PostgreSQL connection pool.
@@ -312,12 +338,21 @@ func (b *postgresStorageBackend) PruneExpired(ctx context.Context, retentionDays
 	cutoff := time.Now().UTC().AddDate(0, 0, -retentionDays)
 
 	const sql = `DELETE FROM audit_entries WHERE timestamp < $1`
-	tag, err := b.pool.Exec(ctx, sql, cutoff)
+
+	// RLS: pruning is an admin-only operation; use admin context.
+	var pruned int
+	err := ioc.WithTenantContextOrPool(ctx, b.pool, "", true, func(q ioc.DBQuerier) error {
+		tag, err := q.Exec(ctx, sql, cutoff)
+		if err != nil {
+			return fmt.Errorf("postgres audit prune: %w", err)
+		}
+		pruned = int(tag.RowsAffected())
+		return nil
+	})
 	if err != nil {
-		return 0, fmt.Errorf("postgres audit prune: %w", err)
+		return 0, err
 	}
 
-	pruned := int(tag.RowsAffected())
 	if pruned > 0 {
 		log.Printf("PostgreSQL audit prune: removed %d entries older than %d days", pruned, retentionDays)
 	}
@@ -335,7 +370,13 @@ func (b *postgresStorageBackend) Count(ctx context.Context) (int64, error) {
 
 	var count int64
 	const sql = `SELECT COUNT(*) FROM audit_entries`
-	err := b.pool.QueryRow(ctx, sql).Scan(&count)
+
+	// RLS: count is tenant-scoped for non-admin users.
+	tenantID, isAdmin := ioc.TenantFromContext(ctx)
+
+	err := ioc.WithTenantContextOrPool(ctx, b.pool, tenantID, isAdmin, func(q ioc.DBQuerier) error {
+		return q.QueryRow(ctx, sql).Scan(&count)
+	})
 	if err != nil {
 		return 0, fmt.Errorf("postgres audit count: %w", err)
 	}
@@ -357,36 +398,40 @@ func (b *postgresStorageBackend) VerifyIntegrity(ctx context.Context) (bool, []s
 		FROM audit_entries
 		ORDER BY timestamp ASC`
 
-	rows, err := b.pool.Query(ctx, sql)
-	if err != nil {
-		return false, nil, fmt.Errorf("postgres audit integrity query: %w", err)
-	}
-	defer rows.Close()
-
+	// RLS: integrity verification is an admin-only operation.
 	var broken []string
 	var prevHash string
 
-	for rows.Next() {
-		var id, hash, prevRef string
-		if err := rows.Scan(&id, &hash, &prevRef); err != nil {
-			return false, nil, fmt.Errorf("postgres audit integrity scan: %w", err)
+	err := ioc.WithTenantContextOrPool(ctx, b.pool, "", true, func(q ioc.DBQuerier) error {
+		rows, err := q.Query(ctx, sql)
+		if err != nil {
+			return fmt.Errorf("postgres audit integrity query: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var id, hash, prevRef string
+			if err := rows.Scan(&id, &hash, &prevRef); err != nil {
+				return fmt.Errorf("postgres audit integrity scan: %w", err)
+			}
+
+			// First entry: previous_hash should be empty
+			if prevHash == "" && prevRef != "" {
+				broken = append(broken, fmt.Sprintf("entry %s: unexpected previous_hash %q (first entry)", id, prevRef))
+			} else if prevHash != "" && prevRef != prevHash {
+				broken = append(broken, fmt.Sprintf("entry %s: hash chain broken (expected previous %q, got %q)", id, prevHash, prevRef))
+			}
+
+			prevHash = hash
 		}
 
-		// First entry: previous_hash should be empty
-		if prevHash == "" && prevRef != "" {
-			broken = append(broken, fmt.Sprintf("entry %s: unexpected previous_hash %q (first entry)", id, prevRef))
-		} else if prevHash != "" && prevRef != prevHash {
-			broken = append(broken, fmt.Sprintf("entry %s: hash chain broken (expected previous %q, got %q)", id, prevHash, prevRef))
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("postgres audit integrity rows: %w", err)
 		}
+		return nil
+	})
 
-		prevHash = hash
-	}
-
-	if err := rows.Err(); err != nil {
-		return false, nil, fmt.Errorf("postgres audit integrity rows: %w", err)
-	}
-
-	return len(broken) == 0, broken, nil
+	return len(broken) == 0, broken, err
 }
 
 // scanAuditEntry scans a single audit entry from a query row.
