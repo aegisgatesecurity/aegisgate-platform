@@ -65,11 +65,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/* && \
     useradd -m -s /usr/sbin/nologin appuser
 
-# Copy binary, UI assets, ML model, and ONNX Runtime library
+# Copy binary, UI assets, and ONNX Runtime library
 COPY --from=builder /aegisgate-platform /usr/local/bin/aegisgate-platform
 COPY --from=builder /build/aegisgate-platform/ui/frontend /opt/aegisgate-platform/ui/frontend
-COPY --from=builder /build/aegisgate-platform/upstream/aegisgate/pkg/ml/models/threat_cnn_bilstm.onnx /opt/aegisgate-platform/pkg/ml/models/threat_cnn_bilstm.onnx
 COPY --from=builder /usr/lib/libonnxruntime.so* /usr/lib/
+
+# Create ML model directory. The ONNX model file is proprietary and not
+# included in the public repository. It should be provided at deploy time
+# via a volume mount or downloaded from a secure artifact store.
+# If the model is absent, the platform falls back to heuristic detection.
+RUN mkdir -p /opt/aegisgate-platform/pkg/ml/models
 RUN ln -sf /usr/lib/libonnxruntime.so /usr/lib/onnxruntime.so
 
 # Create writable data directories (audits, certs, logs)
