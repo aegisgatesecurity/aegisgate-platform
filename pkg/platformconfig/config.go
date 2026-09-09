@@ -390,7 +390,7 @@ func DefaultConfig() *Config {
 			AllowedHeaders:           []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},
 			MLThreatDetectionEnabled: false, // Cold-start: disabled by default
 			MLShadowMode:             true,  // Safe deployment: shadow mode on by default
-			MLThreshold:              0.5,   // Calibrated threshold: 100% PI TPR, 97.5% exfil TPR, 0% FPR (v9 model, 256-char, Latin-1)
+			MLThreshold:              0.85,  // v10 calibrated threshold: 0.85 for 0% FPR (v10 model, evasion-augmented)
 			MLModelPath:              "",    // Empty: fall back to env var or default path
 		},
 		Logging: LoggingConfig{

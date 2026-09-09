@@ -916,7 +916,7 @@ func newEvasionDetector() *evasionDetector {
 	neuralCfg := platformml.DefaultDetectorConfig()
 	neuralCfg.Enabled = true
 	neuralCfg.ShadowMode = false // Active mode for evasion testing
-	neuralCfg.Threshold = 0.5    // Standard threshold
+	neuralCfg.Threshold = 0.85   // v10 calibrated threshold (0% FPR)
 
 	// Use env var if set, otherwise auto-discover from well-known paths
 	if libPath := os.Getenv("ONNXRUNTIME_SHARED_LIBRARY_PATH"); libPath != "" {
