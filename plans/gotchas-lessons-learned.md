@@ -129,6 +129,29 @@ Plus 35 L2 compliance + 16 ML evasion resistance + 38 response scanning patterns
 
 ---
 
+### 101. Stripe integration was LIVE in code but documentation said "test mode"
+
+**Context:** The pricing page (`content/pricing.md` in platform repo) and `pkg/billing/doc.go` both said "Stripe Buy Buttons are in test mode (use card 4242 4242 4242 4242)" and "live mode is gated on H1 legal + H4 pentest sign-off." But `billing-config.json` contained a real `pk_live_` publishable key and real Stripe product/price IDs. The website repo's `pricing.md` was already clean with real `buy.stripe.com` URLs.
+
+**Lesson:** Stale documentation can undermine buyer confidence even when the backend is correct. A visitor to the pricing page saw "🟡 Test Mode" and "No real money is charged" while the actual payment system was live. Always verify documentation claims against actual code state. Fixed in commit `088d34b`.
+
+### 102. Platform content/pricing.md is gitignored — website repo has separate copy
+
+**Context:** When committing the Stripe documentation fix, `content/pricing.md` in the platform repo was gitignored. The platform repo's `content/` directory appears to be a template/source copy, not the live website content. The website repo (`websites/aegisgate-site/content/pricing.md`) has its own separate copy that was already clean.
+
+**Lesson:** Always check the website repo for live content state. The platform repo's `content/` directory may be outdated or gitignored. When fixing website-facing documentation, verify which copy is actually deployed.
+
+### 103. Verify before claiming — three corrections in one session
+
+**Context:** In the VC/investor assessment, I claimed three things that were wrong:
+1. "Stripe is in test mode" → It was LIVE (pk_live key in billing-config.json)
+2. "Create a LinkedIn company page" → It already existed (linked from website baseof.html)
+3. "Set up Google Analytics" → It was already set up (dashboard-level)
+
+**Lesson:** This is Rule #1 ("Verify before claiming") applied to business infrastructure, not just code. Before claiming something "doesn't exist" or "needs to be created," check the codebase, config files, website templates, and dashboard-level configurations. The user corrected all three. Each correction erodes trust and wastes time.
+
+---
+
 ## Prior Gotchas (91-100 above are new)
 
 ### Items 1-90: See git history of this file for prior gotchas covering:
