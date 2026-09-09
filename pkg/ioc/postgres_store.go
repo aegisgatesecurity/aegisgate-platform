@@ -167,6 +167,12 @@ func NewPostgresStore(ctx context.Context, cfg DatabaseConfig) (*PostgresStore, 
 		// #nosec G115 -- range-checked by the if-branch above
 		poolConfig.MinConns = int32(cfg.MinConns)
 	}
+	// Clamp MinConns to MaxConns so a runaway MinConns (e.g.
+	// math.MaxInt32) does not cause pgxpool to pre-allocate 2B
+	// connections and OOM the process.
+	if poolConfig.MinConns > poolConfig.MaxConns {
+		poolConfig.MinConns = poolConfig.MaxConns
+	}
 	poolConfig.MaxConnIdleTime = cfg.MaxConnIdleTime
 	poolConfig.MaxConnLifetime = cfg.MaxConnLifetime
 	poolConfig.HealthCheckPeriod = cfg.HealthCheckInterval
