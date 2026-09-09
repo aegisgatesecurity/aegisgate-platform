@@ -197,7 +197,7 @@ func (td *ThreatDetector) closeONNX() error {
 // computeFileHash computes SHA256 of a file for model versioning.
 func computeFileHash(path string) (string, error) {
 	cleanPath := filepath.Clean(path)
-	data, err := os.ReadFile(cleanPath)
+	data, err := os.ReadFile(cleanPath) // #nosec G703 -- path cleaned via filepath.Clean, model path from config
 	if err != nil {
 		return "", fmt.Errorf("read file: %w", err)
 	}

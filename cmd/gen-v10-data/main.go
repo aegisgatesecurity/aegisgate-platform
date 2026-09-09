@@ -103,7 +103,7 @@ var v9ExfilPayloads = []training.AtlasPayload{
 
 func main() {
 	outputDir := "training/raw_data"
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0750); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating output directory: %v\n", err)
 		os.Exit(1)
 	}
@@ -292,7 +292,7 @@ func main() {
 
 // loadJSONL loads examples from a JSONL file, handling both string and int labels.
 func loadJSONL(path string) ([]training.Example, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path from CLI flag, not HTTP input
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}
