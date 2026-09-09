@@ -120,14 +120,21 @@ var l33tMap = map[rune]rune{
 }
 
 // keyWalkReverse maps QWERTY right-shifted keys back to their original position.
-// Only maps lowercase letters that have an unambiguous left-neighbor on QWERTY.
+// This is the exact inverse of the keyboardWalkShift transform used in both the
+// augmentation engine (augment.go) and the evasion suite test (evasion_suite_test.go).
+// Both use RIGHT shift (a→s, s→d, etc.), so we reverse with LEFT shift (s→a, d→s, etc.).
+// Includes mappings for ; and , (the shifted outputs of l and m), plus uppercase.
 var keyWalkReverse = map[rune]rune{
-	// Home row: s→a, d→s, f→d, g→f, h→g, j→h, k→j, l→k
-	's': 'a', 'd': 's', 'f': 'd', 'g': 'f', 'h': 'g', 'j': 'h', 'k': 'j', 'l': 'k',
-	// Top row: e→w, r→e, t→r, y→t, u→y, i→u, o→i, p→o
-	'e': 'w', 'r': 'e', 't': 'r', 'y': 't', 'u': 'y', 'i': 'u', 'o': 'i', 'p': 'o',
-	// Bottom row: c→x, v→c, b→v, n→b, m→n
-	'c': 'x', 'v': 'c', 'b': 'v', 'n': 'b', 'm': 'n',
+	// Home row (lowercase): s→a, d→s, f→d, g→f, h→g, j→h, k→j, l→k, ;→l
+	's': 'a', 'd': 's', 'f': 'd', 'g': 'f', 'h': 'g', 'j': 'h', 'k': 'j', 'l': 'k', ';': 'l',
+	// Top row (lowercase): w→q, e→w, r→e, t→r, y→t, u→y, i→u, o→i, p→o
+	'w': 'q', 'e': 'w', 'r': 'e', 't': 'r', 'y': 't', 'u': 'y', 'i': 'u', 'o': 'i', 'p': 'o',
+	// Bottom row (lowercase): x→z, c→x, v→c, b→v, n→b, m→n, ,→m
+	'x': 'z', 'c': 'x', 'v': 'c', 'b': 'v', 'n': 'b', 'm': 'n', ',': 'm',
+	// Uppercase (same shifts, uppercase output)
+	'S': 'A', 'D': 'S', 'F': 'D', 'G': 'F', 'H': 'G', 'J': 'H', 'K': 'J', 'L': 'K', ':': 'L',
+	'W': 'Q', 'E': 'W', 'R': 'E', 'T': 'R', 'Y': 'T', 'U': 'Y', 'I': 'U', 'O': 'I', 'P': 'O',
+	'X': 'Z', 'C': 'X', 'V': 'C', 'B': 'V', 'N': 'B', 'M': 'N', '<': 'M',
 }
 
 // zeroWidthSet is a lookup set for zero-width/invisible Unicode characters.

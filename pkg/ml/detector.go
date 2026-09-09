@@ -37,12 +37,13 @@ import (
 	"sync"
 )
 
-// ExpectedModelHash is the SHA-256 hash of the v10 threat detection model
+// ExpectedModelHash is the SHA-256 hash of the v11 threat detection model
 // (threat_cnn_bilstm.onnx). If the model file hash does not match, the
 // detector refuses to load it — preventing supply-chain tampering.
+// v11: 32b7db74379b28a0e3da5a79e42c0ecedab29b66463c26a8cf2081a731facc91
 // v10: 8f874aa5a0d01a8acaa8449ba68c82d8bc0bc984744d9cf8a68ce900b83f2e56
 // v9:  0076b66d069ca445589526624ebeb67b65a1df68d615525b83e528f03e0bd4b7
-const ExpectedModelHash = "8f874aa5a0d01a8acaa8449ba68c82d8bc0bc984744d9cf8a68ce900b83f2e56"
+const ExpectedModelHash = "32b7db74379b28a0e3da5a79e42c0ecedab29b66463c26a8cf2081a731facc91"
 
 // ThreatDetector performs neural network-based threat detection.
 // ONNX session fields are defined in build-tag-specific files:

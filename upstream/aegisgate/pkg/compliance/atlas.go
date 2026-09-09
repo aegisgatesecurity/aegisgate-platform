@@ -431,7 +431,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "PluginExploitation",
 		Description: "Journal Manipulation",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(modify\s+journal|alter\s+journal|journal\s+manipulation|log\s+manipulation|inject\s+log|fake\s+log|hidden\s+log|delete\s+log|clear\s+log|grant\s+admin\s+access)`),
+		Regex:       regexp.MustCompile(`(?i)(modify\s+(?:\w+\s+)?journal|alter\s+(?:\w+\s+)?journal|journal\s+manipulation|log\s+manipulation|inject\s+log|fake\s+log|hidden\s+log|delete\s+(?:\w+\s+)*log|clear\s+log|grant\s+admin\s+access)`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -465,7 +465,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "DefenseEvasion",
 		Description: "Defense Evasion via Fragmentation",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(fragment\w*\s+attack|split\s+payload|chunk\w*\s+injection|divide\s+and\s+conquer|b\s*y\s*p\s*a\s*s\s*s|\bconfiguration\b.{0,30}(?:extract\w*|reveal|leak|steal|dump|show|display|access)\b|\b(?:reveal|show|display|expose|extract|dump|leak|steal)\s+(?:your\s+)?(?:configuration|config|settings)\b|\bconfiguration\s+settings\b)`),
+		Regex:       regexp.MustCompile(`(?i)(fragment\w*\s+attack|split\s+(?:\w+\s+)?payload|chunk\w*\s+injection|divide\s+and\s+conquer|b\s*y\s*p\s*a\s*s\s*s|\bconfiguration\b.{0,30}(?:extract\w*|reveal|leak|steal|dump|show|display|access)\b|\b(?:reveal|show|display|expose|extract|dump|leak|steal)\s+(?:your\s+)?(?:configuration|config|settings)\b|\bconfiguration\s+settings\b)`),
 	})
 
 	f.patterns = append(f.patterns, &Pattern{
@@ -614,7 +614,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "EndpointDenial",
 		Description: "Service Exhaustion",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(exhaust\s+(all\s+)?(available\s+)?(connections|resources)|consume\s+all\s+(resources|memory|cpu)|memory\s+exhaustion|resource\s+starvation|max\s+out\s+(memory|cpu)|allocate\s+infinite|infinite\s+memory|memory\s+leak|connection\s+limit|too\s+many\s+connections)`),
+		Regex:       regexp.MustCompile(`(?i)(exhaust\s+(?:all\s+)?(?:available\s+)?(?:\w+\s+)?(?:connections|resources)|consume\s+all\s+(?:resources|memory|cpu)|memory\s+exhaustion|resource\s+starvation|max\s+out\s+(?:memory|cpu)|allocate\s+infinite|infinite\s+memory|memory\s+leak|connection\s+limit|too\s+many\s+connections)`),
 	})
 
 	// ==================== CONFIG REPO EXFILTRATION (T1602) ====================
