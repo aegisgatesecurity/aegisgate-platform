@@ -9,10 +9,10 @@
 //
 // Mode:
 //   - Mock mode:  default when STRIPE_SECRET_KEY is empty; no network calls
-//   - Live mode:  when STRIPE_SECRET_KEY is set; makes real Stripe API calls
-//   - Test mode:  per the v3.3.0 beta launch, Stripe Buy Buttons are in
-//                 test mode (use card 4242 4242 4242 4242); live mode is
-//                 gated on H1 legal + H4 pentest sign-off
+//   - Live mode:  when STRIPE_SECRET_KEY is set (sk_live_ prefix); makes
+//                 real Stripe API calls. Stripe integration is LIVE as of
+//                 v4.4.1 — billing-config.json contains live publishable
+//                 keys and real Stripe product/price IDs.
 //
 // Pricing (locked 2026-06-04, plans/aegisgate-pricing-decisions-locked-2026-06-04):
 //
