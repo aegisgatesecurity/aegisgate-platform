@@ -1,3 +1,26 @@
+## [4.4.1] - 2026-09-09 - v11b Model + Evasion Suite + OPSEC Hardening 🔒
+
+> **v4.4.1** upgrades the Char CNN-BiLSTM threat detection model from v9 to v11b across all three products. The v11b model syncs all 50 augmentor transforms to match the adversarial evasion suite, achieving 99.8/100 evasion resistance with zero in-scope misses. Adds keyWalkReverse text normalization, full adversarial evasion test suites (2,600 tests on Platform/Rampart, 550 on Lens), and OPSEC hardening (pre-commit hooks, gitleaks, CODEOWNERS).
+
+### Security Enhancements
+- **v11b Neural Model**: All 50 augmentor transforms synced to evasion suite. Score: 99.8/100 (up from 97/100 at v10). Zero in-scope misses.
+- **keyWalkReverse normalization**: QWERTY right-shift inverse map for keyboard-walk deobfuscation (Cyrillic/Greek homoglyphs, l33t speak, zero-width Unicode).
+- **Evasion suite**: 52 ATLAS payloads × 50 transforms = 2,600 adversarial tests. Phase3c k6 validation: 100% TPR, 0% FPR.
+- **OPSEC hardening**: Pre-commit hooks activated, gitleaks config verified, CODEOWNERS and PR templates added.
+
+### Bug Fixes
+- Fixed upstream regex sync gap (commit ca22d15)
+- Fixed go vet unkeyed struct literals in gen-v10-data
+- Fixed Phase 2 regex patterns in scanner
+
+### Version & Infrastructure
+- Platform VERSION file: 4.3.1 → 4.4.0
+- Docker image tag: 3.5.0 → 4.4.0
+- README badges updated to v4.4.0
+- Model SHA-256: `8e13c793c32816aa0f6e2af13ffadd4f38f707b4ac8906b56ddfa77da51ea8e5`
+
+---
+
 ## [4.4.0] - 2026-09-08 - v9 Neural Threat Detection Model 🔒
 
 > **v4.4.0** upgrades the Char CNN-BiLSTM threat detection model from v4 to v9 across all three products (Platform, Rampart, Lens). The v9 model introduces a larger Latin-1 vocabulary (256 chars), doubled input sequence length (256 chars), and a recalibrated detection threshold (0.5). Docker images switched from Alpine to Debian bookworm-slim to support ONNX Runtime's glibc requirement.
