@@ -4,6 +4,7 @@
 package security
 
 import (
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -190,5 +191,65 @@ func TestCSRFMiddleware_CustomConfig(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("custom CSRF cookie name was not set")
+	}
+}
+
+func TestCSRFMiddleware_WithLogger(t *testing.T) {
+	mw := NewCSRFMiddleware(DefaultCSRFConfig())
+	defer mw.Stop()
+	result := mw.WithLogger(slog.Default())
+	if result == nil {
+		t.Fatal("WithLogger returned nil")
+	}
+	if result != mw {
+		t.Fatal("WithLogger should return the same middleware instance")
+	}
+}
+
+func TestCSRFMiddleware_GetToken(t *testing.T) {
+	mw := NewCSRFMiddleware(DefaultCSRFConfig())
+	defer mw.Stop()
+
+	// No cookie → empty string
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	if token := mw.GetToken(req); token != "" {
+		t.Errorf("GetToken() with no cookie = %q, want empty", token)
+	}
+
+	// With cookie → returns cookie value
+	req2 := httptest.NewRequest(http.MethodGet, "/", nil)
+	req2.AddCookie(&http.Cookie{Name: DefaultCSRFConfig().CookieName, Value: "test-token-123"})
+	if token := mw.GetToken(req2); token != "test-token-123" {
+		t.Errorf("GetToken() = %q, want %q", token, "test-token-123")
+	}
+}
+
+func TestCSRFMiddleware_GenerateToken_ServerSideStore(t *testing.T) {
+	mw := NewCSRFMiddleware(DefaultCSRFConfig())
+	defer mw.Stop()
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	token := mw.GenerateToken(rr, req)
+
+	if token == "" {
+		t.Fatal("GenerateToken returned empty token")
+	}
+	// Verify cookie was set
+	found := false
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == DefaultCSRFConfig().CookieName && c.Value == token {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("GenerateToken did not set CSRF cookie")
+	}
+	// Verify token is stored server-side (can be validated)
+	mw.mu.RLock()
+	_, exists := mw.tokens[token]
+	mw.mu.RUnlock()
+	if !exists {
+		t.Fatal("GenerateToken did not store token server-side")
 	}
 }
