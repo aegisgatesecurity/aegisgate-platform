@@ -48,6 +48,7 @@ func discoverONNXRuntimeLib(configPath string) string {
 	// 1. Explicit config path takes priority
 	if configPath != "" {
 		cleanPath := filepath.Clean(configPath)
+		// #nosec G703 -- path from trusted config, cleaned via filepath.Clean
 		if _, err := os.Stat(cleanPath); err == nil {
 			return cleanPath
 		}

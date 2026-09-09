@@ -60,7 +60,8 @@ RUN go build \
 FROM debian:bookworm-slim
 
 # Install runtime dependencies: ca-certificates (TLS), wget (healthcheck), libstdc++ (for ONNX).
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# apt-get upgrade pulls in security patches for base image packages (e.g. libpcre2 CVE fixes).
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
         ca-certificates wget libstdc++6 && \
     rm -rf /var/lib/apt/lists/* && \
     useradd -m -s /usr/sbin/nologin appuser

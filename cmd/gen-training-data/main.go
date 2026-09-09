@@ -24,6 +24,7 @@ func main() {
 	}
 
 	// Create output directory
+	// #nosec G703 -- outputDir from CLI flag, not user input
 	if err := os.MkdirAll(outputDir, 0750); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating output directory: %v\n", err)
 		os.Exit(1)
