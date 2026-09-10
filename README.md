@@ -420,6 +420,8 @@ go tool cover -func=coverage.out | grep total
 
 Apache 2.0 for the community edition — see [LICENSE](LICENSE). Enterprise features are proprietary and require a license key.
 
+The trained ML model weights are separately licensed under the [AegisGate Model Weight License](WEIGHTS-LICENSE.md). Non-commercial use is permitted; commercial use requires a commercial license.
+
 ## Security
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
