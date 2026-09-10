@@ -279,3 +279,7 @@ pkg/compliance/premium/
 cmd/aegisgate-platform/trust_portal_http.go
 cmd/aegisgate-platform/trust_portal_http_test.go
 .plans/
+
+# Provisional patent specifications — proprietary, never published
+plans/provisional-patent-*.md
+plans/provisional-patent-filing-guide.md
