@@ -1,7 +1,7 @@
 # Copyright Registration Guide — AegisGate Software
 
 **Date:** 2026-09-11
-**Total cost:** $65 (single "unpublished collection" registration for open-source repos) + $65 (Enterprise separate registration) = **$130 total**
+**Total cost:** $65 (single collection registration for open-source repos) + $65 (Enterprise separate registration) = **$130 total**
 **Timeline:** Can be filed online in ~30 minutes
 
 ---
@@ -171,7 +171,9 @@ You must identify material that is NOT part of your copyright claim:
 | Type of Title | **Title Appears on Work** |
 | Alternative Title | (leave blank) |
 
-> **Why a collection?** 17 U.S.C. § 408(c)(1) allows registration of a "group of works" as a single registration when they were published in the same year, have the same copyright claimant, and were published as part of a collective work. Your 3 repos share the same author, same claimant, same copyright notice, and were all published in 2026.
+> **Why a collection?** 37 CFR § 202.3(b)(4) and the Compendium of U.S. Copyright Office Practices (Third Edition, Chapter 1100) allow registration of a "group of works" as a single registration when they share the same copyright claimant and were published in the same calendar year. Your 3 repos share the same author, same claimant, same copyright notice, and were all published in 2026.
+>
+> **Note on group registration eligibility:** The three repos have different publication dates (April, July, August 2026). Group registration for published works requires that the works be published as part of a "unit of publication" — meaning they were first published as a single collective unit. Three independently-published GitHub repositories may not meet this requirement. If the Copyright Office rejects the group registration, file three separate Standard Applications ($65 each = $195). The group filing is worth attempting first to save $130, but the fallback is three separate filings.
 
 #### Section 3: Publication
 
@@ -354,9 +356,11 @@ For the open-source repos, the **3-month statutory damage window** has already p
 
 | Item | Cost | When |
 |------|------|------|
-| Registration 1 (Open-Source Collection) | $65 | Before December 9, 2026 |
+| Registration 1 (Open-Source Collection — single filing) | $65 | Before December 9, 2026 |
+| Registration 1 Fallback (3 separate filings, if group rejected) | $195 | Before December 9, 2026 |
 | Registration 2 (Enterprise) | $65 | Anytime (unpublished, no deadline) |
-| **Total** | **$130** | |
+| **Total (best case)** | **$130** | |
+| **Total (fallback)** | **$260** | |
 
 ---
 
