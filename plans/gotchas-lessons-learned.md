@@ -173,3 +173,15 @@ Plus 35 L2 compliance + 16 ML evasion resistance + 38 response scanning patterns
 **Context:** Platform had 18 topics and a full description. Lens had 14 topics and a description (stale). Rampart had null description, empty topics array, and null homepage. GitHub search uses topics for discoverability — Rampart was invisible to anyone searching for "AI security," "MCP proxy," "secret detection," etc.
 
 **Lesson:** Every public repo should have: a description (160 chars max for GitHub API), 10-20 relevant topics, and a homepage URL. This is a 30-second fix via `gh api` that directly impacts discoverability. Set topics that users would actually search for.
+
+### 107. Patent specs had 6 factual errors that didn't match the codebase
+
+**Context:** Drafted 5 provisional patent specs with technical claims. During review, found 6 claims that didn't match actual code: (1) 10 capability types were fabricated (code has 22 different ones), (2) keyWalkReverse map said 54 entries but code has 50, (3) FPR claim said "0%" but raw FPR is 0.64% (0% is calibrated only), (4) "52 MITRE ATLAS techniques" confused test payload count with mapped technique count, (5) "33+ compliance frameworks" was overcounted (actual: 30), (6) copyright guide cited wrong legal statute.
+
+**Lesson:** Before filing any legal document that costs money, cross-reference EVERY technical claim against the actual codebase. Use grep, wc, and direct file inspection. A provisional patent with incorrect technical details may fail to establish priority for the actual invention if the non-provisional can't reference it accurately.
+
+### 108. Patent specs were accidentally re-added to public git tracking
+
+**Context:** Patent specs were previously `git rm --cached` and gitignored. During a fix commit, `git add -f` was used to stage the corrected specs, which re-added them to git tracking. The commit pushed them to the public repo. Had to `git rm --cached` again and push the removal.
+
+**Lesson:** `git add -f` overrides .gitignore and adds files to tracking. When committing fixes to gitignored files that should NOT be tracked, stage ONLY the non-gitignored files. For gitignored files that need local-only edits, never use `git add -f` — make edits locally and verify with `git ls-files` that they're not tracked.
