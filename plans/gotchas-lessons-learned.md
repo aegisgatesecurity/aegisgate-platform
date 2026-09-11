@@ -156,3 +156,20 @@ Plus 35 L2 compliance + 16 ML evasion resistance + 38 response scanning patterns
 
 ### Items 1-90: See git history of this file for prior gotchas covering:
 - Framework count (31 not 25), "Easy Button" trademark, CI coverage floor, interactive test input counting, sed escape issues, Hugo server, three documentation locations, SAML certificate encoding, Docker Alpine→Debian migration, ONNX Runtime glibc requirement, CGO-only test files, protected branch force-push, dev machine paths in production code, NO STUBS tenet, efficacy test file tracking
+### 104. Stale version badges in READMEs across multiple repos
+
+**Context:** Lens README had version badges saying v0.4.0 while manifest.json, git tag, and GitHub release all said v0.4.1. Rampart README had version badge saying v0.7.0, Docker image reference saying v0.6.2, and "What's New" section saying v0.6.2 — all while version.go and git tag said v0.7.1. The GitHub repo descriptions were also stale (Lens said v0.2.0, Rampart had no description at all).
+
+**Lesson:** When bumping versions and tagging releases, always update README badges, Docker image references, "What's New" sections, and GitHub repo descriptions/topics. Create a release checklist that includes: version.go, manifest.json, README badges, Docker image refs, GitHub repo description, and changelog sections.
+
+### 105. GitHub org profile was completely blank — no .github repo
+
+**Context:** The GitHub org at github.com/aegisgatesecurity had no name, no description, no blog URL, and no email. There was no `.github` repository (which provides an org-level README shown on the org profile page and an org-level SECURITY.md). Any VC, customer, or developer visiting the org page saw a blank profile with 14 repos (5 of which were dead/archived).
+
+**Lesson:** The `.github` repo is a standard GitHub pattern — it provides an org profile README, org-level security policy, and default issue/PR templates. It's free and takes 10 minutes to set up. Also set the org name, description, blog URL, and email via the GitHub API or org settings page.
+
+### 106. Rampart repo had zero GitHub metadata — no description, no topics, no homepage
+
+**Context:** Platform had 18 topics and a full description. Lens had 14 topics and a description (stale). Rampart had null description, empty topics array, and null homepage. GitHub search uses topics for discoverability — Rampart was invisible to anyone searching for "AI security," "MCP proxy," "secret detection," etc.
+
+**Lesson:** Every public repo should have: a description (160 chars max for GitHub API), 10-20 relevant topics, and a homepage URL. This is a 30-second fix via `gh api` that directly impacts discoverability. Set topics that users would actually search for.
