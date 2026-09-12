@@ -1,7 +1,7 @@
-# Session Handoff — 2026-09-11 (Updated with IP Review + Email Security + Full Scorecard)
+# Session Handoff — 2026-09-12 (Updated with Patent + Copyright Filings)
 
-**Date:** 2026-09-11
-**Session focus:** VC/investor assessment, IP protection moat (5 provisional patents + model weight license + trade secrets + copyright), CI/CD hardening across 4 repos, GitHub org hygiene, email security (DMARC + MTA-STS), third-party license attribution, VDP, export classification, comprehensive IP review with 6 corrections fixed
+**Date:** 2026-09-12
+**Session focus:** Patent filing (5 provisionals FILED), copyright registration (2 FILED), Guardian article analysis + LinkedIn post, SBIR letter revision, IP document quality assurance (6 corrections), website patent pending notices, E&O insurance research
 
 ---
 
@@ -91,15 +91,15 @@
 | 14 | Enable Discussions | ✅ Rampart + Lens | Free |
 | 15 | DMARC upgrade | ✅ p=reject + rua | Free |
 | 16 | MTA-STS | ✅ DNS + cert + policy | Free |
-| 17 | File 5 provisional patents | 📋 Specs ready, reviewed, corrected | $325 |
-| 18 | Copyright registration | 📋 Guide ready, reviewed, corrected | $65-195 |
+| 17 | File 5 provisional patents | ✅ **FILED** 09/12/2026 — 64/153,573–64/153,577 | $325 ✅ |
+| 18 | Copyright registration | ✅ **FILED** 09/12/2026 — 1-15259252537 (Enterprise), 1-15259254081 (Open-Source Collection) | $130 ✅ |
 | 19 | E&O insurance | 📋 Before first customer | $500-2K/yr |
 | 20 | Formal VDP | ✅ VDP.md created | Free |
 | 21 | Tax compliance | ✅ Stripe Tax activated | Free |
 | 22 | Export control self-classification | ✅ EXPORT-CLASSIFICATION.md | Free |
 | 23 | International trademarks | 📋 When selling internationally | $1K+/region |
 
-**12 of 13 done. 3 remaining = $325 patents + $65-195 copyright + $500-2K insurance**
+**13 of 13 actionable items done. 2 remaining awareness items = $500-2K insurance + $1K+ international trademarks**
 
 ## Key Verified Business Facts
 - Stripe: LIVE (pk_live key, real product IDs)
@@ -116,25 +116,40 @@
 - MX: `mail.protonmail.ch` (pri 10), `mailsec.protonmail.ch` (pri 20) ✅
 
 ## IP Document Locations (all in plans/, gitignored except copyright guide)
-- `plans/provisional-patent-01-trust-framework.md` — 10 claims, ECDSA P-256 identity + capability contracts + trust scoring + attestations
-- `plans/provisional-patent-02-multi-protocol-interception.md` — 10 claims, MCP/A2A/ACP/ANP interception
-- `plans/provisional-patent-03-compliance-mapping.md` — 10 claims, 30 frameworks, real-time control mapping
-- `plans/provisional-patent-04-three-layer-detection.md` — 10 claims, regex→ATLAS/compliance→CharCNN-BiLSTM
-- `plans/provisional-patent-05-response-scanning.md` — 10 claims, AI output scanning (PII/secrets/hallucinations/toxicity)
-- `plans/provisional-patent-filing-guide.md` — $325 total, file at patentscenter.uspto.gov
-- `plans/copyright-registration-guide.md` — $130 total ($65 open-source + $65 enterprise)
+
+### Provisional Patents — FILED September 12, 2026
+- `plans/provisional-patent-01-trust-framework.pdf` — **App. No. 64/153,573** — 10 claims, ECDSA P-256 identity + capability contracts + trust scoring + attestations
+- `plans/provisional-patent-02-multi-protocol-interception.pdf` — **App. No. 64/153,574** — 10 claims, MCP/A2A/ACP/ANP interception
+- `plans/provisional-patent-03-compliance-mapping.pdf` — **App. No. 64/153,575** — 10 claims, 30 frameworks, real-time control mapping
+- `plans/provisional-patent-04-three-layer-detection.pdf` — **App. No. 64/153,576** — 10 claims, regex→ATLAS/compliance→CharCNN-BiLSTM
+- `plans/provisional-patent-05-response-scanning.pdf` — **App. No. 64/153,577** — 10 claims, AI output scanning (PII/secrets/hallucinations/toxicity)
+- **Priority date:** September 12, 2026 (all 5)
+- **Non-provisional deadline:** September 12, 2027
+- **Total cost:** $325 ($65 each, micro entity)
+- **Inventor:** Joshua Colvin
+
+### Copyright Registrations — FILED September 12, 2026
+- Registration 1 (Open-Source Collection): **App. No. 1-15259254081** — Platform + Rampart + Lens, published collection
+- Registration 2 (Enterprise): **App. No. 1-15259252537** — Enterprise, unpublished
+- **Total cost:** $130 ($65 each)
+- **Author:** Joshua Colvin (individual) | **Claimant:** AegisGate Security, LLC
+- **Deposit PDFs:** `plans/copyright-deposit-1-opensource.pdf` (97 pages), `plans/copyright-deposit-2-enterprise.pdf` (10 pages)
+
+### Filing Guides (gitignored)
+- `plans/provisional-patent-filing-guide.md` — filing instructions
+- `plans/copyright-registration-guide.md` — filing instructions (all fields filled in)
 
 ## LinkedIn Posting Cadence
-- Posts made: 3 (General AegisGate, Lens, Rampart)
-- Drafted but not yet posted: Trust Framework post (recommended after filing provisionals)
+- Posts made: 5 (General AegisGate, Lens, Rampart, AI agents/data exfiltration, Trust Framework/Guardian article)
 - Cadence: Every other day
-- Next post: Platform post OR AI data leak headline post (Sept 11, 2026)
+- Next post: Platform deep-dive OR design partner recruitment post
+- Trust Framework post published 09/12/2026 with "patent pending" — references Guardian article about OpenAI agents going rogue
 
 ## Next Session Priorities
-1. **File 5 provisional patents** ($325) — specs reviewed and corrected, ready to file at patentscenter.uspto.gov
-2. **File copyright registrations** ($130) — guide ready, file at eco.copyright.gov before Dec 9, 2026
-3. **Post Trust Framework LinkedIn post** — after filing provisionals (can say "patent pending")
-4. **Post design partner LinkedIn post** — after Trust Framework post
-5. **E&O insurance** — before first paying customer
-6. **Continue LinkedIn cadence** — Platform post, then headline-driven posts
-7. **Consider Show HN alternatives** — dev.to, Reddit r/cybersecurity, Product Hunt
+1. **E&O insurance** — get quotes before first paying customer ($500-2K/yr)
+2. **Continue LinkedIn cadence** — Platform deep-dive post, then design partner recruitment post
+3. **Non-provisional patent conversion** — by September 12, 2027, decide which provisionals to convert ($300 each + attorney fees)
+4. **Design partner outreach** — send emails from plans/DESIGN-PARTNER-OUTREACH-2026-09-09.md
+5. **SBIR applications** — submit DHS and/or NSF concept papers with letters of support
+6. **Show HN / community launch** — consider dev.to, Reddit r/cybersecurity, Product Hunt
+7. **International trademarks** — when selling internationally ($1K+/region)

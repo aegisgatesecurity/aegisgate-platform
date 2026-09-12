@@ -36,7 +36,7 @@ Copyright registration protects the **original expression** of your source code 
 
 ### Step 1: Confirm Authorship and Ownership
 
-**Author:** [YOUR FULL LEGAL NAME] — the individual who wrote the code.
+**Author:** Joshua Colvin — the individual who wrote the code.
 
 **Claimant:** AegisGate Security, LLC — the entity that owns the copyright.
 
@@ -50,6 +50,8 @@ Copyright registration protects the **original expression** of your source code 
 > - **If code was written before LLC formation:** Author = [Your Name], transferred to AegisGate Security, LLC by assignment
 
 > **For this guide, we assume the LLC existed and you wrote code as its owner.** If that's not the case, adjust the "Author" field accordingly.
+>
+> **AegisGate-specific note:** The LLC was formed before code writing began (per the commercial launch checklist). However, the copyright notices vary across repos: Platform uses "Copyright (c) 2025-2026 AegisGate Security" (no LLC suffix), Enterprise uses "Copyright 2024-2026 AegisGate Security, LLC", and Rampart/Lens use "AegisGate Rampart" / "AegisGate Lens" branding without formal copyright lines. For registration purposes, use "Joshua Colvin" as the individual author and "AegisGate Security, LLC" as the claimant. This avoids any work-for-hire complications and is the simplest, most defensible approach for a solo founder.
 
 ### Step 2: Confirm Publication Status
 
@@ -90,9 +92,9 @@ For published software, the deposit is:
 Platform (first 25 pages — pick highest-LOC original files):
 - `cmd/aegisgate-platform/main.go` — entry point
 - `pkg/scanner/scanner.go` — L1 regex scanner
-- `pkg/ml/threat_detector.go` — L3 ML detection
-- `pkg/scanner/patterns.go` — detection patterns
-- `pkg/proxy/proxy.go` — reverse proxy core
+- `pkg/ml/detector.go` — L3 ML detection core
+- `pkg/scanner/patterns.go` — detection patterns (216 regex)
+- `pkg/proxy/mitm.go` — MITM reverse proxy core (in `upstream/aegisgate/pkg/proxy/`)
 
 Platform (last 25 pages):
 - `pkg/billing/stripe.go` — billing integration
@@ -101,9 +103,11 @@ Platform (last 25 pages):
 - `pkg/compliance/compliance.go` — compliance framework
 
 Rampart (include key files):
-- `internal/proxy/mitm.go` — MITM proxy
-- `internal/detectors/detector.go` — detection engine
+- `cmd/rampart/main.go` — entry point
+- `pkg/proxy/proxy.go` — HTTPS MITM proxy
+- `internal/detectors/engine.go` — detection engine
 - `internal/detectors/normalize.go` — keyWalkReverse normalization
+- `internal/ml/detector.go` — ML detection
 
 Lens (include key files):
 - `src/detectors/ml/threat-detector-js.js` — JS ML inference
@@ -124,9 +128,9 @@ For unpublished software, the deposit is:
 
 **Recommended files for the Enterprise deposit:**
 - `pkg/trust/identity/identity.go` — ECDSA identity (representative, may redact key generation details)
-- `pkg/trust/scoring/scoring.go` — trust scoring algorithm (may redact scoring formula)
-- `pkg/siem/siem.go` — SIEM integration framework
-- `pkg/compliance/premium/soc2.go` — SOC 2 compliance module
+- `pkg/trust/score/calculator.go` — trust scoring algorithm (may redact scoring formula)
+- `pkg/siem/manager.go` — SIEM integration framework
+- `pkg/compliance/premium/soc2/soc2.go` — SOC 2 compliance module
 
 ### Step 4: Identify Excluded Material
 
@@ -190,14 +194,17 @@ You must identify material that is NOT part of your copyright claim:
 
 | Field | Value |
 |-------|-------|
-| Author Name | **AegisGate Security, LLC** (if work made for hire) |
-| Year of Birth | (leave blank for entities) |
+| Author Name | **Joshua Colvin** (individual author) |
+| Year of Birth | (leave blank — not required) |
 | Citizenship/Domicile | **United States** |
 | Nature of Authorship | **Computer program; original source code in Go and JavaScript** |
 
-> If you are claiming as an individual author (not work made for hire):
-> - Author Name: [YOUR FULL LEGAL NAME]
-> - Citizenship: United States
+> **Recommended approach:** Use Joshua Colvin as the individual author and AegisGate Security, LLC as the claimant. The transfer statement should read: "The author transferred all rights to AegisGate Security, LLC by assignment." This is the simplest and most defensible approach for a solo founder.
+>
+> If you prefer to claim as work made for hire:
+> - Author Name: AegisGate Security, LLC
+> - Year of Birth: (leave blank for entities)
+> - Citizenship/Domicile: United States
 > - Nature of Authorship: "Computer program; original source code in Go and JavaScript"
 
 #### Section 5: Claimant
@@ -205,9 +212,8 @@ You must identify material that is NOT part of your copyright claim:
 | Field | Value |
 |-------|-------|
 | Claimant Name | **AegisGate Security, LLC** |
-| Address | [YOUR LLC BUSINESS ADDRESS] |
-| Transfer Statement | "The author created the works as works made for hire for AegisGate Security, LLC" (if LLC is author) |
-| Transfer Statement | "The author transferred all rights to AegisGate Security, LLC by assignment" (if individual author) |
+| Address | 319 N. Kerch St, Brooklyn, WI 53521 |
+| Transfer Statement | "The author transferred all rights to AegisGate Security, LLC by assignment" |
 
 #### Section 6: Limitation of Claim
 
@@ -222,18 +228,18 @@ This is CRITICAL — it excludes material you don't own from your copyright clai
 
 | Field | Value |
 |-------|-------|
-| Corresponding Author | [YOUR NAME] |
+| Corresponding Author | Joshua Colvin |
 | Corresponding Email | security@aegisgatesecurity.io |
-| Phone | [YOUR PHONE NUMBER] |
-| Address | [YOUR LLC BUSINESS ADDRESS] |
+| Phone | 608-217-2302 |
+| Address | 319 N. Kerch St, Brooklyn, WI 53521 |
 
 #### Section 8: Certification
 
 | Field | Value |
 |-------|-------|
-| Certifying Person | [YOUR FULL LEGAL NAME] |
+| Certifying Person | Joshua Colvin |
 | Capacity | **Authorized Agent** (or **Owner** if you are the LLC owner) |
-| Date | [DATE OF FILING] |
+| Date | September 12, 2026 |
 
 #### Section 9: Deposit
 
@@ -278,7 +284,7 @@ Pay $65 filing fee via credit card / ACH.
 
 | Field | Value |
 |-------|-------|
-| Author Name | **AegisGate Security, LLC** (work made for hire) |
+| Author Name | **Joshua Colvin** (individual author) |
 | Nature of Authorship | **Computer program; original source code in Go including trust framework, SIEM integration, and compliance modules** |
 
 #### Section 5: Claimant
@@ -286,7 +292,7 @@ Pay $65 filing fee via credit card / ACH.
 | Field | Value |
 |-------|-------|
 | Claimant Name | **AegisGate Security, LLC** |
-| Transfer Statement | "The author created the works as works made for hire for AegisGate Security, LLC" |
+| Transfer Statement | "The author transferred all rights to AegisGate Security, LLC by assignment" |
 
 #### Section 6: Limitation of Claim
 
@@ -366,8 +372,8 @@ For the open-source repos, the **3-month statutory damage window** has already p
 
 ## Checklist Before Filing
 
-- [ ] Confirm whether LLC existed before code was written (affects "Author" field)
-- [ ] Confirm your LLC's legal business address
+- [x] Confirm whether LLC existed before code was written — LLC formed first; using individual author (Joshua Colvin) with transfer to LLC for simplicity
+- [x] Confirm your LLC's legal business address — 319 N. Kerch St, Brooklyn, WI 53521
 - [ ] Prepare Deposit PDF 1 (open-source: first 25 + last 25 pages, no redactions)
 - [ ] Prepare Deposit PDF 2 (Enterprise: first 25 + last 25 pages, trade secrets redacted)
 - [ ] File Registration 1 at https://eco.copyright.gov

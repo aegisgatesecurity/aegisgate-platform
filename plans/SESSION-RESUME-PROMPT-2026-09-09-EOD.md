@@ -1,4 +1,4 @@
-# Session Resume Prompt — 2026-09-11 EOD
+# Session Resume Prompt — 2026-09-12 EOD
 
 Copy/paste this prompt to begin a new session with full context.
 
@@ -29,15 +29,25 @@ I am the sole founder and developer of AegisGate Security, LLC. We build AI secu
 - LinkedIn: linkedin.com/company/aegisgate-security — posting every other day (3 posts so far: general, Lens, Rampart)
 - GitHub: aegisgatesecurity org, 8 public repos, 1 follower, 0 stars
 
-### IP Protection Moat (6 layers)
-1. **5 provisional patents** — specs drafted, reviewed, corrected (6 factual errors fixed). NOT YET FILED. $325 total. Located in `plans/provisional-patent-*.md` (gitignored)
+### IP Protection Moat (6 layers) — ALL FILED
+1. **5 provisional patents** — ✅ FILED September 12, 2026. Inventor: Joshua Colvin. Micro entity. $325 total.
+   - 64/153,573: Cryptographic identity, capability contracts, trust scoring (Trust Framework)
+   - 64/153,574: Multi-protocol AI message interception (MCP/A2A/ACP/ANP)
+   - 64/153,575: Compliance framework mapping (30 frameworks)
+   - 64/153,576: Multi-layered detection pipeline (regex→ATLAS→CharCNN-BiLSTM)
+   - 64/153,577: AI response scanning (PII/secrets/hallucinations/toxicity)
+   - Non-provisional deadline: September 12, 2027
+   - PDFs in `plans/provisional-patent-*.pdf` (gitignored)
 2. **Model weight license** — WEIGHTS-LICENSE.md deployed to all 3 open-source repos. Non-commercial free, commercial requires license
 3. **Trade secrets** — Enterprise has TRADE-SECRET-NOTICE.md, confidentiality headers on 101 Go files, SPDX: AegisGate-Enterprise
-4. **Copyright** — Registration guide drafted and reviewed. NOT YET FILED. $130 total. Located in `plans/copyright-registration-guide.md`
+4. **Copyright** — ✅ FILED September 12, 2026. $130 total.
+   - 1-15259254081: Open-source collection (Platform + Rampart + Lens), published
+   - 1-15259252537: Enterprise, unpublished
+   - Author: Joshua Colvin | Claimant: AegisGate Security, LLC
 5. **Trademark** — AegisGate filed with USPTO
 6. **Commercial license** — Enterprise LICENSE file
 
-### Session Work Completed (2026-09-09 to 2026-09-11)
+### Session Work Completed (2026-09-09 to 2026-09-12)
 - VC/investor assessment (11-part, 416 lines)
 - 5 provisional patent specs + filing guide (reviewed, 6 corrections applied)
 - Copyright registration guide (reviewed, 3 corrections applied)
@@ -51,15 +61,20 @@ I am the sole founder and developer of AegisGate Security, LLC. We build AI secu
 - .dockerignore: added to Rampart + Enterprise
 - Gotchas 101-106 documented
 - 12 of 13 "what have we missed" items done
+- **09/12: Filed 5 provisional patents** ($325) — App. Nos. 64/153,573–64/153,577, inventor Joshua Colvin, micro entity
+- **09/12: Filed 2 copyright registrations** ($130) — App. Nos. 1-15259254081 (open-source), 1-15259252537 (enterprise)
+- **09/12: Published Trust Framework LinkedIn post** — references Guardian article about OpenAI agents going rogue, says "patent pending"
+- **09/12: Updated SBIR letter** — added patent application numbers and copyright registration references
+- **09/12: Website updated** — "Patent Pending" notices added to product pages
+- **09/12: Updated session docs** — handoff, resume prompt, gotchas all current
 
 ### Remaining Tasks (in priority order)
-1. **File 5 provisional patents** ($325) — go to patentscenter.uspto.gov, fill in [INVENTOR NAME], upload specs as PDF
-2. **File copyright registrations** ($130) — go to eco.copyright.gov, follow guide in plans/copyright-registration-guide.md
-3. **Post Trust Framework LinkedIn post** — after filing provisionals, can say "patent pending"
-4. **Post design partner recruitment LinkedIn post**
-5. **Continue LinkedIn cadence** (every other day)
-6. **E&O insurance** ($500-2K/yr) — before first paying customer
-7. **International trademarks** — when selling internationally
+1. **E&O insurance** ($500-2K/yr) — get quotes before first paying customer
+2. **Continue LinkedIn cadence** — Platform deep-dive post, then design partner recruitment post
+3. **Non-provisional patent conversion** — by September 12, 2027, decide which of the 5 provisionals to convert to utility patents ($300 each + attorney fees)
+4. **Design partner outreach** — send emails from plans/DESIGN-PARTNER-OUTREACH-2026-09-09.md
+5. **SBIR applications** — submit DHS and/or NSF concept papers with updated letters of support (patent numbers now included)
+6. **International trademarks** — when selling internationally ($1K+/region)
 
 ### Key Files
 - `plans/SESSION-HANDOFF-2026-09-09-V11B-PARITY-DOCS-COMPLETE.md` — full session handoff

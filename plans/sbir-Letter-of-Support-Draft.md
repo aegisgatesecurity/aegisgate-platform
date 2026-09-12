@@ -33,6 +33,8 @@ As a [title/role] at [organization], I work with [small businesses / cybersecuri
 
 AegisGate Security has demonstrated technical credibility through:
 
+- Five provisional patent applications filed with the USPTO (September 2026) covering the core technology stack: cryptographic AI agent identity and capability contracts (App. No. 64/153,573), multi-protocol AI message interception (App. No. 64/153,574), compliance framework mapping (App. No. 64/153,575), multi-layered detection pipeline (App. No. 64/153,576), and AI response scanning (App. No. 64/153,577)
+- Two copyright registrations filed with the U.S. Copyright Office (September 2026) covering the open-source software collection and the proprietary enterprise module
 - Three shipping, open-source products (Apache 2.0) — a server-side gateway platform, a local proxy for AI coding tools, and a browser extension — totaling over 9,800 automated tests across the codebase
 - A three-layer detection pipeline combining 216 regex patterns (PII, secrets, XSS, OT protocols, harmful content across 24+ international jurisdictions), 30+ compliance framework mappings (HIPAA, PCI-DSS, NIST CSF, NIST 800-171, SOC 2, ISO 27001, ISO 42001, EU AI Act, FedRAMP, FIPS 140-2/3, and others), and a character-level neural network (CharCNN-BiLSTM, 1.6M parameters) for adversarial content classification
 - Validated detection efficacy of 99.8/100 across 2,600 adversarial test cases (52 MITRE ATLAS payloads × 50 evasion transforms) with a calibrated 0% false positive rate on benign corpus
@@ -85,3 +87,4 @@ Sincerely,
 | Security practices | "Self-assessed following GitHub's five-step" | Expanded: CodeQL, gitleaks, Trivy, gosec, govulncheck, Dependabot, SBOM, GPG-signed releases, VDP |
 | Products | Implied single product | "Three shipping, open-source products" (Platform, Rampart, Lens) |
 | Export control | Not mentioned | "U.S. export control self-classification (EAR99)" |
+| IP portfolio | Not mentioned | 5 provisional patents filed (64/153,573–64/153,577) + 2 copyright registrations filed |
