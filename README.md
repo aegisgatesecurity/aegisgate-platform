@@ -6,12 +6,13 @@
 
 *A self-hosted gateway that scans every request and response between your team and any AI service — catching data leaks, prompt injections, and compliance violations before they happen.*
 
-[![Version](https://img.shields.io/badge/Version-v4.4.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.4.0)
+[![Version](https://img.shields.io/badge/Version-v4.4.1-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.4.1)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-8000+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-81.5%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-10,700+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Coverage](https://img.shields.io/badge/Coverage-83.1%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-120_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
+[![Patent Pending](https://img.shields.io/badge/IP-Patent_Pending-8B5CF6?logo=uspto)](https://github.com/aegisgatesecurity/aegisgate-platform#ip-notice)
 [![SIEM](https://img.shields.io/badge/SIEM-Pro+_only-9333ea?logo=splunk)](#tier-gated-features)
 [![ML Detection](https://img.shields.io/badge/ML_Detection-Pro+_only-22c55e?logo=tensorflow)](#tier-gated-features)
 [![Lens](https://img.shields.io/badge/Lens-Browser_Extension-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
@@ -21,6 +22,8 @@
 
 [🌐 Website](https://aegisgatesecurity.io) · [🚀 Live Demo](https://demo.aegisgatesecurity.io/) · [📊 Pricing](https://aegisgatesecurity.io/pricing/) · [📚 Docs](https://aegisgatesecurity.io/docs/) · [🔒 Security](SECURITY.md) · [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
+[![GitHub stars](https://img.shields.io/github/stars/aegisgatesecurity/aegisgate-platform?style=social)](https://github.com/aegisgatesecurity/aegisgate-platform) — **If AegisGate helps you secure your AI interactions, please consider ⭐ starring this repo. It helps others discover it.**
+
 </div>
 
 > **We follow [GitHub's recommended security practices](https://securitylab.github.com/resources/five-easy-steps-to-secure-your-open-source-project/) for open source projects.** CodeQL scanning · Secret scanning with push protection · Dependabot alerts & security updates · Protected branches · RFC 9116 security policy · [Report a vulnerability →](./SECURITY.md)
@@ -29,7 +32,7 @@
 
 > **🧩 Using AI without enterprise protections?** [AegisGate Lens](https://github.com/aegisgatesecurity/aegisgate-lens) is our free browser extension that brings detection patterns to everyday AI conversations — for the 95% of users who don't have a security gateway. [Install Lens →](https://github.com/aegisgatesecurity/aegisgate-lens)
 
-> **⚡ Building AI apps with Copilot, Cursor, or Claude Code?** [AegisGate Rampart](https://github.com/aegisgatesecurity/aegisgate-rampart) is our free local proxy that intercepts AI API calls in real-time — for developers who need protection before production. [Download Rampart →](https://github.com/aegisgatesecurity/aegisgate-rampart/releases/tag/v0.6.2)
+> **⚡ Building AI apps with Copilot, Cursor, or Claude Code?** [AegisGate Rampart](https://github.com/aegisgatesecurity/aegisgate-rampart) is our free local proxy that intercepts AI API calls in real-time — for developers who need protection before production. [Download Rampart →](https://github.com/aegisgatesecurity/aegisgate-rampart/releases/tag/v0.7.1)
 
 ---
 
@@ -54,12 +57,12 @@ Every AI interaction is an attack surface. Prompt injections leak secrets. MCP s
 
 AegisGate sits in front of all of it — one binary, zero dependencies, fail-closed by default — so you don't have to worry about what your team is sending to AI services.
 
-- **Zero-cost proxy.** -2.8ms p99 overhead (faster than direct). Blocked requests resolve in 7.2ms p50. 15K+ RPS with 0% errors at 2,000 VUs.
+- **Zero-cost proxy.** -2.8ms p99 overhead (faster than direct). Blocked requests resolve in 7.2ms p50. 23,578 RPS with 0% errors at 5,000 VUs.
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, Response, and Trust — no patchwork of point products.
-- **176 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time. The same engine powers Lens and Rampart.
-- **31 compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
+- **216 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time. The same engine powers Lens and Rampart.
+- **30+ compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
 
 ## Security Posture
 
@@ -194,12 +197,12 @@ flowchart LR
 | MCP | `pkg/mcpserver/` | Model Context Protocol guardrails |
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
-| Response | `pkg/response/detectors/` | 176-pattern detection (secrets, XSS, PII, compliance) |
+| Response | `pkg/response/detectors/` | 216-pattern detection (secrets, XSS, PII, compliance) |
 | Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
 
 ## Detection Engine
 
-The `pkg/response/detectors/` package provides 176 regex patterns — the same detection engine that powers Lens and Rampart:
+The `pkg/response/detectors/` package provides 216 regex patterns — the same detection engine that powers Lens and Rampart:
 
 | Category | Patterns | What it catches |
 |----------|----------|-----------------|
@@ -214,7 +217,7 @@ The `pkg/response/detectors/` package provides 176 regex patterns — the same d
 ```go
 import "github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
 
-// Scan all 176 patterns
+// Scan all 216 patterns
 matches := detectors.DetectAll(text)
 
 // Scan by category
@@ -235,7 +238,7 @@ AegisGate is **open-core**: the community edition is Apache 2.0 open source, and
 
 | Edition | License | Features |
 |---------|---------|----------|
-| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 176 detection patterns, 4 community compliance frameworks, in-memory + file persistence |
+| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 216 detection patterns, 4 community compliance frameworks, in-memory + file persistence |
 | **Developer** ($79/mo) | Proprietary | + 6 regulatory frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR), PostgreSQL persistence, SSO |
 | **Professional** ($499/mo) | Proprietary | + 16 frameworks (4 security foundation + 12 industry) (EU AI Act, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, SIEM (11 platforms), ML threat detection, federated IOC, PostgreSQL |
 | **Enterprise** (custom) | Proprietary | + 5 regulated frameworks (FedRAMP, CMMC L2, NIST 800-171, HITRUST, TISAX), HSM, FIPS mode, air-gapped, K8s clustering, custom ML, 24×7 support |
@@ -246,10 +249,10 @@ Enterprise features are gated via `//go:build enterprise` build tags and tier ch
 
 | Tier | Price | Rate Limits (Proxy/MCP) | Users / Agents | Compliance | Key Features |
 |------|-------|------------------------|---------------|------------|--------------|
-| **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 176 detection patterns, in-memory persistence |
+| **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 216 detection patterns, in-memory persistence |
 | **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
 | **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
-| **Enterprise** | Custom | Unlimited | Unlimited | 31 frameworks | + FedRAMP, HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
+| **Enterprise** | Custom | Unlimited | Unlimited | 30+ frameworks | + FedRAMP, HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
 
 ### Vertical Bundles
 
@@ -268,7 +271,7 @@ See [Pricing →](https://aegisgatesecurity.io/pricing/) for full details.
 <details>
 <summary><strong>📋 Compliance Coverage (31 Frameworks, 2,043 Controls)</strong></summary>
 
-2,043 total controls across 31 frameworks. **1,457 automated** (71.3%), 586 manual (28.7% — organizational, legal, physical, HR, governance, and policy controls that require human processes).
+2,043 total controls across 30+ frameworks. **1,457 automated** (71.3%), 586 manual (28.7% — organizational, legal, physical, HR, governance, and policy controls that require human processes).
 
 Automation methods: Config State Verification, Audit Trail Evidence, Detection Engine State, Cross-Framework Mapping.
 
@@ -345,11 +348,11 @@ above the licensed tier.
 | MCP guardrails | ✅ Native | ❌ Plugin or missing |
 | A2A protocol security | ✅ Native | ❌ Not supported |
 | ACP enforcement | ✅ Native | ❌ Not supported |
-| Response scanning (176 patterns) | ✅ Built-in | ⚠️ Limited or external |
+| Response scanning (216 patterns) | ✅ Built-in | ⚠️ Limited or external |
 | Cryptographic attestation | ✅ Native | ❌ Not available |
 | Self-hosted, zero dependencies | ✅ Single binary | ❌ Requires external services |
 | Fail-closed by default | ✅ | ⚠️ Often fail-open |
-| 31 compliance frameworks | ✅ | ⚠️ 3–5 typical |
+| 30+ compliance frameworks | ✅ | ⚠️ 3–5 typical |
 | PostgreSQL + file persistence | ✅ | ⚠️ Cloud-locked |
 | HA clustering | ✅ Enterprise+ | ⚠️ Enterprise add-on |
 | Open-core (Apache 2.0 community) | ✅ | ❌ Proprietary |
@@ -386,7 +389,7 @@ pkg/
 ├── promptcache/            # Prompt caching
 ├── rbac/                   # Role-based access control
 ├── response/               # 6-pillar response guard
-├── response/detectors/     # 176-pattern detection engine
+├── response/detectors/     # 216-pattern detection engine
 ├── scanner/                # Vulnerability scanner
 ├── security/               # Security utilities
 ├── signature_verification/ # Package signature verification
@@ -425,6 +428,22 @@ The trained ML model weights are separately licensed under the [AegisGate Model 
 ## Security
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
+---
+
+<div align="center">
+
+## IP Notice
+
+AegisGate's core technologies are patent pending with the USPTO:
+
+- **US Provisional App. No. 64/153,573** — Cryptographic Identity, Capability Contracts, and Trust Scoring for AI Agent Communication Security
+- **US Provisional App. No. 64/153,574** — Intercepting and Scanning AI Protocol Messages for Data Exfiltration
+- **US Provisional App. No. 64/153,575** — Mapping AI Security Detections to Compliance Framework Controls
+- **US Provisional App. No. 64/153,576** — Multi-Layered Detection Pipeline for AI Prompt Content
+- **US Provisional App. No. 64/153,577** — Scanning AI Model Responses for Sensitive Data, Hallucinations, and Harmful Content
+
+Source code is © 2025-2026 AegisGate Security, LLC. Licensed under Apache 2.0. Trained ML model weights are separately licensed under the [AegisGate Model Weight License](WEIGHTS-LICENSE.md).
 
 ---
 
