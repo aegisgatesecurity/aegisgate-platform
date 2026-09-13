@@ -185,3 +185,33 @@ Plus 35 L2 compliance + 16 ML evasion resistance + 38 response scanning patterns
 **Context:** Patent specs were previously `git rm --cached` and gitignored. During a fix commit, `git add -f` was used to stage the corrected specs, which re-added them to git tracking. The commit pushed them to the public repo. Had to `git rm --cached` again and push the removal.
 
 **Lesson:** `git add -f` overrides .gitignore and adds files to tracking. When committing fixes to gitignored files that should NOT be tracked, stage ONLY the non-gitignored files. For gitignored files that need local-only edits, never use `git add -f` — make edits locally and verify with `git ls-files` that they're not tracked.
+
+### 109. CWS listing rejected for keyword spam (Yellow Argon)
+
+**Context:** Chrome Web Store rejected the Lens v0.4.1 listing update because the description listed brand names: "AWS, Azure, Google Cloud, GitHub, GitLab, Slack, Stripe, Twilio, SendGrid, Mailgun." CWS classifies this as keyword stuffing ("Yellow Argon" policy violation). Fixed by replacing the brand list with: "access keys for major cloud infrastructure, source-control, payment, messaging, and email-delivery platforms."
+
+**Lesson:** CWS (and other extension stores) strictly enforce keyword spam policies. Never list competitor or integration brand names in listing descriptions — use generic category descriptions instead. Even legitimate integration references can trigger automated rejection. Review CWS developer policies before submitting listing updates.
+
+### 110. Google Analytics measurement ID was for the wrong property
+
+**Context:** Attempted to add Google Analytics to aegisgatesecurity.io using measurement ID G-LP7XKYPPBM. This ID was actually for the Chrome Web Store developer property (chrome.google.com/webstore), not for aegisgatesecurity.io. Adding the gtag snippet with this ID to the website would have sent website traffic data to the CWS property. Had to remove the GA code, revert CSP changes, and switch to Cloudflare Web Analytics instead.
+
+**Lesson:** Always verify which GA property/stream a measurement ID belongs to before deploying. GA properties are per-domain — a measurement ID for one property cannot track a different domain. When using multiple Google properties (CWS, website, etc.), label them clearly in the GA dashboard. For a privacy-focused security product, Cloudflare Web Analytics (cookieless, no GDPR consent needed) is a better fit than GA.
+
+### 111. Dependabot didn't run `go mod tidy` after bumping prometheus/client_golang
+
+**Context:** Dependabot merged PR #2 on Enterprise repo bumping `prometheus/client_golang` from 1.18.0 to 1.24.1. This pulled in `prometheus/common v0.70.1` as a transitive dependency, which imports `github.com/munnerz/goautoneg`. Dependabot updated `go.mod` but failed to add the checksum for this transitive dependency to `go.sum`. CI failed with "missing go.sum entry for module providing package github.com/munnerz/goautoneg." Fixed by running `go mod tidy` locally and pushing the updated go.sum.
+
+**Lesson:** Dependabot updates `go.mod` directives but sometimes doesn't fully synchronize all transitive `go.sum` entries. After merging any Dependabot Go dependency PR, always verify CI passes. If it fails with "missing go.sum entry," run `go mod tidy` and push the fix. This is a known Dependabot limitation with Go modules.
+
+### 112. GitHub Sponsors/donations undermine enterprise positioning at pre-revenue stage
+
+**Context:** Considered enabling GitHub Sponsors for the 3 open-source repos. Analysis showed that for a pre-revenue company with 0 GitHub stars and enterprise pricing ($499-$2,000+/mo), a "Donate" button signals desperation and creates price ambiguity. Users may think "why pay $499/mo when I can donate $5?" It also shifts focus from "enterprise security platform" to "open-source side project." GitHub Sponsors should be enabled only after 500+ stars AND validated paid revenue.
+
+**Lesson:** Monetization signaling matters. For enterprise-targeted products, donation buttons and "buy me a coffee" patterns undermine premium positioning. Enable donation/sponsor mechanisms only after establishing market validation (stars, users, revenue). The open-source community edition serves as the funnel to paid tiers — it doesn't need its own monetization.
+
+### 113. Platform CodeQL alerts are Trivy container CVEs, not Go code vulnerabilities
+
+**Context:** 25 CodeQL alerts on the Platform repo were initially alarming. Investigation showed all 25 were OS package vulnerabilities in the `debian:bookworm-slim` Docker base image (glibc, zlib, wget, util-linux), NOT vulnerabilities in the Go code itself. These are tracked by Trivy container scanning and flagged by GitHub's CodeQL integration. They're accepted risk waiting for upstream Debian patches.
+
+**Lesson:** When CodeQL alerts fire, check whether they're code vulnerabilities or container image OS package CVEs. Container CVEs in the base image (Debian, Alpine, etc.) are upstream issues — you can only wait for patches or switch base images. Don't conflate container OS CVEs with code vulnerabilities when assessing security posture. Go statically compiled binaries are largely immune to glibc-level CVEs.
