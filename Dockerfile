@@ -21,7 +21,7 @@
 # Hardening:
 #   - Production stage runs as non-root via USER appuser.
 #   - HEALTHCHECK directive is set to hit the dashboard's /health endpoint.
-#   - Only ca-certificates and wget added (minimal attack surface).
+#   - Only ca-certificates and wget added (minimal attack surface, wget needed for HEALTHCHECK).
 # =========================================================================
 
 # Builder stage: Go 1.27.0 on Debian bookworm with ONNX Runtime v1.29.0.
@@ -59,8 +59,8 @@ RUN go build \
 # Production stage: minimal Debian bookworm-slim with ONNX Runtime.
 FROM debian:bookworm-slim
 
-# Install runtime dependencies: ca-certificates (TLS), wget (healthcheck), libstdc++ (for ONNX).
-# apt-get upgrade pulls in security patches for base image packages (e.g. libpcre2 CVE fixes).
+# Install runtime dependencies: ca-certificates (TLS), wget (healthcheck only), libstdc++ (for ONNX).
+# apt-get upgrade pulls in security patches for base image packages.
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
         ca-certificates wget libstdc++6 && \
     rm -rf /var/lib/apt/lists/* && \
@@ -103,7 +103,7 @@ EXPOSE 8080 8081 8443
 
 # Health check hits the dashboard health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -q --spider http://localhost:8081/health || exit 1
+    CMD wget -q --spider http://localhost:8081/healthz || exit 1
 
 # Single writable volume for audit logs, certificates, etc.
 VOLUME ["/data"]
