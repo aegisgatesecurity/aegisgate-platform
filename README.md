@@ -449,7 +449,7 @@ Source code is © 2025-2026 AegisGate Security, LLC. Licensed under Apache 2.0. 
 
 <div align="center">
 
-[🌐 AegisGate Security](https://aegisgatesecurity.io) · [💬 Discord](https://discord.gg/cvJ4QcY9B) · [✉️ support@aegisgatesecurity.io](mailto:support@aegisgatesecurity.io) · [🐦 X/Twitter](https://x.com/aegisgate) · [🐘 Mastodon](https://mastodon.social/@aegisgate)
+[🌐 AegisGate Security](https://aegisgatesecurity.io) · [💬 Discord](https://discord.gg/cvJ4QcY9B) · [✉️ support@aegisgatesecurity.io](mailto:support@aegisgatesecurity.io) · [🐦 X/Twitter](https://x.com/aegisgate) · [📱 Telegram](https://t.me/+imsWrOY4QpcxYzIx) · [🐘 Mastodon](https://mastodon.social/@aegisgate)
 
 Made with 🖤 by AegisGate Security developers to secure the AI attack surface.
 
