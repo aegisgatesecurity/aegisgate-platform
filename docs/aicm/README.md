@@ -2,6 +2,10 @@
 
 This directory contains a control-by-control mapping of the Cloud Security Alliance's [AI Controls Matrix (AICM) v1.1.1](https://cloudsecurityalliance.org/artifacts/ai-controls-matrix-v1-1) to the AegisGate Security Platform.
 
+## CSA STAR Registry
+
+AegisGate Security is listed in the [CSA STAR Registry](https://cloudsecurityalliance.org/star/registry/aegisgate-security) at Level 1. Our [AI-CAIQ self-assessment](https://cloudsecurityalliance.org/star/registry/aegisgate-security) (311 questions, 184 Yes / 127 NA) is publicly available.
+
 ## Files
 
 | File | Description |
