@@ -2,9 +2,12 @@
 
 This directory contains a control-by-control mapping of the Cloud Security Alliance's [AI Controls Matrix (AICM) v1.1.1](https://cloudsecurityalliance.org/artifacts/ai-controls-matrix-v1-1) to the AegisGate Security Platform.
 
-## CSA STAR Registry
+## CSA Listings
 
-AegisGate Security is listed in the [CSA STAR Registry](https://cloudsecurityalliance.org/star/registry/aegisgate-security) at Level 1. Our [AI-CAIQ self-assessment](https://cloudsecurityalliance.org/star/registry/aegisgate-security) (311 questions, 184 Yes / 127 NA) is publicly available.
+AegisGate Security is listed in two CSA programs:
+
+- **[CSA STAR Registry](https://cloudsecurityalliance.org/star/registry/aegisgate-security)** (Level 1) — Our [AI-CAIQ self-assessment](https://cloudsecurityalliance.org/star/registry/aegisgate-security) (311 questions, 184 Yes / 127 NA) is publicly available.
+- **[CSA Startup Showcase](https://cloudsecurityalliance.org/csa-startup-showcase/registry/?modal=aegisgate-security-llc)** — Featured as an AI security solution for Agentic AI Identity and Access Management.
 
 ## Files
 
@@ -28,7 +31,7 @@ AegisGate Security is listed in the [CSA STAR Registry](https://cloudsecurityall
 
 ## Methodology
 
-All 247 AICM v1.1.1 controls were extracted from the official CSA Excel spreadsheet and evaluated against AegisGate's Go source code (401K LOC, 60+ packages). Every evidence string references specific package paths (e.g., `pkg/response/pii_scanner.go`) — the mapping is reproducible against the source code in this repository.
+All 247 AICM v1.1.1 controls were extracted from the official CSA Excel spreadsheet and evaluated against AegisGate's Go source code (400K LOC, 60+ packages). Every evidence string references specific package paths (e.g., `pkg/response/pii_scanner.go`) — the mapping is reproducible against the source code in this repository.
 
 ## License
 
