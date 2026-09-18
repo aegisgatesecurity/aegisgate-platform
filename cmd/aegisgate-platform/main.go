@@ -1421,6 +1421,14 @@ func main() {
 		mcpGuardrails = mcpserver.NewGuardrailMiddleware(mcpserver.DefaultGuardrailConfig(platformTier), "main-server")
 		mcpserver.RegisterBuiltInTools(embeddedServer.Handler(), platformTier)
 
+		// Wire guardrails (request-side) and response guard (response-side)
+		// into the MCP handler. Without this, the MCP server runs without
+		// session limits, tool authorization, rate limiting, STDIO validation,
+		// and tool response scanning for PII/secrets/XSS/toxicity.
+		mcpResponseGuard := mcpserver.NewMCPResponseGuard()
+		embeddedServer.SetGuardrails(mcpGuardrails, mcpResponseGuard, mcpserver.DefaultEmbeddedResponseConfig())
+		log.Printf("MCP guardrails wired: request guards + response scanning enabled")
+
 		if err := embeddedServer.Start(); err != nil {
 			log.Fatalf("Failed to start embedded MCP server: %v", err)
 		}
