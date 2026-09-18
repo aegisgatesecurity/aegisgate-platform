@@ -53,12 +53,13 @@ func DefaultConfig() *Config {
 
 // EmbeddedServer wraps AegisGuard's MCP server for in-process use
 type EmbeddedServer struct {
-	config  *Config
-	server  *mcp.Server
-	handler *mcp.RequestHandler
-	logger  *slog.Logger
-	ctx     context.Context
-	cancel  context.CancelFunc
+	config      *Config
+	server      *mcp.Server
+	handler     *mcp.RequestHandler
+	handlerFunc mcp.HandlerFunc // set by SetGuardrails, used by Start()
+	logger      *slog.Logger
+	ctx         context.Context
+	cancel      context.CancelFunc
 }
 
 // NewEmbeddedServer creates a new embedded MCP server
@@ -107,6 +108,7 @@ func (es *EmbeddedServer) Start() error {
 	serverCfg := &mcp.ServerConfig{
 		Address:      es.config.Address,
 		Handler:      es.handler,
+		HandleFunc:   es.handlerFunc, // nil unless SetGuardrails was called
 		ReadTimeout:  es.config.ReadTimeout,
 		WriteTimeout: es.config.WriteTimeout,
 		IdleTimeout:  es.config.IdleTimeout,

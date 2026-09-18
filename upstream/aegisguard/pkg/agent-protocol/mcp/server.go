@@ -14,10 +14,18 @@ import (
 )
 
 // Server represents an MCP server instance
+// HandlerFunc is the signature for a custom MCP request handler.
+// If set on the Server (via ServerConfig.HandleFunc or Server.SetHandleFunc),
+// it replaces the default s.handler.HandleRequest call in handleMCPProtocol.
+// This allows the platform to wrap the handler with guardrails, response
+// scanning, and other middleware without modifying the core handler logic.
+type HandlerFunc func(conn *Connection, req *JSONRPCRequest) *JSONRPCResponse
+
 type Server struct {
 	config      *ServerConfig
 	listener    net.Listener
 	handler     *RequestHandler
+	handleFunc  HandlerFunc // if non-nil, overrides handler.HandleRequest
 	connections map[string]*Connection
 	connMu      sync.RWMutex
 	ctx         context.Context
@@ -29,6 +37,7 @@ type Server struct {
 type ServerConfig struct {
 	Address      string
 	Handler      *RequestHandler
+	HandleFunc   HandlerFunc // optional: overrides Handler.HandleRequest
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
@@ -64,6 +73,7 @@ func NewServer(cfg *ServerConfig) *Server {
 	return &Server{
 		config:      cfg,
 		handler:     cfg.Handler,
+		handleFunc:  cfg.HandleFunc,
 		connections: make(map[string]*Connection),
 		ctx:         ctx,
 		cancel:      cancel,
@@ -91,6 +101,13 @@ func (s *Server) StartContext(ctx context.Context) error {
 	go s.acceptLoop()
 
 	return nil
+}
+
+// SetHandleFunc sets a custom handler function that overrides the default
+// handler.HandleRequest. This allows wrapping the handler with middleware
+// (guardrails, response scanning, etc.) after the server is created.
+func (s *Server) SetHandleFunc(fn HandlerFunc) {
+	s.handleFunc = fn
 }
 
 // Stop gracefully shuts down the server
@@ -207,7 +224,12 @@ func (s *Server) handleMCPProtocol(conn *Connection) {
 		conn.LastSeen = time.Now()
 		conn.mu.Unlock()
 
-		resp := s.handler.HandleRequest(conn, &req)
+		var resp *JSONRPCResponse
+		if s.handleFunc != nil {
+			resp = s.handleFunc(conn, &req)
+		} else {
+			resp = s.handler.HandleRequest(conn, &req)
+		}
 
 		conn.Conn.SetWriteDeadline(time.Now().Add(s.config.WriteTimeout))
 
