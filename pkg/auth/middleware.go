@@ -201,24 +201,40 @@ type Middleware struct {
 
 	// anomalyDetector tracks API key usage patterns (v4.5.0 P4)
 	anomalyDetector *AnomalyDetector
+
+	// v4.5.0 GAP-DIST2-5: Distillation attack detection
+	proxyDetect        *ProxyServiceDetector        // GAP-DIST2
+	distillationDetect *DistillationPatternDetector // GAP-DIST3
+	clusterDetect      *AccountClusterDetector      // GAP-DIST4
+	stolenKeyDetect    *StolenKeyDetector           // GAP-DIST5
 }
 
 // NewMiddleware creates auth middleware with SSO support
 func NewMiddleware(cfg *Config) *Middleware {
+	proxyDetect := NewProxyServiceDetector()
 	return &Middleware{
-		config:          cfg,
-		logger:          slog.Default().With("component", "auth-middleware"),
-		anomalyDetector: NewAnomalyDetector(),
+		config:             cfg,
+		logger:             slog.Default().With("component", "auth-middleware"),
+		anomalyDetector:    NewAnomalyDetector(),
+		proxyDetect:        proxyDetect,
+		distillationDetect: NewDistillationPatternDetector(),
+		clusterDetect:      NewAccountClusterDetector(),
+		stolenKeyDetect:    NewStolenKeyDetector(proxyDetect),
 	}
 }
 
 // NewMiddlewareWithSSO creates auth middleware with SSO support
 func NewMiddlewareWithSSO(cfg *Config, ssoManager *sso.Manager) *Middleware {
+	proxyDetect := NewProxyServiceDetector()
 	return &Middleware{
-		config:          cfg,
-		ssoManager:      ssoManager,
-		logger:          slog.Default().With("component", "auth-middleware"),
-		anomalyDetector: NewAnomalyDetector(),
+		config:             cfg,
+		ssoManager:         ssoManager,
+		logger:             slog.Default().With("component", "auth-middleware"),
+		anomalyDetector:    NewAnomalyDetector(),
+		proxyDetect:        proxyDetect,
+		distillationDetect: NewDistillationPatternDetector(),
+		clusterDetect:      NewAccountClusterDetector(),
+		stolenKeyDetect:    NewStolenKeyDetector(proxyDetect),
 	}
 }
 
@@ -227,6 +243,20 @@ func NewMiddlewareWithSSO(cfg *Config, ssoManager *sso.Manager) *Middleware {
 func (m *Middleware) AnomalyDetector() *AnomalyDetector {
 	return m.anomalyDetector
 }
+
+// ProxyServiceDetector returns the GAP-DIST2 detector.
+func (m *Middleware) ProxyServiceDetector() *ProxyServiceDetector { return m.proxyDetect }
+
+// DistillationPatternDetector returns the GAP-DIST3 detector.
+func (m *Middleware) DistillationPatternDetector() *DistillationPatternDetector {
+	return m.distillationDetect
+}
+
+// AccountClusterDetector returns the GAP-DIST4 detector.
+func (m *Middleware) AccountClusterDetector() *AccountClusterDetector { return m.clusterDetect }
+
+// StolenKeyDetector returns the GAP-DIST5 detector.
+func (m *Middleware) StolenKeyDetector() *StolenKeyDetector { return m.stolenKeyDetect }
 
 // SSOManager returns the SSO manager instance
 func (m *Middleware) SSOManager() *sso.Manager {
@@ -489,17 +519,19 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 
 // unauthorized returns 401 response
 // recordAndCheckAnomaly records API key usage and checks for anomalous patterns.
-// v4.5.0 P4: Called after successful API token authentication.
+// v4.5.0 P4 + GAP-DIST2-5: Called after successful API token authentication.
 func (m *Middleware) recordAndCheckAnomaly(r *http.Request, keyID string) {
 	if m.anomalyDetector == nil {
 		return
 	}
 
+	sourceIP := r.RemoteAddr
+
 	rec := KeyUsageRecord{
 		KeyID:     keyID,
 		Timestamp: time.Now(),
 		ToolName:  r.URL.Path, // use endpoint path as the "tool" proxy
-		SourceIP:  r.RemoteAddr,
+		SourceIP:  sourceIP,
 		Endpoint:  r.URL.Path,
 	}
 
@@ -509,11 +541,64 @@ func (m *Middleware) recordAndCheckAnomaly(r *http.Request, keyID string) {
 	if result.IsAnomalous {
 		m.logger.Warn("API key anomaly detected",
 			"key_id", keyID,
-			"source_ip", r.RemoteAddr,
+			"source_ip", sourceIP,
 			"endpoint", r.URL.Path,
 			"anomaly_types", anomalyTypeNames(result.Types),
 			"details", strings.Join(result.Details, "; "),
 		)
+	}
+
+	// GAP-DIST2: Proxy service detection
+	if m.proxyDetect != nil {
+		proxyResult := m.proxyDetect.CheckIP(sourceIP)
+		if proxyResult.IsProxy {
+			m.logger.Warn("API key used from datacenter/proxy IP",
+				"key_id", keyID,
+				"source_ip", sourceIP,
+				"confidence", proxyResult.Confidence,
+				"reason", proxyResult.Reason,
+			)
+			m.proxyDetect.RecordDatacenterIP(sourceIP)
+		}
+	}
+
+	// GAP-DIST3: Distillation pattern detection
+	if m.distillationDetect != nil {
+		// Extract prompt from request body for pattern analysis
+		// (best-effort — body may already be consumed)
+		m.distillationDetect.RecordPrompt(keyID, r.URL.Path, sourceIP)
+		distillResult := m.distillationDetect.AnalyzeKey(keyID)
+		if distillResult.IsDistillation {
+			m.logger.Warn("Distillation attack pattern detected",
+				"key_id", keyID,
+				"confidence", distillResult.Confidence,
+				"prompt_count", distillResult.PromptCount,
+				"similarity_score", distillResult.SimilarityScore,
+				"cot_ratio", distillResult.CoTRequestRatio,
+				"unique_ips", distillResult.UniqueIPCount,
+				"flags", strings.Join(distillResult.Flags, ", "),
+			)
+		}
+	}
+
+	// GAP-DIST4: Account clustering (record activity for batch analysis)
+	if m.clusterDetect != nil {
+		m.clusterDetect.RecordKeyActivity(keyID, r.URL.Path, sourceIP, r.URL.Path)
+	}
+
+	// GAP-DIST5: Stolen key detection
+	if m.stolenKeyDetect != nil {
+		m.stolenKeyDetect.RecordKeyUse(keyID, sourceIP)
+		stolenResult := m.stolenKeyDetect.CheckKey(keyID, sourceIP)
+		if stolenResult.IsLikelyStolen {
+			m.logger.Warn("Likely stolen API key detected",
+				"key_id", keyID,
+				"source_ip", sourceIP,
+				"confidence", stolenResult.Confidence,
+				"flags", strings.Join(stolenResult.Flags, ", "),
+				"details", strings.Join(stolenResult.Details, "; "),
+			)
+		}
 	}
 }
 
