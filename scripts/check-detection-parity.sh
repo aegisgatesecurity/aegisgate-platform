@@ -93,17 +93,63 @@ if [[ -z "$RAMPART_DIR" || ! -f "$RAMPART_DIR/internal/detectors/compliance.go" 
 fi
 
 # Extract pattern names from each product
-# Only compare the SHARED detection layer: compliance patterns (OWASP, ATLAS, EU AI Act, etc.)
-# Product-specific patterns are intentionally different:
-#   - Platform has CategoryPrompt patterns (PromptInjection*) — Lens uses ML for this
-#   - Platform has harmful_* patterns — safety category, Platform-only
-#   - Platform has PII/secrets/OT patterns — not applicable to Lens/Rampart
-# The shared layer is: owasp_llm*, atlas_*, eu_ai_act*, anp_*, cu_*, toxicity_*,
-# nist_csf*, iso_27001*, ccpa*, lgpd*, pipeda*, popia*, mitre_atlas*
+# Compare the SHARED detection layer across all three products.
+#
+# Naming conventions differ:
+#   - Platform uses CamelCase for prompt injection patterns: PromptInjectionSSTI
+#   - Lens/Rampart use snake_case: prompt_injection_ssti
+#   - Compliance patterns (owasp_llm*, atlas_*, etc.) are already snake_case everywhere
+#
+# We normalize CamelCase PromptInjection names to snake_case so they can be
+# compared across products. Platform-only patterns (PII, secrets, OT, harmful_*,
+# xss_*, credit cards, connection strings) are excluded — they don't belong in
+# Lens (browser extension) or Rampart (API gateway).
+#
+# Shared layer: owasp_llm*, atlas_*, eu_ai_act*, anp_*, cu_*, toxicity_*,
+# nist_csf*, iso_27001*, ccpa*, lgpd*, pipeda*, popia*, mitre_atlas*,
+# PromptInjection* (normalized to prompt_injection_*)
 
-# Platform: extract names, filter to shared compliance patterns only
+# Normalize CamelCase to snake_case (e.g., PromptInjectionSSTI → prompt_injection_ssti)
+normalize_name() {
+    echo "$1" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' | tr '[:upper:]' '[:lower:]'
+}
+
+# Platform: extract all names, filter to shared patterns, normalize CamelCase
 ALL_PLATFORM=$(grep -oP '\{Name:\s*"\K[^"]+' "$PLATFORM_DIR/pkg/scanner/patterns.go")
-PLATFORM_PATTERNS=$(echo "$ALL_PLATFORM" | grep -iE '^(owasp_llm|atlas_|eu_ai_act|anp_|cu_|toxicity|nist_csf|iso_27001|ccpa|lgpd|pipeda|popia|mitre_atlas)' | sort -u)
+
+# Platform-only PromptInjection patterns (Lens uses ML/heuristics for these, not regex)
+# Only prompt_injection_ssti and prompt_injection_eval_atob are shared across all products.
+# If a new PromptInjection pattern is shared, it will appear in Lens/Rampart and pass parity.
+# If it's Platform-only, add it here to suppress the false alarm.
+# MAINTAINERS: When adding a new shared PromptInjection pattern, ensure it's added
+# to Lens compliance.js and Rampart compliance.go. If it's Platform-only, add it here.
+PLATFORM_ONLY_PATTERNS="prompt_injection_base64 prompt_injection_code_execution prompt_injection_command prompt_injection_delimiter prompt_injection_leakage prompt_injection_prefix prompt_injection_role_play prompt_injection_unicode"
+
+is_platform_only() {
+    local name="$1"
+    for p in $PLATFORM_ONLY_PATTERNS; do
+        if [[ "$name" == "$p" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Build normalized platform pattern list
+PLATFORM_PATTERNS=""
+while IFS= read -r name; do
+    # Include compliance patterns (already snake_case)
+    if echo "$name" | grep -qE '^(owasp_llm|atlas_|eu_ai_act|anp_|cu_|toxicity|nist_csf|iso_27001|ccpa|lgpd|pipeda|popia|mitre_atlas)'; then
+        PLATFORM_PATTERNS="$PLATFORM_PATTERNS$name"$'\n'
+    elif echo "$name" | grep -qE '^PromptInjection'; then
+        normalized=$(normalize_name "$name")
+        # Skip Platform-only patterns
+        if ! is_platform_only "$normalized"; then
+            PLATFORM_PATTERNS="$PLATFORM_PATTERNS$normalized"$'\n'
+        fi
+    fi
+done <<< "$ALL_PLATFORM"
+PLATFORM_PATTERNS=$(echo "$PLATFORM_PATTERNS" | grep -v '^$' | sort -u)
 
 # Lens: all pattern keys from compliance.js (all are shared compliance patterns)
 LENS_PATTERNS=$(grep -oP '^\s{4}\K[a-z_][a-z0-9_]*(?=\s*:\s*\{)' "$LENS_DIR/src/detectors/regex/compliance.js" | sort -u)
