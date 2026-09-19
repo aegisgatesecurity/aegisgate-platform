@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: Apache-2.0
+# AegisGate Platform — Triple Detection Parity CI Workflow
+#
+# Checks out all three repos (Platform, Lens, Rampart) and compares
+# scanner pattern names. Fails if Platform has patterns not in Lens or Rampart.
+#
+# Trigger: On PRs and pushes that touch scanner pattern files.
+
+name: Detection Parity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pkg/scanner/patterns.go'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pkg/scanner/patterns.go'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * 1'  # Weekly — same as detection gate
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parity-check:
+    name: Triple Parity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout Platform
+        uses: actions/checkout@v6
+        with:
+          path: aegisgate-platform
+
+      - name: Checkout Lens
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-lens
+          path: aegisgate-lens
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Rampart
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-rampart
+          path: aegisgate-rampart
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run parity check
+        run: |
+          cd aegisgate-platform
+          PLATFORM_DIR=$GITHUB_WORKSPACE/aegisgate-platform \
+          LENS_DIR=$GITHUB_WORKSPACE/aegisgate-lens \
+          RAMPART_DIR=$GITHUB_WORKSPACE/aegisgate-rampart \
+          bash scripts/check-detection-parity.sh
+
+      - name: Create issue on parity failure (weekly audit)
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Detection Parity Drift Detected',
+              body: 'The weekly parity check detected that detection patterns have drifted between Platform, Lens, and Rampart.\n\nPlease sync the missing patterns to the affected product(s).\n\nTriggered by: scheduled audit (Monday 09:00 UTC)',
+              labels: ['parity-drift', 'priority:high']
+            });

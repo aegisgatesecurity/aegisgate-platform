@@ -1,0 +1,149 @@
+# SPDX-License-Identifier: Apache-2.0
+# AegisGate Platform — Detection Gate CI Workflow
+#
+# Runs the k6 adversarial detection test suite against the platform.
+# Fails if detection_rate < 100% or false_positive_rate > 0%.
+#
+# This is a release gate — no PR touching scanner/detector code can merge
+# without passing this test.
+#
+# Trigger: On PRs and pushes to main that touch detection-related files.
+# Manual trigger available.
+
+name: Detection Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pkg/scanner/**'
+      - 'pkg/response/**'
+      - 'pkg/auth/**'
+      - 'pkg/toolauth/**'
+      - 'tests/adversarial/**'
+      - 'tests/load/k6/detection-gate.js'
+      - 'tests/echo-server/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pkg/scanner/**'
+      - 'pkg/response/**'
+      - 'pkg/auth/**'
+      - 'pkg/toolauth/**'
+      - 'tests/adversarial/**'
+      - 'tests/load/k6/detection-gate.js'
+      - 'tests/echo-server/**'
+  workflow_dispatch:
+  schedule:
+    # Weekly detection audit — every Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+
+env:
+  GO_VERSION: '1.26.6'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  detection-gate:
+    name: Detection Rate Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build platform binary
+        run: |
+          go build -o aegisgate-platform ./cmd/aegisgate-platform
+
+      - name: Build echo server
+        run: |
+          go build -o echo-server ./tests/echo-server/
+
+      - name: Install k6
+        run: |
+          curl -sL https://github.com/grafana/k6/releases/download/v0.57.0/k6-v0.57.0-linux-amd64.tar.gz | tar -xz
+          sudo mv k6-v0.57.0-linux-amd64/k6 /usr/local/bin/k6
+          k6 version
+
+      - name: Start echo server
+        run: |
+          ./echo-server -port 11435 &
+          echo $! > /tmp/echo-server.pid
+          sleep 2
+          curl -s http://localhost:11435/health | grep -q healthy
+
+      - name: Start platform (staging mode)
+        env:
+          AEGISGATE_DATA_DIR: /tmp/aegisgate-data
+          API_AUTH_TOKEN: ci-test-token
+        run: |
+          mkdir -p /tmp/aegisgate-data
+          ./aegisgate-platform \
+            --proxy-port=8080 \
+            --dashboard-port=8443 \
+            --mcp-port=8081 \
+            --embedded-mcp \
+            --mode=staging \
+            --target=http://localhost:11435 \
+            > /tmp/platform.log 2>&1 &
+          echo $! > /tmp/platform.pid
+          # Wait for health endpoint
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "Platform is healthy"
+              break
+            fi
+            sleep 1
+          done
+          curl -s http://localhost:8080/health
+
+      - name: Run detection gate test
+        env:
+          PROXY_URL: 'http://localhost:8080/v1/chat/completions'
+          AUTH_TOKEN: 'ci-test-token'
+        run: |
+          k6 run --quiet tests/load/k6/detection-gate.js 2>&1 | tee /tmp/detection-results.txt
+          # Check if the test passed by looking for PASS markers
+          if grep -q "❌ FAIL" /tmp/detection-results.txt; then
+            echo "DETECTION GATE FAILED"
+            exit 1
+          fi
+          echo "DETECTION GATE PASSED"
+
+      - name: Weekly audit — create issue on regression
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('/tmp/detection-results.txt', 'utf8');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Weekly Detection Audit: Regression Detected',
+              body: `The weekly detection audit has detected a regression.\n\n\`\`\`\n${results}\n\`\`\`\n\nPlease investigate and fix before the next release.\n\nTriggered by: scheduled audit (Monday 09:00 UTC)`,
+              labels: ['detection-regression', 'priority:high']
+            });
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kill $(cat /tmp/platform.pid 2>/dev/null) 2>/dev/null || true
+          kill $(cat /tmp/echo-server.pid 2>/dev/null) 2>/dev/null || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detection-gate-results
+          path: /tmp/detection-results.txt
+          retention-days: 30
