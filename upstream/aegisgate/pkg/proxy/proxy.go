@@ -37,6 +37,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/scanner"
 
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
+	platformscanner "github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 )
 
 // Options contains proxy configuration
@@ -129,6 +130,9 @@ type Proxy struct {
 	// Multi-turn Attack Detection - P3.6
 	multiTurn *MultiTurnMiddleware
 
+	// v4.5.0 P1: Scanner-level session tracking for L1/L2 finding correlation
+	sessionTracker *platformscanner.SessionTracker
+
 	// Combined ML Detector for multi-turn signal extraction
 	combinedDetector *ml.CombinedDetector
 
@@ -215,6 +219,9 @@ func New(opts *Options) *Proxy {
 
 	// Initialize multi-turn attack detection
 	p.multiTurn = NewMultiTurnMiddleware(DefaultMultiTurnMiddlewareConfig())
+
+	// v4.5.0 P1: Scanner-level session tracker for L1/L2 finding correlation
+	p.sessionTracker = platformscanner.NewSessionTracker()
 
 	// Initialize combined ML detector for multi-turn signal extraction
 	p.combinedDetector = ml.NewCombinedDetector(70)
@@ -648,6 +655,40 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			// Uses results from scanner, ATLAS, and ML detection to build per-turn signals.
 			if p.multiTurn != nil {
 				conversationID := ExtractConversationID(req)
+
+				// v4.5.0 P1: Record L1/L2 findings in the scanner-level session tracker
+				if p.sessionTracker != nil && (len(requestFindings) > 0 || len(atlasFindings) > 0) {
+					severity := "info"
+					technique := ""
+					if len(atlasFindings) > 0 {
+						severity = atlasFindings[0].Severity.String()
+						technique = atlasFindings[0].Technique
+					} else if len(requestFindings) > 0 && requestFindings[0].Pattern != nil {
+						severity = requestFindings[0].Pattern.Severity.String()
+					}
+					p.sessionTracker.RecordFinding(conversationID, platformscanner.TurnFinding{
+						Severity:  severity,
+						Technique: technique,
+						PatternID: func() string {
+							if len(requestFindings) > 0 && requestFindings[0].Pattern != nil {
+								return requestFindings[0].Pattern.Name
+							}
+							return ""
+						}(),
+					})
+
+					// Analyze for multi-turn scanner patterns
+					stResult := p.sessionTracker.AnalyzeSession(conversationID)
+					if stResult.RiskLevel >= platformscanner.MultiTurnRiskHigh {
+						slog.Warn("Scanner-level multi-turn escalation detected",
+							"conversation_id", conversationID,
+							"turn_count", stResult.TurnCount,
+							"escalation_score", stResult.EscalationScore,
+							"repetition_score", stResult.RepetitionScore,
+							"risk_level", stResult.RiskLevel,
+						)
+					}
+				}
 
 				// Run combined ML detection for per-category scores
 				var mlResult *ml.CombinedResult
