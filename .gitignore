@@ -263,6 +263,9 @@ __pycache__/
 *.bak
 # Evasion suite generated reports (large JSON artifacts, >1MB each)
 upstream/aegisgate/pkg/proxy/testing/reports/adversarial/*.json
+# Allow tracking the latest evasion suite report for analysis
+# (force-add with: git add -f <file>)
+!upstream/aegisgate/pkg/proxy/testing/reports/adversarial/evasion-suite-phase0a-2026-09-19.json
 # Allow training scripts (open source)
 !training/*.py
 !training/*.md
