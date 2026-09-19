@@ -123,6 +123,10 @@ type GuardrailMiddleware struct {
 	toolAuth *toolauth.Matrix
 	serverID string // Server identifier for MCP registration logging
 
+	// Chain analysis (v4.5.0 P2): tracks tool call sequences per session
+	// to detect escalation, exfiltration, and recon-to-exploit chains.
+	chainAnalyzer *toolauth.ChainAnalyzer
+
 	// Session tracking
 	mu             sync.RWMutex
 	sessions       map[string]*sessionState // sessionID -> state
@@ -153,15 +157,19 @@ func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMidd
 	toolAuth := toolauth.NewMatrix()
 	toolAuth.RegisterDefaultPolicies()
 
+	// Initialize chain analyzer (v4.5.0 P2)
+	chainAnalyzer := toolauth.NewChainAnalyzer()
+
 	if !cfg.Enabled {
 		return &GuardrailMiddleware{
-			config:       cfg,
-			logger:       slog.Default().With("component", "mcp-guardrails"),
-			serverID:     serverID,
-			sessions:     make(map[string]*sessionState),
-			rateLimits:   make(map[string]*mcpClientBucket),
-			rateLimitRPM: rpm,
-			toolAuth:     toolAuth,
+			config:        cfg,
+			logger:        slog.Default().With("component", "mcp-guardrails"),
+			serverID:      serverID,
+			sessions:      make(map[string]*sessionState),
+			rateLimits:    make(map[string]*mcpClientBucket),
+			rateLimitRPM:  rpm,
+			toolAuth:      toolAuth,
+			chainAnalyzer: chainAnalyzer,
 		}
 	}
 
@@ -173,6 +181,7 @@ func NewGuardrailMiddleware(cfg GuardrailConfig, serverID string) *GuardrailMidd
 		rateLimits:     make(map[string]*mcpClientBucket),
 		rateLimitRPM:   rpm,
 		toolAuth:       toolAuth,
+		chainAnalyzer:  chainAnalyzer,
 		stdioValidator: NewSTDIOValidator(DefaultSTDIOValidationConfig()),
 	}
 }
@@ -397,11 +406,66 @@ func (g *GuardrailMiddleware) OnToolCallWithAuth(sessionID, agentID, toolName st
 		return fmt.Errorf("tool %s blocked: %s", toolName, decision.Reason)
 	}
 
+	// v4.5.0 P2: Record this call in the chain analyzer and evaluate
+	// the session's tool call sequence for chained attack patterns.
+	if g.chainAnalyzer != nil {
+		riskLevel := g.toolAuth.GetRiskLevel(toolName)
+		g.chainAnalyzer.RecordCall(sessionID, toolauth.ChainEntry{
+			ToolName:  toolName,
+			RiskLevel: riskLevel,
+			Decision:  "allow",
+			DataType:  g.inferDataType(toolName),
+			Target:    agentID,
+		})
+
+		chainResult := g.chainAnalyzer.AnalyzeChain(sessionID)
+		if chainResult.EscalationChain || chainResult.ExfilChain {
+			atomic.AddInt64(&g.blockedRequests, 1)
+			tool := metrics.SanitizeToolName(toolName, nil)
+			metrics.RecordMCPRequest(tool, metrics.ResultFailure)
+
+			if g.config.LogViolations {
+				g.logger.Warn("Tool call blocked by chain analysis",
+					"session_id", sessionID,
+					"tool", toolName,
+					"flags", chainResult.Flags,
+					"overall_risk", chainResult.OverallRisk.String(),
+					"call_count", chainResult.CallCount)
+			}
+			return fmt.Errorf("tool %s blocked: chained attack pattern detected (%s)",
+				toolName, strings.Join(chainResult.Flags, ", "))
+		}
+
+		if chainResult.ReconChain {
+			g.logger.Warn("Recon-to-exploit chain detected (monitoring)",
+				"session_id", sessionID,
+				"tool", toolName,
+				"call_count", chainResult.CallCount)
+		}
+	}
+
 	// Tool is authorized, record success metric
 	tool := metrics.SanitizeToolName(toolName, nil)
 	metrics.RecordMCPRequest(tool, metrics.ResultSuccess)
 
 	return nil
+}
+
+// inferDataType classifies a tool call's data type for chain analysis.
+// It uses the tool name to infer whether the call is a read, write,
+// execute, or network operation. This is a heuristic — operators can
+// override by extending the chain analyzer with custom classifications.
+func (g *GuardrailMiddleware) inferDataType(toolName string) string {
+	switch {
+	case strings.Contains(toolName, "write") || strings.Contains(toolName, "create") || strings.Contains(toolName, "update") || strings.Contains(toolName, "delete") || strings.Contains(toolName, "file_write"):
+		return "write"
+	case strings.Contains(toolName, "exec") || strings.Contains(toolName, "run") || strings.Contains(toolName, "shell") || strings.Contains(toolName, "process") || strings.Contains(toolName, "command"):
+		return "execute"
+	case strings.Contains(toolName, "http") || strings.Contains(toolName, "fetch") || strings.Contains(toolName, "request") || strings.Contains(toolName, "web_search") || strings.Contains(toolName, "url"):
+		return "network"
+	default:
+		return "read"
+	}
 }
 
 // OnToolCallWithContext wraps a tool call with a timeout context.
