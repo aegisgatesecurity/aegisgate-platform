@@ -13,6 +13,7 @@ package response
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,6 +45,9 @@ type ResponseGuard struct {
 	// hallucinationDetector detects hallucinations
 	hallucinationDetector *HallucinationDetector
 
+	// exfilDetector analyzes responses for data exfiltration patterns (v4.5.0 P5)
+	exfilDetector *ExfilDetector
+
 	// mu protects concurrent access
 	mu sync.RWMutex
 
@@ -73,6 +77,7 @@ func NewResponseGuardWithConfig(config *ResponseGuardConfig) *ResponseGuard {
 		toxicityFilter: NewToxicityFilter(),
 		clientUsage:    make(map[string]*TokenUsage),
 		enabled:        true,
+		exfilDetector:  NewExfilDetector(),
 	}
 
 	// Initialize hallucination detector if enabled
@@ -277,6 +282,36 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 				Message:  hallResult.Explanation,
 				Location: "response_content",
 			})
+		}
+	}
+
+	// 8. Exfiltration analysis (v4.5.0 P5)
+	if rg.exfilDetector != nil {
+		sensitiveCount := len(result.DetectedPII) + len(result.DetectedSecrets)
+		exfilInput := ExfilInput{
+			ResponseBody:    response,
+			SensitiveCount:  sensitiveCount,
+			HasIngressAlert: false, // wired when proxy passes ingress context
+		}
+		if scanCtx != nil {
+			exfilInput.SessionID = scanCtx.ClientID
+		}
+		exfilResult := rg.exfilDetector.Analyze(exfilInput)
+		if exfilResult.IsExfil {
+			result.ExfilResult = &exfilResult
+			result.Threats = append(result.Threats, Threat{
+				Type:     "exfiltration",
+				Severity: 5,
+				Message:  "Data exfiltration pattern detected: " + strings.Join(exfilResult.Flags, ", "),
+				Location: "response_body",
+			})
+			if rg.config.StrictMode {
+				result.Allowed = false
+				if result.BlockReason == "" {
+					result.BlockReason = "Data exfiltration detected (score: " +
+						fmt.Sprintf("%.2f", exfilResult.Score) + ")"
+				}
+			}
 		}
 	}
 

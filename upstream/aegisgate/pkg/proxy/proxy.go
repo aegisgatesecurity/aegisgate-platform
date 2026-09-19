@@ -998,12 +998,14 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 			// Runs after the regex scanner + ATLAS as an additional layer.
 			rgBlocked := false
 			var rgBlockReason string
+			var rgResult *responseguard.ResponseScanResult
+			var rgErr error
 			if p.responseGuard != nil && p.responseGuard.IsEnabled() {
 				scanCtx := responseguard.NewScanContext(
 					resp.Request.RemoteAddr,
 					resp.Request.Header.Get("X-Request-ID"),
 				)
-				rgResult, rgErr := p.responseGuard.ScanWithContext(context.Background(), scanContent, scanCtx)
+				rgResult, rgErr = p.responseGuard.ScanWithContext(context.Background(), scanContent, scanCtx)
 				if rgErr != nil {
 					slog.Warn("ResponseGuard scan failed",
 						"path", resp.Request.URL.Path,
@@ -1064,6 +1066,26 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 				resp.StatusCode = http.StatusForbidden
 				resp.Body = io.NopCloser(strings.NewReader(
 					fmt.Sprintf(`{"error":"Response blocked: %s"}`, rgBlockReason)))
+				resp.ContentLength = -1
+				resp.Header.Set("Content-Type", "application/json")
+				return nil
+			}
+			// v4.5.0 P5: Check for data exfiltration patterns even if
+			// ResponseGuard didn't block (non-strict mode). Exfil with
+			// a high score should still be blocked at the proxy layer.
+			if rgResult != nil && rgResult.ExfilResult != nil && rgResult.ExfilResult.IsExfil {
+				exfilR := rgResult.ExfilResult
+				slog.Error("Response blocked: data exfiltration pattern detected",
+					"path", resp.Request.URL.Path,
+					"exfil_score", exfilR.Score,
+					"flags", strings.Join(exfilR.Flags, ", "),
+					"finding_count", exfilR.FindingCount,
+				)
+				metrics.RecordSecurityBlock(metrics.ReasonSecrets)
+				resp.StatusCode = http.StatusForbidden
+				resp.Body = io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"error":"Response blocked: data exfiltration detected (score: %.2f, flags: %s)"}`,
+						exfilR.Score, strings.Join(exfilR.Flags, ", "))))
 				resp.ContentLength = -1
 				resp.Header.Set("Content-Type", "application/json")
 				return nil

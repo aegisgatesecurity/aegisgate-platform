@@ -119,6 +119,10 @@ type ResponseScanResult struct {
 
 	// ComplianceReports maps framework names to compliance status
 	ComplianceReports map[string]ComplianceResult
+
+	// ExfilResult is the data exfiltration analysis result (v4.5.0 P5)
+	// nil if exfil detection is disabled or not triggered
+	ExfilResult *ExfilResult
 }
 
 // Threat represents a detected threat in a response
