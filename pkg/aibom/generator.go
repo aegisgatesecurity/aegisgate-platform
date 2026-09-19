@@ -183,7 +183,11 @@ func buildComponents(a *AIBOM) []Component {
 	components = append(components, buildACPComponent(a.ACP))
 	components = append(components, buildANPComponent(a.ANP))
 	if a.Model.IsRegistered {
-		components = append(components, buildModelComponent(a.Model))
+		if a.Provenance != nil {
+			components = append(components, buildModelComponentWithProvenance(a.Model, a.Provenance))
+		} else {
+			components = append(components, buildModelComponent(a.Model))
+		}
 	}
 	for _, p := range a.Prompts {
 		components = append(components, buildPromptComponent(p))
@@ -399,6 +403,82 @@ func buildModelComponent(m ModelComponent) Component {
 	}
 }
 
+// buildModelComponentWithProvenance produces the model component enriched
+// with provenance metadata (training dataset, framework, hash, metrics).
+// v4.5.0 P3 enhancement.
+func buildModelComponentWithProvenance(m ModelComponent, prov *ModelProvenance) Component {
+	props := []Property{
+		{Name: "aegisgate:pillar", Value: "model"},
+		{Name: "aegisgate:provider", Value: m.Provider},
+		{Name: "aegisgate:model_id", Value: m.ModelID},
+		{Name: "aegisgate:model_version", Value: m.Version},
+	}
+
+	// Provenance properties
+	if prov != nil {
+		props = append(props,
+			Property{Name: "aegisgate:model_hash", Value: prov.ModelHash},
+			Property{Name: "aegisgate:model_format", Value: prov.ModelFormat},
+			Property{Name: "aegisgate:model_size_bytes", Value: fmt.Sprintf("%d", prov.ModelSizeBytes)},
+			Property{Name: "aegisgate:model_param_count", Value: fmt.Sprintf("%d", prov.ModelParamCount)},
+			Property{Name: "aegisgate:training_dataset", Value: prov.TrainingDataset},
+			Property{Name: "aegisgate:training_framework", Value: prov.TrainingFramework},
+		)
+		if !prov.TrainingStartDate.IsZero() {
+			props = append(props, Property{
+				Name:  "aegisgate:training_start_date",
+				Value: prov.TrainingStartDate.Format(time.RFC3339),
+			})
+		}
+		if !prov.TrainingEndDate.IsZero() {
+			props = append(props, Property{
+				Name:  "aegisgate:training_end_date",
+				Value: prov.TrainingEndDate.Format(time.RFC3339),
+			})
+		}
+		if prov.ConversionTool != "" {
+			props = append(props, Property{Name: "aegisgate:conversion_tool", Value: prov.ConversionTool})
+		}
+		if prov.ConversionSource != "" {
+			props = append(props, Property{Name: "aegisgate:conversion_source", Value: prov.ConversionSource})
+		}
+		if prov.SignedBy != "" {
+			props = append(props, Property{Name: "aegisgate:signed_by", Value: prov.SignedBy})
+		}
+		// Evaluation metrics
+		for k, v := range prov.EvalMetrics {
+			props = append(props, Property{
+				Name:  "aegisgate:eval_" + k,
+				Value: fmt.Sprintf("%.4f", v),
+			})
+		}
+		// Hyperparameters (selected key ones for readability)
+		for k, v := range prov.Hyperparameters {
+			props = append(props, Property{
+				Name:  "aegisgate:hyperparam_" + k,
+				Value: fmt.Sprintf("%v", v),
+			})
+		}
+	}
+
+	sort.Slice(props, func(i, j int) bool { return props[i].Name < props[j].Name })
+
+	var hashes []Hash
+	if prov != nil && prov.ModelHash != "" {
+		hashes = []Hash{{Algorithm: "SHA-256", Content: prov.ModelHash}}
+	}
+
+	return Component{
+		Type:        "machine-learning-model",
+		BOMRef:      "aegisgate-model",
+		Name:        fmt.Sprintf("AI Model: %s/%s", m.Provider, m.ModelID),
+		Version:     m.Version,
+		Description: "AI model registered for this deployment with provenance metadata.",
+		Properties:  props,
+		Hashes:      hashes,
+	}
+}
+
 // buildPromptComponent produces a component for a single
 // hashed prompt. The full prompt is NEVER stored; only the
 // SHA-256 of the normalized prompt.
@@ -506,6 +586,10 @@ type AIBOMOptions struct {
 	// Corpora is optional. Empty slice means "no corpora
 	// registered" (the BOM omits the RAG components).
 	Corpora []RAGCorpusComponent
+	// Provenance is optional. nil means "no provenance
+	// recorded." When set, the BOM emits provenance
+	// properties on the model component (v4.5.0 P3).
+	Provenance *ModelProvenance
 }
 
 // BuildAIBOMFromOptions builds a v0.1 AIBOM from CLI/HTTP
@@ -529,6 +613,7 @@ func BuildAIBOMFromOptions(opts AIBOMOptions) *AIBOM {
 		Corpora:         opts.Corpora,
 		GeneratorNotes:  opts.GeneratorNotes,
 		BOMVersion:      opts.BOMVersion, // 0 = default to 1 in GenerateFromAIBOM
+		Provenance:      opts.Provenance,
 		// HTTP, MCP, A2A, ACP, ANP are zero-valued. The
 		// generator emits them anyway (with Enabled=false
 		// and no other data) so the validator is happy.

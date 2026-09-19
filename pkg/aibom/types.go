@@ -222,6 +222,11 @@ type AIBOM struct {
 	// override (callers like regeneration pipelines can
 	// track their own version counter).
 	BOMVersion int
+	// Provenance is the ML model provenance metadata
+	// (training dataset, framework, hash, metrics, etc.).
+	// v4.5.0: P3 enhancement. nil means "no provenance
+	// recorded" (the BOM omits provenance properties).
+	Provenance *ModelProvenance
 }
 
 // HTTPComponent describes the HTTP transport for the AIBOM.
