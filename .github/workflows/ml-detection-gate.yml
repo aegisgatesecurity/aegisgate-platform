@@ -75,11 +75,15 @@ jobs:
       - name: Download ML model from latest release
         run: |
           mkdir -p pkg/ml/models
+          mkdir -p upstream/aegisgate/pkg/ml/models
           # Download the ONNX model from the latest GitHub release
           gh release download --pattern "threat_cnn_bilstm.onnx" --dir pkg/ml/models/ || {
             echo "Model not found in release assets — using heuristic-only mode"
             echo "AEGISGATE_ML_SKIP=1" >> $GITHUB_ENV
           }
+          # Copy model to upstream/aegisgate/pkg/ml/models/ for evasion suite
+          # (evasion suite runs from upstream/aegisgate/ directory)
+          cp pkg/ml/models/threat_cnn_bilstm.onnx upstream/aegisgate/pkg/ml/models/ 2>/dev/null || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
