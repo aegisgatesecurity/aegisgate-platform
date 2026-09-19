@@ -169,6 +169,7 @@ jobs:
           ONNXRUNTIME_SHARED_LIBRARY_PATH: /usr/lib/libonnxruntime.so
         run: |
           cd upstream/aegisgate
+          go clean -cache
           go test -v -run TestEvasionSuite -timeout 10m ./pkg/proxy/ 2>&1 | tee /tmp/evasion-results.txt
           # Check evasion resistance score (must be >= 95.0)
           SCORE=$(grep "Evasion Resistance Score" /tmp/evasion-results.txt | grep -oP '[\d.]+/100' | cut -d/ -f1)
