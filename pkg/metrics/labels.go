@@ -159,16 +159,17 @@ const (
 	ScanRuntime    = "runtime"
 
 	// Block reasons
-	ReasonInjection = "injection"
-	ReasonPII       = "pii"
-	ReasonSecrets   = "secrets"
-	ReasonMalware   = "malware"
-	ReasonMultiTurn = "multiturn"
-	ReasonMLThreat  = "ml_threat"
-	ReasonAtlas     = "atlas"
-	ReasonRateLimit = "rate_limit"
-	ReasonPolicy    = "policy"
-	ReasonUnknown   = "unknown"
+	ReasonInjection    = "injection"
+	ReasonPII          = "pii"
+	ReasonSecrets      = "secrets"
+	ReasonMalware      = "malware"
+	ReasonMultiTurn    = "multiturn"
+	ReasonMLThreat     = "ml_threat"
+	ReasonMLThreatHigh = "ml_threat_high_confidence"
+	ReasonAtlas        = "atlas"
+	ReasonRateLimit    = "rate_limit"
+	ReasonPolicy       = "policy"
+	ReasonUnknown      = "unknown"
 
 	// Cache outcomes
 	CacheHit     = "hit"

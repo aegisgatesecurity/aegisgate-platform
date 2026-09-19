@@ -62,8 +62,9 @@ jobs:
 
       - name: Install onnxruntime
         run: |
-          # Download onnxruntime 1.18.x for Ubuntu x64
-          ORT_VERSION="1.18.0"
+          # onnxruntime_go v1.36.0 requires C API version 29 (ORT 1.29.0)
+          # Using older versions causes "Error setting ORT API base: 2"
+          ORT_VERSION="1.29.0"
           curl -sL "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/onnxruntime-linux-x64-${ORT_VERSION}.tgz" -o /tmp/ort.tgz
           tar -xzf /tmp/ort.tgz -C /tmp/
           sudo cp /tmp/onnxruntime-linux-x64-${ORT_VERSION}/lib/libonnxruntime.so* /usr/lib/
@@ -171,15 +172,13 @@ jobs:
           cd upstream/aegisgate
           go clean -cache
           go test -v -run TestEvasionSuite -timeout 10m ./pkg/proxy/ 2>&1 | tee /tmp/evasion-results.txt
-          # Check evasion resistance score (must be >= 88.0)
-          # NOTE: Threshold is 88.0 (not 95.0) because CI may run without the
-          # ONNX neural detector if onnxruntime fails to initialize. Heuristic-
-          # only mode scores ~88.7/100. With ONNX, it scores 99.3/100.
-          # TODO: Fix ONNX runtime initialization in CI to restore 95.0 threshold.
+          # Check evasion resistance score (must be >= 95.0)
+          # With ORT 1.29.0 + ONNX neural detector, score is 99.3/100.
+          # Heuristic-only mode (no ONNX) scores ~88.7/100.
           SCORE=$(grep "Evasion Resistance Score" /tmp/evasion-results.txt | grep -oP '[\d.]+/100' | cut -d/ -f1)
           echo "Evasion Resistance Score: $SCORE/100"
-          if awk -v score="$SCORE" 'BEGIN { exit !(score < 88.0) }'; then
-            echo "EVASION RESISTANCE BELOW THRESHOLD (88.0)"
+          if awk -v score="$SCORE" 'BEGIN { exit !(score < 95.0) }'; then
+            echo "EVASION RESISTANCE BELOW THRESHOLD (95.0)"
             exit 1
           fi
 

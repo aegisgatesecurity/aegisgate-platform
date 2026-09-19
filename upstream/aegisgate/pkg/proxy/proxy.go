@@ -659,12 +659,22 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				if p.threatDetector != nil && p.threatDetector.IsEnabled() {
 					threatResult := p.threatDetector.Detect(scanContent)
 					if threatResult.IsThreat {
-						// L3 ML: only block if L1/L2 also found suspicious content.
-						// The ML model over-fires on benign numeric strings (dates,
-						// UUIDs, timestamps) with scores 0.97+. L3 acts as a booster:
-						// it blocks only when L1 (scanner) or L2 (ATLAS) corroborate.
-						// Count only High+ severity findings as corroboration (Info/Medium/Low
-						// are not blocking on their own and shouldn't boost L3)
+						// Two-tier L3 blocking architecture:
+						//
+						// Tier 1 (High Confidence): score >= L3HighConfidenceThreshold (0.95)
+						//   → Block independently, no L1/L2 corroboration needed.
+						//   → The model is highly confident; these are character-level
+						//     evasions (transposition, vowel deletion, word reversal)
+						//     that regex and ATLAS cannot detect.
+						//
+						// Tier 2 (Standard): score >= threshold (0.50) but < 0.95
+						//   → Block only with L1/L2 corroboration (Medium+ severity).
+						//   → Prevents FPs on benign numeric strings (dates, UUIDs,
+						//     timestamps) that may score in this range.
+						//
+						// Tier 3 (Below threshold): log only, never block.
+
+						// Count L1/L2 corroboration (Medium+ severity findings)
 						corroboratingCount := 0
 						for _, f := range requestFindings {
 							if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
@@ -677,12 +687,36 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 							}
 						}
 						hasCorroboratingEvidence := corroboratingCount > 0
+
+						// L3 Tier 1: High-confidence independent block
+						l3HighConfidenceThreshold := 0.95
+						if threatResult.Score >= l3HighConfidenceThreshold {
+							slog.Error("Neural threat detector blocked request (high confidence, no corroboration required)",
+								"client", req.RemoteAddr,
+								"path", req.URL.Path,
+								"score", fmt.Sprintf("%.3f", threatResult.Score),
+								"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+								"tier", "L3-high-confidence",
+								"variant", threatResult.Variant,
+								"model", threatResult.ModelVersion,
+								"l1_findings", len(requestFindings),
+								"l2_findings", len(atlasFindings),
+								"corroborating", corroboratingCount,
+							)
+							metrics.RecordSecurityBlock(metrics.ReasonMLThreatHigh)
+							w.WriteHeader(http.StatusForbidden)
+							w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f, high confidence)", threatResult.Score)))
+							return
+						}
+
+						// L3 Tier 2: Standard block with L1/L2 corroboration
 						if hasCorroboratingEvidence {
 							slog.Error("Neural threat detector blocked request (corroborated by L1/L2)",
 								"client", req.RemoteAddr,
 								"path", req.URL.Path,
 								"score", fmt.Sprintf("%.3f", threatResult.Score),
 								"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+								"tier", "L3-corroborated",
 								"variant", threatResult.Variant,
 								"model", threatResult.ModelVersion,
 								"l1_findings", len(requestFindings),
@@ -693,12 +727,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 							w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
 							return
 						}
-						// L3 fired but no L1/L2 corroboration — log as alert only
-						slog.Warn("Neural threat detected but no L1/L2 corroboration — allowing",
+
+						// L3 fired but no corroboration and below high-confidence threshold
+						// — log as alert only
+						slog.Warn("Neural threat detected but below high-confidence threshold and no L1/L2 corroboration — allowing",
 							"client", req.RemoteAddr,
 							"path", req.URL.Path,
 							"score", fmt.Sprintf("%.3f", threatResult.Score),
 							"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+							"high_confidence_threshold", fmt.Sprintf("%.2f", l3HighConfidenceThreshold),
 						)
 					}
 				}
