@@ -22,7 +22,8 @@ var onnxRuntimeSearchPaths = []string{
 //  1. Explicit config path (ONNXRuntimeLibPath in config)
 //  2. Environment variable (ONNXRUNTIME_SHARED_LIBRARY_PATH)
 //  3. User-local install (~/.local/lib)
-//  4. System library paths
+//  4. Repo-local dev/test paths (testlab/)
+//  5. System library paths
 //
 // Returns empty string if not found (onnxruntime will use its default search).
 func discoverONNXRuntimeLib(configPath string) string {
@@ -51,7 +52,20 @@ func discoverONNXRuntimeLib(configPath string) string {
 		}
 	}
 
-	// 4. System library paths
+	// 4. Repo-local dev/test paths — walk up from CWD to find testlab/
+	cwd, _ := os.Getwd()
+	for dir := cwd; dir != "/" && dir != "."; dir = filepath.Dir(dir) {
+		candidate := filepath.Join(dir, "testlab", "onnxruntime.so")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+		candidateLib := filepath.Join(dir, "testlab", "libonnxruntime.so")
+		if _, err := os.Stat(candidateLib); err == nil {
+			return candidateLib
+		}
+	}
+
+	// 5. System library paths
 	for _, p := range onnxRuntimeSearchPaths {
 		if _, err := os.Stat(p); err == nil {
 			return p

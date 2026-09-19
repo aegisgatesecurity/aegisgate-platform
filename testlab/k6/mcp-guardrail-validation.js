@@ -13,7 +13,7 @@
 //
 // NOTE: k6 cannot speak raw TCP (MCP protocol on port 8081 is JSON-RPC
 // over TCP, not HTTP). This script monitors the HTTP dashboard API
-// (port 8443) to verify guardrail stats change under load.
+// (port 8080) to verify guardrail stats change under load.
 //
 // The actual MCP protocol-level validation is done by the Go integration
 // test: tests/e2e/mcp_guardrail_integration_test.go (run with -tags=e2e).
@@ -32,7 +32,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
 
-const DASHBOARD_URL = __ENV.DASHBOARD_URL || 'http://localhost:8443';
+const DASHBOARD_URL = __ENV.DASHBOARD_URL || 'http://localhost:8080';
 
 // Custom metrics
 const guardrailChecks = new Counter('aegisgate_guardrail_checks_total');
