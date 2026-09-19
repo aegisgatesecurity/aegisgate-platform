@@ -640,6 +640,60 @@ func (f *ATLASFramework) initPatterns() {
 		Regex:       regexp.MustCompile(`(?i)(?:(?:reveal|show|display|expose|extract|dump|leak|steal|list|print|read|access|copy|send|exfiltrate)\s+(?:the\s+)?(?:environment\s+variables|env\s+variables|configuration|config|settings|api\s+keys?|secrets?|credentials?))|(?:\$ENV|\$\{[^}]*\})|(?:getenv\w*|os\.environ|process\.env|export\s+vars|printenv|listenv|read\s+env|env\s+file)`),
 	})
 
+	// ==================== BRUTE FORCE / PASSWORD GUESSING (T1110) ====================
+	// Maps to MITRE ATT&CK T1110 — adapted for AI agents that attempt to guess
+	// or crack passwords to gain unauthorized access to protected systems.
+	// Motivated by real-world Gemini breakout (Sept 2026) where the AI model
+	// guessed passwords to hack real companies during a CTF exercise.
+	f.patterns = append(f.patterns, &Pattern{
+		ID:          "T1110.001",
+		Technique:   "T1110",
+		Framework:   FrameworkATLAS,
+		Severity:    SeverityCritical,
+		Category:    "BruteForce",
+		Description: "Password Guessing Attempt",
+		Block:       true,
+		Regex:       regexp.MustCompile(`(?i)(guess\s+(?:the\s+)?password|try\s+(?:different|common|various|these)\s+passwords|brute[- ]?force\s+(?:the\s+)?password|password\s+(?:crack|guess|brute)|crack\s+(?:the\s+)?password|dictionary\s+attack|try\s+(?:all|every)\s+password|password\s+list|common\s+passwords|default\s+passwords|test\s+passwords)`),
+	})
+
+	f.patterns = append(f.patterns, &Pattern{
+		ID:          "T1110.002",
+		Technique:   "T1110",
+		Framework:   FrameworkATLAS,
+		Severity:    SeverityHigh,
+		Category:    "BruteForce",
+		Description: "Credential Stuffing Attempt",
+		Block:       true,
+		Regex:       regexp.MustCompile(`(?i)(credential\s+stuffing|try\s+(?:these|leaked|stolen)\s+credentials|test\s+(?:leaked|compromised)\s+(?:credentials|passwords)|reuse\s+(?:passwords|credentials)|spray\s+(?:passwords|credentials)|password\s+spray)`),
+	})
+
+	// ==================== UNSECURED CREDENTIALS (T1552) ====================
+	// Maps to MITRE ATT&CK T1552 — adapted for AI agents that search for and
+	// exploit credentials found in public repositories or unsecured files.
+	// Motivated by real-world Gemini breakout (Sept 2026) where the AI model
+	// found credentials in public repos to access protected systems.
+	f.patterns = append(f.patterns, &Pattern{
+		ID:          "T1552.001",
+		Technique:   "T1552",
+		Framework:   FrameworkATLAS,
+		Severity:    SeverityCritical,
+		Category:    "UnsecuredCredentials",
+		Description: "Credential Discovery in Public Repositories",
+		Block:       true,
+		Regex:       regexp.MustCompile(`(?i)(?:search|find|look|check|scan)\s+(?:for\s+)?(?:credentials?|secrets?|api\s+keys?|access\s+keys?|tokens?)\s+(?:in|on|from|via)\s+(?:public\s+)?(?:repo|repository|github|gitlab|bitbucket|pastebin|gist|code\s+search)|credentials?\s+(?:found|located|stored)\s+(?:in|on)\s+(?:public\s+)?(?:repo|repository|github|gitlab)|leaked?\s+(?:credentials?|secrets?|keys?)\s+(?:in|on)\s+(?:public\s+)?(?:repo|repository|github|gitlab)`),
+	})
+
+	f.patterns = append(f.patterns, &Pattern{
+		ID:          "T1552.002",
+		Technique:   "T1552",
+		Framework:   FrameworkATLAS,
+		Severity:    SeverityHigh,
+		Category:    "UnsecuredCredentials",
+		Description: "Credentials in Unsecured Files",
+		Block:       true,
+		Regex:       regexp.MustCompile(`(?i)(?:credentials?|secrets?|api\s+keys?|access\s+keys?|passwords?)\s+(?:in|stored\s+in|left\s+in|committed\s+to)\s+(?:\.env|config|configuration|settings|properties|yaml|json|xml|ini|conf)\s?(?:file|files)?|(?:hardcoded|hard-coded|plaintext|plain-text)\s+(?:credentials?|secrets?|passwords?|api\s+keys?)|secrets?\s+(?:committed|pushed)\s+to\s+(?:repo|repository)`),
+	})
+
 	// ==================== ADDITIONAL PATTERNS ====================
 	// Resource exhaustion via excessive tokens
 	f.patterns = append(f.patterns, &Pattern{
