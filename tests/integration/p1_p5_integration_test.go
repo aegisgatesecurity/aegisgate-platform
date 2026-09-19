@@ -167,6 +167,36 @@ func TestP2_ReconChainDetection(t *testing.T) {
 	t.Logf("P2 Recon Chain: exfil=%v, recon=%v, flags=%v, risk=%d", result.ExfilChain, result.ReconChain, result.Flags, result.OverallRisk)
 }
 
+func TestP2_ReconChainDetection_PrefixMatching(t *testing.T) {
+	ca := toolauth.NewChainAnalyzer()
+	sessionID := "sess-chain-recon-prefix-001"
+
+	// Simulate a recon chain using tool names that DON'T match the old
+	// exact-match list but DO match the new prefix matching.
+	// "browse_directory" matches prefix "browse"
+	// "scan_folder" matches prefix "scan"
+	// "probe_network" matches prefix "probe"
+	chain := []toolauth.ChainEntry{
+		{ToolName: "browse_directory", RiskLevel: toolauth.RiskLevelLow, Decision: "allow", DataType: "read", Target: "/etc", Timestamp: time.Now()},
+		{ToolName: "scan_folder", RiskLevel: toolauth.RiskLevelLow, Decision: "allow", DataType: "read", Target: "/var/log", Timestamp: time.Now().Add(time.Second)},
+		{ToolName: "probe_network", RiskLevel: toolauth.RiskLevelLow, Decision: "allow", DataType: "read", Target: "10.0.0.0/24", Timestamp: time.Now().Add(2 * time.Second)},
+		{ToolName: "exec_command", RiskLevel: toolauth.RiskLevelCritical, Decision: "allow", DataType: "execute", Target: "nmap -sS 10.0.0.0/24", Timestamp: time.Now().Add(3 * time.Second)},
+	}
+
+	for _, entry := range chain {
+		ca.RecordCall(sessionID, entry)
+	}
+
+	result := ca.AnalyzeChain(sessionID)
+
+	// Should detect reconnaissance chain via prefix matching
+	if !result.ReconChain {
+		t.Error("expected reconnaissance chain to be detected via prefix matching (browse/scan/probe → exec)")
+	}
+
+	t.Logf("P2 Recon Chain (prefix): recon=%v, flags=%v, risk=%d", result.ReconChain, result.Flags, result.OverallRisk)
+}
+
 func TestP2_BenignChainNotFlagged(t *testing.T) {
 	ca := toolauth.NewChainAnalyzer()
 	sessionID := "sess-chain-benign-001"

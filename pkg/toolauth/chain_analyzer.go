@@ -31,6 +31,7 @@
 package toolauth
 
 import (
+	"strings"
 	"sync"
 	"time"
 )
@@ -179,19 +180,46 @@ func (ca *ChainAnalyzer) detectExfilChain(chain []ChainEntry) bool {
 
 // detectReconChain identifies scan-then-execute patterns where
 // reconnaissance tools are followed by exploitation tools.
+// Uses prefix matching to catch tools with similar names (e.g.,
+// "browse_directory" matches "browse", "scan_folder" matches "scan").
 func (ca *ChainAnalyzer) detectReconChain(chain []ChainEntry) bool {
-	reconTools := map[string]bool{
-		"list_files": true, "read_config": true, "get_env": true,
-		"enumerate": true, "discover": true, "inspect": true,
+	// Recon prefix patterns — match tool names that start with these prefixes.
+	// This is more robust than exact matching because MCP servers may expose
+	// tools with variations like "list_directory", "browse_files", "scan_env".
+	reconPrefixes := []string{
+		"list", "read", "get", "browse", "scan", "enumerate",
+		"discover", "inspect", "probe", "explore", "survey",
+		"reconnoiter", "fetch", "query", "search",
+	}
+
+	// Exact-match recon tool names (for tools that don't follow the prefix
+	// convention but are clearly reconnaissance).
+	reconExact := map[string]bool{
+		"get_env":     true,
+		"read_config": true,
 	}
 
 	for i, entry := range chain {
-		if reconTools[entry.ToolName] {
+		if isReconTool(entry.ToolName, reconPrefixes, reconExact) {
 			for j := i + 1; j < len(chain); j++ {
 				if chain[j].DataType == "execute" && chain[j].RiskLevel >= RiskLevelHigh {
 					return true
 				}
 			}
+		}
+	}
+	return false
+}
+
+// isReconTool checks whether a tool name matches a recon prefix or exact name.
+func isReconTool(toolName string, prefixes []string, exact map[string]bool) bool {
+	if exact[toolName] {
+		return true
+	}
+	lower := strings.ToLower(toolName)
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(lower, prefix) {
+			return true
 		}
 	}
 	return false
