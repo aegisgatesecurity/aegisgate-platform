@@ -5,8 +5,8 @@
 //
 // Prerequisites:
 //   - go 1.25+
-//   - ports 28080, 28081, 28443 available (non-standard to avoid conflicts)
 //   - 2GB free disk
+//   - Ports are dynamically assigned (no hardcoded port requirements)
 //
 //go:build e2e
 
@@ -31,11 +31,6 @@ import (
 )
 
 const (
-	// Non-standard ports to avoid conflicts with running instances
-	proxyPort     = 28080
-	mcpPort       = 28081
-	dashboardPort = 28443
-
 	// Timeouts
 	startupTimeout  = 30 * time.Second
 	shutdownTimeout = 10 * time.Second
@@ -45,6 +40,23 @@ const (
 	healthcheckRetries = 30
 	healthcheckDelay   = 1 * time.Second
 )
+
+// Dynamic ports — assigned at TestMain startup to avoid conflicts.
+var (
+	proxyPort     int
+	mcpPort       int
+	dashboardPort int
+)
+
+// platformE2EFreePort returns a free TCP port by letting the OS assign one.
+func platformE2EFreePort() int {
+	l, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get free port: %v", err))
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port
+}
 
 // TestSuite holds shared state across subtests
 type TestSuite struct {
@@ -69,13 +81,10 @@ var (
 
 // TestMain validates environment before running tests
 func TestMain(m *testing.M) {
-	// Check ports are available before starting
-	for _, port := range []int{proxyPort, mcpPort, dashboardPort} {
-		if !isPortAvailable(port) {
-			fmt.Fprintf(os.Stderr, "FATAL: Port %d is not available\n", port)
-			os.Exit(1)
-		}
-	}
+	// Assign dynamic ports to avoid conflicts with running instances
+	proxyPort = platformE2EFreePort()
+	mcpPort = platformE2EFreePort()
+	dashboardPort = platformE2EFreePort()
 
 	suite = &TestSuite{
 		TestOutput: &testOutputCapture{},
@@ -184,7 +193,9 @@ version: "1.0"
 			"--dashboard-port", fmt.Sprintf("%d", dashboardPort),
 			"--tier", "community",
 			"--embedded-mcp",
+			"--mode", "staging",
 		)
+		cmd.Env = append(os.Environ(), "REQUIRE_AUTH=false")
 
 		// Set up log capture
 		stdoutPipe, err := cmd.StdoutPipe()

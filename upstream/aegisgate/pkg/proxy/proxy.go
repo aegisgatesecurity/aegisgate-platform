@@ -35,6 +35,8 @@ import (
 	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 	"github.com/aegisgatesecurity/aegisgate/pkg/resilience"
 	"github.com/aegisgatesecurity/aegisgate/pkg/scanner"
+
+	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 )
 
 // Options contains proxy configuration
@@ -133,6 +135,12 @@ type Proxy struct {
 	// Neural Network Threat Detector (Char CNN-BiLSTM)
 	// Supplementary layer — only runs when regex doesn't trigger
 	threatDetector *ml.ThreatDetector
+
+	// Response Guard — 7-layer response scanning (PII, secrets, XSS,
+	// compliance, token limits, toxicity, hallucination).
+	// Wired into modifyResponse() as an additional detection layer
+	// after the regex scanner and ATLAS compliance checks.
+	responseGuard *responseguard.ResponseGuard
 }
 
 // RateLimiter implements token bucket rate limiting
@@ -224,6 +232,11 @@ func New(opts *Options) *Proxy {
 		tdCfg.Threshold = 0.5
 	}
 	p.threatDetector = ml.NewThreatDetector(tdCfg)
+
+	// Initialize Response Guard for response-side scanning.
+	// Adds PII, secret, XSS, compliance, token-limit, toxicity, and
+	// hallucination detection layers beyond the regex scanner + ATLAS.
+	p.responseGuard = responseguard.NewResponseGuard()
 
 	// Load the ONNX model for threat detection
 	// Priority: MLModelPath option > AEGISGATE_ML_MODEL_PATH env > default path
@@ -844,6 +857,30 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 					"status", resp.StatusCode,
 					"patterns", strings.Join(violationNames, ", "),
 				)
+				metrics.RecordSecurityBlock(metrics.ReasonSecrets)
+				resp.StatusCode = http.StatusForbidden
+				resp.Body = io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"error":"Response blocked: sensitive data detected (%s)"}`,
+						strings.Join(violationNames, ", "))))
+				resp.ContentLength = -1
+				resp.Header.Set("Content-Type", "application/json")
+				return nil
+			}
+			if entry.shouldBlockAtlas {
+				techniqueIDs := p.getAtlasTechniqueIDs(entry.atlasFindings)
+				slog.Error("Response blocked: MITRE ATLAS threat detected (cached)",
+					"path", resp.Request.URL.Path,
+					"status", resp.StatusCode,
+					"techniques", strings.Join(techniqueIDs, ", "),
+				)
+				metrics.RecordSecurityBlock(metrics.ReasonAtlas)
+				resp.StatusCode = http.StatusForbidden
+				resp.Body = io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"error":"Response blocked: ATLAS violation detected (%s)"}`,
+						strings.Join(techniqueIDs, ", "))))
+				resp.ContentLength = -1
+				resp.Header.Set("Content-Type", "application/json")
+				return nil
 			}
 		} else {
 			p.scanCacheMiss.Add(1)
@@ -956,7 +993,40 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 				}
 			}
 
-			// Log critical findings
+			// Response Guard: 7-layer response scanning (PII, secrets, XSS,
+			// compliance, token limits, toxicity, hallucination).
+			// Runs after the regex scanner + ATLAS as an additional layer.
+			rgBlocked := false
+			var rgBlockReason string
+			if p.responseGuard != nil && p.responseGuard.IsEnabled() {
+				scanCtx := responseguard.NewScanContext(
+					resp.Request.RemoteAddr,
+					resp.Request.Header.Get("X-Request-ID"),
+				)
+				rgResult, rgErr := p.responseGuard.ScanWithContext(context.Background(), scanContent, scanCtx)
+				if rgErr != nil {
+					slog.Warn("ResponseGuard scan failed",
+						"path", resp.Request.URL.Path,
+						"error", rgErr,
+					)
+				} else if !rgResult.Allowed {
+					rgBlocked = true
+					rgBlockReason = rgResult.BlockReason
+					slog.Error("ResponseGuard blocked response",
+						"path", resp.Request.URL.Path,
+						"reason", rgBlockReason,
+						"threats", len(rgResult.Threats),
+						"pii", len(rgResult.DetectedPII),
+						"secrets", len(rgResult.DetectedSecrets),
+						"xss", len(rgResult.DetectedXSS),
+					)
+				}
+			}
+
+			// Block the response if any detection layer found blocking-level threats.
+			// This fixes the original bug where scanner findings and ATLAS findings
+			// in responses were logged but never acted on — sensitive data was
+			// passed through to the client.
 			if blocked {
 				violationNames := p.scanner.GetViolationNames(findings)
 				slog.Error("Critical data found in response",
@@ -964,6 +1034,39 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 					"status", resp.StatusCode,
 					"patterns", strings.Join(violationNames, ", "),
 				)
+				metrics.RecordSecurityBlock(metrics.ReasonSecrets)
+				resp.StatusCode = http.StatusForbidden
+				resp.Body = io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"error":"Response blocked: sensitive data detected (%s)"}`,
+						strings.Join(violationNames, ", "))))
+				resp.ContentLength = -1
+				resp.Header.Set("Content-Type", "application/json")
+				return nil
+			}
+			if atlasBlocked {
+				techniqueIDs := p.getAtlasTechniqueIDs(atlasFindings)
+				slog.Error("Response blocked: MITRE ATLAS threat detected",
+					"path", resp.Request.URL.Path,
+					"status", resp.StatusCode,
+					"techniques", strings.Join(techniqueIDs, ", "),
+				)
+				metrics.RecordSecurityBlock(metrics.ReasonAtlas)
+				resp.StatusCode = http.StatusForbidden
+				resp.Body = io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"error":"Response blocked: ATLAS violation detected (%s)"}`,
+						strings.Join(techniqueIDs, ", "))))
+				resp.ContentLength = -1
+				resp.Header.Set("Content-Type", "application/json")
+				return nil
+			}
+			if rgBlocked {
+				metrics.RecordSecurityBlock(metrics.ReasonSecrets)
+				resp.StatusCode = http.StatusForbidden
+				resp.Body = io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"error":"Response blocked: %s"}`, rgBlockReason)))
+				resp.ContentLength = -1
+				resp.Header.Set("Content-Type", "application/json")
+				return nil
 			}
 
 			// Cache the response scan result
