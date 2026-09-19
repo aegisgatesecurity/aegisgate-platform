@@ -162,7 +162,7 @@ jobs:
           # Check evasion resistance score (must be >= 95.0)
           SCORE=$(grep "Evasion Resistance Score" /tmp/evasion-results.txt | grep -oP '[\d.]+/100' | cut -d/ -f1)
           echo "Evasion Resistance Score: $SCORE/100"
-          if (( $(echo "$SCORE < 95.0" | bc -l) )); then
+          if awk -v score="$SCORE" 'BEGIN { exit !(score < 95.0) }'; then
             echo "EVASION RESISTANCE BELOW THRESHOLD (95.0)"
             exit 1
           fi
