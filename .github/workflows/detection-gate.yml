@@ -25,6 +25,9 @@ on:
       - 'tests/load/k6/detection-gate.js'
       - 'tests/echo-server/**'
       - 'tests/integration/**'
+      - 'upstream/aegisgate/pkg/scanner/**'
+      - 'upstream/aegisgate/pkg/compliance/**'
+      - 'upstream/aegisgate/pkg/proxy/**'
   pull_request:
     branches: [main]
     paths:
@@ -37,6 +40,9 @@ on:
       - 'tests/load/k6/detection-gate.js'
       - 'tests/echo-server/**'
       - 'tests/integration/**'
+      - 'upstream/aegisgate/pkg/scanner/**'
+      - 'upstream/aegisgate/pkg/compliance/**'
+      - 'upstream/aegisgate/pkg/proxy/**'
   workflow_dispatch:
   schedule:
     # Weekly detection audit — every Monday at 09:00 UTC

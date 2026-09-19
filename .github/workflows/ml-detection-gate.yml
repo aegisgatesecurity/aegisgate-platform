@@ -21,12 +21,18 @@ on:
       - 'pkg/ml/**'
       - 'pkg/scanner/**'
       - 'tests/adversarial/**'
+      - 'upstream/aegisgate/pkg/scanner/**'
+      - 'upstream/aegisgate/pkg/compliance/**'
+      - 'upstream/aegisgate/pkg/proxy/**'
   pull_request:
     branches: [main]
     paths:
       - 'pkg/ml/**'
       - 'pkg/scanner/**'
       - 'tests/adversarial/**'
+      - 'upstream/aegisgate/pkg/scanner/**'
+      - 'upstream/aegisgate/pkg/compliance/**'
+      - 'upstream/aegisgate/pkg/proxy/**'
   workflow_dispatch:
   schedule:
     # Weekly ML detection audit — every Monday at 10:00 UTC (after L1 gate)
