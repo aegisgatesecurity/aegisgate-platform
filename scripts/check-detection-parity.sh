@@ -123,7 +123,7 @@ ALL_PLATFORM=$(grep -oP '\{Name:\s*"\K[^"]+' "$PLATFORM_DIR/pkg/scanner/patterns
 # If it's Platform-only, add it here to suppress the false alarm.
 # MAINTAINERS: When adding a new shared PromptInjection pattern, ensure it's added
 # to Lens compliance.js and Rampart compliance.go. If it's Platform-only, add it here.
-PLATFORM_ONLY_PATTERNS="prompt_injection_base64 prompt_injection_code_execution prompt_injection_command prompt_injection_delimiter prompt_injection_leakage prompt_injection_prefix prompt_injection_role_play prompt_injection_unicode"
+PLATFORM_ONLY_PATTERNS="prompt_injection_base64 prompt_injection_code_execution prompt_injection_command prompt_injection_delimiter prompt_injection_leakage prompt_injection_prefix prompt_injection_role_play prompt_injection_unicode prompt_injection_sstiprobe"
 
 is_platform_only() {
     local name="$1"

@@ -20,9 +20,11 @@ on:
       - 'pkg/response/**'
       - 'pkg/auth/**'
       - 'pkg/toolauth/**'
+      - 'pkg/aibom/**'
       - 'tests/adversarial/**'
       - 'tests/load/k6/detection-gate.js'
       - 'tests/echo-server/**'
+      - 'tests/integration/**'
   pull_request:
     branches: [main]
     paths:
@@ -30,9 +32,11 @@ on:
       - 'pkg/response/**'
       - 'pkg/auth/**'
       - 'pkg/toolauth/**'
+      - 'pkg/aibom/**'
       - 'tests/adversarial/**'
       - 'tests/load/k6/detection-gate.js'
       - 'tests/echo-server/**'
+      - 'tests/integration/**'
   workflow_dispatch:
   schedule:
     # Weekly detection audit — every Monday at 09:00 UTC
@@ -73,6 +77,16 @@ jobs:
           curl -sL https://github.com/grafana/k6/releases/download/v0.57.0/k6-v0.57.0-linux-amd64.tar.gz | tar -xz
           sudo mv k6-v0.57.0-linux-amd64/k6 /usr/local/bin/k6
           k6 version
+
+      - name: Generate k6 payloads from corpus
+        run: |
+          go run ./scripts/generate-k6-payloads/
+          # Verify committed payloads.js matches corpus
+          git diff --exit-code tests/load/k6/payloads.js && echo "Payloads in sync" || {
+            echo "ERROR: payloads.js is out of sync with corpus.yaml"
+            echo "Run: go run ./scripts/generate-k6-payloads/ && commit the result"
+            exit 1
+          }
 
       - name: Start echo server
         run: |
@@ -118,6 +132,15 @@ jobs:
             exit 1
           fi
           echo "DETECTION GATE PASSED"
+
+      - name: Run P1-P5 integration tests
+        run: |
+          go test -v -count=1 ./tests/integration/ 2>&1 | tee /tmp/p1-p5-results.txt
+          if grep -q "FAIL" /tmp/p1-p5-results.txt; then
+            echo "P1-P5 INTEGRATION TESTS FAILED"
+            exit 1
+          fi
+          echo "P1-P5 INTEGRATION TESTS PASSED"
 
       - name: Weekly audit — create issue on regression
         if: failure() && github.event_name == 'schedule'
