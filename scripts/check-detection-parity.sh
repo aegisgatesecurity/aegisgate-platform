@@ -219,9 +219,121 @@ fi
 # Cleanup
 rm -f "$PLATFORM_TMP" "$LENS_TMP" "$RAMPART_TMP"
 
+# ---------------------------------------------------------------------------
+# Phase 2: Regex content comparison for shared patterns
+# Verifies that patterns with matching names also have matching regex content
+# across Platform, Lens, and Rampart. Detects silent divergence where the same
+# pattern name has different regex strings in different products.
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "=== Regex Content Comparison ==="
+
+# Extract regex for a given pattern name from Platform (Go regexp.MustCompile)
+extract_platform_regex() {
+    local name="$1"
+    # Pattern: {Name: "NAME", ...Regex: regexp.MustCompile(`CONTENT`)
+    # Use perl to capture the backtick-delimited string after MustCompile
+    grep -oP "\{Name:\s*\"${name}\".*?Regex:\s*regexp\.MustCompile\(\x60\K[^\x60]*" \
+        "$PLATFORM_DIR/pkg/scanner/patterns.go" 2>/dev/null | head -1
+}
+
+# Extract regex for a given pattern name from Rampart (Go raw string)
+extract_rampart_regex() {
+    local name="$1"
+    # Pattern: Name: "NAME", ... Regex: `CONTENT`
+    grep -oP "Name:\s*\"${name}\".*?Regex:\s*\x60\K[^\x60]*" \
+        "$RAMPART_DIR/internal/detectors/compliance.go" 2>/dev/null | head -1
+}
+
+# Extract regex for a given pattern name from Lens (JS regex literal)
+extract_lens_regex() {
+    local name="$1"
+    # Pattern: name: { ... re: /CONTENT/gi
+    # Capture content between the / delimiters
+    local line
+    line=$(grep -A5 "^\s*${name}:\s*{" "$LENS_DIR/src/detectors/regex/compliance.js" 2>/dev/null | \
+           grep -oP "re:\s*/\K[^/]*(?=/[gimsuy]*)")
+    echo "$line" | head -1
+}
+
+# Normalize a regex string for comparison:
+# - Remove (?i) inline flag (Lens uses /i flag instead)
+# - Trim leading/trailing whitespace
+normalize_regex() {
+    echo "$1" | sed 's/(?i)//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+CONTENT_MISMATCHES=0
+
+# Only check patterns that exist in all three products
+SHARED_PATTERNS=$(comm -12 "$PLATFORM_TMP" <(echo "$LENS_PATTERNS") 2>/dev/null || true)
+SHARED_PATTERNS=$(comm -12 <(echo "$SHARED_PATTERNS") <(echo "$RAMPART_PATTERNS") 2>/dev/null || true)
+
+# Rebuild temp files since they were deleted
+echo "$PLATFORM_PATTERNS" > "$PLATFORM_TMP"
+echo "$LENS_PATTERNS" > "$LENS_TMP"
+echo "$RAMPART_PATTERNS" > "$RAMPART_TMP"
+SHARED_PATTERNS=$(comm -12 "$PLATFORM_TMP" "$LENS_TMP" | comm -12 - "$RAMPART_TMP")
+
+if [[ -z "$SHARED_PATTERNS" ]]; then
+    echo "No shared patterns found across all three products — skipping content check."
+else
+    SHARED_COUNT=$(echo "$SHARED_PATTERNS" | wc -l)
+    echo "Checking $SHARED_COUNT shared patterns..."
+
+    while IFS= read -r pattern; do
+        [[ -z "$pattern" ]] && continue
+
+        # Get normalized regex from each product
+        p_re=$(normalize_regex "$(extract_platform_regex "$pattern")")
+        l_re=$(normalize_regex "$(extract_lens_regex "$pattern")")
+        r_re=$(normalize_regex "$(extract_rampart_regex "$pattern")")
+
+        mismatches=""
+
+        # Compare Platform vs Lens
+        if [[ "$p_re" != "$l_re" && -n "$p_re" && -n "$l_re" ]]; then
+            mismatches="$mismatches Platform≠Lens"
+        fi
+
+        # Compare Platform vs Rampart
+        if [[ "$p_re" != "$r_re" && -n "$p_re" && -n "$r_re" ]]; then
+            mismatches="$mismatches Platform≠Rampart"
+        fi
+
+        # Compare Lens vs Rampart
+        if [[ "$l_re" != "$r_re" && -n "$l_re" && -n "$r_re" ]]; then
+            mismatches="$mismatches Lens≠Rampart"
+        fi
+
+        if [[ -n "$mismatches" ]]; then
+            echo -e "  ${YELLOW}⚠ $pattern:$mismatches${NC}"
+            CONTENT_MISMATCHES=$((CONTENT_MISMATCHES + 1))
+        fi
+    done <<< "$SHARED_PATTERNS"
+
+    if [[ $CONTENT_MISMATCHES -eq 0 ]]; then
+        echo -e "  ${GREEN}All $SHARED_COUNT shared patterns have matching regex content${NC}"
+    else
+        echo ""
+        echo -e "  ${YELLOW}$CONTENT_MISMATCHES pattern(s) have regex content divergence${NC}"
+        echo "  This does not fail the check but indicates the regex strings differ."
+        echo "  Review the patterns to ensure the differences are intentional."
+        # Content mismatches are warnings, not failures — different products
+        # may intentionally have slightly different regex (e.g., Go vs JS
+        # regex syntax differences). The name parity check is the hard gate.
+    fi
+fi
+
+# Final cleanup
+rm -f "$PLATFORM_TMP" "$LENS_TMP" "$RAMPART_TMP"
+
 if [[ $EXIT_CODE -eq 0 ]]; then
+    echo ""
     echo -e "${GREEN}✅ Detection parity verified — all products have matching pattern sets${NC}"
 else
+    echo ""
     echo -e "${RED}❌ Detection parity check FAILED — patterns missing from one or more products${NC}"
     echo ""
     echo "To fix: add missing patterns to the product(s) above and commit."
