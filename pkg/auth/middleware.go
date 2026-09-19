@@ -193,27 +193,39 @@ type Claims struct {
 }
 
 // Middleware provides HTTP auth middleware with JWT, API token, and SSO support
+// Middleware wraps HTTP handlers with authentication and authorization.
 type Middleware struct {
 	config     *Config
 	ssoManager *sso.Manager
 	logger     *slog.Logger
+
+	// anomalyDetector tracks API key usage patterns (v4.5.0 P4)
+	anomalyDetector *AnomalyDetector
 }
 
 // NewMiddleware creates auth middleware with SSO support
 func NewMiddleware(cfg *Config) *Middleware {
 	return &Middleware{
-		config: cfg,
-		logger: slog.Default().With("component", "auth-middleware"),
+		config:          cfg,
+		logger:          slog.Default().With("component", "auth-middleware"),
+		anomalyDetector: NewAnomalyDetector(),
 	}
 }
 
 // NewMiddlewareWithSSO creates auth middleware with SSO support
 func NewMiddlewareWithSSO(cfg *Config, ssoManager *sso.Manager) *Middleware {
 	return &Middleware{
-		config:     cfg,
-		ssoManager: ssoManager,
-		logger:     slog.Default().With("component", "auth-middleware"),
+		config:          cfg,
+		ssoManager:      ssoManager,
+		logger:          slog.Default().With("component", "auth-middleware"),
+		anomalyDetector: NewAnomalyDetector(),
 	}
+}
+
+// AnomalyDetector returns the middleware's anomaly detector instance.
+// v4.5.0 P4: allows callers to access the detector for manual checks.
+func (m *Middleware) AnomalyDetector() *AnomalyDetector {
+	return m.anomalyDetector
 }
 
 // SSOManager returns the SSO manager instance
@@ -431,6 +443,7 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 					ctx = context.WithValue(ctx, ContextKeyTenantID, scoped.TenantID)
 					ctx = context.WithValue(ctx, ContextKeyIsAdmin, false)
 				}
+				m.recordAndCheckAnomaly(r, "api-scoped:"+token[:8])
 				next(w, r.WithContext(ctx))
 				return
 			}
@@ -454,6 +467,7 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 				ctx = context.WithValue(ctx, ContextKeyTenantID, scoped.TenantID)
 				ctx = context.WithValue(ctx, ContextKeyIsAdmin, false)
 			}
+			m.recordAndCheckAnomaly(r, "api-scoped:"+expectedToken[:8])
 			next(w, r.WithContext(ctx))
 			return
 		}
@@ -469,10 +483,60 @@ func (m *Middleware) handleAPIToken(w http.ResponseWriter, r *http.Request, toke
 	// Admin API tokens bypass tenant filtering
 	ctx = context.WithValue(ctx, ContextKeyIsAdmin, true)
 
+	m.recordAndCheckAnomaly(r, "api-service")
 	next(w, r.WithContext(ctx))
 }
 
 // unauthorized returns 401 response
+// recordAndCheckAnomaly records API key usage and checks for anomalous patterns.
+// v4.5.0 P4: Called after successful API token authentication.
+func (m *Middleware) recordAndCheckAnomaly(r *http.Request, keyID string) {
+	if m.anomalyDetector == nil {
+		return
+	}
+
+	rec := KeyUsageRecord{
+		KeyID:     keyID,
+		Timestamp: time.Now(),
+		ToolName:  r.URL.Path, // use endpoint path as the "tool" proxy
+		SourceIP:  r.RemoteAddr,
+		Endpoint:  r.URL.Path,
+	}
+
+	m.anomalyDetector.RecordUsage(rec)
+
+	result := m.anomalyDetector.CheckAnomaly(keyID, rec)
+	if result.IsAnomalous {
+		m.logger.Warn("API key anomaly detected",
+			"key_id", keyID,
+			"source_ip", r.RemoteAddr,
+			"endpoint", r.URL.Path,
+			"anomaly_types", anomalyTypeNames(result.Types),
+			"details", strings.Join(result.Details, "; "),
+		)
+	}
+}
+
+// anomalyTypeNames converts a slice of AnomalyType to a comma-separated string.
+func anomalyTypeNames(types []AnomalyType) string {
+	names := make([]string, 0, len(types))
+	for _, t := range types {
+		switch t {
+		case AnomalyVolumeSpike:
+			names = append(names, "volume_spike")
+		case AnomalyOffHours:
+			names = append(names, "off_hours")
+		case AnomalyGeoShift:
+			names = append(names, "geo_shift")
+		case AnomalyNewTool:
+			names = append(names, "new_tool")
+		case AnomalyRateExceeded:
+			names = append(names, "rate_exceeded")
+		}
+	}
+	return strings.Join(names, ",")
+}
+
 func (m *Middleware) unauthorized(w http.ResponseWriter, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("WWW-Authenticate", `Bearer, Token`)
