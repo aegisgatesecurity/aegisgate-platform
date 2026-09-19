@@ -82,6 +82,7 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: |
+          go clean -cache
           go build -o aegisgate-platform ./cmd/aegisgate-platform
 
       - name: Build echo server
