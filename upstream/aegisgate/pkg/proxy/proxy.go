@@ -39,7 +39,10 @@ import (
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 	platformscanner "github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 
+	platformaibom "github.com/aegisgatesecurity/aegisgate-platform/pkg/aibom"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/anomaly"
+	platformanomaly "github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
+	platformtoolauth "github.com/aegisgatesecurity/aegisgate-platform/pkg/toolauth"
 )
 
 // Options contains proxy configuration
@@ -151,6 +154,27 @@ type Proxy struct {
 	// Wired into modifyResponse() as an additional detection layer
 	// after the regex scanner and ATLAS compliance checks.
 	responseGuard *responseguard.ResponseGuard
+
+	// v4.5.0 P2: Tool call chain analyzer — detects multi-step attack chains
+	// (recon→exploit, escalation, exfil) across tool calls in a session.
+	// Non-blocking in v4.5.0 (alert/log only).
+	chainAnalyzer *platformtoolauth.ChainAnalyzer
+
+	// v4.5.0 P2: Tool call extractor — parses tool calls from request bodies
+	// and classifies their risk level using the toolauth risk matrix.
+	toolCallExtractor *toolCallExtractor
+
+	// v4.5.0 P3: Model provenance recorder — validates ML model provenance
+	// (hash, training metadata, format) at startup.
+	provenanceRecorder *platformaibom.ProvenanceRecorder
+
+	// v4.5.0 P4: API key anomaly detector — tracks usage patterns per key
+	// and flags volume spikes, off-hours access, geo shifts, new tools.
+	// Non-blocking in v4.5.0 (alert/log only).
+	anomalyDetector *platformanomaly.AnomalyDetector
+
+	// v4.5.0: Cleanup channel for P2/P4 periodic maintenance goroutine.
+	v450CleanupDone chan struct{}
 }
 
 // RateLimiter implements token bucket rate limiting
@@ -257,6 +281,22 @@ func New(opts *Options) *Proxy {
 	// hallucination detection layers beyond the regex scanner + ATLAS.
 	p.responseGuard = responseguard.NewResponseGuard()
 
+	// v4.5.0 P2: Tool call chain analyzer
+	p.chainAnalyzer = platformtoolauth.NewChainAnalyzer()
+	p.toolCallExtractor = newToolCallExtractor()
+
+	// v4.5.0 P3: Model provenance recorder
+	p.provenanceRecorder = platformaibom.NewProvenanceRecorder()
+
+	// v4.5.0 P4: API key anomaly detector
+	p.anomalyDetector = platformanomaly.NewAnomalyDetector()
+
+	// Initialize cleanup channel for P2/P4 maintenance
+	p.v450CleanupDone = make(chan struct{})
+
+	// Start periodic cleanup for P2/P4 tracking data
+	p.startV450Cleanup()
+
 	// Load the ONNX model for threat detection
 	// Priority: MLModelPath option > AEGISGATE_ML_MODEL_PATH env > default path
 	modelPath := p.options.MLModelPath
@@ -275,6 +315,8 @@ func New(opts *Options) *Proxy {
 			"shadow_mode", tdCfg.ShadowMode,
 			"enabled", tdCfg.Enabled,
 		)
+		// v4.5.0 P3: Validate model provenance after successful load
+		p.validateModelProvenance(modelPath)
 	}
 
 	// Initialize circuit breaker if configured
@@ -295,14 +337,6 @@ func New(opts *Options) *Proxy {
 
 	// Buffer pool for request/response body reuse — avoids allocating
 	// new byte slices on every proxy request.
-	var bufPool = sync.Pool{
-		New: func() interface{} {
-			buf := make([]byte, 0, 8192)
-			return &buf
-		},
-	}
-	_ = bufPool // used in ServeHTTP for body reading
-
 	// Create reverse proxy with optimized transport.
 	// http.DefaultTransport creates a new connection per request under load.
 	// Our custom transport pools keep-alive connections and tunes timeouts
@@ -454,6 +488,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		// Restore the body
 		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
+		// v4.5.0 P2: Record tool calls for chain analysis (non-blocking)
+		conversationID := ExtractConversationID(req)
+		p.recordToolCalls(conversationID, bodyBytes)
+
+		// v4.5.0 P4: Record API key usage for anomaly detection (non-blocking)
+		p.recordKeyUsage(req)
 
 		// Extract user-facing content from JSON before scanning.
 		// This prevents structural JSON tokens (llama2_inst, chatml_tokens,
@@ -1296,6 +1337,11 @@ func (p *Proxy) Start() error {
 func (p *Proxy) Stop(ctx context.Context) error {
 	if p.rateLimiter != nil {
 		p.rateLimiter.Stop()
+	}
+
+	// v4.5.0: Stop P2/P4 cleanup goroutine
+	if p.v450CleanupDone != nil {
+		close(p.v450CleanupDone)
 	}
 
 	if p.server != nil {
