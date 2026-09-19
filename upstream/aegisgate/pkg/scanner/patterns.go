@@ -315,3 +315,4 @@ func DefaultPatterns() []*Pattern {
 func ShouldBlock(severity Severity) bool {
 	return severity >= High
 }
+
