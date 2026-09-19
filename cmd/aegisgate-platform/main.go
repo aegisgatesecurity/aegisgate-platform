@@ -110,7 +110,7 @@ func (a *tsaSignerAdapter) Endpoints() []string {
 }
 
 var (
-	version    = "4.4.2"
+	version    = "4.4.3"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
