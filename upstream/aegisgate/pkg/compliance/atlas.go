@@ -637,7 +637,7 @@ func (f *ATLASFramework) initPatterns() {
 		Category:    "ConfigExfiltration",
 		Description: "Environment Variables Exfiltration",
 		Block:       true,
-		Regex:       regexp.MustCompile(`(?i)(?:(?:reveal|show|display|expose|extract|dump|leak|steal|list|print|read|access|copy|send|exfiltrate)\s+(?:the\s+)?(?:environment\s+variables|env\s+variables|configuration|config|settings|api\s+keys?|secrets?|credentials?))|(?:\$ENV|\$\{[^}]*\})|(?:getenv\w*|os\.environ|process\.env|export\s+vars|printenv|listenv|read\s+env|env\s+file)`),
+		Regex:       regexp.MustCompile(`(?i)(?:(?:reveal|show|display|expose|extract|dump|leak|steal|print|read|access|copy|send|exfiltrate)\s+(?:the\s+)?(?:environment\s+variables|env\s+variables|configuration|config|settings|api\s+keys?|secrets?|credentials?))|(?:\$ENV|\$\{[^}]*\})|(?:getenv\w*|os\.environ|process\.env|export\s+vars|printenv|listenv|read\s+env|env\s+file)`),
 	})
 
 	// ==================== BRUTE FORCE / PASSWORD GUESSING (T1110) ====================
