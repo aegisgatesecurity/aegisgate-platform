@@ -19,6 +19,8 @@ import (
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/anomaly"
 )
 
 // ============================================================================
@@ -47,6 +49,10 @@ type ResponseGuard struct {
 
 	// exfilDetector analyzes responses for data exfiltration patterns (v4.5.0 P5)
 	exfilDetector *ExfilDetector
+
+	// anomalyDetector provides entropy-based anomaly scoring (v4.5.0)
+	// Non-blocking — augments scan results with anomaly metadata
+	anomalyDetector *anomaly.AnomalyAugmentedScanner
 
 	// mu protects concurrent access
 	mu sync.RWMutex
@@ -83,6 +89,14 @@ func NewResponseGuardWithConfig(config *ResponseGuardConfig) *ResponseGuard {
 	// Initialize hallucination detector if enabled
 	if config.EnableHallucination {
 		rg.hallucinationDetector = NewHallucinationDetector(nil)
+	}
+
+	// Initialize anomaly scanner if enabled (v4.5.0)
+	if config.EnableAnomalyDetection {
+		anonConfig := anomaly.DefaultIntegrationConfig(anomaly.IntegrationResponseGuard)
+		anonConfig.BlockOnAlert = false // Non-blocking: alert only, never block
+		anonConfig.Timeout = 10 * time.Millisecond
+		rg.anomalyDetector = anomaly.NewAnomalyAugmentedScanner(&nopScanner{}, anonConfig)
 	}
 
 	return rg
@@ -311,6 +325,37 @@ func (rg *ResponseGuard) ScanWithContext(ctx context.Context, response string, s
 					result.BlockReason = "Data exfiltration detected (score: " +
 						fmt.Sprintf("%.2f", exfilResult.Score) + ")"
 				}
+			}
+		}
+	}
+
+	// 9. Entropy-based anomaly scoring (v4.5.0)
+	// Non-blocking: augments the result with anomaly metadata for
+	// alerting/logging. This catches encoded/obfuscated content and
+	// statistically unusual response patterns that regex misses.
+	if rg.anomalyDetector != nil {
+		anonResult := rg.anomalyDetector.Scan([]byte(response))
+		if anonResult.Augmented && anonResult.Error == nil {
+			summary := &AnomalyScoreSummary{
+				Total:          anonResult.AnomalyScore.Total,
+				Entropy:        anonResult.AnomalyScore.Entropy,
+				Frequency:      anonResult.AnomalyScore.Frequency,
+				Structure:      anonResult.AnomalyScore.Structure,
+				IsAnomalous:    anonResult.AnomalyScore.IsAnomalous,
+				IsAlert:        anonResult.AnomalyScore.IsAlert,
+				Classification: anonResult.AnomalyScore.Classification,
+				Flags:          anonResult.AnomalyScore.Flags,
+			}
+			result.AnomalyScore = summary
+
+			if anonResult.AnomalyScore.IsAlert {
+				result.Threats = append(result.Threats, Threat{
+					Type:     "anomaly",
+					Severity: 3,
+					Message:  "Entropy anomaly detected: " + anonResult.AnomalyScore.Classification,
+					Location: "response_body",
+				})
+				// Non-blocking by design — anomaly alone doesn't block
 			}
 		}
 	}
@@ -572,3 +617,11 @@ func RedactResponse(response string) string {
 func MaskResponse(response string) string {
 	return MaskSecrets(response)
 }
+
+// nopScanner is a no-op scanner for the anomaly augmented scanner wrapper.
+// The ResponseGuard already performs its own scanning; the anomaly layer
+// only needs to score the response body — the underlying scanner result
+// is unused.
+type nopScanner struct{}
+
+func (n *nopScanner) Scan(data []byte) interface{} { return nil }

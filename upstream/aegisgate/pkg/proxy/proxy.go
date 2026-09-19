@@ -38,6 +38,8 @@ import (
 
 	responseguard "github.com/aegisgatesecurity/aegisgate-platform/pkg/response"
 	platformscanner "github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/anomaly"
 )
 
 // Options contains proxy configuration
@@ -133,6 +135,10 @@ type Proxy struct {
 	// v4.5.0 P1: Scanner-level session tracking for L1/L2 finding correlation
 	sessionTracker *platformscanner.SessionTracker
 
+	// v4.5.0: Entropy-based anomaly detection for ingress prompts
+	// Non-blocking — augments scanner results with anomaly metadata
+	anomalyScanner *anomaly.AnomalyAugmentedScanner
+
 	// Combined ML Detector for multi-turn signal extraction
 	combinedDetector *ml.CombinedDetector
 
@@ -222,6 +228,12 @@ func New(opts *Options) *Proxy {
 
 	// v4.5.0 P1: Scanner-level session tracker for L1/L2 finding correlation
 	p.sessionTracker = platformscanner.NewSessionTracker()
+
+	// v4.5.0: Entropy-based anomaly scanner for ingress prompts
+	anonConfig := anomaly.DefaultIntegrationConfig(anomaly.IntegrationHTTPGuard)
+	anonConfig.BlockOnAlert = false // Non-blocking: alert only
+	anonConfig.Timeout = 10 * time.Millisecond
+	p.anomalyScanner = anomaly.NewAnomalyAugmentedScanner(&nopProxyScanner{}, anonConfig)
 
 	// Initialize combined ML detector for multi-turn signal extraction
 	p.combinedDetector = ml.NewCombinedDetector(70)
@@ -517,6 +529,20 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 				// Log all findings
 				p.logFindings("request", req.URL.Path, requestFindings)
+
+				// v4.5.0: Entropy-based anomaly scoring on ingress prompt
+				// Non-blocking — logs alert if anomalous content detected
+				if p.anomalyScanner != nil {
+					anonResult := p.anomalyScanner.Scan([]byte(scanContent))
+					if anonResult.Augmented && anonResult.Error == nil && anonResult.AnomalyScore.IsAlert {
+						slog.Warn("ingress entropy anomaly detected",
+							"path", req.URL.Path,
+							"score", anonResult.AnomalyScore.Total,
+							"classification", anonResult.AnomalyScore.Classification,
+							"flags", anonResult.AnomalyScore.Flags,
+						)
+					}
+				}
 
 				// Check for MITRE ATLAS threats
 				atlasBlocked := false
@@ -1527,3 +1553,10 @@ func extractContentFromResponse(body []byte) string {
 
 	return strings.Join(parts, "\n")
 }
+
+// nopProxyScanner is a no-op scanner for the anomaly augmented scanner.
+// The proxy already has its own scanner; the anomaly layer only needs
+// to score the content — the underlying scanner result is unused.
+type nopProxyScanner struct{}
+
+func (n *nopProxyScanner) Scan(data []byte) interface{} { return nil }

@@ -50,6 +50,10 @@ type ResponseGuardConfig struct {
 	// EnableComplianceDetection enables compliance framework detection
 	EnableComplianceDetection bool
 
+	// EnableAnomalyDetection enables entropy-based anomaly scoring (v4.5.0)
+	// Non-blocking — adds anomaly score to scan result for alerting/logging
+	EnableAnomalyDetection bool
+
 	// PIIPatterns custom PII patterns (nil = use defaults)
 	PIIPatterns []string
 
@@ -66,6 +70,7 @@ func DefaultResponseGuardConfig() *ResponseGuardConfig {
 		EnableHallucination:       false,
 		EnableXSSDetection:        true,
 		EnableComplianceDetection: true,
+		EnableAnomalyDetection:    true,
 		MaxResponseTokens:         8192,
 		MaxResponseLatencyMS:      100,
 		StrictMode:                false,
@@ -123,6 +128,23 @@ type ResponseScanResult struct {
 	// ExfilResult is the data exfiltration analysis result (v4.5.0 P5)
 	// nil if exfil detection is disabled or not triggered
 	ExfilResult *ExfilResult
+
+	// AnomalyScore is the entropy-based anomaly analysis result (v4.5.0)
+	// nil if anomaly detection is disabled. Non-blocking — alert only.
+	AnomalyScore *AnomalyScoreSummary
+}
+
+// AnomalyScoreSummary is a serializable summary of the anomaly analysis.
+// (v4.5.0) Wraps pkg/anomaly.AnomalyScore for the response scan result.
+type AnomalyScoreSummary struct {
+	Total          float64
+	Entropy        float64
+	Frequency      float64
+	Structure      float64
+	IsAnomalous    bool
+	IsAlert        bool
+	Classification string
+	Flags          []string
 }
 
 // Threat represents a detected threat in a response
