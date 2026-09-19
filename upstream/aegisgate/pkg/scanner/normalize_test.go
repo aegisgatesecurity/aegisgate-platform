@@ -75,7 +75,9 @@ func TestReverseKeyboardWalk(t *testing.T) {
 		// Reversing "ohmptr": o→i, h→g, m→n, p→o, t→r, r→e = "ignore"
 		{"ignore reversed", "ohmptr", "ignore"},
 		{"preserve digits", "ohmptr 123!", "ignore 123!"},
-		{"preserve uppercase", "Ohmptr", "Ognore"},
+		// "Ohmptr" = uppercase O + lowercase "hmptr"
+		// O→I (uppercase), h→g, m→n, p→o, t→r, r→e = "Ignore"
+		{"preserve uppercase", "Ohmptr", "Ignore"},
 		// "system" shifted right = "dudyr," → reversing "dudyr" (no comma) = "system"
 		// d→s, u→y, d→s, y→t, r→e = "syste"? No: d→s, u→y, d→s, y→t, r→e = "syste"
 		// Wait: "system" = s,y,s,t,e,m → shift: d,u,d,y,r,m → reverse: s,y,s,t,e,n
