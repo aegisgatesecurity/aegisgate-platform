@@ -150,7 +150,8 @@ func classifyToolDataType(toolName string) string {
 }
 
 // recordToolCalls feeds extracted tool calls into the ChainAnalyzer.
-func (p *Proxy) recordToolCalls(sessionID string, body []byte) {
+// It also records P2 shadow alerts for response header tracking.
+func (p *Proxy) recordToolCalls(sessionID string, body []byte, sac *shadowAlertContext) {
 	if p.chainAnalyzer == nil {
 		return
 	}
@@ -176,6 +177,9 @@ func (p *Proxy) recordToolCalls(sessionID string, body []byte) {
 
 		// Analyze after each call to detect chains in real time
 		result := p.chainAnalyzer.AnalyzeChain(sessionID)
+		if sac != nil {
+			sac.RecordPrediction(ShadowDetectorP2)
+		}
 		if result.EscalationChain || result.ExfilChain || result.ReconChain {
 			slog.Warn("v4.5.0 P2: Tool call chain pattern detected",
 				"session_id", sessionID,
@@ -187,6 +191,10 @@ func (p *Proxy) recordToolCalls(sessionID string, body []byte) {
 				"flags", strings.Join(result.Flags, ", "),
 				"call_count", result.CallCount,
 			)
+			// Record P2 shadow alert for response header + metrics
+			if sac != nil {
+				sac.RecordAlert(ShadowDetectorP2)
+			}
 			// v4.5.0: alert only. v4.6.0 may block based on chain risk.
 		}
 	}
@@ -261,8 +269,8 @@ func (p *Proxy) validateModelProvenance(modelPath string) {
 
 // recordKeyUsage feeds request metadata into the AnomalyDetector.
 // It extracts the API key ID from the Authorization header (hashed for privacy),
-// records usage stats, and checks for anomalies.
-func (p *Proxy) recordKeyUsage(req *http.Request) {
+// records usage stats, and checks for anomalies. Also records P4 shadow alerts.
+func (p *Proxy) recordKeyUsage(req *http.Request, sac *shadowAlertContext) {
 	if p.anomalyDetector == nil {
 		return
 	}
@@ -289,6 +297,10 @@ func (p *Proxy) recordKeyUsage(req *http.Request) {
 	p.anomalyDetector.RecordUsage(rec)
 	result := p.anomalyDetector.CheckAnomaly(keyID, rec)
 
+	if sac != nil {
+		sac.RecordPrediction(ShadowDetectorP4)
+	}
+
 	if result.IsAnomalous {
 		slog.Warn("v4.5.0 P4: API key anomaly detected",
 			"key_id", keyID,
@@ -297,6 +309,10 @@ func (p *Proxy) recordKeyUsage(req *http.Request) {
 			"types", fmt.Sprintf("%v", result.Types),
 			"details", strings.Join(result.Details, "; "),
 		)
+		// Record P4 shadow alert for response header + metrics
+		if sac != nil {
+			sac.RecordAlert(ShadowDetectorP4)
+		}
 		// v4.5.0: alert only. v4.6.0 may block or rate-limit anomalous keys.
 	}
 }

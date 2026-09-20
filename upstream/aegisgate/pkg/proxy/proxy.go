@@ -441,6 +441,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Increment request counter
 	p.requestCount.Add(1)
 
+	// Create shadow alert context for this request.
+	// Must be created before any detectors run so they can record alerts.
+	// SetShadowHeaders is called just before forwarding to upstream.
+	shadowCtx := newShadowAlertContext()
+	req = req.WithContext(context.WithValue(req.Context(), shadowCtxKey{}, shadowCtx))
+
 	// Fast path: skip content scanning for health, version, and metrics endpoints.
 	// These are infrastructure endpoints that never contain user-generated content.
 	// Under load (15K+ RPS), this saves ~80 regex evaluations per request.
@@ -491,10 +497,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 		// v4.5.0 P2: Record tool calls for chain analysis (non-blocking)
 		conversationID := ExtractConversationID(req)
-		p.recordToolCalls(conversationID, bodyBytes)
+		sac := getShadowAlertContext(req)
+		p.recordToolCalls(conversationID, bodyBytes, sac)
 
 		// v4.5.0 P4: Record API key usage for anomaly detection (non-blocking)
-		p.recordKeyUsage(req)
+		p.recordKeyUsage(req, sac)
 
 		// Extract user-facing content from JSON before scanning.
 		// This prevents structural JSON tokens (llama2_inst, chatml_tokens,
@@ -658,6 +665,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				// for regex.
 				if p.threatDetector != nil && p.threatDetector.IsEnabled() {
 					threatResult := p.threatDetector.Detect(scanContent)
+					if sac != nil {
+						sac.RecordPrediction(ShadowDetectorL3)
+					}
 					if threatResult.IsThreat {
 						// Two-tier L3 blocking architecture:
 						//
@@ -737,6 +747,10 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 							"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
 							"high_confidence_threshold", fmt.Sprintf("%.2f", l3HighConfidenceThreshold),
 						)
+						// Record L3 shadow alert for response header + metrics
+						if sac != nil {
+							sac.RecordAlert(ShadowDetectorL3)
+						}
 					}
 				}
 			}
@@ -863,6 +877,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 	w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+
+	// Set shadow alert headers on the response.
+	// By this point, all shadow detectors (P2/P4/L3) have already run
+	// during body scanning. Any alerts they recorded will appear here.
+	// This enables k6 shadow-validation-7day.js to measure per-detector FPR.
+	shadowCtx.SetResponseHeaders(w)
 
 	// Log request
 	slog.Info("Proxy request",
