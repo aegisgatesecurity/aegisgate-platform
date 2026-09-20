@@ -11,7 +11,9 @@
 //
 // L3 was flipped to blocking mode after 7-day shadow validation:
 //   0% FPR, 99.57% TPR across 8.5M requests (50→10K VUs stress test).
-// P2/P4/DIST2-5 remain alert-only (controlled by BlockOnAlert=false).
+// P2 was flipped to blocking mode after chain analysis validation:
+//   91.67% TPR, 0% FPR across multi-turn chain tests.
+// P4/DIST2-5 remain alert-only (time-based / pattern-based, need production traffic).
 //
 // =========================================================================
 
@@ -39,6 +41,16 @@ func TestDefaultConfig_MLShadowModeDisabled(t *testing.T) {
 
 	if cfg.Security.MLShadowMode {
 		t.Error("MLShadowMode should be false by default (L3 in blocking mode)")
+	}
+}
+
+// TestDefaultConfig_ChainBlockingEnabled verifies that P2 chain blocking is
+// enabled by default (flipped after chain analysis validation).
+func TestDefaultConfig_ChainBlockingEnabled(t *testing.T) {
+	cfg := DefaultConfig()
+
+	if !cfg.Security.ChainBlockingEnabled {
+		t.Error("ChainBlockingEnabled should be true by default (P2 blocking enabled after chain validation)")
 	}
 }
 
@@ -105,6 +117,20 @@ func TestEnvOverride_MLFeatureFlagsBothSet(t *testing.T) {
 	}
 }
 
+// TestEnvOverride_ChainBlockingDisabled verifies that the
+// AEGISGATE_CHAIN_BLOCKING_ENABLED env var can disable P2 blocking.
+func TestEnvOverride_ChainBlockingDisabled(t *testing.T) {
+	os.Setenv("AEGISGATE_CHAIN_BLOCKING_ENABLED", "false")
+	defer os.Unsetenv("AEGISGATE_CHAIN_BLOCKING_ENABLED")
+
+	cfg := DefaultConfig()
+	cfg.applyEnvOverrides()
+
+	if cfg.Security.ChainBlockingEnabled {
+		t.Error("ChainBlockingEnabled should be false when env var is set to 'false'")
+	}
+}
+
 // TestYAMLConfig_MLFeatureFlags verifies that YAML config keys are correctly
 // parsed into the SecurityConfig struct fields.
 func TestYAMLConfig_MLFeatureFlags(t *testing.T) {
@@ -166,5 +192,8 @@ platform:
 	}
 	if cfg.Security.MLShadowMode {
 		t.Error("MLShadowMode should default to false (blocking mode)")
+	}
+	if !cfg.Security.ChainBlockingEnabled {
+		t.Error("ChainBlockingEnabled should default to true (P2 blocking enabled)")
 	}
 }

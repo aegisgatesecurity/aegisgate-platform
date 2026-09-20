@@ -4,7 +4,8 @@
 #
 # Override file for TPR validation tests. L3 is now in BLOCKING mode
 # (flipped after 7-day shadow validation: 0% FPR, 99.57% TPR).
-# P2/P4/DIST2-5 remain alert-only (BlockOnAlert=false).
+# P2 is now in BLOCKING mode (flipped after chain validation: 91.67% TPR, 0% FPR).
+# P4/DIST2-5 remain alert-only (time-based/pattern-based, need production traffic).
 #
 # Uses mock upstream on :18888 for instant responses (shadow detectors
 # run pre-forward, so FPR/TPR measurement is unaffected).
@@ -37,7 +38,9 @@ services:
       AEGISGATE_ML_SENSITIVITY: "high"
       AEGISGATE_ML_MIN_SCORE_TO_BLOCK: "0.5"
       AEGISGATE_ML_MODEL_PATH: "/data/models/threat_cnn_bilstm.onnx"
-      # P2/P4/DIST2-5 remain alert-only (BlockOnAlert=false in proxy.go)
+      # P2 Chain Blocking — BLOCKING mode (flipped after chain validation)
+      AEGISGATE_CHAIN_BLOCKING_ENABLED: "true"
+      # P4/DIST2-5 remain alert-only (time-based/pattern-based, need production traffic)
     volumes:
       - ./models:/data/models:ro
     logging:

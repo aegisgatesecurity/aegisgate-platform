@@ -970,6 +970,7 @@ func main() {
 		MLShadowMode:                   cfg.Security.MLShadowMode,
 		MLThreshold:                    cfg.Security.MLThreshold,
 		MLModelPath:                    cfg.Security.MLModelPath,
+		ChainBlockingEnabled:           cfg.Security.ChainBlockingEnabled,
 		OnRateLimited: func(client string) {
 			metrics.RecordRateLimitHit(metrics.ServiceProxy, client)
 		},

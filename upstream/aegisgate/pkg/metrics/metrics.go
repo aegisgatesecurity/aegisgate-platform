@@ -994,6 +994,7 @@ const (
 	ReasonAtlas        = "atlas"
 	ReasonRateLimit    = "rate_limit"
 	ReasonPolicy       = "policy"
+	ReasonToolChain    = "tool_chain"
 	ReasonUnknown      = "unknown"
 )
 

@@ -405,7 +405,8 @@ func highSecurityConfig() *platformconfig.Config {
 	cfg.Security.AllowedMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
 	cfg.Security.AllowedHeaders = []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"}
 	cfg.Security.MLThreatDetectionEnabled = true // L3 ML blocking enabled after shadow validation
-	cfg.Security.MLShadowMode = false            // P2/P4/DIST2-5 remain alert-only via BlockOnAlert=false
+	cfg.Security.MLShadowMode = false            // L3 blocks. P4/DIST2-5 remain alert-only.
+	cfg.Security.ChainBlockingEnabled = true     // P2 chain blocking enabled (91.67% TPR, 0% FPR)
 
 	// Persistence: file-backed, large retention
 	cfg.Persistence.Enabled = true

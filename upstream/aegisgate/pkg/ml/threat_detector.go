@@ -18,7 +18,8 @@
 // Deployment status (v4.6.0):
 //   1. Ship with Enabled=true, ShadowMode=false ✅
 //   2. 7-day shadow validation COMPLETE: 0% FPR, 99.57% TPR (8.5M requests)
-//   3. L3 now blocks threats. P2/P4/DIST2-5 remain alert-only.
+//   3. L3 now blocks threats. P2 now blocks chain attacks.
+//   4. P4/DIST2-5 remain alert-only (need production traffic for TPR validation).
 //
 // =========================================================================
 

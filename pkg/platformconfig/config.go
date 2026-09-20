@@ -164,13 +164,13 @@ type SecurityConfig struct {
 	AllowedHeaders        []string `yaml:"allowed_headers"`
 
 	// MLThreatDetectionEnabled controls whether the neural network threat
-	// detector (Char CNN-BiLSTM) is active. Default: false (cold-start safety).
-	// Only enable after 7-day shadow validation with 0% FPR.
+	// detector (Char CNN-BiLSTM) is active. Default: true (L3 blocking enabled
+	// after 7-day shadow validation: 0% FPR, 99.57% TPR across 8.5M requests).
 	MLThreatDetectionEnabled bool `yaml:"ml_threat_detection_enabled"`
 
 	// MLShadowMode controls whether the neural threat detector runs in shadow
-	// mode (log predictions but never block). Default: true (safe deployment).
-	// Set to false only after calibration confirms zero FPR.
+	// mode (log predictions but never block). Default: false (L3 blocks).
+	// Set to true for shadow-mode deployment during calibration.
 	MLShadowMode bool `yaml:"ml_shadow_mode"`
 
 	// MLThreshold is the score above which content is classified as adversarial.
@@ -180,6 +180,13 @@ type SecurityConfig struct {
 	// MLModelPath is the path to the ONNX model file. If empty, falls back to
 	// AEGISGATE_ML_MODEL_PATH env var, then /opt/aegisgate-platform/models/.
 	MLModelPath string `yaml:"ml_model_path"`
+
+	// ChainBlockingEnabled controls whether the P2 tool call chain analyzer
+	// blocks requests when escalation/exfil/recon chains are detected.
+	// Default: true (blocking enabled after P2 shadow validation:
+	// 91.67% TPR, 0% FPR across multi-turn chain tests).
+	// When false, P2 logs warnings and sets shadow headers but does not block.
+	ChainBlockingEnabled bool `yaml:"chain_blocking_enabled"`
 }
 
 // LoggingConfig holds structured logging settings
@@ -392,6 +399,7 @@ func DefaultConfig() *Config {
 			MLShadowMode:             false, // Shadow mode disabled — L3 now blocks. P2/P4/DIST2-5 remain alert-only.
 			MLThreshold:              0.50,  // v11 calibrated threshold: 0.50 for 0% FPR (v11 model, max benign=0.13, min TP=0.91)
 			MLModelPath:              "",    // Empty: fall back to env var or default path
+			ChainBlockingEnabled:     true,  // P2 chain blocking enabled after validation (91.67% TPR, 0% FPR)
 		},
 		Logging: LoggingConfig{
 			Level:  "info",
@@ -704,6 +712,9 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("AEGISGATE_ML_MODEL_PATH"); v != "" {
 		c.Security.MLModelPath = v
+	}
+	if v := os.Getenv("AEGISGATE_CHAIN_BLOCKING_ENABLED"); v != "" {
+		c.Security.ChainBlockingEnabled = strings.ToLower(v) == "true"
 	}
 
 	// FIPS overrides

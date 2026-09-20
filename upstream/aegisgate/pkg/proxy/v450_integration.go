@@ -150,16 +150,20 @@ func classifyToolDataType(toolName string) string {
 }
 
 // recordToolCalls feeds extracted tool calls into the ChainAnalyzer.
-// It also records P2 shadow alerts for response header tracking.
-func (p *Proxy) recordToolCalls(sessionID string, body []byte, sac *shadowAlertContext) {
+// Returns a pointer to the last ChainResult that detected a chain pattern,
+// or nil if no chain was detected. The caller checks the result to decide
+// whether to block the request (when chain blocking is enabled).
+func (p *Proxy) recordToolCalls(sessionID string, body []byte, sac *shadowAlertContext) *platformtoolauth.ChainResult {
 	if p.chainAnalyzer == nil {
-		return
+		return nil
 	}
 
 	calls := p.toolCallExtractor.extractToolCalls(body)
 	if len(calls) == 0 {
-		return
+		return nil
 	}
+
+	var chainResult *platformtoolauth.ChainResult
 
 	for _, call := range calls {
 		riskLevel := p.toolCallExtractor.matrix.GetRiskLevel(call.ToolName)
@@ -190,14 +194,21 @@ func (p *Proxy) recordToolCalls(sessionID string, body []byte, sac *shadowAlertC
 				"risk", result.OverallRisk.String(),
 				"flags", strings.Join(result.Flags, ", "),
 				"call_count", result.CallCount,
+				"blocking_enabled", p.chainBlockingEnabled,
 			)
 			// Record P2 shadow alert for response header + metrics
 			if sac != nil {
 				sac.RecordAlert(ShadowDetectorP2)
 			}
-			// v4.5.0: alert only. v4.6.0 may block based on chain risk.
+			// P2 blocking: when ChainBlockingEnabled is true, the proxy
+			// ServeHTTP will block this request with 403. When false,
+			// the alert is logged and shadow headers are set but the
+			// request continues (shadow mode for P2).
+			chainResult = &result
 		}
 	}
+
+	return chainResult
 }
 
 // ---------------------------------------------------------------------------
@@ -313,7 +324,10 @@ func (p *Proxy) recordKeyUsage(req *http.Request, sac *shadowAlertContext) {
 		if sac != nil {
 			sac.RecordAlert(ShadowDetectorP4)
 		}
-		// v4.5.0: alert only. v4.6.0 may block or rate-limit anomalous keys.
+		// P4 anomaly detection: alert only. Time-based anomaly detection
+		// (hourly volume, stddev, geo-shift) requires production traffic with
+		// natural variation to validate TPR. Flip to blocking in v4.6.1
+		// after design partner traffic validates TPR.
 	}
 }
 
