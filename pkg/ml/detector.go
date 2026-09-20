@@ -41,11 +41,12 @@ import (
 // (threat_cnn_bilstm.onnx). If the model file hash does not match, the
 // detector refuses to load it — preventing supply-chain tampering.
 // v12:  9ce1e81a5ec68733f6dc763815203e8f42a3116f41c3642dfbf199f7849d2822
+// v13:  329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0
 // v11b: 8e13c793c32816aa0f6e2af13ffadd4f38f707b4ac8906b56ddfa77da51ea8e5
 // v11:  32b7db74379b28a0e3da5a79e42c0ecedab29b66463c26a8cf2081a731facc91
 // v10:  8f874aa5a0d01a8acaa8449ba68c82d8bc0bc984744d9cf8a68ce900b83f2e56
 // v9:   0076b66d069ca445589526624ebeb67b65a1df68d615525b83e528f03e0bd4b7
-const ExpectedModelHash = "9ce1e81a5ec68733f6dc763815203e8f42a3116f41c3642dfbf199f7849d2822"
+const ExpectedModelHash = "329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0"
 
 // ThreatDetector performs neural network-based threat detection.
 // ONNX session fields are defined in build-tag-specific files:
