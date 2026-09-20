@@ -138,7 +138,7 @@ jobs:
         env:
           AEGISGATE_DATA_DIR: /tmp/aegisgate-data
           API_AUTH_TOKEN: ci-test-token
-          AEGISGATE_ML_MODEL_PATH: pkg/ml/models/threat_cnn_bilstm.onnx
+          AEGISGATE_ML_MODEL_PATH: ${{ github.workspace }}/pkg/ml/models/threat_cnn_bilstm.onnx
           ONNXRUNTIME_SHARED_LIBRARY_PATH: /usr/lib/libonnxruntime.so
         run: |
           mkdir -p /tmp/aegisgate-data
