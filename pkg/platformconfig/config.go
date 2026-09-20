@@ -388,8 +388,8 @@ func DefaultConfig() *Config {
 			AllowedOrigins:           []string{},
 			AllowedMethods:           []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"},
 			AllowedHeaders:           []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},
-			MLThreatDetectionEnabled: false, // Cold-start: disabled by default
-			MLShadowMode:             true,  // Safe deployment: shadow mode on by default
+			MLThreatDetectionEnabled: true,  // L3 ML blocking enabled after 7-day shadow validation (0% FPR, 99.57% TPR)
+			MLShadowMode:             false, // Shadow mode disabled — L3 now blocks. P2/P4/DIST2-5 remain alert-only.
 			MLThreshold:              0.50,  // v11 calibrated threshold: 0.50 for 0% FPR (v11 model, max benign=0.13, min TP=0.91)
 			MLModelPath:              "",    // Empty: fall back to env var or default path
 		},
