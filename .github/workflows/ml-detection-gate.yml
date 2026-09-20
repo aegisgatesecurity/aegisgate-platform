@@ -178,7 +178,7 @@ jobs:
       - name: Run evasion suite (ML layer)
         if: env.AEGISGATE_ML_SKIP != '1'
         env:
-          AEGISGATE_ML_MODEL_PATH: pkg/ml/models/threat_cnn_bilstm.onnx
+          AEGISGATE_ML_MODEL_PATH: ${{ github.workspace }}/upstream/aegisgate/pkg/ml/models/threat_cnn_bilstm.onnx
           ONNXRUNTIME_SHARED_LIBRARY_PATH: /usr/lib/libonnxruntime.so
           CGO_ENABLED: '1'
         run: |
