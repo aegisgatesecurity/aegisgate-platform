@@ -985,8 +985,10 @@ func newEvasionDetector() *evasionDetector {
 	}
 	if err := neural.LoadModel(modelPath); err != nil {
 		// ONNX model not available — heuristic fallback will be used
+		fmt.Printf("⚠️  ONNX model load failed: %v (path=%s)\n", err, modelPath)
 		neural = nil
 	} else {
+		fmt.Printf("✅ ONNX model loaded successfully (path=%s)\n", modelPath)
 		combined.SetThreatDetector(neural)
 	}
 
