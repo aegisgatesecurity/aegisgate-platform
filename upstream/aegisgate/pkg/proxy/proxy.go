@@ -668,6 +668,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					if sac != nil {
 						sac.RecordPrediction(ShadowDetectorL3)
 					}
+					// In shadow mode, IsThreat is always false but Score has the real value.
+					// Record L3 shadow alert when score >= threshold (would block if not in shadow).
+					if sac != nil && !threatResult.IsThreat && threatResult.Score >= threatResult.Threshold {
+						sac.RecordAlert(ShadowDetectorL3)
+					}
 					if threatResult.IsThreat {
 						// Two-tier L3 blocking architecture:
 						//

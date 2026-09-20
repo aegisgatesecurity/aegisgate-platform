@@ -15,14 +15,29 @@
 
 services:
   aegisgate:
+    # Override command to fix upstream target port (11434 not 11435)
+    command: >
+      --mode=staging
+      --license-public-key=/data/license-public.pem
+      --proxy-port=8080
+      --mcp-port=8081
+      --dashboard-port=8443
+      --grpc-addr=:50051
+      --embedded-mcp
+      --target=http://host.docker.internal:11434
     environment:
       # ML Threat Detection — ENABLED in SHADOW mode (alert-only, no blocking)
       AEGISGATE_ML_THREAT_DETECTION_ENABLED: "true"
       AEGISGATE_ML_SHADOW_MODE: "true"
       AEGISGATE_ML_SENSITIVITY: "high"
       AEGISGATE_ML_MIN_SCORE_TO_BLOCK: "0.5"
+      # Point to mounted model file
+      AEGISGATE_ML_MODEL_PATH: "/data/models/threat_cnn_bilstm.onnx"
       # Shadow detectors P2/P4 are always alert-only by design (BlockOnAlert=false)
       # DIST2-5 are alert-only by design (distillation_detect.go)
+    volumes:
+      # Mount the ONNX model file into the container
+      - ./models:/data/models:ro
     logging:
       driver: "json-file"
       options:
