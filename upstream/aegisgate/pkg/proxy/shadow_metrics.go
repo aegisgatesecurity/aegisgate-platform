@@ -39,13 +39,13 @@ import (
 
 // Detector names for metric labels.
 const (
-	ShadowDetectorP2     = "p2_chain"
-	ShadowDetectorP4     = "p4_anomaly"
-	ShadowDetectorDIST2  = "dist2_proxy"
-	ShadowDetectorDIST3  = "dist3_pattern"
-	ShadowDetectorDIST4  = "dist4_cluster"
-	ShadowDetectorDIST5  = "dist5_stolen_key"
-	ShadowDetectorL3     = "l3_neural"
+	ShadowDetectorP2    = "p2_chain"
+	ShadowDetectorP4    = "p4_anomaly"
+	ShadowDetectorDIST2 = "dist2_proxy"
+	ShadowDetectorDIST3 = "dist3_pattern"
+	ShadowDetectorDIST4 = "dist4_cluster"
+	ShadowDetectorDIST5 = "dist5_stolen_key"
+	ShadowDetectorL3    = "l3_neural"
 )
 
 // Response header names for shadow alerts.
