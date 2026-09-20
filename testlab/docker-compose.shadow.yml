@@ -1,21 +1,26 @@
 # =========================================================================
-# AegisGate Synthetic Test Environment — Shadow Validation Override
+# AegisGate Synthetic Test Environment — Validation Override
 # =========================================================================
 #
-# Override file for shadow mode FPR validation. Enables ALL shadow
-# detectors (P2, P4, L3) in alert-only mode for 7-day simulation.
+# Override file for TPR validation tests. L3 is now in BLOCKING mode
+# (flipped after 7-day shadow validation: 0% FPR, 99.57% TPR).
+# P2/P4/DIST2-5 remain alert-only (BlockOnAlert=false).
+#
+# Uses mock upstream on :18888 for instant responses (shadow detectors
+# run pre-forward, so FPR/TPR measurement is unaffected).
 #
 # Usage:
 #   docker compose -f docker-compose.synth.yml -f docker-compose.shadow.yml up -d
 #
 # Then run:
-#   k6 run --env BASE_URL=http://localhost:8080 \
-#     testlab/k6/shadow-validation-7day.js
+#   k6 run --env BASE_URL=http://localhost:8080 testlab/k6/shadow-p2-tpr.js
+#   k6 run --env BASE_URL=http://localhost:8080 testlab/k6/shadow-p4-tpr.js
+#   k6 run --env BASE_URL=http://localhost:8080 testlab/k6/shadow-dist-tpr.js
 # =========================================================================
 
 services:
   aegisgate:
-    # Override command to fix upstream target port (11434 not 11435)
+    # Override command: mock upstream on :18888 for instant responses
     command: >
       --mode=staging
       --license-public-key=/data/license-public.pem
@@ -26,17 +31,14 @@ services:
       --embedded-mcp
       --target=http://host.docker.internal:18888
     environment:
-      # ML Threat Detection — ENABLED in SHADOW mode (alert-only, no blocking)
+      # L3 ML Threat Detection — BLOCKING mode (flipped after shadow validation)
       AEGISGATE_ML_THREAT_DETECTION_ENABLED: "true"
-      AEGISGATE_ML_SHADOW_MODE: "true"
+      AEGISGATE_ML_SHADOW_MODE: "false"
       AEGISGATE_ML_SENSITIVITY: "high"
       AEGISGATE_ML_MIN_SCORE_TO_BLOCK: "0.5"
-      # Point to mounted model file
       AEGISGATE_ML_MODEL_PATH: "/data/models/threat_cnn_bilstm.onnx"
-      # Shadow detectors P2/P4 are always alert-only by design (BlockOnAlert=false)
-      # DIST2-5 are alert-only by design (distillation_detect.go)
+      # P2/P4/DIST2-5 remain alert-only (BlockOnAlert=false in proxy.go)
     volumes:
-      # Mount the ONNX model file into the container
       - ./models:/data/models:ro
     logging:
       driver: "json-file"
