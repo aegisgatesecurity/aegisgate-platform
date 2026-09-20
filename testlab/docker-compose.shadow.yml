@@ -24,7 +24,7 @@ services:
       --dashboard-port=8443
       --grpc-addr=:50051
       --embedded-mcp
-      --target=http://host.docker.internal:11434
+      --target=http://host.docker.internal:18888
     environment:
       # ML Threat Detection — ENABLED in SHADOW mode (alert-only, no blocking)
       AEGISGATE_ML_THREAT_DETECTION_ENABLED: "true"

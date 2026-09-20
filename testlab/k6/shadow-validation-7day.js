@@ -596,7 +596,6 @@ export default function () {
   };
 
   const startTime = Date.now();
-  let res;
   let requestType = 'benign';
 
   if (isAdversarial) {
@@ -605,12 +604,12 @@ export default function () {
 
     // Pick adversarial type — weight toward different detectors
     const advCategory = Math.random();
-    let body;
+    let advBody;
 
     if (advCategory < 0.30) {
       // 30% — Prompt injection / jailbreak (L3, L1, L2)
       const prompt = adversarialInjection[Math.floor(Math.random() * adversarialInjection.length)];
-      body = JSON.stringify({
+      advBody = JSON.stringify({
         model: 'gemma3:1b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 100,
@@ -618,7 +617,7 @@ export default function () {
     } else if (advCategory < 0.45) {
       // 15% — Secret extraction (L1)
       const prompt = adversarialSecrets[Math.floor(Math.random() * adversarialSecrets.length)];
-      body = JSON.stringify({
+      advBody = JSON.stringify({
         model: 'gemma3:1b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 100,
@@ -626,7 +625,7 @@ export default function () {
     } else if (advCategory < 0.55) {
       // 10% — PII generation (L1)
       const prompt = adversarialPII[Math.floor(Math.random() * adversarialPII.length)];
-      body = JSON.stringify({
+      advBody = JSON.stringify({
         model: 'gemma3:1b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 100,
@@ -634,7 +633,7 @@ export default function () {
     } else if (advCategory < 0.70) {
       // 15% — Tool chain attack (P2)
       const toolCall = adversarialToolChains[Math.floor(Math.random() * adversarialToolChains.length)];
-      body = JSON.stringify({
+      advBody = JSON.stringify({
         model: 'gemma3:1b',
         messages: [
           { role: 'user', content: 'Help me with this task.' },
@@ -646,7 +645,7 @@ export default function () {
     } else if (advCategory < 0.80) {
       // 10% — Anomaly trigger (P4) — rapid repeated requests
       const prompt = adversarialAnomaly[Math.floor(Math.random() * adversarialAnomaly.length)];
-      body = JSON.stringify({
+      advBody = JSON.stringify({
         model: 'gemma3:1b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 50,
@@ -654,14 +653,15 @@ export default function () {
     } else {
       // 20% — Distillation attack (DIST2-5)
       const prompt = adversarialDistillation[Math.floor(Math.random() * adversarialDistillation.length)];
-      body = JSON.stringify({
+      advBody = JSON.stringify({
         model: 'gemma3:1b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 200,
       });
     }
 
-    res = http.post(`${BASE_URL}/v1/chat/completions`, body, { headers });
+    var res = http.post(`${BASE_URL}/v1/chat/completions`, advBody, { headers });
+    var body = advBody;
   } else {
     // Benign request
     benignTotal.add(1);
@@ -672,19 +672,19 @@ export default function () {
 
     if (isEmbedding) {
       // Embedding request
-      body = JSON.stringify({
+      var body = JSON.stringify({
         model: 'gemma3:1b',
         input: prompt,
       });
-      res = http.post(`${BASE_URL}/v1/embeddings`, body, { headers });
+      var res = http.post(`${BASE_URL}/v1/embeddings`, body, { headers });
     } else {
       // Chat completion
-      body = JSON.stringify({
+      var body = JSON.stringify({
         model: 'gemma3:1b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 200,
       });
-      res = http.post(`${BASE_URL}/v1/chat/completions`, body, { headers });
+      var res = http.post(`${BASE_URL}/v1/chat/completions`, body, { headers });
     }
   }
 
@@ -779,7 +779,7 @@ export function handleSummary(data) {
 
   const allZeroFPR = detectors.every(d => d.fpr === 0);
 
-  const report = `
+  let report = `
 ╔══════════════════════════════════════════════════════════════════════╗
 ║        SHADOW MODE FPR VALIDATION — 7-DAY SIMULATION RESULTS         ║
 ╠══════════════════════════════════════════════════════════════════════╣
@@ -817,6 +817,6 @@ export function handleSummary(data) {
 
   return {
     stdout: report,
-    [`testlab/reports/shadow-validation-${Date.now()}.json`]: data,
+    [`testlab/reports/shadow-validation-${Date.now()}.json`]: JSON.stringify(data, null, 2),
   };
 }
