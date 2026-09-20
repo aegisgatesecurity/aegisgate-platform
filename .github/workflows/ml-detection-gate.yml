@@ -82,6 +82,18 @@ jobs:
             echo "Model not found in release assets — using heuristic-only mode"
             echo "AEGISGATE_ML_SKIP=1" >> $GITHUB_ENV
           }
+          # Verify model hash
+          if [ -f pkg/ml/models/threat_cnn_bilstm.onnx ]; then
+            MODEL_HASH=$(sha256sum pkg/ml/models/threat_cnn_bilstm.onnx | cut -d' ' -f1)
+            echo "Model downloaded. SHA256: $MODEL_HASH"
+            echo "Expected: 9ce1e81a5ec68733f6dc763815203e8f42a3116f41c3642dfbf199f7849d2822"
+            if [ "$MODEL_HASH" != "9ce1e81a5ec68733f6dc763815203e8f42a3116f41c3642dfbf199f7849d2822" ]; then
+              echo "WARNING: Model hash mismatch! Expected v12 model."
+            fi
+          else
+            echo "ERROR: Model file not found after download"
+            echo "AEGISGATE_ML_SKIP=1" >> $GITHUB_ENV
+          fi
           # Copy model to upstream/aegisgate/pkg/ml/models/ for evasion suite
           # (evasion suite runs from upstream/aegisgate/ directory)
           cp pkg/ml/models/threat_cnn_bilstm.onnx upstream/aegisgate/pkg/ml/models/ 2>/dev/null || true
