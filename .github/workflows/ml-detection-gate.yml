@@ -184,14 +184,6 @@ jobs:
         run: |
           cd upstream/aegisgate
           go clean -cache
-          # Debug: verify model file exists
-          echo "Checking model paths..."
-          echo "AEGISGATE_ML_MODEL_PATH=$AEGISGATE_ML_MODEL_PATH"
-          ls -la "$AEGISGATE_ML_MODEL_PATH" 2>/dev/null || echo "NOT FOUND: $AEGISGATE_ML_MODEL_PATH"
-          ls -la pkg/ml/models/threat_cnn_bilstm.onnx 2>/dev/null || echo "NOT FOUND: pkg/ml/models/threat_cnn_bilstm.onnx"
-          ls -la ../../pkg/ml/models/threat_cnn_bilstm.onnx 2>/dev/null || echo "NOT FOUND: ../../pkg/ml/models/threat_cnn_bilstm.onnx"
-          echo "ONNXRUNTIME_SHARED_LIBRARY_PATH=$ONNXRUNTIME_SHARED_LIBRARY_PATH"
-          ls -la "$ONNXRUNTIME_SHARED_LIBRARY_PATH" 2>/dev/null || echo "NOT FOUND: $ONNXRUNTIME_SHARED_LIBRARY_PATH"
           go test -v -run TestEvasionSuite -timeout 10m ./pkg/proxy/ 2>&1 | tee /tmp/evasion-results.txt
           # Check evasion resistance score (must be >= 95.0)
           # With ORT 1.29.0 + ONNX neural detector, score is 99.3/100.
