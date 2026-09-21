@@ -4,8 +4,9 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
-| v4.3.x  | ✅ Yes    | Current release (v4.3.3) |
-| < v4.3  | ❌ EOL     | Archived — upgrade to v4.3.3 |
+| v4.5.x  | ✅ Yes    | Current release — includes GHSA-8c34-rfx7-frm4 fixes |
+| v4.3.x  | ✅ Yes    | Supported (v4.3.3) |
+| < v4.3  | ❌ EOL     | Archived — upgrade to v4.5.0 |
 
 ## Security Features
 
@@ -151,6 +152,10 @@ Results are available:
 ## Acknowledgments
 
 We thank security researchers who responsibly disclose vulnerabilities.
+
+| Researcher | Finding | Fix | Date |
+|------------|---------|-----|------|
+| [@kta1kri](https://github.com/kta1kri) | [GHSA-8c34-rfx7-frm4](https://github.com/aegisgatesecurity/aegisgate-platform/security/advisories/GHSA-8c34-rfx7-frm4) — Request-side scanner only inspected user/system message roles (assistant/tool content unscanned); Response Guard PII/secret findings never blocked by default; block threshold hardcoded bypassing configurable BlockThreshold | Commit `b1ec7db` — All three findings fixed: scan all message roles, StrictMode=true by default, configurable BlockThreshold wired into ShouldBlock | Sept 2026 |
 
 ## Contact
 
