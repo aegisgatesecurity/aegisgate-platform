@@ -71,9 +71,12 @@ func TestScanWithPII(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Scan() error: %v", err)
 	}
-	// Should be allowed but with threats
-	if result.Allowed && !guard.config.StrictMode {
-		// Expected behavior in non-strict mode
+	// With StrictMode=true (default after GHSA-8c34-rfx7-frm4), PII findings block
+	if guard.config.StrictMode && result.Allowed {
+		t.Error("expected response to be blocked in strict mode with PII findings")
+	}
+	if !guard.config.StrictMode && !result.Allowed {
+		t.Error("expected response to be allowed in non-strict mode")
 	}
 	if len(result.DetectedPII) == 0 {
 		t.Error("expected PII to be detected")

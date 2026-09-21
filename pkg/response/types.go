@@ -73,7 +73,7 @@ func DefaultResponseGuardConfig() *ResponseGuardConfig {
 		EnableAnomalyDetection:    true,
 		MaxResponseTokens:         8192,
 		MaxResponseLatencyMS:      100,
-		StrictMode:                false,
+		StrictMode:                true, // GHSA-8c34-rfx7-frm4: block on PII/secret/XSS/compliance findings by default
 		Tier:                      "community",
 		PIIPatterns:               nil,
 		SecretPatterns:            nil,

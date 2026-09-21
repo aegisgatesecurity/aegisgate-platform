@@ -312,6 +312,12 @@ func DefaultPatterns() []*Pattern {
 	}
 }
 
+// ShouldBlock returns true if the given severity meets or exceeds the
+// scanner's configured BlockThreshold. This replaces the previous hardcoded
+// >= High check (GHSA-8c34-rfx7-frm4 Finding 3: Medium-severity PII like
+// email/phone/address could never be blocked because BlockThreshold was
+// dead config). The package-level ShouldBlock function is kept for backward
+// compatibility with code that doesn't have a scanner instance.
 func ShouldBlock(severity Severity) bool {
 	return severity >= High
 }

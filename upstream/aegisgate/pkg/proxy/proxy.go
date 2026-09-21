@@ -1636,10 +1636,11 @@ type chatCompletionResponse struct {
 	} `json:"choices"`
 }
 
-// extractContentFromRequest extracts user and system message content from a
-// chat completion request body. This prevents the scanner from matching
-// structural JSON tokens (like llama2_inst, chatml_tokens, vicuna_tokens)
-// that appear in the request envelope but not in the actual user content.
+// extractContentFromRequest extracts all message content from a chat
+// completion request body. A stateless proxy cannot trust client-asserted
+// message roles — fabricated assistant/tool turns are a known vector for
+// conversation-history poisoning and secret/PII exfiltration bypass.
+// All roles (user, system, assistant, tool, function) are scanned.
 // Returns the extracted content string, or falls back to raw body on parse failure.
 func extractContentFromRequest(body []byte) string {
 	// Fast path: skip JSON parsing if body doesn't look like a chat completion request.
@@ -1661,18 +1662,18 @@ func extractContentFromRequest(body []byte) string {
 		return string(body)
 	}
 
-	// Pre-allocate parts slice for efficiency
+	// Scan ALL message roles — a stateless proxy cannot trust client-asserted
+	// roles. Fabricated assistant/tool turns can carry secrets, PII, or prompt
+	// injection payloads (conversation-history poisoning vector).
 	parts := make([]string, 0, len(req.Messages))
 	for _, msg := range req.Messages {
-		if msg.Role == "user" || msg.Role == "system" {
-			if msg.Content != "" {
-				parts = append(parts, msg.Content)
-			}
+		if msg.Content != "" {
+			parts = append(parts, msg.Content)
 		}
 	}
 
 	if len(parts) == 0 {
-		// No user/system content — return empty (nothing to scan)
+		// No message content — return empty (nothing to scan)
 		return ""
 	}
 

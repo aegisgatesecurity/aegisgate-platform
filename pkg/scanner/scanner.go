@@ -39,7 +39,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Patterns:       DefaultPatterns(),
-		BlockThreshold: Critical,
+		BlockThreshold: High, // GHSA-8c34-rfx7-frm4: was Critical (dead config). High matches the previous hardcoded ShouldBlock behavior.
 		LogFindings:    true,
 		IncludeContext: false,
 		ContextSize:    50,
@@ -228,10 +228,12 @@ func (s *Scanner) GetFindingsBySeverity(findings []Finding, minSeverity Severity
 	return filtered
 }
 
-// ShouldBlock checks if any finding should trigger a block action
+// ShouldBlock checks if any finding should trigger a block action based on
+// the scanner's configured BlockThreshold (GHSA-8c34-rfx7-frm4: previously
+// used hardcoded ShouldBlock() >= High, ignoring the configurable threshold).
 func (s *Scanner) ShouldBlock(findings []Finding) bool {
 	for _, finding := range findings {
-		if ShouldBlock(finding.Pattern.Severity) {
+		if finding.Pattern.Severity >= s.config.BlockThreshold {
 			return true
 		}
 	}
