@@ -6,7 +6,7 @@
 
 *A self-hosted gateway that scans every request and response between your team and any AI service — catching data leaks, prompt injections, and compliance violations before they happen.*
 
-[![Version](https://img.shields.io/badge/Version-v4.5.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.5.0)
+[![Version](https://img.shields.io/badge/Version-v4.5.1-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.5.1)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-10,883+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)

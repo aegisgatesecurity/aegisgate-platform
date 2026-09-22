@@ -325,10 +325,27 @@ Three vulnerabilities reported by @kta1kri:
 
 ---
 
+## Model Update Process
+
+**AegisGate does not support automatic model updates.** Model files must be manually deployed:
+
+1. **Download** from signed GitHub release (releases.aegisgatesecurity.io or GitHub Releases)
+2. **Verify hash**: `sha256sum threat_cnn_bilstm.onnx` → compare to `ExpectedModelHash` constant in code
+3. **Deploy** to model directory (platform will refuse to start if hash mismatch)
+4. **Restart** platform to load new model
+
+**Auto-update is not implemented** and is not planned before v4.6. Manual deployment ensures:
+- No supply chain attacks via compromised update server
+- Explicit operator approval for model changes
+- Audit trail (restart timestamp in logs)
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4.5.1 | 2026-09-22 | **Security Hardening**: Session DoS protection (MaxSessions=10000), model update process documentation, threat model publication (38 STRIDE findings), architecture diagrams (request flow, DFD, ML pipeline). No breaking changes. |
 | v4.5.0 | 2026-09-22 | Initial public threat model. Covers L3/P2 blocking, Response Guard strict mode, shadow validation, GHSA fix. |
 
 ---
