@@ -33,8 +33,9 @@ type payload struct {
 }
 
 func main() {
-	corpusPath := "tests/adversarial/corpus.yaml"
-	outputPath := "tests/load/k6/payloads.js"
+	// Hardcoded paths — not user-controlled (CodeQL G304).
+	const corpusPath = "tests/adversarial/corpus.yaml"
+	const outputPath = "tests/load/k6/payloads.js"
 
 	if _, err := os.Stat(corpusPath); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "ERROR: corpus not found at %s\n", corpusPath)
@@ -169,5 +170,5 @@ func generateJS(path string, adversarial, benign []payload) error {
 	}
 	sb.WriteString("];\n")
 
-	return os.WriteFile(path, []byte(sb.String()), 0644)
+	return os.WriteFile(path, []byte(sb.String()), 0600)
 }

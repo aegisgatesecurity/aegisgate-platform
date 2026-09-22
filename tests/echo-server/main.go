@@ -17,7 +17,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"runtime"
 	"strings"
 	"sync/atomic"
@@ -91,15 +90,19 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("ERROR: encoding chat response: %v", err)
+	}
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status":  "healthy",
 		"version": "echo-server-ci",
-	})
+	}); err != nil {
+		log.Printf("ERROR: encoding health response: %v", err)
+	}
 }
 
 func statsPrinter() {
@@ -133,8 +136,17 @@ func main() {
 	log.Printf("CI Echo Server starting on %s (GOMAXPROCS=%d)\n", addr, runtime.GOMAXPROCS(0))
 	log.Printf("Endpoints: POST /v1/chat/completions, GET /health\n")
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	// Use http.Server with timeouts to prevent slowloris and resource
+	// exhaustion (CodeQL G114). ReadTimeout/WriteTimeout/IdleTimeout set.
+	server := &http.Server{
+		Addr:         addr,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Server error: %v", err)
-		os.Exit(1)
 	}
 }
