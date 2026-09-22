@@ -1,0 +1,85 @@
+%%{init: {'theme': 'default'}}%%
+flowchart TB
+    %% Trust boundaries
+    subgraph Untrusted["Untrusted Zone"]
+        direction LR
+        Client["Client / Agent"]
+        Attacker["Attacker"]
+    end
+
+    subgraph Platform["AegisGate Platform Trust Boundary"]
+        direction TB
+
+        subgraph Edge["Edge Ingress"]
+            BodyCap["10MB Body Cap"]
+            MethodFilter["Method Filter"]
+            RateLimit["Rate Limiter"]
+        end
+
+        subgraph Detection["Detection Engine 7 Layers"]
+            direction LR
+            P4["P4 Anomaly"]
+            P2["P2 Chain"]
+            L1["L1 Regex 223 patterns"]
+            L2["L2 ATLAS 52+ techniques"]
+            L3["L3 Neural v13"]
+            P3["P3 Multi-Turn"]
+            RG["Response Guard"]
+        end
+
+        subgraph Decision["Decision Engine"]
+            BlockLogic["Block Decision Tree"]
+            ShadowCtx["Shadow Context"]
+        end
+
+        subgraph Forwarding["Proxy Layer"]
+            CB["Circuit Breaker"]
+            RevProxy["Reverse Proxy"]
+        end
+
+        subgraph Persistence["Persistence"]
+            AuditLog["Audit Log RFC 5424"]
+            ScanCache["Scan Cache SHA-256"]
+            SessionTracker["Session Tracker"]
+            ChainStore["Chain Store"]
+        end
+    end
+
+    subgraph UpstreamZone["Upstream"]
+        AI["AI Services"]
+        MCPTools["MCP Tools"]
+        PeerAgents["A2A Agents"]
+    end
+
+    subgraph Observability["Observability"]
+        SIEM["SIEM / SOAR"]
+        Grafana["Grafana"]
+    end
+
+    Client --> Edge
+    Attacker -.-> Edge
+    Edge --> Detection
+    Detection --> Decision
+    Decision -->|Block| AuditLog
+    Decision -->|Allow| Forwarding
+    Forwarding --> AI
+    Forwarding --> MCPTools
+    Forwarding --> PeerAgents
+    AI --> RG
+    RG --> Decision
+    Decision --> Client
+    Detection --> ScanCache
+    P2 --> ChainStore
+    P3 --> SessionTracker
+    AuditLog --> SIEM
+    ShadowCtx --> Grafana
+
+    style Untrusted fill:#ffebee,stroke:#c62828,stroke-dasharray: 5 5
+    style Platform fill:#e3f2fd,stroke:#1565c0
+    style UpstreamZone fill:#fff3e0,stroke:#ef6c00,stroke-dasharray: 5 5
+    style Observability fill:#e8f5e9,stroke:#2e7d32
+    style L3 fill:#bbdefb,stroke:#0d47a1
+    style P2 fill:#e1bee7,stroke:#4a148c
+    style RG fill:#c8e6c9,stroke:#1b5e20
+    style AuditLog fill:#c8e6c9,stroke:#1b5e20
+    style BlockLogic fill:#ffcdd2,stroke:#b71c1c

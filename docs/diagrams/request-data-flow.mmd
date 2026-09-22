@@ -1,0 +1,117 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00ADD8', 'primaryBorderColor': '#00ADD8', 'lineColor': '#F97583', 'secondaryColor': '#238636', 'tertiaryColor': '#1f6feb'}}}%%
+flowchart TD
+    Client["💻 Client Request<br/>HTTP / MCP / A2A / ACP / ANP"]
+    MaxBytes["10MB Body Cap<br/>MaxBytesHandler"]
+    RejectMethods["Reject TRACE/CONNECT/TRACK<br/>rejectDangerousMethods"]
+    RateLimit{"Rate Limiter<br/>Token bucket"}
+    P4Anomaly["P4: Entropy Anomaly<br/>Alert-only (non-blocking)"]
+    P2Chain["P2: Tool Call Chain Analysis<br/>ChainWindow=20, TTL=30min<br/>EscalationChain / ExfilChain / ReconChain"]
+
+    %% L1 Detection
+    ExtractReq["Extract Content<br/>extractContentFromRequest<br/>All message roles (user/system/assistant)"]
+    ScanCache{"Scan Cache?<br/>SHA-256 content hash"}
+    L1Regex["L1: Regex Scanner<br/>223 patterns (ScanFast)<br/>Secrets, PII, XSS, Compliance"]
+    Variants["Normalization Variants<br/>ROT13, l33t, keyboard-walk,<br/>unicode, homoglyph"]
+    L1Block{"ShouldBlock?<br/>Severity >= BlockThreshold"}
+
+    %% L2 Detection
+    L2ATLAS["L2: MITRE ATLAS Compliance<br/>52+ techniques<br/>checkAtlasCompliance"]
+    L2Block{"shouldBlockAtlas?<br/>Critical severity finding"}
+
+    %% L3 Detection
+    L3ML["L3: Neural Threat Detector<br/>CharCNN-BiLSTM v13 (ONNX)<br/>~1.6M params, ~600ms inference"]
+    L3Tier1{"Score >= 0.95?<br/>High-confidence<br/>independent block"}
+    L3Tier2{"Score >= 0.50<br/>& L1/L2 corroboration?<br/>Medium+ severity findings"}
+    L3Alert["Log alert only<br/>Shadow header set"]
+
+    %% P3 Multi-turn
+    P3MultiTurn["P3: Multi-Turn Attack Detection<br/>Cumulative suspicious patterns<br/>across conversation turns"]
+    P3Block{"ShouldBlock?<br/>RiskLevel >= High"}
+
+    %% Forward
+    Forward["Forward to Upstream<br/>OpenAI / Anthropic / Azure / Bedrock<br/>Circuit breaker + retry"]
+    Upstream["🤖 AI Service"]
+
+    %% Response path
+    Response["AI Response"]
+    ExtractResp["Extract Content<br/>extractContentFromResponse"]
+    L1Resp["L1: Regex Scan Response<br/>223 patterns + variants"]
+    L2Resp["L2: ATLAS Scan Response<br/>52+ techniques"]
+    L3Resp["L3: Neural Scan Response<br/>DetectAll (all variants)"]
+    RespGuard["Response Guard<br/>PII / Secrets / XSS<br/>StrictMode = true (fail-closed)"]
+    RespBlock{"Blocked?<br/>Response Guard or L1/L2/L3"}
+    ClientResp["✅ Return Response to Client"]
+
+    %% Blocking
+    Block403["🚫 403 Forbidden<br/>Request blocked"]
+    Resp403["🚫 403 Forbidden<br/>Response blocked"]
+
+    %% Audit
+    AuditLog["📋 Audit Log<br/>RFC 5424 syslog<br/>Append-only"]
+    ShadowHeaders["Shadow Alert Headers<br/>X-AegisGate-Alert-*<br/>Metrics + SIEM"]
+
+    %% Flow
+    Client --> MaxBytes --> RejectMethods --> RateLimit
+    RateLimit -->|Allowed| P4Anomaly
+    RateLimit -->|Exceeded| Block403
+
+    P4Anomaly --> P2Chain
+    P2Chain -->|Chain detected & blocking enabled| Block403
+    P2Chain -->|No chain or alert-only| ExtractReq
+
+    ExtractReq --> ScanCache
+    ScanCache -->|Hit & benign| Forward
+    ScanCache -->|Hit & blocked| Block403
+    ScanCache -->|Miss| L1Regex
+
+    L1Regex --> Variants
+    Variants --> L1Block
+    L1Block -->|Blocked| Block403
+    L1Block -->|Not blocked| L2ATLAS
+
+    L2ATLAS --> L2Block
+    L2Block -->|Critical| Block403
+    L2Block -->|Not critical| L3ML
+
+    L3ML --> L3Tier1
+    L3Tier1 -->|Yes| Block403
+    L3Tier1 -->|No| L3Tier2
+    L3Tier2 -->|Yes| Block403
+    L3Tier2 -->|No| L3Alert
+
+    L3Alert --> P3MultiTurn
+    P3MultiTurn --> P3Block
+    P3Block -->|Blocked| Block403
+    P3Block -->|Allowed| Forward
+
+    Forward --> Upstream
+    Upstream --> Response
+
+    Response --> ExtractResp
+    ExtractResp --> L1Resp
+    L1Resp --> L2Resp
+    L2Resp --> L3Resp
+    L3Resp --> RespGuard
+
+    RespGuard --> RespBlock
+    RespBlock -->|Blocked| Resp403
+    RespBlock -->|Allowed| ClientResp
+
+    %% Audit connections
+    Block403 --> AuditLog
+    Resp403 --> AuditLog
+    ClientResp --> AuditLog
+    L3Alert --> ShadowHeaders
+    ShadowHeaders --> AuditLog
+    P4Anomaly -.->|Alert| AuditLog
+
+    %% Styling
+    style Block403 fill:#da363322,stroke:#da3633
+    style Resp403 fill:#da363322,stroke:#da3633
+    style L3ML fill:#1f6feb22,stroke:#1f6feb
+    style P2Chain fill:#a371f722,stroke:#a371f7
+    style P3MultiTurn fill:#a371f722,stroke:#a371f7
+    style P4Anomaly fill:#d2992233,stroke:#d29922
+    style RespGuard fill:#23863622,stroke:#238636
+    style Forward fill:#00ADD822
+    style Upstream fill:#00ADD822

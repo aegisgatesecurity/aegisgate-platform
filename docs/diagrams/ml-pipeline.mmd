@@ -1,0 +1,119 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00ADD8', 'primaryBorderColor': '#00ADD8', 'lineColor': '#F97583', 'secondaryColor': '#238636', 'tertiaryColor': '#1f6feb'}}}%%
+flowchart LR
+    %% Training Pipeline
+    subgraph Training["🔧 Training Pipeline"]
+        direction TB
+
+        subgraph DataSources["Data Sources"]
+            Adversarial["Adversarial Corpora<br/>OWASP LLM Top 10<br/>MITRE ATLAS techniques<br/>Prompt injection patterns"]
+            Benign["Benign Corpora<br/>Security education<br/>Code snippets<br/>General conversation"]
+            Augmented["Augmented Data<br/>Evasion transforms<br/>ROT13, l33t, unicode,<br/>homoglyph, word reversal"]
+        end
+
+        subgraph Preprocess["Preprocessing"]
+            Balance["Class Balancing<br/>Equal attack/benign ratio<br/>Stratified sampling"]
+            Normalize["Char Normalization<br/>Latin-1 vocabulary (256)<br/>PAD=0, UNK=1<br/>MaxSeqLen=256"]
+            Encode["Token Encoding<br/>Character-level IDs<br/>[batch, 256] int32"]
+        end
+
+        subgraph Model["Model Architecture — ~1.6M params"]
+            Input["Input Layer<br/>[1, 256] int32<br/>Latin-1 character IDs"]
+            Embed["Char Embedding<br/>64-dim<br/>256 vocab → 64 dim"]
+            ConvBranch["Parallel CNN Branches<br/>3 kernels: 3, 5, 7<br/>256 filters each<br/>→ 768 channels total"]
+            BiLSTM["Bidirectional LSTM<br/>128 hidden per direction<br/>→ 256 output dim"]
+            Attention["Attention Layer<br/>Learned weights over<br/>BiLSTM outputs"]
+            Dense["Dense Layer<br/>256 → 64<br/>Dropout 0.3"]
+            Output["Output Layer<br/>64 → 1<br/>Sigmoid → [0, 1]"]
+        end
+
+        subgraph TrainConfig["Training Config"]
+            Epochs["50 epochs<br/>Batch size 64<br/>Adam optimizer"]
+            ValSplit["80/20 train/val split<br/>Early stopping on val loss"]
+            Calibrate["Threshold Calibration<br/>Find zero-FPR threshold<br/>max_benign_score + margin<br/>Min threshold: 0.50"]
+        end
+    end
+
+    %% Export
+    subgraph Export["📦 Export & Deployment"]
+        ONNXExport["ONNX Export<br/>PyTorch → ONNX<br/>Input: input [1,256] int32<br/>Output: threat_score [1] float32"]
+        HashVerify["SHA-256 Hash Verification<br/>v13: 329fd89afe153d0b...<br/>Platform refuses to load<br/>if hash mismatch"]
+        Deploy["Deploy to Repos<br/>Platform: pkg/ml/models/<br/>Rampart: embedded binary<br/>Lens: JS weights (distilled)"]
+    end
+
+    %% Inference
+    subgraph Inference["⚡ Runtime Inference (~600ms)"]
+        direction TB
+        ReqContent["Request Content<br/>extractContentFromRequest<br/>Original text only<br/>(not normalization variants)"]
+        RuntimeNorm["Char Normalizer<br/>Same as training:<br/>Latin-1, PAD=0, UNK=1<br/>Truncate to 256 chars"]
+        RuntimeEncode["Encode → [1, 256] int32"]
+        ONNXSession["ONNX Runtime Session<br/>onnxruntime-go (CGO)<br/>Single forward pass"]
+        Score["Threat Score [0, 1]"]
+        Threshold{"Threshold Check<br/>≥ 0.95 → High-confidence block<br/>≥ 0.50 + L1/L2 corroboration → block<br/>< 0.50 → allow (alert in shadow)"}
+    end
+
+    %% Parity
+    subgraph Parity["🔄 Model Parity Verification"]
+        PlatformHash["Platform ONNX hash<br/>329fd89afe153d0b9f01..."]
+        RampartHash["Rampart ONNX hash<br/>329fd89afe153d0b9f01...<br/>(same file)"]
+        LensHash["Lens JS weights hash<br/>b46bbde284651319fdcd...<br/>(distilled, same architecture)"]
+        ParityCheck["✅ Parity Verified<br/>All three repos<br/>report model version<br/>char-cnn-bilstm-v13"]
+    end
+
+    %% Validation
+    subgraph Validation["✅ Validation Results"]
+        ShadowVal["7-Day Shadow Validation<br/>0% FPR all detectors<br/>Mock upstream + Grafana"]
+        StressTest["Progressive Stress Test<br/>8,546,186 requests<br/>50→10K VUs, 28K RPS<br/>0% FPR, 99.57% TPR"]
+        Evasion["Evasion Resistance<br/>100.0/100 (0 misses)<br/>10 attack types × 50 transforms"]
+    end
+
+    %% Flow connections
+    Adversarial --> Balance
+    Benign --> Balance
+    Augmented --> Balance
+    Balance --> Normalize
+    Normalize --> Encode
+    Encode --> Input
+
+    Input --> Embed
+    Embed --> ConvBranch
+    ConvBranch --> BiLSTM
+    BiLSTM --> Attention
+    Attention --> Dense
+    Dense --> Output
+
+    Output --> ValSplit
+    ValSplit --> Calibrate
+    Calibrate --> ONNXExport
+
+    ONNXExport --> HashVerify
+    HashVerify --> Deploy
+
+    Deploy --> PlatformHash
+    Deploy --> RampartHash
+    Deploy --> LensHash
+    PlatformHash --> ParityCheck
+    RampartHash --> ParityCheck
+    LensHash --> ParityCheck
+
+    Deploy --> ReqContent
+    ReqContent --> RuntimeNorm
+    RuntimeNorm --> RuntimeEncode
+    RuntimeEncode --> ONNXSession
+    ONNXSession --> Score
+    Score --> Threshold
+
+    ParityCheck --> ShadowVal
+    ShadowVal --> StressTest
+    StressTest --> Evasion
+
+    %% Styling
+    style Training fill:#1f6feb11,stroke:#1f6feb
+    style Export fill:#d2992211,stroke:#d29922
+    style Inference fill:#23863611,stroke:#238636
+    style Parity fill:#a371f711,stroke:#a371f7
+    style Validation fill:#23863622,stroke:#238636
+
+    style ONNXSession fill:#1f6feb22,stroke:#1f6feb
+    style Threshold fill:#da363322,stroke:#da3633
+    style ParityCheck fill:#23863622,stroke:#238636
+    style HashVerify fill:#d2992222,stroke:#d29922
