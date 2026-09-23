@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -72,7 +73,12 @@ func main() {
 // We use a simple line-by-line parser rather than a full YAML library
 // to avoid adding dependencies. The corpus format is simple and controlled.
 func parseCorpus(path string) ([]payload, error) {
-	file, err := os.Open(path)
+	// Sanitize path to prevent directory traversal (CodeQL G304).
+	cleaned := filepath.Clean(path)
+	if strings.Contains(cleaned, "..") {
+		return nil, fmt.Errorf("invalid corpus path: %s", path)
+	}
+	file, err := os.Open(cleaned)
 	if err != nil {
 		return nil, fmt.Errorf("opening corpus: %w", err)
 	}
