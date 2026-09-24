@@ -1,10 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # AegisGate Platform — Triple Detection Parity CI Workflow
 #
-# Checks out all three repos (Platform, Lens, Rampart) and compares
-# scanner pattern names. Fails if Platform has patterns not in Lens or Rampart.
+# Checks out all three repos (Platform, Lens, Rampart) and compares:
+#   1. Scanner pattern names (regex layer)
+#   2. Regex content for shared patterns
+#   3. Model hash alignment (ONNX v13)
+#   4. Evasion suite payload count (81)
+#   5. Transform count (50)
+#   6. ML threshold alignment (0.5)
+#   7. Detection logic check (regex + ML, not ML-only)
 #
-# Trigger: On PRs and pushes that touch scanner pattern files.
+# Fails if any hard gate fails. Warns on soft divergences.
+#
+# Trigger: On PRs and pushes that touch detection-related files.
 
 name: Detection Parity
 
@@ -13,10 +21,26 @@ on:
     branches: [main]
     paths:
       - 'pkg/scanner/patterns.go'
+      - 'pkg/ml/detector.go'
+      - 'pkg/ml/types.go'
+      - 'upstream/aegisgate/pkg/proxy/evasion_suite_test.go'
+      - 'upstream/aegisgate/pkg/scanner/normalize.go'
+      - 'upstream/aegisgate/pkg/scanner/normalize_conformance_test.go'
+      - 'testkit/normalization-conformance-vectors.json'
+      - 'testkit/normalization-spec.json'
+      - 'scripts/check-normalization-conformance.sh'
   pull_request:
     branches: [main]
     paths:
       - 'pkg/scanner/patterns.go'
+      - 'pkg/ml/detector.go'
+      - 'pkg/ml/types.go'
+      - 'upstream/aegisgate/pkg/proxy/evasion_suite_test.go'
+      - 'upstream/aegisgate/pkg/scanner/normalize.go'
+      - 'upstream/aegisgate/pkg/scanner/normalize_conformance_test.go'
+      - 'testkit/normalization-conformance-vectors.json'
+      - 'testkit/normalization-spec.json'
+      - 'scripts/check-normalization-conformance.sh'
   workflow_dispatch:
   schedule:
     - cron: '0 9 * * 1'  # Weekly — same as detection gate
@@ -58,6 +82,15 @@ jobs:
           LENS_DIR=$GITHUB_WORKSPACE/aegisgate-lens \
           RAMPART_DIR=$GITHUB_WORKSPACE/aegisgate-rampart \
           bash scripts/check-detection-parity.sh
+
+      - name: Run normalization conformance check
+        run: |
+          cd aegisgate-platform
+          PLATFORM_DIR=$GITHUB_WORKSPACE/aegisgate-platform \
+          LENS_DIR=$GITHUB_WORKSPACE/aegisgate-lens \
+          RAMPART_DIR=$GITHUB_WORKSPACE/aegisgate-rampart \
+          AEGISGATE_ROOT=$GITHUB_WORKSPACE \
+          bash scripts/check-normalization-conformance.sh
 
       - name: Create issue on parity failure (weekly audit)
         if: failure() && github.event_name == 'schedule'

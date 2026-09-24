@@ -1,0 +1,88 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0 — AegisGate Normalization Specification",
+  "$description": "Manifest of required normalization capabilities. Each product must implement every variant listed here. Products should validate against this manifest at startup or test time to prevent silent drift.",
+  "version": "1.0.0",
+  "model_version": "13",
+  "model_hash_onnx": "329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0",
+  "model_hash_lens_js": "b46bbde284651319fdcdf9212e4b0579dfc2d3a5198291d5bddce822381dda3a",
+  "ml_threshold": 0.50,
+  "max_sequence_length": 256,
+  "required_variants": [
+    {
+      "name": "NormalizeText",
+      "required": true,
+      "products": ["platform", "rampart"],
+      "description": "Idempotent normalization: strip zero-width, decode URL, deobfuscate l33t, remove insertions, collapse whitespace"
+    },
+    {
+      "name": "stripZeroWidth",
+      "required": true,
+      "products": ["platform", "rampart", "lens"],
+      "description": "Remove zero-width and invisible Unicode characters (U+200B-U+200F, U+2028-E, U+00AD, U+FEFF, U+2000-A, U+00A0)"
+    },
+    {
+      "name": "NormalizeKeyboardWalk",
+      "required": true,
+      "products": ["platform", "rampart", "lens"],
+      "description": "Reverse keyboard-walk shifted text"
+    },
+    {
+      "name": "NormalizeROT13",
+      "required": true,
+      "products": ["platform", "rampart"],
+      "description": "Decode ROT13 encoding"
+    },
+    {
+      "name": "NormalizeSlidingROT13",
+      "required": true,
+      "products": ["platform", "rampart", "lens"],
+      "description": "Apply ROT13 to individual runs of 4+ alphabetic chars. Returns up to 5 variants. Critical for char_delete_vowels detection.",
+      "max_variants": 5,
+      "min_run_length": 4
+    },
+    {
+      "name": "NormalizeRepeatingChars",
+      "required": true,
+      "products": ["platform", "rampart"],
+      "description": "Collapse 3+ consecutive identical chars to 2"
+    },
+    {
+      "name": "NormalizeBackslashEscapes",
+      "required": true,
+      "products": ["platform", "rampart"],
+      "description": "Remove backslash escape characters"
+    },
+    {
+      "name": "NormalizeHomoglyphs",
+      "required": true,
+      "products": ["platform", "rampart"],
+      "description": "Replace visually-confusable Unicode with ASCII equivalents"
+    },
+    {
+      "name": "NFKC",
+      "required": true,
+      "products": ["platform", "rampart", "lens"],
+      "description": "Unicode NFKC normalization (fullwidth to ASCII, compatibility decomposition)"
+    },
+    {
+      "name": "NormalizeHexEscape",
+      "required": true,
+      "products": ["lens"],
+      "description": "Decode hex escape sequences (\\xNN to char). Platform/Rampart handle this via NormalizeBackslashEscapes + NormalizeText."
+    }
+  ],
+  "conformance_vectors": "normalization-conformance-vectors.json",
+  "expected_scores": {
+    "platform": { "min_score": 100.0, "max_misses": 0 },
+    "rampart": { "min_score": 100.0, "max_misses": 0 },
+    "lens": { "min_score": 99.9, "max_misses": 1, "known_misses": [
+      {
+        "transform": "keyboard_walk_shift",
+        "payload_id": "T1632.003",
+        "reason": "float16 precision loss in Conv1D filters",
+        "lens_score": 0.2706,
+        "onnx_score": 0.9327
+      }
+    ]}
+  }
+}

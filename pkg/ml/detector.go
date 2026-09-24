@@ -37,10 +37,9 @@ import (
 	"sync"
 )
 
-// ExpectedModelHash is the SHA-256 hash of the v12 threat detection model
+// ExpectedModelHash is the SHA-256 hash of the v13 threat detection model
 // (threat_cnn_bilstm.onnx). If the model file hash does not match, the
 // detector refuses to load it — preventing supply-chain tampering.
-// v12:  9ce1e81a5ec68733f6dc763815203e8f42a3116f41c3642dfbf199f7849d2822
 // v13:  329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0
 // v11b: 8e13c793c32816aa0f6e2af13ffadd4f38f707b4ac8906b56ddfa77da51ea8e5
 // v11:  32b7db74379b28a0e3da5a79e42c0ecedab29b66463c26a8cf2081a731facc91

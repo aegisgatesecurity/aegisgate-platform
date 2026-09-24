@@ -177,6 +177,7 @@ echo "$RAMPART_PATTERNS" > "$RAMPART_TMP"
 
 # Check for patterns in Platform that are missing from Lens or Rampart
 EXIT_CODE=0
+PATTERN_FAIL=0
 
 # Platform → Lens missing
 PLATFORM_LENS_MISSING=$(comm -23 "$PLATFORM_TMP" "$LENS_TMP")
@@ -186,6 +187,7 @@ if [[ -n "$PLATFORM_LENS_MISSING" ]]; then
     echo "$PLATFORM_LENS_MISSING" | sed 's/^/  - /'
     echo ""
     EXIT_CODE=1
+    PATTERN_FAIL=1
 fi
 
 # Platform → Rampart missing
@@ -196,6 +198,7 @@ if [[ -n "$PLATFORM_RAMPART_MISSING" ]]; then
     echo "$PLATFORM_RAMPART_MISSING" | sed 's/^/  - /'
     echo ""
     EXIT_CODE=1
+    PATTERN_FAIL=1
 fi
 
 # Lens → Rampart missing (informational)
@@ -338,5 +341,190 @@ else
     echo ""
     echo "To fix: add missing patterns to the product(s) above and commit."
 fi
+
+# ---------------------------------------------------------------------------
+# Phase 3: Model Hash Alignment
+# Verifies all three products expect the same ONNX/JS model hash.
+# Drift here means one product silently rejects the model (as happened
+# with Platform's v11b→v13 hash mismatch).
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Model Hash Alignment ==="
+
+# Platform: ExpectedModelHash in pkg/ml/detector.go
+PLATFORM_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$PLATFORM_DIR/pkg/ml/detector.go" 2>/dev/null | head -1)
+# Rampart: ExpectedModelHash in internal/ml/detector.go
+RAMPART_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$RAMPART_DIR/internal/ml/detector.go" 2>/dev/null | head -1)
+# Lens: hash in threat-detector-js.js (EXPECTED_HASH or similar)
+LENS_HASH=$(grep -oP "(?:EXPECTED_HASH|expectedHash|MODEL_HASH)\s*[:=]\s*['\"]\K[a-f0-9]{64}" "$LENS_DIR/src/detectors/ml/threat-detector-js.js" 2>/dev/null | head -1)
+
+echo "  Platform: ${PLATFORM_HASH:-NOT FOUND}"
+echo "  Rampart:  ${RAMPART_HASH:-NOT FOUND}"
+echo "  Lens:     ${LENS_HASH:-NOT FOUND}"
+
+HASH_MISMATCH=0
+if [[ -n "$PLATFORM_HASH" && -n "$RAMPART_HASH" && "$PLATFORM_HASH" != "$RAMPART_HASH" ]]; then
+    echo -e "  ${RED}❌ Platform ≠ Rampart model hash mismatch${NC}"
+    HASH_MISMATCH=1
+    EXIT_CODE=1
+fi
+if [[ -n "$PLATFORM_HASH" && -n "$LENS_HASH" && "$PLATFORM_HASH" != "$LENS_HASH" ]]; then
+    echo -e "  ${YELLOW}⚠ Platform ≠ Lens model hash (expected: different architectures — ONNX vs pure JS)${NC}"
+    # Lens uses pure JS inference with different weight format — hash will differ.
+    # This is informational, not a failure.
+fi
+if [[ -n "$RAMPART_HASH" && -n "$LENS_HASH" && "$RAMPART_HASH" != "$LENS_HASH" ]]; then
+    echo -e "  ${YELLOW}⚠ Rampart ≠ Lens model hash (expected: different architectures — ONNX vs pure JS)${NC}"
+fi
+
+if [[ $HASH_MISMATCH -eq 0 && -n "$PLATFORM_HASH" && -n "$RAMPART_HASH" ]]; then
+    echo -e "  ${GREEN}✅ Platform and Rampart use the same model hash${NC}"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 4: Evasion Suite Payload Count
+# Verifies all three products' evasion tests use the same number of payloads.
+# Drift here means scores aren't comparable (apples-to-oranges).
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Evasion Suite Payload Count ==="
+
+# Platform: count entries in atlasPayloads struct
+PLATFORM_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null || echo "0")
+# Rampart: count entries in atlasPayloads struct
+RAMPART_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
+# Lens: count entries in ATLAS_PAYLOADS array
+LENS_PAYLOADS=$(grep -cP "id:\s*['\"]([A-Z0-9.]+\.\d+)['\"]" "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
+
+echo "  Platform: $PLATFORM_PAYLOADS payloads"
+echo "  Rampart:  $RAMPART_PAYLOADS payloads"
+echo "  Lens:     $LENS_PAYLOADS payloads"
+
+if [[ "$PLATFORM_PAYLOADS" != "$RAMPART_PAYLOADS" || "$PLATFORM_PAYLOADS" != "$LENS_PAYLOADS" ]]; then
+    echo -e "  ${RED}❌ Payload count mismatch — scores are NOT comparable${NC}"
+    EXIT_CODE=1
+else
+    echo -e "  ${GREEN}✅ All products use $PLATFORM_PAYLOADS payloads${NC}"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5: Transform Count
+# Verifies all three products' evasion tests define 50 transforms (10 per 5 categories).
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Transform Count ==="
+
+# Platform: count variant keys in each category map
+PLATFORM_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
+# Rampart: same approach
+RAMPART_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
+# Lens: count transform function entries (key: (s) => ...)
+LENS_TRANSFORMS=$(grep -cP '^\s+\w+:\s*\(s\)\s*=>' "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
+
+echo "  Platform: $PLATFORM_TRANSFORMS transform keys"
+echo "  Rampart:  $RAMPART_TRANSFORMS transform keys"
+echo "  Lens:     $LENS_TRANSFORMS transform keys"
+
+# Note: Platform/Rampart counts may include non-transform map entries.
+# The expected count is 50 (10 per category × 5 categories).
+# Lens counts arrow functions which should be exactly 50.
+EXPECTED_TRANSFORMS=50
+if [[ "$LENS_TRANSFORMS" -ne "$EXPECTED_TRANSFORMS" ]]; then
+    echo -e "  ${YELLOW}⚠ Lens has $LENS_TRANSFORMS transforms (expected $EXPECTED_TRANSFORMS)${NC}"
+fi
+if [[ "$PLATFORM_TRANSFORMS" -ne "$EXPECTED_TRANSFORMS" ]]; then
+    echo -e "  ${YELLOW}⚠ Platform has $PLATFORM_TRANSFORMS transform keys (expected $EXPECTED_TRANSFORMS — may include extra map entries)${NC}"
+fi
+if [[ "$RAMPART_TRANSFORMS" -ne "$EXPECTED_TRANSFORMS" ]]; then
+    echo -e "  ${YELLOW}⚠ Rampart has $RAMPART_TRANSFORMS transform keys (expected $EXPECTED_TRANSFORMS — may include extra map entries)${NC}"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 6: ML Threshold Alignment
+# Verifies all three products use the same ML detection threshold (0.5).
+# Drift here means one product is more/less sensitive than the others.
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== ML Threshold Alignment ==="
+
+# Platform: Threshold in evasion test newEvasionDetector
+PLATFORM_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null | head -1)
+# Rampart: Threshold in evasion test newEvasionDetector
+RAMPART_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | head -1)
+# Lens: THRESHOLD in threat-detector-js.js
+LENS_THRESH=$(grep -oP 'THRESHOLD\s*=\s*\K[0-9.]+' "$LENS_DIR/src/detectors/ml/threat-detector-js.js" 2>/dev/null | head -1)
+
+echo "  Platform evasion test: $PLATFORM_THRESH"
+echo "  Rampart evasion test:  $RAMPART_THRESH"
+echo "  Lens ML model:         $LENS_THRESH"
+
+# Compare numerically (0.50 == 0.5)
+THRESH_MISMATCH=0
+for pair in "Platform:Rampart:$PLATFORM_THRESH:$RAMPART_THRESH" "Platform:Lens:$PLATFORM_THRESH:$LENS_THRESH" "Rampart:Lens:$RAMPART_THRESH:$LENS_THRESH"; do
+    IFS=: read -r name1 name2 val1 val2 <<< "$pair"
+    if [[ -n "$val1" && -n "$val2" ]]; then
+        # Use awk for numeric comparison (0.50 == 0.5)
+        if ! awk -v a="$val1" -v b="$val2" 'BEGIN { exit (a == b) ? 0 : 1 }'; then
+            echo -e "  ${RED}❌ $name1 ($val1) ≠ $name2 ($val2) threshold mismatch${NC}"
+            THRESH_MISMATCH=1
+            EXIT_CODE=1
+        fi
+    fi
+done
+
+if [[ $THRESH_MISMATCH -eq 0 && -n "$PLATFORM_THRESH" && -n "$RAMPART_THRESH" && -n "$LENS_THRESH" ]]; then
+    echo -e "  ${GREEN}✅ All products use threshold $PLATFORM_THRESH${NC}"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 7: Evasion Test Detection Logic Check
+# Verifies that each product's evasion test uses (regexHit || mlHit) logic,
+# not ML-only. This catches the bug where Lens's test was ML-only.
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Evasion Test Detection Logic ==="
+
+# Check if Lens evasion test uses regex detection (regexDetect or similar)
+LENS_HAS_REGEX=$(grep -c 'regexDetect\|regexHit\|regex.*detect\|facet.*detect' "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
+if [[ "$LENS_HAS_REGEX" -eq 0 ]]; then
+    echo -e "  ${RED}❌ Lens evasion test does NOT use regex detection (ML-only)${NC}"
+    EXIT_CODE=1
+else
+    echo -e "  ${GREEN}✅ Lens evasion test uses regex + ML detection${NC}"
+fi
+
+# Check if Platform evasion test uses scanner/ATLAS detection
+PLATFORM_HAS_REGEX=$(grep -c 'scannerHit\|atlasHit\|scanner.*Scan\|atlas.*Check' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null || echo "0")
+if [[ "$PLATFORM_HAS_REGEX" -eq 0 ]]; then
+    echo -e "  ${RED}❌ Platform evasion test does NOT use regex/ATLAS detection (ML-only?)${NC}"
+    EXIT_CODE=1
+else
+    echo -e "  ${GREEN}✅ Platform evasion test uses scanner + ATLAS + ML detection${NC}"
+fi
+
+# Check if Rampart evasion test uses regex detection
+RAMPART_HAS_REGEX=$(grep -c 'detectorHit\|DetectAll\|detect.*regex' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
+if [[ "$RAMPART_HAS_REGEX" -eq 0 ]]; then
+    echo -e "  ${RED}❌ Rampart evasion test does NOT use regex detection (ML-only?)${NC}"
+    EXIT_CODE=1
+else
+    echo -e "  ${GREEN}✅ Rampart evasion test uses regex + ML detection${NC}"
+fi
+
+# ---------------------------------------------------------------------------
+# Final Summary
+# ---------------------------------------------------------------------------
+echo ""
+echo "============================================"
+echo "  Parity Check Summary"
+echo "============================================"
+echo "  Pattern names:     $([ $PATTERN_FAIL -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Regex content:     $([ $CONTENT_MISMATCHES -eq 0 ] && echo 'PASS' || echo "WARN ($CONTENT_MISMATCHES)")"
+echo "  Model hash:        $([ $HASH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Payload count:     $(([[ "$PLATFORM_PAYLOADS" == "$RAMPART_PAYLOADS" && "$PLATFORM_PAYLOADS" == "$LENS_PAYLOADS" ]]) && echo 'PASS' || echo 'FAIL')"
+echo "  Transform count:   $(([[ "$LENS_TRANSFORMS" -eq 50 ]]) && echo 'PASS' || echo 'WARN')"
+echo "  ML threshold:      $([ $THRESH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Detection logic:   $(([[ "$LENS_HAS_REGEX" -gt 0 && "$PLATFORM_HAS_REGEX" -gt 0 && "$RAMPART_HAS_REGEX" -gt 0 ]]) && echo 'PASS' || echo 'FAIL')"
+echo "============================================"
 
 exit $EXIT_CODE

@@ -1,0 +1,173 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0 — AegisGate Normalization Conformance Vectors",
+  "$description": "Canonical test vectors for cross-product normalization parity. Each product (Platform, Rampart, Lens) must produce the expected output for each input. This file is the single source of truth — products import it at test time and validate their implementations against it.",
+  "version": "1.0.0",
+  "model_version": "13",
+  "vectors": {
+    "stripZeroWidth": [
+      {
+        "name": "zero_width_space",
+        "input": "ignore\u200Bprevious",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "zero_width_nonjoiner",
+        "input": "admin\u200Cpanel",
+        "expected": "adminpanel"
+      },
+      {
+        "name": "zero_width_joiner",
+        "input": "bypass\u200Dsafety",
+        "expected": "bypasssafety"
+      },
+      {
+        "name": "soft_hyphen",
+        "input": "ignore\u00ADprevious",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "bom",
+        "input": "\uFEFFignore",
+        "expected": "ignore"
+      },
+      {
+        "name": "nbsp",
+        "input": "ignore\u00A0previous",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "multiple_zero_width",
+        "input": "i\u200Bgnore\u200Dpre\u200Cvious",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "no_zero_width",
+        "input": "ignore previous instructions",
+        "expected": "ignore previous instructions"
+      },
+      {
+        "name": "directional_override",
+        "input": "ignore\u202Eprevious",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "line_separator",
+        "input": "ignore\u2028previous",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "hair_space",
+        "input": "ignore\u200Aprevious",
+        "expected": "ignoreprevious"
+      },
+      {
+        "name": "em_space",
+        "input": "ignore\u2003previous",
+        "expected": "ignoreprevious"
+      }
+    ],
+    "NormalizeSlidingROT13": [
+      {
+        "name": "single_run",
+        "input": "vtaber previous instructions",
+        "expected_variants_contains": [
+          "ignore previous instructions",
+          "vtaber cerivbhf instructions",
+          "vtaber previous vafgehpgvbaf"
+        ]
+      },
+      {
+        "name": "multiple_runs",
+        "input": "What is your model architecture",
+        "expected_variants_contains": [
+          "Jung is your model architecture",
+          "What is lbhe model architecture",
+          "What is your zbqry architecture",
+          "What is your model nepuvgrpgher"
+        ]
+      },
+      {
+        "name": "vowel_deleted_text",
+        "input": "What s yor model rchitectre",
+        "expected_variants_contains": [
+          "Jung s yor model rchitectre",
+          "What s yor zbqry rchitectre",
+          "What s yor model epuvgrpger"
+        ]
+      },
+      {
+        "name": "no_alpha_runs",
+        "input": "123 456 789",
+        "expected_variants": []
+      },
+      {
+        "name": "short_runs_ignored",
+        "input": "the cat sat",
+        "expected_variants": []
+      }
+    ],
+    "NormalizeRepeatingChars": [
+      {
+        "name": "triple_collapse",
+        "input": "ignooore previous",
+        "expected": "ignoore previous"
+      },
+      {
+        "name": "quad_collapse",
+        "input": "woooords",
+        "expected": "woords"
+      },
+      {
+        "name": "no_repeats",
+        "input": "ignore previous",
+        "expected": "ignore previous"
+      },
+      {
+        "name": "double_preserved",
+        "input": "see the book",
+        "expected": "see the book"
+      }
+    ],
+    "NormalizeBackslashEscapes": [
+      {
+        "name": "remove_backslashes",
+        "input": "ign\\ore pre\\vious",
+        "expected": "ignore previous"
+      },
+      {
+        "name": "no_backslashes",
+        "input": "ignore previous",
+        "expected": "ignore previous"
+      },
+      {
+        "name": "multiple_backslashes",
+        "input": "ig\\n\\o\\r\\e",
+        "expected": "ignore"
+      }
+    ],
+    "NormalizeROT13": [
+      {
+        "name": "standard_rot13",
+        "input": "vtaber",
+        "expected": "ignore"
+      },
+      {
+        "name": "mixed_case_rot13",
+        "input": "Vtaber",
+        "expected": "Ignore"
+      },
+      {
+        "name": "no_alpha",
+        "input": "123 456",
+        "expected": "123 456"
+      }
+    ],
+    "NormalizeKeyboardWalk": [
+      {
+        "name": "reversed_right_shift",
+        "input": "ohmptr",
+        "expected": "ignore"
+      }
+    ]
+  }
+}
