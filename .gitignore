@@ -250,12 +250,9 @@ upstream/aegisgate/pkg/ml/models/*.onnx
 upstream/aegisgate/pkg/ml/models/*.bin
 upstream/aegisgate/pkg/ml/models/*.pt
 upstream/aegisgate/pkg/ml/models/*model_card*.json
-# Training data (proprietary corpus - our ML differentiator)
-training/raw_data/
-# Training checkpoints and reports (proprietary)
-training/checkpoints*/
-training/training/
-training/*_training_report.json
+# Training data, scripts, and methodology (proprietary — core IP)
+# Entire training/ directory is confidential
+training/
 # Python cache
 __pycache__/
 *.pyc
@@ -268,10 +265,9 @@ upstream/aegisgate/pkg/proxy/testing/reports/adversarial/*.json
 !upstream/aegisgate/pkg/proxy/testing/reports/adversarial/evasion-suite-phase0a-2026-09-19.json
 # v4.5.0 regression evidence — Sept 20 .md report (small, useful as proof)
 # Other .md reports in this dir are ephemeral test artifacts, not tracked
-# Allow training scripts (open source)
-!training/*.py
-!training/*.md
-!pkg/ml/training/*.go
+# Training scripts and Go augmentation code (proprietary — core IP, not open source)
+# See "PROTECTED IP" section above — training/ is fully gitignored
+pkg/ml/training/
 # Trust Framework (proprietary, not open source)
 pkg/trust/
 # SIEM integration (proprietary, not open source)
