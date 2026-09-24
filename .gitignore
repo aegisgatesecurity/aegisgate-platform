@@ -262,7 +262,7 @@ __pycache__/
 upstream/aegisgate/pkg/proxy/testing/reports/adversarial/*.json
 # Allow tracking the latest evasion suite report for analysis
 # (force-add with: git add -f <file>)
-!upstream/aegisgate/pkg/proxy/testing/reports/adversarial/evasion-suite-phase0a-2026-09-19.json
+!upstream/aegisgate/pkg/proxy/testing/reports/adversarial/evasion-suite-phase0a-2026-09-24.json
 # v4.5.0 regression evidence — Sept 20 .md report (small, useful as proof)
 # Other .md reports in this dir are ephemeral test artifacts, not tracked
 # Training scripts and Go augmentation code (proprietary — core IP, not open source)

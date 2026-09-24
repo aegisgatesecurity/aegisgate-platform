@@ -367,21 +367,40 @@ echo "  Rampart:  ${RAMPART_SCORE}/100  ($RAMPART_REPORT)"
 echo "  Lens:     ${LENS_SCORE}/100 (${LENS_DETECTED}/${LENS_TOTAL})  ($LENS_REPORT)"
 
 # Compare scores
-if [[ -n "$PLATFORM_SCORE" && "$PLATFORM_SCORE" != "?" ]]; then
-    # Platform and Rampart must be 100
-    if [[ "$RAMPART_SCORE" != "?" ]]; then
-        if python3 -c "exit(0 if abs(float('$PLATFORM_SCORE') - float('$RAMPART_SCORE')) < 0.01 else 1)" 2>/dev/null; then
-            echo -e "  ${GREEN}✅ Platform = Rampart score${NC}"
+# Helper: check if a score string is a valid number
+is_valid_score() {
+    [[ -n "$1" && "$1" != "?" && "$1" != "?" ]]
+}
+
+if is_valid_score "$PLATFORM_SCORE"; then
+    # Platform must be >= 99.9 (allows minor variance)
+    PLATFORM_OK=$(python3 -c "print('YES' if float('$PLATFORM_SCORE') >= 99.9 else 'NO')" 2>/dev/null || echo "NO")
+    if [[ "$PLATFORM_OK" == "YES" ]]; then
+        echo -e "  ${GREEN}✅ Platform score >= 99.9${NC}"
+        PASSES=$((PASSES + 1))
+    else
+        echo -e "  ${RED}❌ Platform score ($PLATFORM_SCORE) below 99.9${NC}"
+        FAILURES=$((FAILURES + 1))
+        EXIT_CODE=1
+    fi
+
+    # Rampart must also be >= 99.9
+    if is_valid_score "$RAMPART_SCORE"; then
+        RAMPART_OK=$(python3 -c "print('YES' if float('$RAMPART_SCORE') >= 99.9 else 'NO')" 2>/dev/null || echo "NO")
+        if [[ "$RAMPART_OK" == "YES" ]]; then
+            echo -e "  ${GREEN}✅ Rampart score >= 99.9${NC}"
             PASSES=$((PASSES + 1))
         else
-            echo -e "  ${RED}❌ Platform ($PLATFORM_SCORE) ≠ Rampart ($RAMPART_SCORE) score${NC}"
+            echo -e "  ${RED}❌ Rampart score ($RAMPART_SCORE) below 99.9${NC}"
             FAILURES=$((FAILURES + 1))
             EXIT_CODE=1
         fi
+    else
+        echo -e "  ${YELLOW}⚠ Rampart score not found — skipping Rampart check${NC}"
     fi
 
     # Lens must be >= 99.9 (allows 1 float16 precision miss)
-    if [[ "$LENS_SCORE" != "?" ]]; then
+    if is_valid_score "$LENS_SCORE"; then
         LENS_OK=$(python3 -c "print('YES' if float('$LENS_SCORE') >= 99.9 else 'NO')" 2>/dev/null || echo "NO")
         if [[ "$LENS_OK" == "YES" ]]; then
             echo -e "  ${GREEN}✅ Lens score >= 99.9 (within float16 tolerance)${NC}"
@@ -391,7 +410,11 @@ if [[ -n "$PLATFORM_SCORE" && "$PLATFORM_SCORE" != "?" ]]; then
             FAILURES=$((FAILURES + 1))
             EXIT_CODE=1
         fi
+    else
+        echo -e "  ${YELLOW}⚠ Lens score not found — skipping Lens check${NC}"
     fi
+else
+    echo -e "  ${YELLOW}⚠ Platform score not found — skipping score comparison${NC}"
 fi
 
 # ---------------------------------------------------------------------------

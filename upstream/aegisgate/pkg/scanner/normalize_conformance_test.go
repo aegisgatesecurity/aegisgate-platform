@@ -20,10 +20,10 @@ import (
 // conformanceVectors is the parsed JSON from the canonical vectors file.
 type conformanceVectors struct {
 	Vectors map[string][]struct {
-		Name                  string   `json:"name"`
-		Input                 string   `json:"input"`
-		Expected              string   `json:"expected"`
-		ExpectedVariants      []string `json:"expected_variants"`
+		Name                     string   `json:"name"`
+		Input                    string   `json:"input"`
+		Expected                 string   `json:"expected"`
+		ExpectedVariants         []string `json:"expected_variants"`
 		ExpectedVariantsContains []string `json:"expected_variants_contains"`
 	} `json:"vectors"`
 }
