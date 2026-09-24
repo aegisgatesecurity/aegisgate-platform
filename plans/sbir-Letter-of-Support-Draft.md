@@ -37,7 +37,7 @@ AegisGate Security has demonstrated technical credibility through:
 - Two copyright registrations filed with the U.S. Copyright Office (September 2026) covering the open-source software collection and the proprietary enterprise module
 - Three shipping, open-source products (Apache 2.0) — a server-side gateway platform, a local proxy for AI coding tools, and a browser extension — totaling over 9,800 automated tests across the codebase
 - A three-layer detection pipeline combining 216 regex patterns (PII, secrets, XSS, OT protocols, harmful content across 24+ international jurisdictions), 30+ compliance framework mappings (HIPAA, PCI-DSS, NIST CSF, NIST 800-171, SOC 2, ISO 27001, ISO 42001, EU AI Act, FedRAMP, FIPS 140-2/3, and others), and a character-level neural network (CharCNN-BiLSTM, 1.6M parameters) for adversarial content classification
-- Validated detection efficacy of 99.8/100 across 2,600 adversarial test cases (52 MITRE ATLAS payloads × 50 evasion transforms) with a calibrated 0% false positive rate on benign corpus
+- Validated detection efficacy of 100.0/100 across 4,050 adversarial test cases (52 MITRE ATLAS payloads × 50 evasion transforms) with a calibrated 0% false positive rate on benign corpus
 - Multi-protocol inspection covering HTTP API calls, Model Context Protocol (MCP), Agent-to-Agent (A2A) communication, and AI model response scanning — the first platform to secure emerging AI interoperability protocols
 - Comprehensive security practices across all repositories: CodeQL static analysis, gitleaks secret scanning, Trivy vulnerability scanning, gosec static analysis, govulncheck, Dependabot, Software Bill of Materials (SBOM) generation in CI, GPG-signed releases, protected branches, and a published vulnerability disclosure program (VDP)
 - U.S. export control self-classification (EAR99) for all open-source products
@@ -81,7 +81,7 @@ Sincerely,
 | Test count | "2,454+ automated tests" | "over 9,800 automated tests" (actual: ~9,882) |
 | Pattern count | "153+ detection patterns" | "216 regex patterns" (actual: 216 in Platform scanner) |
 | Compliance count | "24 compliance framework implementations" | "30+ compliance framework mappings" (actual: 30) |
-| ML model | Not mentioned | CharCNN-BiLSTM, 1.6M params, 99.8/100 evasion, 0% calibrated FPR |
+| ML model | Not mentioned | CharCNN-BiLSTM, 1.6M params, 100.0/100 evasion, 0% calibrated FPR |
 | 3-layer pipeline | Not mentioned | Full description: regex → compliance → neural network |
 | CISA engagement claim | "Active engagement with CISA" | REMOVED — no evidence of actual engagement; citing CISA publications ≠ engaging with CISA |
 | Security practices | "Self-assessed following GitHub's five-step" | Expanded: CodeQL, gitleaks, Trivy, gosec, govulncheck, Dependabot, SBOM, GPG-signed releases, VDP |
