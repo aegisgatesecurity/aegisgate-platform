@@ -26,9 +26,12 @@
 package ml
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/yalue/onnxruntime_go"
@@ -446,19 +449,19 @@ func toLower(s string) string {
 	return string(b)
 }
 
-// computeFileHash computes SHA256 of a file (placeholder until ONNX model exists).
+// computeFileHash computes the SHA-256 hash of an entire file for model
+// integrity verification. This prevents supply-chain tampering by ensuring
+// the loaded ONNX model matches the expected hash.
+//
+// FIX: Previously this only hashed the first 32 bytes of the file
+// (data[:minInt(len(data), 32)]), which meant changes to 99.9% of the
+// model would go undetected. Now hashes the complete file contents.
 func computeFileHash(path string) (string, error) {
-	data, err := os.ReadFile(path)
+	cleanPath := filepath.Clean(path)
+	data, err := os.ReadFile(cleanPath) // #nosec G703 -- path cleaned, model path from trusted config
 	if err != nil {
 		return "", fmt.Errorf("read file: %w", err)
 	}
-	// Simple hash for now — will use crypto/sha256 when model is real
-	return fmt.Sprintf("sha256:%x", data[:minInt(len(data), 32)]), nil
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+	hash := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(hash[:]), nil
 }
