@@ -50,6 +50,19 @@
 
 ---
 
+## [4.5.1] - 2026-09-22 - Security Hardening 🔒
+
+> **v4.5.1** adds session DoS protection (MaxSessions=10000 with LRU eviction), model update process documentation, and publishes the threat model (38 STRIDE findings, 9.5/10 security score). No breaking changes — drop-in replacement for v4.5.0.
+
+### Security Improvements
+- **Session DoS Protection**: Hard memory limit on session tracker (MaxSessions=10000), LRU eviction when limit exceeded, ~100MB max memory footprint
+- **Model Update Process**: Manual deployment only, SHA-256 hash verification on startup, restart required to load new model — prevents supply chain attacks
+- **Threat Model Publication**: THREAT-MODEL.md with 38 STRIDE findings, architecture diagrams (request flow, DFD, ML pipeline)
+
+### Compatibility
+- ✅ No breaking changes
+- ✅ Drop-in replacement for v4.5.0
+
 ## [4.4.1] - 2026-09-09 - v11b Model + Evasion Suite + OPSEC Hardening 🔒
 
 > **v4.4.1** upgrades the Char CNN-BiLSTM threat detection model from v9 to v11b across all three products. The v11b model syncs all 50 augmentor transforms to match the adversarial evasion suite, achieving 99.8/100 evasion resistance with zero in-scope misses. Adds keyWalkReverse text normalization, full adversarial evasion test suites (2,600 tests on Platform/Rampart, 550 on Lens), and OPSEC hardening (pre-commit hooks, gitleaks, CODEOWNERS).
