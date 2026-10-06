@@ -15,8 +15,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -1909,9 +1909,9 @@ func iocFingerprintFromFinding(f scanner.Finding) string {
 	}
 	// Canonical JSON with sorted keys (matches pkg/ioc.canonicalJSON).
 	type detectionJSON struct {
-		Pattern   string `json:"pattern,omitempty"`
-		Severity  string `json:"severity"`
-		Type      string `json:"type"`
+		Pattern  string `json:"pattern,omitempty"`
+		Severity string `json:"severity"`
+		Type     string `json:"type"`
 	}
 	d := detectionJSON{
 		Pattern:  f.Pattern.Name,
