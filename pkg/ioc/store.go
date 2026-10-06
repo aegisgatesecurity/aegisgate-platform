@@ -37,6 +37,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -535,6 +536,113 @@ func (s *Store) mergePeerIOC(ioc IOC) {
 	s.byFP[ioc.Fingerprint] = &stored
 	s.order = append(s.order, ioc.Fingerprint)
 	s.dirty = true
+}
+
+// mergeQuarantinedIOC merges an IOC from a low-reputation peer
+// into the local store with the Quarantined flag set. The IOC
+// is stored (for admin review and potential promotion) but is
+// NOT acted upon by the feedback loop checker or the proxy
+// corroboration logic.
+//
+// If the IOC already exists in the store (from a trusted source),
+// the existing entry is NOT downgraded to quarantined — a trusted
+// IOC stays trusted. The quarantined entry is only stored if the
+// fingerprint is new. If the IOC already exists as quarantined,
+// the merge updates the count/severity/timestamps as usual but
+// preserves the Quarantined flag.
+//
+// v4.5.1+ Phase 4: Hardening — soft quarantine.
+func (s *Store) mergeQuarantinedIOC(ioc IOC) {
+	if !ioc.Valid() {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := time.Now().UTC()
+	if existing, ok := s.byFP[ioc.Fingerprint]; ok {
+		// If the existing IOC is NOT quarantined, don't downgrade it.
+		// A trusted IOC (from local detection or a reputable peer)
+		// should not be tainted by a quarantined merge.
+		if !existing.Quarantined {
+			return
+		}
+		// Existing is quarantined; merge normally but keep the flag.
+		if ioc.FirstSeen.Before(existing.FirstSeen) {
+			existing.FirstSeen = ioc.FirstSeen
+		}
+		if ioc.LastSeen.After(existing.LastSeen) {
+			existing.LastSeen = ioc.LastSeen
+		}
+		existing.Count += ioc.Count
+		existing.Severity = WorseSeverity(existing.Severity, ioc.Severity)
+		s.dirty = true
+		return
+	}
+	// New quarantined IOC from a low-reputation peer.
+	if ioc.FirstSeen.IsZero() {
+		ioc.FirstSeen = now
+	}
+	if ioc.LastSeen.IsZero() {
+		ioc.LastSeen = now
+	}
+	if len(s.byFP) >= s.cfg.Capacity {
+		s.evictOldest()
+	}
+	ioc.Quarantined = true
+	stored := ioc
+	s.byFP[ioc.Fingerprint] = &stored
+	s.order = append(s.order, ioc.Fingerprint)
+	s.dirty = true
+}
+
+// PromoteQuarantined un-quarantines all IOCs from the given
+// source peer. Called when a peer's reputation recovers above
+// the threshold, or manually by an admin. Returns the number
+// of IOCs promoted.
+//
+// The sourcePrefix is matched as a prefix on the IOC's Source
+// field (e.g., "peer:instance-abc" promotes all quarantined
+// IOCs from that peer instance).
+//
+// v4.5.1+ Phase 4: Hardening — soft quarantine.
+func (s *Store) PromoteQuarantined(sourcePrefix string) int {
+	if sourcePrefix == "" {
+		return 0
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	promoted := 0
+	for _, ioc := range s.byFP {
+		if !ioc.Quarantined {
+			continue
+		}
+		if strings.HasPrefix(ioc.Source, sourcePrefix) {
+			ioc.Quarantined = false
+			promoted++
+		}
+	}
+	if promoted > 0 {
+		s.dirty = true
+	}
+	return promoted
+}
+
+// QuarantineStats returns the count of quarantined and non-
+// quarantined IOCs in the store. Used by the admin API for
+// observability.
+//
+// v4.5.1+ Phase 4: Hardening — soft quarantine.
+func (s *Store) QuarantineStats() (quarantined, active int) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, ioc := range s.byFP {
+		if ioc.Quarantined {
+			quarantined++
+		} else {
+			active++
+		}
+	}
+	return
 }
 
 // loadFromDisk reads the on-disk file and populates the in-memory

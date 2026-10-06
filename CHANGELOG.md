@@ -1,3 +1,55 @@
+## [4.5.2] - 2026-10-06 - Federated IOC Hardening (Phase 4) 🔒
+
+> **v4.5.2** hardens the federated IOC threat intelligence component with four production-readiness layers: per-IP rate limiting on gossip endpoints, bearer token authentication for the IOC admin API, AES-256-GCM encryption for keyring files at rest, and soft quarantine for IOCs from low-reputation peers. This completes the 4-phase IOC production readiness initiative (Phases 1–4).
+
+### Security Enhancements
+
+- **IOC Gossip Rate Limiting**: Per-IP token bucket on both manifest and health endpoints (default 60 requests/minute/IP). Configurable via `AEGISGATE_IOC_RATE_LIMIT` env var. CIDR-based allow-list bypass via `AEGISGATE_IOC_PEER_ALLOWLIST` for trusted partner networks.
+- **IOC Admin API Token Auth**: Bearer token middleware (`requireAdminToken`) using `crypto/subtle.ConstantTimeCompare` for constant-time comparison. Defense-in-depth layer on top of existing dashboard auth middleware. Configurable via `AEGISGATE_IOC_ADMIN_TOKEN`; when unset, only dashboard auth is required (backward compatible).
+- **Keyring Encryption at Rest**: AES-256-GCM encryption for keyring JSON files. Passphrase stretched via SHA-256 to derive a 32-byte key. Encrypted file format: `{"encrypted":true,"nonce":"<base64>","ciphertext":"<base64>"}`. Auto-detection on load — if the file is encrypted and no passphrase is provided, startup fails with a clear error. Plaintext files are automatically migrated to encrypted on the next key rotation when a passphrase is set. Configurable via `AEGISGATE_IOC_KEY_PASSPHRASE`.
+- **Soft Quarantine for Low-Reputation IOCs**: IOCs received from peers below the reputation threshold are now stored with `Quarantined=true` instead of being rejected. The corroboration checker excludes quarantined IOCs from blocking recommendations. `PromoteQuarantined(sourcePrefix)` un-quarantines IOCs by source prefix (admin endpoint: `POST /api/v1/ioc/admin/quarantine`). Trusted IOCs are never downgraded by quarantined merges — a low-reputation peer cannot taint IOCs already trusted from local detection or reputable peers.
+
+### IOC Production Readiness Initiative (Complete)
+
+| Phase | Feature | Status |
+|-------|---------|--------|
+| Phase 1 | IOC→Detection Feedback Loop | ✅ Complete |
+| Phase 2 | External TAXII Feed Integration | ✅ Complete |
+| Phase 3 | Metrics & Observability | ✅ Complete |
+| Phase 4 | Hardening (rate limiting, admin auth, key encryption, quarantine) | ✅ Complete |
+
+### New Environment Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `AEGISGATE_IOC_RATE_LIMIT` | Gossip requests/minute/IP | `60` |
+| `AEGISGATE_IOC_PEER_ALLOWLIST` | Comma-separated IPs/CIDRs that bypass rate limiting | (empty) |
+| `AEGISGATE_IOC_ADMIN_TOKEN` | Bearer token for IOC admin API (defense-in-depth) | (empty = none) |
+| `AEGISGATE_IOC_KEY_PASSPHRASE` | AES-256-GCM passphrase for keyring encryption at rest | (empty = plaintext) |
+
+### New Files
+
+- `pkg/ioc/key_encryption.go` — AES-256-GCM encrypt/decrypt for keyring at rest
+- `pkg/ioc/hardening_test.go` — 20 unit tests for all Phase 4 features
+- `testlab/ioc_hardening_inproc_test.go` — 10 in-process integration tests (always run)
+- `testlab/ioc_hardening_docker_test.go` — 7 Docker-gated integration tests (`//go:build lab`)
+
+### Testing
+
+- 37 new tests added (20 unit + 10 in-process + 7 Docker-gated)
+- All 362 `pkg/ioc` tests pass, all 26 `testlab` tests pass
+- `go vet` clean, `go build` clean, `gofmt` clean
+- Docker integration tests validated against live containers
+
+### Version & Infrastructure
+
+- Platform VERSION: 4.5.0 → 4.5.2
+- README badges updated to v4.5.2
+- Test count badge updated: 10,883+ → 11,573+
+- No new dependencies added
+
+---
+
 ## [4.4.1] - 2026-09-09 - v11b Model + Evasion Suite + OPSEC Hardening 🔒
 
 > **v4.4.1** upgrades the Char CNN-BiLSTM threat detection model from v9 to v11b across all three products. The v11b model syncs all 50 augmentor transforms to match the adversarial evasion suite, achieving 99.8/100 evasion resistance with zero in-scope misses. Adds keyWalkReverse text normalization, full adversarial evasion test suites (2,600 tests on Platform/Rampart, 550 on Lens), and OPSEC hardening (pre-commit hooks, gitleaks, CODEOWNERS).

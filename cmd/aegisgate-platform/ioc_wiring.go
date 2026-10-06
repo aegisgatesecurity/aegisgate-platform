@@ -40,7 +40,9 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -50,21 +52,27 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/logging"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
+
+	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 )
 
 // iocWiring is the result of IOC wiring: the components the
 // caller needs to start goroutines and mount the HTTP handler.
 type iocWiring struct {
-	Store    *ioc.Store
-	Producer *ioc.Producer
-	Sync     *ioc.Sync
-	KeyRing  *ioc.KeyRing // TODO-301: shared with the AR-EaaS HTTP endpoint
-	Enabled  bool         // true if either share or receive is enabled
+	Store       *ioc.Store
+	Producer    *ioc.Producer
+	Sync        *ioc.Sync
+	KeyRing     *ioc.KeyRing     // TODO-301: shared with the AR-EaaS HTTP endpoint
+	Checker     *ioc.IOCChecker  // v4.5.1+: IOC→Detection feedback loop checker
+	FeedManager *ioc.FeedManager // v4.5.1+ Phase 2: external TAXII feed manager
+	Enabled     bool             // true if either share or receive is enabled
 }
 
 // iocKeyFile is the on-disk filename for the persisted signing
-// key. The file is base64 JSON; not encrypted at rest. A future
-// iteration may add KMS-backed encryption.
+// key. The file is JSON; when AEGISGATE_IOC_KEY_PASSPHRASE is
+// set, it is encrypted with AES-256-GCM. Otherwise it is
+// plaintext JSON (backward compatible).
+// v4.5.1+ Phase 4: Hardening.
 const iocKeyFile = "key.json"
 
 // iocInstanceIDFile is the on-disk filename for the persisted
@@ -117,7 +125,17 @@ func wireIOC(dataDir string, platformTier tier.Tier) (*iocWiring, string, error)
 	// current key plus any retired keys (from past rotations).
 	// Retired keys are kept so the instance can still verify
 	// attestations it signed under an old keyId.
-	keyring, err := ioc.LoadKeyRing(filepath.Join(iocDir, iocKeyFile))
+	//
+	// v4.5.1+ Phase 4: If AEGISGATE_IOC_KEY_PASSPHRASE is set,
+	// the keyring file is encrypted with AES-256-GCM at rest.
+	keyPassphrase := os.Getenv("AEGISGATE_IOC_KEY_PASSPHRASE")
+	var keyring *ioc.KeyRing
+	var err error
+	if keyPassphrase != "" {
+		keyring, err = ioc.LoadKeyRingWithPassphrase(filepath.Join(iocDir, iocKeyFile), keyPassphrase)
+	} else {
+		keyring, err = ioc.LoadKeyRing(filepath.Join(iocDir, iocKeyFile))
+	}
 	if err != nil {
 		return nil, "", fmt.Errorf("load IOC keyring: %w", err)
 	}
@@ -166,30 +184,73 @@ func wireIOC(dataDir string, platformTier tier.Tier) (*iocWiring, string, error)
 		// On parse error, fall back to the CLI value (which
 		// itself defaults to 5m).
 	}
+	// v4.5.1+ Phase 4: Rate limiting + peer allow-list for gossip endpoints.
+	// AEGISGATE_IOC_RATE_LIMIT (int, default 60) controls requests/minute/IP.
+	// AEGISGATE_IOC_PEER_ALLOWLIST (comma-separated IPs/CIDRs) bypasses rate limiting.
+	rateLimit := 60
+	if envRaw := os.Getenv("AEGISGATE_IOC_RATE_LIMIT"); envRaw != "" {
+		if v, err := strconv.Atoi(envRaw); err == nil && v > 0 {
+			rateLimit = v
+		}
+	}
+	var peerAllowList []string
+	if alRaw := os.Getenv("AEGISGATE_IOC_PEER_ALLOWLIST"); alRaw != "" {
+		for _, entry := range strings.Split(alRaw, ",") {
+			entry = strings.TrimSpace(entry)
+			if entry != "" {
+				peerAllowList = append(peerAllowList, entry)
+			}
+		}
+	}
 	syncCfg := ioc.SyncConfig{
-		InstanceID:     instanceID,
-		SigningKey:     nil, // not used when KeyRing is set
-		KeyID:          "",  // not used when KeyRing is set
-		KeyRing:        keyring,
-		Store:          store,
-		Tier:           platformTier,
-		EnableShare:    share,
-		EnableReceive:  receive,
-		Peers:          peers,
-		ClientTimeout:  10 * time.Second,
-		GossipInterval: gossipInterval,
+		InstanceID:         instanceID,
+		SigningKey:         nil, // not used when KeyRing is set
+		KeyID:              "",  // not used when KeyRing is set
+		KeyRing:            keyring,
+		Store:              store,
+		Tier:               platformTier,
+		EnableShare:        share,
+		EnableReceive:      receive,
+		Peers:              peers,
+		ClientTimeout:      10 * time.Second,
+		GossipInterval:     gossipInterval,
+		RateLimitPerMinute: rateLimit,
+		PeerAllowList:      peerAllowList,
 	}
 	syncSub, err := ioc.NewSync(syncCfg)
 	if err != nil {
 		return nil, "", fmt.Errorf("create IOC sync: %w", err)
 	}
 
+	// v4.5.1+ Phase 1: Construct the IOC feedback loop checker.
+	// The checker is always constructed (even if sharing is disabled)
+	// so the admin status endpoint can report its config. It only
+	// has an effect when injected into the proxy via SetCorroborationChecker.
+	checker := ioc.NewIOCChecker(store, ioc.DefaultCheckerConfig())
+
+	// v4.5.1+ Phase 2: External TAXII feed manager.
+	// Load feed configs from env var AEGISGATE_IOC_FEEDS (JSON array).
+	// If no feeds are configured, FeedManager is nil (no external feeds).
+	var feedManager *ioc.FeedManager
+	feedConfigs := loadFeedConfigs()
+	if len(feedConfigs) > 0 {
+		fm, err := ioc.NewFeedManager(store, feedConfigs)
+		if err != nil {
+			log.Printf("IOC feed manager: failed to construct: %v", err)
+		} else {
+			feedManager = fm
+			log.Printf("IOC feed manager: %d feeds configured", len(feedConfigs))
+		}
+	}
+
 	return &iocWiring{
-		Store:    store,
-		Producer: producer,
-		Sync:     syncSub,
-		KeyRing:  keyring, // TODO-301: shared with the AR-EaaS HTTP endpoint
-		Enabled:  share || receive,
+		Store:       store,
+		Producer:    producer,
+		Sync:        syncSub,
+		KeyRing:     keyring, // TODO-301: shared with the AR-EaaS HTTP endpoint
+		Checker:     checker,
+		FeedManager: feedManager, // v4.5.1+ Phase 2
+		Enabled:     share || receive,
 	}, instanceID, nil
 }
 
@@ -309,4 +370,52 @@ func loadOrGenerateInstanceID(path string) (string, error) {
 		return "", fmt.Errorf("write instance ID: %w", err)
 	}
 	return id, nil
+}
+
+// iocCorroborationAdapter adapts pkg/ioc.IOCChecker to the
+// proxy.CorroborationChecker interface. This adapter exists because
+// the upstream proxy package cannot import pkg/ioc (circular
+// dependency); the adapter bridges the two packages.
+//
+// v4.5.1+ Phase 1: IOC→Detection Feedback Loop.
+type iocCorroborationAdapter struct {
+	checker *ioc.IOCChecker
+}
+
+// CheckCorroborationResult implements proxy.CorroborationChecker.
+// It delegates to the IOCChecker and maps the result to the
+// proxy's CorroborationResult type.
+func (a *iocCorroborationAdapter) CheckCorroborationResult(fingerprint string, hasLocalDetection bool) proxy.CorroborationResult {
+	if a == nil || a.checker == nil {
+		return proxy.CorroborationResult{}
+	}
+	result := a.checker.CheckFingerprint(fingerprint, hasLocalDetection)
+	return proxy.CorroborationResult{
+		Found:          result.Found,
+		PeerCount:      result.PeerCount,
+		TotalCount:     result.TotalCount,
+		RecommendBlock: result.RecommendBlock,
+		Reason:         result.Reason,
+	}
+}
+
+// loadFeedConfigs loads external TAXII feed configurations from
+// the AEGISGATE_IOC_FEEDS environment variable. The value is a
+// JSON array of ioc.FeedConfig objects. If the env var is not set
+// or empty, no feeds are configured (returns nil).
+//
+// Example:
+//
+//	AEGISGATE_IOC_FEEDS='[{name:cisa-acs,server_url:https://limo.anomali.com/api/v1/taxii/taxii2/,auth_type:token,api_token:...,collection_id:...,poll_interval:1h,reputation_weight:1.0,enabled:true}]'
+func loadFeedConfigs() []ioc.FeedConfig {
+	raw := os.Getenv("AEGISGATE_IOC_FEEDS")
+	if raw == "" {
+		return nil
+	}
+	var configs []ioc.FeedConfig
+	if err := json.Unmarshal([]byte(raw), &configs); err != nil {
+		log.Printf("IOC feed manager: failed to parse AEGISGATE_IOC_FEEDS: %v", err)
+		return nil
+	}
+	return configs
 }

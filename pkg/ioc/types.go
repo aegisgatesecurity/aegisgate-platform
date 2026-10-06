@@ -276,6 +276,18 @@ type IOC struct {
 	// is the primary isolation boundary: tenant A cannot see
 	// tenant B's IOCs. Admin users can see all tenants' IOCs.
 	TenantID string `json:"tenantId,omitempty"`
+
+	// Quarantined is true when the IOC was received from a peer
+	// whose reputation was below the acceptance threshold at
+	// the time of ingest. Quarantined IOCs are stored (for
+	// admin review and potential future promotion) but are NOT
+	// acted upon by the feedback loop checker or the proxy
+	// corroboration logic. A quarantined IOC can be promoted
+	// (un-quarantined) when the source peer's reputation
+	// recovers, or manually by an admin.
+	//
+	// v4.5.1+ Phase 4: Hardening — soft quarantine.
+	Quarantined bool `json:"quarantined,omitempty"`
 }
 
 // Valid reports whether the IOC has the minimum required fields

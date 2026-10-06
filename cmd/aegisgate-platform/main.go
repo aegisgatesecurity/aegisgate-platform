@@ -74,6 +74,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tracing"
+	upstreammetrics "github.com/aegisgatesecurity/aegisgate/pkg/metrics"
 	"github.com/aegisgatesecurity/aegisgate/pkg/opsec"
 	"github.com/aegisgatesecurity/aegisgate/pkg/proxy"
 )
@@ -667,6 +668,32 @@ func main() {
 			log.Printf("Federated IOC: reputation store attached (threshold=%.2f, half-life=%s)",
 				ioc.DefaultReputationThreshold, ioc.DefaultReputationHalfLife)
 		}
+		// v4.5.1+ Phase 2: Start external TAXII feed manager if configured.
+		if iocW.FeedManager != nil {
+			go iocW.FeedManager.Run(ctx)
+			log.Printf("Federated IOC: external TAXII feed manager started (%d feeds)", len(iocW.FeedManager.FeedNames()))
+		}
+		// v4.5.1+ Phase 3: Update IOC store/peer Prometheus gauges
+		// periodically. We use a 30s ticker to avoid hammering
+		// the store's RLock.
+		go func() {
+			ticker := time.NewTicker(30 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					upstreammetrics.IOCStoreSize.Set(float64(iocW.Store.Size()))
+					upstreammetrics.IOCPeerCount.Set(float64(len(iocW.Sync.Peers())))
+					// Peer reachability: count peers that respond
+					// to health checks. For now, we report the
+					// configured peer count as reachable; a
+					// health-check goroutine will refine this.
+					upstreammetrics.IOCPeerReachableCount.Set(float64(len(iocW.Sync.Peers())))
+				}
+			}
+		}()
 		// Construct the bootstrap Discoverer (v3.5.0+ Task 5).
 		// Polls the configured seeds and learns about new
 		// peers, up to MaxPeers. This is the pragmatic
@@ -977,6 +1004,18 @@ func main() {
 	}
 
 	proxyServer := proxy.New(proxyOpts)
+
+	// v4.5.1+ Phase 1: IOC→Detection Feedback Loop.
+	// If the IOC subsystem is wired, inject the corroboration checker
+	// into the proxy. When a local detection finds a finding (but not
+	// at blocking severity), the checker looks up the fingerprint in
+	// the federated IOC store. If peer instances have corroborated the
+	// same threat, the proxy escalates to a block.
+	if iocW != nil && iocW.Store != nil {
+		adapter := &iocCorroborationAdapter{checker: iocW.Checker}
+		proxyServer.SetCorroborationChecker(adapter)
+		log.Printf("IOC feedback loop: enabled (checker injected into proxy)")
+	}
 
 	// A/B Testing service — declared early so the proxy middleware can
 	// reference it. The HTTP handlers are wired later after the dashboard

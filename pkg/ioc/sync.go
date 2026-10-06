@@ -52,6 +52,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -132,6 +133,25 @@ type SyncConfig struct {
 	// longer interval delays the cross-instance signal. The
 	// lab test uses sub-second intervals for fast feedback.
 	GossipInterval time.Duration
+
+	// RateLimitPerMinute is the maximum number of requests per
+	// IP per minute on the gossip endpoints (manifest + health).
+	// Default 60. <=0 means use the default. Set higher for
+	// busy deployments with many peers; set lower for exposed
+	// instances that want stricter abuse protection.
+	//
+	// v4.5.1+ Phase 4: Hardening.
+	RateLimitPerMinute int
+
+	// PeerAllowList is a list of IPs or CIDR ranges that bypass
+	// rate limiting. Known peers (configured in Peers[]) should
+	// be listed here so they aren't rate-limited during normal
+	// gossip polling. Entries can be single IPs ("10.0.0.5") or
+	// CIDR ranges ("10.0.0.0/24"). Empty means no bypass;
+	// everyone is subject to the rate limit.
+	//
+	// v4.5.1+ Phase 4: Hardening.
+	PeerAllowList []string
 }
 
 // Sync is the gossip sync subsystem. It is the bridge between
@@ -156,8 +176,12 @@ type Sync struct {
 	// httpClient is shared across all peer fetches.
 	httpClient *http.Client
 
-	// rateLimiter tracks per-IP request counts for the manifest endpoint.
+	// rateLimiter tracks per-IP request counts for the gossip endpoints.
 	rateLimiter *iocRateLimiter
+
+	// peerNets is the parsed CIDR allow-list for rate-limit bypass.
+	// nil means no bypass (everyone is rate-limited).
+	peerNets []*net.IPNet
 }
 
 // NewSync creates a Sync from the given config. Returns an
@@ -186,12 +210,29 @@ func NewSync(cfg SyncConfig) (*Sync, error) {
 	if cfg.GossipInterval <= 0 {
 		cfg.GossipInterval = 5 * time.Minute
 	}
+	if cfg.RateLimitPerMinute <= 0 {
+		cfg.RateLimitPerMinute = 60
+	}
+	// Parse the peer allow-list into net.IPNet for efficient CIDR matching.
+	var peerNets []*net.IPNet
+	for _, entry := range cfg.PeerAllowList {
+		// If no /prefix, treat as /32 (IPv4) or /128 (IPv6).
+		if !strings.Contains(entry, "/") {
+			entry = entry + "/32"
+		}
+		_, n, err := net.ParseCIDR(entry)
+		if err != nil {
+			return nil, fmt.Errorf("parse peer allow-list entry %q: %w", entry, err)
+		}
+		peerNets = append(peerNets, n)
+	}
 	return &Sync{
 		cfg: cfg,
 		httpClient: &http.Client{
 			Timeout: cfg.ClientTimeout,
 		},
-		rateLimiter: newIOCRateLimiter(60, time.Minute), // 60 requests per minute per IP
+		rateLimiter: newIOCRateLimiter(cfg.RateLimitPerMinute, time.Minute),
+		peerNets:    peerNets,
 	}, nil
 }
 
@@ -205,7 +246,7 @@ func NewSync(cfg SyncConfig) (*Sync, error) {
 func (s *Sync) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/ioc/manifest", s.rateLimitedManifest)
-	mux.HandleFunc("/api/v1/ioc/health", s.handleHealth)
+	mux.HandleFunc("/api/v1/ioc/health", s.rateLimitedHealth)
 	return mux
 }
 
@@ -243,18 +284,13 @@ func (rl *iocRateLimiter) allow(ip string) bool {
 	return true
 }
 
-// rateLimitedManifest wraps handleManifest with per-IP rate limiting.
-func (s *Sync) rateLimitedManifest(w http.ResponseWriter, r *http.Request) {
-	if !s.IsShare() {
-		http.Error(w, "IOC sharing is not enabled on this instance", http.StatusForbidden)
-		return
-	}
-	// Extract client IP (strip port)
+// clientIP extracts the client IP from the request, respecting
+// X-Forwarded-For when present. Used by the rate limiter.
+func (s *Sync) clientIP(r *http.Request) string {
 	ip := r.RemoteAddr
 	if idx := strings.LastIndex(ip, ":"); idx > 0 {
 		ip = ip[:idx]
 	}
-	// Check X-Forwarded-For if behind a proxy (take first IP)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		if idx := strings.Index(xff, ","); idx > 0 {
 			ip = strings.TrimSpace(xff[:idx])
@@ -262,12 +298,56 @@ func (s *Sync) rateLimitedManifest(w http.ResponseWriter, r *http.Request) {
 			ip = strings.TrimSpace(xff)
 		}
 	}
-	if !s.rateLimiter.allow(ip) {
+	return ip
+}
+
+// isAllowedPeer returns true if the client IP is in the peer
+// allow-list (bypasses rate limiting). Returns false if no
+// allow-list is configured.
+func (s *Sync) isAllowedPeer(ip string) bool {
+	if len(s.peerNets) == 0 {
+		return false
+	}
+	parsed := net.ParseIP(ip)
+	if parsed == nil {
+		return false
+	}
+	for _, n := range s.peerNets {
+		if n.Contains(parsed) {
+			return true
+		}
+	}
+	return false
+}
+
+// rateLimitedManifest wraps handleManifest with per-IP rate limiting.
+func (s *Sync) rateLimitedManifest(w http.ResponseWriter, r *http.Request) {
+	if !s.IsShare() {
+		http.Error(w, "IOC sharing is not enabled on this instance", http.StatusForbidden)
+		return
+	}
+	ip := s.clientIP(r)
+	if !s.isAllowedPeer(ip) && !s.rateLimiter.allow(ip) {
 		w.Header().Set("Retry-After", "60")
 		http.Error(w, `{"error":"rate_limit_exceeded","message":"too many manifest requests"}`, http.StatusTooManyRequests)
 		return
 	}
 	s.handleManifest(w, r)
+}
+
+// rateLimitedHealth wraps handleHealth with per-IP rate limiting.
+// Health is a cheaper endpoint than manifest, but it can still be
+// abused for DoS. The same rate limit applies.
+//
+// v4.5.1+ Phase 4: Hardening.
+func (s *Sync) rateLimitedHealth(w http.ResponseWriter, r *http.Request) {
+	ip := s.clientIP(r)
+	if !s.isAllowedPeer(ip) && !s.rateLimiter.allow(ip) {
+		w.Header().Set("Retry-After", "60")
+		http.Error(w, `{"error":"rate_limit_exceeded","message":"too many health requests"}`, http.StatusTooManyRequests)
+		return
+	}
+	s.handleHealth(w, r)
 }
 
 // handleManifest serves GET /api/v1/ioc/manifest[?since=...].
@@ -692,23 +772,26 @@ func (r *Receiver) Ingest(b *Bundle) (int, error) {
 	// ingesting. The source is the InstanceID in the bundle
 	// envelope, not the URL we fetched from (which could be
 	// behind a reverse proxy).
+	//
+	// v4.5.1+ Phase 4: Soft quarantine. Instead of rejecting
+	// the bundle entirely when the peer is below threshold,
+	// we store the IOCs in a quarantined state. Quarantined
+	// IOCs are retained for admin review and potential
+	// promotion, but are NOT acted upon by the feedback loop
+	// checker or the proxy corroboration logic.
+	quarantined := false
 	if r.reputation != nil && sourceInstance != "" {
 		if !r.reputation.IsAcceptable(sourceInstance) {
+			quarantined = true
+			// Record the rejection outcome — the peer's score
+			// still drops, but we keep the IOCs.
 			r.reputation.Observe(sourceInstance, 0,
-				int64(len(b.Attestations)), "below_threshold")
-			return 0, fmt.Errorf(
-				"peer %q below reputation threshold (score=%.3f, threshold=%.3f)",
-				sourceInstance,
-				r.reputation.Score(sourceInstance),
-				r.reputation.cfg.Threshold)
+				int64(len(b.Attestations)), "below_threshold_quarantined")
 		}
 	}
 	n := 0
 	for i := range b.Attestations {
 		att := &b.Attestations[i]
-		// We use the store's Observe path so eviction + dedup
-		// are applied. To preserve "worse severity wins" and
-		// "count sums", we set the IOC fields carefully.
 		ioc := IOC{
 			Fingerprint: att.Fingerprint,
 			Type:        att.IOCType,
@@ -718,29 +801,20 @@ func (r *Receiver) Ingest(b *Bundle) (int, error) {
 			Count:       att.Count,
 			Source:      "peer:" + att.InstanceID,
 		}
-		// Observe increments Count by 1, which is NOT what we
-		// want here; we want the peer-reported count to be
-		// added. Bypass Observe and merge manually.
-		//
-		// We do this by writing a small inline merge. This is
-		// safe because we hold no lock and the store's mutex
-		// serializes the update.
-		//
-		// To keep the surface minimal, we just call Observe and
-		// then patch the merged count afterwards. (Observe
-		// is a single critical section; this is rare and
-		// batched.)
-		//
-		// Actually, simpler: we directly merge into the store
-		// map via the package-private helpers exposed below.
-		r.store.mergePeerIOC(ioc)
+		if quarantined {
+			ioc.Quarantined = true
+			// mergeQuarantinedIOC stores the IOC with the
+			// Quarantined flag set. It still deduplicates by
+			// fingerprint and merges counts/severity, but
+			// the Quarantined flag is preserved.
+			r.store.mergeQuarantinedIOC(ioc)
+		} else {
+			r.store.mergePeerIOC(ioc)
+		}
 		n++
 	}
 	// Record the round outcome in the reputation store.
-	// All attestations in the bundle are accepted as a single
-	// "round" for the peer; partial failures inside the bundle
-	// (which would be a bug) are not currently distinguished.
-	if r.reputation != nil && sourceInstance != "" {
+	if r.reputation != nil && sourceInstance != "" && !quarantined {
 		r.reputation.Observe(sourceInstance,
 			int64(n), int64(len(b.Attestations)-n), "")
 	}

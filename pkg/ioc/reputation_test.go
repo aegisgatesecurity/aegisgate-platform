@@ -257,8 +257,11 @@ func TestReputation_DecayFactorZeroElapsedIsOne(t *testing.T) {
 }
 
 // TestReputation_ReceiverRejectsBelowThreshold verifies that
-// Receiver.Ingest rejects IOCs from a peer below the
-// threshold, and that the rejection is recorded.
+// Receiver.Ingest soft-quarantines IOCs from a peer below the
+// threshold (v4.5.1+ Phase 4: changed from rejection to soft
+// quarantine). The IOCs are stored with Quarantined=true so
+// they are retained for admin review but not acted upon by the
+// feedback loop checker.
 func TestReputation_ReceiverRejectsBelowThreshold(t *testing.T) {
 	store, _ := NewStore(StoreConfig{Capacity: 100})
 	rs, _ := NewReputationStore(ReputationConfig{Threshold: 0.5, HalfLife: time.Hour})
@@ -289,23 +292,76 @@ func TestReputation_ReceiverRejectsBelowThreshold(t *testing.T) {
 	}
 
 	// First round: bad-peer starts at 1.0, acceptable. Ingest.
-	if _, err := receiver.Ingest(bundle); err != nil {
+	n, err := receiver.Ingest(bundle)
+	if err != nil {
 		t.Fatalf("first Ingest: %v", err)
 	}
+	if n != 1 {
+		t.Errorf("first Ingest returned %d, want 1", n)
+	}
+	// The first IOC should NOT be quarantined.
+	ioc := store.Get(strings.Repeat("a", 64))
+	if ioc == nil {
+		t.Fatalf("first IOC not found in store")
+	}
+	if ioc.Quarantined {
+		t.Errorf("first IOC should not be quarantined (peer was above threshold)")
+	}
+
 	// Now drop the peer's score below threshold.
 	for i := 0; i < 50; i++ {
 		rs.Observe("bad-peer", 0, 10, "bad")
 	}
-	// Second round: rejected.
-	_, err := receiver.Ingest(bundle)
-	if err == nil {
-		t.Errorf("expected error on Ingest from below-threshold peer")
+
+	// Second round: soft-quarantined (not rejected). The IOC
+	// is a different fingerprint so it's a new entry.
+	att2 := IOCAttestation{
+		Fingerprint: strings.Repeat("b", 64),
+		InstanceID:  "bad-peer",
+		IOCType:     IOCTypeProxyResponse,
+		Severity:    SeverityHigh,
+		FirstSeen:   time.Now().UTC(),
+		LastSeen:    time.Now().UTC(),
+		Count:       1,
 	}
-	if !strings.Contains(err.Error(), "below reputation threshold") {
-		t.Errorf("err = %q, want contains 'below reputation threshold'", err.Error())
+	if err := SignAttestationWithKeyRing(&att2, kr); err != nil {
+		t.Fatalf("SignAttestationWithKeyRing: %v", err)
 	}
-	if store.Size() != 1 {
-		t.Errorf("store size = %d, want 1 (only the first ingest succeeded)", store.Size())
+	bundle2 := NewBundle("bad-peer")
+	bundle2.Add(att2)
+	if err := bundle2.SignWithKeyRing(kr); err != nil {
+		t.Fatalf("SignWithKeyRing: %v", err)
+	}
+	if err := bundle2.VerifyAll(); err != nil {
+		t.Fatalf("VerifyAll: %v", err)
+	}
+	n2, err := receiver.Ingest(bundle2)
+	if err != nil {
+		t.Errorf("second Ingest should not error (soft quarantine): %v", err)
+	}
+	if n2 != 1 {
+		t.Errorf("second Ingest returned %d, want 1", n2)
+	}
+	// The second IOC should be quarantined.
+	ioc2 := store.Get(strings.Repeat("b", 64))
+	if ioc2 == nil {
+		t.Fatalf("second IOC not found in store")
+	}
+	if !ioc2.Quarantined {
+		t.Errorf("second IOC should be quarantined (peer below threshold)")
+	}
+	// The first IOC should still NOT be quarantined (don't downgrade).
+	if ioc.Quarantined {
+		t.Errorf("first IOC was downgraded to quarantined — trusted IOCs should not be tainted")
+	}
+	// Store should have 2 IOCs (both ingests succeeded).
+	if store.Size() != 2 {
+		t.Errorf("store size = %d, want 2 (both ingests stored)", store.Size())
+	}
+	// Quarantine stats: 1 quarantined, 1 active.
+	q, active := store.QuarantineStats()
+	if q != 1 || active != 1 {
+		t.Errorf("quarantine stats = (%d quarantined, %d active), want (1, 1)", q, active)
 	}
 }
 

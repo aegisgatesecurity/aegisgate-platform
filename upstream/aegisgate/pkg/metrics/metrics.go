@@ -995,6 +995,7 @@ const (
 	ReasonRateLimit    = "rate_limit"
 	ReasonPolicy       = "policy"
 	ReasonToolChain    = "tool_chain"
+	ReasonFederatedIOC = "federated_ioc"
 	ReasonUnknown      = "unknown"
 )
 
@@ -1010,6 +1011,128 @@ var securityBlocksTotal = prometheus.NewCounterVec(
 func init() {
 	// Register security blocks metric with Prometheus
 	prometheus.MustRegister(securityBlocksTotal)
+	prometheus.MustRegister(IOCCorroborationTotal)
+	prometheus.MustRegister(IOCFeedbackBlocksTotal)
+	prometheus.MustRegister(IOCFeedErrorsTotal)
+	prometheus.MustRegister(IOCFeedIOCsTotal)
+	prometheus.MustRegister(IOCFeedLastPullTimestamp)
+	prometheus.MustRegister(IOCStoreSize)
+	prometheus.MustRegister(IOCStoreCapacity)
+	prometheus.MustRegister(IOCPeerCount)
+	prometheus.MustRegister(IOCPeerReachableCount)
+}
+
+// IOCCorroborationTotal tracks the total number of IOC corroboration
+// checks performed by the feedback loop checker. This is the "lookup"
+// counter — every time the proxy asks the checker "has any peer seen
+// this fingerprint?" this counter increments.
+var IOCCorroborationTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "aegisgate_ioc_corroboration_total",
+		Help: "Total IOC corroboration checks performed, partitioned by result (found, not_found, blocked)",
+	},
+	[]string{"result"},
+)
+
+// IOCFeedbackBlocksTotal tracks the number of requests/responses that
+// were blocked due to federated IOC corroboration. This is a subset of
+// aegisgate_security_blocks_total{reason="federated_ioc"} but provides
+// a dedicated counter for the feedback loop specifically.
+var IOCFeedbackBlocksTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "aegisgate_ioc_feedback_blocks_total",
+		Help: "Total blocks issued due to federated IOC corroboration, partitioned by direction (request, response)",
+	},
+	[]string{"direction"},
+)
+
+// RecordIOCCorroboration records an IOC corroboration check result.
+// result should be "found", "not_found", or "blocked".
+func RecordIOCCorroboration(result string) {
+	IOCCorroborationTotal.WithLabelValues(result).Inc()
+}
+
+// RecordIOCFeedbackBlock records a block issued due to federated IOC
+// corroboration. direction should be "request" or "response".
+func RecordIOCFeedbackBlock(direction string) {
+	IOCFeedbackBlocksTotal.WithLabelValues(direction).Inc()
+}
+
+// ── IOC Feed Manager Metrics (Phase 2/3) ──
+
+// IOCFeedErrorsTotal tracks errors per external TAXII feed.
+var IOCFeedErrorsTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "aegisgate_ioc_feed_errors_total",
+		Help: "Total errors pulling from external TAXII feeds, by feed name.",
+	},
+	[]string{"feed"},
+)
+
+// IOCFeedIOCsTotal tracks IOCs ingested per external feed.
+var IOCFeedIOCsTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "aegisgate_ioc_feed_iocs_total",
+		Help: "Total IOCs ingested from external TAXII feeds, by feed name.",
+	},
+	[]string{"feed"},
+)
+
+// IOCFeedLastPullTimestamp tracks the last successful pull time
+// per feed (as a Unix timestamp gauge).
+var IOCFeedLastPullTimestamp = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: "aegisgate_ioc_feed_last_pull_timestamp",
+		Help: "Unix timestamp of the last successful pull from each external feed.",
+	},
+	[]string{"feed"},
+)
+
+// IOCStoreSize is the current number of IOCs in the store.
+var IOCStoreSize = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Name: "aegisgate_ioc_store_size",
+		Help: "Current number of IOCs in the IOC store.",
+	},
+)
+
+// IOCStoreCapacity is the configured maximum capacity of the store.
+var IOCStoreCapacity = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Name: "aegisgate_ioc_store_capacity",
+		Help: "Configured maximum capacity of the IOC store.",
+	},
+)
+
+// IOCPeerCount is the number of configured gossip peers.
+var IOCPeerCount = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Name: "aegisgate_ioc_peer_count",
+		Help: "Number of configured gossip peers.",
+	},
+)
+
+// IOCPeerReachableCount is the number of reachable gossip peers.
+var IOCPeerReachableCount = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Name: "aegisgate_ioc_peer_reachable_count",
+		Help: "Number of gossip peers that are currently reachable.",
+	},
+)
+
+// RecordIOCFeedError records an error for an external feed.
+func RecordIOCFeedError(feedName string) {
+	IOCFeedErrorsTotal.WithLabelValues(feedName).Inc()
+}
+
+// RecordIOCFeedIOCs records IOCs ingested from an external feed.
+func RecordIOCFeedIOCs(feedName string, count int) {
+	IOCFeedIOCsTotal.WithLabelValues(feedName).Add(float64(count))
+}
+
+// SetIOCFeedLastPull records the last successful pull time for a feed.
+func SetIOCFeedLastPull(feedName string, ts float64) {
+	IOCFeedLastPullTimestamp.WithLabelValues(feedName).Set(ts)
 }
 
 // RecordSecurityBlock records a security block with the specified reason

@@ -144,6 +144,12 @@ type KeyRing struct {
 	// = use DefaultRetiredKeyTTL. Set via SetRetiredKeyTTL.
 	// v3.4.0+ primitive.
 	retiredKeyTTL time.Duration
+	// passphrase is the encryption passphrase for the on-disk
+	// file. When non-empty, the keyring is encrypted with
+	// AES-256-GCM. When empty, the keyring is stored as
+	// plaintext JSON (backward compatible).
+	// v4.5.1+ Phase 4: Hardening.
+	passphrase string
 }
 
 // ringKey is a single key in the keyring. The public and
@@ -176,7 +182,13 @@ type keyRingOnDisk struct {
 // a single key with no "version" field, written by
 // loadOrGenerateIOCKey), it is auto-migrated to v2: the
 // single key becomes the current key in a v2 ring.
-func loadKeyRing(persist string) (*KeyRing, error) {
+//
+// v4.5.1+ Phase 4: If passphrase is non-empty, the on-disk file
+// is encrypted with AES-256-GCM. On load, if the file is
+// detected as encrypted, the passphrase is used to decrypt it.
+// If the file is encrypted but no passphrase is provided, an
+// error is returned.
+func loadKeyRing(persist, passphrase string) (*KeyRing, error) {
 	// G304 (CodeQL): sanitize the path before
 	// os.ReadFile. The persist arg is typically
 	// derived from a config value or CLI flag, not
@@ -188,8 +200,9 @@ func loadKeyRing(persist string) (*KeyRing, error) {
 	}
 	persist = cleanPath
 	kr := &KeyRing{
-		keys:    make(map[string]*ringKey),
-		persist: persist,
+		keys:       make(map[string]*ringKey),
+		persist:    persist,
+		passphrase: passphrase,
 	}
 	if persist == "" {
 		// No persistence. Generate a fresh ephemeral key.
@@ -216,6 +229,18 @@ func loadKeyRing(persist string) (*KeyRing, error) {
 			return kr, nil
 		}
 		return nil, fmt.Errorf("read keyring: %w", err)
+	}
+
+	// v4.5.1+ Phase 4: If the file is encrypted, decrypt it first.
+	if isEncryptedKeyFile(data) {
+		if passphrase == "" {
+			return nil, errNoPassphrase
+		}
+		decrypted, err := decryptKeyFile(data, passphrase)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt keyring: %w", err)
+		}
+		data = decrypted
 	}
 
 	// Try v2 first.
@@ -471,7 +496,19 @@ func (kr *KeyRing) Verify(keyID string, digest, sig []byte) error {
 // Exported so the wiring layer (cmd/aegisgate-platform/ioc_wiring.go)
 // can construct the keyring.
 func LoadKeyRing(persist string) (*KeyRing, error) {
-	return loadKeyRing(persist)
+	return loadKeyRing(persist, "")
+}
+
+// LoadKeyRingWithPassphrase loads a keyring from disk with
+// encryption support. When passphrase is non-empty, the
+// keyring file is encrypted with AES-256-GCM on write and
+// decrypted on read. When the passphrase is empty, the file
+// is stored as plaintext JSON (backward compatible with
+// LoadKeyRing).
+//
+// v4.5.1+ Phase 4: Hardening.
+func LoadKeyRingWithPassphrase(persist, passphrase string) (*KeyRing, error) {
+	return loadKeyRing(persist, passphrase)
 }
 
 // ----------------------------------------------------------------------------
@@ -549,6 +586,16 @@ func (kr *KeyRing) persistLocked() error {
 	data, err := json.MarshalIndent(onDisk, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)
+	}
+	// v4.5.1+ Phase 4: Encrypt the keyring at rest if a passphrase
+	// is configured. The encrypted file contains a nonce + ciphertext;
+	// the plaintext keyring JSON never touches disk.
+	if kr.passphrase != "" {
+		encrypted, err := encryptKeyFile(data, kr.passphrase)
+		if err != nil {
+			return fmt.Errorf("encrypt keyring: %w", err)
+		}
+		data = encrypted
 	}
 	tmp := kr.persist + ".tmp"
 	if err := os.WriteFile(tmp, data, 0o600); err != nil {

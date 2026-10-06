@@ -6,10 +6,10 @@
 
 *A self-hosted gateway that scans every request and response between your team and any AI service — catching data leaks, prompt injections, and compliance violations before they happen.*
 
-[![Version](https://img.shields.io/badge/Version-v4.5.1-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.5.1)
+[![Version](https://img.shields.io/badge/Version-v4.5.2-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.5.2)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-10,883+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Tests](https://img.shields.io/badge/Tests-11,573+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-81%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-120_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![Patent Pending](https://img.shields.io/badge/IP-Patent_Pending-8B5CF6?logo=uspto)](https://github.com/aegisgatesecurity/aegisgate-platform#ip-notice)
@@ -75,6 +75,10 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 | Private keys in git | **0** (rotated, gitignored, pre-commit blocked) |
 | Code-scanning alerts open | **0** |
 | Dependabot alerts open | **0** |
+| IOC gossip rate limiting | ✅ (60/min/IP default, CIDR allow-list bypass) |
+| IOC admin API bearer token auth | ✅ (defense-in-depth, `crypto/subtle`) |
+| IOC keyring encryption at rest | ✅ (AES-256-GCM) |
+| IOC soft quarantine | ✅ (low-reputation sources stored, not acted upon) |
 
 ## Quick Start
 
@@ -324,7 +328,7 @@ above the licensed tier.
 | **SIEM Integration** | Forward audit events to Splunk, Elasticsearch, QRadar, Sentinel, SumoLogic, LogRhythm, ArcSight, Syslog, Datadog, CloudWatch, SecurityHub (11 platforms) |
 | **ML Threat Detection** | Char CNN-BiLSTM neural network (1.58M params, ONNX) for adversarial pattern detection with 100/100 evasion resistance |
 | **Trust Framework** | Cryptographic agent identity, per-session trust scoring, pillar-based governance, and signed attestations |
-| **Federated IOC** | Cross-organization indicator-of-compromise sharing |
+| **Federated IOC** | Cross-organization indicator-of-compromise sharing with ECDSA-signed gossip protocol, peer reputation scoring, TAXII feed integration, and soft quarantine for low-reputation sources |
 | **Incident Response** | Automated playbook-driven incident management (14 default playbooks) |
 | **CISO Posture Digest** | Signed posture digest with IOC, audit, and posture sources |
 | **Trust Portal** | Public-facing trust page with posture, frameworks, and uptime snapshots |
@@ -378,7 +382,7 @@ pkg/
 ├── evidence/               # Evidence collection and packaging
 ├── grpc/                   # gRPC service layer (7 services, 50 RPCs)
 ├── incident/               # Incident response (PostgreSQL + in-memory, 14 playbooks)
-├── ioc/                    # IOC management and STIX export
+├── ioc/                    # Federated IOC sharing (gossip, reputation, TAXII feeds, quarantine, STIX export)
 ├── lensbackend/            # Lens extension backend
 ├── mcpserver/              # MCP guardrails
 ├── metrics/                # Prometheus metrics
@@ -408,7 +412,7 @@ pkg/
 ## Testing
 
 ```bash
-# Unit tests (81.5% coverage, 8200+ tests across 441 files)
+# Unit tests (79.6% coverage, 11,573+ tests across 127 packages)
 go test ./...
 
 # Integration tests (requires Docker for PostgreSQL testcontainers)

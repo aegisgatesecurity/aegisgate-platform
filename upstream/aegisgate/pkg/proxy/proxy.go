@@ -16,6 +16,7 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
@@ -186,6 +187,59 @@ type Proxy struct {
 
 	// v4.5.0: Cleanup channel for P2/P4 periodic maintenance goroutine.
 	v450CleanupDone chan struct{}
+
+	// v4.5.1+ Phase 1: IOC→Detection feedback loop.
+	// When set, the proxy checks each detection fingerprint against
+	// the federated IOC store for peer corroboration. If peer
+	// instances have seen the same threat, the detection is
+	// escalated (crowdsourced threat intel). Injected from main.go
+	// via SetCorroborationChecker; nil = feedback loop disabled.
+	corroborationChecker CorroborationChecker
+}
+
+// CorroborationChecker is the interface for the IOC feedback loop.
+// It is implemented by pkg/ioc.IOCChecker. The proxy uses it to
+// check whether a detection fingerprint has been corroborated by
+// peer AegisGate instances via the federated IOC gossip protocol.
+//
+// The interface is defined here (in the upstream proxy package)
+// to avoid a circular dependency: upstream/aegisgate cannot import
+// pkg/ioc, but pkg/ioc can import upstream/aegisgate. The
+// IOCChecker struct in pkg/ioc satisfies this interface.
+//
+// v4.5.1+ Phase 1: IOC→Detection Feedback Loop.
+type CorroborationChecker interface {
+	// CheckCorroborationResult checks a pre-computed fingerprint
+	// against the IOC store and returns whether the detection
+	// is corroborated by peer instances.
+	// hasLocalDetection should be true if the proxy found a
+	// local detection finding for this content.
+	CheckCorroborationResult(fingerprint string, hasLocalDetection bool) CorroborationResult
+}
+
+// CorroborationResult is the result of checking a fingerprint
+// against the federated IOC store. It is returned by
+// CorroborationChecker.CheckCorroborationResult.
+//
+// The fields mirror pkg/ioc.CorroborationResult but are defined
+// here to avoid the circular dependency. The IOCChecker in pkg/ioc
+// adapts its CorroborationResult to this type.
+type CorroborationResult struct {
+	// Found is true if any IOC with this fingerprint exists.
+	Found bool
+
+	// PeerCount is the number of distinct peer instances that
+	// have observed this IOC.
+	PeerCount int
+
+	// TotalCount is the total observation count across all sources.
+	TotalCount int
+
+	// RecommendBlock is true if the corroboration warrants blocking.
+	RecommendBlock bool
+
+	// Reason is a human-readable explanation.
+	Reason string
 }
 
 // RateLimiter implements token bucket rate limiting
@@ -688,6 +742,52 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 					w.Write([]byte(fmt.Sprintf("Content blocked: %s", strings.Join(violationNames, ", "))))
 					return
+				}
+
+				// v4.5.1+ Phase 1: IOC→Detection Feedback Loop.
+				// If local detection found findings (but not blocking-level),
+				// check the federated IOC store for peer corroboration. If peer
+				// instances have seen the same threat, escalate to a block.
+				// This is the "1 customer's threat = all customers protected"
+				// network effect.
+				if !blocked && len(requestFindings) > 0 && p.corroborationChecker != nil {
+					// Compute fingerprint from the first finding for IOC lookup.
+					// The fingerprint is a SHA-256 of the detection metadata
+					// (type, severity, pattern), not the raw content — it's
+					// privacy-safe.
+					for _, f := range requestFindings {
+						if f.Pattern == nil {
+							continue
+						}
+						fp := iocFingerprintFromFinding(f)
+						if fp == "" {
+							continue
+						}
+						result := p.corroborationChecker.CheckCorroborationResult(fp, true)
+						if result.Found {
+							metrics.RecordIOCCorroboration("found")
+						} else {
+							metrics.RecordIOCCorroboration("not_found")
+						}
+						if result.RecommendBlock {
+							metrics.RecordIOCFeedbackBlock("request")
+							slog.Error("Request blocked: Federated IOC corroboration",
+								"client", req.RemoteAddr,
+								"path", req.URL.Path,
+								"pattern", f.Pattern.Name,
+								"peer_count", result.PeerCount,
+								"total_count", result.TotalCount,
+								"reason", result.Reason,
+							)
+							metrics.RecordSecurityBlock(metrics.ReasonFederatedIOC)
+							sac.SetResponseHeaders(w)
+							w.WriteHeader(http.StatusForbidden)
+							w.Write([]byte(fmt.Sprintf(
+								"Request blocked: threat corroborated by federated intelligence (pattern: %s, peers: %d)",
+								f.Pattern.Name, result.PeerCount)))
+							return
+						}
+					}
 				}
 
 				// Cache the scan result for future requests with the same content
@@ -1310,6 +1410,54 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 				return nil
 			}
 
+			// Federated IOC corroboration check (response path).
+			// Same logic as the request path: if the local scanner
+			// found findings (even non-blocking ones) AND peer
+			// instances have corroborated the same fingerprint via
+			// the gossip protocol, escalate to a block.
+			//
+			// This catches response-side threats (e.g. a model
+			// leaking PII in a pattern that other instances have
+			// already flagged) that don't individually meet the
+			// local block threshold but are known-bad in the
+			// federated intel store.
+			if !blocked && len(findings) > 0 && p.corroborationChecker != nil {
+				for _, f := range findings {
+					if f.Pattern == nil {
+						continue
+					}
+					fp := iocFingerprintFromFinding(f)
+					if fp == "" {
+						continue
+					}
+					result := p.corroborationChecker.CheckCorroborationResult(fp, true)
+					if result.Found {
+						metrics.RecordIOCCorroboration("found")
+					} else {
+						metrics.RecordIOCCorroboration("not_found")
+					}
+					if result.RecommendBlock {
+						metrics.RecordIOCFeedbackBlock("response")
+						slog.Error("Response blocked: Federated IOC corroboration",
+							"path", resp.Request.URL.Path,
+							"status", resp.StatusCode,
+							"pattern", f.Pattern.Name,
+							"peer_count", result.PeerCount,
+							"total_count", result.TotalCount,
+							"reason", result.Reason,
+						)
+						metrics.RecordSecurityBlock(metrics.ReasonFederatedIOC)
+						resp.StatusCode = http.StatusForbidden
+						resp.Body = io.NopCloser(strings.NewReader(
+							fmt.Sprintf(`{"error":"Response blocked: threat corroborated by federated intelligence (pattern: %s, peers: %d)"}`,
+								f.Pattern.Name, result.PeerCount)))
+						resp.ContentLength = -1
+						resp.Header.Set("Content-Type", "application/json")
+						return nil
+					}
+				}
+			}
+
 			// Cache the response scan result
 			p.scanCache.Store(cacheKey, &scanCacheEntry{
 				findings:         findings,
@@ -1397,6 +1545,16 @@ func (p *Proxy) SetScanner(s *scanner.Scanner) {
 	if s != nil {
 		p.scanner = s
 	}
+}
+
+// SetCorroborationChecker injects the IOC feedback loop checker.
+// When set, the proxy checks each detection fingerprint against
+// the federated IOC store for peer corroboration. Pass nil to
+// disable the feedback loop.
+//
+// v4.5.1+ Phase 1: IOC→Detection Feedback Loop.
+func (p *Proxy) SetCorroborationChecker(c CorroborationChecker) {
+	p.corroborationChecker = c
 }
 
 // GetComplianceManager returns the compliance manager
@@ -1718,3 +1876,52 @@ func extractContentFromResponse(body []byte) string {
 type nopProxyScanner struct{}
 
 func (n *nopProxyScanner) Scan(data []byte) interface{} { return nil }
+
+// iocFingerprintFromFinding computes a SHA-256 fingerprint from a
+// scanner Finding, matching the format used by pkg/ioc.Fingerprint().
+// The fingerprint is computed over a canonical JSON of the detection
+// metadata (type, severity, pattern name), NOT the raw match content.
+// This ensures privacy: two instances that detect the same pattern
+// produce the same fingerprint without sharing any customer data.
+//
+// The Detection struct in pkg/ioc uses the same field names and
+// canonical JSON algorithm, so fingerprints are interoperable.
+//
+// v4.5.1+ Phase 1: IOC→Detection Feedback Loop.
+func iocFingerprintFromFinding(f scanner.Finding) string {
+	if f.Pattern == nil {
+		return ""
+	}
+	// Build the canonical JSON detection object.
+	// This matches pkg/ioc.Detection's JSON serialization.
+	severityStr := "medium"
+	switch f.Pattern.Severity {
+	case scanner.Critical:
+		severityStr = "critical"
+	case scanner.High:
+		severityStr = "high"
+	case scanner.Medium:
+		severityStr = "medium"
+	case scanner.Low:
+		severityStr = "low"
+	case scanner.Info:
+		severityStr = "info"
+	}
+	// Canonical JSON with sorted keys (matches pkg/ioc.canonicalJSON).
+	type detectionJSON struct {
+		Pattern   string `json:"pattern,omitempty"`
+		Severity  string `json:"severity"`
+		Type      string `json:"type"`
+	}
+	d := detectionJSON{
+		Pattern:  f.Pattern.Name,
+		Severity: severityStr,
+		Type:     "proxy_response",
+	}
+	b, err := json.Marshal(d)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
+}

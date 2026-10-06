@@ -169,6 +169,7 @@ const (
 	ReasonAtlas        = "atlas"
 	ReasonRateLimit    = "rate_limit"
 	ReasonPolicy       = "policy"
+	ReasonFederatedIOC = "federated_ioc"
 	ReasonUnknown      = "unknown"
 
 	// Cache outcomes
