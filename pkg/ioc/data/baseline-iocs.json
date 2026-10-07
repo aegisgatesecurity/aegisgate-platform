@@ -1,0 +1,4255 @@
+{
+  "bundleId": "2d269134-ee93-4501-9cfe-c0060ed6ff1e",
+  "instanceId": "aegisgate-baseline-seed",
+  "issuedAt": "2026-10-07T01:19:52.698565753Z",
+  "count": 223,
+  "attestations": [
+    {
+      "fingerprint": "b23e591bf26cb1234c0c0d13463956f1d463b0c74bbb92e16c63c005147f5fe3",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCgwhrU4bSEfuOvHTzJWllKnNobjO87PLniJLySAWJtLwIhAPOdb0MQzwc6v9zesLIhOOwEedYRKdw8utdcBML/B/MU"
+      }
+    },
+    {
+      "fingerprint": "5b124481d8659bb56d8649fb1a66c0c1219476fd9dc9ad471e2a6fa997e934ff",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCP+/Xz1x2UtkxuG3S00uZE8+ruHM7wmvGfXPdyBlLS5AIhAN5WJTPvarLiIKe1KLSdSkNzT6Mq39B3owgmSkwJz352"
+      }
+    },
+    {
+      "fingerprint": "0dec4cb81b4cd26bd9fa9ebd18497b44aa4ec2b0470cdd8329dea7ee8683a078",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCHv0aFfb9PajWIP+UMdX9+uKQUXp+q9F9jMXWcJ1gRXAIhAMjgM6lmqRnHGzV37Kcp7/Q1TbMZSbdDGvcVfq2AHzSs"
+      }
+    },
+    {
+      "fingerprint": "d8f4d4a1c06c9928fe93d48f1a8f82281cc0f114331da4e39e1d835fe9705b67",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGPS1gEE8DXc8QhjNekriMnpHfAW4R19jJp8G8sR9T1rAiAdhQ0kb9bZoFYZNkc2/c4HOnQw3+KqaKk5SMhqWlg/wg=="
+      }
+    },
+    {
+      "fingerprint": "3da449a31228afa0fb014801d07f81711f0846ffea115bd9de4ddee0dad34bec",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCgbml56VEbzC/iK73LtD2qc9dcTscxvv3gqC5WqugybwIhAJdWnoU1BtWwnBnbfCZS7tJ766IpDolpEBgpPGE/EaR9"
+      }
+    },
+    {
+      "fingerprint": "ccd4c85f01cd5f4cb6435cd7f36e64fcfc3d0aac7da75a2b8b5259f40e3bc4a3",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFM7j7sqa9B1du8TpHKKEl0sOvI0+Zj0mRxVhO9YUvD7AiEAzU4uJ4a9dt3n5ho2/VJcx5a+g6fOYgvlXTivZadkBfs="
+      }
+    },
+    {
+      "fingerprint": "0c5eac5500f0f3d93714b4b5cb0d46f65d2c4b6793d987098fc9c1b846e755c6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDUFi2g1CM6oJtC5rqPiUmgP9CFPlMDpWIp3u0WVlO7TgIhAMCZmJBhyZ5b6JaCAhc1u6fBS5aB0ggXEPPAoNOdu7vK"
+      }
+    },
+    {
+      "fingerprint": "f614491634f89f947b3ef6a60bd9b43c4845cb81a202eee2b47ab36aa34ca750",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDImGhEasQsVSui3UhoP244WSFt8euJ028d47ycT7bGagIhAOcnS98v2ctJybbPnL+9vNIvgw7SkkwhJe5hNJPUn+H5"
+      }
+    },
+    {
+      "fingerprint": "42c24f0b40718665b5a306c9cca1894cce37047177c07a1eab5a405ff70d5f4a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQD/rdz//JhO8cIQGCQ/Bywb1/iIiW6uxNVhHgDzEvL+0gIhAJvZsWwSuRJr2Lfl5AaWdD7161EI38syp/R1adPiijae"
+      }
+    },
+    {
+      "fingerprint": "e98d577ed2b39d2675add536c7aa483320b8f82c2e7118dee8cc03706d556a5a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIHJhLFOYO9TULXrKTgK+nnPUeuOIkxCRbrQsP6vGsF/ZAiEArtgRrpCi/A7/YYAiXthD9U9dnYSwNMpjCXtVXp9giY4="
+      }
+    },
+    {
+      "fingerprint": "3a73edb72d1e8ce7626aac8600bbbde9b9fc8c4b628213c163f2ee121ce3dae9",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIC6qN0FFljnb348WEQ+SKMxtDs3V66i0tNW0hSYpxx/hAiEArODZPoJT0+RSVMDI73z+xygX5vsKih7EPGP8Wc5+NuQ="
+      }
+    },
+    {
+      "fingerprint": "042e53bc5d128b4aebf539ca21299fce292d8d835f821e45c0f3dd0fc94bc7a3",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAjPgwvsswjGFnsKM7Awn94Md2eO4BMssbDefwWbbVC1AiA+2MyvRXaXdJsNbwWeSmysbkNzmldPlf1BrQTV+K0uQw=="
+      }
+    },
+    {
+      "fingerprint": "88149608bdffbbed966a989aeb9ba28b905c0b453506e1321915999fb9c7f1ae",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIH+NSV/6vqe40J5RypaKRtpof3xUkQ/J4uYEDTqVfEmKAiA19XBu+jN1pgCqbdpy8ZO+t8U3uSKJ7UUNOfSbR3S04Q=="
+      }
+    },
+    {
+      "fingerprint": "02934258d10f4c6f6a0707033294f770676732736679f6e20c46c86298904aca",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICchm0QExF7zZsFAXTkxCfxEipUI62o5gmjm80tu4zQVAiBjAnlDzuK89bF/T2qcDGe2NkGiuPf6vuvnxC7cY8TdNg=="
+      }
+    },
+    {
+      "fingerprint": "8c82be901c91e883e340cd2f162a6135efc9b5c52be81c6a19d29bc3a6e13160",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC0OlStvSMQ16LjEA2U2CK32+BDndHq8bSwn+6URzYLqwIhAMxPQdcNNKNF11tdDDMMpaQDAdaufk80jExYO6Wc0hFC"
+      }
+    },
+    {
+      "fingerprint": "471bf16ad9523764a6ae67ed6ee3dd1d7e5874ffbcf329d6bd6e6ca40022f144",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAZB+XLxJfgeCzMDfUczC/YHVpyqH2DsSikurTzWHGShAiAS2r/zOI6tux4kpnb0NFoqi+EGww2f82qGBHx1lFkYGA=="
+      }
+    },
+    {
+      "fingerprint": "395740a2ac3f44c1aade90ad93d62c455f892fc653bbbfae1c23721e0b435cda",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCHJbDSAPMyc71xArmsIXkLC/L91yz0cV779LgKbh7VqQIga+TDhpSmPiM1fiwuMvMDgQQDGKInGIrE8cIpFsNwpGs="
+      }
+    },
+    {
+      "fingerprint": "3df61e35b364976aaa22b35ff8403116d599088e626e6f75551df3fac3e652da",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIH2oD9st8KBrctXmiMZriRPytJUW/cidDRMIvmsnbHZ4AiEA9hGKZbgzMuGlRsCvezFJdyH9FHcquBBjJ3GeLQEtfHE="
+      }
+    },
+    {
+      "fingerprint": "b3152a94ef7be38e7531918b8ee95e63219f02fcf874e1e122a1453dde23b429",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCWF+UgGRakymvyr7633ByDovmjrikZsDgqg/BFOvtj+QIgHacipVc3YX8fH/37pXP75wmjddu6+Hi5XgQpGa5w1Fs="
+      }
+    },
+    {
+      "fingerprint": "766a42ef9dbecd4dcac0682518232dd83ef3fac2f3aa93ac1e3a46d9ce9fa031",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIB6hWSdudxpoHnvGERNAh4I5+T5n5fUx04TrSQgjgMmkAiAh3iPZ7EcgdmFE2cEQIbMLrtSi8YbSNkuQq5NGtkGLaQ=="
+      }
+    },
+    {
+      "fingerprint": "a91ba0b9cc056cc61847b222bc92c33690f624bb9175c8cd695b35ddb94da45a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIBd0WkpvOI8rDX6QZV7W6vc46dJEZciA/0OW+N3RwtXVAiBJ85RtJhBLVBvFVl6eTM+wZgz6V2Wh3YWLeeiQ83Bjtg=="
+      }
+    },
+    {
+      "fingerprint": "ac864cf5b07ef826fcb432211e54a3cfd9c0db6fd0e749feb6f4b4f4161fa163",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIA8FEEgaCv7Jp+WJWPnbzRTvpFh63KTUX0CwfxEvWYvxAiAX03HTJRjWI/n/0Xz9e4dZsFYdIu6Ju9OIbWA+tNYl8g=="
+      }
+    },
+    {
+      "fingerprint": "a8c3f73d9c47ecb280aed3b36fc15b02d664e109a922411fef3c142e8427c7e2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIHGoCvw0w2hFnUTZqCiP5JxqqnqnLP2s77l3QXfWQ2SKAiAhn7V5cwrOuKlCTaAgHsV5/SQrF5n+HnKJ2e5dTvtKQg=="
+      }
+    },
+    {
+      "fingerprint": "c6b163b36561ddd72e2f96f582fdf1e03a892306c83867d2c5f312c23d08ef1f",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCMyyjnIKRgGkR1Cg4meF7y6TCCM37Xp67AHPBvBKPA3wIhAJcoyHnPilMWkeWOVNIngLz9QBqrbaLqbon50PG/b4Eb"
+      }
+    },
+    {
+      "fingerprint": "3c77510a3ce29ef15de19fd8b2bd38fb95383a1fac9278e655f36bb5ac1e7484",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAK0LEmLyv1IeNj6WXLPmR85icVrxV7dlHgM7V3KczE4AiBKetSH1mWfBTMcPOKqAdBRj0TmpFPIV/GGYxWEjqiWCA=="
+      }
+    },
+    {
+      "fingerprint": "5e747ab82d70189491f9696725ae8e0c989f39e3a912a61f3d175e4f08831482",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIA+hnTtOuB491N1HkPVate03hDGOdhIRuMAkRyAqYnTnAiEAwX22DfTqs+WFgi90Mj4meXCmwCJCUhZjoWcHKqSNqiU="
+      }
+    },
+    {
+      "fingerprint": "b1ecc61bc88852fc6a70e3b99eaca33835bcc4f34b760a8dc55a79a131e36a31",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIH3LV/KbbHaIeQnnpH3k1huQcVzgGRDnbBexDUShZGO2AiEAyNFxnalj/RIzRqC4ZDfkOFKnP1U3TmUIQMQt32Z0zeY="
+      }
+    },
+    {
+      "fingerprint": "ea474877815563969d95d140068b83bc0791a551a26a17dab2aff569c53a4c82",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICOkncGy8B/+m8q4s8ZSvBqmUCwZ5wS8WtND9Fu1a33cAiA88/L/HiJzG0/XbVQNbgyYl5UCjSUXj0Ju1PZAzaDo/Q=="
+      }
+    },
+    {
+      "fingerprint": "692108daf06fd7543de09454415c52e9a9984bdfba56f9db09f4ffde78ae3d65",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICTyW6FuNtADwn+zYf0qdiKSNiX+Rz+XoqdQUmbjshCzAiBk9fkY4moYSqQojQERK8ZXq0sCftMUZWRu5sMkpZQ6Fw=="
+      }
+    },
+    {
+      "fingerprint": "c16f1c3b37e070e5ac91a4efe5e1e965d153aba1fb5dc1116d5c5e818549bb9b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIHyPfsIMfXt5DgK9D2qRkDiLi1DyXRC0Fz5bPKG/3nxZAiBQMEN0FUI13CHYF6OkI5eHm2hyzege4JdvPwkLodtSjA=="
+      }
+    },
+    {
+      "fingerprint": "c91184041deeedbb473601f9ef1fde24ab18d6b1287dbef520fe40297d63c176",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCGkPFMT4iD6dMenlFz+9mA/ZrRPlFiIu5itZI0/mRA2wIgBMg8OIn4h6XNAW6uYBsQFkB0E0g33gBWJtyMDKb4rEw="
+      }
+    },
+    {
+      "fingerprint": "5d044d405c1dea5110ce4ded7a292946fb407a67ff9781c425505ce1bd4af064",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIF8FYXd+kgvmhgL786+51vzNkPpdwNWmt0QMWo8oxsqVAiEA6ukjYbBFSnV56dg8iD8LZfeppuMuatPHQwmzjwMozUw="
+      }
+    },
+    {
+      "fingerprint": "a4c0006469b7119c6ccd8abeb2938ba941906bde667f2242a824a306fc4a9296",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDz2aD9y2Pb+/3/7X1g5JAorwHvWp+I/Otd2qXRW58nyAiAPUik8kboB4zH+lNjg1ruUPVPOvQRRgnvk01CVBKPZ5A=="
+      }
+    },
+    {
+      "fingerprint": "26a97c2a05829ad25b0ad254e4c454ec6e1124b90cb38744a12b5076ac543e76",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCICvXmBmEiS3inO2WfTpjSzLA22RMxmHcZ9JPB3CqRQyTAiEAqGT12tEzZs+lQTWhHgXPHa1sIYZAno+1EdinxF7pUT4="
+      }
+    },
+    {
+      "fingerprint": "6006f2b50e321604abc7d3f5c4e79f327aab1c3bc237b1d1ead00c81f49e5d83",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIDo+3wsJk9WbEeja4Z4l0gpmN0oH+pNmedqyxDiK4eL7AiEA8/6cUYRDL8UjgGf+uIu7zvy+gj3XNeWVlrR2DQa1qZY="
+      }
+    },
+    {
+      "fingerprint": "d79de29e8a3f3ffff3a8c6ead1b9bacac6d8028e71412fdfb3347b7a535a4466",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "prompt_injection",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCWeg4bdjzBypTrQdAtaj3qcd75AwKUlCRuhkUOP6drOwIgaKoXT/g9pWJLJu807eosfUskQXNxuAog3d1kW3aWH/w="
+      }
+    },
+    {
+      "fingerprint": "fb3dec8b2ea58f2a5c399073e57bad97eabdb405d17bddeaaa26785226b7b3df",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBbeqTNV/zacYF9zE/gQfzRDGV7xPQIYlekeo7ab4rstAiEAsuQUPtDopfcPLNyepIMl0B3yE1EEAqllXTbnUGREU1o="
+      }
+    },
+    {
+      "fingerprint": "5f52fe7e5c157a1cb1785d97d592f174fde581a1064904526e923b6bb9040e36",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC+9PlXHNU3dWSxCjStBOl3CacBeMMYZzujcpWI0FgJtQIhANGYhw+NUePBuKVLU2+BXDvEtRoiei7A88u6J+AXfbT5"
+      }
+    },
+    {
+      "fingerprint": "28b5ca2fec60fbd914fb111f39e83bc771d89f970c8a8fe07f495927cb5d73dd",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDkmgBDFQOCCPppxnU8P9ZkqWFusdSrmi7Iy7lLFdMgWQIhAMC+4hJO5OMGWqr6CqHqD4jhEekHBCdNilIkPP4SchZH"
+      }
+    },
+    {
+      "fingerprint": "0c6f2af65c8acf65438d17ac57704c2998fde1a9e27ac1c899a651992eab3440",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCK2XQ553/tnaAmhMgjHgBrQce/f3FpB/qNjARA3rIiJAIhAL4Y/j63cvOFJLxreWTnn7m21+UNuvTe7X4SLjyc5LxE"
+      }
+    },
+    {
+      "fingerprint": "bb986856cf02db3f9c6343d231e73d6cb6d34796b10bd230302f2805457e53e8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDlIPgReyFmn5OItnNynBDK3LuRiVI8m3X/llYoPKZrYwIhAIX7OawHOZsWZbyYmscfErexXcioOSgr/X7qeMrLmdP5"
+      }
+    },
+    {
+      "fingerprint": "005402f52376ef06c5f1a3eb9641f439b80eb7f3f150cc7cb423702ad18a09d2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIF/WCTSUtOELaYJYPyzM4yT854q6gvY7xUSotA59wKfxAiEA9KTW14A8OkE9H/YT7HxV9pwS8lz4dRkJixwgYzc+5Wg="
+      }
+    },
+    {
+      "fingerprint": "ed7e0978f2d69f496424646e3e0fd39ae847e2be7c5d801f121764e8b5b8c8f4",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCICQFB9Crr4h/tBX5IYrkK/XzjD8U9F8GAUaQ07R0i0EIAiEAmzlrOd+G8mAYIspDREEYGsAHi+XNp/sbxm6v+WNQ0DQ="
+      }
+    },
+    {
+      "fingerprint": "dc9ced61f128e92ee1f383f9bfd57162fe69b88f880f8b741087d24b94584729",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDejyGrQ+ZxRxlCjfXVukHWH4A/wmKwWdoyasod/oqBBwIgQzkHYNPkt9AzKSzA6FUOGyQlDmA4vjVe9X9ImBjcY5E="
+      }
+    },
+    {
+      "fingerprint": "05fb88a9aec6b16de488c43f7bae4b427c24d307e9852fb830e90ef71f036745",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCTIIe09WPof4bUCptkvth1AW0C4+ZIq3En2puunt6eNQIgcRWXDz5m8Np9O54iZiVOiHbtNdtl3Q986wtFVGHC7m4="
+      }
+    },
+    {
+      "fingerprint": "745e1789a5aa99ce7b3b3a4dafb40ffcbe5a4caad77cb212946596800093d337",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDRieML2ASj5LgNQnvNoezOl5FiNwnaGxjuoaXNj3+3rAIhAKvI9y0fa2dWx2RYeIMFGYfLJXNuuootZXYCoJu8Vgir"
+      }
+    },
+    {
+      "fingerprint": "10658c3fd43951989aac5370e0277df92ed0f5dd7b9cd73988927b0578f74f04",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDU8ihwL0tRcl1MdpB2gguVWo5h06qc1brwBHTCxmzaMgIhAMJ5u++lbers6qMIYFxuL+a8moAkT4wNt/z575kBjdq5"
+      }
+    },
+    {
+      "fingerprint": "b97503365a3bb3d906d6446f4a72bb8649100dcf0e477de55460345ec1c07d98",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIB8QW1wyvuT6dDSQNyMxc12aktvTYDhsoAwkLAy0qnvCAiAuj/EcKoOWbaQFEybObMy28e3DIjOIMju3H19Ev6+IrA=="
+      }
+    },
+    {
+      "fingerprint": "ce74135484f4bf2cb172e8b136d1cc78b9ecbbfc493afc1e91832960e1c0afc2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIHK1ogUfExpjlFYz4UiRRlvrG5rMi67DR1yC8CsETi0tAiAZwbh3EcmgahNWaBC1k3TEcLhSD5enifCQGIzNW2X9Fg=="
+      }
+    },
+    {
+      "fingerprint": "0c1dc0787de9c4b83887779f833e958a2b8d4cfabec25b6fc3d8b246da7e841d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIH1Pshr6GqTpYZfpNIXkXhl+UAY7cuzrBdCKzXtyVRaZAiEAhVW4eQLvJvbSvN6jhx8sQcCfD6RfCPW7ZSNgd6Ps7rQ="
+      }
+    },
+    {
+      "fingerprint": "4418dcfbc0ac2f632ec18780c8caee43e3bdd90e13b308df9f4fcde415f48126",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDgb1G0emdKfdOJV6Qm9ZZGuVE/+27qXgGhpVSMZMEJ0AIga8Nqi4vjhxcJI96wX85VNEtJMIH5HUlrrBeDB5VzsXc="
+      }
+    },
+    {
+      "fingerprint": "9574ef52f9f47d61b63f9cbe86ef53ae54331053c72399935abfac84df96fe99",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIExu/tW5PenJgHunUmxFN7316Iq4XqXNL+9oLUV8O5HDAiBOy5qWbjkxJ6OGbQ4xjJI+2glOp838D3fXv5dwsRhkSQ=="
+      }
+    },
+    {
+      "fingerprint": "eb2e415f8b1c068ddd3a17f7cdb27d0cec2c860424b41aee5ec38d65167fe19a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIG2NcUh/1s7YxJk+Tx1wrygmBnftKj2fCa+ygOdSxI5wAiEA2g/TdlbeY42yuAsRA/Wc1bcQjJon3UFofSTiupJMF7M="
+      }
+    },
+    {
+      "fingerprint": "09186078cc9dc965d200ea7c82d902fb331a6300d86c7363caf6a5104462b851",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCICYWKjKX1P+Yp5b9vYMMktYbf/pXxhKu0jiEl0VaEHocAiEArznJmg5AdnskG0KgmUNbDgwJxC2pskaAbZUBvGyPWkI="
+      }
+    },
+    {
+      "fingerprint": "ba85df4550935d47b36b50b43c941d56eec752cb182b8768f3e094899e8f1a0a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD+NbVVP3Y26KbseX9smIK+uV77vveMFe2v5tvS5avQVAIgK4JU7DXtL7RWTPLl1HB0Y2SBGGzCNLySvYa+m8xIey4="
+      }
+    },
+    {
+      "fingerprint": "c0cc8e91ec7717a38417527dc22fd5a9c77ed4737e6db485622c590dbbc338d7",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCPOAvb0iBVzlETm8ksujwec0oY+PvCMWGfZE0mPTbZtQIhAMLpn9kCp7wxaxN+aoRp0fUf8xnkrW6zveFAKA94FHxS"
+      }
+    },
+    {
+      "fingerprint": "7ace1da59c4e363c91262bcf5dc66b022c5d394696037227b6e4c64d40b89889",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDEHqEu1mJEsQcdGevIgs0DoUlwPDR5HbACaQEFbBd6IAiBNCw0lBiSEoauBGd2mhB7rCSxjLOgrATpdnCp7dMYQnQ=="
+      }
+    },
+    {
+      "fingerprint": "4d3c0b3e2dcc461ac12b532c65472649f18da779c772a8fd0346ff3fa1a8ac1b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFU8X6ASqz/ODk6wLfDSpabJjSBLE/S/ttDskmyEyI1GAiEA5yN0UUFibV/odMa9oQX+rvFZfwV4kik29UrM0oGIEnI="
+      }
+    },
+    {
+      "fingerprint": "8a507761be6c96f6d8f003b6e0051252d72db7722bfc2da56dfbb6845b433068",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDPsOTbvV+2suGxD8UkCRbPzifFZKAaVbWplxMM+3OtQQIhANFuGCWds2NVzft75XJk5Y8MGFRXNE0yhy9khvaulWCh"
+      }
+    },
+    {
+      "fingerprint": "1ce01584a35b5a90848c1d9b3ba8da0fc7e6ac980e6702b2234355d786736c66",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCU50O/JL5nFNmm11vvD2WCAlUYwmM0FZ82aXFDVjzU9QIhAN2O7eSHagNJgSW8OoFtDPBPyjUINZOo/LZmxgKmkK+P"
+      }
+    },
+    {
+      "fingerprint": "e0be81a7ad0f356fe5d33a64ad02135d9ae57f525bf6393390f51a0463f8f6b3",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICof3S5FmKSZgSgtt/+jNM7BlSM/hz+ApK1sKFUWB6KEAiAcbIqrNmosFatIdeHWD0L75ZF6ro5ppnNsxf3C9RemfA=="
+      }
+    },
+    {
+      "fingerprint": "6c43c997575e3d7e781985ccebc682f6fb4bd9e9aa15211e1240cc7f85b45d68",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDajEuAoSeX8+UxlkBssII3hxEs4UKlxGCbBa4e7nbHmAIhAJsRVFjcw3l+Csn8KKSmRMkihA5ukGj5Zo5x3zhky6Zm"
+      }
+    },
+    {
+      "fingerprint": "efb8ce3f5492df44b967541e1cedaae8825e4797a983f29e8a3963898c463e59",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCeAvhFxYWspCtJUn8vVFZmhg3T++a6CWlP7huEYObASQIgNXpIJDYaEcwquwWQUwtcT0IneN0FJJX4oijp3tmZAPk="
+      }
+    },
+    {
+      "fingerprint": "136694fb12cea26e7cd004b2e74d74e257058a100e6a209d8ee40b5b987f0841",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIF+u9GWUbkd0jToPxBM6Aw+u8flv0+c9iPuserp81SHnAiAmfYR+49vEQcZxCGjyuNDmC/VYFPkxJzcgj1Xzk7ZMJA=="
+      }
+    },
+    {
+      "fingerprint": "0c50ae02706d6f01b3e1c076e0f4db73ccd56d9dbee6dc5b1a2a85f84cd02693",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCqiY9lGFlJCkvysDFV3q1h0ekpPyyH9+SvL2YgRgHgFwIgaEPmqgk/AIB4S0xZPQbMacf9zY0bJ5QK6FJ8Qj7K7NQ="
+      }
+    },
+    {
+      "fingerprint": "455b8312b454cb64832d35c11c988f3520a9f0856ec86a65ba2fc9aa00318ee9",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCDUi7zJOkFvLpA/+jfIqp7BvSn5mcjq3ohEKliuxuuNQIgIDbp/bg4dtjE+Poh2roIMBq3HeuSg2DDDNGDFDWca84="
+      }
+    },
+    {
+      "fingerprint": "0ddee2321bc7d4fd4f8c35d881c49ac81d2bd2cf3d8c4434dc2185d5aa7fa434",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCVnoU5wxb4J7O00lVJKa7hGKARPJJGxGmA484xGNnjPAIhAPWcCxNHC11lM/85qZ/8S4sMSxITIehqeMc2/tpaGpJ1"
+      }
+    },
+    {
+      "fingerprint": "8f6e8c62534641d0c73f1c8a2158f35a8315425562e2a3122c68ecbce921c3e8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDqAJdLiFBfTN8Em3pm8AMtc2Il6/n16gaSptPhYfa1dQIgOGas3UcXEGcN2ld6Y8ioQ3c1QyVegQIgul1vpuMoUQ8="
+      }
+    },
+    {
+      "fingerprint": "89af6defe9f602bc8d9984f6f9da1b4822c9f0b2c89b5bde0300ff38b034d2dd",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIADgSkd93HmTwlzfzw6hvtwl9oelZMx4CQmZBPswg7w/AiEA3ClAHHwFWQhCkmdS1Y2eHs/KPVy/sypHdX8xSfu0fbQ="
+      }
+    },
+    {
+      "fingerprint": "14ccac6936abeeb663934e190e8591f2de92d5bc45cc668acb07303da1a86378",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQChjfgjSEZnipJtHaBqM2g38FWP7qf24Cm8b0v/tDSCNwIhANEKCKpeMOEEQpVq4NDYT8aJAuL9ctv0J7d7saRcD4BY"
+      }
+    },
+    {
+      "fingerprint": "c0cb7916af21612ee540405314f27a19e3dc9c53f1258f09163aa897f0fea2c1",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIC2F4dN2TWYH7tnj6tFli6O/W8sXYqTH888t0z9vnEmWAiEA73z1Y72P8UePMyTIM0D5U15dYANljlRhRbvHGzpXmGY="
+      }
+    },
+    {
+      "fingerprint": "7b60e2a1ce2b4c32eafffc9abeb3b7da0dc4101ae7e73f29137abd6712a2118c",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFDntiimHas+EL2JcANSAdEiNwL44Bl8FAi0PXBXCfmzAiEA9ACsWtRBaznSORICyhDYXfUQj0zOl41W7QL6Z3EStWI="
+      }
+    },
+    {
+      "fingerprint": "6998bca43c6fb383c4fe0338dd6ec03860b8b92a0d927541d06465121feb5dbb",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIEldM463o9FaP/qD1iUJ2HGm+AQ3D5Rs4xT2AA9qToSmAiEAuNdZDyc76CgKRfZESurP/O4AjSV3ljUDSw3AcRE2Irg="
+      }
+    },
+    {
+      "fingerprint": "444fdd31ba02d89afe0c2b1cda7aad4bcc17351d995768c8fd08bfa5bb39e3dd",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCBAGvtCaN2StH8Ids5cjRGT6b/6qiNZ53B3tLsjdMboQIhAMDn80xbtNJz9fEoSr3v8+0nUTug+BIGgMPYkBTtOnRQ"
+      }
+    },
+    {
+      "fingerprint": "16392312a59769202bd711d72f3e8fd961dbc59d057f7224401fc7bf9874b19c",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIElact3Bp898fU+y6joqmBKYw914Cn+5eh2LbuEbgLIkAiBKuvsOrp35CynmojSSaNSfh6Yy76JJ1MvKL0pFxPjSvA=="
+      }
+    },
+    {
+      "fingerprint": "83a701831dd84fbfee5a52ab81e3c43746904601c559690fc136cc55eed8682c",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGv8Pq7fux/wrPL8nL6Ca+gYYKLFwypXSN2XImwcUYVWAiBU81geb7/9r/G2LbMD21Mk7Cx2dqgzz5GfE9M+D2cLBA=="
+      }
+    },
+    {
+      "fingerprint": "f71c66d2d7b2ca386ba85339defeb6cf8435cd23f1ea667e2d824f2de02b2142",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGC9O5Ole1Nq/HXEPZtO/WxXaYmki5YBdP38NzKCYwGWAiBB3LHVW/PcRnz/JGAekd9cH44EXzrFva2ULlvHsFDyKQ=="
+      }
+    },
+    {
+      "fingerprint": "82ac7c457a36f73481f9f6d8c3948e1fe29835d1a63b204cd023469749c8fea6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC7mq3R//wjvGA73S65SNwbz8sr04WQXQ2QInbOGk7dVgIhAK409q9AzrqtZRZ5pMtsoYHI97c1zv/8UF7QkrcRbziY"
+      }
+    },
+    {
+      "fingerprint": "c43e6776e6c1cc4407363250b748d7c3b6eb21754ad72bd39750bf24769ab825",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCJ7mxu3BMdYp2/Yk0fB5FbALAxZG8BiDhXbyOIv8R7WwIhAI0vt0BcGA+02JLrFOBiM4Uw/regRoSYCuTHJl/Y3k3A"
+      }
+    },
+    {
+      "fingerprint": "dba69706576e0072ee864a2719fd388f35de82bb951f6016b4a48f0e2eeafaa6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQC1K272mqSQXgmQBadyQEftdgGg8Ft9CJDzd9kCQAdW4AIgDW6GQY4XNiseSuMXT+zPQ9gpgK2BwIeBIho7OwhpGvI="
+      }
+    },
+    {
+      "fingerprint": "1c3243fe4569df21d11b99ed22faca5946347309490374cd8c6a5297b5fd835e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIFl2XYjyOKIUMz8/Tlwh/W1C7x8oF8kGbaAF02Fmzc/sAiB6SdFmsIUIizOSUV6eGh5XCDoZDYNM65MgP++kJijjBQ=="
+      }
+    },
+    {
+      "fingerprint": "8977c1f9a69320625c845ff88ec6210866cda1dfa6f52be592148e2e71f7ba05",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCmVlnzFyPTxiIUaVieMZTHp0ggPf07KRJA4xV2h2HlygIgcYeUd3x+Cb0T4vhfVGddRK5RlB2mzvZzt/SouVP+QxA="
+      }
+    },
+    {
+      "fingerprint": "2c3bb6e3c03079d9395f1899bb77c6acdbb89357c6075213d71d954faaf64ba0",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBcR+i0HbjWbnkPmzYgYH63GzHgHUhZBJOUqoD9TUpxnAiEAros439IN2yTUiF1GBxVl96fgz/ZvFgGTKXr66TYXJOA="
+      }
+    },
+    {
+      "fingerprint": "11f5e491cc8791d1b3cd6e0c9bbc680d6dc004a7d20149d9aaa4be127d6a6fa0",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIH6ehPOGw7yt/EOhrYc/jMOaH6hXJTs77i0+BztnVJuNAiEAttZ8exMV9GLKZSaUIuOUxfg3W4oPbNvPdw6MlmXFLBA="
+      }
+    },
+    {
+      "fingerprint": "14507be5005d86facd2e517b9cc5ae0802409012f4a7c755dbe91f49ff265ffd",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDAd8/oVNF5rNx83H6oVQHzGW5WORVp8EvLuRez5wxkXgIgVVlehbCaR7IcePbZ9hguRf6MK8s6vOjCAul1+qBOqMs="
+      }
+    },
+    {
+      "fingerprint": "161707065eeda30788143a8816a9e0c44464395e5c98e320f97ed26cc531d998",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCPtDtd8VdcQWzjSSj4pWNTGI/IYan3bdV8zn4LTN/OlwIgUrOMRWG3xXU8nyB6920b0bDstsqt44gP0rJ9KaH9fvM="
+      }
+    },
+    {
+      "fingerprint": "2bffa08ca8a9e193513f12a7a81d17bc33be1f2da98ff8a64c66dbb117fdba20",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIBueqd5UK65FxmGl8LoVsHNP6ildXsobccKBZJ5zvz41AiBAA1CLGJj7e24qAGeHG555ngNotdfHK+KN3wJLTRlzAQ=="
+      }
+    },
+    {
+      "fingerprint": "142c658204d0a45424a4c0e17d4a610b522610d05aea97ed84ab9e3db8188673",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGxlq2mwMUwaJapfxRnGjg5Et+j53QpotLpcxr0Y8VGlAiAkpSKUFs2ShADaNHsyuy5SojenPbN318QaDI4+bk9YNA=="
+      }
+    },
+    {
+      "fingerprint": "d153fe758aea762f744003b42ca91fcc15139430084554933bd6ac0b006bec32",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFxNRI2m9SIRnMTOPyLGDV4hmqhYoB9rhEu35QXO9o/oAiEAqud10Zm2A+Tp+f7azFzstvrExgEG0TV79qkQgHujW5E="
+      }
+    },
+    {
+      "fingerprint": "e69bb1aa0b0414d1777a7d1e6de1bb53426624e678ef7c44ad58ea1c1cab467f",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIF/6oK3Oayn9mniJReDUwyqtNL1KrBudUP4lUOuAElLxAiBUnLGw9AWrMDgnnVFGV+0j3PEIHpqajqIbAfxi/EF5TQ=="
+      }
+    },
+    {
+      "fingerprint": "daf780cc03700b3b950f141bd704523ff960c898bc5c894fad4f319af9518698",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFNYyXiFCXqOCbTrmEFeVbVwKv/6CFgYxoYJW/kQebEQAiEA3KghAsMt9S8CpPnzWDRA/Lq8rbKgHGVd8q9wFvNXBz4="
+      }
+    },
+    {
+      "fingerprint": "a7ceacef11278ef149552a488db1bfc2f990bf2f6aaa563a83023284207e258f",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIH8u46CQcJrbsPDDlZom80FIcZH+G4/3/yBRRDQmTf7KAiEA/c66ZgnQmK+TndKQWYECdGLt8RCBSkEdvlP3HggNuIM="
+      }
+    },
+    {
+      "fingerprint": "061d340952cae2d79cccd2358e90880bc68a04d5feabb7c0dc0212b8ee36fd4d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAzmckulqvm1gVlhV0izGcHlT4Jy/YWpXKvLah1KigkKAiAGanHlGah6WPU/o1DvGN6M0AXllvbF0o8mnxQcTiBP9g=="
+      }
+    },
+    {
+      "fingerprint": "4bd4e36cb231019e11509e81a14d7742950244ecb10b3c25aec46cd335a89ca6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCjaqKqB/ZPhHzhvYb1P6+0q79lxfQovcSTuFr6PYox5QIgbdwq89GgGvsMwvXAff1veXdgiy+F6Q9EujQktD6zksE="
+      }
+    },
+    {
+      "fingerprint": "f8ef69aea76eee514309bd624d9f6cc74b71f5a1bf47f7b278a32551c4b52a5e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC8yrMGIyGblv9GhtTjr+3gxKDod3iAEenLjSm9o+w4igIhALaeAfobp9dRhu6j4mVhVfDnnI3Z+O83WIpjCMcwDACL"
+      }
+    },
+    {
+      "fingerprint": "279e51abb7bbd74c33bcc4386f50e248f329e711d0e75b9934fbe175531d3eb6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCPf1/vAnW4bN5SwFDwdQFG4tfZ/IJlAQcLL9olhPxKpAIgRkwNydMfhudKMMrGZAYQnICUllQyc2kp1hOpzXdzqts="
+      }
+    },
+    {
+      "fingerprint": "370ed98b2a0c6c6e448f82b41fa81c33d9a804d2d8b2fe30a8fbc57d2688eda1",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCQ/KPHMO6AvMP3zAPMwENsrJzN0u1RbwWiVGAdx36V4gIgZES9/ocbU95K0RCLvj0IsNtHFWz4F2eqsrpIxA15vrs="
+      }
+    },
+    {
+      "fingerprint": "7d078c6293ad066dfda146f4dcdef5310ea6661220949ae3c89f9dc3169b2326",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIFW2VlyRBT3OCw6bQaHw9HHK0jvWhqCm78/jcLdoQunpAiBzBF/CYtqzpqraNrr3ijqPmRuBmQ/W/pi+8r2MibNA9Q=="
+      }
+    },
+    {
+      "fingerprint": "b5671b9aafff763410d06537244d92727de313856d017e472537955293cbb6fd",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDopZcKmY7hnewX1hbGPTFJLDgWIXi1lWBpE/DKkwflngIgYYVJXCHyhKH0o5Y88/HhgzBhA7osGkFTDgqEhm6KbA4="
+      }
+    },
+    {
+      "fingerprint": "4776b632db6a60306dcb0878fca2fbcf19873da169209c75801505bc69474f34",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICV7Bv4aSs504y2m4TBuejMCg2PYUVKZswOziVX5zslXAiB2ZZVCxWlHUDrdHVpzTyqy0oljixH8MDWbvMQ4A/N8aQ=="
+      }
+    },
+    {
+      "fingerprint": "e2b3bda2e5b304de217115d5d4b09d10d9a7b00e312edb6fcdad85c9982f83ec",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDav4yGusIvEF8XadUJiE/tu38W7lfLo3jNRvP0ma0X9QIgBwk4oik0SPQMutPlqPdu6W8Ct05WCnJkDqCzde4i7sM="
+      }
+    },
+    {
+      "fingerprint": "5ebab2683812ff1b6b18acc7712cab89835deec661fbd952e91bbf47e81b7cba",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCZZvIoAMo7C5hSO24g80lr/h641Mr7kMrJhnyoY+YZdQIgFNqDKm4XUmrOvP0+i6txR+sgp3Ul+tN8PSDEKtqT0QE="
+      }
+    },
+    {
+      "fingerprint": "ba2c82369c06ff6592c6added46b1f63c4cbee23f2045337b73baf51bd7cf218",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIHgBXOb1qNoGBKGTrHplsj4dJaeVmdWEuE1GiD+f6GeLAiAyUZpvLqR7SKFD5EgS/pzw2WtyIAksM3xm4wWkga4VZg=="
+      }
+    },
+    {
+      "fingerprint": "1cb6040c2949fca92d895680f5a8659e564ac524140bb4ab52da5853d3eb3395",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCNFbQeBzLJtc/o5kL0psG3MxCGp1Zn1ONk3Qcksn/JoAIgCt08/B/NC6RoJpKQACVo3Q1/+LmzvKpBskNVFg+Ww84="
+      }
+    },
+    {
+      "fingerprint": "8e34516142dff4db226f334b98a27fe01f219eaa4ee026f492184bde0d7b97d8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDLga+iGToqBCkRvLAfY+5NcLYMEpWv75rgJTXqSwtzjwIgLPqZsb2Un98gTI3mBg8bHdZGYib4CfHU9Qy2/M3QUes="
+      }
+    },
+    {
+      "fingerprint": "c8e21db7b7e15932c00207bd07499e61700df6addaa122b8b13ac6ccacac474d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDAPLf8Ophd89SoOuIP92jGHlRKRtvLKcVBLPKjVCixzwIhAKUJ2uujR7RjF9pP+38Let4+tgniJDJkI1UjnihvxawM"
+      }
+    },
+    {
+      "fingerprint": "042c116c58c518d612c4f95371fed91b9ee588048d0f1ea51f65b76ffe24b51b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDH0oMNhARLLzkKNzYLAdisEZpp+kf5cBxF5Aw0J8obZwIhAPzoqyCi4IOkhcGgQKrd5iVQnBylJdhLbBy6p+5kMoLN"
+      }
+    },
+    {
+      "fingerprint": "294ff89638f763dd00ae51d810a9210623122d481c4c6c24d1f0caa2647cb006",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCICblBGJatJ9zmhHvdbUFXsiDVMH2cCNbpfRL5eReto6gAiEAl7urndxaiNtT4yspKlk2ChHhB1FnC9c514F//JeI14I="
+      }
+    },
+    {
+      "fingerprint": "b0f760dcbed6e2de2351f81dd5b9f1678459e99c849d9996ff41a1eeb2f59f0a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDeH5VHHjdI4kF0m4XaunmnZ5zYPf4tV6rK0X/fdJjjUQIhAIy0HXi8WxQW/jRrk06JlmRJtS4cpJlOXLN3/2xmURbg"
+      }
+    },
+    {
+      "fingerprint": "2868b79ca54e0794c7f7d8ddd1e94fa76c110b44f83128295656e816e44cb26d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIAk734KxqrugnE9Ug4iR1AQgpCfwaH8BU6IAioa9bwUBAiEAyZiBWBVFwyrwMTo8KdqJZ4uUE7Y0O87PzZhnbfU7WFQ="
+      }
+    },
+    {
+      "fingerprint": "f1355d7a6e965f57aa579f1cb16900fefd15d95210e8d4cbd6cc93ed09b36857",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIAjjD3S45PLLuODqzWcIV0Xh8vsJ+8wKHJRph5mkDsPHAiEApvJlW+z9Ty+OaEjIxS0FGuxvCizFdDmqdAXGdWKFFiU="
+      }
+    },
+    {
+      "fingerprint": "4248ab6fb2780d23feb2d90c65504198d95cc6a99f0855ec9d833efb0a87bbd5",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQClhi2afDs5PG37aIDyXFqYjTZA/f6JhVx8iaFAGVVLLwIhAOWr8K/udetZ1lCns35dQwKQlFSL7/LqEI/qnL/e4hal"
+      }
+    },
+    {
+      "fingerprint": "dabf2de1680ea020ad335df271f05c3b41532d55c2a1a055e0be7d98f42ba4c6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIGnY7MbWsF3hj2QVEaJXlKwylKygZ6vSQ0oPFk2CXzm1AiEA6BhBPmB3eXcV+YImA9VsLilf4alxgjKodj8yJmwEF9Y="
+      }
+    },
+    {
+      "fingerprint": "b0c39205e37c9c70faeb9dbe827072574edc44939ee591fcf51ffebc649c4825",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBFG0YTsjHB8k4GnWQkfH27rKN5zRxKWXq6piYNuNbFSAiEA9d2g5IIhgFJCDIxmnn7l82H+YmYXv+meNqrFT11JR9E="
+      }
+    },
+    {
+      "fingerprint": "ddafd8e42358c8c97ff941e75df9d560cbfcd52c341489dfb3fb83977c7e23fc",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCTxWscxv3wD8xM04lrcW1/vB8osm+V25vFW7jpQhKB2QIgeM2zWORhJajHkVAXSGdJ9Bm50W/m8G21+6IPevQY/0k="
+      }
+    },
+    {
+      "fingerprint": "18337ca5403b4de3202297ac20bd4b27eb513ff217d04e294549cca0e8505331",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDeNys3sRxYOyhBjoxBjwsC9I+944/jUmTE9oLhUzBkCQIhAOTBQ6ujKVUuu+qRD2OJXD7DVJH5RYtzTkvsynUcVgd+"
+      }
+    },
+    {
+      "fingerprint": "88008e597bef67905fd8cd6deab2fc9c7d0d6ea00584a5527cc06503286d61bb",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDMN0uz8APVoHb+8garulNRrr76S6Xz/kAniC04i4zkoAiAmkBGLTTnIqfM+IEIoYFFvna5uFhKK5jqb61BhZwvI2Q=="
+      }
+    },
+    {
+      "fingerprint": "e5391b79b253dc5b5c295ae6cbd5041668397de509bfe405afb0ef15dd16affa",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIExRpBQq+7KO6kdRBWVwVdlo4Ltv/jwgzmhmy8c4VdToAiEA8NnlH2pFKnjer0SW7akkAZHd48UnSwwuRhdixMmENms="
+      }
+    },
+    {
+      "fingerprint": "a69f94b40713600a041302a88298da7a7f401e4e1d58daf8afda875a66865b93",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFmZDeSDCI+EmjPtCpUEDqGrEfnNTQX8IMQF9jrK+xOgAiEAto1U9S9muVSER5zse0JXeKE3LtERkihn49vyhqdMR74="
+      }
+    },
+    {
+      "fingerprint": "c4225e4191959e5a3c43edb9f3a1fdd02f0243ddeae23357239e605128454410",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCeI5pYKV9grDR6dtHLowvQnV7FTOpZ4CarJsU6mYCdOgIgDpD3z7TbVIrdpFhzqiVZKpTy4T51537KFqUvKz7KjrE="
+      }
+    },
+    {
+      "fingerprint": "69726548221d28e8f99fb3cd786a12f9614176f07cdd4db7aa0aad41045720d4",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIFkpa5waqRD2rOoQh6HulVvLgnx7ryZgWzl6UsgYpv0VAiB1gOg+ahoJFv3b2XNnbGrtzyefCWpsE8uQ8uuogmhpxQ=="
+      }
+    },
+    {
+      "fingerprint": "df12c9fa0c2e68a50e65558063a8884fc385e306cf921fd00cc0d5404b0570f1",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC6mUwV6SL943O+APGItnuQIYRvyjIu/9jz0uYqhCQBDwIhAIy9ErR0gylRkZy9PLsa95FAjsG2YOws21bcI/c4HGQN"
+      }
+    },
+    {
+      "fingerprint": "655c15e9dc2894ed98100ec4a50532451f013e5243e530499fbe4f9b0107c0d5",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFnXoFq+4MNQVSNVRm8OJwg3wZtRMQRssoGEX5fWreZmAiEAzTKKLIUz09nbyi+R02lfIuTqQmSTP3Fno+YnbJtU43c="
+      }
+    },
+    {
+      "fingerprint": "4bf50eeed4fe8c0e7cb13f9bdb1cd73aeb0aa44d035d14913c00cd13b50d76c6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCtGpPd8JwuUG+bVhGDUl/yONRVJrvUFnWOUxw2gGvbewIgIMWq3xp02zvmJIP57soThjailYC7G2xfjqieRx/xf1o="
+      }
+    },
+    {
+      "fingerprint": "6ae8768d378a56b7934b6a9fd0323f7e14b7151cc5c74eb4eb421b1befe387d0",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAv1Lx2Bx/+aScPaQDZPMocunHfEvhpA0M5qrGfokNoQAiBKlLzg2SHfYGmyjSDytUYn2c4fJvX6O9o2wdYq4mHbAg=="
+      }
+    },
+    {
+      "fingerprint": "64b4544cf32f59146e68fe27d3ffedfd25fc0c16a858716691589c240f442a34",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIATid+GjhUaaq6iWK8H7kmDYwjudu3t3sh2Z5re5sFeXAiAj4afeEAR3Ji9RbvrKiZeGfW8kD6cEr6n/4MRjho7big=="
+      }
+    },
+    {
+      "fingerprint": "7791e45fe5d0785ed19f19d77aef64aed084216c3061229e55ccde87ae9a06b5",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCcNf3d0h/IGSZ8iV3SfGJuggF/Jj8EHYvi2/YUHA7smAIhAPrI2tjbfL6lsPF9TL/BolnLbuSHaLOS4oxtk4W674+X"
+      }
+    },
+    {
+      "fingerprint": "9017e0cd407385ba1354aa015578fe9c7f589fb6c33a1acf8b2166ddc92966df",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCiMzaA2m+TFE//ykYCI3MVk4PrM82QIW2DEqR4LXmjcgIgKgmrzu1xiGUuf1tw9WJC/i21viKz7f4YIQpGJ7ATrnM="
+      }
+    },
+    {
+      "fingerprint": "49df1cff972e23cb0062594ba49017b4baef0a1cf7d26db3b4bdfb7380bb3230",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIH2D1cvmBDd9wzP/bA3Le4ac81NAkUmodNoLxUUP4PQrAiBFr8OxJa1tkUEho1d3dkb7dlEdxV26LYV3Y4nm2+kE4g=="
+      }
+    },
+    {
+      "fingerprint": "3b6c3f741a1239c3d0ede6422e294699b6f36a35dab1588c30e7923e56331ea4",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQD0uSYeBQf3Uq3NNEqbHmsqRmZtRy0kNfRhg0nbITlsEwIhAMM4m63/7IRNV0oSQpmwRTAQfqnlioHV98cDWWI2/fCl"
+      }
+    },
+    {
+      "fingerprint": "cda9af3d452fd8283b29d1019eaa6e6a10675c34f53958aa0968c758e4afa005",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIFgtkxqjCdXtYvF1lL0BbcDv5c6RsMTIoD1SsUqZuxyAAiBgZXvA11wEKgDmicBm8kEHuB+aZ9cS4MSV7EAB5IT0yA=="
+      }
+    },
+    {
+      "fingerprint": "8e4ad2b77cfc208edc3c74092d4936867f5f3f912a6cb169c22ac6094514c8d8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCVLhTEJpnKIQYddJYVzqkqJlxHVgLR6PPh4tYt7QCZQAIgf4HHJjC8xwUAm1jxobiciqRDy/68i0s18p9ofohf71o="
+      }
+    },
+    {
+      "fingerprint": "8e21b9b11521b3c8922fb3a977eff3965d537a218efab02cbd340f7f9c4cf77d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGQMsIengJzDXfy4o3mr7xhFNgWMl0YXg/BnSG8i4jJKAiBYfitbnfjijezyYfzXGxz009xpgGdotAZzwdTasMWF4g=="
+      }
+    },
+    {
+      "fingerprint": "de747f0d889fc80bc7b5c708ca2f6e516db96967f36da41f5cde532d143163dc",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC3XpswXfA1QKouFVKOOe0y1+p7Wjl8IzKUE6L+n1EYcQIhAI0tZxeWpkmo7g+dcD0V7/Ud2v4p+wjYLYF9z5LZOa4Q"
+      }
+    },
+    {
+      "fingerprint": "f70ea8b531557ce5c055fbb58d83de0b5c0bae49186cbcfa1b29310c9700ab0a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDeg/sXgQ9+UwVfk9lkklHQHz40H/5OmSgOIaujlXNfNwIgYynpN8LKIcAkhWIttfVtE6MvbD5261iGEcLy0GfKeEI="
+      }
+    },
+    {
+      "fingerprint": "b1a2a075cd0c0f6f8c865e77af0adc1d61639a9b4f8dfaece3b671ff63f8015b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDuO8fOnIPj6mFFeI2A8MAoetRDdR5MNvS/mi0STFzVEwIhAMOdGAW3KerWhm+G5BH2AZwWLy/5WHRJplsDGzl3sdV8"
+      }
+    },
+    {
+      "fingerprint": "39c9935e7148dbdf2586defd6f7917fe2797065d6e3e7f164a92b21a158e8dcb",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQC7pUhnwN/PhRI1oNubJLKwIxIDcvoNzZKjDfvB/Ub4jwIgTiyAQMmhv/F6QUYeSjijVzWYXl1Lw2XD9sAnztdbxH0="
+      }
+    },
+    {
+      "fingerprint": "c1732ac38a0c554a2c76f74da66b4419b3492f10f7991bff1104c15e9af55c4f",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBGKHfYdG4Q+3Nb8RGafClAE72Nq84C0PgOAYvBdnHLkAiEA38OtfhZCSEtBIAVv0QkUqOTjZJ6TRATylvbjD23CUHI="
+      }
+    },
+    {
+      "fingerprint": "af7def4829a5c24ed8e90e259b4f5bcdeb854da673036a8f44db6e6af0b1e0b2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCTy1hQkE4Yw1OBgvAuayUVnRoCmFBQYgZ1bKnycCEZ6AIgC4VfKIfIsETykaVffqxvybk7JcZXQe/CFdG8BPf58Co="
+      }
+    },
+    {
+      "fingerprint": "737d76ddf6f0c1e60cf822ff450b789b1ff55184ddff84cddfc0cfa65335777a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBYV87FD3MzEZqajjSditq9KPBjKUOzM8LerQR31/Cf3AiEAt2JiZuNv4K2R0x47t3EnM76rOV6ZU79Hwfm4nQS90f0="
+      }
+    },
+    {
+      "fingerprint": "c849fe7e2eea93bb61a20e59119d30b41787d5b614614328269885ce74b79520",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFWhaLAIiEpOP4xyVhrK55lmPnU5D7LTeMW7S9eXXwzqAiEAqBWgdurLVy4sb6cGq7lKZvFQ8KcgpDSzYPOt6FkE1lQ="
+      }
+    },
+    {
+      "fingerprint": "a12d88e7bb11f3213a07f6e60807add339b5f529bd3b53b86cd8d308cbd5e908",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQC/aycgMZbkRgNiVyWsnHvcMjZtqbLTdlokPrVx2/F/eAIgJZiU5KjipscES6D7poTGZtLCg7RUezQI16DknEz9TmY="
+      }
+    },
+    {
+      "fingerprint": "dad7b416cc26b63985a3fa5f4bf5574aa7414ee61c8a7862ce5d1b663f1de2b8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIEr9tiVKhuz6ZPFPdXPSOgrYjliQhqO5lXISNYQR2hO6AiEA8pLR589HFurp1ND8IEZJzWDEvPO+LE3Zz/mRtiAIDes="
+      }
+    },
+    {
+      "fingerprint": "cf3c9d2065371b50a907ab663d7c2cfa32524e57cc8ef2db176353710d32f8ac",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIG3tXRGCJCgdJNSXFAwX32ri6UKEO5OAnKS9f3sS1NpRAiEAmZzyHSe5nIpTPuYCM2r3Z++YaShMIbXAjPFtvS7SpNs="
+      }
+    },
+    {
+      "fingerprint": "8d762b858058fec52e9733aea9f54592487978c31604a67a2d9cc860708ea408",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC58Pbm2LEq03Gp0luDDzIsAC7YsrdKcJX95aOYLua4xwIhALgOPYsL3n5+Df+xxSmhFK8Go/lLn5s1FCBaBpGIhqps"
+      }
+    },
+    {
+      "fingerprint": "3c21747e981b4716eb42622d385e83024b805230a5357ca2c46ac2cab4cc94a8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBH297MQWhOMZLkDmiDM2AlWBND0yWIiip7vq4eCNhgMAiEA3ytCPds78Rnsj2Hnta216GFBl+IT9lB/iscloOPGyRo="
+      }
+    },
+    {
+      "fingerprint": "b63bd3609818a25dcf777732b4546c0066af11ffe0dd8c5b1b0f8539bb8444d7",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDCn4oHIRFRiLJFNI1JI6j/0MkBwPTN024e4bHCUAnqGAIgKgy42yqDaHRx2R50eiEJdoToYRUdirI98hFPnmSEBp0="
+      }
+    },
+    {
+      "fingerprint": "d629c7112c99ccee64a32c3723dad53126556a732499021b08b328295d9c24e5",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDIKd0l7ZRHnw1DM5nFqzgvMuqpktzYY4fYOMo0vLIQcwIgZyhhCu3Ooum0QhdspaTS5VqKbalRbyHTiDthi9cBvQo="
+      }
+    },
+    {
+      "fingerprint": "6ad9eddd760073ba87d6bc517767c14d715004e596de276eaa4fcb6b5b6f0159",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDKzNzNe49B6lG8MmXLBWnkppilLlXJh2y8iCvZHSSo6gIhAJTTdSIhy2ga4lMjE0WGKkkoj3+/hdhlirSDz1dWgsn3"
+      }
+    },
+    {
+      "fingerprint": "a2c692558d80b7518f3637bdc89e8c81a17da3fddb19df922a579b123db81856",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCPKsrt3uQiVT79a4nW5Jn+iNSNcITr65D5dHj0LOGl0wIgcgOttGDih+oEoJ9IL5bZEW9VeuJ5tqZOt7EA9tlZTyU="
+      }
+    },
+    {
+      "fingerprint": "79523508077cee856d61582db06103625ac5267a8814a8e63c0349c80adfb739",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCID0VdtiCBH9xErlGDq2amXhHCdiv//y+m/1TtnOVP3GFAiAe0c/yy2oUBLb6A7pqM3DZxEGu1xpE+q8ZZBbhu8st9Q=="
+      }
+    },
+    {
+      "fingerprint": "fe26e2179dd243b3272e821a62f5ae344e18dab2fd7d0554bff0e93d12da432a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGikaJg0T9yU3lqpnEmwhCtRvw0y4QlYy/LS192HdLHQAiA/ocfmGmX4zzB1s/kFRUflHb4CPLoUgPwwl6TyGnmcTw=="
+      }
+    },
+    {
+      "fingerprint": "e99bf6acd30998d418ee2f3c4edd76824b01a2afb4f2aac0fbab2e8390952790",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC47Ccp/RVISVzj4vfOYKnYzdsUHZgccLBnjs5TsWFqKAIhAPo1dvz4BA3dodHQP1scTC3eBKXNOwSwo5irteZbo8eg"
+      }
+    },
+    {
+      "fingerprint": "00e7701ff0cef8922796b96a865282bfe2b81ad23a5ef9b49a46759087e4e33c",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDs618iThlRBU0fN1RsVohN8Mt2iX+haUZUBLcVY5mo2wIhAL7/yC3E/qxcSzXMIMy/VVjzIXqkGXwEeT78vIUmKIUy"
+      }
+    },
+    {
+      "fingerprint": "2f870ad5aa3718beff75635916d63d0242f9d1f4eacdbf29a1f87c66b4fe72f0",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD4iWeCa0t1TRnLCFMXlBHERab8tPqKS7Ol0zl8ZtEoTgIgBMiDHhSh2GK1ok7If/4yNkMkuqOS6uDmzvkKrFTiInA="
+      }
+    },
+    {
+      "fingerprint": "15a008987ebfd9eba2e4a7617e7ad082fb89840baa5d4b541d549a3d0e8c2ec3",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQC9H5fEEvko1KtHshIocnucrKEVQamPw0iu9A1CmgSa2wIgCvu84Iu8pvkgBbGxb19LwN3Yk30o+BvzQSvGhc0lo2w="
+      }
+    },
+    {
+      "fingerprint": "dcbf92f9414a586d044f3ad6e39b2fb417c985274e34d5a31c90451850a46da6",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDccr3avyQZ47XLXEw5oWKUlz/y74TooGh9SyLJJrR5VAIhANQ9vvr+Ab2RsO+4/wp3akOWjbkzWHleWO00dgLHDrBz"
+      }
+    },
+    {
+      "fingerprint": "faeb340ccdeb1281a12050437b68f8ffbfbee9c55659605862cc850c0c9b0998",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCcBgGZNu/Ii9YasGNg1LVWcFcL8Lnvr/ZPijSVJBOgswIhAMn/rrj79L7BBIh5rjBQlWNAla2XgUJ2SXLMDNSzIEw/"
+      }
+    },
+    {
+      "fingerprint": "7f12d0faf364819801f3410f8a510f388da1d17550f2e48cd82be1d561f07082",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCbkIZA+loLIs6GQxpErxaedNTiNSflj2+oUavJvsKg3QIhAJcgyaWBjWHMw9Y6Ief8bKHCLowKzYI4XsFNzROJQPPB"
+      }
+    },
+    {
+      "fingerprint": "e8410456b2c421ecd646c00bce5ceac49e603df3e110b1436a8b3ff34401672b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDbP62AT1iRSbNxen5Evv48MjsQ1+Or9iixSmCXHJZFdgIgMueYQ6TeFK9slTZ4EkS1SssRDXO1ArqGjg6jTbisdLA="
+      }
+    },
+    {
+      "fingerprint": "574ee61298fd02971c2c2d65f512c4c1ef40c5a570503a2dd7908580e4ba743e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDxe3jMY+flh8APgb4I8DPhVRgrHNVPFdtNwJfOXf6dfQIhAPhSeWuCmgN8iqWIdodGsWoiSXU6y6eqG8aII+/eJtFI"
+      }
+    },
+    {
+      "fingerprint": "6e148647225900a0ad0873b99fb3776242066d1f1dd422c1392895db6bef49b9",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCiAGfGOTd6eW0lqqQtpMaMNktllEz79gUPEkowvn5wsAIhANUP3o6osTp9SLj+acQ8/V9rCGgWcX6MpH2Rir8UmGIQ"
+      }
+    },
+    {
+      "fingerprint": "b007835520e28fef12da3128b3a6d1f02b83b28ad241bf1db630c2b3e210bfc7",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIH81VDqkVbEAzzGIwfqp7wbb6SrnJMoau1ONbtzBTg90AiEAol2C7V725VTpS0jdrVrCuvHH7bpAo39kZPT6EqAPN6o="
+      }
+    },
+    {
+      "fingerprint": "cc97a308da3e8e51d30a73cf17946d6ad81d77c2db4256184d0abf6561045845",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIF/5GuSDH/yT10WyeWxU718Yl0DbIbd62iPZBpBE8DmnAiAVhWb7E1DolYObNBU/qRMAhDLKUUsZeTtxL//XRRWhIw=="
+      }
+    },
+    {
+      "fingerprint": "2a887ac931b3737f294190b74aabbd80583e86e953afe7e32ff68dd5aa26cb79",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDBqb1k67yZXjxM3RqUCgRY8Ka3s1ICV9AFTv2pDyqXegIgSIkGtBWgpJDG4jk3/8ckvbtikLO7aVEFx0zLOswqGKU="
+      }
+    },
+    {
+      "fingerprint": "29fe9d75121f00b91ca925bb6ecb32ab4afb3c41c0082a4fb581e9234d9da553",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "xss_detected",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIEBm1rI49J7w1VwMZ/hg9qXJf4f/4pm0knxc3OXsKriRAiEAyg3wQjg6TLmDqLv5BVDMiflfnCSj0aUpPMm3NUUDLYQ="
+      }
+    },
+    {
+      "fingerprint": "a8a516f824ca41d5ff89e8a470d7ad4e71cabd9a14a574bcdafb7c11ab4f78bf",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQC1G9xodusvTdaiBPIE8dRqmcHjtNVGczdGv4o0/r3aOgIgC8JeElI0/bhCNbG/0TH1X+hrzJIbtFtJMv32odr4xow="
+      }
+    },
+    {
+      "fingerprint": "3d76b067e60b394470a73ccf8c7b12fa515d7d18e89de9844daed6c79fb831ed",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCm3u4C1nvhsZkM8oTzirYWAqVSRnzDS5Y11E9VKbHlyQIhAOr3Lkf6JCBhl4NjlW2a8L+Jwcpjk9jYzBsB2t9XkSTB"
+      }
+    },
+    {
+      "fingerprint": "9da6a76a75b7a8754be1324e902dd0a59dbc25b290184738edf2669be4b6048e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQC2N2Ngddngjz+jadvYL5H7M90iAlJHrqVcQ9x44dpW0QIgO2sNlTK3EjlpOfAZNBiDIxKU0SdsygRpLeC7bBcxBQA="
+      }
+    },
+    {
+      "fingerprint": "f54221b1ea5e14266c9c9e7cb05359b72d3825bed796e273ab80ec4e726940f2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDql9iaE8GGS6Yqvgbt2+H1Q+LXvLef7b9mcQZdPR3GdAiA52l7LLcSy2wPP6QPVuwaQv4a4w6eT0oBgpjqQb1o0XQ=="
+      }
+    },
+    {
+      "fingerprint": "f9a886609bd8d02e7ec23fed4b9a7db13fc2a04edfc529d64f7392cd2737fdb2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQD2pYzNc8Ihj9iEQOWpNeODKseOB0qb8HS7nzH2BJhV0gIhAL02jdCEuhHt8HHTUj0jGKipzXmj89ICkaIM+XLfwLPX"
+      }
+    },
+    {
+      "fingerprint": "21e6b52fd3310dcbf26651682dbe0b2c4c033585a0519a689dd3c9d885bc6492",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDxDkk+GD3/3/xrsRco9fEykrE94d6CmGZaWWcIUuM8IAiBpFMiSgSGVuqIDRe4w1PuWmd63qYCmRSBVVTKvAu6VvA=="
+      }
+    },
+    {
+      "fingerprint": "44dd92ae0c9022975bfd3f2744c37e0f82064581e3dc613304713bb909ea2f05",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQChGgEsoeMo6Kavg/fcoQ6tNGS5+wQc4An5CTN5GFloMwIgcT1509rWhe6Iu7s8+062rhrfDF0YO2UMUWbgYioeBGw="
+      }
+    },
+    {
+      "fingerprint": "6fb087d516af3a2242753a11ac0d0e177866cb75c812ab7311b3f1420d8bf354",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDKDkPZyFkOQtuQ5HaKgIIiyKIySza4exRkdgpRu8B9XgIhALXR7R0qcDE+8HxWNE0f+4MMp5Dz8NGQ9EwrhZC3MFTn"
+      }
+    },
+    {
+      "fingerprint": "cbe93322f5849495f6275d01e8b3a2f1d99e908b6251d181c139ff200a08212d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIBfKNa+FFQ8Qg0asr4JrYCuhGfy7lmxICUmgXV4PN+vTAiAdZnLcWngWEAQp626N0VwIkCk92jQ3TcFhFDLUsytyhA=="
+      }
+    },
+    {
+      "fingerprint": "fb96c2e99d300b5395765c98c1b9be30e74c69664e12c5b8c7ccf7a6ea781f32",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCbJfBy0Fe4uHx26HubXHXMhsxAt6MY41BQyC/ZsBvjdwIgFlp5VqK+jS/UoDtAEPQh//xQLnL9NpciIu6pMCmugg0="
+      }
+    },
+    {
+      "fingerprint": "85ad4aab807bbf2c925dcfcec3c5161f8f2f7d2797ec80933e77759251286a4e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD3cal4xjm+17H4r5x/5d68JyrgFU9AUcBQcBBIj2RSnAIgGetaSIVwFV1E5RlcT8WP/GoN48oTRrqLGxfIpqnc47E="
+      }
+    },
+    {
+      "fingerprint": "f44d8299316bb4c6423a670e8695a5e3346d225c4849408b209d52bd758aa6e5",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDNLbV2piscUH3FQQ82YWavkJ250fS89iAXow8FrchLKgIhALI2ohTwGHTPTTfYG2iTGruJDkQ+KyO4tQd+h+waWgWh"
+      }
+    },
+    {
+      "fingerprint": "2dea1df24023fb0c405950961e448a06f70df29d22dd532897ba40a2270b41bf",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQC+fbtku2cP9js/ot7Z1OQqi78ZlLId0vKOluxUf7KI9QIhANGbCT2/nWRm0K3MiD1xEycGJA14lhEWD8K3WtZTQZfd"
+      }
+    },
+    {
+      "fingerprint": "61454b028bd2beef1f92f29cf42a45c2393d75d8ddb604fa2c28dd134c1b76b7",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCQEm+ZyODPqa1NuC0RQ16Vz5VhsyqmWA8b8IgXE9Mu7gIhAKPZmGYWCEEYlP1kNCp52KlPgXKZQBZli7oskUuS40qN"
+      }
+    },
+    {
+      "fingerprint": "c1a59ec470e38dc11e62e76cf0047d9233568622d1e9321988eecc62d9ba58c0",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDn7oa8h4t7fLtDG4L5ai1JuvXra9EK6VW9yg3MDA6riwIgUtH1eCnXmjEuQWWymRQVEMtbi+HKagcl7bq8XsiBVoY="
+      }
+    },
+    {
+      "fingerprint": "f8670d6cdf77d6784ffde115891fcc6c991fc317760785b3ca9a4d016ba45da9",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD8znS3k2DsIENGeQMqML/YZQHMm7/PEthICsMj2cRNDAIgElh1CdCmGAi1yvYv9S1Fhs8dZ4LgGQxLD1OkzRCyohk="
+      }
+    },
+    {
+      "fingerprint": "b41fbc9c3c45e16a2a914310a85c3ef65f49675414b3ca81ed908b42154a2a49",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCLPrCIfUV8Zj8KzX2q3F2pyIqS+yd1bgr2bYQ257lfaAIgIdA3BaemNVYDuvO86Hr9fNFzFoWGgyw6CDPtpYTk0uE="
+      }
+    },
+    {
+      "fingerprint": "95d4f41d0cdbfa88177b98d4af4f1759f35aa03c8ddbf42c6696dbfdd8035be1",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDMFTLf4yVrcvzXpZ99VmmCSIrJ1EOycKluCrBHkZhHHAiB4Sl/DW6shqBOqJoiJXy3gAvZChJFgJgXgQYM53MfWGQ=="
+      }
+    },
+    {
+      "fingerprint": "666d6353d090eea761cb5acc9cbdfc858769f44b705d78ae184453d224713cdb",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIFkqXi/CXNdvwUTI/mxkaipCvaxFHK5pScj0EisbOCPaAiBCTbTwFXdjTcLOGSqLGh8U7w4vqIq/r6Moz34a5oYU9g=="
+      }
+    },
+    {
+      "fingerprint": "182a0f6b387f15ebd2d039d2172558938209c6bae90f068591cbb747641efdc8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIBAVUUXfqBIfKp/AHa44fyxatTA61LT5+QD7y4syjGCyAiEAtEaTQoqv+CVL84x+lrlagk6wEmQe3+8bT9kn75cROGg="
+      }
+    },
+    {
+      "fingerprint": "a4db0b9b126744861eafd298f8646cb0905ea82d6f526ecc31d5c12e1a534856",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCZejDY11BzF19l3+NXRCiJZ7ZTcxYtWdRq34/y9ulRTgIhANPeqlfdGHvFlP2TQ54X8yydUSYqlIslFBoO7zd/w4Ur"
+      }
+    },
+    {
+      "fingerprint": "1eed76edc114137b2545614e14379d7505894a575c08e7e1c71fcb1d3634ec23",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIA20DB6sp0NtBn/lyPgqBLyUQdiqwFtcbx9lClkVZ5DbAiADGdsKh5dEnaDOR7LYXv6lp5T1UD49BGmkeWbDzlWFtw=="
+      }
+    },
+    {
+      "fingerprint": "9d8f5ad29970dc4c86a22c6954ca0a29d0894277dda97ab2ec1050991526c71f",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDbjY2lAc8E9QDXExF9UAtYEFOc0Wxw/4aFLBGWRILRZQIgZrm/MienWcUnatH6ZqlBl6JQ0ozCBlydJHtBCPUveDk="
+      }
+    },
+    {
+      "fingerprint": "c910f8fee6cbdc3293604adb0d49d9f98db59352c9238d735b5ba6b35e17ec58",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIB+o969ml4zbcts8v9sxqEVB6nS5b28nF+S4offSqI32AiBWfSNOSoLGNCEzN5OBjtKd8HAjawAYMfyv3tyL07FFbw=="
+      }
+    },
+    {
+      "fingerprint": "d287c954fd5131caec3a4f4d716e5f58f5cb7fdc1a2127acbde07ec6bb473c92",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD1jxGHPHBknPRP3zemwAZQdsL0mvsVG25UuBMiDonIpwIgVDtou2m6bqSPJ8oU5u3S3h0S0o0J6Vn7IqSnOhlrjRM="
+      }
+    },
+    {
+      "fingerprint": "9ee8ee3955e8c859a4fc3a69158153b2fa8e22fca76e02b2232b1b91088e8e43",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIG1smXAQsrWWnaapGkjM+9W8XJTK8Q5CioqSQvbBLcE+AiEA3uAjF8Ut5XrLdwgepMrVrznYXQNOpBVto12JvWRV5Cg="
+      }
+    },
+    {
+      "fingerprint": "e75a4a0ef2c0f372964ec5f5100c7e24d9f2e28b08a2f2d3efb82eeceb5a3f29",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "low",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDCAsLQ4et9m2l5dEOcL3vfN7Sg4JW/FtShiM9ieCpmcQIhAJSIaKUEO7EiYllA5vxVxmVn674fyaTI7pk7WD+fGC5b"
+      }
+    },
+    {
+      "fingerprint": "f8a509b76344286b6e460c29d0527e6f5cd135b755556df1f65f67187601d852",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIFIuhed5Kg7JrJOiNP0qrFO/tW0StUYBoEWCGjpFF4BMAiARgqSV0sC2BAZoAMqSj/irgDaWymUKQcY/tQFiNP9wkA=="
+      }
+    },
+    {
+      "fingerprint": "75ecc64d853dd5faf5673f6241d5b71bf059e6bbc48f7a9d708314fc503434e1",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD7e/6aqzg6ahmSUqK8aI9ANW9Ul2w2FxW1J22y19uNFQIgEjTsqJA2ALESrxWbDGB6Yx5l9787gmdxLg5RH0S48jU="
+      }
+    },
+    {
+      "fingerprint": "d3519d31402f308d1919780381dcf9eb2adb9c7abf46416d6cde06772b980a11",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIEqjd92Jz593QPPAMDMpcWmMykLsgRBqlGYnz2ev1f7cAiBfqGSkUmOB7RdefFxwSKzk0bkr/7tOTGKwjlmwOxDrAg=="
+      }
+    },
+    {
+      "fingerprint": "b1d45f16b1b96b4fccca79c997664f9bc653d9905f03cdba6a9672aafb8ecc2e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIFkyn+fo3xsisBxi88bDmMbZyZP9QCkFki1VN0VxEWYFAiEA5qu3MMh1GXSFb0GUeJOt8TIQHRV1HnadDKQr6OP1qkQ="
+      }
+    },
+    {
+      "fingerprint": "6cc9d2a24ec900a31d897d8f82b723aad9d9d615f9937860274d9c05e2205be7",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCba+Q5PWA1BoJe55jaKgSLLQCcRPqaE483zw9as1eNmgIgZeRm+dKJUp/kbsgJal5lofL5GwYncTpUl9AGQLHIpZs="
+      }
+    },
+    {
+      "fingerprint": "2b0968025150eea26555c27615f12b1359e8685093eec36ac45f6093be452970",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQD0G3x4k32oEcoiXyPFBSnK+FjiQhcajzVXJ01jc94WWAIgLKqf0PRXxL0znL5IVxknflTQ9DRCjbQGu//8oWF+3Go="
+      }
+    },
+    {
+      "fingerprint": "5961a29c03fcd4167911a4965fe293ad7e0a2f37f19b528838ba96476f458bd4",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDQ1H62S3eXVIOx3SZkA9AxuKoVMelkkT8drmVCpyB+vAIgLy1qE1suLaukq5gcXKXTCQ8hcYXlJaQNYgcNgiyP7js="
+      }
+    },
+    {
+      "fingerprint": "d440c5d3152bfed959cfeae339235a7c7a0c9a9aa87f0699609b090ec8c6c608",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIGJV3RxU7GWmRBCl8P95kMb+UEsmS89krmC0/uYHt73UAiEAjLpIAys8DrCmZF9gkAbaz2LY/wP5izgS1BfjaGgkPp0="
+      }
+    },
+    {
+      "fingerprint": "b6b1ff10b263cdc46b717a7469bcdf66d6b7d225ad21f13f7c015f5095592204",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIEioX3QMVO6Cbq7Kj/HWbt4Ri4ZCSB1vA6xXbMa7/QMwAiEA0ds9NDasAyGq4TqKeHWdhb3vRnU9JGQo3Ue8/PzXCFw="
+      }
+    },
+    {
+      "fingerprint": "25d6ece38203131af364f2f1c7f13b2e7dc500d522cb9081efa54b7e2905a37f",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAh9IvzFbnYbFb7JyioOK5tZ5vFxF7GQF1axGQRxRh6AAiAZhx2lIRLaMX+mGeP9ENIeHeNtQzVJ4d1MEQzuL8cXdA=="
+      }
+    },
+    {
+      "fingerprint": "94815e1a0496f6bea1f2f61e570efde33d0cc18d0e29b64351e68299668dfeb9",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDwqZn1JS2Q8iKz/OO0RWn50UfYiBZeSX1/LCQdpU8KkAIhAIGAXlH5RxmmNaQIeadMRfnCfbi5bR1bEqSc/SqbCUTt"
+      }
+    },
+    {
+      "fingerprint": "34c64a0d64c1216f59bd8b12d243555af7a12dc1a19068e81aaa2c0bcfce8abb",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIA17uOHtHBBaw7deXwifIkQGKvop9dCHNZHWUk9uamomAiEAhUKm3fdwe47qdvOkaa61vDHZgnQowJEkJhTQ5r7+CJU="
+      }
+    },
+    {
+      "fingerprint": "c42193d81c55447ce193fb2a178e4410212dd965018eb13f11034c9fb1697252",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIAU+lwhdu19bPxvr8N5CDTqmI5gGEtgaatiyTG4ESjksAiBSYE/z5MI+hnxiH5Odjtk4ClqKtpATc6hwfkZJnR2dMQ=="
+      }
+    },
+    {
+      "fingerprint": "0de03461da6189a60413d6b5c6e27f530443707dab2b5c4803950645286e83e8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDZLA1+/hoe+EV0nNnH+cq+AGxEOS5weQb4sG26gpTsBwIhALVDTsZYIlikNC9f0UtdMJD2GHCJJT49Koey34v7Eyr6"
+      }
+    },
+    {
+      "fingerprint": "fa41c004034637e222e0d93f0f5d3aa5725ed693a7fb6e287a6a6b31248930b2",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIDBnsGO/mPSiZ9N/7MiHKJR099xaWUsrY1L006FU1+9MAiBpZKL/qskn45+2kPOhLnIYaMRdlvTpVzJRqnyQtTLTfA=="
+      }
+    },
+    {
+      "fingerprint": "d976df7b96decf0c6b38a6e1efe9e0756eed035d0452703e0f685345ac242955",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCFeEDSHDvFrljPj+PAapiHzwGsB0yk0qk0UOPdscCxZQIhAKuYrpX3rW2I1NVO/Phfd8ZWjuvjxDA+BxO9OWuUiQpK"
+      }
+    },
+    {
+      "fingerprint": "ce63ac40aea1aa44931dada4f413e867d256816addcc74d8ffef41413614eadf",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "compliance_violation",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGM6WJVQVx2tOAksSA/WXwIU4tocl/ZABuaroMZoEQ06AiAOqlKhGHcALMgwQZ/Qh7UAJ+XzdT8AWjPBJvOFo6NtcQ=="
+      }
+    },
+    {
+      "fingerprint": "6bc0e5d13bbc5d092e60e6a783b887e309ef2f62d5e0f7891c9da03cd40329c8",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "pii_detected",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQCSLnqB32ZhOdMMaOT8siUvHd4YIV+jQilgoxM249rgegIgZx4b/egiBpTkCvHryaWVkkmuCRcxIgHRwLaU1AV7IQg="
+      }
+    },
+    {
+      "fingerprint": "bc9544afc04bd189c46a7f92c47d63f34997d521d02e6e0dbbd73f08fbb69a62",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIQDSMooxZx4yO12WzMAuvmywRjJpcc9hCScgsc0fhiOTWwIgImsy9VSlfo1pIP2a0WqfT+WTecItixK8AuZCFrZy++o="
+      }
+    },
+    {
+      "fingerprint": "9da72d079824835db9feeffcfd080de1976d3d5ba03d1966dafa1e378917da08",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "critical",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDQxtan44BWrS5PKI7b60K/IHAtzHE7CWPGCpTOc/51JAIhAKSDSqNBvjPePT3p9WzuPALFmDq+SoJLKMz7OcIhEstC"
+      }
+    },
+    {
+      "fingerprint": "133e70dcc8a30648a71ce0c33b792e3183a8a6baab3f463aab3a9dde24bdce4b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "secret_leak",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICBMTYp4FZtpU/QCL62+FrWi23zegH4C5e5A9KATk/OwAiA2F8KJvkKDAobZk2HOYlLYlzSOHaKNJK35B3ExSzvSNw=="
+      }
+    },
+    {
+      "fingerprint": "f5bdfc81a7a4d207dc5e858dcabf18407bb171d49174d35d4295e1bcb279368d",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEUCIDyQun+kVbLkmUloRCflRg62LhAdx5+8gs629S97nBi2AiEAnNyfKTP7JJmpUJqdLQk2bm+teAOIAda0TaUGplXBKPk="
+      }
+    },
+    {
+      "fingerprint": "1cc9987cd385b863247d2df329efcaa13e83423790d37f1f8ba1ec347037e21a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCvJ0HC6WfKxnK3zlFtN0oPVX2uh4ZGfI3BPVDJLqc1DQIhAMHZTgpRJBhxcB37lSkKrjQZ9ytQjCmn54Laq9oGR4Mp"
+      }
+    },
+    {
+      "fingerprint": "a7971dfb7586e2dc369e6c6b635b47cada28928345f6456b8e492d8591161e80",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCICxfRn4IJOMQRMZlANQEMT6TVKgtJE31vg+SdGd7jvNwAiAVHF6QBPzbuYCcZzdMK++XVYoJlsLSnavyi6nblNmZjg=="
+      }
+    },
+    {
+      "fingerprint": "7decd668bb2d9c2e0ac7699628d1bbfbe23877f8f2ecd7571b9a424ed36a827b",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCHyfnEqIFp3AM4UHoJsStq6KL4dVL/Q0KtKnuUmt4ISAIhAMK5VT3IB5GY41GSttQErgRodfajinV//AQLz5V23GLX"
+      }
+    },
+    {
+      "fingerprint": "2991b210236cc2d37e120d0f192589c8fb6c147dc244971211cd7f5560512e75",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDSX+WYDjfcUsAU3NzEmsZth1IZb+CQGSMY6ge28l+MkQIhAMP4ABmvkTMUhMro3hoZEg5M+t88szicJFkNSCFdCZQL"
+      }
+    },
+    {
+      "fingerprint": "5b1bd72a0324e0a5b2a2ee0d8817db93e8b8288d65086f47811514f24f0c842a",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEQCIGmEBWBoEW6YVNSzo9ACaYB2V/GrHzqx8lncc6C8O2aMAiAe5OAo/c51KFJI0JM4vvK/vOfjKTVE3tnoe3/VCdaR8A=="
+      }
+    },
+    {
+      "fingerprint": "cce7b409d2d7237796cf4b04f97d34151b17659926a8e0cf788bbe32ac4e3c5e",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQCHxV3xHlVWzzUpiRcmNPn4NxEuuXkHBjWNkTVyr8rbhAIhAODYprre+ZZGbkGPDpRY9q70IVxxAJY0/Lyux1wxgDOc"
+      }
+    },
+    {
+      "fingerprint": "1d2c878594159bf5b4b90a1d621faae61f94afa3b828b647fb1ebe53b70f5b62",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "medium",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDaaRtB9jFJS3Oqc72K+rKEH/RXuQKpR6h2NCXk5ZbMTwIhAJ4DIEx3XFqwjO5a8iY164N5ox+8UIskwCqUsX8Vh5k6"
+      }
+    },
+    {
+      "fingerprint": "3fb10beeddf5b9e3048cbeb4bb7ad7c6419fe86f7274b14ed3b70c7135a0f287",
+      "instanceId": "aegisgate-baseline-seed",
+      "iocType": "proxy_response",
+      "severity": "high",
+      "firstSeen": "2026-10-07T01:19:52.67866203Z",
+      "lastSeen": "2026-10-07T01:19:52.67866203Z",
+      "count": 1,
+      "publicKey": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+      },
+      "signature": {
+        "algorithm": "ecdsa-p256",
+        "keyId": "k-d7657a6487801ace",
+        "value": "MEYCIQDgeeUnr5N/q40peTzpGW5QWs3a6MsU33oogGbPafggrAIhAMa3nxygn3/ci4XgQ7ei29z9/nb7GFpyR2F44q7wzTmP"
+      }
+    }
+  ],
+  "publicKey": {
+    "algorithm": "ecdsa-p256",
+    "keyId": "k-d7657a6487801ace",
+    "value": "BIOJfkYWQab25EhjlYd6n2y26A8U+WsW93494A0sjHMdiivfUUK4M+aoLkgoxgON5ArLp4PrZBP2tE1qW/+yIbw="
+  },
+  "signature": {
+    "algorithm": "ecdsa-p256",
+    "keyId": "k-d7657a6487801ace",
+    "value": "MEYCIQCxcBytn93UqhVtPJk8aeS0keqG9APW76DldTqwiL7hawIhAKJPAfzY9dtiTZZ1rkTwrdW0igpDw/XGhupXouChTC75"
+  }
+}

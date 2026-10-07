@@ -165,18 +165,19 @@ var (
 	// The IOC store path is configured via the IOC subsystem; no top-level
 	// --ioc-store-dir flag is needed. Re-add if a future subscriber mode
 	// needs explicit path control.
-	iocGossipInterval = flag.Duration("ioc-gossip-interval", 5*time.Minute, "Interval between peer IOC fetches in RunReceiver. Env: AEGISGATE_IOC_GOSSIP_INTERVAL (Go duration: 30s, 5m, 1h)")
-	iocBootstrapPeers = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS)")
-	lensEnabled       = flag.Bool("lens-enabled", false, "Enable the Lens telemetry backend on the proxy port (AEGISGATE_LENS_ENABLED)")
-	siemEnabled       = flag.Bool("siem-enabled", false, "Enable the SIEM dispatcher to forward audit events to external SIEM platforms (AEGISGATE_SIEM_ENABLED)")
-	soarEnabled       = flag.Bool("soar-enabled", false, "Enable SOAR outbound webhooks (PagerDuty, Jira, ServiceNow) for incident response (AEGISGATE_SOAR_ENABLED)")
-	lensBearerToken   = flag.String("lens-bearer-token", "", "Bearer token for Lens telemetry endpoints (AEGISGATE_LENS_BEARER_TOKEN)")
-	lensIOCStoreDir   = flag.String("lens-ioc-store-dir", "", "Directory for Lens IOC store persistence (default: <DataDir>/lens)")
-	tsaEnabled        = flag.Bool("tsa-enabled", false, "Enable RFC 3161 TSA timestamping for audit events (AEGISGATE_TSA_ENABLED)")
-	tsaEndpoints      = flag.String("tsa-endpoints", "", "Comma-separated TSA server URLs (default: DigiCert,Sectigo,Apple). Env: AEGISGATE_TSA_ENDPOINTS")
-	tsaTimeout        = flag.Duration("tsa-timeout", 10*time.Second, "Per-endpoint TSA request timeout (AEGISGATE_TSA_TIMEOUT)")
-	tsaRetryCount     = flag.Int("tsa-retry-count", 2, "Retry attempts per TSA endpoint (AEGISGATE_TSA_RETRY_COUNT)")
-	tokenAnalytics    = flag.Bool("token-analytics", false, "Enable token usage analytics (AEGISGATE_TOKEN_ANALYTICS)")
+	iocGossipInterval  = flag.Duration("ioc-gossip-interval", 5*time.Minute, "Interval between peer IOC fetches in RunReceiver. Env: AEGISGATE_IOC_GOSSIP_INTERVAL (Go duration: 30s, 5m, 1h)")
+	iocBootstrapPeers  = flag.String("ioc-bootstrap-peers", "", "Comma-separated seed URLs for IOC peer discovery (e.g. https://aegis-primary.example.com:8443). The Discoverer polls each seed and learns about new peers. Env: AEGISGATE_IOC_BOOTSTRAP_PEERS)")
+	iocBootstrapBundle = flag.String("ioc-bootstrap-bundle", "", "Path to a baseline IOC bundle JSON file to seed the local store on startup. The bundle must be signed (ECDSA P-256). IOCs are ingested as local observations, not peer observations. Env: AEGISGATE_IOC_BOOTSTRAP_BUNDLE")
+	lensEnabled        = flag.Bool("lens-enabled", false, "Enable the Lens telemetry backend on the proxy port (AEGISGATE_LENS_ENABLED)")
+	siemEnabled        = flag.Bool("siem-enabled", false, "Enable the SIEM dispatcher to forward audit events to external SIEM platforms (AEGISGATE_SIEM_ENABLED)")
+	soarEnabled        = flag.Bool("soar-enabled", false, "Enable SOAR outbound webhooks (PagerDuty, Jira, ServiceNow) for incident response (AEGISGATE_SOAR_ENABLED)")
+	lensBearerToken    = flag.String("lens-bearer-token", "", "Bearer token for Lens telemetry endpoints (AEGISGATE_LENS_BEARER_TOKEN)")
+	lensIOCStoreDir    = flag.String("lens-ioc-store-dir", "", "Directory for Lens IOC store persistence (default: <DataDir>/lens)")
+	tsaEnabled         = flag.Bool("tsa-enabled", false, "Enable RFC 3161 TSA timestamping for audit events (AEGISGATE_TSA_ENABLED)")
+	tsaEndpoints       = flag.String("tsa-endpoints", "", "Comma-separated TSA server URLs (default: DigiCert,Sectigo,Apple). Env: AEGISGATE_TSA_ENDPOINTS")
+	tsaTimeout         = flag.Duration("tsa-timeout", 10*time.Second, "Per-endpoint TSA request timeout (AEGISGATE_TSA_TIMEOUT)")
+	tsaRetryCount      = flag.Int("tsa-retry-count", 2, "Retry attempts per TSA endpoint (AEGISGATE_TSA_RETRY_COUNT)")
+	tokenAnalytics     = flag.Bool("token-analytics", false, "Enable token usage analytics (AEGISGATE_TOKEN_ANALYTICS)")
 
 	// Deploy profiles (v4.2.0+ "Guided Setup"):
 	// --profile selects a predefined configuration preset. The profile acts
@@ -643,6 +644,22 @@ func main() {
 		// MUST happen before Component 1 (proxy) so that the
 		// proxy's first record() call is captured as an IOC.
 		installIOCRecorder(auditRing, iocW.Producer, share, receive)
+
+		// v4.5.2: Bootstrap the IOC store with a baseline bundle
+		// if --ioc-bootstrap-bundle (or AEGISGATE_IOC_BOOTSTRAP_BUNDLE)
+		// is set. This seeds the store with known detection-pattern
+		// fingerprints so the corroboration checker can match
+		// detections even before any production traffic or peer IOCs.
+		bootstrapPath := *iocBootstrapBundle
+		if bootstrapPath == "" {
+			bootstrapPath = os.Getenv("AEGISGATE_IOC_BOOTSTRAP_BUNDLE")
+		}
+		if bootstrapPath != "" {
+			if err := bootstrapIOCs(iocW.Store, bootstrapPath); err != nil {
+				log.Printf("⚠️  IOC bootstrap failed: %v (continuing without baseline IOCs)", err)
+			}
+		}
+
 		// Start the background goroutines. The flusher is always
 		// started (the store may have on-disk state to load).
 		// The receiver is only started if receive is enabled

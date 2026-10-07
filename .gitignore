@@ -289,3 +289,7 @@ plans/provisional-patent-filing-guide.md
 /echo-server
 /generate-k6-payloads
 /.workingdirectory/
+# Evasion suite .md reports (ephemeral test artifacts, not tracked)
+upstream/aegisgate/pkg/proxy/testing/reports/adversarial/*.md
+# IOC baseline seed keyring (private ECDSA key, never commit)
+pkg/ioc/data/seed-keyring.json

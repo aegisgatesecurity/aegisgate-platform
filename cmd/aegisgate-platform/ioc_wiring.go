@@ -254,6 +254,77 @@ func wireIOC(dataDir string, platformTier tier.Tier) (*iocWiring, string, error)
 	}, instanceID, nil
 }
 
+// bootstrapIOCs loads a signed baseline IOC bundle from disk and
+// ingests it into the local store. This is called at startup when
+// --ioc-bootstrap-bundle (or AEGISGATE_IOC_BOOTSTRAP_BUNDLE) is set.
+//
+// The bundle must be signed (ECDSA P-256). The signature is verified
+// before ingestion. If verification fails, the bundle is rejected and
+// a warning is logged.
+//
+// IOCs from the bootstrap bundle are ingested as LOCAL observations
+// (Source = "bootstrap"), not peer observations. This means:
+//   - They appear in the store immediately.
+//   - They are NOT gated by peer reputation (they're local).
+//   - They DO participate in the corroboration feedback loop: if a
+//     real detection matches a bootstrap IOC's fingerprint, the
+//     checker will find it and report Found=true.
+//
+// This is the intended behavior: the bootstrap seeds the store with
+// known detection patterns so that even before any production traffic
+// or peer IOCs arrive, the corroboration checker can match detections
+// against the baseline.
+//
+// The bootstrap is idempotent: if the store already has IOCs with
+// the same fingerprints (e.g., from a previous bootstrap or from real
+// production observations), the merge updates the count and
+// last-seen timestamp but does not create duplicates.
+//
+// v4.5.2: Added as part of IOC baseline seeding.
+func bootstrapIOCs(store *ioc.Store, bundlePath string) error {
+	data, err := os.ReadFile(filepath.Clean(bundlePath))
+	if err != nil {
+		return fmt.Errorf("read bootstrap bundle: %w", err)
+	}
+
+	var bundle ioc.Bundle
+	if err := json.Unmarshal(data, &bundle); err != nil {
+		return fmt.Errorf("unmarshal bootstrap bundle: %w", err)
+	}
+
+	// Verify the bundle signature before ingesting. This ensures
+	// we don't ingest a tampered or forged baseline.
+	if err := ioc.VerifyBundleSignature(&bundle); err != nil {
+		return fmt.Errorf("bootstrap bundle signature verification failed: %w", err)
+	}
+
+	// Ingest each attestation as a local observation. We use
+	// store.Observe() directly (not receiver.Ingest) because these
+	// are local bootstrap IOCs, not peer IOCs.
+	ingested := 0
+	for i := range bundle.Attestations {
+		att := &bundle.Attestations[i]
+		newIOC := ioc.IOC{
+			Fingerprint: att.Fingerprint,
+			Type:        att.IOCType,
+			Severity:    att.Severity,
+			FirstSeen:   att.FirstSeen,
+			LastSeen:    att.LastSeen,
+			Count:       att.Count,
+			Source:      "bootstrap",
+		}
+		if _, err := store.Observe(newIOC); err != nil {
+			// Log and continue — one bad IOC shouldn't abort the bootstrap.
+			log.Printf("IOC bootstrap: skip attestation %s: %v", att.Fingerprint[:16], err)
+			continue
+		}
+		ingested++
+	}
+
+	log.Printf("IOC bootstrap: ingested %d/%d IOCs from %s", ingested, len(bundle.Attestations), bundlePath)
+	return nil
+}
+
 // installIOCRecorder layers the IOC producer on top of the
 // existing audit ring buffer. After this call:
 //
