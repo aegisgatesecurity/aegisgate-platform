@@ -1,3 +1,27 @@
+## [Unreleased] - 2026-10-07 - Trademark Compliance & IOC Baseline Seeder
+
+> **Unreleased** fixes a trademark compliance issue (® → ™ before federal registration) and adds a baseline IOC seeder tool with production-matching fingerprints.
+
+### Legal / Compliance
+
+- **Trademark Symbol Fix**: Corrected `AegisGate®` → `AegisGate™` in `TRADEMARKS.md` and `NOTICE`. The AegisGate and AegisGate Security marks were applied for in April 2026 and published for opposition by the USPTO on October 13, 2026. The ® symbol will replace ™ upon issuance of the Certificate of Registration (post 30-day opposition period). Using ® before registration is a violation of the Lanham Act (15 U.S.C. § 1126).
+- **EULA Trademark Clause**: Removed "or registered" from trademark clause in website EULA to reflect pending status.
+- **README Copyright**: Added ™ to "AegisGate Security" in copyright line.
+- **Website Footer**: Added ™ to "AegisGate Security" in footer copyright.
+
+### IOC Baseline Seeder
+
+- **New Tool**: `cmd/aegisgate-ioc-seed/` — CLI tool that generates a signed IOC baseline bundle from AegisGate's real scanner patterns (all 223 patterns). Fingerprints match the proxy's runtime fingerprint computation exactly (`Type: "proxy_response"`, no `ThreatType`), ensuring interoperability between baseline IOCs and live detections.
+- **Startup Import**: `--ioc-bootstrap-bundle` CLI flag and `AEGISGATE_IOC_BOOTSTRAP_BUNDLE` env var to load a signed baseline bundle at startup. IOCs are ingested as local observations (Source: "bootstrap"), verified via `VerifyBundleSignature` before ingestion.
+- **Signed Bundle**: `pkg/ioc/data/baseline-iocs.json` — 223 signed IOCs (ECDSA P-256), all attestation signatures verified, all fingerprints cross-checked against proxy output.
+
+### Testing
+
+- 7 new tests in `cmd/aegisgate-ioc-seed/` (fingerprint match, uniqueness, coverage, severity, store import, signing, count)
+- End-to-end verification: bundle signature valid, 223/223 attestation signatures valid, 223/223 fingerprints match proxy, store ingests all 223, corroboration checker finds baseline IOCs
+
+---
+
 ## [4.5.2] - 2026-10-06 - Federated IOC Hardening (Phase 4) 🔒
 
 > **v4.5.2** hardens the federated IOC threat intelligence component with four production-readiness layers: per-IP rate limiting on gossip endpoints, bearer token authentication for the IOC admin API, AES-256-GCM encryption for keyring files at rest, and soft quarantine for IOCs from low-reputation peers. This completes the 4-phase IOC production readiness initiative (Phases 1–4).

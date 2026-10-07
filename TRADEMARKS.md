@@ -4,10 +4,17 @@
 
 The following are trademarks of AegisGate Security, LLC:
 
-- **AegisGate®** — Registered trademark
+- **AegisGate™** — Trademark (USPTO published October 13, 2026; application pending registration)
 - **AegisGate Platform™** — Trademark
-- **AegisGate Security™** — Trademark
+- **AegisGate Security™** — Trademark (USPTO published October 13, 2026; application pending registration)
 - The AegisGate logo and associated brand marks
+
+> **Note:** The AegisGate and AegisGate Security marks were applied for in
+> April 2026 and published for opposition by the USPTO on October 13, 2026.
+> Following the 30-day opposition period, the marks will proceed to
+> registration. Until registration is complete, the ™ symbol is used.
+> The ® symbol will replace ™ upon issuance of the Certificate of
+> Registration.
 
 ## Acceptable Use
 
