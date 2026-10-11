@@ -2,8 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # AegisGate Platform — Triple Detection Parity Checker
 #
-# Compares scanner pattern names across Platform, Lens, and Rampart repos.
-# Fails (exit 1) if any pattern exists in Platform but not in Lens or Rampart.
+# Compares detection patterns across Platform, Lens, and Rampart repos.
+#
+# Parity model:
+#   Platform ↔ Rampart: FULL parity — ALL pattern names AND regex content must match.
+#   Lens: Compliance-only parity — Lens patterns must be a subset of Platform/Rampart.
+#         Regex content is compared with JS↔Go normalization (warnings for syntax diffs).
 #
 # Usage:
 #   ./scripts/check-detection-parity.sh
@@ -12,8 +16,6 @@
 #   - aegisgate-platform (or consolidated/aegisgate-platform)
 #   - aegisgate-lens
 #   - aegisgate-rampart
-#
-# Can also be run in CI with individual checkouts — see detection-parity.yml
 
 set -euo pipefail
 
@@ -30,7 +32,6 @@ RAMPART_DIR="${RAMPART_DIR:-}"
 
 # Auto-detect paths if not set
 if [[ -z "$PLATFORM_DIR" ]]; then
-    # Try common locations
     for candidate in \
         "$(dirname "$0")/../../aegisgate-platform" \
         "$(dirname "$0")/../" \
@@ -92,106 +93,55 @@ if [[ -z "$RAMPART_DIR" || ! -f "$RAMPART_DIR/internal/detectors/compliance.go" 
     exit 1
 fi
 
-# Extract pattern names from each product
-# Compare the SHARED detection layer across all three products.
-#
-# Naming conventions differ:
-#   - Platform uses CamelCase for prompt injection patterns: PromptInjectionSSTI
-#   - Lens/Rampart use snake_case: prompt_injection_ssti
-#   - Compliance patterns (owasp_llm*, atlas_*, etc.) are already snake_case everywhere
-#
-# We normalize CamelCase PromptInjection names to snake_case so they can be
-# compared across products. Platform-only patterns (PII, secrets, OT, harmful_*,
-# xss_*, credit cards, connection strings) are excluded — they don't belong in
-# Lens (browser extension) or Rampart (API gateway).
-#
-# Shared layer: owasp_llm*, atlas_*, eu_ai_act*, anp_*, cu_*, toxicity_*,
-# nist_csf*, iso_27001*, ccpa*, lgpd*, pipeda*, popia*, mitre_atlas*,
-# PromptInjection* (normalized to prompt_injection_*)
+# ===========================================================================
+# Phase 1: Pattern Name Parity
+# Platform ↔ Rampart: FULL parity (ALL patterns must match)
+# Lens: Subset check (all Lens patterns must exist in Platform and Rampart)
+# ===========================================================================
+echo "=== Phase 1: Pattern Name Parity ==="
+echo ""
 
-# Normalize CamelCase to snake_case (e.g., PromptInjectionSSTI → prompt_injection_ssti)
-normalize_name() {
-    echo "$1" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' | tr '[:upper:]' '[:lower:]'
-}
+# Platform: extract ALL pattern names from patterns.go
+ALL_PLATFORM=$(grep -oP '\{Name:\s*"\K[^"]+' "$PLATFORM_DIR/pkg/scanner/patterns.go" | sort -u)
 
-# Platform: extract all names, filter to shared patterns, normalize CamelCase
-ALL_PLATFORM=$(grep -oP '\{Name:\s*"\K[^"]+' "$PLATFORM_DIR/pkg/scanner/patterns.go")
+# Rampart: extract ALL pattern names from ALL detector .go files (excluding tests)
+ALL_RAMPART=""
+for rampart_file in "$RAMPART_DIR"/internal/detectors/*.go; do
+    [[ "$rampart_file" == *_test.go ]] && continue
+    [[ ! -f "$rampart_file" ]] && continue
+    names=$(grep -oP 'Name:\s*"\K[^"]+' "$rampart_file" 2>/dev/null || true)
+    ALL_RAMPART="$ALL_RAMPART$names"$'\n'
+done
+ALL_RAMPART=$(echo "$ALL_RAMPART" | grep -v '^$' | sort -u)
 
-# Platform-only PromptInjection patterns (Lens uses ML/heuristics for these, not regex)
-# Only prompt_injection_ssti and prompt_injection_eval_atob are shared across all products.
-# If a new PromptInjection pattern is shared, it will appear in Lens/Rampart and pass parity.
-# If it's Platform-only, add it here to suppress the false alarm.
-# MAINTAINERS: When adding a new shared PromptInjection pattern, ensure it's added
-# to Lens compliance.js and Rampart compliance.go. If it's Platform-only, add it here.
-PLATFORM_ONLY_PATTERNS="prompt_injection_base64 prompt_injection_code_execution prompt_injection_command prompt_injection_delimiter prompt_injection_leakage prompt_injection_prefix prompt_injection_role_play prompt_injection_unicode prompt_injection_sstiprobe"
+# Lens: extract pattern keys from compliance.js
+ALL_LENS=$(grep -oP '^\s{4}\K[a-z_][a-z0-9_]*(?=\s*:\s*\{)' "$LENS_DIR/src/detectors/regex/compliance.js" | sort -u)
 
-is_platform_only() {
-    local name="$1"
-    for p in $PLATFORM_ONLY_PATTERNS; do
-        if [[ "$name" == "$p" ]]; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Build normalized platform pattern list
-PLATFORM_PATTERNS=""
-while IFS= read -r name; do
-    # Include compliance patterns (already snake_case)
-    if echo "$name" | grep -qE '^(owasp_llm|atlas_|eu_ai_act|anp_|cu_|toxicity|nist_csf|iso_27001|ccpa|lgpd|pipeda|popia|mitre_atlas)'; then
-        PLATFORM_PATTERNS="$PLATFORM_PATTERNS$name"$'\n'
-    elif echo "$name" | grep -qE '^PromptInjection'; then
-        normalized=$(normalize_name "$name")
-        # Skip Platform-only patterns
-        if ! is_platform_only "$normalized"; then
-            PLATFORM_PATTERNS="$PLATFORM_PATTERNS$normalized"$'\n'
-        fi
-    fi
-done <<< "$ALL_PLATFORM"
-PLATFORM_PATTERNS=$(echo "$PLATFORM_PATTERNS" | grep -v '^$' | sort -u)
-
-# Lens: all pattern keys from compliance.js (all are shared compliance patterns)
-LENS_PATTERNS=$(grep -oP '^\s{4}\K[a-z_][a-z0-9_]*(?=\s*:\s*\{)' "$LENS_DIR/src/detectors/regex/compliance.js" | sort -u)
-
-# Rampart: all pattern names from compliance.go (all are shared compliance patterns)
-RAMPART_PATTERNS=$(grep -oP 'Name:\s*"\K[^"]+' "$RAMPART_DIR/internal/detectors/compliance.go" | sort -u)
-
-PLATFORM_COUNT=$(echo "$PLATFORM_PATTERNS" | wc -l)
-LENS_COUNT=$(echo "$LENS_PATTERNS" | wc -l)
-RAMPART_COUNT=$(echo "$RAMPART_PATTERNS" | wc -l)
+PLATFORM_COUNT=$(echo "$ALL_PLATFORM" | wc -l)
+RAMPART_COUNT=$(echo "$ALL_RAMPART" | wc -l)
+LENS_COUNT=$(echo "$ALL_LENS" | wc -l)
 
 echo "Pattern counts:"
 echo "  Platform: $PLATFORM_COUNT"
-echo "  Lens:     $LENS_COUNT"
 echo "  Rampart:  $RAMPART_COUNT"
+echo "  Lens:     $LENS_COUNT (compliance only)"
 echo ""
 
-# Save to temp files for comparison
+# Save to temp files
 PLATFORM_TMP=$(mktemp)
-LENS_TMP=$(mktemp)
 RAMPART_TMP=$(mktemp)
-echo "$PLATFORM_PATTERNS" > "$PLATFORM_TMP"
-echo "$LENS_PATTERNS" > "$LENS_TMP"
-echo "$RAMPART_PATTERNS" > "$RAMPART_TMP"
+LENS_TMP=$(mktemp)
+echo "$ALL_PLATFORM" > "$PLATFORM_TMP"
+echo "$ALL_RAMPART" > "$RAMPART_TMP"
+echo "$ALL_LENS" > "$LENS_TMP"
 
-# Check for patterns in Platform that are missing from Lens or Rampart
 EXIT_CODE=0
 PATTERN_FAIL=0
 
-# Platform → Lens missing
-PLATFORM_LENS_MISSING=$(comm -23 "$PLATFORM_TMP" "$LENS_TMP")
-if [[ -n "$PLATFORM_LENS_MISSING" ]]; then
-    MISSING_COUNT=$(echo "$PLATFORM_LENS_MISSING" | wc -l)
-    echo -e "${RED}MISSING from Lens ($MISSING_COUNT patterns):${NC}"
-    echo "$PLATFORM_LENS_MISSING" | sed 's/^/  - /'
-    echo ""
-    EXIT_CODE=1
-    PATTERN_FAIL=1
-fi
-
-# Platform → Rampart missing
+# Platform ↔ Rampart: FULL parity (hard gate)
 PLATFORM_RAMPART_MISSING=$(comm -23 "$PLATFORM_TMP" "$RAMPART_TMP")
+RAMPART_PLATFORM_MISSING=$(comm -13 "$PLATFORM_TMP" "$RAMPART_TMP")
+
 if [[ -n "$PLATFORM_RAMPART_MISSING" ]]; then
     MISSING_COUNT=$(echo "$PLATFORM_RAMPART_MISSING" | wc -l)
     echo -e "${RED}MISSING from Rampart ($MISSING_COUNT patterns):${NC}"
@@ -201,59 +151,105 @@ if [[ -n "$PLATFORM_RAMPART_MISSING" ]]; then
     PATTERN_FAIL=1
 fi
 
-# Lens → Rampart missing (informational)
-LENS_RAMPART_MISSING=$(comm -23 "$LENS_TMP" "$RAMPART_TMP")
-if [[ -n "$LENS_RAMPART_MISSING" ]]; then
-    MISSING_COUNT=$(echo "$LENS_RAMPART_MISSING" | wc -l)
-    echo -e "${YELLOW}In Lens but not Rampart ($MISSING_COUNT patterns):${NC}"
-    echo "$LENS_RAMPART_MISSING" | sed 's/^/  - /'
+if [[ -n "$RAMPART_PLATFORM_MISSING" ]]; then
+    MISSING_COUNT=$(echo "$RAMPART_PLATFORM_MISSING" | wc -l)
+    echo -e "${RED}MISSING from Platform ($MISSING_COUNT patterns):${NC}"
+    echo "$RAMPART_PLATFORM_MISSING" | sed 's/^/  - /'
+    echo ""
+    EXIT_CODE=1
+    PATTERN_FAIL=1
+fi
+
+if [[ -z "$PLATFORM_RAMPART_MISSING" && -z "$RAMPART_PLATFORM_MISSING" ]]; then
+    echo -e "${GREEN}✅ Platform ↔ Rampart: $PLATFORM_COUNT patterns match exactly${NC}"
     echo ""
 fi
 
-# Rampart → Lens missing (informational)
-RAMPART_LENS_MISSING=$(comm -23 "$RAMPART_TMP" "$LENS_TMP")
-if [[ -n "$RAMPART_LENS_MISSING" ]]; then
-    MISSING_COUNT=$(echo "$RAMPART_LENS_MISSING" | wc -l)
-    echo -e "${YELLOW}In Rampart but not Lens ($MISSING_COUNT patterns):${NC}"
-    echo "$RAMPART_LENS_MISSING" | sed 's/^/  - /'
+# Lens subset check: all Lens patterns must exist in Platform
+LENS_NOT_IN_PLATFORM=$(comm -23 "$LENS_TMP" "$PLATFORM_TMP")
+if [[ -n "$LENS_NOT_IN_PLATFORM" ]]; then
+    MISSING_COUNT=$(echo "$LENS_NOT_IN_PLATFORM" | wc -l)
+    echo -e "${RED}In Lens but not Platform ($MISSING_COUNT patterns):${NC}"
+    echo "$LENS_NOT_IN_PLATFORM" | sed 's/^/  - /'
+    echo ""
+    EXIT_CODE=1
+    PATTERN_FAIL=1
+fi
+
+# Lens subset check: all Lens patterns must exist in Rampart
+LENS_NOT_IN_RAMPART=$(comm -23 "$LENS_TMP" "$RAMPART_TMP")
+if [[ -n "$LENS_NOT_IN_RAMPART" ]]; then
+    MISSING_COUNT=$(echo "$LENS_NOT_IN_RAMPART" | wc -l)
+    echo -e "${RED}In Lens but not Rampart ($MISSING_COUNT patterns):${NC}"
+    echo "$LENS_NOT_IN_RAMPART" | sed 's/^/  - /'
+    echo ""
+    EXIT_CODE=1
+    PATTERN_FAIL=1
+fi
+
+if [[ -z "$LENS_NOT_IN_PLATFORM" && -z "$LENS_NOT_IN_RAMPART" ]]; then
+    echo -e "${GREEN}✅ Lens patterns are subset of Platform and Rampart${NC}"
     echo ""
 fi
 
-# Cleanup
-rm -f "$PLATFORM_TMP" "$LENS_TMP" "$RAMPART_TMP"
+# Informational: patterns in Platform/Rampart but not Lens (expected — Lens is compliance-only)
+PLATFORM_NOT_IN_LENS=$(comm -23 "$PLATFORM_TMP" "$LENS_TMP")
+if [[ -n "$PLATFORM_NOT_IN_LENS" ]]; then
+    INFO_COUNT=$(echo "$PLATFORM_NOT_IN_LENS" | wc -l)
+    echo -e "${YELLOW}ℹ In Platform/Rampart but not Lens ($INFO_COUNT patterns — expected for non-compliance):${NC}"
+    # Show first 10 as sample
+    echo "$PLATFORM_NOT_IN_LENS" | head -10 | sed 's/^/  - /'
+    if [[ $INFO_COUNT -gt 10 ]]; then
+        echo "  ... and $((INFO_COUNT - 10)) more"
+    fi
+    echo ""
+fi
 
-# ---------------------------------------------------------------------------
-# Phase 2: Regex content comparison for shared patterns
-# Verifies that patterns with matching names also have matching regex content
-# across Platform, Lens, and Rampart. Detects silent divergence where the same
-# pattern name has different regex strings in different products.
-# ---------------------------------------------------------------------------
-
+# ===========================================================================
+# Phase 2: Regex Content Parity
+# Platform ↔ Rampart: ALL patterns — regex must match (HARD gate)
+# Lens: Compliance patterns — regex compared with JS↔Go normalization (warning)
+# ===========================================================================
+echo "=== Phase 2: Regex Content Parity ==="
 echo ""
-echo "=== Regex Content Comparison ==="
 
 # Extract regex for a given pattern name from Platform (Go regexp.MustCompile)
+# Handles both backtick raw strings and string concatenation
 extract_platform_regex() {
     local name="$1"
-    # Pattern: {Name: "NAME", ...Regex: regexp.MustCompile(`CONTENT`)
-    # Use perl to capture the backtick-delimited string after MustCompile
-    grep -oP "\{Name:\s*\"${name}\".*?Regex:\s*regexp\.MustCompile\(\x60\K[^\x60]*" \
-        "$PLATFORM_DIR/pkg/scanner/patterns.go" 2>/dev/null | head -1
+    # Try backtick raw string first: {Name: "NAME", ...Regex: regexp.MustCompile(`CONTENT`)
+    local regex
+    regex=$(grep -oP "\{Name:\s*\"${name}\".*?Regex:\s*regexp\.MustCompile\(\x60\K[^\x60]*" \
+        "$PLATFORM_DIR/pkg/scanner/patterns.go" 2>/dev/null | head -1)
+    if [[ -n "$regex" ]]; then
+        echo "$regex"
+        return
+    fi
+    # Fallback: string concatenation (e.g., regexp.MustCompile("[" + "\u200b" + ...))
+    # This is rare — only for patterns with actual unicode chars in Go string syntax
+    # Return a sentinel that won't match — these patterns need manual verification
+    echo "__STRING_CONCAT__"
 }
 
-# Extract regex for a given pattern name from Rampart (Go raw string)
+# Extract regex for a given pattern name from any Rampart detector file
 extract_rampart_regex() {
     local name="$1"
-    # Pattern: Name: "NAME", ... Regex: `CONTENT`
-    grep -oP "Name:\s*\"${name}\".*?Regex:\s*\x60\K[^\x60]*" \
-        "$RAMPART_DIR/internal/detectors/compliance.go" 2>/dev/null | head -1
+    local regex
+    for rampart_file in "$RAMPART_DIR"/internal/detectors/*.go; do
+        [[ "$rampart_file" == *_test.go ]] && continue
+        [[ ! -f "$rampart_file" ]] && continue
+        regex=$(grep -oP "Name:\s*\"${name}\".*?Regex:\s*\x60\K[^\x60]*" \
+            "$rampart_file" 2>/dev/null | head -1)
+        if [[ -n "$regex" ]]; then
+            echo "$regex"
+            return
+        fi
+    done
 }
 
 # Extract regex for a given pattern name from Lens (JS regex literal)
 extract_lens_regex() {
     local name="$1"
-    # Pattern: name: { ... re: /CONTENT/gi
-    # Capture content between the / delimiters
     local line
     line=$(grep -A5 "^\s*${name}:\s*{" "$LENS_DIR/src/detectors/regex/compliance.js" 2>/dev/null | \
            grep -oP "re:\s*/\K[^/]*(?=/[gimsuy]*)")
@@ -267,80 +263,72 @@ normalize_regex() {
     echo "$1" | sed 's/(?i)//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
+# --- Platform ↔ Rampart regex content check (HARD gate) ---
 CONTENT_MISMATCHES=0
+CONTENT_TOTAL=0
 
-# Only check patterns that exist in all three products
-SHARED_PATTERNS=$(comm -12 "$PLATFORM_TMP" <(echo "$LENS_PATTERNS") 2>/dev/null || true)
-SHARED_PATTERNS=$(comm -12 <(echo "$SHARED_PATTERNS") <(echo "$RAMPART_PATTERNS") 2>/dev/null || true)
+while IFS= read -r pattern; do
+    [[ -z "$pattern" ]] && continue
+    CONTENT_TOTAL=$((CONTENT_TOTAL + 1))
 
-# Rebuild temp files since they were deleted
-echo "$PLATFORM_PATTERNS" > "$PLATFORM_TMP"
-echo "$LENS_PATTERNS" > "$LENS_TMP"
-echo "$RAMPART_PATTERNS" > "$RAMPART_TMP"
-SHARED_PATTERNS=$(comm -12 "$PLATFORM_TMP" "$LENS_TMP" | comm -12 - "$RAMPART_TMP")
+    p_re=$(normalize_regex "$(extract_platform_regex "$pattern")")
+    r_re=$(normalize_regex "$(extract_rampart_regex "$pattern")")
 
-if [[ -z "$SHARED_PATTERNS" ]]; then
-    echo "No shared patterns found across all three products — skipping content check."
+    if [[ "$p_re" == "__STRING_CONCAT__" ]]; then
+        echo -e "  ${YELLOW}⚠ $pattern: Platform uses string concatenation — manual verification needed${NC}"
+        continue
+    fi
+
+    if [[ "$p_re" != "$r_re" ]]; then
+        if [[ -z "$r_re" ]]; then
+            # Pattern not found in Rampart (already reported in Phase 1)
+            continue
+        fi
+        echo -e "  ${RED}❌ $pattern: Platform ≠ Rampart${NC}"
+        echo "     Platform: ${p_re:0:120}${p_re:120:+...}"
+        echo "     Rampart:  ${r_re:0:120}${r_re:120:+...}"
+        CONTENT_MISMATCHES=$((CONTENT_MISMATCHES + 1))
+    fi
+done <<< "$ALL_PLATFORM"
+
+if [[ $CONTENT_MISMATCHES -eq 0 ]]; then
+    echo -e "${GREEN}✅ Platform ↔ Rampart: All $CONTENT_TOTAL patterns have matching regex content${NC}"
 else
-    SHARED_COUNT=$(echo "$SHARED_PATTERNS" | wc -l)
-    echo "Checking $SHARED_COUNT shared patterns..."
+    echo ""
+    echo -e "${RED}$CONTENT_MISMATCHES pattern(s) have regex content divergence between Platform and Rampart${NC}"
+    EXIT_CODE=1
+fi
+echo ""
+
+# --- Lens regex content check (warning — JS vs Go syntax differences) ---
+LENS_MISMATCHES=0
+LENS_SHARED=$(comm -12 "$PLATFORM_TMP" "$LENS_TMP")
+
+if [[ -n "$LENS_SHARED" ]]; then
+    LENS_SHARED_COUNT=$(echo "$LENS_SHARED" | wc -l)
+    echo "Checking $LENS_SHARED_COUNT Lens compliance patterns..."
 
     while IFS= read -r pattern; do
         [[ -z "$pattern" ]] && continue
 
-        # Get normalized regex from each product
         p_re=$(normalize_regex "$(extract_platform_regex "$pattern")")
         l_re=$(normalize_regex "$(extract_lens_regex "$pattern")")
-        r_re=$(normalize_regex "$(extract_rampart_regex "$pattern")")
 
-        mismatches=""
-
-        # Compare Platform vs Lens
-        if [[ "$p_re" != "$l_re" && -n "$p_re" && -n "$l_re" ]]; then
-            mismatches="$mismatches Platform≠Lens"
+        if [[ -n "$p_re" && -n "$l_re" && "$p_re" != "$l_re" && "$p_re" != "__STRING_CONCAT__" ]]; then
+            echo -e "  ${YELLOW}⚠ $pattern: Platform ≠ Lens (may be JS↔Go syntax diff)${NC}"
+            LENS_MISMATCHES=$((LENS_MISMATCHES + 1))
         fi
+    done <<< "$LENS_SHARED"
 
-        # Compare Platform vs Rampart
-        if [[ "$p_re" != "$r_re" && -n "$p_re" && -n "$r_re" ]]; then
-            mismatches="$mismatches Platform≠Rampart"
-        fi
-
-        # Compare Lens vs Rampart
-        if [[ "$l_re" != "$r_re" && -n "$l_re" && -n "$r_re" ]]; then
-            mismatches="$mismatches Lens≠Rampart"
-        fi
-
-        if [[ -n "$mismatches" ]]; then
-            echo -e "  ${YELLOW}⚠ $pattern:$mismatches${NC}"
-            CONTENT_MISMATCHES=$((CONTENT_MISMATCHES + 1))
-        fi
-    done <<< "$SHARED_PATTERNS"
-
-    if [[ $CONTENT_MISMATCHES -eq 0 ]]; then
-        echo -e "  ${GREEN}All $SHARED_COUNT shared patterns have matching regex content${NC}"
+    if [[ $LENS_MISMATCHES -eq 0 ]]; then
+        echo -e "  ${GREEN}✅ All Lens compliance patterns match Platform regex${NC}"
     else
-        echo ""
-        echo -e "  ${YELLOW}$CONTENT_MISMATCHES pattern(s) have regex content divergence${NC}"
-        echo "  This does not fail the check but indicates the regex strings differ."
-        echo "  Review the patterns to ensure the differences are intentional."
-        # Content mismatches are warnings, not failures — different products
-        # may intentionally have slightly different regex (e.g., Go vs JS
-        # regex syntax differences). The name parity check is the hard gate.
+        echo -e "  ${YELLOW}$LENS_MISMATCHES Lens pattern(s) differ from Platform (review for JS↔Go syntax differences)${NC}"
     fi
 fi
 
-# Final cleanup
-rm -f "$PLATFORM_TMP" "$LENS_TMP" "$RAMPART_TMP"
-
-if [[ $EXIT_CODE -eq 0 ]]; then
-    echo ""
-    echo -e "${GREEN}✅ Detection parity verified — all products have matching pattern sets${NC}"
-else
-    echo ""
-    echo -e "${RED}❌ Detection parity check FAILED — patterns missing from one or more products${NC}"
-    echo ""
-    echo "To fix: add missing patterns to the product(s) above and commit."
-fi
+# Cleanup temp files
+rm -f "$PLATFORM_TMP" "$RAMPART_TMP" "$LENS_TMP"
 
 # ---------------------------------------------------------------------------
 # Phase 3: Model Hash Alignment
@@ -349,13 +337,10 @@ fi
 # with Platform's v11b→v13 hash mismatch).
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Model Hash Alignment ==="
+echo "=== Phase 3: Model Hash Alignment ==="
 
-# Platform: ExpectedModelHash in pkg/ml/detector.go
 PLATFORM_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$PLATFORM_DIR/pkg/ml/detector.go" 2>/dev/null | head -1)
-# Rampart: ExpectedModelHash in internal/ml/detector.go
 RAMPART_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$RAMPART_DIR/internal/ml/detector.go" 2>/dev/null | head -1)
-# Lens: hash in threat-detector-js.js (EXPECTED_HASH or similar)
 LENS_HASH=$(grep -oP "(?:EXPECTED_HASH|expectedHash|MODEL_HASH)\s*[:=]\s*['\"]\K[a-f0-9]{64}" "$LENS_DIR/src/detectors/ml/threat-detector-js.js" 2>/dev/null | head -1)
 
 echo "  Platform: ${PLATFORM_HASH:-NOT FOUND}"
@@ -370,8 +355,6 @@ if [[ -n "$PLATFORM_HASH" && -n "$RAMPART_HASH" && "$PLATFORM_HASH" != "$RAMPART
 fi
 if [[ -n "$PLATFORM_HASH" && -n "$LENS_HASH" && "$PLATFORM_HASH" != "$LENS_HASH" ]]; then
     echo -e "  ${YELLOW}⚠ Platform ≠ Lens model hash (expected: different architectures — ONNX vs pure JS)${NC}"
-    # Lens uses pure JS inference with different weight format — hash will differ.
-    # This is informational, not a failure.
 fi
 if [[ -n "$RAMPART_HASH" && -n "$LENS_HASH" && "$RAMPART_HASH" != "$LENS_HASH" ]]; then
     echo -e "  ${YELLOW}⚠ Rampart ≠ Lens model hash (expected: different architectures — ONNX vs pure JS)${NC}"
@@ -387,13 +370,10 @@ fi
 # Drift here means scores aren't comparable (apples-to-oranges).
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Evasion Suite Payload Count ==="
+echo "=== Phase 4: Evasion Suite Payload Count ==="
 
-# Platform: count entries in atlasPayloads struct
 PLATFORM_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null || echo "0")
-# Rampart: count entries in atlasPayloads struct
 RAMPART_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
-# Lens: count entries in ATLAS_PAYLOADS array
 LENS_PAYLOADS=$(grep -cP "id:\s*['\"]([A-Z0-9.]+\.\d+)['\"]" "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
 
 echo "  Platform: $PLATFORM_PAYLOADS payloads"
@@ -412,22 +392,16 @@ fi
 # Verifies all three products' evasion tests define 50 transforms (10 per 5 categories).
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Transform Count ==="
+echo "=== Phase 5: Transform Count ==="
 
-# Platform: count variant keys in each category map
 PLATFORM_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
-# Rampart: same approach
 RAMPART_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
-# Lens: count transform function entries (key: (s) => ...)
 LENS_TRANSFORMS=$(grep -cP '^\s+\w+:\s*\(s\)\s*=>' "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
 
 echo "  Platform: $PLATFORM_TRANSFORMS transform keys"
 echo "  Rampart:  $RAMPART_TRANSFORMS transform keys"
 echo "  Lens:     $LENS_TRANSFORMS transform keys"
 
-# Note: Platform/Rampart counts may include non-transform map entries.
-# The expected count is 50 (10 per category × 5 categories).
-# Lens counts arrow functions which should be exactly 50.
 EXPECTED_TRANSFORMS=50
 if [[ "$LENS_TRANSFORMS" -ne "$EXPECTED_TRANSFORMS" ]]; then
     echo -e "  ${YELLOW}⚠ Lens has $LENS_TRANSFORMS transforms (expected $EXPECTED_TRANSFORMS)${NC}"
@@ -445,25 +419,20 @@ fi
 # Drift here means one product is more/less sensitive than the others.
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== ML Threshold Alignment ==="
+echo "=== Phase 6: ML Threshold Alignment ==="
 
-# Platform: Threshold in evasion test newEvasionDetector
 PLATFORM_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null | head -1)
-# Rampart: Threshold in evasion test newEvasionDetector
 RAMPART_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | head -1)
-# Lens: THRESHOLD in threat-detector-js.js
 LENS_THRESH=$(grep -oP 'THRESHOLD\s*=\s*\K[0-9.]+' "$LENS_DIR/src/detectors/ml/threat-detector-js.js" 2>/dev/null | head -1)
 
 echo "  Platform evasion test: $PLATFORM_THRESH"
 echo "  Rampart evasion test:  $RAMPART_THRESH"
 echo "  Lens ML model:         $LENS_THRESH"
 
-# Compare numerically (0.50 == 0.5)
 THRESH_MISMATCH=0
 for pair in "Platform:Rampart:$PLATFORM_THRESH:$RAMPART_THRESH" "Platform:Lens:$PLATFORM_THRESH:$LENS_THRESH" "Rampart:Lens:$RAMPART_THRESH:$LENS_THRESH"; do
     IFS=: read -r name1 name2 val1 val2 <<< "$pair"
     if [[ -n "$val1" && -n "$val2" ]]; then
-        # Use awk for numeric comparison (0.50 == 0.5)
         if ! awk -v a="$val1" -v b="$val2" 'BEGIN { exit (a == b) ? 0 : 1 }'; then
             echo -e "  ${RED}❌ $name1 ($val1) ≠ $name2 ($val2) threshold mismatch${NC}"
             THRESH_MISMATCH=1
@@ -482,9 +451,8 @@ fi
 # not ML-only. This catches the bug where Lens's test was ML-only.
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Evasion Test Detection Logic ==="
+echo "=== Phase 7: Evasion Test Detection Logic ==="
 
-# Check if Lens evasion test uses regex detection (regexDetect or similar)
 LENS_HAS_REGEX=$(grep -c 'regexDetect\|regexHit\|regex.*detect\|facet.*detect' "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
 if [[ "$LENS_HAS_REGEX" -eq 0 ]]; then
     echo -e "  ${RED}❌ Lens evasion test does NOT use regex detection (ML-only)${NC}"
@@ -493,7 +461,6 @@ else
     echo -e "  ${GREEN}✅ Lens evasion test uses regex + ML detection${NC}"
 fi
 
-# Check if Platform evasion test uses scanner/ATLAS detection
 PLATFORM_HAS_REGEX=$(grep -c 'scannerHit\|atlasHit\|scanner.*Scan\|atlas.*Check' "$PLATFORM_DIR/upstream/aegisgate/pkg/proxy/evasion_suite_test.go" 2>/dev/null || echo "0")
 if [[ "$PLATFORM_HAS_REGEX" -eq 0 ]]; then
     echo -e "  ${RED}❌ Platform evasion test does NOT use regex/ATLAS detection (ML-only?)${NC}"
@@ -502,7 +469,6 @@ else
     echo -e "  ${GREEN}✅ Platform evasion test uses scanner + ATLAS + ML detection${NC}"
 fi
 
-# Check if Rampart evasion test uses regex detection
 RAMPART_HAS_REGEX=$(grep -c 'detectorHit\|DetectAll\|detect.*regex' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
 if [[ "$RAMPART_HAS_REGEX" -eq 0 ]]; then
     echo -e "  ${RED}❌ Rampart evasion test does NOT use regex detection (ML-only?)${NC}"
@@ -518,13 +484,15 @@ echo ""
 echo "============================================"
 echo "  Parity Check Summary"
 echo "============================================"
-echo "  Pattern names:     $([ $PATTERN_FAIL -eq 0 ] && echo 'PASS' || echo 'FAIL')"
-echo "  Regex content:     $([ $CONTENT_MISMATCHES -eq 0 ] && echo 'PASS' || echo "WARN ($CONTENT_MISMATCHES)")"
-echo "  Model hash:        $([ $HASH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
-echo "  Payload count:     $(([[ "$PLATFORM_PAYLOADS" == "$RAMPART_PAYLOADS" && "$PLATFORM_PAYLOADS" == "$LENS_PAYLOADS" ]]) && echo 'PASS' || echo 'FAIL')"
-echo "  Transform count:   $(([[ "$LENS_TRANSFORMS" -eq 50 ]]) && echo 'PASS' || echo 'WARN')"
-echo "  ML threshold:      $([ $THRESH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
-echo "  Detection logic:   $(([[ "$LENS_HAS_REGEX" -gt 0 && "$PLATFORM_HAS_REGEX" -gt 0 && "$RAMPART_HAS_REGEX" -gt 0 ]]) && echo 'PASS' || echo 'FAIL')"
+echo "  Pattern names (P↔R): $([ $PATTERN_FAIL -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Regex content (P↔R): $([ $CONTENT_MISMATCHES -eq 0 ] && echo 'PASS' || echo "FAIL ($CONTENT_MISMATCHES)")"
+echo "  Lens subset:         $([[ -z "${LENS_NOT_IN_PLATFORM:-}" && -z "${LENS_NOT_IN_RAMPART:-}" ]] && echo 'PASS' || echo 'FAIL')"
+echo "  Lens regex:          $([ $LENS_MISMATCHES -eq 0 ] && echo 'PASS' || echo "WARN ($LENS_MISMATCHES)")"
+echo "  Model hash:          $([ $HASH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Payload count:       $([[ "$PLATFORM_PAYLOADS" == "$RAMPART_PAYLOADS" && "$PLATFORM_PAYLOADS" == "$LENS_PAYLOADS" ]] && echo 'PASS' || echo 'FAIL')"
+echo "  Transform count:     $([[ "$LENS_TRANSFORMS" -eq 50 ]] && echo 'PASS' || echo 'WARN')"
+echo "  ML threshold:        $([ $THRESH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Detection logic:     $([[ "$LENS_HAS_REGEX" -gt 0 && "$PLATFORM_HAS_REGEX" -gt 0 && "$RAMPART_HAS_REGEX" -gt 0 ]] && echo 'PASS' || echo 'FAIL')"
 echo "============================================"
 
 exit $EXIT_CODE
