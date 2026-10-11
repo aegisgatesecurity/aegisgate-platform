@@ -24,7 +24,7 @@
 #   - Only ca-certificates and wget added (minimal attack surface, wget needed for HEALTHCHECK).
 # =========================================================================
 
-# Builder stage: Go 1.27.0 on Debian bookworm with ONNX Runtime v1.29.0.
+# Builder stage: Go 1.27.1 on Debian bookworm with ONNX Runtime v1.29.0.
 FROM golang:1.27.1-bookworm AS builder
 
 # Install build tools + download ONNX Runtime v1.29.0
@@ -87,11 +87,14 @@ RUN mkdir -p /data/certs /data/audit /data/logs /app/certs && \
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
 
 # Security hardening: purge non-essential packages to reduce attack surface.
-# Removes bash and perl-base — not needed at runtime (appuser shell is nologin,
-# Go binary has no perl dependencies). Reduces image by ~15MB and eliminates
-# two common local privilege escalation vectors.
+# Removes bash, perl-base, and gnutls — not needed at runtime (appuser shell
+# is nologin, Go binary has no perl/gnutls dependencies, TLS is handled by
+# Go's crypto/tls which uses the standard library, not gnutls).
+# Eliminates 6 CRITICAL/HIGH Trivy alerts from gnutls CVEs and reduces image
+# by ~20MB. Two common local privilege escalation vectors (bash, perl) removed.
 RUN apt-get update && \
-    apt-get purge -y --allow-remove-essential bash perl-base && \
+    apt-get purge -y --allow-remove-essential bash perl-base \
+        gnutls-bin libgnutls30 libgnutlsxx30 gnutls-doc && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/*
 
