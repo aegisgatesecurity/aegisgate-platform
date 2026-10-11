@@ -87,15 +87,17 @@ RUN mkdir -p /data/certs /data/audit /data/logs /app/certs && \
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
 
 # Security hardening: purge non-essential packages to reduce attack surface.
-# Removes bash, perl-base, and gnutls — not needed at runtime (appuser shell
-# is nologin, Go binary has no perl/gnutls dependencies, TLS is handled by
-# Go's crypto/tls which uses the standard library, not gnutls).
-# Eliminates 6 CRITICAL/HIGH Trivy alerts from gnutls CVEs and reduces image
-# by ~20MB. Two common local privilege escalation vectors (bash, perl) removed.
+# Removes bash, perl-base, gnutls, and apt — none needed at runtime (appuser
+# shell is nologin, Go binary uses crypto/tls not gnutls, no package management
+# needed in production container). Eliminates 6 CRITICAL/HIGH Trivy alerts from
+# gnutls CVEs and reduces image by ~25MB. Two common local privilege escalation
+# vectors (bash, perl) removed.
+# Note: apt depends on libgnutls30, so apt must be purged alongside gnutls.
+# autoremove runs BEFORE apt is purged.
 RUN apt-get update && \
-    apt-get purge -y --allow-remove-essential bash perl-base \
-        gnutls-bin libgnutls30 libgnutlsxx30 gnutls-doc && \
     apt-get autoremove -y && \
+    apt-get purge -y --allow-remove-essential bash perl-base \
+        gnutls-bin libgnutls30 libgnutlsxx30 gnutls-doc apt && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/*
 
 # Run as non-root user (shell disabled via /usr/sbin/nologin)
