@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# AegisGate Platform — Triple Detection Parity Checker
+# AegisGate Platform — Detection Parity Checker
 #
-# Compares detection patterns across Platform, Lens, and Rampart repos.
+# Compares detection patterns across Platform, Lens, Rampart, and Scanner repos.
 #
 # Parity model:
 #   Platform ↔ Rampart: FULL parity — ALL pattern names AND regex content must match.
+#   Scanner ↔ Rampart: FULL parity — ALL pattern names AND regex content must match.
+#                       (Scanner's detection engine was copied from Rampart — copy integrity check)
 #   Lens: Compliance-only parity — Lens patterns must be a subset of Platform/Rampart.
 #         Regex content is compared with JS↔Go normalization (warnings for syntax diffs).
 #
 # Usage:
 #   ./scripts/check-detection-parity.sh
 #
-# Requires: All three repos cloned as siblings under AegisGate/ directory.
+# Requires: Repos cloned as siblings under AegisGate/ directory.
 #   - aegisgate-platform (or consolidated/aegisgate-platform)
 #   - aegisgate-lens
 #   - aegisgate-rampart
+#   - aegisgate-scanner (optional — Scanner checks are skipped if not found)
 
 set -euo pipefail
 
@@ -29,6 +32,7 @@ NC='\033[0m' # No Color
 PLATFORM_DIR="${PLATFORM_DIR:-}"
 LENS_DIR="${LENS_DIR:-}"
 RAMPART_DIR="${RAMPART_DIR:-}"
+SCANNER_DIR="${SCANNER_DIR:-}"
 
 # Auto-detect paths if not set
 if [[ -z "$PLATFORM_DIR" ]]; then
@@ -65,13 +69,25 @@ if [[ -z "$RAMPART_DIR" ]]; then
     done
 fi
 
+if [[ -z "$SCANNER_DIR" ]]; then
+    for candidate in \
+        "$(dirname "$0")/../../aegisgate-scanner" \
+        "$(dirname "$0")/../../../aegisgate-scanner"; do
+        if [[ -f "$candidate/internal/detectors/compliance.go" ]]; then
+            SCANNER_DIR="$candidate"
+            break
+        fi
+    done
+fi
+
 echo "============================================"
-echo "  Triple Detection Parity Checker"
+echo "  Detection Parity Checker"
 echo "============================================"
 echo ""
 echo "Platform: ${PLATFORM_DIR:-NOT FOUND}"
 echo "Lens:     ${LENS_DIR:-NOT FOUND}"
 echo "Rampart:  ${RAMPART_DIR:-NOT FOUND}"
+echo "Scanner:  ${SCANNER_DIR:-NOT FOUND}"
 echo ""
 
 # Verify paths exist
@@ -93,9 +109,20 @@ if [[ -z "$RAMPART_DIR" || ! -f "$RAMPART_DIR/internal/detectors/compliance.go" 
     exit 1
 fi
 
+# Scanner is optional — warn but don't fail
+SCANNER_ENABLED=0
+if [[ -z "$SCANNER_DIR" || ! -f "$SCANNER_DIR/internal/detectors/compliance.go" ]]; then
+    echo -e "${YELLOW}WARNING: Scanner compliance.go not found. Set SCANNER_DIR environment variable${NC}"
+    echo -e "${YELLOW}         Scanner parity checks will be skipped.${NC}"
+    echo ""
+else
+    SCANNER_ENABLED=1
+fi
+
 # ===========================================================================
 # Phase 1: Pattern Name Parity
 # Platform ↔ Rampart: FULL parity (ALL patterns must match)
+# Scanner ↔ Rampart: FULL parity (ALL patterns must match — copy integrity)
 # Lens: Subset check (all Lens patterns must exist in Platform and Rampart)
 # ===========================================================================
 echo "=== Phase 1: Pattern Name Parity ==="
@@ -114,16 +141,33 @@ for rampart_file in "$RAMPART_DIR"/internal/detectors/*.go; do
 done
 ALL_RAMPART=$(echo "$ALL_RAMPART" | grep -v '^$' | sort -u)
 
+# Scanner: extract ALL pattern names from ALL detector .go files (excluding tests)
+ALL_SCANNER=""
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    for scanner_file in "$SCANNER_DIR"/internal/detectors/*.go; do
+        [[ "$scanner_file" == *_test.go ]] && continue
+        [[ ! -f "$scanner_file" ]] && continue
+        names=$(grep -oP 'Name:\s*"\K[^"]+' "$scanner_file" 2>/dev/null || true)
+        ALL_SCANNER="$ALL_SCANNER$names"$'\n'
+    done
+    ALL_SCANNER=$(echo "$ALL_SCANNER" | grep -v '^$' | sort -u)
+fi
+
 # Lens: extract pattern keys from compliance.js
 ALL_LENS=$(grep -oP '^\s{4}\K[a-z_][a-z0-9_]*(?=\s*:\s*\{)' "$LENS_DIR/src/detectors/regex/compliance.js" | sort -u)
 
 PLATFORM_COUNT=$(echo "$ALL_PLATFORM" | wc -l)
 RAMPART_COUNT=$(echo "$ALL_RAMPART" | wc -l)
+SCANNER_COUNT=0
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_COUNT=$(echo "$ALL_SCANNER" | wc -l)
+fi
 LENS_COUNT=$(echo "$ALL_LENS" | wc -l)
 
 echo "Pattern counts:"
 echo "  Platform: $PLATFORM_COUNT"
 echo "  Rampart:  $RAMPART_COUNT"
+echo "  Scanner:  ${SCANNER_COUNT}$([[ $SCANNER_ENABLED -eq 0 ]] && echo ' (not found)')"
 echo "  Lens:     $LENS_COUNT (compliance only)"
 echo ""
 
@@ -131,12 +175,17 @@ echo ""
 PLATFORM_TMP=$(mktemp)
 RAMPART_TMP=$(mktemp)
 LENS_TMP=$(mktemp)
+SCANNER_TMP=$(mktemp)
 echo "$ALL_PLATFORM" > "$PLATFORM_TMP"
 echo "$ALL_RAMPART" > "$RAMPART_TMP"
 echo "$ALL_LENS" > "$LENS_TMP"
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    echo "$ALL_SCANNER" > "$SCANNER_TMP"
+fi
 
 EXIT_CODE=0
 PATTERN_FAIL=0
+SCANNER_PATTERN_FAIL=0
 
 # Platform ↔ Rampart: FULL parity (hard gate)
 PLATFORM_RAMPART_MISSING=$(comm -23 "$PLATFORM_TMP" "$RAMPART_TMP")
@@ -163,6 +212,35 @@ fi
 if [[ -z "$PLATFORM_RAMPART_MISSING" && -z "$RAMPART_PLATFORM_MISSING" ]]; then
     echo -e "${GREEN}✅ Platform ↔ Rampart: $PLATFORM_COUNT patterns match exactly${NC}"
     echo ""
+fi
+
+# Scanner ↔ Rampart: FULL parity (hard gate) — copy integrity check
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_RAMPART_MISSING=$(comm -23 "$SCANNER_TMP" "$RAMPART_TMP")
+    RAMPART_SCANNER_MISSING=$(comm -13 "$SCANNER_TMP" "$RAMPART_TMP")
+
+    if [[ -n "$SCANNER_RAMPART_MISSING" ]]; then
+        MISSING_COUNT=$(echo "$SCANNER_RAMPART_MISSING" | wc -l)
+        echo -e "${RED}MISSING from Scanner ($MISSING_COUNT patterns):${NC}"
+        echo "$SCANNER_RAMPART_MISSING" | sed 's/^/  - /'
+        echo ""
+        EXIT_CODE=1
+        SCANNER_PATTERN_FAIL=1
+    fi
+
+    if [[ -n "$RAMPART_SCANNER_MISSING" ]]; then
+        MISSING_COUNT=$(echo "$RAMPART_SCANNER_MISSING" | wc -l)
+        echo -e "${RED}MISSING from Rampart (in Scanner but not Rampart) ($MISSING_COUNT patterns):${NC}"
+        echo "$RAMPART_SCANNER_MISSING" | sed 's/^/  - /'
+        echo ""
+        EXIT_CODE=1
+        SCANNER_PATTERN_FAIL=1
+    fi
+
+    if [[ -z "$SCANNER_RAMPART_MISSING" && -z "$RAMPART_SCANNER_MISSING" ]]; then
+        echo -e "${GREEN}✅ Scanner ↔ Rampart: $SCANNER_COUNT patterns match exactly${NC}"
+        echo ""
+    fi
 fi
 
 # Lens subset check: all Lens patterns must exist in Platform
@@ -208,6 +286,7 @@ fi
 # ===========================================================================
 # Phase 2: Regex Content Parity
 # Platform ↔ Rampart: ALL patterns — regex must match (HARD gate)
+# Scanner ↔ Rampart: ALL patterns — regex must match (HARD gate — copy integrity)
 # Lens: Compliance patterns — regex compared with JS↔Go normalization (warning)
 # ===========================================================================
 echo "=== Phase 2: Regex Content Parity ==="
@@ -240,6 +319,25 @@ extract_rampart_regex() {
         [[ ! -f "$rampart_file" ]] && continue
         regex=$(grep -oP "Name:\s*\"${name}\".*?Regex:\s*\x60\K[^\x60]*" \
             "$rampart_file" 2>/dev/null | head -1)
+        if [[ -n "$regex" ]]; then
+            echo "$regex"
+            return
+        fi
+    done
+}
+
+# Extract regex for a given pattern name from any Scanner detector file
+extract_scanner_regex() {
+    local name="$1"
+    local regex
+    if [[ $SCANNER_ENABLED -ne 1 ]]; then
+        return
+    fi
+    for scanner_file in "$SCANNER_DIR"/internal/detectors/*.go; do
+        [[ "$scanner_file" == *_test.go ]] && continue
+        [[ ! -f "$scanner_file" ]] && continue
+        regex=$(grep -oP "Name:\s*\"${name}\".*?Regex:\s*\x60\K[^\x60]*" \
+            "$scanner_file" 2>/dev/null | head -1)
         if [[ -n "$regex" ]]; then
             echo "$regex"
             return
@@ -300,6 +398,41 @@ else
 fi
 echo ""
 
+# --- Scanner ↔ Rampart regex content check (HARD gate) — copy integrity ---
+SCANNER_REGEX_MISMATCHES=0
+SCANNER_REGEX_TOTAL=0
+
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    while IFS= read -r pattern; do
+        [[ -z "$pattern" ]] && continue
+        SCANNER_REGEX_TOTAL=$((SCANNER_REGEX_TOTAL + 1))
+
+        s_re=$(normalize_regex "$(extract_scanner_regex "$pattern")")
+        r_re=$(normalize_regex "$(extract_rampart_regex "$pattern")")
+
+        if [[ -z "$r_re" ]]; then
+            # Pattern not found in Rampart (already reported in Phase 1)
+            continue
+        fi
+
+        if [[ "$s_re" != "$r_re" ]]; then
+            echo -e "  ${RED}❌ $pattern: Scanner ≠ Rampart${NC}"
+            echo "     Scanner:  ${s_re:0:120}${s_re:120:+...}"
+            echo "     Rampart:  ${r_re:0:120}${r_re:120:+...}"
+            SCANNER_REGEX_MISMATCHES=$((SCANNER_REGEX_MISMATCHES + 1))
+        fi
+    done <<< "$ALL_SCANNER"
+
+    if [[ $SCANNER_REGEX_MISMATCHES -eq 0 ]]; then
+        echo -e "${GREEN}✅ Scanner ↔ Rampart: All $SCANNER_REGEX_TOTAL patterns have matching regex content${NC}"
+    else
+        echo ""
+        echo -e "${RED}$SCANNER_REGEX_MISMATCHES pattern(s) have regex content divergence between Scanner and Rampart${NC}"
+        EXIT_CODE=1
+    fi
+fi
+echo ""
+
 # --- Lens regex content check (warning — JS vs Go syntax differences) ---
 LENS_MISMATCHES=0
 LENS_SHARED=$(comm -12 "$PLATFORM_TMP" "$LENS_TMP")
@@ -328,13 +461,15 @@ if [[ -n "$LENS_SHARED" ]]; then
 fi
 
 # Cleanup temp files
-rm -f "$PLATFORM_TMP" "$RAMPART_TMP" "$LENS_TMP"
+rm -f "$PLATFORM_TMP" "$RAMPART_TMP" "$LENS_TMP" "$SCANNER_TMP"
 
 # ---------------------------------------------------------------------------
 # Phase 3: Model Hash Alignment
-# Verifies all three products expect the same ONNX/JS model hash.
+# Verifies all products expect the same ONNX/JS model hash.
 # Drift here means one product silently rejects the model (as happened
 # with Platform's v11b→v13 hash mismatch).
+# Scanner's ML stack was copied from MCP — Scanner hash should match Rampart
+# and Platform.
 # ---------------------------------------------------------------------------
 echo ""
 echo "=== Phase 3: Model Hash Alignment ==="
@@ -343,8 +478,15 @@ PLATFORM_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$PLATFORM_DIR/pkg/m
 RAMPART_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$RAMPART_DIR/internal/ml/detector.go" 2>/dev/null | head -1)
 LENS_HASH=$(grep -oP "(?:EXPECTED_HASH|expectedHash|MODEL_HASH)\s*[:=]\s*['\"]\K[a-f0-9]{64}" "$LENS_DIR/src/detectors/ml/threat-detector-js.js" 2>/dev/null | head -1)
 
+SCANNER_HASH=""
+SCANNER_HASH_MISMATCH=0
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$SCANNER_DIR/internal/ml/detector.go" 2>/dev/null | head -1)
+fi
+
 echo "  Platform: ${PLATFORM_HASH:-NOT FOUND}"
 echo "  Rampart:  ${RAMPART_HASH:-NOT FOUND}"
+echo "  Scanner:  ${SCANNER_HASH:-NOT FOUND}$([[ $SCANNER_ENABLED -eq 0 ]] && echo ' (not found)')"
 echo "  Lens:     ${LENS_HASH:-NOT FOUND}"
 
 HASH_MISMATCH=0
@@ -360,13 +502,30 @@ if [[ -n "$RAMPART_HASH" && -n "$LENS_HASH" && "$RAMPART_HASH" != "$LENS_HASH" ]
     echo -e "  ${YELLOW}⚠ Rampart ≠ Lens model hash (expected: different architectures — ONNX vs pure JS)${NC}"
 fi
 
+# Scanner ↔ Rampart and Scanner ↔ Platform hash parity
+if [[ $SCANNER_ENABLED -eq 1 && -n "$SCANNER_HASH" ]]; then
+    if [[ -n "$RAMPART_HASH" && "$SCANNER_HASH" != "$RAMPART_HASH" ]]; then
+        echo -e "  ${RED}❌ Scanner ≠ Rampart model hash mismatch${NC}"
+        SCANNER_HASH_MISMATCH=1
+        EXIT_CODE=1
+    fi
+    if [[ -n "$PLATFORM_HASH" && "$SCANNER_HASH" != "$PLATFORM_HASH" ]]; then
+        echo -e "  ${RED}❌ Scanner ≠ Platform model hash mismatch${NC}"
+        SCANNER_HASH_MISMATCH=1
+        EXIT_CODE=1
+    fi
+    if [[ $SCANNER_HASH_MISMATCH -eq 0 ]]; then
+        echo -e "  ${GREEN}✅ Scanner model hash matches Platform and Rampart${NC}"
+    fi
+fi
+
 if [[ $HASH_MISMATCH -eq 0 && -n "$PLATFORM_HASH" && -n "$RAMPART_HASH" ]]; then
     echo -e "  ${GREEN}✅ Platform and Rampart use the same model hash${NC}"
 fi
 
 # ---------------------------------------------------------------------------
 # Phase 4: Evasion Suite Payload Count
-# Verifies all three products' evasion tests use the same number of payloads.
+# Verifies all products' evasion tests use the same number of payloads.
 # Drift here means scores aren't comparable (apples-to-oranges).
 # ---------------------------------------------------------------------------
 echo ""
@@ -376,8 +535,14 @@ PLATFORM_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$PLATFORM_D
 RAMPART_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
 LENS_PAYLOADS=$(grep -cP "id:\s*['\"]([A-Z0-9.]+\.\d+)['\"]" "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
 
+SCANNER_PAYLOADS=0
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
+fi
+
 echo "  Platform: $PLATFORM_PAYLOADS payloads"
 echo "  Rampart:  $RAMPART_PAYLOADS payloads"
+echo "  Scanner:  $SCANNER_PAYLOADS payloads$([[ $SCANNER_ENABLED -eq 0 ]] && echo ' (not found)')"
 echo "  Lens:     $LENS_PAYLOADS payloads"
 
 if [[ "$PLATFORM_PAYLOADS" != "$RAMPART_PAYLOADS" || "$PLATFORM_PAYLOADS" != "$LENS_PAYLOADS" ]]; then
@@ -387,9 +552,19 @@ else
     echo -e "  ${GREEN}✅ All products use $PLATFORM_PAYLOADS payloads${NC}"
 fi
 
+# Scanner payload count comparison
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    if [[ "$SCANNER_PAYLOADS" != "$RAMPART_PAYLOADS" ]]; then
+        echo -e "  ${RED}❌ Scanner payload count ($SCANNER_PAYLOADS) ≠ Rampart ($RAMPART_PAYLOADS)${NC}"
+        EXIT_CODE=1
+    else
+        echo -e "  ${GREEN}✅ Scanner payload count matches Rampart ($SCANNER_PAYLOADS)${NC}"
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # Phase 5: Transform Count
-# Verifies all three products' evasion tests define 50 transforms (10 per 5 categories).
+# Verifies all products' evasion tests define 50 transforms (10 per 5 categories).
 # ---------------------------------------------------------------------------
 echo ""
 echo "=== Phase 5: Transform Count ==="
@@ -398,8 +573,14 @@ PLATFORM_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$PLATFORM_DIR/upstream/aegis
 RAMPART_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
 LENS_TRANSFORMS=$(grep -cP '^\s+\w+:\s*\(s\)\s*=>' "$LENS_DIR/test/unit/ml-evasion-suite.test.mjs" 2>/dev/null || echo "0")
 
+SCANNER_TRANSFORMS=0
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
+fi
+
 echo "  Platform: $PLATFORM_TRANSFORMS transform keys"
 echo "  Rampart:  $RAMPART_TRANSFORMS transform keys"
+echo "  Scanner:  $SCANNER_TRANSFORMS transform keys$([[ $SCANNER_ENABLED -eq 0 ]] && echo ' (not found)')"
 echo "  Lens:     $LENS_TRANSFORMS transform keys"
 
 EXPECTED_TRANSFORMS=50
@@ -412,10 +593,13 @@ fi
 if [[ "$RAMPART_TRANSFORMS" -ne "$EXPECTED_TRANSFORMS" ]]; then
     echo -e "  ${YELLOW}⚠ Rampart has $RAMPART_TRANSFORMS transform keys (expected $EXPECTED_TRANSFORMS — may include extra map entries)${NC}"
 fi
+if [[ $SCANNER_ENABLED -eq 1 && "$SCANNER_TRANSFORMS" -ne "$EXPECTED_TRANSFORMS" ]]; then
+    echo -e "  ${YELLOW}⚠ Scanner has $SCANNER_TRANSFORMS transform keys (expected $EXPECTED_TRANSFORMS — may include extra map entries)${NC}"
+fi
 
 # ---------------------------------------------------------------------------
 # Phase 6: ML Threshold Alignment
-# Verifies all three products use the same ML detection threshold (0.5).
+# Verifies all products use the same ML detection threshold (0.5).
 # Drift here means one product is more/less sensitive than the others.
 # ---------------------------------------------------------------------------
 echo ""
@@ -425,8 +609,14 @@ PLATFORM_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$PLATFORM_DIR/upstrea
 RAMPART_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$RAMPART_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | head -1)
 LENS_THRESH=$(grep -oP 'THRESHOLD\s*=\s*\K[0-9.]+' "$LENS_DIR/src/detectors/ml/threat-detector-js.js" 2>/dev/null | head -1)
 
+SCANNER_THRESH=""
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | head -1)
+fi
+
 echo "  Platform evasion test: $PLATFORM_THRESH"
 echo "  Rampart evasion test:  $RAMPART_THRESH"
+echo "  Scanner evasion test:  ${SCANNER_THRESH:-NOT FOUND}$([[ $SCANNER_ENABLED -eq 0 ]] && echo ' (not found)')"
 echo "  Lens ML model:         $LENS_THRESH"
 
 THRESH_MISMATCH=0
@@ -440,6 +630,24 @@ for pair in "Platform:Rampart:$PLATFORM_THRESH:$RAMPART_THRESH" "Platform:Lens:$
         fi
     fi
 done
+
+# Scanner threshold comparison with Rampart and Platform
+SCANNER_THRESH_MISMATCH=0
+if [[ $SCANNER_ENABLED -eq 1 && -n "$SCANNER_THRESH" ]]; then
+    if [[ -n "$RAMPART_THRESH" ]] && ! awk -v a="$SCANNER_THRESH" -v b="$RAMPART_THRESH" 'BEGIN { exit (a == b) ? 0 : 1 }'; then
+        echo -e "  ${RED}❌ Scanner ($SCANNER_THRESH) ≠ Rampart ($RAMPART_THRESH) threshold mismatch${NC}"
+        SCANNER_THRESH_MISMATCH=1
+        EXIT_CODE=1
+    fi
+    if [[ -n "$PLATFORM_THRESH" ]] && ! awk -v a="$SCANNER_THRESH" -v b="$PLATFORM_THRESH" 'BEGIN { exit (a == b) ? 0 : 1 }'; then
+        echo -e "  ${RED}❌ Scanner ($SCANNER_THRESH) ≠ Platform ($PLATFORM_THRESH) threshold mismatch${NC}"
+        SCANNER_THRESH_MISMATCH=1
+        EXIT_CODE=1
+    fi
+    if [[ $SCANNER_THRESH_MISMATCH -eq 0 ]]; then
+        echo -e "  ${GREEN}✅ Scanner threshold ($SCANNER_THRESH) matches Platform and Rampart${NC}"
+    fi
+fi
 
 if [[ $THRESH_MISMATCH -eq 0 && -n "$PLATFORM_THRESH" && -n "$RAMPART_THRESH" && -n "$LENS_THRESH" ]]; then
     echo -e "  ${GREEN}✅ All products use threshold $PLATFORM_THRESH${NC}"
@@ -477,6 +685,18 @@ else
     echo -e "  ${GREEN}✅ Rampart evasion test uses regex + ML detection${NC}"
 fi
 
+# Scanner detection logic check
+SCANNER_HAS_REGEX=0
+if [[ $SCANNER_ENABLED -eq 1 ]]; then
+    SCANNER_HAS_REGEX=$(grep -c 'DetectAll\|detect.*regex' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
+    if [[ "$SCANNER_HAS_REGEX" -eq 0 ]]; then
+        echo -e "  ${RED}❌ Scanner evasion test does NOT use regex detection (ML-only?)${NC}"
+        EXIT_CODE=1
+    else
+        echo -e "  ${GREEN}✅ Scanner evasion test uses regex + ML detection${NC}"
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # Final Summary
 # ---------------------------------------------------------------------------
@@ -485,14 +705,20 @@ echo "============================================"
 echo "  Parity Check Summary"
 echo "============================================"
 echo "  Pattern names (P↔R): $([ $PATTERN_FAIL -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Scanner patterns:    $([[ $SCANNER_ENABLED -eq 0 ]] && echo 'SKIP' || ([ $SCANNER_PATTERN_FAIL -eq 0 ] && echo 'PASS' || echo 'FAIL'))"
 echo "  Regex content (P↔R): $([ $CONTENT_MISMATCHES -eq 0 ] && echo 'PASS' || echo "FAIL ($CONTENT_MISMATCHES)")"
+echo "  Scanner regex:       $([[ $SCANNER_ENABLED -eq 0 ]] && echo 'SKIP' || ([ $SCANNER_REGEX_MISMATCHES -eq 0 ] && echo 'PASS' || echo "FAIL ($SCANNER_REGEX_MISMATCHES)"))"
 echo "  Lens subset:         $([[ -z "${LENS_NOT_IN_PLATFORM:-}" && -z "${LENS_NOT_IN_RAMPART:-}" ]] && echo 'PASS' || echo 'FAIL')"
 echo "  Lens regex:          $([ $LENS_MISMATCHES -eq 0 ] && echo 'PASS' || echo "WARN ($LENS_MISMATCHES)")"
 echo "  Model hash:          $([ $HASH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Scanner model hash:  $([[ $SCANNER_ENABLED -eq 0 ]] && echo 'SKIP' || ([ $SCANNER_HASH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL'))"
 echo "  Payload count:       $([[ "$PLATFORM_PAYLOADS" == "$RAMPART_PAYLOADS" && "$PLATFORM_PAYLOADS" == "$LENS_PAYLOADS" ]] && echo 'PASS' || echo 'FAIL')"
+echo "  Scanner payload:     $([[ $SCANNER_ENABLED -eq 0 ]] && echo 'SKIP' || ([[ "$SCANNER_PAYLOADS" == "$RAMPART_PAYLOADS" ]] && echo 'PASS' || echo 'FAIL'))"
 echo "  Transform count:     $([[ "$LENS_TRANSFORMS" -eq 50 ]] && echo 'PASS' || echo 'WARN')"
 echo "  ML threshold:        $([ $THRESH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+echo "  Scanner threshold:   $([[ $SCANNER_ENABLED -eq 0 ]] && echo 'SKIP' || ([ $SCANNER_THRESH_MISMATCH -eq 0 ] && echo 'PASS' || echo 'FAIL'))"
 echo "  Detection logic:     $([[ "$LENS_HAS_REGEX" -gt 0 && "$PLATFORM_HAS_REGEX" -gt 0 && "$RAMPART_HAS_REGEX" -gt 0 ]] && echo 'PASS' || echo 'FAIL')"
+echo "  Scanner det. logic:  $([[ $SCANNER_ENABLED -eq 0 ]] && echo 'SKIP' || ([[ "$SCANNER_HAS_REGEX" -gt 0 ]] && echo 'PASS' || echo 'FAIL'))"
 echo "============================================"
 
 exit $EXIT_CODE
