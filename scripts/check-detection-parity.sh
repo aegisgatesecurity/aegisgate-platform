@@ -6,8 +6,9 @@
 #
 # Parity model:
 #   Platform ↔ Rampart: FULL parity — ALL pattern names AND regex content must match.
-#   Scanner ↔ Rampart: FULL parity — ALL pattern names AND regex content must match.
-#                       (Scanner's detection engine was copied from Rampart — copy integrity check)
+#   Scanner ↔ Rampart: SUPERSET parity — ALL Rampart patterns must be present in Scanner.
+#                       Scanner may have extra patterns (dangerous functions, URL/base64 detection).
+#                       Regex content for matching patterns must be identical (copy integrity check).
 #   Lens: Compliance-only parity — Lens patterns must be a subset of Platform/Rampart.
 #         Regex content is compared with JS↔Go normalization (warnings for syntax diffs).
 #
@@ -214,31 +215,38 @@ if [[ -z "$PLATFORM_RAMPART_MISSING" && -z "$RAMPART_PLATFORM_MISSING" ]]; then
     echo ""
 fi
 
-# Scanner ↔ Rampart: FULL parity (hard gate) — copy integrity check
+# Scanner ↔ Rampart: SUPERSET parity — all Rampart patterns must be in Scanner.
+# Scanner may have extra patterns (dangerous functions, URL/base64 detection).
 if [[ $SCANNER_ENABLED -eq 1 ]]; then
-    SCANNER_RAMPART_MISSING=$(comm -23 "$SCANNER_TMP" "$RAMPART_TMP")
-    RAMPART_SCANNER_MISSING=$(comm -13 "$SCANNER_TMP" "$RAMPART_TMP")
+    # comm -23: lines in Scanner only (extra patterns — OK)
+    # comm -13: lines in Rampart only (missing from Scanner — FAIL)
+    SCANNER_EXTRA=$(comm -23 "$SCANNER_TMP" "$RAMPART_TMP")
+    SCANNER_MISSING=$(comm -13 "$SCANNER_TMP" "$RAMPART_TMP")
 
-    if [[ -n "$SCANNER_RAMPART_MISSING" ]]; then
-        MISSING_COUNT=$(echo "$SCANNER_RAMPART_MISSING" | wc -l)
-        echo -e "${RED}MISSING from Scanner ($MISSING_COUNT patterns):${NC}"
-        echo "$SCANNER_RAMPART_MISSING" | sed 's/^/  - /'
+    if [[ -n "$SCANNER_MISSING" ]]; then
+        MISSING_COUNT=$(echo "$SCANNER_MISSING" | wc -l)
+        echo -e "${RED}MISSING from Scanner ($MISSING_COUNT Rampart patterns not found):${NC}"
+        echo "$SCANNER_MISSING" | sed 's/^/  - /'
         echo ""
         EXIT_CODE=1
         SCANNER_PATTERN_FAIL=1
     fi
 
-    if [[ -n "$RAMPART_SCANNER_MISSING" ]]; then
-        MISSING_COUNT=$(echo "$RAMPART_SCANNER_MISSING" | wc -l)
-        echo -e "${RED}MISSING from Rampart (in Scanner but not Rampart) ($MISSING_COUNT patterns):${NC}"
-        echo "$RAMPART_SCANNER_MISSING" | sed 's/^/  - /'
+    if [[ -n "$SCANNER_EXTRA" ]]; then
+        EXTRA_COUNT=$(echo "$SCANNER_EXTRA" | wc -l)
+        echo -e "${YELLOW}ℹ Scanner has $EXTRA_COUNT extra patterns (not in Rampart — expected for scanner-specific detection):${NC}"
+        echo "$SCANNER_EXTRA" | sed 's/^/  - /'
         echo ""
-        EXIT_CODE=1
-        SCANNER_PATTERN_FAIL=1
+        # Extra patterns are OK — Scanner is a superset of Rampart.
     fi
 
-    if [[ -z "$SCANNER_RAMPART_MISSING" && -z "$RAMPART_SCANNER_MISSING" ]]; then
-        echo -e "${GREEN}✅ Scanner ↔ Rampart: $SCANNER_COUNT patterns match exactly${NC}"
+    if [[ -z "$SCANNER_MISSING" ]]; then
+        if [[ -n "$SCANNER_EXTRA" ]]; then
+            EXTRA_COUNT=$(echo "$SCANNER_EXTRA" | wc -l)
+            echo -e "${GREEN}✅ Scanner is superset of Rampart: all $RAMPART_COUNT Rampart patterns present + $EXTRA_COUNT scanner-specific patterns${NC}"
+        else
+            echo -e "${GREEN}✅ Scanner ↔ Rampart: $SCANNER_COUNT patterns match exactly${NC}"
+        fi
         echo ""
     fi
 fi
