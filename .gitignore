@@ -293,3 +293,8 @@ plans/provisional-patent-filing-guide.md
 upstream/aegisgate/pkg/proxy/testing/reports/adversarial/*.md
 # IOC baseline seed keyring (private ECDSA key, never commit)
 pkg/ioc/data/seed-keyring.json
+
+# Local test/dev artifacts
+configs/test.yaml
+docker-compose-ollama.yml
+tests/fpr-simulation/

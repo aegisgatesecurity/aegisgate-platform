@@ -1,6 +1,6 @@
 module github.com/aegisgatesecurity/aegisgate-platform
 
-go 1.26.9
+go 1.27.0
 
 replace (
 	// Vendored upstream modules — self-contained, no external repo needed

@@ -22,10 +22,11 @@
 #   - Production stage runs as non-root via USER appuser.
 #   - HEALTHCHECK directive is set to hit the dashboard's /health endpoint.
 #   - Only ca-certificates and wget added (minimal attack surface, wget needed for HEALTHCHECK).
+#   - gnutls, bash, perl-base, and apt purged in single RUN to eliminate CVEs and reduce image size.
 # =========================================================================
 
 # Builder stage: Go 1.27.1 on Debian bookworm with ONNX Runtime v1.29.0.
-FROM golang:1.27.1-bookworm AS builder
+FROM golang:1.27.2-bookworm AS builder
 
 # Install build tools + download ONNX Runtime v1.29.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -60,10 +61,17 @@ RUN go build \
 FROM debian:bookworm-slim
 
 # Install runtime dependencies: ca-certificates (TLS), wget (healthcheck only), libstdc++ (for ONNX).
+# Then purge non-essential packages to reduce attack surface (bash, perl-base, gnutls, apt).
 # apt-get upgrade pulls in security patches for base image packages.
+# Note: apt depends on libgnutls30, so apt must be purged alongside gnutls.
+# autoremove runs BEFORE apt is purged. All apt operations in one RUN to avoid
+# DS-0017 (apt-get update must be paired with apt-get install) and to minimize layers.
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
         ca-certificates wget libstdc++6 && \
-    rm -rf /var/lib/apt/lists/* && \
+    apt-get autoremove -y && \
+    apt-get purge -y --allow-remove-essential bash perl-base \
+        gnutls-bin libgnutls30 libgnutlsxx30 gnutls-doc apt && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/* && \
     useradd -m -s /usr/sbin/nologin appuser
 
 # Copy binary, UI assets, and ONNX Runtime library
@@ -85,20 +93,6 @@ RUN mkdir -p /data/certs /data/audit /data/logs /app/certs && \
 
 # Copy default Community tier config (embedded in binary, but also available on disk)
 COPY --from=builder /build/aegisgate-platform/configs/community.yaml /opt/aegisgate-platform/configs/community.yaml
-
-# Security hardening: purge non-essential packages to reduce attack surface.
-# Removes bash, perl-base, gnutls, and apt — none needed at runtime (appuser
-# shell is nologin, Go binary uses crypto/tls not gnutls, no package management
-# needed in production container). Eliminates 6 CRITICAL/HIGH Trivy alerts from
-# gnutls CVEs and reduces image by ~25MB. Two common local privilege escalation
-# vectors (bash, perl) removed.
-# Note: apt depends on libgnutls30, so apt must be purged alongside gnutls.
-# autoremove runs BEFORE apt is purged.
-RUN apt-get update && \
-    apt-get autoremove -y && \
-    apt-get purge -y --allow-remove-essential bash perl-base \
-        gnutls-bin libgnutls30 libgnutlsxx30 gnutls-doc apt && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/*
 
 # Run as non-root user (shell disabled via /usr/sbin/nologin)
 USER appuser
