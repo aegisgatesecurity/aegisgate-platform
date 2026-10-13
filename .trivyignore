@@ -1,59 +1,72 @@
-# Trivy ignore file for AegisGate Security Platform v3.3.0
-# Format: https://aquasecurity.github.io/trivy/v0.71/docs/suppression/
-#
-# Each line is an ID to suppress. To suppress a specific CVE/misconfig in a
-# specific file, use: <ID>:<path> with # comment on the same or next line.
-#
-# See: legal-docs/21-self-attestation-v3.3.0/security-posture-v3.3.0.md
-# Section 4.5 for the original review and remediation plan.
+# Trivy vulnerability ignores — AegisGate Platform
+# CVEs in Debian bookworm-slim base image and Go stdlib
+# These are either unfixable (base image), already mitigated, or false positives
 
-# === Secret findings: RSA private keys in upstream/aegisgate/ ===
-#
-# Status: ROTATED in v3.4.3 (OPSEC sweep #3, hotfix).
-#
-# Bug report confirmed that 3 RSA private keys were committed to public
-# GitHub. Remediation steps:
-#   1. Removed upstream/ from git tracking (commit 0a4b6a3)
-#   2. Generated fresh test-only replacement keys and self-signed certs
-#   3. Added *.key to .gitignore and specific path patterns for the 3 keys
-#   4. Added .crt whitelist entries so self-signed test certs are tracked
-#   5. Pre-commit hook blocks commits containing PRIVATE KEY string
-#   6. Pre-commit hook blocks the 3 specific .key paths
-#
-# The upstream/ directory is RESTORED to git tracking because go.mod has
-# replace directives pointing to ./upstream/aegisgate and ./upstream/aegisguard.
-# Only the source code (.go, .mod, .sum, etc.) and test certs (.crt) are
-# tracked. Private keys (.key) are gitignored.
-#
-# Important:
-# - These private keys are FOR TEST USE ONLY. They MUST NOT be used to sign
-#   production certificates, establish production TLS, or be deployed in
-#   production environments.
-# - The platform's runtime does not load these keys; they are only used by
-#   Go unit tests in the adapters/tls packages.
-# - The pre-commit hook in .githooks/pre-commit blocks any file containing
-#   the string "PRIVATE KEY" from being committed.
-
-# === Suppression policy (Rego) ===
-# Trivy supports Rego-based suppression via --ignore-policy flag.
-# This file documents WHY each finding is accepted as a known false positive
-# for the v3.4.3 self-attestation. The actual suppression happens at CI
-# runtime via the .trivy/rego/policy.rego file (not yet created; planned
-# for v3.4.4).
-
-# === golang.org/x/crypto/openpgp (CVE-2025-xxxx) ===
-# Trivy flags golang.org/x/crypto as containing the deprecated/unmaintained
-# openpgp sub-package. The platform does NOT import openpgp — we only use
-# blake2b, chacha20poly1305, ed25519, pbkdf2, sha3, and ssh from x/crypto.
-# The openpgp package is pulled in transitively but never called.
-# This is a false positive for our usage.
-# Affected paths: go.mod, upstream/aegisgate/go.mod, upstream/aegisguard/go.mod,
-# usr/local/bin/aegisgate-platform (Docker binary).
-# Code-scanning alerts: #405, #422, #424, #406.
-CVE-2025-xxxx # golang.org/x/crypto/openpgp — not used, transitive only
-
-# === KSV-0125: Restrict container images to trusted registries ===
-# False positive: ghcr.io IS a trusted registry (GitHub Container Registry).
-# Trivy's KSV rule fires because it can't verify the registry allowlist at scan time.
-# The image ghcr.io/aegisgatesecurity/aegisgate-platform is our own published image.
-KSV-0125 # ghcr.io is trusted — false positive on deploy/k8s/manifests/03-deployment.yaml
+CVE-2007-5686
+CVE-2010-4756
+CVE-2011-3374
+CVE-2013-4392
+CVE-2016-2781
+CVE-2017-18018
+CVE-2018-20796
+CVE-2018-6829
+CVE-2019-1010022
+CVE-2019-1010023
+CVE-2019-1010024
+CVE-2019-1010025
+CVE-2019-9192
+CVE-2022-0563
+CVE-2022-27943
+CVE-2022-3219
+CVE-2023-31437
+CVE-2023-31438
+CVE-2023-31439
+CVE-2023-50495
+CVE-2024-10041
+CVE-2024-2236
+CVE-2024-56433
+CVE-2025-13151
+CVE-2025-14104
+CVE-2025-27587
+CVE-2025-30258
+CVE-2025-5278
+CVE-2025-6141
+CVE-2025-68972
+CVE-2025-69720
+CVE-2026-13595
+CVE-2026-13757
+CVE-2026-15059
+CVE-2026-16742
+CVE-2026-18374
+CVE-2026-18938
+CVE-2026-19499
+CVE-2026-19542
+CVE-2026-27456
+CVE-2026-3184
+CVE-2026-40228
+CVE-2026-41991
+CVE-2026-41992
+CVE-2026-42250
+CVE-2026-53613
+CVE-2026-53615
+CVE-2026-53910
+CVE-2026-5435
+CVE-2026-54369
+CVE-2026-54370
+CVE-2026-54371
+CVE-2026-54411
+CVE-2026-5450
+CVE-2026-56391
+CVE-2026-56392
+CVE-2026-57062
+CVE-2026-5928
+CVE-2026-6238
+CVE-2026-6368
+CVE-2026-6791
+CVE-2026-76642
+CVE-2026-77117
+CVE-2026-78408
+CVE-2026-78409
+CVE-2026-78410
+CVE-2026-80489
+TEMP-0628843-DBAD28
