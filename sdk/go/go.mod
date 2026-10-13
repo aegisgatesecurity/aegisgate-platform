@@ -2,7 +2,7 @@
 
 module github.com/aegisgatesecurity/aegisgate-platform/sdk/go
 
-go 1.26
+go 1.27.0
 
 require google.golang.org/grpc v1.83.2
 
