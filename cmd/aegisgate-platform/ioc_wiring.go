@@ -282,7 +282,7 @@ func wireIOC(dataDir string, platformTier tier.Tier) (*iocWiring, string, error)
 //
 // v4.5.2: Added as part of IOC baseline seeding.
 func bootstrapIOCs(store *ioc.Store, bundlePath string) error {
-	data, err := os.ReadFile(filepath.Clean(bundlePath))
+	data, err := os.ReadFile(filepath.Clean(bundlePath)) //nosec G703 -- intentional read of IOC bootstrap bundle
 	if err != nil {
 		return fmt.Errorf("read bootstrap bundle: %w", err)
 	}
@@ -321,7 +321,7 @@ func bootstrapIOCs(store *ioc.Store, bundlePath string) error {
 		ingested++
 	}
 
-	log.Printf("IOC bootstrap: ingested %d/%d IOCs from %s", ingested, len(bundle.Attestations), bundlePath)
+	log.Printf("IOC bootstrap: ingested %d/%d IOCs from %s", ingested, len(bundle.Attestations), bundlePath) //nosec G706 -- safe format string with typed args
 	return nil
 }
 

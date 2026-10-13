@@ -143,7 +143,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: marshaling bundle: %v\n", err)
 		os.Exit(1)
 	}
-	if err := os.WriteFile(*outputFile, data, 0644); err != nil {
+	if err := os.WriteFile(*outputFile, data, 0600); err != nil { //nosec G306 -- IOC seed bundle may contain security indicators
 		fmt.Fprintf(os.Stderr, "error: writing %s: %v\n", *outputFile, err)
 		os.Exit(1)
 	}
