@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
@@ -339,8 +340,42 @@ func RegisterBuiltInTools(handler *mcp.RequestHandler, platformTier tier.Tier) {
 
 // registerTool is a helper that registers both the tool definition and its handler.
 // This reduces the two-step Register/RegisterHandler to a single call.
+// toolDescriptionScanner is the package-level scanner instance, initialized
+// on first use. It screens all tool descriptions at registration time.
+var toolDescriptionScanner *ToolDescriptionScanner
+var toolDescriptionScannerOnce sync.Once
+
+// getToolDescriptionScanner returns the singleton scanner instance.
+func getToolDescriptionScanner() *ToolDescriptionScanner {
+	toolDescriptionScannerOnce.Do(func() {
+		toolDescriptionScanner = NewToolDescriptionScanner()
+	})
+	return toolDescriptionScanner
+}
+
 func registerTool(registry *mcp.ToolRegistry, name, description string, riskLevel int,
 	schema map[string]interface{}, handler mcp.ToolHandlerFunc) {
+	// Screen the tool description before registration
+	scanner := getToolDescriptionScanner()
+	result := scanner.ScreenTool(name, description, schema)
+	if !result.Passed {
+		var rules []string
+		for _, f := range result.Findings {
+			rules = append(rules, f.RuleID)
+			slog.Warn("tool registration blocked: security screening failed",
+				"tool", name,
+				"rule", f.RuleID,
+				"category", f.Category,
+				"severity", f.Severity,
+				"field", f.Field,
+				"description", f.Description,
+			)
+		}
+		slog.Error("tool registration rejected by security screening",
+			"tool", name, "findings", len(result.Findings), "rules", rules)
+		return
+	}
+
 	if err := registry.Register(name, description, riskLevel, schema); err != nil {
 		slog.Error("Failed to register tool definition", "tool", name, "error", err)
 		return
