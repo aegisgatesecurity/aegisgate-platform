@@ -43,8 +43,10 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: aegisgatesecurity/aegisgate-scanner
-          path: ../../aegisgate-scanner
+          path: ./aegisgate-scanner
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update go.mod replace for scanner
+        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner
 
       - name: Run Semgrep
         uses: returntocorp/semgrep-action@v1
