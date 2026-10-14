@@ -4,7 +4,7 @@
 
 | Version | Supported | Security Fixes |
 |---------|-----------|----------------|
-| v4.5.x  | ✅ Yes    | Current release — includes GHSA-8c34-rfx7-frm4 fixes |
+| v4.5.x  | ✅ Yes    | Current release — includes GHSA-8c34-rfx7-frm4 fixes + near-threshold logging fix (PR #145) |
 | v4.3.x  | ✅ Yes    | Supported (v4.3.3) |
 | < v4.3  | ❌ EOL     | Archived — upgrade to v4.5.0 |
 
@@ -156,6 +156,7 @@ We thank security researchers who responsibly disclose vulnerabilities.
 | Researcher | Finding | Fix | Date |
 |------------|---------|-----|------|
 | [@kta1kri](https://github.com/kta1kri) | [GHSA-8c34-rfx7-frm4](https://github.com/aegisgatesecurity/aegisgate-platform/security/advisories/GHSA-8c34-rfx7-frm4) — Request-side scanner only inspected user/system message roles (assistant/tool content unscanned); Response Guard PII/secret findings never blocked by default; block threshold hardcoded bypassing configurable BlockThreshold | Commit `b1ec7db` — All three findings fixed: scan all message roles, StrictMode=true by default, configurable BlockThreshold wired into ShouldBlock | Sept 2026 |
+| [@analista_83](https://dev.to/analista_83) | Methodology review of "52%→99.57%" gap analysis — identified three issues: (1) two-metric labeling conflation in headline, (2) training/test overlap making 99.57% an upper bound, (3) block mode making near-threshold misses invisible. Point 3 revealed a real observability gap: `LogShadowPrediction` only fired in shadow mode, leaving boundary population invisible in production. | [PR #145](https://github.com/aegisgatesecurity/aegisgate-platform/pull/145) — Decoupled near-threshold logging from shadow mode gate. Added `NearThresholdMargin` to `DetectorConfig` (default: 0.10). Scores within margin below threshold now logged with `log_reason: "near_threshold"` regardless of `ShadowMode`. | Oct 2026 |
 
 ## Contact
 

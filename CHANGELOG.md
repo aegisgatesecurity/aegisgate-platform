@@ -1,24 +1,46 @@
-## [Unreleased] - 2026-10-07 - Trademark Compliance & IOC Baseline Seeder
+## [4.5.3] - 2026-10-14 - Near-Threshold ML Logging & Build Fixes
 
-> **Unreleased** fixes a trademark compliance issue (® → ™ before federal registration) and adds a baseline IOC seeder tool with production-matching fingerprints.
+> **v4.5.3** fixes a critical observability gap in the ML threat detector: in block mode, payloads that scored just below the threshold were completely invisible — no log entry, no metric, no trace. This was identified during community review of the 52%→99.57% gap analysis. The fix decouples near-threshold logging from the shadow-mode gate, making the boundary population between benign and adversarial visible in production for the first time.
 
-### Legal / Compliance
+### ML Threat Detection
 
-- **Trademark Symbol Fix**: Corrected `AegisGate®` → `AegisGate™` in `TRADEMARKS.md` and `NOTICE`. The AegisGate and AegisGate Security marks were applied for in April 2026 and published for opposition by the USPTO on October 13, 2026. The ® symbol will replace ™ upon issuance of the Certificate of Registration (post 30-day opposition period). Using ® before registration is a violation of the Lanham Act (15 U.S.C. § 1126).
-- **EULA Trademark Clause**: Removed "or registered" from trademark clause in website EULA to reflect pending status.
-- **README Copyright**: Added ™ to "AegisGate Security" in copyright line.
-- **Website Footer**: Added ™ to "AegisGate Security" in footer copyright.
+- **Near-Threshold Logging in Block Mode**: Added `NearThresholdMargin` field to `DetectorConfig` (default: 0.10). In block mode (`ShadowMode=false`), any payload whose L3 score falls within `[threshold-margin, threshold)` is now logged with `log_reason: "near_threshold"`. Previously, these scores produced no log entry at all — a drifting miss rate read as silence. ([PR #145](https://github.com/aegisgatesecurity/aegisgate-platform/pull/145))
+- **Renamed `LogShadowPrediction` → `LogPrediction`**: The calibration manager's logging method now accepts a `reason` parameter (`"shadow"` or `"near_threshold"`) to distinguish entry origins in the JSONL log.
+- **`LogReason` Field in `ShadowLogEntry`**: New JSON field makes log entries self-documenting. Existing consumers can ignore the new field without breaking.
+- **Backward Compatibility**: Setting `NearThresholdMargin=0` disables near-threshold logging, preserving previous behavior for deployments that don't want the additional logging.
+- **Same changes in both cgo and noonnx builds**: The community edition (no ONNX) receives the same fix.
+- **4 new tests**: Near-threshold logging, margin disabled, block-mode threats not mislabeled, shadow mode still logs all predictions with correct reason.
 
-### IOC Baseline Seeder
+### Build Fixes
 
-- **New Tool**: `cmd/aegisgate-ioc-seed/` — CLI tool that generates a signed IOC baseline bundle from AegisGate's real scanner patterns (all 223 patterns). Fingerprints match the proxy's runtime fingerprint computation exactly (`Type: "proxy_response"`, no `ThreatType`), ensuring interoperability between baseline IOCs and live detections.
-- **Startup Import**: `--ioc-bootstrap-bundle` CLI flag and `AEGISGATE_IOC_BOOTSTRAP_BUNDLE` env var to load a signed baseline bundle at startup. IOCs are ingested as local observations (Source: "bootstrap"), verified via `VerifyBundleSignature` before ingestion.
-- **Signed Bundle**: `pkg/ioc/data/baseline-iocs.json` — 223 signed IOCs (ECDSA P-256), all attestation signatures verified, all fingerprints cross-checked against proxy output.
+- **go.mod sync**: `go mod tidy` applied — the module file was out of sync on main, preventing builds without the `-mod=mod` flag.
+- **Go 1.27.2**: Bumped from Go 1.27.0 with 3 gosec alert fixes.
+- **.trivyignore**: Added 68 unfixable Debian/Go CVEs that have no upstream patch available.
+- **CI**: Bumped Go version in all workflows from 1.26.9 to 1.27.0.
 
-### Testing
+### Helm Charts
 
-- 7 new tests in `cmd/aegisgate-ioc-seed/` (fingerprint match, uniqueness, coverage, severity, store import, signing, count)
-- End-to-end verification: bundle signature valid, 223/223 attestation signatures valid, 223/223 fingerprints match proxy, store ingests all 223, corroboration checker finds baseline IOCs
+- **appVersion**: Updated from `v4.3.3` → `v4.5.3` in both `aegisgate-platform` and `aegisgate-operator` Chart.yaml files.
+
+### Security Acknowledgments
+
+- **@analista_83** ([dev.to](https://dev.to/analista_83)): Identified the near-threshold observability gap during public methodology review of the 52%→99.57% gap analysis post. See [SECURITY.md Acknowledgments](#) for details.
+
+### Dependency Updates
+
+- `github.com/prometheus/client_golang` bumped to v1.25.0
+- `golang.org/x/crypto` bumped to v0.57.0
+- `golang.org/x/net` bumped to v0.60.0
+- `google.golang.org/grpc` bumped to v1.86.0-dev
+- `go.opentelemetry.io/otel` bumped to v1.47.0
+- `trufflesecurity/trufflehog` bumped to v3.99.2
+
+### Version Bumps
+
+- Platform VERSION: 4.5.1 → 4.5.3
+- README badges updated to v4.5.3
+- Helm chart appVersion updated to v4.5.3
+- model-card.md updated to v4.5.3
 
 ---
 
