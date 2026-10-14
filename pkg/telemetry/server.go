@@ -44,6 +44,9 @@ type Server struct {
 	patternSet        contracts.PatternSet
 	patternsUpdatedAt string
 
+	// Event router for source-specific routing and statistics
+	router *EventRouter
+
 	// HTTP server
 	httpServer *http.Server
 }
@@ -80,6 +83,9 @@ func NewServer(cfg *Config, version string) (*Server, error) {
 		Patterns:    []contracts.Pattern{},
 	}
 
+	// Initialize event router with event store adapter
+	s.router = NewEventRouter(NewEventStorerAdapter(s.appendEvent))
+
 	return s, nil
 }
 
@@ -95,6 +101,9 @@ func (s *Server) Mux() http.Handler {
 
 	// GET /api/v1/healthz — Health check (no auth)
 	mux.HandleFunc("GET /api/v1/healthz", s.handleHealthz)
+
+	// GET /api/v1/stats — Telemetry statistics (authenticated)
+	mux.HandleFunc("GET /api/v1/stats", s.authMiddleware(s.handleStats))
 
 	return mux
 }
@@ -251,6 +260,20 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleStats returns aggregated telemetry statistics.
+func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
+	summary := s.router.GetSummary()
+	writeJSON(w, http.StatusOK, summary)
+}
+
+// LoadDefaultPatterns loads Platform's built-in scanner patterns into
+// the pattern set served by the pull endpoint. Call this at startup
+// or when patterns are updated.
+func (s *Server) LoadDefaultPatterns() {
+	patterns := LoadPlatformPatterns()
+	s.UpdatePatterns(patterns)
+}
+
 // === Internal Methods ===
 
 // validateEvent validates a single event against the canonical schema rules.
@@ -281,23 +304,10 @@ func (s *Server) validateEvent(e contracts.Event) error {
 }
 
 // routeEvent routes an event to the appropriate aggregation logic based on source.
-// This is where source-specific processing happens:
-// - lens: IOC aggregation → gossip protocol
-// - rampart: proxy detection metadata aggregation
-// - scanner: static analysis findings aggregation
-// - mcp: tool poisoning findings aggregation
-//
-// TODO: Implement source-specific routing in the implementation phase.
-// For now, this is a pass-through that logs the event.
+// The EventRouter handles per-source statistics, IOC fingerprint corroboration,
+// and event persistence.
 func (s *Server) routeEvent(e contracts.Event) error {
-	s.logger.Info("event received",
-		"event_id", e.ID,
-		"source", string(e.Source),
-		"total_detections", e.TotalDetections,
-		"blocked", e.Blocked,
-		"direction", string(e.Direction),
-	)
-	return nil
+	return s.router.Route(e)
 }
 
 // appendEvent appends an event to the JSONL store with retention enforcement.
@@ -371,10 +381,7 @@ func (s *Server) UpdatePatterns(patterns []contracts.Pattern) {
 	s.patternsUpdatedAt = time.Now().UTC().Format(time.RFC3339)
 }
 
-// hashPatterns computes a simple content hash for cache invalidation.
-// In production, this should be SHA-256 of all pattern IDs + regex strings.
+// hashPatterns computes a SHA-256 content hash for cache invalidation.
 func hashPatterns(patterns []contracts.Pattern) string {
-	// Placeholder: simple count-based hash for now.
-	// TODO: Implement proper SHA-256 hash in implementation phase.
-	return fmt.Sprintf("count:%d", len(patterns))
+	return HashPatternsSHA256(patterns)
 }
