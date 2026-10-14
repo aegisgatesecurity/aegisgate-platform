@@ -25,6 +25,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6.0.3
+      - name: Checkout Scanner (for go.mod replace)
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-scanner
+          path: ../../aegisgate-scanner
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Go
         uses: actions/setup-go@v7
