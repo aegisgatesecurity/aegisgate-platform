@@ -61,22 +61,38 @@ type DetectorConfig struct {
 	// Use when model is not yet validated or produces unacceptable FPR.
 	// Default: false (use ONNX if loaded)
 	ForceHeuristic bool
+
+	// NearThresholdMargin defines how close to the threshold a non-blocking
+	// score must be to warrant logging for offline analysis. When set to a
+	// positive value, scores that fall below the threshold but are within
+	// this margin are logged regardless of ShadowMode.
+	//
+	// This captures "near-miss" payloads in block mode — inputs that nearly
+	// triggered a block but were allowed through. Without this, the boundary
+	// population between benign and adversarial is invisible in production.
+	//
+	// Example: threshold=0.50, margin=0.10 → any score in [0.40, 0.50) is logged.
+	// Default: 0.10
+	NearThresholdMargin float64
 }
 
 // DefaultDetectorConfig returns sensible defaults.
 func DefaultDetectorConfig() DetectorConfig {
 	return DetectorConfig{
-		Enabled:           false, // Disabled by default — cold-start safety
-		ShadowMode:        true,  // Shadow mode on by default
-		Threshold:         0.7,   // Will be calibrated
-		ModelPath:         "/opt/aegisgate-platform/models/threat_cnn_bilstm.onnx",
-		MaxSequenceLength: 128,
-		Timeout:           10,
-		ForceHeuristic:    false, // Model validated 2026-09-06: 0% FPR, ONNX inference enabled
+		Enabled:             false, // Disabled by default — cold-start safety
+		ShadowMode:          true,  // Shadow mode on by default
+		Threshold:           0.7,   // Will be calibrated
+		ModelPath:           "/opt/aegisgate-platform/models/threat_cnn_bilstm.onnx",
+		MaxSequenceLength:   128,
+		Timeout:             10,
+		ForceHeuristic:      false, // Model validated 2026-09-06: 0% FPR, ONNX inference enabled
+		NearThresholdMargin: 0.10,  // Log scores within 0.10 below threshold
 	}
 }
 
-// ShadowLogEntry records a shadow-mode prediction for offline analysis.
+// ShadowLogEntry records a prediction for offline analysis.
+// Entries can originate from shadow mode (LogReason="shadow") or from
+// near-threshold logging in block mode (LogReason="near_threshold").
 type ShadowLogEntry struct {
 	Timestamp    string  `json:"timestamp"`
 	InputHash    string  `json:"input_hash"` // SHA256 of input (for dedup)
@@ -86,6 +102,7 @@ type ShadowLogEntry struct {
 	Variant      string  `json:"variant"`
 	ModelVersion string  `json:"model_version"`
 	InputLength  int     `json:"input_length"`
+	LogReason    string  `json:"log_reason"` // "shadow" or "near_threshold"
 }
 
 // CalibrationResult holds the result of a calibration run.
