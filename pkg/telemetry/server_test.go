@@ -351,3 +351,181 @@ func mustParseTime(s string) (t time.Time) {
 	}
 	return
 }
+
+func TestLoadConfig(t *testing.T) {
+	// Test with no env vars — should return defaults.
+	os.Unsetenv("TELEMETRY_PORT")
+	os.Unsetenv("TELEMETRY_TLS_CERT")
+	os.Unsetenv("TELEMETRY_TLS_KEY")
+	os.Unsetenv("TELEMETRY_API_KEY")
+	os.Unsetenv("TELEMETRY_EVENT_RETENTION_DAYS")
+	os.Unsetenv("TELEMETRY_STORE_PATH")
+	os.Unsetenv("TELEMETRY_RATE_LIMIT_PER_MIN")
+	os.Unsetenv("TELEMETRY_PATTERNS_VERSION")
+
+	cfg, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig() error: %v", err)
+	}
+	if cfg.Port != 9091 {
+		t.Errorf("LoadConfig(): Port = %d, want 9091", cfg.Port)
+	}
+	if cfg.EventRetentionDays != 90 {
+		t.Errorf("LoadConfig(): EventRetentionDays = %d, want 90", cfg.EventRetentionDays)
+	}
+	if cfg.StorePath != "/var/lib/aegisgate/telemetry" {
+		t.Errorf("LoadConfig(): StorePath = %q, want default", cfg.StorePath)
+	}
+	if cfg.RateLimitPerMin != 10000 {
+		t.Errorf("LoadConfig(): RateLimitPerMin = %d, want 10000", cfg.RateLimitPerMin)
+	}
+	if cfg.PatternsVersion != "v1" {
+		t.Errorf("LoadConfig(): PatternsVersion = %q, want v1", cfg.PatternsVersion)
+	}
+
+	// Test with env vars.
+	t.Setenv("TELEMETRY_PORT", "8080")
+	t.Setenv("TELEMETRY_API_KEY", "secret123")
+	t.Setenv("TELEMETRY_EVENT_RETENTION_DAYS", "30")
+	t.Setenv("TELEMETRY_PATTERNS_VERSION", "v2")
+	t.Setenv("TELEMETRY_RATE_LIMIT_PER_MIN", "5000")
+	t.Setenv("TELEMETRY_STORE_PATH", "/tmp/telemetry")
+
+	cfg2, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig() with env: error: %v", err)
+	}
+	if cfg2.Port != 8080 {
+		t.Errorf("LoadConfig() with env: Port = %d, want 8080", cfg2.Port)
+	}
+	if cfg2.APIKey != "secret123" {
+		t.Errorf("LoadConfig() with env: APIKey = %q, want secret123", cfg2.APIKey)
+	}
+	if cfg2.EventRetentionDays != 30 {
+		t.Errorf("LoadConfig() with env: EventRetentionDays = %d, want 30", cfg2.EventRetentionDays)
+	}
+	if cfg2.PatternsVersion != "v2" {
+		t.Errorf("LoadConfig() with env: PatternsVersion = %q, want v2", cfg2.PatternsVersion)
+	}
+	if cfg2.RateLimitPerMin != 5000 {
+		t.Errorf("LoadConfig() with env: RateLimitPerMin = %d, want 5000", cfg2.RateLimitPerMin)
+	}
+	if cfg2.StorePath != "/tmp/telemetry" {
+		t.Errorf("LoadConfig() with env: StorePath = %q, want /tmp/telemetry", cfg2.StorePath)
+	}
+}
+
+func TestGetenvIntInvalid(t *testing.T) {
+	t.Setenv("TEST_TELEMETRY_BAD_INT", "not-a-number")
+	got := getenvInt("TEST_TELEMETRY_BAD_INT", 42)
+	if got != 42 {
+		t.Errorf("getenvInt with invalid value: got %d, want default 42", got)
+	}
+}
+
+func TestGetenvStr(t *testing.T) {
+	t.Setenv("TEST_TELEMETRY_STR", "custom-value")
+	got := getenvStr("TEST_TELEMETRY_STR", "default")
+	if got != "custom-value" {
+		t.Errorf("getenvStr: got %q, want custom-value", got)
+	}
+
+	got = getenvStr("TEST_TELEMETRY_NONEXISTENT", "fallback")
+	if got != "fallback" {
+		t.Errorf("getenvStr missing: got %q, want fallback", got)
+	}
+}
+
+func TestGetTotalBlocks(t *testing.T) {
+	router := NewEventRouter(nil)
+	router.Route(contracts.Event{
+		ID:            "e1",
+		Source:        "test",
+		SchemaVersion: "v1",
+		Timestamp:     time.Now(),
+		Blocked:       true,
+	})
+	router.Route(contracts.Event{
+		ID:            "e2",
+		Source:        "test",
+		SchemaVersion: "v1",
+		Timestamp:     time.Now(),
+		Blocked:       false,
+	})
+	router.Route(contracts.Event{
+		ID:            "e3",
+		Source:        "test",
+		SchemaVersion: "v1",
+		Timestamp:     time.Now(),
+		Blocked:       true,
+	})
+	if got := router.GetTotalBlocks(); got != 2 {
+		t.Errorf("GetTotalBlocks() = %d, want 2", got)
+	}
+}
+
+func TestServerMux(t *testing.T) {
+	srv, err := NewServer(&Config{
+		Port:               9091,
+		EventRetentionDays: 90,
+		StorePath:          t.TempDir(),
+	}, "test")
+	if err != nil {
+		t.Fatalf("NewServer() error: %v", err)
+	}
+	mux := srv.Mux()
+	if mux == nil {
+		t.Fatal("Mux() returned nil")
+	}
+}
+
+func TestHandleStats(t *testing.T) {
+	srv, err := NewServer(&Config{Port: 9091, EventRetentionDays: 90, StorePath: t.TempDir()}, "test")
+	if err != nil {
+		t.Fatalf("NewServer() error: %v", err)
+	}
+
+	// Route an event so stats are non-empty.
+	srv.router.Route(contracts.Event{
+		ID:            "e1",
+		Source:        "test",
+		SchemaVersion: "v1",
+		Timestamp:     time.Now(),
+		Blocked:       true,
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/stats", nil)
+	srv.handleStats(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("handleStats: status = %d, want 200", rec.Code)
+	}
+
+	var summary map[string]interface{}
+	if err := json.NewDecoder(rec.Body).Decode(&summary); err != nil {
+		t.Fatalf("handleStats: failed to decode response: %v", err)
+	}
+	if summary["total_events"] == nil {
+		t.Error("handleStats: response missing total_events")
+	}
+}
+
+func TestLoadDefaultPatterns(t *testing.T) {
+	srv, err := NewServer(&Config{Port: 9091, EventRetentionDays: 90, StorePath: t.TempDir()}, "test")
+	if err != nil {
+		t.Fatalf("NewServer() error: %v", err)
+	}
+
+	// Should not panic and should populate patterns.
+	srv.LoadDefaultPatterns()
+
+	// Verify patterns were loaded by checking the patterns endpoint.
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/patterns/latest", nil)
+	srv.handlePatternPull(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("handlePatternPull after LoadDefaultPatterns: status = %d, want 200", rec.Code)
+	}
+}

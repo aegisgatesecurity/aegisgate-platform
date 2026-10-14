@@ -184,3 +184,70 @@ func TestRemediationConstants(t *testing.T) {
 		}
 	}
 }
+func TestGetRuleMetadataWithDefault(t *testing.T) {
+	// Known rule should return the same as GetRuleMetadata.
+	m1 := GetRuleMetadataWithDefault("owasp_llm01_prompt_injection")
+	m2 := GetRuleMetadata("owasp_llm01_prompt_injection")
+	if m1.RuleID != m2.RuleID {
+		t.Errorf("GetRuleMetadataWithDefault != GetRuleMetadata for known rule: %q vs %q", m1.RuleID, m2.RuleID)
+	}
+
+	// Unknown rule should return a metadata with the rule ID and default remediation.
+	m := GetRuleMetadataWithDefault("unknown_rule_xyz")
+	if m.RuleID != "unknown_rule_xyz" {
+		t.Errorf("GetRuleMetadataWithDefault(unknown): RuleID = %q, want %q", m.RuleID, "unknown_rule_xyz")
+	}
+	if m.Remediation != remediationDefault {
+		t.Errorf("GetRuleMetadataWithDefault(unknown): Remediation = %q, want remediationDefault", m.Remediation)
+	}
+}
+
+func TestGetRemediationForCategory(t *testing.T) {
+	tests := []struct {
+		category string
+		want     string
+	}{
+		{"prompt_injection_xss", remediationPromptInjection},
+		{"prompt_injection_custom", remediationPromptInjection},     // prefix match
+		{"prompt_injection", remediationPromptInjection},             // containment fallback
+		{"pii_ssn", remediationPII},
+		{"secret_api_key", remediationSecrets},
+		{"xss_script", remediationXSS},
+		{"ot_modbus", remediationOT},
+		{"dangerous_eval", remediationDangerousCode},
+		{"harmful_content", remediationHarmful},
+		{"mitre_atlas_jailbreak", remediationATLAS},
+		{"unknown_category", remediationDefault},
+		{"", remediationDefault},
+	}
+	for _, tc := range tests {
+		got := getRemediationForCategory(tc.category)
+		if got != tc.want {
+			t.Errorf("getRemediationForCategory(%q) = %q, want %q", tc.category, got, tc.want)
+		}
+	}
+}
+
+func TestGetRuleMetadataPrefixMatch(t *testing.T) {
+	// Test prefix matching path — a rule ID that matches a prefix matcher
+	// but isn't an explicit entry should still return metadata with
+	// category-based remediation.
+	m := GetRuleMetadata("prompt_injection_custom_variant")
+	if m.RuleID != "prompt_injection_custom_variant" {
+		t.Errorf("GetRuleMetadata(prefix-match): RuleID = %q", m.RuleID)
+	}
+	// Should have gotten remediation from the prefix matcher.
+	if m.Remediation == remediationDefault {
+		t.Error("GetRuleMetadata(prefix-match): got default remediation, expected category-specific")
+	}
+	if m.Remediation != remediationPromptInjection {
+		t.Errorf("GetRuleMetadata(prefix-match): Remediation = %q, want remediationPromptInjection", m.Remediation)
+	}
+}
+
+func TestGetAllRuleMetadataCount(t *testing.T) {
+	all := GetAllRuleMetadata()
+	if len(all) < 20 {
+		t.Errorf("GetAllRuleMetadata(): expected at least 20 entries, got %d", len(all))
+	}
+}
