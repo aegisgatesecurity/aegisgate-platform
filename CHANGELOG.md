@@ -1,3 +1,42 @@
+## [4.6.0] - 2026-10-14 - Moat Deepening: Shared Contracts, Telemetry, SARIF, Remediation, LLM Presets, MCP Tool Screening
+
+> **v4.6.0** extends Platform's defensive moat with six new packages and enhanced MCP tool poisoning detection. This release adds canonical pattern contracts for cross-product interoperability, a unified telemetry receiver, SARIF output support, remediation guidance, LLM security presets, and an enhanced MCP tool description scanner that screens for 34 dangerous function patterns at registration time. All new packages are air-gap compatible — fully functional with zero external communications.
+
+### New Packages
+
+- **`pkg/contracts`** — Canonical pattern and event contracts (`contracts.Pattern`, `contracts.Event`) with JSON schema versions (`pattern_v1.json`, `event_v1.json`). Single source of truth for pattern exchange across all AegisGate products. Includes SHA-256 content hashing for cache invalidation.
+- **`pkg/telemetry`** — Unified telemetry receiver with HTTP server (`/api/v1/patterns/latest`, `/api/v1/events`, `/api/v1/iocs/latest`, `/api/v1/stats`). Serves Platform's scanner patterns in canonical contract format for FOSS product pull. Configurable via environment variables with sensible defaults.
+- **`pkg/sarifoutput`** — SARIF 2.1.0 output formatter for static analysis results. Produces industry-standard SARIF files compatible with GitHub Code Scanning, Azure DevOps, and other security tooling platforms.
+- **`pkg/remediation`** — Remediation guidance metadata for detection rules. Maps rule IDs to actionable fix descriptions, severity levels, and OWASP/MCP Top 10 references. Prefix-based matching for rule families (e.g., `prompt_injection_*`, `secret_*`, `pii_*`).
+- **`pkg/llmpresets`** — Curated LLM security prompt presets for common deployment scenarios. Includes system prompt hardening templates, output guardrails, and compliance-aware instructions.
+- **`pkg/mcpserver` (enhanced)** — MCP tool description scanner now imports 34 dangerous function patterns from AegisGate Scanner (`pkg/detectors/dangerous_functions.go`). Screens tool descriptions and `inputSchema` recursively at registration time for prompt injection, dangerous code patterns, secret exfiltration channels, and cross-origin escalation. Maps to OWASP MCP Top 10 MCP03 (Tool Poisoning).
+
+### Enhanced Features
+
+- **Pattern Pull Endpoint**: Platform now serves its 220+ canonical detection patterns via `GET /api/v1/patterns/latest`. FOSS products (Scanner, MCP, Rampart, Lens) can pull patterns with `If-None-Match` ETag caching. Air-gap compatible — endpoint only active when telemetry server is enabled.
+- **IOC Pull Endpoint**: Platform serves indicators of compromise via `GET /api/v1/iocs/latest` for Rampart and Lens to pull threat intelligence. Same ETag caching model.
+- **Event Ingestion**: Platform receives security events from FOSS products via `POST /api/v1/events` in canonical `contracts.Event` format. Events are stored with configurable retention.
+- **Lens Signal Correlation**: Platform receives Lens→Rampart signal correlation data, enabling cross-product threat intelligence sharing.
+
+### Testing
+
+- **81 new tests** across all new packages
+- `pkg/llmpresets`: 100% coverage
+- `pkg/remediation`: 81.6% coverage (fixed from 46.9% — added tests for `GetRuleMetadataWithDefault`, `getRemediationForCategory`, prefix matching)
+- `pkg/sarifoutput`: 98.6% coverage
+- `pkg/telemetry`: 84.3% coverage (fixed from 75.1% — added tests for `LoadConfig`, `handleStats`, `LoadDefaultPatterns`)
+- `pkg/contracts`: schema validation tests
+- `pkg/mcpserver`: 88% coverage (tool description scanner tests)
+
+### Version Bumps
+
+- Platform VERSION: 4.5.3 → 4.6.0
+- `cmd/aegisgate-platform/main.go`: version string updated
+- Helm chart appVersion: v4.5.3 → v4.6.0 (both `aegisgate-platform` and `aegisgate-operator`)
+- README badges updated to v4.6.0
+
+---
+
 ## [4.5.3] - 2026-10-14 - Near-Threshold ML Logging & Build Fixes
 
 > **v4.5.3** fixes a critical observability gap in the ML threat detector: in block mode, payloads that scored just below the threshold were completely invisible — no log entry, no metric, no trace. This was identified during community review of the 52%→99.57% gap analysis. The fix decouples near-threshold logging from the shadow-mode gate, making the boundary population between benign and adversarial visible in production for the first time.

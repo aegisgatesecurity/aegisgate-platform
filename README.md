@@ -6,10 +6,10 @@
 
 *A self-hosted gateway that scans every request and response between your team and any AI service — catching data leaks, prompt injections, and compliance violations before they happen.*
 
-[![Version](https://img.shields.io/badge/Version-v4.5.3-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.5.3)
+[![Version](https://img.shields.io/badge/Version-v4.6.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.6.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.26.6-00ADD8?logo=go)](https://golang.org/)
-[![Tests](https://img.shields.io/badge/Tests-11,573+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
+[![Go](https://img.shields.io/badge/Go-1.27.2-00ADD8?logo=go)](https://golang.org/)
+[![Tests](https://img.shields.io/badge/Tests-11,654+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-81%25-green?logo=codecov)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-120_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![Patent Pending](https://img.shields.io/badge/IP-Patent_Pending-8B5CF6?logo=uspto)](https://github.com/aegisgatesecurity/aegisgate-platform#ip-notice)
@@ -61,7 +61,7 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, Response, and Trust — no patchwork of point products.
-- **223 detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time. The same engine powers Lens and Rampart.
+- **220+ canonical detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time. The same engine powers Lens and Rampart.
 - **30+ compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
 
 ## Security Posture
@@ -198,7 +198,7 @@ flowchart LR
 | Pillar | Package | Description |
 |--------|---------|-------------|
 | HTTP API | `pkg/response/` | Request/response scanning, PII redaction, secret masking |
-| MCP | `pkg/mcpserver/` | Model Context Protocol guardrails |
+| MCP | `pkg/mcpserver/` | Model Context Protocol guardrails, tool poisoning detection (34 dangerous function patterns) |
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
 | Response | `pkg/response/detectors/` | 216-pattern detection (secrets, XSS, PII, compliance) |
@@ -207,6 +207,8 @@ flowchart LR
 ## Detection Engine
 
 The `pkg/response/detectors/` package provides 216 regex patterns — the same detection engine that powers Lens and Rampart:
+
+The `pkg/contracts` package defines canonical pattern and event contracts for cross-product interoperability. Platform serves patterns to FOSS products (Scanner, MCP, Rampart, Lens) via the telemetry endpoint (`GET /api/v1/patterns/latest`) with ETag caching.
 
 | Category | Patterns | What it catches |
 |----------|----------|-----------------|
@@ -242,7 +244,7 @@ AegisGate is **open-core**: the community edition is Apache 2.0 open source, and
 
 | Edition | License | Features |
 |---------|---------|----------|
-| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 223 detection patterns, 4 community compliance frameworks, in-memory + file persistence |
+| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 220+ canonical detection patterns, 4 community compliance frameworks, in-memory + file persistence |
 | **Developer** ($79/mo) | Proprietary | + 6 regulatory frameworks (HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR), PostgreSQL persistence, SSO |
 | **Professional** ($499/mo) | Proprietary | + 16 frameworks (4 security foundation + 12 industry) (EU AI Act, NIST CSF, FIPS, CIS, SOX, etc.), Trust Framework, SIEM (11 platforms), ML threat detection, federated IOC, PostgreSQL |
 | **Enterprise** (custom) | Proprietary | + 5 regulated frameworks (FedRAMP, CMMC L2, NIST 800-171, HITRUST, TISAX), HSM, FIPS mode, air-gapped, K8s clustering, custom ML, 24×7 support |
@@ -253,7 +255,7 @@ Enterprise features are gated via `//go:build enterprise` build tags and tier ch
 
 | Tier | Price | Rate Limits (Proxy/MCP) | Users / Agents | Compliance | Key Features |
 |------|-------|------------------------|---------------|------------|--------------|
-| **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 223 detection patterns, in-memory persistence |
+| **Community** | Free | Soft-throttle | 5 / 5 | 4 frameworks | HTTP/MCP/A2A scanning, 220+ canonical detection patterns, in-memory persistence |
 | **Developer** | $79/mo | 1,000 / 500 RPM | 25 / 25 | 10 frameworks | + HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR, PostgreSQL |
 | **Professional** | $499/mo | 10,000 / 5,000 RPM | 100 / 100 | 26 frameworks | + EU AI Act, NIST CSF, FIPS, CIS, SOX, Trust Framework, SIEM (11 platforms), ML threat detection |
 | **Enterprise** | Custom | Unlimited | Unlimited | 30+ frameworks | + FedRAMP, HITRUST, TISAX, CMMC L2, HSM, FIPS mode, air-gapped, K8s clustering, custom ML |
@@ -332,6 +334,11 @@ above the licensed tier.
 | **Incident Response** | Automated playbook-driven incident management (14 default playbooks) |
 | **CISO Posture Digest** | Signed posture digest with IOC, audit, and posture sources |
 | **Trust Portal** | Public-facing trust page with posture, frameworks, and uptime snapshots |
+| **SARIF Output** | Industry-standard SARIF 2.1.0 output for CI/CD integration with GitHub Code Scanning, Azure DevOps, and security platforms |
+| **Remediation Guidance** | Actionable fix descriptions, severity levels, and OWASP/MCP Top 10 references for every detection rule |
+| **LLM Security Presets** | Curated system prompt hardening templates, output guardrails, and compliance-aware instructions |
+| **Canonical Pattern Contracts** | Single-source-of-truth pattern definitions exchanged across all AegisGate products with SHA-256 content hashing |
+| **Unified Telemetry** | Receives security events from FOSS products, serves canonical patterns and IOCs via pull endpoints — air-gap compatible |
 
 ### Enterprise Features
 
@@ -375,6 +382,7 @@ pkg/
 ├── audit/soc2/             # SOC 2 evidence collection
 ├── bridge/                 # Platform bridge for Lens integration
 ├── compliance/             # 31 framework modules across 33 subdirectories
+├── contracts/               # Canonical pattern and event contracts
 ├── cluster/                # HA clustering & distributed rate limiting
 ├── correlation/            # Event correlation engine
 ├── cve/                    # CVE-for-AI feed
@@ -384,6 +392,7 @@ pkg/
 ├── incident/               # Incident response (PostgreSQL + in-memory, 14 playbooks)
 ├── ioc/                    # Federated IOC sharing (gossip, reputation, TAXII feeds, quarantine, STIX export)
 ├── lensbackend/            # Lens extension backend
+├── llmpresets/              # LLM security prompt presets
 ├── mcpserver/              # MCP guardrails
 ├── metrics/                # Prometheus metrics
 ├── ml/                     # ML threat detection (enterprise: ONNX inference)
@@ -392,14 +401,17 @@ pkg/
 ├── posture/                # Security posture assessment
 ├── promptcache/            # Prompt caching
 ├── rbac/                   # Role-based access control
+├── remediation/             # Remediation guidance metadata
 ├── response/               # 6-pillar response guard
 ├── response/detectors/     # 216-pattern detection engine
 ├── scanner/                # Vulnerability scanner
+├── sarifoutput/             # SARIF 2.1.0 output formatter
 ├── security/               # Security utilities
 ├── signature_verification/ # Package signature verification
 ├── sla/                    # SLA tracking
 ├── soc/                    # SOC detection patterns
 ├── sso/                    # SSO/OIDC
+├── telemetry/               # Unified telemetry receiver
 ├── tier/                   # Tier definitions and feature gating
 ├── tieradapter/            # Tier adapter for runtime tier checks
 ├── toolauth/               # MCP tool authorization matrix
