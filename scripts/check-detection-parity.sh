@@ -74,7 +74,7 @@ if [[ -z "$SCANNER_DIR" ]]; then
     for candidate in \
         "$(dirname "$0")/../../aegisgate-scanner" \
         "$(dirname "$0")/../../../aegisgate-scanner"; do
-        if [[ -f "$candidate/internal/detectors/compliance.go" ]]; then
+        if [[ -f "$candidate/pkg/detectors/compliance.go" ]]; then
             SCANNER_DIR="$candidate"
             break
         fi
@@ -112,7 +112,7 @@ fi
 
 # Scanner is optional — warn but don't fail
 SCANNER_ENABLED=0
-if [[ -z "$SCANNER_DIR" || ! -f "$SCANNER_DIR/internal/detectors/compliance.go" ]]; then
+if [[ -z "$SCANNER_DIR" || ! -f "$SCANNER_DIR/pkg/detectors/compliance.go" ]]; then
     echo -e "${YELLOW}WARNING: Scanner compliance.go not found. Set SCANNER_DIR environment variable${NC}"
     echo -e "${YELLOW}         Scanner parity checks will be skipped.${NC}"
     echo ""
@@ -145,7 +145,7 @@ ALL_RAMPART=$(echo "$ALL_RAMPART" | grep -v '^$' | sort -u)
 # Scanner: extract ALL pattern names from ALL detector .go files (excluding tests)
 ALL_SCANNER=""
 if [[ $SCANNER_ENABLED -eq 1 ]]; then
-    for scanner_file in "$SCANNER_DIR"/internal/detectors/*.go; do
+    for scanner_file in "$SCANNER_DIR"/pkg/detectors/*.go; do
         [[ "$scanner_file" == *_test.go ]] && continue
         [[ ! -f "$scanner_file" ]] && continue
         names=$(grep -oP 'Name:\s*"\K[^"]+' "$scanner_file" 2>/dev/null || true)
@@ -341,7 +341,7 @@ extract_scanner_regex() {
     if [[ $SCANNER_ENABLED -ne 1 ]]; then
         return
     fi
-    for scanner_file in "$SCANNER_DIR"/internal/detectors/*.go; do
+    for scanner_file in "$SCANNER_DIR"/pkg/detectors/*.go; do
         [[ "$scanner_file" == *_test.go ]] && continue
         [[ ! -f "$scanner_file" ]] && continue
         regex=$(grep -oP "Name:\s*\"${name}\".*?Regex:\s*\x60\K[^\x60]*" \
@@ -545,7 +545,7 @@ LENS_PAYLOADS=$(grep -cP "id:\s*['\"]([A-Z0-9.]+\.\d+)['\"]" "$LENS_DIR/test/uni
 
 SCANNER_PAYLOADS=0
 if [[ $SCANNER_ENABLED -eq 1 ]]; then
-    SCANNER_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
+    SCANNER_PAYLOADS=$(grep -cP '\{"(T\d+\.\d+|V450\.[A-Z0-9]+\.\d+)"' "$SCANNER_DIR/pkg/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
 fi
 
 echo "  Platform: $PLATFORM_PAYLOADS payloads"
@@ -583,7 +583,7 @@ LENS_TRANSFORMS=$(grep -cP '^\s+\w+:\s*\(s\)\s*=>' "$LENS_DIR/test/unit/ml-evasi
 
 SCANNER_TRANSFORMS=0
 if [[ $SCANNER_ENABLED -eq 1 ]]; then
-    SCANNER_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
+    SCANNER_TRANSFORMS=$(grep -oP '"[a-z_]+":\s+\w+,' "$SCANNER_DIR/pkg/detectors/evasion_suite_test.go" 2>/dev/null | grep -v '^\s*"category"' | wc -l || echo "0")
 fi
 
 echo "  Platform: $PLATFORM_TRANSFORMS transform keys"
@@ -619,7 +619,7 @@ LENS_THRESH=$(grep -oP 'THRESHOLD\s*=\s*\K[0-9.]+' "$LENS_DIR/src/detectors/ml/t
 
 SCANNER_THRESH=""
 if [[ $SCANNER_ENABLED -eq 1 ]]; then
-    SCANNER_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null | head -1)
+    SCANNER_THRESH=$(grep -oP 'Threshold\s*[:=]\s*\K[0-9.]+' "$SCANNER_DIR/pkg/detectors/evasion_suite_test.go" 2>/dev/null | head -1)
 fi
 
 echo "  Platform evasion test: $PLATFORM_THRESH"
@@ -696,7 +696,7 @@ fi
 # Scanner detection logic check
 SCANNER_HAS_REGEX=0
 if [[ $SCANNER_ENABLED -eq 1 ]]; then
-    SCANNER_HAS_REGEX=$(grep -c 'DetectAll\|detect.*regex' "$SCANNER_DIR/internal/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
+    SCANNER_HAS_REGEX=$(grep -c 'DetectAll\|detect.*regex' "$SCANNER_DIR/pkg/detectors/evasion_suite_test.go" 2>/dev/null || echo "0")
     if [[ "$SCANNER_HAS_REGEX" -eq 0 ]]; then
         echo -e "  ${RED}❌ Scanner evasion test does NOT use regex detection (ML-only?)${NC}"
         EXIT_CODE=1
