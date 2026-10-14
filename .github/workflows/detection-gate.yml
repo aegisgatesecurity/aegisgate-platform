@@ -71,7 +71,7 @@ jobs:
           path: ./aegisgate-scanner
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Update go.mod replace for scanner
-        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner
+        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner -replace github.com/aegisgatesecurity/aegisgate-platform=.
 
       - name: Set up Go
         uses: actions/setup-go@v6
