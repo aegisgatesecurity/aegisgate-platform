@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegisgatesecurity.io/schemas/pattern-v1.json",
+  "title": "AegisGate Canonical Pattern v1",
+  "description": "Canonical pattern definition for all AegisGate products. Uses raw regex string (not compiled) for HTTP serialization.",
+  "type": "object",
+  "required": ["id", "name", "regex", "severity", "category", "version"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique pattern identifier (e.g., 'secret_aws_key')"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable pattern name"
+    },
+    "regex": {
+      "type": "string",
+      "description": "Raw Go RE2 regex string (no lookbehind/lookahead). Products compile locally."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", "info"]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "secrets",
+        "pii-us-core",
+        "pii-us-extended",
+        "pii-financial",
+        "pii-international",
+        "xss",
+        "compliance",
+        "dangerous-function",
+        "ot-protocols",
+        "prompt-injection",
+        "network",
+        "credential",
+        "cryptographic"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what the pattern detects"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "", "python", "javascript", "typescript", "go", "java",
+          "c", "cpp", "ruby", "php", "shell", "yaml", "json",
+          "xml", "html", "sql", "generic"
+        ]
+      },
+      "description": "Restricts pattern to specific languages. Empty = all languages."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score (0-1). Defaults to 1.0 for exact regex matches."
+    },
+    "keywords": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional optimization hints for fast pre-filtering"
+    },
+    "version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Pattern format version"
+    }
+  }
+}

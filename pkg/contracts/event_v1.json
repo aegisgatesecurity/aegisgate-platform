@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegisgatesecurity.io/schemas/event-v1.json",
+  "title": "AegisGate Canonical Event v1",
+  "description": "Canonical event schema for all AegisGate products. Metadata-only — no PII values, no credentials, no prompt text.",
+  "type": "object",
+  "required": ["id", "source", "timestamp", "schema_version", "total_detections", "blocked"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier (UUID v4)"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["lens", "rampart", "scanner", "mcp", "platform"],
+      "description": "Which product generated this event"
+    },
+    "source_version": {
+      "type": "string",
+      "description": "Version of the source product (e.g., 'v0.4.1')"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event was generated (RFC3339)"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Event schema version"
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["request", "response", "scan", "realtime"],
+      "description": "Whether detection occurred on request, response, scan, or realtime"
+    },
+    "host": {
+      "type": "string",
+      "description": "Target host (hashed or omitted for privacy)"
+    },
+    "path": {
+      "type": "string",
+      "description": "Request path (may be omitted for privacy)"
+    },
+    "artifact": {
+      "type": "string",
+      "description": "File path (Scanner) or resource identifier"
+    },
+    "hashed_domain": {
+      "type": "string",
+      "description": "Hashed domain identifier (Lens privacy model)"
+    },
+    "total_detections": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of detections in this event"
+    },
+    "blocked": {
+      "type": "boolean",
+      "description": "Whether the source product blocked the request/response"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["blocked", "warned", "logged", "flagged", "allowed"],
+      "description": "Action taken by the source product"
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" },
+      "description": "Individual detection findings (metadata-only)"
+    },
+    "categories": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Summary of detection categories triggered"
+    },
+    "severities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Summary of severity levels triggered"
+    },
+    "rules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Rule IDs that triggered (e.g., 'secret_aws_key')"
+    },
+    "pii_categories": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "PII categories detected (e.g., 'ssn', 'credit_card')"
+    },
+    "secret_types": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Secret types detected (e.g., 'aws_key', 'github_token')"
+    },
+    "ml_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "ML model score (0-1) if ML detection was used"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Links related events across products"
+    },
+    "installation_id": {
+      "type": "string",
+      "description": "Hashed installation identifier for deduplication"
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["rule_id", "category", "severity"],
+      "properties": {
+        "rule_id": { "type": "string" },
+        "category": { "type": "string" },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low", "info"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "message": { "type": "string" },
+        "line": { "type": "integer", "minimum": 0 },
+        "column": { "type": "integer", "minimum": 0 },
+        "end_line": { "type": "integer", "minimum": 0 },
+        "end_column": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
