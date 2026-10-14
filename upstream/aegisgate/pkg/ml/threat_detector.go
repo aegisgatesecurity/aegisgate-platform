@@ -117,10 +117,13 @@ func (td *ThreatDetector) Detect(text string) ThreatScore {
 		ModelVersion: td.modelHash,
 	}
 
-	// In shadow mode, log but don't block
+	// In shadow mode, log all predictions but never block.
+	// In block mode, log near-threshold scores for boundary analysis.
 	if td.config.ShadowMode {
-		td.calibrator.LogShadowPrediction(text, score, "original", td.modelHash)
+		td.calibrator.LogPrediction(text, score, "original", td.modelHash, "shadow")
 		result.IsThreat = false // Never block in shadow mode
+	} else if !isThreat && td.isNearThreshold(score) {
+		td.calibrator.LogPrediction(text, score, "original", td.modelHash, "near_threshold")
 	}
 
 	return result
@@ -173,8 +176,10 @@ func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 	}
 
 	if td.config.ShadowMode {
-		td.calibrator.LogShadowPrediction(variants[0], bestScore, "multi_variant", td.modelHash)
+		td.calibrator.LogPrediction(variants[0], bestScore, "multi_variant", td.modelHash, "shadow")
 		result.IsThreat = false // Never block in shadow mode
+	} else if !isThreat && td.isNearThreshold(bestScore) {
+		td.calibrator.LogPrediction(variants[0], bestScore, "multi_variant", td.modelHash, "near_threshold")
 	}
 
 	return result
@@ -369,6 +374,19 @@ func (td *ThreatDetector) GetStats() map[string]interface{} {
 		"max_seq_len":  td.config.MaxSequenceLength,
 		"timeout_ms":   td.config.Timeout,
 	}
+}
+
+// isNearThreshold returns true when a non-blocking score falls within the
+// NearThresholdMargin below the current threshold. This identifies boundary
+// cases — payloads that nearly triggered a block — for offline analysis.
+//
+// Must be called under td.mu.RLock().
+func (td *ThreatDetector) isNearThreshold(score float64) bool {
+	margin := td.config.NearThresholdMargin
+	if margin <= 0 {
+		return false
+	}
+	return score >= td.config.Threshold-margin && score < td.config.Threshold
 }
 
 // =====================================================================

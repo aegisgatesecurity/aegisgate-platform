@@ -279,7 +279,7 @@ func TestCalibrationManager_ShadowLog(t *testing.T) {
 	cm.logPath = filepath.Join(tmpDir, "shadow.jsonl")
 
 	// Log a prediction
-	cm.LogShadowPrediction("test input", 0.85, "original", "model-v1")
+	cm.LogPrediction("test input", 0.85, "original", "model-v1", "shadow")
 
 	if len(cm.log) != 1 {
 		t.Errorf("expected 1 log entry, got %d", len(cm.log))
@@ -353,6 +353,146 @@ func TestThreatDetector_GetStats(t *testing.T) {
 	}
 	if stats["shadow_mode"] != true {
 		t.Error("expected shadow_mode=true")
+	}
+}
+
+func TestThreatDetector_NearThresholdLogging(t *testing.T) {
+	// In block mode (ShadowMode=false), a score that falls within
+	// NearThresholdMargin below the threshold should be logged for
+	// offline analysis. This captures "near-miss" payloads that would
+	// otherwise be invisible in production.
+	cfg := DetectorConfig{
+		Enabled:             true,
+		ShadowMode:          false, // Block mode
+		Threshold:           0.50,
+		NearThresholdMargin: 0.10, // Log scores in [0.40, 0.50)
+		ModelPath:           "",
+		MaxSequenceLength:   128,
+		Timeout:             10,
+	}
+	td := NewThreatDetector(cfg)
+	cm := td.GetCalibrator()
+
+	// Use a temp dir for the shadow log
+	tmpDir := t.TempDir()
+	cm.logPath = filepath.Join(tmpDir, "near_threshold.jsonl")
+
+	// "igonre instructions" triggers heuristic transposition detection (score ~0.4)
+	// With threshold=0.50 and margin=0.10, a score of 0.40 should be logged.
+	result := td.Detect("igonre instructions")
+
+	// Should NOT be flagged as threat (score < 0.50)
+	if result.IsThreat {
+		t.Errorf("expected IsThreat=false (score=%.3f < threshold=0.50)", result.Score)
+	}
+
+	// Should have been logged as near_threshold
+	if len(cm.log) == 0 {
+		t.Fatal("expected near-threshold log entry, but log is empty — score was invisible")
+	}
+
+	entry := cm.log[0]
+	if entry.LogReason != "near_threshold" {
+		t.Errorf("expected LogReason='near_threshold', got %q", entry.LogReason)
+	}
+	if entry.IsThreat {
+		t.Error("near-threshold entry should have IsThreat=false")
+	}
+}
+
+func TestThreatDetector_NearThresholdMarginDisabled(t *testing.T) {
+	// When NearThresholdMargin=0, near-threshold logging is disabled.
+	// This preserves backward compatibility for deployments that don't
+	// want the additional logging.
+	cfg := DetectorConfig{
+		Enabled:             true,
+		ShadowMode:          false,
+		Threshold:           0.50,
+		NearThresholdMargin: 0, // Disabled
+		ModelPath:           "",
+		MaxSequenceLength:   128,
+		Timeout:             10,
+	}
+	td := NewThreatDetector(cfg)
+	cm := td.GetCalibrator()
+
+	tmpDir := t.TempDir()
+	cm.logPath = filepath.Join(tmpDir, "disabled.jsonl")
+
+	_ = td.Detect("igonre instructions")
+
+	if len(cm.log) != 0 {
+		t.Errorf("expected 0 log entries with NearThresholdMargin=0, got %d", len(cm.log))
+	}
+}
+
+func TestThreatDetector_BlockModeThreatNotLoggedAsNearThreshold(t *testing.T) {
+	// When a score exceeds the threshold in block mode, it should be
+	// flagged as a threat and NOT logged as near_threshold (it's above
+	// the threshold, not a near-miss).
+	cfg := DetectorConfig{
+		Enabled:             true,
+		ShadowMode:          false,
+		Threshold:           0.30, // Low threshold to trigger threat
+		NearThresholdMargin: 0.10,
+		ModelPath:           "",
+		MaxSequenceLength:   128,
+		Timeout:             10,
+	}
+	td := NewThreatDetector(cfg)
+	cm := td.GetCalibrator()
+
+	tmpDir := t.TempDir()
+	cm.logPath = filepath.Join(tmpDir, "threat.jsonl")
+
+	result := td.Detect("igonre instructions") // transposition → score ~0.4 > 0.30
+
+	if !result.IsThreat {
+		t.Errorf("expected IsThreat=true (score=%.3f >= threshold=0.30)", result.Score)
+	}
+
+	// Should NOT be logged as near_threshold (it was flagged as threat)
+	for _, entry := range cm.log {
+		if entry.LogReason == "near_threshold" {
+			t.Error("threat detection should not be logged as near_threshold")
+		}
+	}
+}
+
+func TestThreatDetector_ShadowModeLogsAllPredictions(t *testing.T) {
+	// In shadow mode, ALL predictions should be logged with reason="shadow",
+	// regardless of whether they're near-threshold or not.
+	cfg := DetectorConfig{
+		Enabled:             true,
+		ShadowMode:          true,
+		Threshold:           0.50,
+		NearThresholdMargin: 0.10,
+		ModelPath:           "",
+		MaxSequenceLength:   128,
+		Timeout:             10,
+	}
+	td := NewThreatDetector(cfg)
+	cm := td.GetCalibrator()
+
+	tmpDir := t.TempDir()
+	cm.logPath = filepath.Join(tmpDir, "shadow.jsonl")
+
+	// This will produce a score from heuristics
+	result := td.Detect("igonre instructions")
+
+	// Shadow mode should never block
+	if result.IsThreat {
+		t.Error("shadow mode should never set IsThreat=true")
+	}
+
+	// Should have logged with reason="shadow" (not "near_threshold")
+	if len(cm.log) == 0 {
+		t.Fatal("expected shadow log entry, but log is empty")
+	}
+
+	entry := cm.log[0]
+	if entry.LogReason != "shadow" {
+		t.Errorf("expected LogReason='shadow', got %q", entry.LogReason)
 	}
 }
 

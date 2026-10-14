@@ -97,9 +97,14 @@ func (cm *CalibrationManager) SetShadowMode(shadow bool) {
 	cm.config.ShadowMode = shadow
 }
 
-// LogShadowPrediction records a shadow-mode prediction for offline analysis.
+// LogPrediction records a prediction for offline analysis.
 // Thread-safe. Does NOT block production traffic.
-func (cm *CalibrationManager) LogShadowPrediction(input string, score float64, variant string, modelVersion string) {
+//
+// The reason parameter distinguishes entry origins:
+//   - "shadow": logged because ShadowMode is true (all predictions logged)
+//   - "near_threshold": logged because score was within NearThresholdMargin
+//     of the threshold in block mode (capturing boundary cases)
+func (cm *CalibrationManager) LogPrediction(input string, score float64, variant string, modelVersion string, reason string) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
@@ -113,6 +118,7 @@ func (cm *CalibrationManager) LogShadowPrediction(input string, score float64, v
 		Variant:      variant,
 		ModelVersion: modelVersion,
 		InputLength:  len(input),
+		LogReason:    reason,
 	}
 
 	cm.log = append(cm.log, entry)
