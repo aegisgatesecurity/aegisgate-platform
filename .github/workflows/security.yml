@@ -158,6 +158,16 @@ jobs:
           sarif_file: trivy-fs-results.sarif
           category: trivy-fs
 
+      - name: Checkout Scanner (for go.mod replace)
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-scanner
+          path: ./aegisgate-scanner
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update go.mod replace for CI
+        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner -replace github.com/aegisgatesecurity/aegisgate-platform=.
+
       - name: Build Docker image for scan
         run: docker build -t aegisgate-platform:scan .
 

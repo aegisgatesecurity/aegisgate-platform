@@ -122,9 +122,9 @@ func TestApplySuppressions_NoSuppressions(t *testing.T) {
 func TestApplySuppressions_NextLinePattern(t *testing.T) {
 	// Suppression on line N applies to line N and N+1
 	findings := []SuppressedFinding{
-		{RuleID: "dangerous_py_eval", Line: 5},  // same line as suppression
-		{RuleID: "dangerous_py_eval", Line: 6},  // next line (should be suppressed)
-		{RuleID: "dangerous_py_eval", Line: 7},  // too far (should remain)
+		{RuleID: "dangerous_py_eval", Line: 5}, // same line as suppression
+		{RuleID: "dangerous_py_eval", Line: 6}, // next line (should be suppressed)
+		{RuleID: "dangerous_py_eval", Line: 7}, // too far (should remain)
 	}
 	suppressions := []Suppression{
 		{RuleID: "dangerous_py_eval", Line: 5},

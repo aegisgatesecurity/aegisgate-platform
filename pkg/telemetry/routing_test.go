@@ -15,15 +15,15 @@ func TestEventRouter_Route(t *testing.T) {
 	router := NewEventRouter(nil)
 
 	e := contracts.Event{
-		ID:            "test-1",
-		Source:        contracts.SourceScanner,
-		SchemaVersion: "v1",
-		Timestamp:     time.Now().UTC(),
+		ID:              "test-1",
+		Source:          contracts.SourceScanner,
+		SchemaVersion:   "v1",
+		Timestamp:       time.Now().UTC(),
 		TotalDetections: 3,
-		Blocked:       true,
-		Categories:    []string{"secrets", "pii"},
-		Severities:    []string{"critical", "high"},
-		Rules:         []string{"pii_ssn", "secret_rsa_key"},
+		Blocked:         true,
+		Categories:      []string{"secrets", "pii"},
+		Severities:      []string{"critical", "high"},
+		Rules:           []string{"pii_ssn", "secret_rsa_key"},
 		Findings: []contracts.EventFinding{
 			{RuleID: "pii_ssn", Severity: "critical"},
 		},
@@ -98,7 +98,7 @@ func TestEventRouter_Corroboration(t *testing.T) {
 
 	e1 := contracts.Event{
 		ID: "test-1", Source: contracts.SourceLens, SchemaVersion: "v1",
-		Timestamp: time.Now().UTC(),
+		Timestamp:    time.Now().UTC(),
 		HashedDomain: domain,
 		Findings: []contracts.EventFinding{
 			{RuleID: "prompt_injection", Severity: "high"},
@@ -106,7 +106,7 @@ func TestEventRouter_Corroboration(t *testing.T) {
 	}
 	e2 := contracts.Event{
 		ID: "test-2", Source: contracts.SourceRampart, SchemaVersion: "v1",
-		Timestamp: time.Now().UTC(),
+		Timestamp:    time.Now().UTC(),
 		HashedDomain: domain,
 		Findings: []contracts.EventFinding{
 			{RuleID: "prompt_injection", Severity: "high"},
@@ -136,7 +136,7 @@ func TestEventRouter_PruneFingerprints(t *testing.T) {
 	oldTime := time.Now().UTC().Add(-2 * time.Hour)
 	e1 := contracts.Event{
 		ID: "old", Source: contracts.SourceLens, SchemaVersion: "v1",
-		Timestamp: oldTime,
+		Timestamp:    oldTime,
 		HashedDomain: "old-domain",
 		Findings: []contracts.EventFinding{
 			{RuleID: "old_rule", Severity: "low"},
@@ -147,7 +147,7 @@ func TestEventRouter_PruneFingerprints(t *testing.T) {
 	// Add a recent event
 	e2 := contracts.Event{
 		ID: "new", Source: contracts.SourceRampart, SchemaVersion: "v1",
-		Timestamp: time.Now().UTC(),
+		Timestamp:    time.Now().UTC(),
 		HashedDomain: "new-domain",
 		Findings: []contracts.EventFinding{
 			{RuleID: "new_rule", Severity: "high"},
@@ -176,10 +176,10 @@ func TestEventRouter_GetSummary(t *testing.T) {
 
 	e := contracts.Event{
 		ID: "test-1", Source: contracts.SourceMCP, SchemaVersion: "v1",
-		Timestamp: time.Now().UTC(),
+		Timestamp:       time.Now().UTC(),
 		TotalDetections: 5,
-		Blocked: true,
-		Rules: []string{"tool_poisoning", "dangerous_eval"},
+		Blocked:         true,
+		Rules:           []string{"tool_poisoning", "dangerous_eval"},
 	}
 	router.Route(e)
 
@@ -302,7 +302,7 @@ func TestSanitizeSource(t *testing.T) {
 		{"scanner", contracts.SourceScanner, false},
 		{"mcp", contracts.SourceMCP, false},
 		{"platform", contracts.SourcePlatform, false},
-		{"LENS", contracts.SourceLens, false},  // case insensitive
+		{"LENS", contracts.SourceLens, false}, // case insensitive
 		{"unknown", "", true},
 		{"", "", true},
 	}

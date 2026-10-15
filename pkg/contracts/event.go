@@ -29,10 +29,10 @@ import (
 type EventSource string
 
 const (
-	SourceLens    EventSource = "lens"
-	SourceRampart EventSource = "rampart"
-	SourceScanner EventSource = "scanner"
-	SourceMCP     EventSource = "mcp"
+	SourceLens     EventSource = "lens"
+	SourceRampart  EventSource = "rampart"
+	SourceScanner  EventSource = "scanner"
+	SourceMCP      EventSource = "mcp"
 	SourcePlatform EventSource = "platform"
 )
 
@@ -44,7 +44,7 @@ type EventDirection string
 const (
 	DirectionRequest  EventDirection = "request"
 	DirectionResponse EventDirection = "response"
-	DirectionScan     EventDirection = "scan" // For file/batch scanning (Scanner)
+	DirectionScan     EventDirection = "scan"     // For file/batch scanning (Scanner)
 	DirectionRealtime EventDirection = "realtime" // For browser extension (Lens)
 )
 

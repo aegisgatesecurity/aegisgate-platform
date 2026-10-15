@@ -208,8 +208,8 @@ func TestGetRemediationForCategory(t *testing.T) {
 		want     string
 	}{
 		{"prompt_injection_xss", remediationPromptInjection},
-		{"prompt_injection_custom", remediationPromptInjection},     // prefix match
-		{"prompt_injection", remediationPromptInjection},             // containment fallback
+		{"prompt_injection_custom", remediationPromptInjection}, // prefix match
+		{"prompt_injection", remediationPromptInjection},        // containment fallback
 		{"pii_ssn", remediationPII},
 		{"secret_api_key", remediationSecrets},
 		{"xss_script", remediationXSS},

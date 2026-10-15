@@ -298,3 +298,4 @@ pkg/ioc/data/seed-keyring.json
 configs/test.yaml
 docker-compose-ollama.yml
 tests/fpr-simulation/
+mcp-security/mcp-server

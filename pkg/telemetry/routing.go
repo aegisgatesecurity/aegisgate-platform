@@ -44,13 +44,13 @@ type EventRouter struct {
 
 // SourceStats tracks per-source statistics.
 type SourceStats struct {
-	Events       int64
-	Detections   int64
-	Blocks       int64
-	LastEvent    time.Time
-	Categories   map[string]int
-	Severities   map[string]int
-	Rules        map[string]int
+	Events     int64
+	Detections int64
+	Blocks     int64
+	LastEvent  time.Time
+	Categories map[string]int
+	Severities map[string]int
+	Rules      map[string]int
 }
 
 // fingerprintEntry records a single observation of a fingerprint.
@@ -68,9 +68,9 @@ type EventStorer interface {
 // NewEventRouter creates a new EventRouter.
 func NewEventRouter(store EventStorer) *EventRouter {
 	return &EventRouter{
-		sourceStats:   make(map[contracts.EventSource]*SourceStats),
-		fingerprints:  make(map[string][]fingerprintEntry),
-		store:         store,
+		sourceStats:  make(map[contracts.EventSource]*SourceStats),
+		fingerprints: make(map[string][]fingerprintEntry),
+		store:        store,
 	}
 }
 
@@ -258,21 +258,21 @@ func fingerprintKey(ruleID, hashedDomain string) string {
 
 // SourceStatsSummary is a JSON-serializable summary of all source stats.
 type SourceStatsSummary struct {
-	TotalEvents      int64                          `json:"total_events"`
-	TotalDetections  int64                          `json:"total_detections"`
-	TotalBlocks      int64                          `json:"total_blocks"`
-	BySource         map[string]*SourceStatsSummary `json:"by_source"`
+	TotalEvents     int64                          `json:"total_events"`
+	TotalDetections int64                          `json:"total_detections"`
+	TotalBlocks     int64                          `json:"total_blocks"`
+	BySource        map[string]*SourceStatsSummary `json:"by_source"`
 }
 
 // SourceStatsSummary is per-source summary.
 type SourceStatsSummaryEntry struct {
-	Events      int            `json:"events"`
-	Detections  int            `json:"detections"`
-	Blocks      int            `json:"blocks"`
-	LastEvent   string         `json:"last_event"`
-	Categories  map[string]int `json:"categories"`
-	Severities  map[string]int `json:"severities"`
-	TopRules    []ruleCount    `json:"top_rules,omitempty"`
+	Events     int            `json:"events"`
+	Detections int            `json:"detections"`
+	Blocks     int            `json:"blocks"`
+	LastEvent  string         `json:"last_event"`
+	Categories map[string]int `json:"categories"`
+	Severities map[string]int `json:"severities"`
+	TopRules   []ruleCount    `json:"top_rules,omitempty"`
 }
 
 // ruleCount is a rule ID with its observation count.
