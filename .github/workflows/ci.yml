@@ -100,6 +100,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+      - name: Checkout Scanner (for go.mod replace)
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-scanner
+          path: ./aegisgate-scanner
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update go.mod replace for CI
+        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner -replace github.com/aegisgatesecurity/aegisgate-platform=.
 
       - name: Setup Go
         uses: actions/setup-go@v7
@@ -419,6 +428,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+      - name: Checkout Scanner (for go.mod replace)
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-scanner
+          path: ./aegisgate-scanner
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update go.mod replace for CI
+        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner -replace github.com/aegisgatesecurity/aegisgate-platform=.
 
       - name: Setup Go
         uses: actions/setup-go@v7
@@ -530,6 +548,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+      - name: Checkout Scanner (for go.mod replace)
+        uses: actions/checkout@v6
+        with:
+          repository: aegisgatesecurity/aegisgate-scanner
+          path: ./aegisgate-scanner
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update go.mod replace for CI
+        run: go mod edit -replace github.com/aegisgatesecurity/aegisgate-scanner=./aegisgate-scanner -replace github.com/aegisgatesecurity/aegisgate-platform=.
 
       - name: Setup Go
         uses: actions/setup-go@v7
