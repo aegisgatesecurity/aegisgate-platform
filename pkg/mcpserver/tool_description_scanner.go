@@ -7,6 +7,9 @@
 //
 // Detection coverage:
 //   - Prompt injection (ignore instructions, role-play, system prompt leakage)
+//   - Prompt leakage (system prompt disclosure, meta-instruction references)
+//   - RAG attacks (RAG poisoning, smuggling, retrieval bypass, embedding poisoning)
+//   - Path traversal (dotdot, encoded traversal, sensitive file references)
 //   - Dangerous functions (eval, exec, os.system, child_process, etc.)
 //   - Secrets and credentials in descriptions
 //   - PII in descriptions
@@ -105,12 +108,24 @@ func (s *ToolDescriptionScanner) compilePatterns() {
 		compilePatternSet(scannerdetectors.PIIInternationalPatterns, "pii"),
 	)
 
+	// Prompt leakage patterns (16 patterns: system prompt disclosure, meta-instruction refs)
+	// RAG attack patterns (17 patterns: RAG poisoning, smuggling, retrieval bypass)
+	// Path traversal patterns (19 patterns: dotdot, encoded traversal, sensitive file refs)
+	// These catch tool descriptions that try to leak system context, inject hidden
+	// instructions via zero-width chars or HTML comments, or reference sensitive files.
+	s.promptPatterns = concatPatterns(
+		compilePatternSet(scannerdetectors.PromptLeakageResponsePatterns, "prompt-leakage"),
+		compilePatternSet(scannerdetectors.RAGPatterns, "rag-attack"),
+		compilePatternSet(scannerdetectors.PathTraversalPatterns, "path-traversal"),
+	)
+
 	s.logger.Info("tool description scanner initialized",
 		"dangerous_functions", len(s.dangerousPatterns),
 		"secrets", len(s.secretPatterns),
 		"pii", len(s.piiPatterns),
 		"xss", len(s.xssPatterns),
 		"compliance", len(s.compliancePatterns),
+		"prompt_leakage_rag_traversal", len(s.promptPatterns),
 	)
 }
 
@@ -215,6 +230,7 @@ func (s *ToolDescriptionScanner) allPatterns() []compiledScanPattern {
 		s.piiPatterns,
 		s.xssPatterns,
 		s.compliancePatterns,
+		s.promptPatterns,
 	)
 }
 
