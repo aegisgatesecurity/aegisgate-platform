@@ -11,6 +11,9 @@ package mcp
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -32,6 +35,24 @@ type registryTool struct {
 	InputSchema map[string]interface{}
 	RiskLevel   int
 	Executor    string
+	Hash        string // SHA-256 of name + description + canonical schema JSON
+}
+
+// ToolIntegrityViolation describes a tool whose hash has changed since
+// registration, indicating a possible rug-pull attack.
+type ToolIntegrityViolation struct {
+	ToolName    string
+	StoredHash  string
+	CurrentHash string
+}
+
+// computeToolHash computes a SHA-256 hash over the tool name, description,
+// and canonical JSON serialization of the input schema. The delimiter "|"
+// separates fields to prevent concatenation ambiguity.
+func computeToolHash(name, description string, inputSchema map[string]interface{}) string {
+	schemaBytes, _ := json.Marshal(inputSchema)
+	h := sha256.Sum256([]byte(name + "|" + description + "|" + string(schemaBytes)))
+	return hex.EncodeToString(h[:])
 }
 
 // ToolHandlerFunc is a function that executes a tool
@@ -58,14 +79,17 @@ func (r *ToolRegistry) Register(name string, desc string, riskLevel int, inputSc
 		return fmt.Errorf("tool already registered: %s", name)
 	}
 
+	hash := computeToolHash(name, desc, inputSchema)
+
 	r.tools[name] = &registryTool{
 		Name:        name,
 		Description: desc,
 		RiskLevel:   riskLevel,
 		InputSchema: inputSchema,
 		Executor:    name,
+		Hash:        hash,
 	}
-	r.logger.Debug("MCP tool registered", "name", name, "risk", riskLevel)
+	r.logger.Debug("MCP tool registered", "name", name, "risk", riskLevel, "hash", hash[:16])
 
 	return nil
 }
@@ -133,6 +157,56 @@ func (r *ToolRegistry) ToMCPFormat() []Tool {
 		})
 	}
 	return tools
+}
+
+// VerifyIntegrity re-hashes every registered tool and returns violations
+// for any tool whose current hash does not match the hash stored at
+// registration time. An empty slice means all tools are unchanged.
+func (r *ToolRegistry) VerifyIntegrity() []ToolIntegrityViolation {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var violations []ToolIntegrityViolation
+	for name, t := range r.tools {
+		currentHash := computeToolHash(t.Name, t.Description, t.InputSchema)
+		if currentHash != t.Hash {
+			violations = append(violations, ToolIntegrityViolation{
+				ToolName:    name,
+				StoredHash:  t.Hash,
+				CurrentHash: currentHash,
+			})
+		}
+	}
+	return violations
+}
+
+// ToMCPFormatVerified returns tools that pass integrity verification along
+// with any violations. Tools whose hash has changed since registration are
+// excluded from the returned slice — they must not be exposed to the LLM
+// context until re-approved.
+func (r *ToolRegistry) ToMCPFormatVerified() ([]Tool, []ToolIntegrityViolation) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var tools []Tool
+	var violations []ToolIntegrityViolation
+	for name, t := range r.tools {
+		currentHash := computeToolHash(t.Name, t.Description, t.InputSchema)
+		if currentHash != t.Hash {
+			violations = append(violations, ToolIntegrityViolation{
+				ToolName:    name,
+				StoredHash:  t.Hash,
+				CurrentHash: currentHash,
+			})
+			continue // skip — do not expose to LLM
+		}
+		tools = append(tools, Tool{
+			Name:        t.Name,
+			Description: t.Description,
+			InputSchema: t.InputSchema,
+		})
+	}
+	return tools, violations
 }
 
 // GetRiskLevel returns the risk level for a tool

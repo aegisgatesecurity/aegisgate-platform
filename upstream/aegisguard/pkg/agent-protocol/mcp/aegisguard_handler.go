@@ -130,7 +130,23 @@ func (h *AegisGuardHandler) handleInitialize(ctx context.Context, conn *Connecti
 
 // handleListTools returns available tools
 func (h *AegisGuardHandler) handleListTools(ctx context.Context, req *JSONRPCRequest) *JSONRPCResponse {
-	tools := h.toolRegistry.ToMCPFormat()
+	tools, violations := h.toolRegistry.ToMCPFormatVerified()
+
+	for _, v := range violations {
+		h.logger.Warn("tool integrity violation — tool excluded from list",
+			"tool", v.ToolName,
+			"stored_hash", v.StoredHash[:16],
+			"current_hash", v.CurrentHash[:16],
+		)
+		if h.auditLogger != nil {
+			h.auditLogger.Log(ctx, &AuditEntry{
+				Type:     "tool_integrity_violation",
+				ToolName: v.ToolName,
+				Error:    "tool description hash mismatch — possible rug pull attack",
+			})
+		}
+	}
+
 	result := ListToolsResult{Tools: tools}
 	return h.handleSuccess(req.ID, result)
 }
