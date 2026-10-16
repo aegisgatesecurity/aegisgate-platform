@@ -120,8 +120,18 @@ type PromptArgument struct {
 	Required    bool   `json:"required,omitempty"`
 }
 
+// ExcludedTool describes a tool that was excluded from the tools/list
+// response due to an integrity violation (hash mismatch). Only the tool
+// name and a fixed reason string are included — never the changed content,
+// which could itself be an injection payload.
+type ExcludedTool struct {
+	Name   string `json:"name"`
+	Reason string `json:"reason"`
+}
+
 type ListToolsResult struct {
-	Tools []Tool `json:"tools"`
+	Tools         []Tool         `json:"tools"`
+	ExcludedTools []ExcludedTool `json:"excludedTools,omitempty"`
 }
 
 type ListResourcesResult struct {

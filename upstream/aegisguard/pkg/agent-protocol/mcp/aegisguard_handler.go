@@ -132,6 +132,11 @@ func (h *AegisGuardHandler) handleInitialize(ctx context.Context, conn *Connecti
 func (h *AegisGuardHandler) handleListTools(ctx context.Context, req *JSONRPCRequest) *JSONRPCResponse {
 	tools, violations := h.toolRegistry.ToMCPFormatVerified()
 
+	// Build excludedTools notification for the client. Only the tool name
+	// and a fixed reason string are surfaced — never the changed content.
+	// This prevents the notification itself from becoming an injection
+	// channel (see dev.to discussion on MCP tool poisoning, Oct 2026).
+	excludedTools := make([]ExcludedTool, 0, len(violations))
 	for _, v := range violations {
 		h.logger.Warn("tool integrity violation — tool excluded from list",
 			"tool", v.ToolName,
@@ -145,9 +150,16 @@ func (h *AegisGuardHandler) handleListTools(ctx context.Context, req *JSONRPCReq
 				Error:    "tool description hash mismatch — possible rug pull attack",
 			})
 		}
+		excludedTools = append(excludedTools, ExcludedTool{
+			Name:   v.ToolName,
+			Reason: "hash_changed",
+		})
 	}
 
-	result := ListToolsResult{Tools: tools}
+	result := ListToolsResult{
+		Tools:         tools,
+		ExcludedTools: excludedTools,
+	}
 	return h.handleSuccess(req.ID, result)
 }
 
