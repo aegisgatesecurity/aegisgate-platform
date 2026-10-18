@@ -350,7 +350,26 @@ func DefaultPatterns() []*Pattern {
 		{Name: "prompt_leak_response_prompt_template", Regex: regexp.MustCompile(`(?i)(?:prompt[\s_]+template|system[\s_]+template|instruction[\s_]+template)\s*[:=]\s*["']?\{?\{?.*(?:user|input|query|context)\}?\}?`), Severity: High, Category: CategoryPrompt, Description: "Response-side: prompt template structure leaked"},
 		{Name: "prompt_leak_response_filter_disclosure", Regex: regexp.MustCompile(`(?i)(?:my\s+(?:content\s+filter|safety\s+filter|moderation\s+system|output\s+filter)\s+(?:is|works\s+by|uses?|checks?\s+for))\s*[:.]`), Severity: Medium, Category: CategoryPrompt, Description: "Response-side: model disclosing its content filter mechanism"},
 		{Name: "prompt_leak_response_knowledge_cutoff", Regex: regexp.MustCompile(`(?i)(?:my\s+(?:knowledge|training\s+data)\s+(?:cutoff|end\s+date|goes\s+up\s+to|stops\s+at))\s*[:.]?\s*\d{4}`), Severity: Low, Category: CategoryPrompt, Description: "Response-side: model revealing its training data cutoff date"},
-	}
+		// --- Path traversal & sensitive file access (synced from Scanner v0.5.0) ---
+		{Name: "traversal_dotdot_slash", Regex: regexp.MustCompile(`(?:\.\./){2,}`), Severity: High, Category: CategoryNetwork, Description: "Directory traversal via repeated ../ sequences (agent sandbox escape)"},
+		{Name: "traversal_single_dotdot", Regex: regexp.MustCompile(`\.\./[^\s"'<>{}|\\^]*`), Severity: Medium, Category: CategoryNetwork, Description: "Single parent directory traversal in tool call argument"},
+		{Name: "traversal_encoded_dotdot", Regex: regexp.MustCompile(`(?i)%2e%2e[/\\]`), Severity: High, Category: CategoryNetwork, Description: "URL-encoded directory traversal (%2e%2e) bypassing naive filters"},
+		{Name: "traversal_double_encoded", Regex: regexp.MustCompile(`(?i)%252e%252e[/\\]`), Severity: High, Category: CategoryNetwork, Description: "Double-encoded directory traversal (%252e%252e) bypassing WAF/proxy filters"},
+		{Name: "traversal_encoded_slash", Regex: regexp.MustCompile(`(?i)(?:\.\.|%2e%2e)%2f`), Severity: Medium, Category: CategoryNetwork, Description: "Encoded slash after traversal (../%2f or %2e%2e%2f)"},
+		{Name: "traversal_backslash", Regex: regexp.MustCompile(`(?:\.\.\\){2,}`), Severity: High, Category: CategoryNetwork, Description: "Windows backslash directory traversal (..\\..\\)"},
+		{Name: "traversal_mixed_sep", Regex: regexp.MustCompile(`\.\.[/\\]\.\.[/\\]`), Severity: Medium, Category: CategoryNetwork, Description: "Mixed separator traversal (../..\\ or ..\\../)"},
+		{Name: "traversal_null_byte", Regex: regexp.MustCompile(`(?:\.\./|%2e%2e[/\\]).*%00`), Severity: Critical, Category: CategoryNetwork, Description: "Path traversal with null byte injection (poison null byte attack)"},
+		{Name: "traversal_file_url", Regex: regexp.MustCompile(`file://(?:\.\./|(?:%2e%2e[/\\]))`), Severity: High, Category: CategoryNetwork, Description: "file:// URI with traversal sequence (local file access via tool)"},
+		{Name: "sensitive_file_shadow", Regex: regexp.MustCompile(`(?:^|[/\\\"\s'])etc[/\\]shadow(?:$|[/\\\"\s'&|;])`), Severity: Critical, Category: CategoryNetwork, Description: "Access to /etc/shadow (password hashes — critical credential exposure)"},
+		{Name: "sensitive_file_passwd", Regex: regexp.MustCompile(`(?:^|[/\\\"\s'])etc[/\\]passwd(?:$|[/\\\"\s'&|;])`), Severity: High, Category: CategoryNetwork, Description: "Access to /etc/passwd (user enumeration — system reconnaissance)"},
+		{Name: "sensitive_file_proc", Regex: regexp.MustCompile(`(?:^|[/\\\"\s'])proc[/\\](?:self|\d+)[/\\]`), Severity: High, Category: CategoryNetwork, Description: "Access to /proc/self/ or /proc/<pid>/ (process info, env, fd — sandbox escape)"},
+		{Name: "sensitive_file_ssh_key", Regex: regexp.MustCompile(`(?:~/|/home/[^/]+/|/root/)\.ssh/(?:id_rsa|id_ed25519|id_ecdsa|id_dsa|authorized_keys|config)`), Severity: Critical, Category: CategoryNetwork, Description: "Access to SSH private keys or configuration (credential theft)"},
+		{Name: "sensitive_file_aws_creds", Regex: regexp.MustCompile(`(?:~/|/home/[^/]+/|/root/)\.aws/(?:credentials|config)`), Severity: Critical, Category: CategoryNetwork, Description: "Access to AWS credentials file (cloud credential theft)"},
+		{Name: "sensitive_file_kube_config", Regex: regexp.MustCompile(`(?:~/|/home/[^/]+/|/root/)\.kube/(?:config|admin\.conf)`), Severity: Critical, Category: CategoryNetwork, Description: "Access to Kubernetes configuration (cluster admin credential theft)"},
+		{Name: "sensitive_file_env", Regex: regexp.MustCompile(`(?:^|[/\\\"\s'])\.(?:env|env\.local|env\.production)(?:$|[/\\\"\s'&|;])`), Severity: High, Category: CategoryNetwork, Description: "Access to .env files (application secrets and configuration)"},
+		{Name: "sensitive_file_hosts", Regex: regexp.MustCompile(`(?:^|[/\\\"\s'])etc[/\\]hosts(?:$|[/\\\"\s'&|;])`), Severity: Medium, Category: CategoryNetwork, Description: "Access to /etc/hosts (DNS manipulation, network reconnaissance)"},
+		{Name: "sensitive_file_gcp_creds", Regex: regexp.MustCompile(`(?:~/|/home/[^/]+/|/root/)\.config/gcloud/(?:application_default_credentials\.json|credentials\.db)`), Severity: Critical, Category: CategoryNetwork, Description: "Access to GCP default credentials (cloud credential theft)"},
+		{Name: "sensitive_file_docker_socket", Regex: regexp.MustCompile(`(?:^|[/\\\"\s'])var/run/docker\.sock(?:$|[/\\\"\s'&|;])`), Severity: Critical, Category: CategoryNetwork, Description: "Access to Docker socket (container escape, host compromise)"}}
 }
 
 func ShouldBlock(severity Severity) bool {
