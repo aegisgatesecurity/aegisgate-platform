@@ -558,7 +558,10 @@ jobs:
 
       - name: Fail on lint errors
         run: |
-          if grep -q "issues" lint-results.txt 2>/dev/null; then
+          # Check for actual issues (not "0 issues."). The "Run golangci-lint"
+          # step already exits non-zero on findings via pipefail; this is a
+          # belt-and-suspenders check that parses the summary line.
+          if grep -qE "[1-9][0-9]* issues" lint-results.txt 2>/dev/null; then
             echo "⚠️ Linting issues found - see results"
             exit 1
           fi
