@@ -101,7 +101,7 @@ for f in $FILES; do
         case "$f" in
             README.md|src/detectors/regex/secrets.js|test/unit/regex-secrets.test.mjs|tools/opsec-scan.sh) continue ;;
             # Platform test files use example certs for TLS/cert initialization testing
-            pkg/certinit/certinit_coverage_test.go|pkg/ioc/ioc_inpkg_test.go|pkg/response/detectors/detectors_test.go|pkg/response/secret_detector_test.go|upstream/aegisgate/pkg/ml/advanced_ml_test.go|upstream/aegisgate/pkg/scanner/pattern_test.go) continue ;;
+            pkg/certinit/certinit_coverage_test.go|pkg/ioc/ioc_inpkg_test.go|pkg/ioc/phase1c_test.go|pkg/scanner/scanner_core_test.go|pkg/response/detectors/detectors_test.go|pkg/response/secret_detector_test.go|upstream/aegisgate/pkg/ml/advanced_ml_test.go|upstream/aegisgate/pkg/scanner/pattern_test.go) continue ;;
         esac
         case "$f" in
             # Test regex definition files define patterns, not actual keys
@@ -239,7 +239,7 @@ for f in $FILES; do
         # gitleaks config contains example patterns as allowlist entries
         .gitleaks.toml) continue ;;
         # Platform test files use example GitHub tokens
-        pkg/acp/acp_blocking_test.go|pkg/anomaly/anomaly_test.go|pkg/evaluator/sxc_corpus.go|pkg/lensbackend/privacy_boundary_test.go|upstream/aegisgate/pkg/scanner/scanner_benchmark_test.go) continue ;;
+        pkg/acp/acp_blocking_test.go|pkg/anomaly/anomaly_test.go|pkg/evaluator/sxc_corpus.go|pkg/lensbackend/privacy_boundary_test.go|pkg/ml/data_leakage_efficacy_test.go|upstream/aegisgate/pkg/scanner/scanner_benchmark_test.go) continue ;;
     esac
     CONTENT=$(get_content "$f") || continue
     # AWS access keys (exclude the well-known example key)

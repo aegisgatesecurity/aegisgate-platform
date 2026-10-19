@@ -307,14 +307,14 @@ func (s *Scheduler) runLoop(ctx context.Context) {
 	defer ticker.Stop()
 
 	// Run immediately on start.
-	s.runAssessment()
+	s.runAssessment() // #nosec G104 -- intentional fire-and-forget; scheduler retries on next tick
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			s.runAssessment()
+			s.runAssessment() // #nosec G104 -- intentional fire-and-forget; scheduler retries on next tick
 		}
 	}
 }

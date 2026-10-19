@@ -119,7 +119,7 @@ func LoadOrGenerateKey(keyPath string) (ed25519.PrivateKey, ed25519.PublicKey, e
 	}
 
 	// Try to load existing key.
-	if data, err := os.ReadFile(keyPath); err == nil {
+	if data, err := os.ReadFile(keyPath); err == nil { // #nosec G304 -- keyPath from config, not user input
 		if len(data) == ed25519.PrivateKeySize {
 			privKey := ed25519.PrivateKey(data)
 			pubKey := privKey.Public().(ed25519.PublicKey)

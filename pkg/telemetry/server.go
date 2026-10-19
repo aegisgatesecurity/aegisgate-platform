@@ -321,6 +321,7 @@ func (s *Server) appendEvent(e contracts.Event) error {
 	}
 
 	path := s.storePath + "/events.jsonl"
+	// #nosec -- storePath from server config, not user input; 0o640 for group-readable event log
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
 	if err != nil {
 		return err

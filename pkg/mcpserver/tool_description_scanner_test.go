@@ -253,9 +253,10 @@ func TestToolDescriptionScanner_PatternCount(t *testing.T) {
 		t.Error("Expected promptPatterns to be populated — prompt leakage, RAG, and path traversal patterns should be wired up")
 	}
 
-	// Should have 16 (prompt leakage) + 17 (RAG) + 19 (path traversal) = 52 patterns
-	if len(scanner.promptPatterns) != 52 {
-		t.Errorf("Expected 52 prompt patterns (16 leakage + 17 RAG + 19 traversal), got %d", len(scanner.promptPatterns))
+	// Should have 16 (prompt leakage) + 19 (RAG) + 19 (path traversal) = 54 patterns
+	// RAG count updated in v4.7.0: 17 → 19 (rag_poison_embed_document, rag_retrieval_context_override)
+	if len(scanner.promptPatterns) != 54 {
+		t.Errorf("Expected 54 prompt patterns (16 leakage + 19 RAG + 19 traversal), got %d", len(scanner.promptPatterns))
 	}
 
 	// Verify all other pattern sets are still populated
@@ -282,7 +283,8 @@ func TestToolDescriptionScanner_AllPatternsIncludesPrompt(t *testing.T) {
 
 	all := scanner.allPatterns()
 
-	// Total should be: 34 (dangerous) + 64 (secrets) + 85 (PII) + 12 (XSS) + 64 (compliance) + 52 (prompt) = 311
+	// Total should be: 34 (dangerous) + 64 (secrets) + 85 (PII) + 12 (XSS) + 71 (compliance) + 54 (prompt) = 320
+	// (compliance: 64+7 v4.7.0 sync, prompt: 16+19+19, RAG updated 17→19 in v4.7.0)
 	// But some patterns may fail to compile, so we check that it's at least the prompt pattern count
 	if len(all) <= len(scanner.dangerousPatterns)+len(scanner.secretPatterns)+len(scanner.piiPatterns)+len(scanner.xssPatterns)+len(scanner.compliancePatterns) {
 		t.Errorf("allPatterns should include prompt patterns — expected more than %d, got %d",
