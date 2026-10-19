@@ -202,6 +202,7 @@ type FeedManager struct {
 	feeds   map[string]*feedRunner
 	stats   map[string]*FeedStats
 	configs []FeedConfig
+	wg      sync.WaitGroup
 }
 
 // feedRunner manages a single feed's pull loop.
@@ -307,7 +308,6 @@ func NewFeedManager(store *Store, configs []FeedConfig) (*FeedManager, error) {
 // Call it in a goroutine: `go fm.Run(ctx)`.
 func (fm *FeedManager) Run(ctx context.Context) {
 	fm.mu.Lock()
-	var wg sync.WaitGroup
 	for name, runner := range fm.feeds {
 		if !runner.cfg.Enabled {
 			slog.Info("External TAXII feed disabled, skipping", "feed", name)
@@ -315,8 +315,8 @@ func (fm *FeedManager) Run(ctx context.Context) {
 		}
 		feedCtx, cancel := context.WithCancel(ctx)
 		runner.cancel = cancel
-		runner.wg = &wg
-		wg.Add(1)
+		runner.wg = &fm.wg
+		fm.wg.Add(1)
 		go fm.runFeed(feedCtx, runner)
 		slog.Info("External TAXII feed started",
 			"feed", runner.cfg.Name,
@@ -326,7 +326,7 @@ func (fm *FeedManager) Run(ctx context.Context) {
 		)
 	}
 	fm.mu.Unlock()
-	wg.Wait()
+	fm.wg.Wait()
 	slog.Info("FeedManager: all feed goroutines stopped")
 }
 
@@ -467,12 +467,15 @@ func (fm *FeedManager) recordError(runner *feedRunner, err error) {
 // goroutines to exit.
 func (fm *FeedManager) Stop() {
 	fm.mu.Lock()
-	defer fm.mu.Unlock()
 	for _, runner := range fm.feeds {
 		if runner.cancel != nil {
 			runner.cancel()
 		}
 	}
+	fm.mu.Unlock()
+	// Wait for all feed goroutines to finish before returning.
+	// This ensures Stats() and other reads don't race with pullFeed writes.
+	fm.wg.Wait()
 }
 
 // PullNow triggers an immediate pull from the named feed,

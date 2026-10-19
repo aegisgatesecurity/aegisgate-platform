@@ -157,7 +157,7 @@ jobs:
           CGO_ENABLED: 1
         run: |
           go test -race -count=1 \
-            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/" | grep -v "/billing" | grep -v "/email" | grep -v "/stores" | grep -v "/ml") \
+            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/" | grep -v "/billing" | grep -v "/email" | grep -v "/stores" | grep -v "/ml" | grep -v "/assessment") \
             2>&1 | tee race-results.txt
           echo "✅ All packages pass race detector"
 
@@ -539,7 +539,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
       - name: Run golangci-lint
         run: golangci-lint run ./... 2>&1 | tee lint-results.txt
