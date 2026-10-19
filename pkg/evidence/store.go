@@ -13,6 +13,7 @@ package evidence
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -144,7 +145,7 @@ func (s *Store) readAllLocked() ([]*Manifest, error) {
 	// Scan line by line. We use json.Decoder rather than splitting
 	// on \n and json.Unmarshal-ing each line, because json.Decoder
 	// is tolerant of trailing whitespace and trailing newlines.
-	dec := json.NewDecoder(newBytesReader(data))
+	dec := json.NewDecoder(bytes.NewReader(data))
 	for dec.More() {
 		var m Manifest
 		if err := dec.Decode(&m); err != nil {
@@ -154,24 +155,3 @@ func (s *Store) readAllLocked() ([]*Manifest, error) {
 	}
 	return out, nil
 }
-
-// bytesReader is a tiny helper that wraps a []byte in an io.Reader.
-// Avoids importing bytes just for this one call.
-type bytesReader struct {
-	buf []byte
-	pos int
-}
-
-func newBytesReader(b []byte) *bytesReader { return &bytesReader{buf: b} }
-
-func (r *bytesReader) Read(p []byte) (int, error) {
-	if r.pos >= len(r.buf) {
-		return 0, errEOF
-	}
-	n := copy(p, r.buf[r.pos:])
-	r.pos += n
-	return n, nil
-}
-
-// errEOF is io.EOF in disguise to avoid importing io just for this.
-var errEOF = fmt.Errorf("EOF")

@@ -17,6 +17,11 @@ permissions:
   security-events: write
   actions: read
 
+# Ensure pipeline failures propagate (gosec | tee, trivy | tee, etc.)
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo pipefail {0}
+
 jobs:
   # Job 1: Vulnerability Scanning
   govulncheck:

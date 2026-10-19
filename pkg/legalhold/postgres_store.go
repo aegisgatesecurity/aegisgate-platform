@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
@@ -122,27 +121,30 @@ func (s *PostgresStore) IsUnderHold(ctx context.Context, entityID string) bool {
 // GetActiveHolds returns all active holds for an entity.
 func (s *PostgresStore) GetActiveHolds(ctx context.Context, entityID string) []*Hold {
 	// Admin-scoped: system query for hold management.
-	var rows pgx.Rows
+	// Rows must be fully consumed inside the closure so that the
+	// connection is not released before iteration completes.
+	var holds []*Hold
 	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
-		var queryErr error
-		rows, queryErr = q.Query(ctx,
+		rows, queryErr := q.Query(ctx,
 			`SELECT id, entity_id, entity_type, reason, issued_by, created_at FROM legal_holds
 			 WHERE entity_id = $1 AND released_at IS NULL ORDER BY created_at DESC`,
 			entityID,
 		)
-		return queryErr
+		if queryErr != nil {
+			return queryErr
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			h := &Hold{}
+			if err := rows.Scan(&h.ID, &h.EntityID, &h.EntityType, &h.Reason, &h.IssuedBy, &h.CreatedAt); err == nil {
+				holds = append(holds, h)
+			}
+		}
+		return rows.Err()
 	})
 	if err != nil {
 		return nil
-	}
-	defer rows.Close()
-
-	var holds []*Hold
-	for rows.Next() {
-		h := &Hold{}
-		if err := rows.Scan(&h.ID, &h.EntityID, &h.EntityType, &h.Reason, &h.IssuedBy, &h.CreatedAt); err == nil {
-			holds = append(holds, h)
-		}
 	}
 	return holds
 }
@@ -150,30 +152,33 @@ func (s *PostgresStore) GetActiveHolds(ctx context.Context, entityID string) []*
 // List returns all holds (active and released).
 func (s *PostgresStore) List(ctx context.Context) []*Hold {
 	// Admin-scoped: listing all holds is a system operation.
-	var rows pgx.Rows
+	// Rows must be fully consumed inside the closure so that the
+	// connection is not released before iteration completes.
+	var holds []*Hold
 	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
-		var queryErr error
-		rows, queryErr = q.Query(ctx,
+		rows, queryErr := q.Query(ctx,
 			`SELECT id, entity_id, entity_type, reason, issued_by, created_at, released_at FROM legal_holds
 			 ORDER BY created_at DESC`,
 		)
-		return queryErr
+		if queryErr != nil {
+			return queryErr
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			h := &Hold{}
+			var releasedAt sql.NullTime
+			if err := rows.Scan(&h.ID, &h.EntityID, &h.EntityType, &h.Reason, &h.IssuedBy, &h.CreatedAt, &releasedAt); err == nil {
+				if releasedAt.Valid {
+					h.ReleasedAt = releasedAt.Time
+				}
+				holds = append(holds, h)
+			}
+		}
+		return rows.Err()
 	})
 	if err != nil {
 		return nil
-	}
-	defer rows.Close()
-
-	var holds []*Hold
-	for rows.Next() {
-		h := &Hold{}
-		var releasedAt sql.NullTime
-		if err := rows.Scan(&h.ID, &h.EntityID, &h.EntityType, &h.Reason, &h.IssuedBy, &h.CreatedAt, &releasedAt); err == nil {
-			if releasedAt.Valid {
-				h.ReleasedAt = releasedAt.Time
-			}
-			holds = append(holds, h)
-		}
 	}
 	return holds
 }

@@ -1,10 +1,10 @@
-# AegisGate Platform v4.5.0 — Threat Model
+# AegisGate Platform v4.7.0 — Threat Model
 
-**Status:** v4.5.0 (all findings triaged; 47 mitigated, 3 residual, 2 accepted)  
-**Date:** 2026-09-22  
+**Status:** v4.7.0 (all findings triaged; 53 mitigated, 3 residual, 2 accepted, 1 open)  
+**Date:** 2026-10-19  
 **Audience:** Enterprise security buyers, SBIR reviewers, third-party auditors, design partners, security researchers  
 **Methodology:** STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege)  
-**Coverage:** Full platform architecture (7 detection layers, 5 protocols, 3 deployment modes)
+**Coverage:** Full platform architecture (7 detection layers + MCP tool screening, 5 protocols, 3 deployment modes, cross-product parity)
 
 This is the **public, platform-level** threat model. It covers the AegisGate Platform's architecture, trust boundaries, and security controls. A more detailed package-by-package STRIDE analysis with test references is available internally.
 
@@ -22,13 +22,20 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 
 ### In-Scope
 
-- **Platform codebase** — Go proxy, detection engine (L1/L2/L3/P2/P3/P4/P5), Response Guard, Tool Risk Matrix, Chain Analyzer
+- **Platform codebase** — Go proxy, detection engine (L1/L2/L3/P2/P3/P4/P5), Response Guard, Tool Risk Matrix, Chain Analyzer, MCP Tool Description Scanner
 - **ML pipeline** — Model training, ONNX export, hash verification, runtime inference (CharCNN-BiLSTM v13)
 - **Protocols** — HTTP/HTTPS proxy (:8080), MCP server (:8081), Admin API (:8443), A2A, ANP
 - **Persistence** — Audit log (RFC 5424), scan cache, session tracker, chain store (SQLite/PostgreSQL)
+- **Telemetry server** — Pattern/IOC pull endpoints, event ingestion, Lens signal correlation (v4.6.0+)
+- **Canonical contracts** — Pattern and event exchange format for cross-product interoperability (v4.6.0+)
+- **SARIF output** — Static analysis results interchange format for CI/CD integration (v4.6.0+)
+- **Remediation guidance** — Detection rule to fix mapping for security workflows (v4.6.0+)
+- **LLM security presets** — Curated system prompt hardening templates (v4.6.0+)
 - **Deployment modes** — Single-binary (default), Docker Compose, Kubernetes/Helm, air-gapped
 - **Shadow mode** — FPR validation infrastructure, k6 scripts, Grafana dashboards
 - **Supply chain** — Go module dependencies, ONNX model files, Docker base images, CI/CD pipelines
+- **Cross-product detection parity** — 284 patterns synchronized across Platform, Rampart, and Scanner; parity CI gate enforces alignment (v4.7.0+)
+- **Test coverage** — 67 CI-scoped packages at 90%+ coverage, CI-enforced per-package floor (v4.7.0+)
 
 ### Out-of-Scope (Covered Elsewhere)
 
@@ -90,6 +97,7 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 | **Platform → Upstream** | Semi-trusted. AI providers are external services (not under our control). | Circuit breaker, response scanning, strict TLS verification |
 | **Platform → Persistence** | Trusted but protected. Audit log must be tamper-evident. | Append-only log, file permissions (0600), optional crypto signing |
 | **Admin API → Platform** | Trusted but authenticated. Admin operations require RBAC. | SSO/OIDC/SAML, role-based access control, audit logging |
+| **Telemetry Server → Platform** | Semi-trusted. Serves patterns/IOCs to FOSS products; receives events. Active only when explicitly enabled. | ETag caching, configurable bind address, no auth on pull endpoints (patterns are public); event ingestion validates schema |
 | **ML Model → Runtime** | Trusted but verified. Model file must match expected hash. | SHA-256 hash verification on load (v13: `329fd89...`) |
 
 ---
@@ -106,6 +114,9 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 | **Session state** (chain store, session tracker) | Medium | DoS target, could be used to bypass multi-turn detection |
 | **Scan cache** | Low | Performance optimization; cache poisoning causes FPs/FNs |
 | **Configuration** | High | Security policy (block thresholds, enabled detectors) |
+| **Canonical contracts** | Medium | Pattern/event exchange format — tampering could cause cross-product detection drift (v4.6.0+) |
+| **Remediation guidance** | Low | Metadata mapping rules to fixes — integrity matters for trustworthiness (v4.6.0+) |
+| **LLM security presets** | Medium | System prompt hardening templates — tampering could weaken customer deployments (v4.6.0+) |
 
 ---
 
@@ -113,10 +124,10 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 
 | Dimension | Score | What it means |
 |-----------|-------|---------------|
-| **Engineering posture** (code, tests, validation) | 9.6/10 | All known engineering threats mitigated. 0.4 deduction for residual ML model poisoning risk (requires training data access) and chain store DoS. |
-| **Trust posture** (supply chain, deployment, ops) | 9.2/10 | SLSA L3 build, ONNX hash verification, signed releases, SBOMs. 0.8 deduction for not yet independently audited by third party and container base image CVEs (16 low-severity, being addressed). |
-| **Validation rigor** (shadow mode, stress tests) | 9.8/10 | 7-day shadow validation (0% FPR), 8.5M request stress test (28K RPS, 99.57% TPR), 100/100 evasion resistance. 0.2 deduction for P4/DIST2-5 still in alert-only mode (need production traffic). |
-| **Combined** | **9.5/10** | Weighted by exposure (engineering threats affect all users; trust threats affect deploy-time; validation gaps affect edge cases). |
+| **Engineering posture** (code, tests, validation) | 9.7/10 | All known engineering threats mitigated. 90%+ test coverage across 67 CI-scoped packages (CI-enforced). 0.3 deduction for residual ML model poisoning risk (requires training data access) and chain store DoS. Two production bugs found and fixed during coverage campaign (SQL reserved keyword `window` unquoted, dead code in response_guard.go). |
+| **Trust posture** (supply chain, deployment, ops) | 9.2/10 | SLSA L3 build, ONNX hash verification, signed releases, SBOMs. 0.8 deduction for not yet independently audited by third party and container base image CVEs (16 low-severity, distroless migration still pending). |
+| **Validation rigor** (shadow mode, stress tests) | 9.8/10 | 7-day shadow validation (0% FPR), 8.5M request stress test (28K RPS, 99.57% TPR), 100/100 evasion resistance. Cross-product parity CI gate ensures 284 patterns synchronized across Platform, Rampart, and Scanner. 0.2 deduction for P4/DIST2-5 still in alert-only mode (need production traffic). |
+| **Combined** | **9.6/10** | Weighted by exposure (engineering threats affect all users; trust threats affect deploy-time; validation gaps affect edge cases). Up from 9.5/10 in v4.5.0 due to coverage campaign and parity enforcement. |
 
 ---
 
@@ -140,11 +151,11 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 | ID | Threat | Likelihood | Impact | Status | Mitigation |
 |----|--------|------------|--------|--------|------------|
 | T-01 | Modify detection rules/thresholds at runtime | Low | High | **MITIGATED** | Rules are immutable (compiled into binary); thresholds configurable via admin API only (authenticated) |
-| T-02 | Tamper with audit log entries | Low | Critical | **MITIGATED** | Append-only log; file permissions 0600; optional crypto signing (planned for v4.6); FIM recommended |
+| T-02 | Tamper with audit log entries | Low | Critical | **MITIGATED** | Append-only log; file permissions 0600; optional crypto signing (deferred to post-v4.7); FIM recommended |
 | T-03 | Tamper with scan cache to cause false negatives | Medium | Medium | **MITIGATED** | Cache key is SHA-256 of content; attacker would need to find hash collision. Cache poisoning causes FP (over-blocking), not FN |
 | T-04 | Modify chain store to hide tool call sequences | Low | High | **MITIGATED** | Chain store is in-memory; cleared on restart. Persistent mode (planned) will use append-only log |
 | T-05 | Tamper with ML model in transit (download/update) | Low | Critical | **MITIGATED** | Model files distributed via signed releases; hash verification on load |
-| T-06 | Modify configuration to disable security features (block→shadow) | Medium | High | **RESIDUAL** | Config file permissions 0600; recommend FIM. No runtime config signature yet (planned for v4.6) |
+| T-06 | Modify configuration to disable security features (block→shadow) | Medium | High | **RESIDUAL** | Config file permissions 0600; recommend FIM. No runtime config signature yet (deferred to post-v4.7). Most deployments use immutable infrastructure (Docker/K8s). |
 | T-07 | Tamper with ONNX runtime (CGO library) | Low | Critical | **MITIGATED** | ONNX runtime linked at compile time; binary signing (Cosign) verifies integrity |
 
 ### R — Repudiation
@@ -154,7 +165,7 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 | R-01 | Attacker claims false positive (content was benign) | Medium | Low | **MITIGATED** | Full audit trail with request/response content, findings, timestamps; evidence packages for compliance |
 | R-02 | Platform operator denies blocking a malicious request | Low | Medium | **MITIGATED** | All blocking decisions logged with findings, severity, detector that fired |
 | R-03 | Admin user denies making config change | Low | Medium | **MITIGATED** | Admin API logs all changes with user identity (from SSO), timestamp, old/new values |
-| R-04 | Attacker claims audit log was tampered | Low | High | **RESIDUAL** | Append-only log helps, but no crypto proof yet. Optional signing planned for v4.6 |
+| R-04 | Attacker claims audit log was tampered | Low | High | **RESIDUAL** | Append-only log helps, but no crypto proof yet. Optional signing deferred to post-v4.7 |
 
 ### I — Information Disclosure
 
@@ -166,6 +177,9 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 | I-04 | Metrics endpoint exposes operational details | Low | Medium | **MITIGATED** | `/metrics` requires authentication; unauthenticated callers get minimal response |
 | I-05 | Error messages reveal internal state | Low | Low | **MITIGATED** | Error responses generic; detailed errors logged server-side only |
 | I-06 | Shadow mode headers leak detection results | Low | Low | **MITIGATED** | Shadow headers only set in shadow mode; disabled in production blocking mode |
+| I-07 | Telemetry server exposes pattern list to attackers | Medium | Low | **MITIGATED** | Patterns are public (open source); telemetry endpoint only active when explicitly enabled. ETag caching prevents unnecessary exposure. No sensitive data served. |
+| I-08 | SARIF output leaks internal detection rule names | Low | Low | **MITIGATED** | Rule names are public (open source); SARIF output is for CI/CD consumption, not exposed to end users |
+| I-09 | Remediation guidance reveals defensive techniques | Low | Low | **MITIGATED** | Guidance is public (open source); maps to OWASP/MCP Top 10 references which are industry standard |
 
 ### D — Denial of Service
 
@@ -179,7 +193,7 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 | D-06 | DoS session tracker with many conversations | Low | Medium | **MITIGATED** | Session tracker uses LRU eviction; memory-bounded |
 | D-07 | Slowloris attack (slow HTTP headers) | Low | Medium | **MITIGATED** | `ReadHeaderTimeout: 10s` on all HTTP servers |
 | D-08 | Upstream AI provider DoS → platform backlog | Medium | Medium | **MITIGATED** | Circuit breaker opens on consecutive upstream failures; requests fail fast |
-| D-09 | Container base image CVEs (zlib, wget, glibc) | Low | Low | **OPEN** | 16 low-severity CVEs in base image; migrating to distroless base (planned for v4.6) |
+| D-09 | Container base image CVEs (zlib, wget, glibc) | Low | Low | **OPEN** | 16 low-severity CVEs in base image; distroless migration deferred to post-v4.7. No known exploits. |
 
 ### E — Elevation of Privilege
 
@@ -191,6 +205,9 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 | E-04 | Bypass L3 blocking by manipulating score | Low | High | **MITIGATED** | L3 score from ONNX inference; threshold check is simple comparison. No user input affects score calculation |
 | E-05 | Bypass chain analysis by manipulating session ID | Medium | Medium | **RESIDUAL** | Session ID is conversation ID (client-provided). Attacker could reset session by changing conversation ID. Mitigated by short TTL (30min) and chain window (20 calls) |
 | E-06 | Escalate from shadow mode to blocking mode | Low | High | **MITIGATED** | Shadow mode is config flag; requires admin access to change |
+| E-07 | Inject malicious patterns via telemetry pull endpoint | Medium | High | **MITIGATED** | Telemetry server is read-only (serves Platform patterns to FOSS products); FOSS products pull from Platform, not push. Pattern integrity verified by parity CI gate. |
+| E-08 | Bypass MCP tool screening by crafting benign-looking tool description | Low | High | **MITIGATED** | Tool Description Scanner screens at registration time using 34 dangerous function patterns + prompt injection detection. Defense-in-depth: L1/L2/L3 also scan tool calls at runtime. |
+| T-08 | Tamper with canonical contracts to cause cross-product drift | Low | Medium | **MITIGATED** | Contracts are compiled into binary; SHA-256 content hashing for cache invalidation; parity CI gate enforces pattern alignment across products |
 
 ---
 
@@ -246,9 +263,45 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 | Shadow metrics manipulation | Metrics internal; not exposed to clients | **None** |
 | Validation data poisoning | Validation uses production traffic; not synthetic | **Low** — Requires compromising production traffic |
 
----
+### MCP Tool Description Scanner (v4.6.0)
 
-## GHSA-8c34-rfx7-frm4 (Resolved)
+**New in v4.6.0:** MCP tool descriptions and `inputSchema` are screened at registration time for 34 dangerous function patterns (prompt injection, code execution, secret exfiltration, cross-origin escalation). Maps to OWASP MCP Top 10 MCP03 (Tool Poisoning).
+
+| Threat | Mitigation | Residual Risk |
+|--------|------------|---------------|
+| Malicious tool description evades screening | 34 dangerous function patterns + prompt injection regex; defense-in-depth with L1/L2/L3 runtime scanning | **Low** — Requires evading both registration-time screening and runtime detection |
+| Tool poisoning via crafted inputSchema | Recursive screening of inputSchema fields (string, array, object) | **Low** — Deeply nested schemas are scanned recursively |
+| Attacker registers tool after bypassing auth | MCP server requires authentication; tool registration is admin operation | **None** — Auth required before any tool registration |
+
+### Telemetry Server (v4.6.0)
+
+**New in v4.6.0:** Optional HTTP server serves canonical patterns, IOCs, and receives events from FOSS products. Air-gap compatible — only active when explicitly enabled.
+
+| Threat | Mitigation | Residual Risk |
+|--------|------------|---------------|
+| Telemetry endpoint DoS | Configurable bind address; only active when enabled; standard HTTP timeout | **Low** — Endpoint is opt-in; disabled by default |
+| Event injection (malicious events from FOSS products) | Schema validation on ingestion; events stored with configurable retention | **Low** — Events are telemetry data, not control plane |
+| Pattern list exfiltration via telemetry | Patterns are public (open source); no sensitive data served | **None** — Information is already public |
+
+### Cross-Product Detection Parity (v4.7.0)
+
+**New in v4.7.0:** 284 detection patterns synchronized across Platform, Rampart, and Scanner. Parity CI gate (`detection-parity.yml`) enforces pattern name and regex content alignment on every push.
+
+| Threat | Mitigation | Residual Risk |
+|--------|------------|---------------|
+| Detection drift between products | Parity CI gate compares pattern names + regex content; fails on any mismatch | **None** — Automated enforcement |
+| Customer runs outdated product version | Version history documented; parity gate runs on push, not runtime | **Low** — Customer must update to latest version; older versions may have fewer patterns |
+| Pattern regression (regex change breaks detection) | Evasion suite (81 payloads × 50 transforms) runs in CI for all products | **Low** — Evasion suite catches detection regressions |
+
+### Test Coverage Enforcement (v4.7.0)
+
+**New in v4.7.0:** 67 CI-scoped packages at 90%+ coverage. CI gate enforces 85% total threshold and 90% per-package floor. Integration test coverage step with `-p 1` serialization for 11 testcontainer packages.
+
+| Threat | Mitigation | Residual Risk |
+|--------|------------|---------------|
+| Untested code path contains security bug | 90% per-package floor, CI-enforced; integration tests for database-dependent packages | **Low** — 10% of code paths remain untested; focused on error handling and edge cases |
+| Test regression goes unnoticed | CI gate runs on every push; 5+ consecutive run rule before claiming green | **None** — Automated enforcement |
+| Coverage measurement inaccuracy | Go coverage tool verified (no compiler inlining issue); `go build -gcflags="-m -m"` confirms functions not inlined | **None** — Verified accurate |
 
 **Date:** 2026-09-20  
 **Severity:** High  
@@ -277,7 +330,8 @@ Three vulnerabilities reported by @kta1kri:
 | **Progressive Stress Test** | 99.57% TPR, 0% FPR | 8,546,186 requests, 50→10K VUs, 28K RPS |
 | **Evasion Resistance** | 100.0/100 (0 misses) | 10 attack types × 50 transforms (v13 model) |
 | **Model Parity** | ✅ Verified | Platform ONNX = Rampart ONNX = Lens JS weights (v13) |
-| **CI Gates** | All green | Detection gate (88% min), parity gate, adversarial corpus |
+| **CI Gates** | All green | Detection gate (90% per-package, 85% total), parity gate (284 patterns × 4 products), adversarial corpus, evasion suite |
+| **Test Coverage** | 90%+ per-package (67 packages) | CI-enforced per-package floor; 11 packages use integration tests (testcontainers) to reach 90%+ |
 | **Dependabot** | 0 open alerts | All repos (Platform, Lens, Rampart, Site) |
 | **CodeQL** | 5 Go alerts fixed, 16 container CVEs pending | Go alerts (G304, G306, G114, G104) fixed in commit `5ca56ca` |
 
@@ -289,8 +343,8 @@ Three vulnerabilities reported by @kta1kri:
 |---------|--------|--------------|
 | **Input validation** (10MB cap, method filter) | ✅ Implemented | Pen test D25, F-DOS-1 |
 | **Rate limiting** (token bucket per client) | ✅ Implemented | Stress test (28K RPS, no degradation) |
-| **Content scanning** (7 layers, 223+ patterns) | ✅ Implemented | v4.5.0 regression (10 phases) |
-| **ML model verification** (SHA-256 hash) | ✅ Implemented | ExpectedModelHash constant |
+| **Content scanning** (7 layers, 284 patterns) | ✅ Implemented | v4.7.0 regression (10 phases); parity CI gate (284 patterns × 4 products) |
+| **ML model verification** (SHA-256 hash) | ✅ Implemented | ExpectedModelHash constant; hash verified on load |
 | **Audit logging** (RFC 5424, append-only) | ✅ Implemented | Runbook verification |
 | **RBAC** (SSO/OIDC/SAML) | ✅ Implemented | Admin API integration tests |
 | **Circuit breaker** (upstream failures) | ✅ Implemented | Resilience tests |
@@ -298,6 +352,11 @@ Three vulnerabilities reported by @kta1kri:
 | **Response Guard** (StrictMode=true) | ✅ Implemented | GHSA-8c34-rfx7-frm4 fix |
 | **Chain analysis** (blocking mode) | ✅ Implemented | P2 TPR 91.67%, 0% FPR |
 | **Supply chain security** (SBOM, signing) | ✅ Implemented | Cosign, Sigstore, Rekor |
+| **MCP tool screening** (34 dangerous patterns) | ✅ Implemented | Registration-time screening; OWASP MCP03 (v4.6.0+) |
+| **Cross-product parity** (284 patterns × 4 products) | ✅ Implemented | Parity CI gate; evasion suite 81×50 (v4.7.0+) |
+| **Test coverage enforcement** (90% per-package) | ✅ Implemented | CI gate; 67 packages; integration tests for 11 testcontainer packages (v4.7.0+) |
+| **SARIF output** (SARIF 2.1.0) | ✅ Implemented | CI/CD integration; GitHub Code Scanning compatible (v4.6.0+) |
+| **Canonical contracts** (pattern/event exchange) | ✅ Implemented | SHA-256 content hashing; JSON schema validation (v4.6.0+) |
 
 ---
 
@@ -306,10 +365,11 @@ Three vulnerabilities reported by @kta1kri:
 | Risk | Impact | Likelihood | Why Accepted |
 |------|--------|------------|--------------|
 | **Session fixation in chain analyzer** | Medium | Low | Requires attacker to know conversation ID; impact limited to multi-turn bypass. L1/L2/L3 still block individual malicious calls. |
-| **Config tampering (block→shadow)** | High | Low | Config file permissions 0600; recommend FIM. Most deployments use immutable infrastructure (Docker/K8s). |
-| **Container base image CVEs** | Low | Low | 16 low-severity CVEs (zlib, wget, glibc). No known exploits. Migrating to distroless base in v4.6. |
-| **P4/DIST2-5 alert-only mode** | Medium | Low | Need production traffic to validate TPR. Defense-in-depth (L1/L2/L3 still block). Planned for v4.6 blocking flip. |
-| **No third-party audit** | High | Low | SBIR-gated ($15-30K pentest). Mitigated by open source (public scrutiny), GHSA fix, validation data. |
+| **Config tampering (block→shadow)** | High | Low | Config file permissions 0600; recommend FIM. Most deployments use immutable infrastructure (Docker/K8s). Runtime config signing deferred to post-v4.7. |
+| **Container base image CVEs** | Low | Low | 16 low-severity CVEs (zlib, wget, glibc). No known exploits. Distroless migration deferred to post-v4.7. |
+| **P4/DIST2-5 alert-only mode** | Medium | Low | Need production traffic to validate TPR. Defense-in-depth (L1/L2/L3 still block). Planned for post-v4.7 blocking flip. |
+| **No third-party audit** | High | Low | SBIR-gated ($15-30K pentest). Mitigated by open source (public scrutiny), GHSA fix, validation data, 90%+ test coverage, cross-product parity CI gate. |
+| **Audit log tampering (no crypto proof)** | High | Low | Append-only log helps but no cryptographic signing. Optional signing deferred to post-v4.7. FIM recommended as compensating control. |
 
 ---
 
@@ -345,6 +405,8 @@ Three vulnerabilities reported by @kta1kri:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4.7.0 | 2026-10-19 | **Coverage & Parity**: 6-phase coverage campaign complete (67 CI-scoped packages at 90%+, CI-enforced). Cross-product detection parity (284 patterns synchronized across Platform, Rampart, Scanner; parity CI gate). CI gate raised to 85% total / 90% per-package floor. Production bugs found and fixed (SQL `window` reserved keyword, dead code in response_guard.go). 9 new detection patterns synced to Rampart and Scanner. Compliance integration test fix. Threat model updated to reflect v4.6/v4.7 attack surfaces (telemetry server, MCP tool scanner, contracts, SARIF, parity enforcement, coverage enforcement). |
+| v4.6.0 | 2026-10-14 | **Moat Deepening**: 6 new packages (contracts, telemetry, SARIF output, remediation guidance, LLM presets, enhanced MCP tool scanner). MCP tool description scanner screens for 34 dangerous function patterns at registration time (OWASP MCP03). Canonical pattern/event contracts for cross-product interoperability. Telemetry server for pattern/IOC pull and event ingestion. SARIF 2.1.0 output for CI/CD integration. 81 new tests. |
 | v4.5.1 | 2026-09-22 | **Security Hardening**: Session DoS protection (MaxSessions=10000), model update process documentation, threat model publication (38 STRIDE findings), architecture diagrams (request flow, DFD, ML pipeline). No breaking changes. |
 | v4.5.0 | 2026-09-22 | Initial public threat model. Covers L3/P2 blocking, Response Guard strict mode, shadow validation, GHSA fix. |
 

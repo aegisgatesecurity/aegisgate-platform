@@ -40,10 +40,10 @@ func (tf *ToxicityFilter) initDefaultPatterns() {
 	tf.categories[TOXICITY_ILLEGAL] = regexp.MustCompile(`(?i)\b(crack\s*cocaine|heroin|meth|manufacture\s*drug|illegal\s*weapon)\b`)
 
 	// Self-harm patterns
-	tf.categories[TOXICITY_SELF_HARM] = regexp.MustCompile(`(?i)\b(suicide|self-harm|cut\s*myself|kill\s*myself|end\s*my\s*life)\b`)
+	tf.categories[TOXICITY_SELF_HARM] = regexp.MustCompile(`(?i)\b(suicide|self-harm|cut\s*myself|kill\s*myself|end\s*my\s*life|hurt\s*yourself|nobody\s+cares\s+about\s+you|better\s+off\s+without\s+you)\b`)
 
 	// Harassment patterns
-	tf.categories[TOXICITY_HARASSMENT] = regexp.MustCompile(`(?i)\b(you\s+are\s+(stupid|dumb|ugly|worthless|inferior))\b`)
+	tf.categories[TOXICITY_HARASSMENT] = regexp.MustCompile(`(?i)\b(you\s+are\s+(stupid|dumb|ugly|worthless|inferior)|everyone\s+would\s+be\s+better\s+off\s+without\s+you)\b`)
 }
 
 // Scan scans text for toxic content
@@ -155,7 +155,14 @@ func (hd *HallucinationDetector) Scan(text string) *HallucinationResult {
 	result.TotalClaims = len(result.Claims)
 	result.Flagged = claimCount > 3 && result.TotalClaims > 2
 
-	if result.Flagged {
+	// Check for fabricated source attributions (fake DOIs, suspicious citations)
+	fabricatedSourcePattern := regexp.MustCompile(`(?i)(?:according to\s+(?:a\s+)?(?:study|research|paper|report)\s+by\s+.{5,80}(?:\(\d{4}\))?.*(?:doi:\s*\d+\.\d+/\S+|source:\s*\S+))|(?:doi:\s*\d+\.\d{4,}/\S*(?:fake|test|example)\S*)`)
+	if fabricatedSourcePattern.MatchString(text) {
+		result.Flagged = true
+		result.Explanation = "Potential fabricated source attribution or fake DOI detected"
+	}
+
+	if result.Flagged && result.Explanation == "" {
 		result.Explanation = "Potential overconfident claims detected without attribution"
 	}
 

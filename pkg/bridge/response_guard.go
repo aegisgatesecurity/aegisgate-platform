@@ -232,17 +232,9 @@ func (pb *PlatformBridgeWithResponse) ScanAndFilter(ctx context.Context, respons
 		return response, nil, err
 	}
 
-	// In non-strict mode, still pass through but log warnings
-	// In strict mode, block or return empty response
-	config := responseguard.DefaultResponseGuardConfig()
-	if !result.Allowed && !config.StrictMode {
-		// Non-strict: log warning but pass through
-		pb.logger.Warn("response with security concerns passed through",
-			"block_reason", result.BlockReason,
-			"threat_count", len(result.Threats),
-		)
-		return response, result, nil
-	}
-
+	// The scanner's own config determines whether responses are blocked.
+	// DefaultResponseGuardConfig() always returns StrictMode=true, so the
+	// non-strict pass-through branch was dead code (removed v4.7.0).
+	// The scanner already logs blocked responses via ScanResponseWithContext.
 	return response, result, nil
 }

@@ -66,7 +66,7 @@ func (sd *SecretDetector) initDefaultPatterns() {
 
 	// API Keys for various services - use combined pattern to avoid overwriting
 	// Stripe, GitHub, Slack combined into one pattern
-	sd.patterns[SECRET_API_KEY] = regexp.MustCompile(`(?i)(?:(?:sk_live_|sk_test_|rk_live_|rk_test_|FAKE_SK_)[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{22,}|xox[baprs]-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{24,})`)
+	sd.patterns[SECRET_API_KEY] = regexp.MustCompile(`(?i)(?:(?:sk_live_|sk_test_|rk_live_|rk_test_|FAKE_SK_|sk-)[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{22,}|xox[baprs]-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{24,})`)
 
 	// AWS Access Key
 	sd.patterns[SECRET_AWS_KEY] = regexp.MustCompile(`(?i)(?:AKIA[A-Z0-9]{16})`)

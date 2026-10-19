@@ -44,7 +44,7 @@ func (r *AssessmentResult) ToCSV() ([]byte, error) {
 			sr.OWASP,
 			fmt.Sprintf("%t", sr.Blocked),
 			sr.DetectionLayer,
-			fmt.Sprintf("%.4f", sr.MLScoer),
+			fmt.Sprintf("%.4f", sr.MLScore),
 			regexMatches,
 			sr.Timestamp.Format(time.RFC3339),
 		}); err != nil {

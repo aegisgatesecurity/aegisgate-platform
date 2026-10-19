@@ -70,7 +70,9 @@ func NewRunner(cfg *RunnerConfig) (*Runner, error) {
 
 	// Optionally enable response guard
 	if cfg.EnableResponseGuard {
-		r.responseGuard = response.NewResponseGuard()
+		rgCfg := response.DefaultResponseGuardConfig()
+		rgCfg.EnableHallucination = true // Posture Assessment: enable all detectors
+		r.responseGuard = response.NewResponseGuardWithConfig(rgCfg)
 	}
 
 	return r, nil
@@ -173,7 +175,7 @@ func (r *Runner) runRequestScenario(scenario Scenario, sr *ScenarioResult) {
 	// Layer 2: ML detector (if enabled)
 	if r.mlDetector != nil && r.mlDetector.IsEnabled() {
 		score := r.mlDetector.Detect(scenario.Payload)
-		sr.MLScoer = score.Score
+		sr.MLScore = score.Score
 		if score.IsThreat {
 			sr.Blocked = true
 			sr.DetectionLayer = "ml"

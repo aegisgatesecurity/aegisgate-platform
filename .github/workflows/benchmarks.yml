@@ -40,6 +40,11 @@ permissions:
   contents: read
   pull-requests: write
 
+# Ensure pipeline failures propagate (benchmarks | tee, etc.)
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo pipefail {0}
+
 jobs:
   benchmark:
     name: Run Benchmarks

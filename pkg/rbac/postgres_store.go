@@ -492,26 +492,29 @@ func (s *PostgresRBACStore) GetAgentSessions(ctx context.Context, agentID string
 		ORDER BY created_at DESC`
 
 	// Admin-scoped: system query for session management.
-	var rows pgx.Rows
+	// Rows must be fully consumed inside the closure so that the
+	// connection is not released before iteration completes.
+	var sessions []*AgentSession
 	err := ioc.WithTenantContextOrPool(ctx, s.pool, "", true, func(q ioc.DBQuerier) error {
-		var queryErr error
-		rows, queryErr = q.Query(ctx, sql, agentID)
-		return queryErr
+		rows, queryErr := q.Query(ctx, sql, agentID)
+		if queryErr != nil {
+			return queryErr
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			session, err := scanAgentSessionFromRows(rows)
+			if err != nil {
+				return fmt.Errorf("postgres scan agent session: %w", err)
+			}
+			sessions = append(sessions, session)
+		}
+		return rows.Err()
 	})
 	if err != nil {
 		return nil, fmt.Errorf("postgres get agent sessions: %w", err)
 	}
-	defer rows.Close()
-
-	var sessions []*AgentSession
-	for rows.Next() {
-		session, err := scanAgentSessionFromRows(rows)
-		if err != nil {
-			return nil, fmt.Errorf("postgres scan agent session: %w", err)
-		}
-		sessions = append(sessions, session)
-	}
-	return sessions, rows.Err()
+	return sessions, nil
 }
 
 // ============================================================================

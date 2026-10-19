@@ -55,6 +55,11 @@ permissions:
   contents: read
   issues: write
 
+# Ensure pipeline failures propagate (go test | tee, etc.)
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo pipefail {0}
+
 jobs:
   detection-gate:
     name: Detection Rate Gate

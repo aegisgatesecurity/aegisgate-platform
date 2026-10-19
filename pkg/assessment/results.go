@@ -33,7 +33,7 @@ type ScenarioResult struct {
 	OWASP          string    `json:"owasp"`
 	Blocked        bool      `json:"blocked"`
 	DetectionLayer string    `json:"detection_layer"` // "regex", "ml", "response", "none"
-	MLScoer        float64   `json:"ml_score,omitempty"`
+	MLScore        float64   `json:"ml_score,omitempty"`
 	RegexMatches   []string  `json:"regex_matches,omitempty"`
 	Timestamp      time.Time `json:"timestamp"`
 }

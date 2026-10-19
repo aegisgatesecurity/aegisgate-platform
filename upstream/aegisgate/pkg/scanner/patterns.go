@@ -309,6 +309,8 @@ func DefaultPatterns() []*Pattern {
 		{Name: "ot_dnp3_analog_output", Regex: regexp.MustCompile(`(?i)\bDNP3\s+analog\s+output\s+(?:block|group)\s*[:=]?\s*4[0-2]\b`), Severity: High, Category: CategoryNetwork, Description: "DNP3 analog output block (Groups 40-42) - setpoint manipulation"},
 		{Name: "ot_opcua_method_call", Regex: regexp.MustCompile(`(?i)\bOPC[-_]?UA\s+(?:method\s+)?[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*\b`), Severity: Medium, Category: CategoryNetwork, Description: "OPC-UA method call (Namespace.Method format)"},
 		{Name: "ot_opcua_write_value", Regex: regexp.MustCompile(`(?i)\bWriteValue\s*(?:method)?\b`), Severity: High, Category: CategoryNetwork, Description: "OPC-UA WriteValue method call - potential control manipulation"},
+		// --- Posture Assessment gap closure (v4.7.0) ---
+		{Name: "dangerous_command_rm_rf", Regex: regexp.MustCompile(`(?i)(?:os\.system|subprocess\.(?:call|run|Popen)|exec\(|system\().*(?:rm\s+-rf|del\s+/[fqs]|format\s+|mkfs|dd\s+if=)`), Severity: Critical, Category: CategoryCompliance, Description: "Dangerous system command execution (rm -rf, format, mkfs)"},
 	}
 }
 

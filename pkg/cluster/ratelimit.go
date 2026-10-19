@@ -133,9 +133,9 @@ func (drl *DistributedRateLimiter) allowDistributed(key string) bool {
 	err := ioc.WithTenantContextOrPool(ctx, drl.pgPool, "", true, func(q ioc.DBQuerier) error {
 		// Increment this node's counter for the current window
 		_, err := q.Exec(ctx,
-			`INSERT INTO cluster_rate_limits (key, window, node_id, count)
+			`INSERT INTO cluster_rate_limits (key, "window", node_id, count)
 			 VALUES ($1, $2, $3, 1)
-			 ON CONFLICT (key, window, node_id)
+			 ON CONFLICT (key, "window", node_id)
 			 DO UPDATE SET count = cluster_rate_limits.count + 1`,
 			key, window, drl.nodeID,
 		)
@@ -145,7 +145,7 @@ func (drl *DistributedRateLimiter) allowDistributed(key string) bool {
 
 		// Sum all nodes' counters for this window
 		return q.QueryRow(ctx,
-			`SELECT COALESCE(SUM(count), 0) FROM cluster_rate_limits WHERE key = $1 AND window = $2`,
+			`SELECT COALESCE(SUM(count), 0) FROM cluster_rate_limits WHERE key = $1 AND "window" = $2`,
 			key, window,
 		).Scan(&total)
 	})
@@ -171,10 +171,10 @@ func (drl *DistributedRateLimiter) initSchema(ctx context.Context) {
 		_, err := q.Exec(ctx,
 			`CREATE TABLE IF NOT EXISTS cluster_rate_limits (
 				key       TEXT    NOT NULL,
-				window    BIGINT NOT NULL,
+				"window"  BIGINT NOT NULL,
 				node_id   TEXT    NOT NULL,
 				count     INT    NOT NULL DEFAULT 1,
-				PRIMARY KEY (key, window, node_id)
+				PRIMARY KEY (key, "window", node_id)
 			)`)
 		if err != nil {
 			return err
@@ -182,7 +182,7 @@ func (drl *DistributedRateLimiter) initSchema(ctx context.Context) {
 
 		// Auto-expire old windows (keep only last 2 seconds)
 		_, err = q.Exec(ctx,
-			`CREATE INDEX IF NOT EXISTS idx_cluster_rate_limits_window ON cluster_rate_limits (window)`)
+			`CREATE INDEX IF NOT EXISTS idx_cluster_rate_limits_window ON cluster_rate_limits ("window")`)
 		return err
 	})
 	if err != nil {
@@ -201,7 +201,7 @@ func (drl *DistributedRateLimiter) Cleanup(ctx context.Context) {
 	var rowsAffected int64
 	err := ioc.WithTenantContextOrPool(ctx, drl.pgPool, "", true, func(q ioc.DBQuerier) error {
 		result, err := q.Exec(ctx,
-			`DELETE FROM cluster_rate_limits WHERE window < $1`, cutoff)
+			`DELETE FROM cluster_rate_limits WHERE "window" < $1`, cutoff)
 		if err != nil {
 			return err
 		}

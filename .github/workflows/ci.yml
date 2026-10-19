@@ -18,6 +18,13 @@ permissions:
   contents: read
   packages: write
 
+# Ensure pipeline failures propagate (GitHub Actions default shell omits
+# pipefail on some runners, causing `go test | tee` to swallow test
+# failures). This explicitly sets the shell to include -o pipefail.
+defaults:
+  run:
+    shell: bash --noprofile --norc -eo pipefail {0}
+
 jobs:
   dco:
     name: DCO Check
@@ -127,6 +134,12 @@ jobs:
         run: go mod download
 
       - name: Run unit tests
+        # CGO_ENABLED=0 excludes //go:build cgo test files (ML/ONNX tests)
+        # that require the onnxruntime shared library. ML detection is
+        # validated separately by ml-detection-gate.yml which installs
+        # onnxruntime. This prevents silent ML test failures in regular CI.
+        env:
+          CGO_ENABLED: 0
         run: |
           # Exclude packages that require external services (Stripe, SMTP)
           # and stub packages from coverage calculation
@@ -134,34 +147,89 @@ jobs:
             $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/" | grep -v "/billing" | grep -v "/email" | grep -v "/stores") \
             2>&1 | tee test-results.txt
 
-      - name: Run integration tests
+      - name: Run race detector
+        # Verifies all packages are race-free. CGO_ENABLED=1 is required
+        # for the race detector. pkg/ml is excluded because its ONNX
+        # efficacy tests require the model file (gitignored, not in CI)
+        # and would fail unrelated to race conditions. pkg/assessment's
+        # cgo test skips gracefully when the model is absent.
+        env:
+          CGO_ENABLED: 1
         run: |
-          go test -tags=integration -v ./tests/integration/... 2>&1 | tee -a test-results.txt
+          go test -race -count=1 \
+            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/" | grep -v "/billing" | grep -v "/email" | grep -v "/stores" | grep -v "/ml") \
+            2>&1 | tee race-results.txt
+          echo "✅ All packages pass race detector"
+
+      - name: Run per-package integration tests with coverage
+        # Runs testcontainer-based integration tests for packages that
+        # require a running PostgreSQL instance. -p 1 serializes package
+        # execution to avoid Docker container resource contention when
+        # many packages create containers simultaneously.
+        # CGO_ENABLED=0 for consistency with unit tests.
+        env:
+          CGO_ENABLED: 0
+        run: |
+          # Packages with testcontainer integration tests (//go:build integration).
+          # These packages have unit-only coverage below 90% but reach 90%+
+          # when integration tests are included.
+          INTEGRATION_PACKAGES=(
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/legalhold"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
+          )
+          # -p 1 serializes package execution (one testcontainer at a time).
+          # -count=1 disables caching.
+          go test -tags=integration -p 1 -count=1 -cover \
+            "${INTEGRATION_PACKAGES[@]}" \
+            2>&1 | tee integration-results.txt
+
+      - name: Run integration tests
+        # End-to-end integration tests (not per-package coverage).
+        run: |
+          go test -tags=integration -v -p 1 ./tests/integration/... 2>&1 | tee -a test-results.txt
 
       - name: Generate coverage report
         run: |
           go tool cover -html=coverage.out -o coverage.html
           go tool cover -func=coverage.out | tee coverage.txt
 
-      - name: Check coverage threshold (78% minimum)
+      - name: Check coverage threshold (85% minimum)
+        # Total coverage across all CI-scoped packages (unit-only).
+        # The CI-scoped unit-only total is ~86.5%. The 85% threshold
+        # provides headroom for minor fluctuations while ensuring
+        # overall coverage remains high.
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
           echo "Total coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 78" | bc -l) )); then
-            echo "❌ Coverage below 78% (required threshold)"
+          if (( $(echo "$COVERAGE < 85" | bc -l) )); then
+            echo "❌ Coverage below 85% (required threshold)"
             exit 1
           else
-            echo "✅ Coverage meets 78% threshold"
+            echo "✅ Coverage meets 85% threshold"
           fi
 
-      - name: Check per-package coverage floor (79% minimum, with exemptions)
+      - name: Check per-package coverage floor (90% minimum, with exemptions)
+        # Per-package coverage floor. Catches the case where one
+        # package tanks the average or where coverage is concentrated
+        # in a few packages.
+        #
+        # Packages with testcontainer integration tests are checked
+        # at 90% from integration-results.txt (which includes both
+        # unit and integration coverage). All other packages are
+        # checked at 90% from test-results.txt (unit-only).
+        #
+        # Exempted packages are listed below with a justification.
+        # Each exemption must be reviewed and documented.
         run: |
-          # Per-package coverage floor. Catches the case where one
-          # package tanks the average or where coverage is concentrated
-          # in a few packages.
-          #
-          # Exempted packages are listed below with a justification.
-          # Each exemption must be reviewed and documented.
           EXEMPTED_PACKAGES=(
             # cmd/aegisgate-platform: the 64KB main.go contains
             # process-composition code (flag parsing, signal handling,
@@ -171,188 +239,59 @@ jobs:
             # ioc_admin_api_test.go and ioc_wiring_test.go). Exempted
             # for now; can be revisited in a future session.
             "github.com/aegisgatesecurity/aegisgate-platform/cmd/aegisgate-platform"
-            # pkg/reporting: 66.7% coverage. A thin 122-LOC wrapper around
-            # the vendored upstream pkg/reporting. ExportPDF happy path
-            # requires running the upstream reporter's scheduler (no public
-            # injection API). ExportPDFAdHoc and error paths are fully tested.
-            # Exempted; can be revisited if the upstream gains an injection API.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/reporting"
             # pkg (root): contains only doc.go, no statements to cover.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg"
-            # pkg/persistence: 59.3% coverage. PostgresStorageBackend
-            # (~450 LOC) requires a running PostgreSQL instance. File-backed
-            # storage, Manager lifecycle, closed-state error paths, and
-            # panic-recovery tests are fully covered. The SQL-execution
-            # paths (Write, Read, Query, VerifyIntegrity, scanAuditEntry)
-            # can only be tested via integration tests (//go:build integration).
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
-            # pkg/rbac: 60.7% coverage. PostgresRBACStore (~690 LOC) requires
-            # a running PostgreSQL instance. In-memory Manager, types, middleware,
-            # closed-state error paths, and panic-recovery tests are fully covered.
-            # SQL-execution paths can only be tested via integration tests.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
-            # pkg/cluster: 56.5% coverage. DistributedRateLimiter's PostgreSQL
-            # paths (allowDistributed, initSchema, Cleanup) require a running
-            # PostgreSQL instance. Node identity, middleware, local rate limiting,
-            # and error-handling code are fully tested. The distributed SQL paths
-            # can only be tested via integration tests (//go:build integration).
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
-            # pkg/grpc: 45.4% coverage. gRPC service layer (7 services, 50 RPCs).
-            # Server lifecycle, reflection, health checking, TLS config, and
-            # type registration are fully tested. The individual RPC handler
-            # methods require a running gRPC server/client pair and are
-            # integration-test territory. Exempted; can be revisited when
-            # integration test infrastructure supports gRPC.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
-            # pkg/ml: 75.8% coverage. Previously 82% but dropped after
-            # open-core split removed proprietary training/inference code.
-            # The remaining code (detector, normalizer, drift, calibration,
-            # adversarial, evasion resistance) is well-tested. The ONNX
-            # inference paths require a model file that is no longer in the
-            # community repo (enterprise-only). Exempted; will be revisited
-            # when enterprise build tags exclude ONNX paths from community
-            # coverage calculation.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ml"
-            # pkg/ml: 82% coverage — above the 80% floor. Removed from exemptions
-            # 2026-08-02 after coverage gap closure (feature flags now tested).
-            # pkg/incident: 56% coverage. PostgresIncidentStore, PostgresPlaybookStore,
-            # and PostgresDetectionRuleStore (~1,154 LOC) require a running PostgreSQL
-            # instance. Input validation, nil/empty-ID guards, nullTime helper, Close
-            # semantics, metadata merge, and type serialization are fully tested. The
-            # SQL execution paths (INSERT, SELECT, UPDATE, DELETE with pgxpool) can
-            # only be tested via integration tests (//go:build integration).
-            # Exempted; same pattern as pkg/rbac, pkg/persistence, pkg/cluster.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
             # pkg/testdb: 0% coverage. Ephemeral PostgreSQL test helper using
             # testcontainers-go. Requires a running Docker daemon. Cannot be
             # unit-tested without external infrastructure. Exempted; this is
             # test infrastructure, not production code.
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/testdb"
-            # pkg/tracing: ~39% coverage. OpenTelemetry initialization with
-            # OTLP exporter requires a running collector (e.g., Jaeger) to
-            # test the real exporter path. No-op tracer, middleware
-            # pass-through, sanitizePath, StartSpan, and statusWriter are
-            # fully tested. The OTLP/stdout exporter creation paths are
-            # integration-test territory (require external services).
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/tracing"
-            # pkg/a2a: 91.2% without -race, drops to ~34% with -race due to
-            # goroutine synchronization paths (channel sends/receives, select
-            # with multiple cases, context cancellation) that the race detector
-            # instruments differently. Core A2A protocol logic is fully tested.
-            # Exempted under -race; above 80% without it.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
-            # pkg/certinit: 95.7% without -race, drops to ~76% with -race due
-            # to TLS certificate initialization paths (crypto/rand reads,
-            # x509 template generation) that race detector instruments heavily.
-            # Core cert generation logic is fully tested.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/certinit"
-            # pkg/license: 91.7% without -race, drops to ~73% with -race due to
-            # license verification goroutine and cache synchronization paths.
-            # Core license validation is fully tested.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
-            # pkg/platformconfig: 94.0% without -race, drops to ~61% with -race
-            # due to config hot-reload goroutine and watcher synchronization paths.
-            # Core config loading and validation is fully tested.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/platformconfig"
-            # pkg/sso: 81.5% without -race, drops to ~74% with -race due to
-            # OIDC session goroutine and callback synchronization paths.
-            # Core SSO/OIDC logic is fully tested. PostgreSQL-backed SSO
-            # store paths have dedicated integration tests.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
-            # pkg/compliance/fips: 42% coverage. 40-control framework with
-            # heavy crypto-module verification paths (FIPS 140-2/3 internal
-            # module checks) that require HSM hardware or kernel-level
-            # crypto subsystems. Control registration and metadata fully
-            # tested; crypto-verification paths are integration-test only.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/fips"
-            # pkg/ioc: 79.7% coverage. PostgresStore (~660 LOC) requires a
-            # running PostgreSQL instance. In-memory store, fingerprint
-            # matching, canonicalization, and manifest logic are fully
-            # tested. The SQL execution paths (Observe, Get, Query, Batch,
-            # Snapshot, Prune, migrate) are integration-test territory.
-            # tenant_rls.go helpers require a live PostgreSQL instance to
-            # test SET LOCAL and RLS policy enforcement. Exempted; same
-            # pattern as pkg/rbac, pkg/persistence, pkg/incident.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
-            # pkg/tenant: 45.4% coverage. PostgresManager (~300 LOC) requires
-            # a running PostgreSQL instance for CRUD tests. In-memory Manager
-            # and handler tests are fully covered. The SQL execution paths
-            # (Create, Get, List, Update, Delete, Count with pgxpool) are
-            # integration-test territory. Exempted; same pattern as pkg/rbac,
-            # pkg/persistence, pkg/incident, pkg/ioc.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
-            # pkg/compliance/iso42001: 69.4% coverage. 38-control AI
-            # management framework with data-provenance and deep-risk
-            # assessment paths requiring external data catalogs. Control
-            # registration, metadata, and core checks fully tested.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso42001"
-            # pkg/premium: 78.3% coverage. Open-core interface package
-            # with no-op defaults. TrustSession interface methods (AgentID,
-            # Score, End) are no-op stubs that return zero values — testing
-            # them asserts trivial returns. Registration and factory paths
-            # are fully tested. Will reach 80%+ when enterprise adapters
-            # add integration tests.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/premium"
-            # pkg/legalhold: 32.4% coverage. PostgresStore (~151 LOC) requires
-            # a running PostgreSQL instance. In-memory Service, hold lifecycle
-            # (create, release, check, list), and validation are fully tested.
-            # The SQL execution paths (Create, Release, IsUnderHold, List, Get
-            # with pgxpool) are integration-test territory. Exempted; same
-            # pattern as pkg/rbac, pkg/persistence, pkg/incident, pkg/ioc.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/legalhold"
-            # pkg/scanner: 50.3% coverage. MCP scanner (AegisGuardMCPScanner)
-            # is well-tested (88%+ on Initialize, Scan, Health, Stats, read/write
-            # JSON). The core Scanner struct (pattern-matching engine) and
-            # patterns.go (DefaultPatterns, ShouldBlock) have 0% coverage because
-            # tests use the upstream scanner package directly. The MCP types
-            # (ScanRequest, StatsResponse, AuditEntry, JSONRPCError) are tested
-            # via scanner_mcp_95_test.go and scanner_zero_cov_test.go. Exempted;
-            # will be revisited when scanner integration tests are added.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
-            # pkg/abtest: 72.8% coverage. FNV hash-based variant assignment and
-            # per-variant metrics collection. Core test lifecycle (create, start,
-            # stop, assign, record result) is tested. The Store interface and
-            # PostgreSQL-backed store paths require a running PostgreSQL instance.
-            # Exempted; will reach 80%+ when integration tests are added (Step 6).
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/abtest"
-            # pkg/correlation: 76.2% coverage. PostgresCorrelationStore
-            # (~280 LOC) requires a running PostgreSQL instance. In-memory
-            # store, correlation ID generation, and trace propagation are
-            # fully tested. SQL execution paths are integration-test only.
-            # Exempted; same pattern as pkg/rbac, pkg/persistence.
+          )
+          # Packages checked from integration-results.txt (they have
+          # testcontainer integration tests that bring them to 90%+).
+          # These are exempted from the unit-only floor and checked
+          # separately from the integration results.
+          INTEGRATION_PACKAGES=(
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/attestation"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
             "github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
-            # pkg/compliance/cmmcl2: 76.9% coverage. 24-control CMMC Level 2
-            # framework with access-control verification paths requiring
-            # external NIST SP 800-171 evidence. Control registration and
-            # metadata fully tested; verification paths are integration-only.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/cmmcl2"
-            # pkg/compliance/iso27001: 72.4% coverage. 114-control ISMS
-            # framework with risk-assessment paths requiring external
-            # risk catalogs. Control registration and metadata fully tested.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/iso27001"
-            # pkg/compliance/nist800171: 76.0% coverage. 85-control NIST
-            # 800-171 framework with CUI verification paths requiring
-            # external access control evidence. Control registration and
-            # metadata fully tested.
-            "github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance/nist800171"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/incident"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/ioc"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/legalhold"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/license"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/persistence"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
+            "github.com/aegisgatesecurity/aegisgate-platform/pkg/tenant"
           )
           FAIL=0
           echo "## Per-Package Coverage Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Package | Coverage | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          # Parse test-results.txt for per-package coverage lines.
-          # Format: ok <import-path> <time> coverage: XX.X% of statements
-          # (or: "coverage: [no statements]" for doc-only packages)
+          echo "| Package | Coverage | Source | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Helper: check if a package is in a list
+          in_list() {
+            local pkg="$1"
+            shift
+            for item in "$@"; do
+              if [ "$pkg" = "$item" ]; then return 0; fi
+            done
+            return 1
+          }
+
+          # Parse unit test results (test-results.txt) for non-integration packages.
           while IFS= read -r LINE; do
-            # Extract import path and coverage percentage.
             PKG=$(echo "$LINE" | awk '{print $2}')
             COV=$(echo "$LINE" | grep -oE 'coverage: [0-9.]+%' | awk '{print $2}' | tr -d '%')
             if [ -z "$PKG" ] || [ -z "$COV" ]; then
-              continue  # skip lines with no coverage (e.g. [no statements])
+              continue
+            fi
+            # Skip integration packages (checked from integration-results.txt).
+            if in_list "$PKG" "${INTEGRATION_PACKAGES[@]}"; then
+              continue
             fi
             STATUS="✅"
-            # Check exemption list.
             EXEMPT=0
             for EX in "${EXEMPTED_PACKAGES[@]}"; do
               if [ "$PKG" = "$EX" ]; then
@@ -361,20 +300,45 @@ jobs:
                 break
               fi
             done
-            # Compare using awk for floating point.
-            UNDER=$(awk "BEGIN { print ($COV < 79) ? 1 : 0 }")
+            UNDER=$(awk "BEGIN { print ($COV < 90) ? 1 : 0 }")
             if [ "$EXEMPT" = "0" ] && [ "$UNDER" = "1" ]; then
               STATUS="❌"
               FAIL=1
             fi
-            echo "| $PKG | $COV% | $STATUS |" >> $GITHUB_STEP_SUMMARY
+            echo "| $PKG | $COV% | unit | $STATUS |" >> $GITHUB_STEP_SUMMARY
           done < <(grep -E "^ok " test-results.txt | grep "coverage:")
+
+          # Parse integration test results (integration-results.txt) for integration packages.
+          if [ -f integration-results.txt ]; then
+            while IFS= read -r LINE; do
+              PKG=$(echo "$LINE" | awk '{print $2}')
+              COV=$(echo "$LINE" | grep -oE 'coverage: [0-9.]+%' | awk '{print $2}' | tr -d '%')
+              if [ -z "$PKG" ] || [ -z "$COV" ]; then
+                continue
+              fi
+              # Only check packages in the integration list.
+              if ! in_list "$PKG" "${INTEGRATION_PACKAGES[@]}"; then
+                continue
+              fi
+              STATUS="✅"
+              UNDER=$(awk "BEGIN { print ($COV < 90) ? 1 : 0 }")
+              if [ "$UNDER" = "1" ]; then
+                STATUS="❌"
+                FAIL=1
+              fi
+              echo "| $PKG | $COV% | integration | $STATUS |" >> $GITHUB_STEP_SUMMARY
+            done < <(grep -E "^ok " integration-results.txt | grep "coverage:")
+          else
+            echo "⚠️ integration-results.txt not found — integration packages not checked" >> $GITHUB_STEP_SUMMARY
+            FAIL=1
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ $FAIL -eq 1 ]; then
-            echo "❌ One or more packages are below the 79% per-package floor"
+            echo "❌ One or more packages are below the 90% per-package floor"
             exit 1
           else
-            echo "✅ All packages meet 79% per-package floor (with documented exemptions)"
+            echo "✅ All packages meet 90% per-package floor"
           fi
 
       - name: Check package doc.go files (every package must have one)
@@ -415,6 +379,7 @@ jobs:
           name: test-results
           path: |
             test-results.txt
+            integration-results.txt
             coverage.html
             coverage.txt
             coverage.out
