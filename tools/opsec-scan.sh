@@ -305,6 +305,22 @@ if [ "$ENV_FAIL" -eq 0 ]; then
     log_pass "no .env or credential files in $LABEL files"
 fi
 
+# ─── 8. Patent / IP document detection ─────────────────────────────────────
+echo
+echo "8. Patent / IP document detection"
+PATENT_FAIL=0
+for f in $FILES; do
+    case "$f" in
+        *provisional-patent*|*patent-coverage*|*patent-filing-guide*|*patent-specification*)
+            log_fail "$f appears to be a patent/IP document — must not be committed to public repo"
+            PATENT_FAIL=$((PATENT_FAIL+1))
+            ;;
+    esac
+done
+if [ "$PATENT_FAIL" -eq 0 ]; then
+    log_pass "no patent/IP documents in $LABEL files"
+fi
+
 # ─── Summary ──────────────────────────────────────────────────────────────
 echo
 echo "=== OPSEC scan summary ($LABEL files) ==="
