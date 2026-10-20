@@ -59,7 +59,6 @@ var KnownProxyRanges = []string{
 type ProxyServiceDetector struct {
 	cidrs         []*net.IPNet
 	datacenterIPs sync.Map // IP → first-seen timestamp
-	mu            sync.RWMutex
 }
 
 // NewProxyServiceDetector creates a detector with known relay ranges.
@@ -409,13 +408,6 @@ func (d *AccountClusterDetector) RecordKeyActivity(keyID, promptStructure, sourc
 func (d *AccountClusterDetector) DetectClusters() []ClusterResult {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-
-	// Build similarity graph
-	type keySim struct {
-		key    string
-		sim    float64
-		shared []string
-	}
 
 	// For each pair of keys, compute similarity
 	clusters := []ClusterResult{}

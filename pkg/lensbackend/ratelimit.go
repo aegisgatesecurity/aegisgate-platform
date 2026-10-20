@@ -44,7 +44,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/resilience/ratelimit"
@@ -64,7 +63,6 @@ const GlobalRateLimitPerMin = 10000
 // limit (GlobalRateLimitPerMin) using two underlying
 // ratelimit.RateLimiter instances.
 type LensRateLimiter struct {
-	mu         sync.RWMutex
 	perInstall *ratelimit.RateLimiter
 	global     *ratelimit.RateLimiter
 	hmacKey    []byte

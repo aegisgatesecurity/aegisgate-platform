@@ -85,10 +85,6 @@ type FrameworkRefCacheConfig struct {
 	Logger *log.Logger
 }
 
-// defaultRefCacheTTL is the periodic re-seed interval when the
-// caller specifies a non-zero TTL without overriding the default.
-const defaultRefCacheTTL = 5 * time.Minute
-
 // minimumRefCacheTTL is the lower bound on the TTL to prevent a
 // tight loop from a misconfigured value. 100ms is fast enough
 // for unit tests while still preventing a busy-loop in the

@@ -170,8 +170,7 @@ type Sync struct {
 	// The receiver run state is also guarded by mu so a future
 	// iteration that starts/stops the receiver at runtime can
 	// do so safely.
-	mu      sync.RWMutex
-	running bool
+	mu sync.RWMutex
 
 	// httpClient is shared across all peer fetches.
 	httpClient *http.Client

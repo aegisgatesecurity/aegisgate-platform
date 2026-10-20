@@ -194,7 +194,6 @@ type MCPSessionCompliance struct {
 		Tier      tier.Tier
 		StartTime time.Time
 	}
-	time time.Time
 }
 
 // NewMCPSessionCompliance creates a session-scoped compliance checker

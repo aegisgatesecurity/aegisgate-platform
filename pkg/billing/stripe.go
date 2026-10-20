@@ -231,7 +231,6 @@ type StripeClient struct {
 	webhookSecret  string
 	publishableKey string
 	baseURL        string
-	httpClient     interface{}
 	mockMode       bool
 }
 

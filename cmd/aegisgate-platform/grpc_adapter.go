@@ -21,11 +21,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"time"
-
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/sso"
+	"log/slog"
 )
 
 // ssoAuthBackend adapts sso.Manager to the grpc.AuthBackend interface.
@@ -118,6 +116,3 @@ func (a *ssoAuthBackend) GetAuthConfig(ctx context.Context) (*grpc.AuthConfig, e
 
 // Compile-time interface check.
 var _ grpc.AuthBackend = (*ssoAuthBackend)(nil)
-
-// timeNow is a helper to avoid importing time in the adapter methods.
-var timeNow = time.Now

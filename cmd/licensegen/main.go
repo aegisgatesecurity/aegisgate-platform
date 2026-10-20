@@ -26,7 +26,6 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
-	"math/big"
 	"os"
 	"strings"
 	"time"
@@ -288,22 +287,4 @@ func generateUUID() string {
 	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant 2
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
 		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16])
-}
-
-// verifySignatureIndependently double-checks that the generated license validates
-// by re-verifying the signature independently (belt-and-suspenders check)
-func verifySignatureIndependently(payload license.LicensePayload, sigBytes []byte, pubKey *ecdsa.PublicKey) error {
-	payloadJSON, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal payload: %w", err)
-	}
-	hash := sha256.Sum256(payloadJSON)
-
-	r := new(big.Int).SetBytes(sigBytes[:32])
-	s := new(big.Int).SetBytes(sigBytes[32:])
-
-	if !ecdsa.Verify(pubKey, hash[:], r, s) {
-		return fmt.Errorf("independent signature verification failed")
-	}
-	return nil
 }

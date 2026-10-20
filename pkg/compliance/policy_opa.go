@@ -307,9 +307,6 @@ var regoPkgRe = regexp.MustCompile(`(?m)^package\s+([\w.]+)\s*$`)
 // regoDefaultRe matches: default allow = false / default deny = true
 var regoDefaultRe = regexp.MustCompile(`(?m)^default\s+(allow|deny)\s*=\s*(true|false)\s*$`)
 
-// regoRuleStartRe matches: allow { or deny {
-var regoRuleStartRe = regexp.MustCompile(`(?m)^(allow|deny)\s*\{`)
-
 // ParseRegoSource parses Rego source into a RegoRule struct.
 // Supports: package declarations, allow/deny rules, default assignments,
 // conditions with ==, !=, >, <, >=, <=, in, contains, matches operators,

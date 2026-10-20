@@ -325,11 +325,6 @@ func (at *AuditTrail) Diff(patternID string, fromVersion, toVersion int) []DiffR
 	})
 
 	// Build state at each version
-	type versionState struct {
-		version int
-		fields  map[string]string
-	}
-
 	states := make(map[int]map[string]string)
 
 	// Start from base state (before any changes)

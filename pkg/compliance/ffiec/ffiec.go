@@ -1116,15 +1116,6 @@ func (m *FFIECModule) checkFraudDetection(ctx context.Context, input []byte) (*c
 	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-AU-05", ControlName: "Fraud Detection Systems", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Fraud detection not detected", Timestamp: time.Now(), Remediation: "Implement fraud detection systems"}, nil
 }
 
-func (m *FFIECModule) checkCyberIRCoordination(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
-	inputStr := string(input)
-	hasCoord := strings.Contains(inputStr, "cyber_incident_coordination") || strings.Contains(inputStr, "incident_coordination") || strings.Contains(inputStr, "ir_coordination")
-	if hasCoord {
-		return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-BC-05", ControlName: "Cyber Incident Response Coordination", Status: compliance.StatusCompliant, Severity: compliance.SeverityHigh, Message: "Cyber incident response coordination detected", Timestamp: time.Now()}, nil
-	}
-	return &compliance.ControlCheckResult{Framework: m.Framework(), ControlID: "FFIEC-BC-05", ControlName: "Cyber Incident Response Coordination", Status: compliance.StatusNonCompliant, Severity: compliance.SeverityHigh, Message: "Cyber IR coordination not detected", Timestamp: time.Now(), Remediation: "Implement cyber incident response coordination"}, nil
-}
-
 func (m *FFIECModule) checkBusinessImpactAnalysis(ctx context.Context, input []byte) (*compliance.ControlCheckResult, error) {
 	inputStr := string(input)
 	hasBIA := strings.Contains(inputStr, "business_impact_analysis") || strings.Contains(inputStr, "bia") || strings.Contains(inputStr, "impact_analysis")

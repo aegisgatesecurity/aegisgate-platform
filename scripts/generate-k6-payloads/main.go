@@ -26,11 +26,10 @@ import (
 )
 
 type payload struct {
-	id       string
-	text     string
-	pType    string // adversarial | benign
-	pattern  string
-	category string
+	id      string
+	text    string
+	pType   string // adversarial | benign
+	pattern string
 }
 
 func main() {

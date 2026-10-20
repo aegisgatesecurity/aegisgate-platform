@@ -315,22 +315,6 @@ func all52Techniques() []struct {
 	}
 }
 
-// detectionPatternIDs builds a set of all ATLAS sub-technique IDs that
-// have detection patterns in the ATLAS framework (atlas.go). These are
-// the techniques our rule engine can "Detect" outright.
-func detectionPatternIDs() map[string]bool {
-	// All 52 sub-techniques have detection patterns in atlas.go.
-	// The ATLAS framework initPatterns() method creates patterns for
-	// every sub-technique in this list. We verify this by building
-	// the set from the framework itself.
-	ids := make(map[string]bool)
-	techs := all52Techniques()
-	for _, t := range techs {
-		ids[t.id] = true
-	}
-	return ids
-}
-
 // detectionStatusFor determines whether a sub-technique is Detected,
 // Partial, or Not Detected by the rule engine. The determination is
 // based on whether the ATLAS framework has a pattern for this

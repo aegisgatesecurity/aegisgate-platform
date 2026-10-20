@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
@@ -54,7 +53,6 @@ type ActionCallbacks struct {
 
 // Engine is the central orchestrator for incident response.
 type Engine struct {
-	mu              sync.RWMutex
 	incidentStore   IncidentStore
 	playbookStore   PlaybookStore
 	ruleStore       DetectionRuleStore

@@ -57,18 +57,6 @@ var inScopePayloadIDs = map[string]bool{
 // keyEvasionTransforms are the 10 evasion transforms that account for
 // the majority of in-scope misses. We apply these to existing v9 data
 // examples to create a richer training set.
-var keyEvasionTransformNames = []string{
-	"char_delete_vowels",
-	"keyboard_walk_shift",
-	"char_transpose_adjacent",
-	"char_reverse_words",
-	"char_repeat",
-	"l33t_common",
-	"char_insert_dots",
-	"char_insert_hyphens",
-	"char_substitute_symbols",
-	"frag_concatenation_hint",
-}
 
 // v9ExfilPayloads are additional in-scope adversarial seed texts
 // beyond the ATLAS payloads. These are data exfiltration patterns

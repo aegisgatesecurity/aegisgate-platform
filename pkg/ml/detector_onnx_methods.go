@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	onnxruntime "github.com/yalue/onnxruntime_go"
 )
@@ -218,13 +217,4 @@ func computeFileHash(path string) (string, error) {
 	}
 	hash := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(hash[:]), nil
-}
-
-// measureInferenceLatency measures inference duration in ms.
-func measureInferenceLatency(td *ThreatDetector) (float64, error) {
-	encoded := td.normalizer.Encode("What is the weather today?")
-	start := time.Now()
-	td.inference(encoded)
-	elapsed := time.Since(start)
-	return float64(elapsed.Microseconds()) / 1000.0, nil
 }

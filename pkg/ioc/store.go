@@ -93,12 +93,11 @@ type StoreConfig struct {
 type Store struct {
 	cfg StoreConfig
 
-	mu     sync.RWMutex
-	byFP   map[string]*IOC     // fingerprint -> IOC
-	bySP   map[string][]string // source_provider -> []fingerprint (index for /check)
-	order  []string            // insertion-order list of fingerprints; for stable iteration
-	dirty  bool                // true if the in-memory state has unflushed changes
-	closed bool
+	mu    sync.RWMutex
+	byFP  map[string]*IOC     // fingerprint -> IOC
+	bySP  map[string][]string // source_provider -> []fingerprint (index for /check)
+	order []string            // insertion-order list of fingerprints; for stable iteration
+	dirty bool                // true if the in-memory state has unflushed changes
 }
 
 // NewStore creates a Store from the given config. Loads any

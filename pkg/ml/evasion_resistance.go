@@ -30,10 +30,9 @@ import (
 
 // EvasionDetector detects common evasion techniques used against AI security scanners.
 type EvasionDetector struct {
-	mu                sync.RWMutex
-	patterns          []EvasionPattern
-	variantGenerators []VariantGenerator
-	stats             EvasionStats
+	mu       sync.RWMutex
+	patterns []EvasionPattern
+	stats    EvasionStats
 }
 
 // EvasionPattern is a detection pattern for an evasion technique.
