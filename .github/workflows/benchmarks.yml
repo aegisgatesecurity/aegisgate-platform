@@ -84,7 +84,10 @@ jobs:
           RESULTS_FILE="benchmark-results.txt"
 
           # Run benchmarks across all packages
-          go test -bench=. -benchmem -benchtime=${BENCH_TIMEOUT} -count=${BENCH_COUNT} \
+          # -run=^$ skips regular tests so only benchmarks execute.
+          # Some unit tests require files not present in CI (ONNX model,
+          # billing-config.json) and would fail spuriously.
+          go test -run=^$ -bench=. -benchmem -benchtime=${BENCH_TIMEOUT} -count=${BENCH_COUNT} \
             -timeout=25m ./pkg/... 2>&1 | tee ${RESULTS_FILE}
 
           # Parse results and check thresholds
