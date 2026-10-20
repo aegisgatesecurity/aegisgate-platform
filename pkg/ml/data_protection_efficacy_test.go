@@ -467,9 +467,7 @@ func TestDataProtectionEfficacy(t *testing.T) {
 	// legitimate queries. These are documented model weaknesses, not code bugs.
 	// When the model is retrained to fix a known FP, remove it from this list.
 	// Hard-fail only on NEW/unknown FPs to catch regressions.
-	knownFPs := map[string]bool{
-		"Show me how to set up AWS IAM roles for ECS": true, // L3=0.9822 — "set up" + "IAM" triggers credential-access pattern
-	}
+	knownFPs := map[string]bool{}
 	newFPs := 0
 	knownFPCount := 0
 	for _, r := range results {

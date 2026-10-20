@@ -32,20 +32,21 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
+
+
 	"sync"
 )
 
-// ExpectedModelHash is the SHA-256 hash of the v13 threat detection model
+// ExpectedModelHash is the SHA-256 hash of the v14 threat detection model
 // (threat_cnn_bilstm.onnx). If the model file hash does not match, the
 // detector refuses to load it — preventing supply-chain tampering.
+// v14:  f26793b86c22a95e08d7c262ca1d8d8d47230a5c64b7a71a7b743fb214279442
 // v13:  329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0
 // v11b: 8e13c793c32816aa0f6e2af13ffadd4f38f707b4ac8906b56ddfa77da51ea8e5
 // v11:  32b7db74379b28a0e3da5a79e42c0ecedab29b66463c26a8cf2081a731facc91
 // v10:  8f874aa5a0d01a8acaa8449ba68c82d8bc0bc984744d9cf8a68ce900b83f2e56
 // v9:   0076b66d069ca445589526624ebeb67b65a1df68d615525b83e528f03e0bd4b7
-const ExpectedModelHash = "329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0"
+const ExpectedModelHash = "f26793b86c22a95e08d7c262ca1d8d8d47230a5c64b7a71a7b743fb214279442"
 
 // ThreatDetector performs neural network-based threat detection.
 // ONNX session fields are defined in build-tag-specific files:
@@ -101,15 +102,6 @@ func (td *ThreatDetector) Detect(text string) ThreatScore {
 	score := td.inference(encoded)
 	isThreat := score >= td.config.Threshold
 
-	// Temporal query FP mitigation: downgrade block to warn for temporal queries
-	if isThreat && isTemporalFalsePositive(text) {
-		slog.Debug("Temporal query FP mitigation: downgrading block to warn",
-			"text_preview", text[:min(len(text), 50)],
-			"score", score,
-		)
-		isThreat = false
-	}
-
 	result := ThreatScore{
 		Score:        score,
 		IsThreat:     isThreat,
@@ -158,14 +150,6 @@ func (td *ThreatDetector) DetectAll(variants []string) ThreatScore {
 
 	_ = bestVariant
 	isThreat := bestScore >= td.config.Threshold
-
-	// Temporal query FP mitigation: downgrade block to warn for temporal queries
-	if isThreat && isTemporalFalsePositive(variants[0]) {
-		slog.Debug("Temporal query FP mitigation: downgrading block to warn (multi-variant)",
-			"score", bestScore,
-		)
-		isThreat = false
-	}
 
 	result := ThreatScore{
 		Score:        bestScore,
@@ -264,22 +248,6 @@ func (td *ThreatDetector) LoadModel(path string) error {
 	slog.Info("ML model integrity verified", "hash", hash, "path", cleanPath)
 
 	return td.loadModelONNX(cleanPath)
-}
-
-// temporalQueryPattern matches common temporal/date/time queries that
-// are known to cause false positives in the neural model. The model was
-// trained on adversarial prompts and some temporal phrasings ("What time
-// is it in...", "What day is it") produce high scores without being
-// adversarial. This is a post-inference mitigation: if the text matches
-// a temporal pattern AND the heuristic detector finds no attack keywords,
-// the neural flag is downgraded from block to warn.
-var temporalQueryPattern = regexp.MustCompile(`(?i)^(what|which|tell me|do you know)\s+(time|day|date|month|year|hour|minute|second|timezone|time zone)\b`)
-
-// isTemporalFalsePositive returns true if the text is a temporal query
-// that should not be blocked even if the neural model scores it high.
-func isTemporalFalsePositive(text string) bool {
-	text = strings.TrimSpace(strings.ToLower(text))
-	return temporalQueryPattern.MatchString(text)
 }
 
 // Close cleans up the ONNX session and tensors.

@@ -29,7 +29,7 @@ import (
 
 const (
 	// MaxSeqLen is the maximum sequence length for the model input.
-	MaxSeqLen = 256
+	MaxSeqLen = 128
 
 	// PadID is the padding token ID.
 	PadID = 0
