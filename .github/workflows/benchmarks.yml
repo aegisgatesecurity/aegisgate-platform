@@ -30,11 +30,11 @@ on:
       bench_timeout:
         description: 'Per-benchmark timeout (Go duration)'
         required: false
-        default: '30s'
+        default: '5s'
       bench_count:
         description: 'Number of iterations per benchmark'
         required: false
-        default: '5'
+        default: '1'
 
 permissions:
   contents: read
@@ -49,7 +49,7 @@ jobs:
   benchmark:
     name: Run Benchmarks
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -72,8 +72,8 @@ jobs:
 
       - name: Run Benchmarks
         env:
-          BENCH_TIMEOUT: ${{ github.event.inputs.bench_timeout || '30s' }}
-          BENCH_COUNT: ${{ github.event.inputs.bench_count || '5' }}
+          BENCH_TIMEOUT: ${{ github.event.inputs.bench_timeout || '5s' }}
+          BENCH_COUNT: ${{ github.event.inputs.bench_count || '1' }}
         run: |
           echo "## Performance Benchmark Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
