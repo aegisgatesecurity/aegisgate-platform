@@ -464,10 +464,13 @@ func TestPhase3_Playbook_Delete(t *testing.T) {
 		t.Fatalf("DeletePlaybook: %v", err)
 	}
 
-	// Verify it's gone.
-	_, err := store.GetPlaybook(context.Background(), pb.ID)
-	if err == nil {
-		t.Fatal("expected error for GetPlaybook after delete")
+	// Verify it's gone — GetPlaybook returns (nil, nil) for not-found.
+	got, err := store.GetPlaybook(context.Background(), pb.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != nil {
+		t.Fatal("expected nil playbook after delete")
 	}
 
 	// DeletePlaybook with empty ID should error.
