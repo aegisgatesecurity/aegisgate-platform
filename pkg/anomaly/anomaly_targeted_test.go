@@ -313,7 +313,9 @@ func TestAnomalyAugmentedScanner_Enabled_HappyPath(t *testing.T) {
 
 func TestAnomalyAugmentedScanner_Timeout(t *testing.T) {
 	// A very short timeout should trigger the ctx.Done() branch.
-	scanner := NewAnomalyAugmentedScanner(nil, IntegrationConfig{
+	// Even on timeout, the underlying scanner must still run —
+	// anomaly detection is augmentation, not gating.
+	scanner := NewAnomalyAugmentedScanner(stubScanner{}, IntegrationConfig{
 		Enabled:      true,
 		BlockOnAlert: false,
 		Timeout:      1 * time.Nanosecond, // impossible-to-meet
@@ -329,6 +331,10 @@ func TestAnomalyAugmentedScanner_Timeout(t *testing.T) {
 		t.Logf("note: very-short timeout did not fire (scoring was fast enough); the ctx.Done() branch is hard to hit deterministically")
 	} else if !strings.Contains(result.Error.Error(), "timeout") {
 		t.Errorf("Error = %v, expected it to mention 'timeout'", result.Error)
+	}
+	// Underlying scanner must still run even on timeout.
+	if result.OriginalResult != "stub-original" {
+		t.Errorf("OriginalResult = %v, expected 'stub-original' (scanner must run even on timeout)", result.OriginalResult)
 	}
 }
 

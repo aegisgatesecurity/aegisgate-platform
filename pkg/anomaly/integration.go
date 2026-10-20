@@ -131,8 +131,6 @@ func (s *AnomalyAugmentedScanner) Scan(data []byte) ScannerResult {
 	select {
 	case <-ctx.Done():
 		result.Error = fmt.Errorf("anomaly detection timeout after %v", s.Config.Timeout)
-		result.ProcessingTime = time.Since(start)
-		return result
 	case anomalyScore := <-done:
 		result.AnomalyScore = anomalyScore
 
@@ -142,8 +140,12 @@ func (s *AnomalyAugmentedScanner) Scan(data []byte) ScannerResult {
 		}
 	}
 
-	// Run underlying scanner
-	result.OriginalResult = s.Scanner.Scan(data)
+	// Run underlying scanner (always — anomaly detection is
+	// augmentation, not gating; a timeout must not cause the actual
+	// security scan to be silently skipped)
+	if s.Scanner != nil {
+		result.OriginalResult = s.Scanner.Scan(data)
+	}
 
 	result.ProcessingTime = time.Since(start)
 
@@ -427,7 +429,10 @@ func WrapWithAnomalyDetection(fn ScanFunc, config IntegrationConfig) func([]byte
 			return result
 		}
 
-		// Run anomaly detection
+		// Run anomaly detection (augmentation only — the underlying
+		// scanner must always run regardless of whether anomaly
+		// detection times out, otherwise a slow scorer would cause the
+		// actual security scan to be silently skipped).
 		done := make(chan AnomalyScore, 1)
 		go func() {
 			done <- Score(data, config.ScorerConfig)
@@ -436,12 +441,12 @@ func WrapWithAnomalyDetection(fn ScanFunc, config IntegrationConfig) func([]byte
 		select {
 		case <-time.After(config.Timeout):
 			result.Error = fmt.Errorf("anomaly detection timeout")
-			return result
 		case anomalyScore := <-done:
 			result.AnomalyScore = anomalyScore
 		}
 
-		// Run underlying scanner
+		// Run underlying scanner (always — anomaly detection is
+		// augmentation, not gating)
 		result.OriginalResult = fn(data)
 		result.ProcessingTime = time.Since(start)
 
