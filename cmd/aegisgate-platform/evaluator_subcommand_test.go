@@ -75,7 +75,7 @@ func runEvaluatorInProcess(t *testing.T, args []string) (stdout string, exitCode
 	// pollute the user's home directory.
 	tmpHome := t.TempDir()
 	cmd.Env = append(os.Environ(), "HOME="+tmpHome)
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.Output()
 	if err != nil {
 		var exitErr *exitError
 		if errors.As(err, &exitErr) {

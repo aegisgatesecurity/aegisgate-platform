@@ -35,6 +35,13 @@ func (c *testCmd) CombinedOutput() ([]byte, error) {
 	return runOSExec(c.Name, c.Args, c.Dir, c.Env)
 }
 
+// Output runs the command and returns only stdout (stderr is
+// captured separately and discarded). On non-zero exit, the
+// returned error is a *exitError (defined below).
+func (c *testCmd) Output() ([]byte, error) {
+	return runOSExecStdoutOnly(c.Name, c.Args, c.Dir, c.Env)
+}
+
 // runOSExec runs name with args in dir, with the given env. The
 // combined stdout+stderr is returned. If the process exits with
 // a non-zero code, the returned error is a *testExitError.
@@ -87,7 +94,40 @@ func runOSExec(name string, args []string, dir string, env []string) ([]byte, er
 	return buf.Bytes(), err
 }
 
-// exitError is the error returned when a subprocess
+// runOSExecStdoutOnly is like runOSExec but captures only stdout;
+// stderr goes to a separate buffer that is discarded. This is
+// needed when the CLI prints warnings (e.g. ONNX runtime not
+// found) to stderr that would corrupt stdout JSON parsing.
+func runOSExecStdoutOnly(name string, args []string, dir string, env []string) ([]byte, error) {
+	base := filepath.Base(name)
+	switch base {
+	case "go", "aegisgate":
+		// allowed
+	default:
+		return nil, fmt.Errorf("runOSExecStdoutOnly: executable %q not in allowlist", name)
+	}
+	// #nosec G204 -- base is validated by the allowlist check above.
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	if env != nil {
+		cmd.Env = env
+	}
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = nil // discard stderr
+	err := cmd.Run()
+	if err == nil {
+		return stdout.Bytes(), nil
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+			return stdout.Bytes(), &exitError{Code: status.ExitStatus()}
+		}
+		return stdout.Bytes(), &exitError{Code: exitErr.ExitCode()}
+	}
+	return stdout.Bytes(), err
+}
+
 // exits with a non-zero code. Defined here (not in the test
 // file) so the runOSExec function can construct it.
 type exitError struct {
