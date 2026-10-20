@@ -303,3 +303,7 @@ configs/test.yaml
 docker-compose-ollama.yml
 tests/fpr-simulation/
 mcp-security/mcp-server
+
+# Training data generation commands (depend on gitignored pkg/ml/training/)
+cmd/gen-training-data/
+cmd/gen-v10-data/
