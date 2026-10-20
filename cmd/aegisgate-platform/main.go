@@ -2027,6 +2027,14 @@ func main() {
 	// 60s (see plans/TRUST-PORTAL-DESIGN.md).
 	wireTrustPortalHandlers(dashMux)
 
+	// Posture Assessment HTTP endpoints (v4.7.0+).
+	// Wires pkg/assessment as the dashboard API for posture
+	// assessment scoring, gap analysis, compliance mapping,
+	// PDF reports, and trend tracking. All endpoints require
+	// auth. Assessment is read-only except POST /run.
+	wireAssessmentHandlers(dashMux, authMiddleware)
+	log.Printf("[ASSESSMENT] Posture Assessment HTTP API enabled at /api/v1/assessment/{run,current,history,trend}")
+
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

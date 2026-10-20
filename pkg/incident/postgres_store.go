@@ -348,11 +348,16 @@ func (s *PostgresIncidentStore) ListIncidents(ctx context.Context, query *Incide
 	}
 
 	// Tags filter: all query tags must be present.
+	// tags column is TEXT[] — use ARRAY[...]::text[] for proper
+	// containment check with the @> operator (not JSON).
 	if len(query.Tags) > 0 {
-		where = append(where, fmt.Sprintf("tags @> $%d", argIdx))
-		tagsJSON, _ := json.Marshal(query.Tags)
-		args = append(args, tagsJSON)
-		argIdx++
+		placeholders := make([]string, len(query.Tags))
+		for i, tag := range query.Tags {
+			placeholders[i] = fmt.Sprintf("$%d", argIdx)
+			args = append(args, tag)
+			argIdx++
+		}
+		where = append(where, fmt.Sprintf("tags @> ARRAY[%s]::text[]", strings.Join(placeholders, ", ")))
 	}
 
 	sql := fmt.Sprintf(

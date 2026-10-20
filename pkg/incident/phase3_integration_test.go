@@ -150,10 +150,6 @@ func TestPhase3_Incident_ListByDateRange(t *testing.T) {
 }
 
 func TestPhase3_Incident_ListByTags(t *testing.T) {
-	// NOTE: The tags filter in ListIncidents uses `tags @> $N` (JSONB
-	// containment) but the tags column is text[]. This is a pre-existing
-	// source bug — skip until fixed. The test verifies the query executes
-	// without panicking.
 	store, cleanup := setupIncidentStore(t)
 	defer cleanup()
 
@@ -163,13 +159,26 @@ func TestPhase3_Incident_ListByTags(t *testing.T) {
 		t.Fatalf("CreateIncident: %v", err)
 	}
 
-	// The tags filter may fail due to the text[] vs JSONB mismatch.
-	// Just verify it doesn't panic.
-	_, err := store.ListIncidents(context.Background(), &IncidentQuery{
+	// Tags filter uses ARRAY[...]::text[] containment (fixed from
+	// JSONB @> mismatch). Should return the incident with matching tags.
+	results, err := store.ListIncidents(context.Background(), &IncidentQuery{
 		Tags: []string{"critical-infra"},
 	})
 	if err != nil {
-		t.Logf("ListIncidents by tags returned error (known source bug): %v", err)
+		t.Fatalf("ListIncidents by tags failed: %v", err)
+	}
+	if len(results) == 0 {
+		t.Fatal("expected at least one incident matching tag 'critical-infra'")
+	}
+	found := false
+	for _, r := range results {
+		if r.ID == inc.ID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("created incident not found in tag filter results")
 	}
 }
 
