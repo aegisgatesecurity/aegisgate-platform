@@ -95,7 +95,7 @@ func NewResponseGuardWithConfig(config *ResponseGuardConfig) *ResponseGuard {
 	if config.EnableAnomalyDetection {
 		anonConfig := anomaly.DefaultIntegrationConfig(anomaly.IntegrationResponseGuard)
 		anonConfig.BlockOnAlert = false // Non-blocking: alert only, never block
-		anonConfig.Timeout = 10 * time.Millisecond
+		anonConfig.Timeout = 100 * time.Millisecond
 		rg.anomalyDetector = anomaly.NewAnomalyAugmentedScanner(&nopScanner{}, anonConfig)
 	}
 
