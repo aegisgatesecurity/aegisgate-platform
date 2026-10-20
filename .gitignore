@@ -284,6 +284,10 @@ cmd/aegisgate-platform/trust_portal_http_test.go
 # Provisional patent specifications — proprietary, never published
 plans/provisional-patent-*.md
 plans/provisional-patent-filing-guide.md
+# Also block any patent docs accidentally placed in docs/
+docs/provisional-patent-*.md
+docs/provisional-patent-filing-guide.md
+docs/patent-coverage-analysis.md
 
 # Local build artifacts (from evasion suite / k6 tests)
 /echo-server
