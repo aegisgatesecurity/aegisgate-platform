@@ -400,3 +400,78 @@ func TestPhase3_Incident_UpdateWithEscalation(t *testing.T) {
 		t.Fatalf("expected escalated_to=tier-2, got %s", got.EscalatedTo)
 	}
 }
+
+func TestPhase3_Rule_ListAllAndDelete(t *testing.T) {
+	store, cleanup := setupDetectionRuleStore(t)
+	defer cleanup()
+
+	// Create a disabled rule so ListRules(false) has something to return.
+	rule := newTestDetectionRule("list-all-delete")
+	rule.Enabled = false
+	if err := store.CreateRule(context.Background(), rule); err != nil {
+		t.Fatalf("CreateRule: %v", err)
+	}
+
+	// ListRules with enabledOnly=false should include disabled rules.
+	results, err := store.ListRules(context.Background(), false)
+	if err != nil {
+		t.Fatalf("ListRules(enabledOnly=false): %v", err)
+	}
+	found := false
+	for _, r := range results {
+		if r.ID == rule.ID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("disabled rule not found in ListRules(false)")
+	}
+
+	// Delete the rule.
+	if err := store.DeleteRule(context.Background(), rule.ID); err != nil {
+		t.Fatalf("DeleteRule: %v", err)
+	}
+
+	// Verify it's gone.
+	results, err = store.ListRules(context.Background(), false)
+	if err != nil {
+		t.Fatalf("ListRules after delete: %v", err)
+	}
+	for _, r := range results {
+		if r.ID == rule.ID {
+			t.Fatal("rule still exists after delete")
+		}
+	}
+
+	// DeleteRule with empty ID should error.
+	if err := store.DeleteRule(context.Background(), ""); err == nil {
+		t.Fatal("expected error for DeleteRule with empty ID")
+	}
+}
+
+func TestPhase3_Playbook_Delete(t *testing.T) {
+	store, cleanup := setupPlaybookStore(t)
+	defer cleanup()
+
+	pb := newTestPlaybook("delete-pb")
+	if err := store.CreatePlaybook(context.Background(), pb); err != nil {
+		t.Fatalf("CreatePlaybook: %v", err)
+	}
+
+	// DeletePlaybook should succeed.
+	if err := store.DeletePlaybook(context.Background(), pb.ID); err != nil {
+		t.Fatalf("DeletePlaybook: %v", err)
+	}
+
+	// Verify it's gone.
+	_, err := store.GetPlaybook(context.Background(), pb.ID)
+	if err == nil {
+		t.Fatal("expected error for GetPlaybook after delete")
+	}
+
+	// DeletePlaybook with empty ID should error.
+	if err := store.DeletePlaybook(context.Background(), ""); err == nil {
+		t.Fatal("expected error for DeletePlaybook with empty ID")
+	}
+}
