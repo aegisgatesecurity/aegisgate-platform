@@ -1748,6 +1748,12 @@ func main() {
 	// inject them here to activate /policy-engine, /evidence/collect,
 	// /evidence/verify, and /audit-trail endpoints.
 	policyEngine := compliance.NewPolicyEngine()
+	for _, p := range compliance.DefaultPolicies() {
+		if err := policyEngine.AddPolicy(p); err != nil {
+			log.Printf("[COMPLIANCE] Warning: failed to load default policy %q: %v", p.ID, err)
+		}
+	}
+	log.Printf("[COMPLIANCE] Loaded %d default Rego policies into policy engine", len(compliance.DefaultPolicies()))
 	complianceAPI.SetPolicyEngine(policyEngine)
 
 	evidenceCollector := compliance.NewEvidenceCollector()
