@@ -459,6 +459,7 @@ AegisGate's core technologies are patent pending with the USPTO:
 - **US Provisional App. No. 64/153,576** — Multi-Layered Detection Pipeline for AI Prompt Content
 - **US Provisional App. No. 64/153,577** — Scanning AI Model Responses for Sensitive Data, Hallucinations, and Harmful Content
 - **US Provisional App. No. 64/174,824** — Systems and Methods for Static Analysis of AI Training Artifacts for Security Threats
+- **US Provisional App. No. 64/180,722** — Systems and Methods for Federated Detection Gap Analysis and Self-Improving AI Security Posture Assessment
 
 Source code is © 2025-2026 AegisGate Security™, LLC. Licensed under Apache 2.0. Trained ML model weights are separately licensed under the [AegisGate Model Weight License](WEIGHTS-LICENSE.md).
 
