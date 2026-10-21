@@ -1,21 +1,35 @@
-## [4.7.0] - 2026-10-20 — ML Model v14 Retrain, Policy Engine Seeding, MaxSeqLen Fix, Coverage Campaign
+## [4.7.0] - 2026-10-21 — ML Model v15b Retrain, Policy Engine Seeding, MaxSeqLen Restoration, Coverage Campaign
 
-> **v4.7.0** is a cross-product release that retrains the shared CharCNN-BiLSTM threat model from v13 to v14, seeds the Platform compliance policy engine with 7 built-in Rego policies, fixes a critical MaxSeqLen dimension mismatch in the active ONNX inference code path, and drives compliance test coverage to ≥98% across FIPS, ISO 27001, ISO 42001, and HITRUST frameworks. All four Go-based products (Platform, Scanner, MCP, Rampart) share the same v14 ONNX model file (SHA-256: `f26793b86c22a95e08d7c262ca1d8d8d47230a5c64b7a71a7b743fb214279442`).
+> **v4.7.0** is a cross-product release that retrains the shared CharCNN-BiLSTM threat model from v13 to v15b (256-char Latin-1), seeds the Platform compliance policy engine with 7 built-in Rego policies, restores the correct MaxSeqLen=256 across all products, and drives compliance test coverage to ≥98% across FIPS, ISO 27001, ISO 42001, and HITRUST frameworks. All four Go-based products (Platform, Scanner, MCP, Rampart) share the same v15b ONNX model file (SHA-256: `99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7`). Lens uses the v15b JS weights (SHA-256: `03792717405a1875d068a6304b69d3aeb019643778af30677b0f7257dbfbabab`).
 
-### ML Model v14 Retrain — All Products
+### ML Model v15b Retrain — All Products
 
-- **Training corpus expanded to 70,830 examples** (from ~68,000 in v13). Added 257 hard-negative proverbs and common phrases that were false positives in v13.
-- **Performance**: FPR 0.67% (down from ~1.0%), Recall 92.75%, F1 0.9510.
-- **All 7 known false positives eliminated**: Proverbs like "Actions speak louder than words," "The early bird catches the worm," and similar common-phrase FPs that scored >0.90 in v13 now score <0.50 in v14.
-- **Model file**: `threat_cnn_bilstm.onnx`, 1,596,034 parameters. SHA-256 consistent across all 4 repos.
-- **Docker end-to-end validated**: Built `aegisgate-platform:v14-test` (155MB), tested 4 scenarios through the proxy — attack blocked (ATLAS), proverb passed (previously blocked in v13), benign passed, PII exfil blocked (ML score 0.997). Logs confirmed `text_len=128` (fixed) and `ONNX threat model loaded successfully`.
+The model version history for this release is:
 
-### Critical Fix: MaxSeqLen 256→128 (All Products)
+1. **v14 (reverted)**: An experimental retrain that reduced input from 256→128 chars and vocabulary from 256→128 (ASCII). While it eliminated 7 proverb false positives, the 50% input window reduction was deemed an unacceptable regression. This model was never shipped to production.
+2. **v15 (failed)**: First retrain at 256-char Latin-1 using the v14 training corpus (70,830 examples including 257 hard-negative proverbs). Metrics were strong (FPR 0.55%, F1 95.98%), but the Lens JS evasion suite scored 88.4/100 (threshold 95.0) due to float16 precision loss in the JS weight conversion shifting decision boundaries on borderline cases. This model was rejected.
+3. **v15b (final)**: Retrained at 256-char Latin-1 using the original v13 training corpus (70,572 examples, no proverbs). Metrics are close to v13 baseline. All CI tests pass, including the Lens JS evasion suite.
 
-- **Root cause**: The v14 ONNX model expects input shape `[batch, 128]`, but the active code path in Platform (`upstream/aegisgate/pkg/ml/threat_normalizer.go`, used via go.mod `replace` directive) still had `MaxSeqLen = 256`. The local `pkg/ml/normalizer.go` (already 128) is NOT the active code path.
-- **Symptom**: `Got invalid dimensions for input: index 1 Got: 256 Expected: 128` — ONNX inference failed in Docker.
-- **Fix**: Changed `MaxSeqLen = 256` → `128` in `upstream/aegisgate/pkg/ml/threat_normalizer.go` (Platform, commit `ca56517`). Test expectations updated from 256→128 across Platform, MCP, and Rampart.
-- **Impact**: Without this fix, ML threat detection silently failed in containerized deployments. The local dev path worked because `pkg/ml/normalizer.go` was already correct — masking the issue.
+**v15b Performance**:
+- Accuracy: 98.16%
+- Precision: 98.20%
+- Recall: 93.48%
+- F1: 95.78%
+- FPR: 0.49% (27 false positives out of 5,479 benign samples)
+- Confusion matrix: TP=1476, FP=27, FN=103, TN=5452
+
+**Training details**: 75 epochs, batch size 64, focal loss (α=0.25, γ=2.0), 80/10/10 train/val/test split. 1,596,034 parameters. Architecture: embedding 256→64, conv [3,5,7]×256, BiLSTM 128 hidden, attention, dense 64→1.
+
+**Model files**:
+- ONNX (Go products): `threat_cnn_bilstm.onnx`, 6,398,115 bytes, SHA-256 `99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7`
+- JS weights (Lens): `threat_cnn_bilstm_weights.bin.json`, 3,928,018 bytes, SHA-256 `03792717405a1875d068a6304b69d3aeb019643778af30677b0f7257dbfbabab`
+
+### MaxSeqLen Restoration — All Products
+
+- **Root cause**: During the v14 experiment, `MAX_SEQ_LEN` and `VOCAB_SIZE` were changed from 256→128 across `training/model.py` and all 5 Go normalizers. When v14 was reverted, these changes were inadvertently left in place, creating a mismatch between the model architecture and the production code.
+- **Symptom**: The v15/v15b ONNX models expect input shape `[batch, 256]`, but the normalizers were producing `[batch, 128]`, causing inference failures and reducing the ML detection window by 50%.
+- **Fix**: Restored `MaxSeqLen = 256` and `VocabSize = 256` (Latin-1, 0–255) in all 5 Go normalizers (Platform local + upstream, Scanner, MCP, Rampart) and in `training/model.py`. Test expectations updated from 128→256 across Platform, MCP, and Rampart.
+- **Impact**: Full 256-char input window restored for L3 ML threat detection across all products.
 
 ### Policy Engine Seeding (Platform)
 
@@ -71,22 +85,28 @@ Compliance framework test coverage driven to industry-leading levels:
 - gosec tolerated for SSA type errors (exit code 1).
 - k6 `http_req_failed` threshold removed from detection gate (false positive failures).
 - Scanner checkout added to benchmarks workflow for cross-compilation.
+- ML Detection Gate workflow updated to v15b model hash.
 
 ### OPSEC (Rampart)
 
 - **Allowlist update**: `internal/response/response_comprehensive_test.go` added to `tools/opsec-scan.sh` hardcoded secret detection allowlist. The test file uses a fake GitHub token (`ghp_1234567890...`) for detection testing — a legitimate use case that triggered the OPSEC scanner.
 
+### Provisional Patent #7
+
+- **64/180,722** — Federated Detection Gap Analysis (filed Oct 20, 2026). Covers the cross-product federated IOC sharing and detection gap analysis methodology.
+- Brings total to **7 provisional patent applications** filed.
+
 ### Cross-Product State
 
 | Repo | Version | HEAD | CI |
 |------|---------|------|----|
-| Platform | 4.7.0 | `ca56517` | ✅ All green |
-| Scanner | 0.4.0 | `23efc00` | ✅ All green |
-| MCP | 1.6.0 | `5685cb8` | ✅ All green |
-| Rampart | 0.9.0 | `397f732` | ✅ All green |
-| Lens | 0.5.1 | `f0ed633` | ✅ All green |
+| Platform | 4.7.0 | `3f4f4df` | ✅ Test Suite, Lint, Docker, Helm |
+| Scanner | 0.4.0 | `2ff2dbe` | ✅ All green |
+| MCP | 1.6.0 | `856f1bb` | ✅ All green |
+| Rampart | 0.9.0 | `fdead55` | ✅ CI (govulncheck pre-existing) |
+| Lens | 0.5.1 | `444b0d6` | ✅ Evasion Suite (Headless Smoke pre-existing timeout) |
 
-All repos share the same v14 ONNX model (SHA-256: `f26793b86c22a95e08d7c262ca1d8d8d47230a5c64b7a71a7b743fb214279442`). Docker end-to-end validation confirmed attack blocking, proverb passage, benign passage, and PII exfil blocking through the proxy with ONNX Runtime active.
+All Go repos share the same v15b ONNX model (SHA-256: `99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7`). Lens uses v15b JS weights (SHA-256: `03792717405a1875d068a6304b69d3aeb019643778af30677b0f7257dbfbabab`).
 
 ### Version Bumps
 
