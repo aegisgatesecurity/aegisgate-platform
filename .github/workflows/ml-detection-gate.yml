@@ -99,8 +99,8 @@ jobs:
           if [ -f pkg/ml/models/threat_cnn_bilstm.onnx ]; then
             MODEL_HASH=$(sha256sum pkg/ml/models/threat_cnn_bilstm.onnx | cut -d' ' -f1)
             echo "Model downloaded. SHA256: $MODEL_HASH"
-            echo "Expected: 146f336ed38cc47772e58f51d9632b851b8015edec080e2a9eaed91f696caba0"
-            if [ "$MODEL_HASH" != "146f336ed38cc47772e58f51d9632b851b8015edec080e2a9eaed91f696caba0" ]; then
+            echo "Expected: 99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7"
+            if [ "$MODEL_HASH" != "99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7" ]; then
               echo "WARNING: Model hash mismatch! Expected v15 model."
             fi
           else
