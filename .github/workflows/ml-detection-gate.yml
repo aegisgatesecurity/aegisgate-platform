@@ -99,9 +99,9 @@ jobs:
           if [ -f pkg/ml/models/threat_cnn_bilstm.onnx ]; then
             MODEL_HASH=$(sha256sum pkg/ml/models/threat_cnn_bilstm.onnx | cut -d' ' -f1)
             echo "Model downloaded. SHA256: $MODEL_HASH"
-            echo "Expected: 329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0"
-            if [ "$MODEL_HASH" != "329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0" ]; then
-              echo "WARNING: Model hash mismatch! Expected v13 model."
+            echo "Expected: 146f336ed38cc47772e58f51d9632b851b8015edec080e2a9eaed91f696caba0"
+            if [ "$MODEL_HASH" != "146f336ed38cc47772e58f51d9632b851b8015edec080e2a9eaed91f696caba0" ]; then
+              echo "WARNING: Model hash mismatch! Expected v15 model."
             fi
           else
             echo "ERROR: Model file not found after download"
