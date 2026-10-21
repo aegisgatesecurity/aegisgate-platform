@@ -333,11 +333,11 @@ func New(opts *Options) *Proxy {
 	tdCfg := ml.DefaultDetectorConfig()
 	tdCfg.Enabled = p.options.MLThreatDetectionEnabled
 	tdCfg.ShadowMode = p.options.MLShadowMode
-	// Use configured threshold, default to 0.5 for retrained model
+	// Use configured threshold, default to 0.74 for v15b model
 	if p.options.MLThreshold > 0 {
 		tdCfg.Threshold = p.options.MLThreshold
 	} else {
-		tdCfg.Threshold = 0.5
+		tdCfg.Threshold = 0.74 // v15b calibrated: 0% FPR threshold
 	}
 	p.threatDetector = ml.NewThreatDetector(tdCfg)
 
