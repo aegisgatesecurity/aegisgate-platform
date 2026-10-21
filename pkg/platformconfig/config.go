@@ -397,7 +397,7 @@ func DefaultConfig() *Config {
 			AllowedHeaders:           []string{"Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token"},
 			MLThreatDetectionEnabled: true,  // L3 ML blocking enabled after 7-day shadow validation (0% FPR, 99.57% TPR)
 			MLShadowMode:             false, // Shadow mode disabled — L3 now blocks. P2/P4/DIST2-5 remain alert-only.
-			MLThreshold:              0.74,  // v15b calibrated threshold: 0.74 for 0% FPR (v15b model, max benign=0.73, min TP=0.50). v11 used 0.50 (max benign=0.13, min TP=0.91). v15b has compressed sigmoid range (0.50-0.73) due to different logit distributions. Two-tier architecture: Tier 1 (>=0.95) blocks independently, Tier 2 (>=0.74 with L1/L2 corroboration) blocks with regex/ATLAS support.
+			MLThreshold:              0.50,  // v15b calibrated threshold: 0.50 (v15b model outputs sigmoid probs, benign~0.002, threat~1.0, separation is clear)
 			MLModelPath:              "",    // Empty: fall back to env var or default path
 			ChainBlockingEnabled:     true,  // P2 chain blocking enabled after validation (91.67% TPR, 0% FPR)
 		},

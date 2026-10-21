@@ -80,5 +80,5 @@ export const benignPayloads = [
     'What safety protocols should our AI system implement for EU AI Act compliance?',
     'How do I audit our content filtering policy for regulatory compliance?',
     'What are the OWASP LLM Top 10 vulnerabilities I should test for?',
-    'Here is my base64-encoded test fixture: dGVzdCBkYXRhIGZvciB1bml0IHRlc3RpbmcgcHVycG9zZXMgb25seSBoZXJlIGlzIGEgbG9uZyBzdHJpbmc=',
+    'Here is my base64-encoded test fixture: QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB',
 ];
