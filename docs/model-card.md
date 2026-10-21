@@ -4,10 +4,10 @@
 
 ## Model Details
 
-- **Model name**: AegisGate Threat Detector v13
+- **Model name**: AegisGate Threat Detector v15
 - **Model type**: Character CNN-BiLSTM with Attention
-- **Version**: v13 (char-cnn-bilstm-v13)
-- **Release date**: 2026-09-23
+- **Version**: v15 (char-cnn-bilstm-v15)
+- **Release date**: 2026-10-20
 - **License**: Apache 2.0
 - **Architecture**: 1,596,034 parameters, character-level input (256 chars max), Latin-1 vocabulary (256 tokens), ~6.1MB ONNX export (float32), ~3.75MB JSON weights (float16, gzip+base64 for Lens)
 - **Inference**: <1ms CPU inference via ONNX Runtime (Go), pure JS inference in browser (~5-50ms Chrome V8)
@@ -23,7 +23,7 @@
 
 - **Adversarial examples**: 81 payload seeds (52 ATLAS + 29 V450 advanced) × 50 augmentation transforms (character substitution, encoding, linguistic, whitespace, fragmentation) plus prompt injection datasets, jailbreak collections, and data leakage synthetic examples
 - **Benign examples**: 7 categories (system admin, security research, AI/ML, general, near-miss, benign evasion-transformed, data leakage benign) including near-miss examples designed to stress-test the FPR boundary
-- **Total corpus**: 185,338 samples (75K v12 + 110K character-level augmented + 49 JWT benign)
+- **Total corpus**: 70,572 samples (v13 corpus, combined_training_v10.jsonl)
 - **Data sources**: Alpaca (cleaned), AGNews, Dolly-15k, OpenOrca, TruthfulQA, HH-RLHF (red team), ToxiGen, WikiText, security education, synthetic ATLAS augmentations, synthetic data leakage, prompt injection collections
 - **Data collection**: All synthetic or publicly available datasets — no real user data. Seeds derived from publicly documented ATLAS techniques.
 - **Preprocessing**: Character-level normalization to Latin-1 (256-char max sequence, 256-token vocabulary, PAD=0, UNK=1)
@@ -33,11 +33,11 @@
 - **Evaluation methodology**: Stratified split (80/10/10 train/val/test) with category-level stratification
 - **Test set**: Held-out 10% of both adversarial and benign examples
 - **Metrics reported on test set**:
-  - Test Accuracy: 99.35%
-  - Test Precision: 99.57%
-  - Test Recall (TPR): 99.45%
-  - Test F1: 0.995
-  - False Positive Rate (FPR): 0.85%
+  - Test Accuracy: 98.16%
+  - Test Precision: 98.20%
+  - Test Recall (TPR): 93.48%
+  - Test F1: 95.78%
+  - False Positive Rate (FPR): 0.49%
 
 ### Evasion Suite Results
 
@@ -52,8 +52,8 @@
 - **Latency**: <1ms CPU inference (ONNX Runtime), ~5-50ms pure JS (Chrome V8 estimated)
 - **Model size**: ~6.1MB ONNX file (float32), ~3.75MB JSON weights (float16, gzip+base64 for Lens)
 - **Weight quantization**: float16 for Lens (max error ~0.0002), float32 for Platform/Rampart
-- **SHA-256 (ONNX, float32)**: `329fd89afe153d0b9f01143c50a9a2dd73b1d3613cc87a07b4b83a93172aeaf0`
-- **SHA-256 (Lens JS weights, float16)**: `b46bbde284651319fdcdf9212e4b0579dfc2d3a5198291d5bddce822381dda3a`
+- **SHA-256 (ONNX, float32)**: `99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7`
+- **SHA-256 (Lens JS weights, float16)**: `03792717405a1875d068a6304b69d3aeb019643778af30677b0f7257dbfbabab`
 
 ## Limitations
 
@@ -67,7 +67,7 @@
 ## Ethical Considerations
 
 - The model detects attack patterns, not attackers. It should not be used for user profiling or discrimination
-- False positives (0.85% on test set) may vary in production environments. Shadow mode provides a safety net
+- False positives (0.49% on test set) may vary in production environments. Shadow mode provides a safety net
 - The model's training data ensures no real user data was used
 - Calibration manager provides zero-FPR threshold tuning from benign corpus
 
@@ -89,12 +89,14 @@
 | v11 | 2026-09-09 | Expanded corpus to 70K, added evasion augmentation | `32b7db74...` |
 | v11b | 2026-09-09 | Final calibration, 99.8/100 evasion score | `8e13c793...` |
 | **v13** | **2026-09-23** | **Cross-product parity, 100.0/100 Platform/Rampart, 99.975% Lens (float16)** | **`329fd89a...`** |
+| v14 | 2026-10-20 | 128-char ASCII experiment (reverted — 50% input window regression) | `f26793b8...` |
+| **v15** | **2026-10-20** | **256-char Latin-1 restored, retrained on v13 corpus, FPR reduced to 0.49%** | **`99187453...`** |
 
 ## Citation
 
 ```
-AegisGate Platform v4.5.3
-Char CNN-BiLSTM with Attention — Threat Detection Model v13
+AegisGate Platform v4.7.0
+Char CNN-BiLSTM with Attention — Threat Detection Model v15
 Apache License 2.0
 https://github.com/aegisgatesecurity/aegisgate-platform
 ```

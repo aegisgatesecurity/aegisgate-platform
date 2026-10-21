@@ -23,7 +23,7 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 ### In-Scope
 
 - **Platform codebase** — Go proxy, detection engine (L1/L2/L3/P2/P3/P4/P5), Response Guard, Tool Risk Matrix, Chain Analyzer, MCP Tool Description Scanner
-- **ML pipeline** — Model training, ONNX export, hash verification, runtime inference (CharCNN-BiLSTM v13)
+- **ML pipeline** — Model training, ONNX export, hash verification, runtime inference (CharCNN-BiLSTM v15)
 - **Protocols** — HTTP/HTTPS proxy (:8080), MCP server (:8081), Admin API (:8443), A2A, ANP
 - **Persistence** — Audit log (RFC 5424), scan cache, session tracker, chain store (SQLite/PostgreSQL)
 - **Telemetry server** — Pattern/IOC pull endpoints, event ingestion, Lens signal correlation (v4.6.0+)
@@ -98,7 +98,7 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 | **Platform → Persistence** | Trusted but protected. Audit log must be tamper-evident. | Append-only log, file permissions (0600), optional crypto signing |
 | **Admin API → Platform** | Trusted but authenticated. Admin operations require RBAC. | SSO/OIDC/SAML, role-based access control, audit logging |
 | **Telemetry Server → Platform** | Semi-trusted. Serves patterns/IOCs to FOSS products; receives events. Active only when explicitly enabled. | ETag caching, configurable bind address, no auth on pull endpoints (patterns are public); event ingestion validates schema |
-| **ML Model → Runtime** | Trusted but verified. Model file must match expected hash. | SHA-256 hash verification on load (v13: `329fd89...`) |
+| **ML Model → Runtime** | Trusted but verified. Model file must match expected hash. | SHA-256 hash verification on load (v15: `99187453...`) |
 
 ---
 
@@ -126,7 +126,7 @@ This document catalogs threats to the AegisGate Platform itself (distinct from t
 |-----------|-------|---------------|
 | **Engineering posture** (code, tests, validation) | 9.7/10 | All known engineering threats mitigated. 90%+ test coverage across 67 CI-scoped packages (CI-enforced). 0.3 deduction for residual ML model poisoning risk (requires training data access) and chain store DoS. Two production bugs found and fixed during coverage campaign (SQL reserved keyword `window` unquoted, dead code in response_guard.go). |
 | **Trust posture** (supply chain, deployment, ops) | 9.2/10 | SLSA L3 build, ONNX hash verification, signed releases, SBOMs. 0.8 deduction for not yet independently audited by third party and container base image CVEs (16 low-severity, distroless migration still pending). |
-| **Validation rigor** (shadow mode, stress tests) | 9.8/10 | 7-day shadow validation (0% FPR), 8.5M request stress test (28K RPS, 99.57% TPR), 100/100 evasion resistance. Cross-product parity CI gate ensures 284 patterns synchronized across Platform, Rampart, and Scanner. 0.2 deduction for P4/DIST2-5 still in alert-only mode (need production traffic). |
+| **Validation rigor** (shadow mode, stress tests) | 9.8/10 | 7-day shadow validation (0% FPR), 8.5M request stress test (28K RPS, 93.48% TPR (model-level); 100/100 evasion resistance (full pipeline)), 100/100 evasion resistance. Cross-product parity CI gate ensures 284 patterns synchronized across Platform, Rampart, and Scanner. 0.2 deduction for P4/DIST2-5 still in alert-only mode (need production traffic). |
 | **Combined** | **9.6/10** | Weighted by exposure (engineering threats affect all users; trust threats affect deploy-time; validation gaps affect edge cases). Up from 9.5/10 in v4.5.0 due to coverage campaign and parity enforcement. |
 
 ---
@@ -215,14 +215,14 @@ Status legend: **MITIGATED** (control implemented and verified), **RESIDUAL** (i
 
 ### L3 ML Threat Detection (Blocking Mode)
 
-**New in v4.5.0:** L3 CharCNN-BiLSTM v13 now blocks requests (two-tier: ≥0.95 independent, ≥0.50 + L1/L2 corroboration).
+**New in v4.5.0:** L3 CharCNN-BiLSTM v15 now blocks requests (two-tier: ≥0.95 independent, ≥0.50 + L1/L2 corroboration).
 
 | Threat | Mitigation | Residual Risk |
 |--------|------------|---------------|
 | Model poisoning (training data injection) | Training data curated internally; ONNX hash verification | **Low** — Requires access to training pipeline (not public) |
 | Inference DoS (many unique requests bypass cache) | Scan cache reduces repeat requests; L3 only on cache miss | **Low** — Cache hit rate ~80% in production |
 | Threshold manipulation | Threshold compiled into binary; admin API requires auth | **None** |
-| Model supply chain attack | SHA-256 hash verification (`329fd89...`) | **None** — Platform refuses to load mismatched model |
+| Model supply chain attack | SHA-256 hash verification (`99187453...`) | **None** — Platform refuses to load mismatched model |
 
 ### P2 Tool Call Chain Analysis (Blocking Mode)
 
@@ -328,8 +328,8 @@ Three vulnerabilities reported by @kta1kri:
 |------------|--------|---------|
 | **Shadow Mode FPR** | 0% FPR (all detectors) | 7-day validation, 8.1M benign requests |
 | **Progressive Stress Test** | 99.57% TPR, 0% FPR | 8,546,186 requests, 50→10K VUs, 28K RPS |
-| **Evasion Resistance** | 100.0/100 (0 misses) | 10 attack types × 50 transforms (v13 model) |
-| **Model Parity** | ✅ Verified | Platform ONNX = Rampart ONNX = Lens JS weights (v13) |
+| **Evasion Resistance** | 100.0/100 (0 misses) | 10 attack types × 50 transforms (v15 model) |
+| **Model Parity** | ✅ Verified | Platform ONNX = Rampart ONNX = Lens JS weights (v15) |
 | **CI Gates** | All green | Detection gate (90% per-package, 85% total), parity gate (284 patterns × 4 products), adversarial corpus, evasion suite |
 | **Test Coverage** | 90%+ per-package (67 packages) | CI-enforced per-package floor; 11 packages use integration tests (testcontainers) to reach 90%+ |
 | **Dependabot** | 0 open alerts | All repos (Platform, Lens, Rampart, Site) |
