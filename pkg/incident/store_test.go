@@ -475,8 +475,9 @@ func TestInMemoryDetectionRuleStore_ListAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRules: %v", err)
 	}
-	if len(results) != 5 {
-		t.Errorf("len(results) = %d; want 5", len(results))
+	expectedCount := len(DefaultDetectionRules())
+	if len(results) != expectedCount {
+		t.Errorf("len(results) = %d; want %d", len(results), expectedCount)
 	}
 }
 
@@ -492,8 +493,9 @@ func TestInMemoryDetectionRuleStore_ListEnabledOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRules: %v", err)
 	}
-	if len(results) != 5 {
-		t.Errorf("len(enabled results) = %d; want 5", len(results))
+	expectedCount := len(DefaultDetectionRules())
+	if len(results) != expectedCount {
+		t.Errorf("len(enabled results) = %d; want %d", len(results), expectedCount)
 	}
 
 	// Disable one rule and check.
@@ -505,8 +507,8 @@ func TestInMemoryDetectionRuleStore_ListEnabledOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRules: %v", err)
 	}
-	if len(results) != 4 {
-		t.Errorf("len(enabled results after disable) = %d; want 4", len(results))
+	if len(results) != expectedCount-1 {
+		t.Errorf("len(enabled results after disable) = %d; want %d", len(results), expectedCount-1)
 	}
 }
 

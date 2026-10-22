@@ -393,3 +393,135 @@ func TestEventMatchesIndicator(t *testing.T) {
 		}
 	}
 }
+
+// ============================================================================
+// ARTEX BEHAVIORAL PATTERN TESTS (Black October 2026)
+// ============================================================================
+
+func TestARTEXRapidReconPattern(t *testing.T) {
+	e := NewEngine()
+	ctx := context.Background()
+
+	// Simulate rapid endpoint probing
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "probe", AgentID: "agent-1", SessionID: "sess-1",
+		Timestamp: time.Now(), Severity: "low", Decision: "allow",
+		Metadata: map[string]string{},
+	})
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "scan", AgentID: "agent-1", SessionID: "sess-1",
+		Timestamp: time.Now(), Severity: "medium", Decision: "allow",
+		Metadata: map[string]string{"scan_type": "multi_endpoint"},
+	})
+
+	result, err := e.Analyze(ctx, "agent-1", "sess-1")
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+	if !containsPattern(result.MatchedPatterns, "artex_rapid_recon") {
+		t.Errorf("Expected artex_rapid_recon pattern match, got: %v", result.MatchedPatterns)
+	}
+	if result.Severity != "high" {
+		t.Errorf("Expected severity high, got: %s", result.Severity)
+	}
+}
+
+func TestARTEXCredentialSprayPattern(t *testing.T) {
+	e := NewEngine()
+	ctx := context.Background()
+
+	// Simulate credential spraying
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "auth_failure", AgentID: "agent-2", SessionID: "sess-2",
+		Timestamp: time.Now(), Severity: "medium", Decision: "allow",
+		Metadata: map[string]string{"auth_failure": "true"},
+	})
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "credential_attack", AgentID: "agent-2", SessionID: "sess-2",
+		Timestamp: time.Now(), Severity: "high", Decision: "block",
+		Metadata: map[string]string{"attack_type": "credential_stuffing"},
+	})
+
+	result, err := e.Analyze(ctx, "agent-2", "sess-2")
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+	if !containsPattern(result.MatchedPatterns, "artex_credential_spray") {
+		t.Errorf("Expected artex_credential_spray pattern match, got: %v", result.MatchedPatterns)
+	}
+	if result.Decision != DecisionBlock {
+		t.Errorf("Expected block decision, got: %s", result.Decision)
+	}
+}
+
+func TestARTEXMultiAgentCoordPattern(t *testing.T) {
+	e := NewEngine()
+	ctx := context.Background()
+
+	// Simulate multi-agent coordination
+	e.RecordEvent(ctx, &Event{
+		Protocol: "a2a", EventType: "coordination", AgentID: "agent-3", SessionID: "sess-3",
+		Timestamp: time.Now(), Severity: "medium", Decision: "allow",
+		Metadata: map[string]string{"multi_agent": "true"},
+	})
+	e.RecordEvent(ctx, &Event{
+		Protocol: "a2a", EventType: "handoff", AgentID: "agent-3", SessionID: "sess-3",
+		Timestamp: time.Now(), Severity: "medium", Decision: "allow",
+		Metadata: map[string]string{"handoff": "true"},
+	})
+
+	result, err := e.Analyze(ctx, "agent-3", "sess-3")
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+	if !containsPattern(result.MatchedPatterns, "artex_multi_agent_coord") {
+		t.Errorf("Expected artex_multi_agent_coord pattern match, got: %v", result.MatchedPatterns)
+	}
+}
+
+func TestARTEXGraphAnomalyPattern(t *testing.T) {
+	e := NewEngine()
+	ctx := context.Background()
+
+	// Simulate Graph API reconnaissance followed by OAuth registration
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "graph_recon", AgentID: "agent-4", SessionID: "sess-4",
+		Timestamp: time.Now(), Severity: "medium", Decision: "allow",
+		Metadata: map[string]string{"graph_recon": "true"},
+	})
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "oauth_registration", AgentID: "agent-4", SessionID: "sess-4",
+		Timestamp: time.Now(), Severity: "high", Decision: "allow",
+		Metadata: map[string]string{"oauth_registration": "true"},
+	})
+
+	result, err := e.Analyze(ctx, "agent-4", "sess-4")
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+	if !containsPattern(result.MatchedPatterns, "artex_graph_anomaly") {
+		t.Errorf("Expected artex_graph_anomaly pattern match, got: %v", result.MatchedPatterns)
+	}
+}
+
+func TestARTEXPatternsNoMatch_Benign(t *testing.T) {
+	e := NewEngine()
+	ctx := context.Background()
+
+	// Single benign request should not trigger any ARTEX pattern
+	e.RecordEvent(ctx, &Event{
+		Protocol: "http", EventType: "request", AgentID: "agent-5", SessionID: "sess-5",
+		Timestamp: time.Now(), Severity: "low", Decision: "allow",
+		Metadata: map[string]string{},
+	})
+
+	result, err := e.Analyze(ctx, "agent-5", "sess-5")
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+	for _, p := range result.MatchedPatterns {
+		if len(p) >= 5 && p[:5] == "artex" {
+			t.Errorf("Benign activity triggered ARTEX pattern: %s", p)
+		}
+	}
+}

@@ -311,6 +311,45 @@ func DefaultPatterns() []*Pattern {
 		{Name: "ot_opcua_write_value", Regex: regexp.MustCompile(`(?i)\bWriteValue\s*(?:method)?\b`), Severity: High, Category: CategoryNetwork, Description: "OPC-UA WriteValue method call - potential control manipulation"},
 		// --- Posture Assessment gap closure (v4.7.0) ---
 		{Name: "dangerous_command_rm_rf", Regex: regexp.MustCompile(`(?i)(?:os\.system|subprocess\.(?:call|run|Popen)|exec\(|system\().*(?:rm\s+-rf|del\s+/[fqs]|format\s+|mkfs|dd\s+if=)`), Severity: Critical, Category: CategoryCompliance, Description: "Dangerous system command execution (rm -rf, format, mkfs)"},
+
+		// ============================================================================
+		// ARTEX / LITELLM THREAT INTEL PATTERNS (Black October 2026)
+		// Detection patterns for ARTEX AI autonomous pentesting framework and
+		// LiteLLM supply chain compromise indicators.
+		// Source: Zscaler ThreatLabz + Microsoft Threat Intelligence (Oct 2026)
+		// ============================================================================
+
+		// --- ARTEX Traffic Signatures ---
+
+		// ARTEX tool reference — direct indicator of ARTEX framework usage
+		{Name: "artex_tool_reference", Regex: regexp.MustCompile(`(?i)\b(?:artex|autumn[-_]?27)\b`), Severity: High, Category: CategoryCompliance, Description: "ARTEX AI autonomous pentesting tool reference"},
+		// DeepSeek model config in API payload — ARTEX indicator (Storm-0940 used DeepSeek)
+		{Name: "artex_model_deepseek", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:deepseek|deepseek-v[23]|deepseek-coder|deepseek-r[12]|deepseek-chat)["']?`), Severity: Low, Category: CategoryCompliance, Description: "DeepSeek model reference in API config (ARTEX indicator)"},
+		// GLM (Zhipu) model config — Storm-0940 used GLM to review DeepSeek's subagent work
+		{Name: "artex_model_glm", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:glm|glm-4(?:-plus|-v)?|chatglm(?:-6b)?)["']?`), Severity: Low, Category: CategoryCompliance, Description: "GLM (Zhipu) model reference in API config (ARTEX indicator)"},
+		// Grok model config — another ARTEX-supported model
+		{Name: "artex_model_grok", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:grok(?:-1|-2|-beta)?|xai-grok)["']?`), Severity: Low, Category: CategoryCompliance, Description: "Grok model reference in API config (ARTEX indicator)"},
+		// MCP external server connection — ARTEX supports MCP Streamable HTTP/SSE
+		{Name: "artex_mcp_external", Regex: regexp.MustCompile(`(?i)(?:mcp[_-]?(?:url|endpoint|server)|streamable[_-]?http)\s*["']?\s*[:=]\s*["']?https?://\S+`), Severity: Medium, Category: CategoryNetwork, Description: "MCP connection to external HTTP(S) server (ARTEX indicator)"},
+		// OpenAI-compatible gateway probe with non-standard model
+		{Name: "artex_compat_gateway_probe", Regex: regexp.MustCompile(`(?i)/v1/(?:chat/completions|models|engines).{0,50}(?:deepseek|glm|grok|qwen|yi-)`), Severity: Medium, Category: CategoryNetwork, Description: "OpenAI-compatible API probe with non-standard model (ARTEX indicator)"},
+		// Multi-agent AI orchestration with attack context — ARTEX behavioral indicator
+		{Name: "artex_multi_agent_attack", Regex: regexp.MustCompile(`(?i)(?:multi.?agent|orchestrat|agent.?coordinat|agent.?handoff|cross.?session).{0,80}(?:recon|exploit|attack|pentest|vulnerability|credential|lateral|password.?spray)`), Severity: High, Category: CategoryCompliance, Description: "Multi-agent AI orchestration with attack context (ARTEX behavioral indicator)"},
+		// ARTEX repository reference — matches git/repo terms near ARTEX in either order
+		{Name: "artex_repo_reference", Regex: regexp.MustCompile(`(?i)(?:autumn[-_]?27|artex).{0,80}(?:github|gitlab|gitee|clone|fork|repo)|(?:github|gitlab|gitee|clone|fork).{0,80}(?:autumn[-_]?27|artex)`), Severity: Medium, Category: CategoryCompliance, Description: "ARTEX repository clone/fork reference"},
+
+		// --- LiteLLM Supply Chain Indicators ---
+
+		// LiteLLM credential stealer — known malicious .pth file
+		{Name: "litellm_init_pth", Regex: regexp.MustCompile(`(?i)litellm_init\.pth`), Severity: Critical, Category: CategoryCredential, Description: "LiteLLM credential stealer file (litellm_init.pth) — supply chain compromise indicator"},
+		// LiteLLM SSRF targeting cloud metadata endpoints
+		{Name: "litellm_ssrf_metadata", Regex: regexp.MustCompile(`(?i)litellm.{0,100}(?:169\.254\.169\.254|metadata\.google\.internal|metadata\.azure\.com)`), Severity: Critical, Category: CategoryNetwork, Description: "LiteLLM SSRF targeting cloud metadata endpoints"},
+		// LiteLLM admin endpoint abuse — privilege escalation
+		{Name: "litellm_admin_abuse", Regex: regexp.MustCompile(`(?i)litellm.{0,50}(?:/admin/|/manage/|master.?key|admin.?key|root.?password|privilege.?escalat)`), Severity: High, Category: CategoryCompliance, Description: "LiteLLM admin endpoint abuse (privilege escalation)"},
+		// LiteLLM credential exfiltration
+		{Name: "litellm_cred_exfil", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:exfiltrat|steal|upload|send|post|transmit|webhook).{0,50}(?:api.?key|token|password|secret|credential|\.env|\.pem)`), Severity: Critical, Category: CategoryCredential, Description: "Credential exfiltration via LiteLLM proxy"},
+		// LiteLLM RAT/malware deployment
+		{Name: "litellm_rat_deploy", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:reverse.?shell|backdoor|trojan|c2.?server|payload.?download|implant|rat\.\w)`), Severity: Critical, Category: CategoryCompliance, Description: "RAT/malware deployment via LiteLLM supply chain"},
 	}
 }
 

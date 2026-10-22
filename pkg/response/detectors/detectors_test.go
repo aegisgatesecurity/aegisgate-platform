@@ -276,8 +276,8 @@ func TestScannerSeverityMapping(t *testing.T) {
 
 func TestPatternCountParity(t *testing.T) {
 	// XSS: 11 scanner patterns + 1 supplemental (xss_polyglot) = 12
-	// Compliance: 45 scanner patterns = 45 (v4.5.0: +4 detection gap patterns, v4.7.0: +1 dangerous command)
-	// Total = 57 patterns (matching Lens parity for XSS + Compliance)
+	// Compliance: 53 scanner patterns = 53 (v4.5.0: +4 detection gap patterns, v4.7.0: +1 dangerous command, v4.8.0: +8 ARTEX/LiteLLM threat intel)
+	// Total = 65 patterns (matching Lens parity for XSS + Compliance)
 
 	scannerXSSCount := 0
 	scannerComplianceCount := 0
@@ -297,7 +297,7 @@ func TestPatternCountParity(t *testing.T) {
 	}{
 		{"xss (scanner)", scannerXSSCount, 11},
 		{"xss (local supplemental)", len(XSSPatterns), 1},
-		{"compliance (scanner)", scannerComplianceCount, 45},
+		{"compliance (scanner)", scannerComplianceCount, 53},
 		{"compliance (local)", len(CompliancePatterns), 0},
 	}
 
@@ -308,8 +308,8 @@ func TestPatternCountParity(t *testing.T) {
 	}
 
 	total := scannerXSSCount + len(XSSPatterns) + scannerComplianceCount
-	if total != 57 {
-		t.Errorf("expected 57 total XSS+Compliance patterns, got %d", total)
+	if total != 65 {
+		t.Errorf("expected 65 total XSS+Compliance patterns, got %d", total)
 	}
 }
 

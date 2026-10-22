@@ -380,7 +380,31 @@ func DefaultPatterns() []*Pattern {
 		{Name: "excessive_agency_privilege_escalation", Regex: regexp.MustCompile(`(?i)(?:role\s*=\s*admin|update_role\s+.*role\s*=\s*admin|grant\s+(?:me\s+)?admin\s+access)`), Severity: Critical, Category: CategoryCompliance, Description: "Excessive agency: privilege escalation to admin role"},
 		{Name: "rag_retrieval_context_override", Regex: regexp.MustCompile(`(?i)(?:\[(?:CONTEXT\s+FROM\s+RAG|RETRIEVED\s+CONTEXT)\]).*(?:override|approved?\s+without|without\s+verification|security\s+policy|all\s+requests)`), Severity: High, Category: CategoryPrompt, Description: "RAG retrieval manipulation: injected context with override instructions"},
 		{Name: "unbounded_consumption_excessive_gen", Regex: regexp.MustCompile(`(?i)(?:generate|write|produce)\s+(?:a\s+)?\d{5,}\s+word`), Severity: Medium, Category: CategoryCompliance, Description: "Unbounded consumption: excessive token generation request"},
-		{Name: "dangerous_command_rm_rf", Regex: regexp.MustCompile(`(?i)(?:os\.system|subprocess\.(?:call|run|Popen)|exec\(|system\().*(?:rm\s+-rf|del\s+/[fqs]|format\s+|mkfs|dd\s+if=)`), Severity: Critical, Category: CategoryCompliance, Description: "Dangerous system command execution (rm -rf, format, mkfs)"}}
+		{Name: "dangerous_command_rm_rf", Regex: regexp.MustCompile(`(?i)(?:os\.system|subprocess\.(?:call|run|Popen)|exec\(|system\().*(?:rm\s+-rf|del\s+/[fqs]|format\s+|mkfs|dd\s+if=)`), Severity: Critical, Category: CategoryCompliance, Description: "Dangerous system command execution (rm -rf, format, mkfs)"},
+
+		// ARTEX / LITELLM THREAT INTEL PATTERNS (Black October 2026)
+		// Detection patterns for ARTEX AI autonomous pentesting framework and
+		// LiteLLM supply chain compromise indicators.
+		// Source: Zscaler ThreatLabz + Microsoft Threat Intelligence (Oct 2026)
+
+		// --- ARTEX Traffic Signatures ---
+
+		{Name: "artex_tool_reference", Regex: regexp.MustCompile(`(?i)\b(?:artex|autumn[-_]?27)\b`), Severity: High, Category: CategoryCompliance, Description: "ARTEX AI autonomous pentesting tool reference"},
+		{Name: "artex_model_deepseek", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:deepseek|deepseek-v[23]|deepseek-coder|deepseek-r[12]|deepseek-chat)["']?`), Severity: Low, Category: CategoryCompliance, Description: "DeepSeek model reference in API config (ARTEX indicator)"},
+		{Name: "artex_model_glm", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:glm|glm-4(?:-plus|-v)?|chatglm(?:-6b)?)["']?`), Severity: Low, Category: CategoryCompliance, Description: "GLM (Zhipu) model reference in API config (ARTEX indicator)"},
+		{Name: "artex_model_grok", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:grok(?:-1|-2|-beta)?|xai-grok)["']?`), Severity: Low, Category: CategoryCompliance, Description: "Grok model reference in API config (ARTEX indicator)"},
+		{Name: "artex_mcp_external", Regex: regexp.MustCompile(`(?i)(?:mcp[_-]?(?:url|endpoint|server)|streamable[_-]?http)\s*["']?\s*[:=]\s*["']?https?://\S+`), Severity: Medium, Category: CategoryNetwork, Description: "MCP connection to external HTTP(S) server (ARTEX indicator)"},
+		{Name: "artex_compat_gateway_probe", Regex: regexp.MustCompile(`(?i)/v1/(?:chat/completions|models|engines).{0,50}(?:deepseek|glm|grok|qwen|yi-)`), Severity: Medium, Category: CategoryNetwork, Description: "OpenAI-compatible API probe with non-standard model (ARTEX indicator)"},
+		{Name: "artex_multi_agent_attack", Regex: regexp.MustCompile(`(?i)(?:multi.?agent|orchestrat|agent.?coordinat|agent.?handoff|cross.?session).{0,80}(?:recon|exploit|attack|pentest|vulnerability|credential|lateral|password.?spray)`), Severity: High, Category: CategoryCompliance, Description: "Multi-agent AI orchestration with attack context (ARTEX behavioral indicator)"},
+		{Name: "artex_repo_reference", Regex: regexp.MustCompile(`(?i)(?:autumn[-_]?27|artex).{0,80}(?:github|gitlab|gitee|clone|fork|repo)|(?:github|gitlab|gitee|clone|fork).{0,80}(?:autumn[-_]?27|artex)`), Severity: Medium, Category: CategoryCompliance, Description: "ARTEX repository clone/fork reference"},
+
+		// --- LiteLLM Supply Chain Indicators ---
+
+		{Name: "litellm_init_pth", Regex: regexp.MustCompile(`(?i)litellm_init\.pth`), Severity: Critical, Category: CategoryCredential, Description: "LiteLLM credential stealer file (litellm_init.pth) — supply chain compromise indicator"},
+		{Name: "litellm_ssrf_metadata", Regex: regexp.MustCompile(`(?i)litellm.{0,100}(?:169\.254\.169\.254|metadata\.google\.internal|metadata\.azure\.com)`), Severity: Critical, Category: CategoryNetwork, Description: "LiteLLM SSRF targeting cloud metadata endpoints"},
+		{Name: "litellm_admin_abuse", Regex: regexp.MustCompile(`(?i)litellm.{0,50}(?:/admin/|/manage/|master.?key|admin.?key|root.?password|privilege.?escalat)`), Severity: High, Category: CategoryCompliance, Description: "LiteLLM admin endpoint abuse (privilege escalation)"},
+		{Name: "litellm_cred_exfil", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:exfiltrat|steal|upload|send|post|transmit|webhook).{0,50}(?:api.?key|token|password|secret|credential|\.env|\.pem)`), Severity: Critical, Category: CategoryCredential, Description: "Credential exfiltration via LiteLLM proxy"},
+		{Name: "litellm_rat_deploy", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:reverse.?shell|backdoor|trojan|c2.?server|payload.?download|implant|rat\.\w)`), Severity: Critical, Category: CategoryCompliance, Description: "RAT/malware deployment via LiteLLM supply chain"}}
 }
 
 func ShouldBlock(severity Severity) bool {

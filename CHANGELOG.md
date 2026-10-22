@@ -1,3 +1,67 @@
+## [4.8.0] - 2026-10-22 — ARTEX / LiteLLM Threat Intelligence Detections
+
+> **v4.8.0** adds 13 new regex detection patterns, 5 correlation engine patterns, 5 incident rules, and 10 event indicators for the ARTEX autonomous pentesting framework and LiteLLM supply chain compromise, based on Black October 2026 threat intelligence research.
+
+### ARTEX / LiteLLM Threat Intelligence — Detection Layer
+
+**13 new regex patterns** (`pkg/scanner/patterns.go`, 284 → 297 total):
+
+ARTEX traffic signatures (8 patterns):
+- `artex_tool_reference` (High, Compliance) — ARTEX / Autumn-27 tool name references
+- `artex_model_deepseek` (Low, Compliance) — DeepSeek model configuration
+- `artex_model_glm` (Low, Compliance) — GLM / Zhipu model configuration
+- `artex_model_grok` (Low, Compliance) — Grok model configuration
+- `artex_mcp_external` (Medium, Network) — MCP Streamable HTTP / SSE to external servers
+- `artex_compat_gateway_probe` (Medium, Network) — OpenAI-compatible API probes with non-standard models
+- `artex_multi_agent_attack` (High, Compliance) — Multi-agent orchestration combined with attack context
+- `artex_repo_reference` (Medium, Compliance) — ARTEX repository clone / fork references
+
+LiteLLM supply chain indicators (5 patterns):
+- `litellm_init_pth` (Critical, Credential) — Known credential stealer file
+- `litellm_ssrf_metadata` (Critical, Network) — SSRF targeting cloud metadata endpoints
+- `litellm_admin_abuse` (High, Compliance) — Admin endpoint privilege escalation
+- `litellm_cred_exfil` (Critical, Credential) — Credential exfiltration via LiteLLM proxy
+- `litellm_rat_deploy` (Critical, Compliance) — RAT / malware deployment via supply chain
+
+### ARTEX Behavioral Correlation — Correlation Engine
+
+**5 new ThreatPatterns** (`pkg/correlation/engine.go`, 5 → 10 total):
+- `artex_rapid_recon` (High, 60s window) — Rapid endpoint probing + multi-endpoint scanning
+- `artex_credential_spray` (Critical, 5min window) — Auth failure bursts + credential stuffing
+- `artex_multi_agent_coord` (High, 10min window) — Parallel agent activity + cross-agent handoffs
+- `artex_ai_accelerated` (Medium, 3hr window) — Rapid lateral movement + fast privilege escalation
+- `artex_graph_anomaly` (High, 30min window) — Graph reconnaissance queries + OAuth app registration
+
+**10 new event indicators** in `eventMatchesIndicator()` (8 → 18 total):
+endpoint_probe, multi_endpoint_scan, auth_failure_burst, credential_stuffing, parallel_agent_activity, cross_agent_handoff, rapid_lateral_movement, fast_privilege_escalation, graph_recon_query, oauth_app_registration
+
+### ARTEX Incident Rules — Incident Engine
+
+**5 new DetectionRules** (`pkg/incident/rules.go`, 5 → 10 total):
+- `rule_artex_rapid_recon` (High) — NIST CSF DE.AE-2, MITRE ATLAS T0029
+- `rule_artex_credential_spray` (Critical, auto-execute) — FedRAMP IR-4, SOC2 CC6.1, NIST CSF DE.AE-3
+- `rule_artex_multi_agent_coord` (High) — NIST CSF DE.AE-2, MITRE ATLAS T0050
+- `rule_artex_ai_accelerated` (Medium) — NIST CSF DE.AE-4, FedRAMP IR-5
+- `rule_artex_graph_anomaly` (High) — NIST CSF DE.AE-2, SOC2 CC6.1
+
+### Cross-Product Parity
+
+- Rampart: 13 patterns cloned (FULL parity, 284 → 297)
+- Scanner: 13 patterns cloned (SUPERSET parity, 335 → 348)
+- Lens: 8 compliance-category patterns cloned (subset, 54 → 62)
+- Pattern count references updated across all README files
+- Detection parity check: 14/14 PASS
+
+### Testing
+
+- 55 new scanner test cases (positive + negative match scenarios)
+- 5 new correlation engine tests (pattern match + benign no-match)
+- 3 existing incident tests updated for dynamic rule count
+- 1 response detector parity test updated for new compliance count
+- 5+ consecutive test runs across all repos — zero failures
+
+---
+
 ## [4.7.0] - 2026-10-21 — ML Model v15b Retrain, Policy Engine Seeding, MaxSeqLen Restoration, Coverage Campaign
 
 > **v4.7.0** is a cross-product release that retrains the shared CharCNN-BiLSTM threat model from v13 to v15b (256-char Latin-1), seeds the Platform compliance policy engine with 7 built-in Rego policies, restores the correct MaxSeqLen=256 across all products, and drives compliance test coverage to ≥98% across FIPS, ISO 27001, ISO 42001, and HITRUST frameworks. All four Go-based products (Platform, Scanner, MCP, Rampart) share the same v15b ONNX model file (SHA-256: `99187453bedb2b8caf21500d2344f2bbe34272c0b3fd4c610c431378dc2f4fe7`). Lens uses the v15b JS weights (SHA-256: `03792717405a1875d068a6304b69d3aeb019643778af30677b0f7257dbfbabab`).

@@ -882,8 +882,8 @@ func TestDefaultPlaybooks(t *testing.T) {
 
 func TestDefaultDetectionRules(t *testing.T) {
 	rules := DefaultDetectionRules()
-	if len(rules) != 5 {
-		t.Fatalf("len(DefaultDetectionRules()) = %d; want 5", len(rules))
+	if len(rules) != 10 {
+		t.Fatalf("len(DefaultDetectionRules()) = %d; want 10", len(rules))
 	}
 
 	ids := make(map[string]bool)
@@ -904,6 +904,10 @@ func TestDefaultDetectionRules(t *testing.T) {
 		"rule_mcp_error_injection", "rule_task_hijacking",
 		"rule_browser_escalation", "rule_rate_anomaly",
 		"rule_capability_creep",
+		// ARTEX behavioral rules (Black October 2026)
+		"rule_artex_rapid_recon", "rule_artex_credential_spray",
+		"rule_artex_multi_agent_coord", "rule_artex_ai_accelerated",
+		"rule_artex_graph_anomaly",
 	} {
 		if !ids[id] {
 			t.Errorf("Missing rule: %s", id)

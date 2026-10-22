@@ -98,6 +98,68 @@ func (e *Engine) registerDefaultPatterns() {
 		Indicators:  []string{"capability_delta"},
 		TimeWindow:  10 * time.Minute,
 	}
+
+	// ============================================================================
+	// ARTEX BEHAVIORAL PATTERNS (Black October 2026)
+	// Source: Zscaler ThreatLabz + Microsoft Threat Intelligence
+	// These patterns detect ARTEX-like multi-agent AI attack behavior
+	// in correlation with protocol-level events observed by Platform.
+	// ============================================================================
+
+	// Rapid multi-endpoint reconnaissance — Storm-0940 hit 2,900 auth/min
+	e.patterns["artex_rapid_recon"] = &ThreatPattern{
+		ID:          "artex_rapid_recon",
+		Name:        "ARTEX Rapid Reconnaissance",
+		Description: "Rapid multi-endpoint probing — AI-accelerated reconnaissance pattern consistent with ARTEX framework",
+		Severity:    "high",
+		Weight:      0.8,
+		Indicators:  []string{"endpoint_probe", "multi_endpoint_scan"},
+		TimeWindow:  60 * time.Second,
+	}
+
+	// Credential spraying via application credentials — 151K+ failed sign-ins observed
+	e.patterns["artex_credential_spray"] = &ThreatPattern{
+		ID:          "artex_credential_spray",
+		Name:        "ARTEX Credential Spraying",
+		Description: "Credential spraying via API credentials — automated password attack pattern consistent with ARTEX",
+		Severity:    "critical",
+		Weight:      0.9,
+		Indicators:  []string{"auth_failure_burst", "credential_stuffing"},
+		TimeWindow:  5 * time.Minute,
+	}
+
+	// Multi-agent coordination — one agent recon, one exploit, one data access
+	e.patterns["artex_multi_agent_coord"] = &ThreatPattern{
+		ID:          "artex_multi_agent_coord",
+		Name:        "ARTEX Multi-Agent Coordination",
+		Description: "Multiple agents coordinating attack phases — reconnaissance, exploitation, and data access across protocols",
+		Severity:    "high",
+		Weight:      0.85,
+		Indicators:  []string{"parallel_agent_activity", "cross_agent_handoff"},
+		TimeWindow:  10 * time.Minute,
+	}
+
+	// AI-accelerated lateral movement — initial targeting to privileged access in under 3 hours
+	e.patterns["artex_ai_accelerated"] = &ThreatPattern{
+		ID:          "artex_ai_accelerated",
+		Name:        "ARTEX AI-Accelerated Attack",
+		Description: "Rapid lateral movement and privilege escalation — impossibly fast progression consistent with AI acceleration",
+		Severity:    "medium",
+		Weight:      0.7,
+		Indicators:  []string{"rapid_lateral_movement", "fast_privilege_escalation"},
+		TimeWindow:  3 * time.Hour,
+	}
+
+	// Microsoft Graph anomalies — recon queries, OAuth app registrations, credential changes
+	e.patterns["artex_graph_anomaly"] = &ThreatPattern{
+		ID:          "artex_graph_anomaly",
+		Name:        "ARTEX Graph API Anomaly",
+		Description: "Microsoft Graph API anomalies — reconnaissance queries, OAuth registration, or credential changes in close succession",
+		Severity:    "high",
+		Weight:      0.8,
+		Indicators:  []string{"graph_recon_query", "oauth_app_registration"},
+		TimeWindow:  30 * time.Minute,
+	}
 }
 
 // RecordEvent records a security event for correlation
@@ -263,6 +325,29 @@ func (e *Engine) eventMatchesIndicator(event *Event, indicator string) bool {
 		return event.Severity == "high" && event.Decision == "block"
 	case "capability_delta":
 		return event.EventType == "capability_change"
+	// ============================================================================
+	// ARTEX BEHAVIORAL INDICATORS (Black October 2026)
+	// ============================================================================
+	case "endpoint_probe":
+		return event.Protocol == "http" && (event.EventType == "request" || event.EventType == "probe")
+	case "multi_endpoint_scan":
+		return event.Protocol == "http" && event.EventType == "scan" || (event.Metadata != nil && event.Metadata["scan_type"] == "multi_endpoint")
+	case "auth_failure_burst":
+		return event.EventType == "auth_failure" || (event.EventType == "error" && event.Metadata != nil && event.Metadata["auth_failure"] == "true")
+	case "credential_stuffing":
+		return event.EventType == "credential_attack" || (event.Metadata != nil && event.Metadata["attack_type"] == "credential_stuffing")
+	case "parallel_agent_activity":
+		return event.Protocol == "a2a" && event.EventType == "coordination" || (event.Metadata != nil && event.Metadata["multi_agent"] == "true")
+	case "cross_agent_handoff":
+		return event.Protocol == "a2a" && event.EventType == "handoff" || (event.Metadata != nil && event.Metadata["handoff"] == "true")
+	case "rapid_lateral_movement":
+		return event.EventType == "lateral_movement" || (event.Metadata != nil && event.Metadata["lateral"] == "true")
+	case "fast_privilege_escalation":
+		return event.EventType == "privilege_escalation" || (event.Metadata != nil && event.Metadata["privilege_escalation"] == "true")
+	case "graph_recon_query":
+		return event.EventType == "graph_recon" || (event.Metadata != nil && event.Metadata["graph_recon"] == "true")
+	case "oauth_app_registration":
+		return event.EventType == "oauth_registration" || (event.Metadata != nil && event.Metadata["oauth_registration"] == "true")
 	}
 	return false
 }
