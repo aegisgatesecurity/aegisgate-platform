@@ -1385,20 +1385,25 @@ func TestDefaultPlaybooksIntegrity(t *testing.T) {
 	}
 }
 
-// TestDefaultDetectionRulesIntegrity verifies that all 5 default
+// TestDefaultDetectionRulesIntegrity verifies that all 10 default
 // detection rules have valid patterns and compliance mappings.
 func TestDefaultDetectionRulesIntegrity(t *testing.T) {
 	rules := incident.DefaultDetectionRules()
-	if len(rules) != 5 {
-		t.Fatalf("expected 5 default rules, got %d", len(rules))
+	if len(rules) != 10 {
+		t.Fatalf("expected 10 default rules, got %d", len(rules))
 	}
 
 	expectedPatterns := map[string]bool{
-		"mcp_error_injection": true,
-		"task_hijacking":      true,
-		"browser_escalation":  true,
-		"rate_anomaly":        true,
-		"capability_creep":    true,
+		"mcp_error_injection":     true,
+		"task_hijacking":          true,
+		"browser_escalation":      true,
+		"rate_anomaly":            true,
+		"capability_creep":        true,
+		"artex_rapid_recon":       true,
+		"artex_credential_spray":  true,
+		"artex_multi_agent_coord": true,
+		"artex_ai_accelerated":    true,
+		"artex_graph_anomaly":     true,
 	}
 
 	for _, rule := range rules {
