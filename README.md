@@ -6,6 +6,9 @@
 
 *A self-hosted gateway that scans every request and response between your team and any AI service — catching data leaks, prompt injections, and compliance violations before they happen.*
 
+[![GitHub stars](https://img.shields.io/github/stars/aegisgatesecurity/aegisgate-platform?style=flat&logo=github&label=Star&color=FFD700&labelColor=181717&logoColor=FFD700)](https://github.com/aegisgatesecurity/aegisgate-platform)
+**Found AegisGate useful? [Star the repo](https://github.com/aegisgatesecurity/aegisgate-platform) ⭐ and [tell a colleague](https://x.com/intent/tweet?text=Securing%20every%20AI%20interaction%20with%20AegisGate%20%E2%80%94%206%20pillars%2C%201%20gateway%2C%20zero%20dependencies%3A%20https%3A%2F%2Fgithub.com%2Faegisgatesecurity%2Faegisgate-platform) — it helps other teams discover AI security tooling.**
+
 [![Version](https://img.shields.io/badge/Version-v4.7.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.7.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.27.2-00ADD8?logo=go)](https://golang.org/)
@@ -22,7 +25,7 @@
 
 [🌐 Website](https://aegisgatesecurity.io) · [🚀 Live Demo](https://demo.aegisgatesecurity.io/) · [📊 Pricing](https://aegisgatesecurity.io/pricing/) · [📚 Docs](https://aegisgatesecurity.io/docs/) · [🔒 Security](SECURITY.md) · [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
-[![GitHub stars](https://img.shields.io/github/stars/aegisgatesecurity/aegisgate-platform?style=social)](https://github.com/aegisgatesecurity/aegisgate-platform) — **If AegisGate helps you secure your AI interactions, please consider ⭐ starring this repo. It helps others discover it.**
+
 
 </div>
 
