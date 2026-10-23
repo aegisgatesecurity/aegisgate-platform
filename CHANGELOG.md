@@ -1,6 +1,24 @@
+## [4.9.0] - 2026-10-23 — Agent Instruction Poisoning Detection
+
+> **v4.9.0** adds 5 new regex detection patterns in a new `AgentPoisoning` category to `DefaultPatterns()`, targeting Warden Stealer and similar malware that poisons AI agent instruction files. Cross-product parity with Scanner v0.4.3 and Rampart v0.9.3.
+
+### Agent Instruction Poisoning Detection (5 new patterns)
+
+New `AgentPoisoning` category detecting malware that poisons AI agent instruction files (CLAUDE.md, AGENTS.md, .codex/config.toml):
+
+- **agent_poisoning_anthropic_redirect** (HIGH): ANTHROPIC_BASE_URL redirected to attacker server
+- **agent_poisoning_install_instruction** (HIGH): npm/pip install commands embedded in agent instruction context
+- **agent_poisoning_codex_config** (MEDIUM): .codex/config.toml references (OpenAI Codex config manipulation)
+- **agent_poisoning_env_exfil** (MEDIUM): Environment variable exfiltration instructions
+- **agent_poisoning_function_color** (LOW): function-color npm package IOC (Warden Stealer)
+
+Threat intelligence source: Black October 2026 Warden Stealer campaign. Verified against Warden Stealer test artifacts.
+
+---
+
 ## [4.8.0] - 2026-10-22 — ARTEX / LiteLLM Threat Intelligence Detections
 
-> **v4.8.0** adds 13 new regex detection patterns, 5 correlation engine patterns, 5 incident rules, and 10 event indicators for the ARTEX autonomous pentesting framework and LiteLLM supply chain compromise, based on Black October 2026 threat intelligence research.
+> **v4.9.0** adds 13 new regex detection patterns, 5 correlation engine patterns, 5 incident rules, and 10 event indicators for the ARTEX autonomous pentesting framework and LiteLLM supply chain compromise, based on Black October 2026 threat intelligence research.
 
 ### ARTEX / LiteLLM Threat Intelligence — Detection Layer
 
