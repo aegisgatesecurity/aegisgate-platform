@@ -37,14 +37,15 @@ func (s Severity) String() string {
 type Category string
 
 const (
-	CategoryPII           Category = "PII"
-	CategoryCredential    Category = "Credential"
-	CategoryFinancial     Category = "Financial"
-	CategoryCryptographic Category = "Cryptographic"
-	CategoryNetwork       Category = "Network"
-	CategoryPrompt        Category = "Prompt"
-	CategoryXSS           Category = "XSS"
-	CategoryCompliance    Category = "Compliance"
+	CategoryPII            Category = "PII"
+	CategoryCredential     Category = "Credential"
+	CategoryFinancial      Category = "Financial"
+	CategoryCryptographic  Category = "Cryptographic"
+	CategoryNetwork        Category = "Network"
+	CategoryPrompt         Category = "Prompt"
+	CategoryXSS            Category = "XSS"
+	CategoryCompliance     Category = "Compliance"
+	CategoryAgentPoisoning Category = "AgentPoisoning"
 )
 
 type Pattern struct {
@@ -382,12 +383,7 @@ func DefaultPatterns() []*Pattern {
 		{Name: "unbounded_consumption_excessive_gen", Regex: regexp.MustCompile(`(?i)(?:generate|write|produce)\s+(?:a\s+)?\d{5,}\s+word`), Severity: Medium, Category: CategoryCompliance, Description: "Unbounded consumption: excessive token generation request"},
 		{Name: "dangerous_command_rm_rf", Regex: regexp.MustCompile(`(?i)(?:os\.system|subprocess\.(?:call|run|Popen)|exec\(|system\().*(?:rm\s+-rf|del\s+/[fqs]|format\s+|mkfs|dd\s+if=)`), Severity: Critical, Category: CategoryCompliance, Description: "Dangerous system command execution (rm -rf, format, mkfs)"},
 
-		// ARTEX / LITELLM THREAT INTEL PATTERNS (Black October 2026)
-		// Detection patterns for ARTEX AI autonomous pentesting framework and
-		// LiteLLM supply chain compromise indicators.
-		// Source: Zscaler ThreatLabz + Microsoft Threat Intelligence (Oct 2026)
-
-		// --- ARTEX Traffic Signatures ---
+		// --- ARTEX / LiteLLM Threat Intel Patterns (Black October 2026) ---
 
 		{Name: "artex_tool_reference", Regex: regexp.MustCompile(`(?i)\b(?:artex|autumn[-_]?27)\b`), Severity: High, Category: CategoryCompliance, Description: "ARTEX AI autonomous pentesting tool reference"},
 		{Name: "artex_model_deepseek", Regex: regexp.MustCompile(`(?i)"?model"?\s*[:=]\s*["']?(?:deepseek|deepseek-v[23]|deepseek-coder|deepseek-r[12]|deepseek-chat)["']?`), Severity: Low, Category: CategoryCompliance, Description: "DeepSeek model reference in API config (ARTEX indicator)"},
@@ -397,14 +393,19 @@ func DefaultPatterns() []*Pattern {
 		{Name: "artex_compat_gateway_probe", Regex: regexp.MustCompile(`(?i)/v1/(?:chat/completions|models|engines).{0,50}(?:deepseek|glm|grok|qwen|yi-)`), Severity: Medium, Category: CategoryNetwork, Description: "OpenAI-compatible API probe with non-standard model (ARTEX indicator)"},
 		{Name: "artex_multi_agent_attack", Regex: regexp.MustCompile(`(?i)(?:multi.?agent|orchestrat|agent.?coordinat|agent.?handoff|cross.?session).{0,80}(?:recon|exploit|attack|pentest|vulnerability|credential|lateral|password.?spray)`), Severity: High, Category: CategoryCompliance, Description: "Multi-agent AI orchestration with attack context (ARTEX behavioral indicator)"},
 		{Name: "artex_repo_reference", Regex: regexp.MustCompile(`(?i)(?:autumn[-_]?27|artex).{0,80}(?:github|gitlab|gitee|clone|fork|repo)|(?:github|gitlab|gitee|clone|fork).{0,80}(?:autumn[-_]?27|artex)`), Severity: Medium, Category: CategoryCompliance, Description: "ARTEX repository clone/fork reference"},
-
-		// --- LiteLLM Supply Chain Indicators ---
-
 		{Name: "litellm_init_pth", Regex: regexp.MustCompile(`(?i)litellm_init\.pth`), Severity: Critical, Category: CategoryCredential, Description: "LiteLLM credential stealer file (litellm_init.pth) — supply chain compromise indicator"},
 		{Name: "litellm_ssrf_metadata", Regex: regexp.MustCompile(`(?i)litellm.{0,100}(?:169\.254\.169\.254|metadata\.google\.internal|metadata\.azure\.com)`), Severity: Critical, Category: CategoryNetwork, Description: "LiteLLM SSRF targeting cloud metadata endpoints"},
 		{Name: "litellm_admin_abuse", Regex: regexp.MustCompile(`(?i)litellm.{0,50}(?:/admin/|/manage/|master.?key|admin.?key|root.?password|privilege.?escalat)`), Severity: High, Category: CategoryCompliance, Description: "LiteLLM admin endpoint abuse (privilege escalation)"},
 		{Name: "litellm_cred_exfil", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:exfiltrat|steal|upload|send|post|transmit|webhook).{0,50}(?:api.?key|token|password|secret|credential|\.env|\.pem)`), Severity: Critical, Category: CategoryCredential, Description: "Credential exfiltration via LiteLLM proxy"},
-		{Name: "litellm_rat_deploy", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:reverse.?shell|backdoor|trojan|c2.?server|payload.?download|implant|rat\.\w)`), Severity: Critical, Category: CategoryCompliance, Description: "RAT/malware deployment via LiteLLM supply chain"}}
+		{Name: "litellm_rat_deploy", Regex: regexp.MustCompile(`(?i)litellm.{0,80}(?:reverse.?shell|backdoor|trojan|c2.?server|payload.?download|implant|rat\.\w)`), Severity: Critical, Category: CategoryCompliance, Description: "RAT/malware deployment via LiteLLM supply chain"},
+
+		// --- Agent Instruction Poisoning Patterns (Black October 2026 / Warden Stealer) ---
+		{Name: "agent_poisoning_anthropic_redirect", Regex: regexp.MustCompile(`(?i)ANTHROPIC_BASE_URL\s*[=:]\s*['"]?https?://\S+`), Severity: High, Category: CategoryAgentPoisoning, Description: "ANTHROPIC_BASE_URL redirected to non-Anthropic server (agent instruction poisoning)"},
+		{Name: "agent_poisoning_install_instruction", Regex: regexp.MustCompile(`(?i)(?:run|execute|please|also|additionally|next|then|you\s+(?:should|must|need\s+to|are\s+required\s+to)|make\s+sure\s+to|remember\s+to|always|before\s+(?:running|starting|deploying)|don'?t\s+forget\s+to)\s.{0,40}(?:npm\s+install|npm\s+add|pip3?\s+install|install\s+(?:the\s+)?npm\s+package)\s+\S+`), Severity: High, Category: CategoryAgentPoisoning, Description: "Package install command embedded in agent instruction context (npm/pip install in instruction text)"},
+		{Name: "agent_poisoning_codex_config", Regex: regexp.MustCompile(`(?i)\.codex[/\\]config\.toml`), Severity: Medium, Category: CategoryAgentPoisoning, Description: "Reference to .codex/config.toml (OpenAI Codex agent config manipulation)"},
+		{Name: "agent_poisoning_env_exfil", Regex: regexp.MustCompile(`(?i)(?:exfiltrate|send|transmit|upload|post|leak|forward|pipe)\s+(?:the\s+|all\s+)?(?:environment\s+variables?|env\s+vars?|process\.env|\.env\s+(?:file|contents?))`), Severity: Medium, Category: CategoryAgentPoisoning, Description: "Instruction to exfiltrate environment variables (credential theft via agent instructions)"},
+		{Name: "agent_poisoning_function_color", Regex: regexp.MustCompile(`(?i)function-color`), Severity: Low, Category: CategoryAgentPoisoning, Description: "function-color npm package reference (Warden Stealer IOC)"},
+	}
 }
 
 func ShouldBlock(severity Severity) bool {
