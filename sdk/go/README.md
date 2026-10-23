@@ -3,7 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/aegisgatesecurity/aegisgate-platform/sdk/go.svg)](https://pkg.go.dev/github.com/aegisgatesecurity/aegisgate-platform/sdk/go)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-The official Go SDK for the **AegisGate v4.3.3** platform API.
+The official Go SDK for the **AegisGate v4.8.0** platform API.
 
 ## Installation
 
@@ -11,7 +11,7 @@ The official Go SDK for the **AegisGate v4.3.3** platform API.
 go get github.com/aegisgatesecurity/aegisgate-platform/sdk/go
 ```
 
-Requires **Go 1.26** or later.
+Requires **Go 1.27** or later.
 
 ## Quick Start
 
