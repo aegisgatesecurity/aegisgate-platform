@@ -307,3 +307,7 @@ mcp-security/mcp-server
 # Training data generation commands (depend on gitignored pkg/ml/training/)
 cmd/gen-training-data/
 cmd/gen-v10-data/
+
+# Proprietary documents - local only, not for remote
+docs/AegisGate-Leave-Behind.pdf
+plans/sbir-letter-support-pwc.md
