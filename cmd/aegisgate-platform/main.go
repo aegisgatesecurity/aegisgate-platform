@@ -1466,6 +1466,7 @@ func main() {
 	var embeddedServer *mcpserver.EmbeddedServer
 	var mcpGuardrails *mcpserver.GuardrailMiddleware
 	var mcpScanner *scanner.AegisGuardMCPScanner
+	var connSessionMgr *mcpserver.ConnectionSessionManager
 
 	if *embeddedMCP {
 		// STANDALONE MODE: Start the MCP server embedded in this process
@@ -1487,7 +1488,13 @@ func main() {
 		// and tool response scanning for PII/secrets/XSS/toxicity.
 		mcpResponseGuard := mcpserver.NewMCPResponseGuard()
 		embeddedServer.SetGuardrails(mcpGuardrails, mcpResponseGuard, mcpserver.DefaultEmbeddedResponseConfig())
-		log.Printf("MCP guardrails wired: request guards + response scanning enabled")
+
+		// Wire the ConnectionSessionManager so MCP connections are
+		// tracked as RBAC sessions and visible to the Agent Registry.
+		connSessionMgr = mcpserver.NewConnectionSessionManager(rbacMgr)
+		connSessionMgr.SetGuardrails(mcpGuardrails)
+		embeddedServer.SetConnectionSessionManager(connSessionMgr)
+		log.Printf("MCP session manager wired: MCP connections visible to Agent Registry")
 
 		if err := embeddedServer.Start(); err != nil {
 			log.Fatalf("Failed to start embedded MCP server: %v", err)
@@ -2103,6 +2110,7 @@ func main() {
 			RBAC:            rbacMgr,
 			A2ASource:       a2aSource,
 			Correlation:     correlationSource,
+			MCPSessions:     connSessionMgr,
 			RefreshInterval: refreshInterval,
 			Logger:          slog.Default().With("component", "agent-registry"),
 		})
@@ -2183,6 +2191,26 @@ func main() {
 				} else {
 					log.Printf("[AGENT-REGISTRY] Seeded default dormancy policy (dormant=24h, quarantine=7d, revoke=30d)")
 				}
+			}
+		}
+
+		// Pre-register a test agent in RBAC so the Agent Registry can
+		// discover it during the initial background refresh. This agent
+		// represents an MCP client that will connect to the embedded MCP
+		// server. In production, agents are registered via the RBAC API
+		// or configuration; this seed agent is for testing and development.
+		if connSessionMgr != nil {
+			testAgent := &rbac.Agent{
+				ID:        "test-mcp-agent",
+				Name:      "Test MCP Agent",
+				Enabled:   true,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+			if err := rbacMgr.RegisterAgent(testAgent); err != nil {
+				log.Printf("[AGENT-REGISTRY] Failed to seed test agent: %v", err)
+			} else {
+				log.Printf("[AGENT-REGISTRY] Seeded test agent: %s", testAgent.ID)
 			}
 		}
 	} else {
