@@ -49,13 +49,13 @@ const (
 // Engine (cross-protocol events), and Intent Signer (signed intents).
 type AgentRecord struct {
 	// --- Identity (from RBAC) ---
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description,omitempty"`
-	Role        string            `json:"role"`
-	Tools       []string          `json:"tools,omitempty"`
-	Enabled     bool              `json:"enabled"`
-	TenantID    string            `json:"tenant_id,omitempty"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Role        string   `json:"role"`
+	Tools       []string `json:"tools,omitempty"`
+	Enabled     bool     `json:"enabled"`
+	TenantID    string   `json:"tenant_id,omitempty"`
 
 	// --- Lifecycle (managed by Registry) ---
 	Status      AgentStatus       `json:"status"`
@@ -90,11 +90,11 @@ type AgentRecord struct {
 
 // ListFilter narrows the results of List and ListByStatus queries.
 type ListFilter struct {
-	Status    AgentStatus       `json:"status,omitempty"`
-	Protocol  Protocol          `json:"protocol,omitempty"`
-	Owner     string            `json:"owner,omitempty"`
-	Tag       map[string]string `json:"tag,omitempty"`
-	TenantID  string            `json:"tenant_id,omitempty"`
+	Status   AgentStatus       `json:"status,omitempty"`
+	Protocol Protocol          `json:"protocol,omitempty"`
+	Owner    string            `json:"owner,omitempty"`
+	Tag      map[string]string `json:"tag,omitempty"`
+	TenantID string            `json:"tenant_id,omitempty"`
 }
 
 // matches checks whether a record passes all non-zero filter criteria.
@@ -235,10 +235,10 @@ type DormancyEntry struct {
 
 // PolicyEnforcementResult records the outcome of a single policy action.
 type PolicyEnforcementResult struct {
-	PolicyID  string      `json:"policy_id"`
-	AgentID   string      `json:"agent_id"`
+	PolicyID  string       `json:"policy_id"`
+	AgentID   string       `json:"agent_id"`
 	Action    PolicyAction `json:"action"`
-	Status    string      `json:"status"` // "executed", "skipped", "failed"
-	Error     string      `json:"error,omitempty"`
-	Timestamp time.Time   `json:"timestamp"`
+	Status    string       `json:"status"` // "executed", "skipped", "failed"
+	Error     string       `json:"error,omitempty"`
+	Timestamp time.Time    `json:"timestamp"`
 }

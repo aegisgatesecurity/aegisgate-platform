@@ -27,11 +27,11 @@ type PolicyActionExecutor interface {
 // DormancyEngine to evaluate agent state and the PolicyActionExecutor
 // to carry out actions.
 type PolicyEngine struct {
-	registry   *Registry
-	dormancy   *DormancyEngine
-	executor   PolicyActionExecutor
+	registry    *Registry
+	dormancy    *DormancyEngine
+	executor    PolicyActionExecutor
 	policyStore LifecyclePolicyStore
-	logger     *slog.Logger
+	logger      *slog.Logger
 }
 
 // NewPolicyEngine creates a new PolicyEngine.
@@ -46,11 +46,11 @@ func NewPolicyEngine(
 		logger = slog.Default().With("component", "policy-engine")
 	}
 	return &PolicyEngine{
-		registry:   registry,
-		dormancy:   dormancy,
-		executor:   executor,
+		registry:    registry,
+		dormancy:    dormancy,
+		executor:    executor,
 		policyStore: policyStore,
-		logger:     logger,
+		logger:      logger,
 	}
 }
 

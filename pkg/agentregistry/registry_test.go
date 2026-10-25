@@ -32,11 +32,11 @@ func (m *mockA2ASource) KnownAgents() []A2AAgentInfo { return m.agents }
 
 // mockAIBOMSource is a test AIBOMSource.
 type mockAIBOMSource struct {
-	names      []string
+	names       []string
 	generatedAt time.Time
 }
 
-func (m *mockAIBOMSource) AgentNames() []string    { return m.names }
+func (m *mockAIBOMSource) AgentNames() []string        { return m.names }
 func (m *mockAIBOMSource) AIBOMGeneratedAt() time.Time { return m.generatedAt }
 
 // mockCorrelationSource is a test CorrelationSource.
@@ -434,6 +434,7 @@ func TestRegistryStartStop(t *testing.T) {
 	// Double stop should be safe
 	reg.Stop()
 }
+
 // =====================================================================
 // Additional Discover tests — MCP sessions, A2A-only, correlation
 // =====================================================================
@@ -550,7 +551,7 @@ func TestRegistryDiscoverCorrelationEnrichment(t *testing.T) {
 	// Mock correlation source that returns events with a recent timestamp
 	recentEventTime := testTime.Add(-30 * time.Minute)
 	corrSource := &mockCorrelationSourceWithEvents{
-		count:  15,
+		count: 15,
 		events: []CorrelationEventInfo{
 			{EventType: "tool_call", Timestamp: recentEventTime},
 		},

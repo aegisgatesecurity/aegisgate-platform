@@ -24,8 +24,8 @@ import (
 // are managed by the DormancyEngine and PolicyEngine, which are wired
 // after Registry creation.
 type Registry struct {
-	mu      sync.RWMutex
-	store   Store
+	mu       sync.RWMutex
+	store    Store
 	policies LifecyclePolicyStore
 
 	// Data sources
@@ -50,11 +50,11 @@ type Registry struct {
 // The Registry calls the onLifecycleEvent callback (if set) so that
 // SSE streams, policy engines, and other consumers can react.
 type LifecycleEvent struct {
-	AgentID     string      `json:"agent_id"`
-	OldStatus   AgentStatus `json:"old_status"`
-	NewStatus   AgentStatus `json:"new_status"`
-	Timestamp   time.Time   `json:"timestamp"`
-	Reason      string      `json:"reason,omitempty"`
+	AgentID   string      `json:"agent_id"`
+	OldStatus AgentStatus `json:"old_status"`
+	NewStatus AgentStatus `json:"new_status"`
+	Timestamp time.Time   `json:"timestamp"`
+	Reason    string      `json:"reason,omitempty"`
 }
 
 // Config holds the dependencies needed to create a Registry.
@@ -147,12 +147,12 @@ func (r *Registry) Discover(ctx context.Context) error {
 			// Agent exists in MCP but not RBAC — create a minimal record.
 			// This is a drift condition (active but not registered).
 			record = &AgentRecord{
-				ID:          ma.AgentID,
-				Name:        ma.AgentID,
-				Status:      StatusProvisioned,
-				StatusSince: nowFunc(),
-				FirstSeen:   nowFunc(),
-				CreatedAt:   nowFunc(),
+				ID:               ma.AgentID,
+				Name:             ma.AgentID,
+				Status:           StatusProvisioned,
+				StatusSince:      nowFunc(),
+				FirstSeen:        nowFunc(),
+				CreatedAt:        nowFunc(),
 				DiscoverySources: []string{"mcp"},
 			}
 			records[ma.AgentID] = record
@@ -204,12 +204,12 @@ func (r *Registry) Discover(ctx context.Context) error {
 			record, ok := records[info.AgentID]
 			if !ok {
 				record = &AgentRecord{
-					ID:          info.AgentID,
-					Name:        info.AgentID,
-					Status:      StatusProvisioned,
-					StatusSince: nowFunc(),
-					FirstSeen:   nowFunc(),
-					CreatedAt:   nowFunc(),
+					ID:               info.AgentID,
+					Name:             info.AgentID,
+					Status:           StatusProvisioned,
+					StatusSince:      nowFunc(),
+					FirstSeen:        nowFunc(),
+					CreatedAt:        nowFunc(),
 					DiscoverySources: []string{"a2a"},
 				}
 				records[info.AgentID] = record
@@ -347,9 +347,9 @@ func (r *Registry) Reconcile(ctx context.Context) (*DriftReport, error) {
 	for _, name := range aibomNames {
 		if !recordSet[name] {
 			report.InAIBOMNotActive = append(report.InAIBOMNotActive, DriftEntry{
-				AgentID: name,
+				AgentID:   name,
 				AgentName: name,
-				Note:     "agent declared in AIBOM but not active in runtime",
+				Note:      "agent declared in AIBOM but not active in runtime",
 			})
 		}
 	}

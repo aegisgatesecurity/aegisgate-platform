@@ -357,9 +357,9 @@ func TestPolicyCRUD(t *testing.T) {
 
 func TestParseTagTarget(t *testing.T) {
 	tests := []struct {
-		target   string
-		wantKey  string
-		wantVal  string
+		target  string
+		wantKey string
+		wantVal string
 	}{
 		{"flagged=true", "flagged", "true"},
 		{"env=prod", "env", "prod"},
@@ -377,6 +377,7 @@ func TestParseTagTarget(t *testing.T) {
 		})
 	}
 }
+
 // =====================================================================
 // Additional executeAction tests — playbook, unknown action
 // =====================================================================

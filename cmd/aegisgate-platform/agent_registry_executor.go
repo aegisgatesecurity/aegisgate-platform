@@ -29,11 +29,11 @@ import (
 // the PolicyEngine's abstract actions and the platform's concrete
 // SOAR, incident, and RBAC infrastructure.
 type agentRegistryExecutor struct {
-	soarMgr       *soar.Manager
-	incidentEng   *incident.Engine
-	rbacMgr       *rbac.Manager
-	registry      *agentregistry.Registry
-	logger        *slog.Logger
+	soarMgr     *soar.Manager
+	incidentEng *incident.Engine
+	rbacMgr     *rbac.Manager
+	registry    *agentregistry.Registry
+	logger      *slog.Logger
 }
 
 // newAgentRegistryExecutor creates a PolicyActionExecutor wired to

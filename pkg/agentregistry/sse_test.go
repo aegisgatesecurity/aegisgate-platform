@@ -437,6 +437,7 @@ func splitLines(s string) []string {
 	}
 	return lines
 }
+
 // =====================================================================
 // Edge case tests for NewEventBroadcaster and Broadcast
 // =====================================================================

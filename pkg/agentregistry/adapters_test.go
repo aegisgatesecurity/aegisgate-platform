@@ -233,6 +233,7 @@ func TestExtractMCPProtocolCount_Nil(t *testing.T) {
 		t.Errorf("extractMCPProtocolCount(nil) = %d; want 0", count)
 	}
 }
+
 // =====================================================================
 // extractMCPActivity / extractMCPProtocolCount — with real sessions
 // =====================================================================

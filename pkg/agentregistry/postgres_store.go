@@ -54,7 +54,7 @@ import (
 
 // Compile-time interface compliance checks.
 var (
-	_ Store               = (*PostgresStore)(nil)
+	_ Store                = (*PostgresStore)(nil)
 	_ LifecyclePolicyStore = (*PostgresPolicyStore)(nil)
 )
 

@@ -42,8 +42,8 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/abtest"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/acp"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/analytics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/agentregistry"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/analytics"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/audit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
@@ -2170,11 +2170,11 @@ func main() {
 			policies, _ := policyEngine.ListPolicies(ctx)
 			if len(policies) == 0 {
 				defaultPolicy := &agentregistry.LifecyclePolicy{
-					ID:               "default-dormancy",
-					Name:             "Default Dormancy Policy",
-					Description:      "Automatically quarantine agents inactive for 7 days and revoke at 30 days.",
-					Enabled:          true,
-					DormancyThreshold: 24 * time.Hour,
+					ID:                  "default-dormancy",
+					Name:                "Default Dormancy Policy",
+					Description:         "Automatically quarantine agents inactive for 7 days and revoke at 30 days.",
+					Enabled:             true,
+					DormancyThreshold:   24 * time.Hour,
 					QuarantineThreshold: 7 * 24 * time.Hour,
 					AutoRevokeThreshold: 30 * 24 * time.Hour,
 					OnQuarantine: []agentregistry.PolicyAction{

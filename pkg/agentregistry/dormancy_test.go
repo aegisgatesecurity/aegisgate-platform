@@ -18,8 +18,8 @@ func TestDormancyEvaluate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		record    *AgentRecord
+		name       string
+		record     *AgentRecord
 		wantStatus AgentStatus
 	}{
 		{
@@ -173,6 +173,7 @@ func TestDormancyClassify(t *testing.T) {
 		t.Errorf("Agents count = %d, want 4", len(report.Agents))
 	}
 }
+
 // =====================================================================
 // Edge case tests for NewDormancyEngine and inactiveDuration
 // =====================================================================

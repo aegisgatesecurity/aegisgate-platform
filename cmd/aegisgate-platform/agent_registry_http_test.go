@@ -93,16 +93,16 @@ func setupTestRegistry(t *testing.T) (*agentregistry.Registry, *agentregistry.Po
 			UpdatedAt:    now.Add(-48 * time.Hour),
 		},
 		{
-			ID:           "agent-gamma",
-			Name:         "Gamma Agent",
-			Role:         string(rbac.AgentRoleRestricted),
-			Status:       agentregistry.StatusProvisioned,
-			StatusSince:  now,
-			Enabled:      true,
-			TenantID:     "tenant-2",
-			Protocols:    []agentregistry.Protocol{agentregistry.ProtocolHTTP},
-			CreatedAt:    now,
-			UpdatedAt:    now,
+			ID:          "agent-gamma",
+			Name:        "Gamma Agent",
+			Role:        string(rbac.AgentRoleRestricted),
+			Status:      agentregistry.StatusProvisioned,
+			StatusSince: now,
+			Enabled:     true,
+			TenantID:    "tenant-2",
+			Protocols:   []agentregistry.Protocol{agentregistry.ProtocolHTTP},
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		},
 	}
 	for _, a := range agents {
@@ -135,8 +135,8 @@ func testContext() context.Context {
 func authMiddlewareForAdminTests(t *testing.T) (*auth.Middleware, string) {
 	t.Helper()
 	mw := auth.NewMiddleware(&auth.Config{
-		RequireAuth:     true,
-		JWTSigningKey:   []byte("dev-key-change-in-production"),
+		RequireAuth:      true,
+		JWTSigningKey:    []byte("dev-key-change-in-production"),
 		TokenExpiryHours: 1,
 	})
 	token, err := mw.GenerateToken("test-admin", string(rbac.UserRoleAdmin))
@@ -938,10 +938,10 @@ func TestEventBroadcaster_StopClosesChannels(t *testing.T) {
 
 func TestParseTagQuery(t *testing.T) {
 	tests := []struct {
-		input    string
-		wantKey  string
-		wantVal  string
-		wantNil  bool
+		input   string
+		wantKey string
+		wantVal string
+		wantNil bool
 	}{
 		{"env=prod", "env", "prod", false},
 		{"team=security-ops", "team", "security-ops", false},
@@ -1034,6 +1034,7 @@ func TestAgentLifecycleTransition_SSEBroadcast(t *testing.T) {
 		t.Fatal("timed out waiting for SSE event after lifecycle transition")
 	}
 }
+
 // =====================================================================
 // Utility function tests
 // =====================================================================

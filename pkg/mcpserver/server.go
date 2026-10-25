@@ -53,14 +53,14 @@ func DefaultConfig() *Config {
 
 // EmbeddedServer wraps AegisGuard's MCP server for in-process use
 type EmbeddedServer struct {
-	config        *Config
-	server        *mcp.Server
-	handler       *mcp.RequestHandler
-	handlerFunc   mcp.HandlerFunc // set by SetGuardrails, used by Start()
+	config         *Config
+	server         *mcp.Server
+	handler        *mcp.RequestHandler
+	handlerFunc    mcp.HandlerFunc           // set by SetGuardrails, used by Start()
 	connSessionMgr *ConnectionSessionManager // wired by SetConnectionSessionManager
-	logger        *slog.Logger
-	ctx           context.Context
-	cancel        context.CancelFunc
+	logger         *slog.Logger
+	ctx            context.Context
+	cancel         context.CancelFunc
 }
 
 // SetConnectionSessionManager wires the MCP session manager so that

@@ -15,12 +15,12 @@ func TestInMemoryStoreCRUD(t *testing.T) {
 
 	// Create
 	record := &AgentRecord{
-		ID:       "agent-1",
-		Name:     "Test Agent",
-		Role:     "standard",
-		Enabled:  true,
-		Status:   StatusActive,
-		Tags:     map[string]string{"env": "prod"},
+		ID:      "agent-1",
+		Name:    "Test Agent",
+		Role:    "standard",
+		Enabled: true,
+		Status:  StatusActive,
+		Tags:    map[string]string{"env": "prod"},
 	}
 	if err := store.Upsert(ctx, record); err != nil {
 		t.Fatalf("Upsert failed: %v", err)
@@ -164,9 +164,9 @@ func TestListFilterMatching(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		filter   *ListFilter
-		wantLen  int
+		name    string
+		filter  *ListFilter
+		wantLen int
 	}{
 		{"nil filter", nil, 3},
 		{"status active", &ListFilter{Status: StatusActive}, 2},
@@ -193,6 +193,7 @@ func TestListFilterMatching(t *testing.T) {
 		})
 	}
 }
+
 // =====================================================================
 // Close tests
 // =====================================================================
