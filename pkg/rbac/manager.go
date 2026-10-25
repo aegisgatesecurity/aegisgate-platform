@@ -300,7 +300,8 @@ func (m *Manager) UpdateAgent(agentID string, updates *AgentUpdates) error {
 			agent.Tags[k] = v
 		}
 	}
-	// Note: We don't update Enabled here as it's a critical field that should be set explicitly
+	// Note: Enabled is not updated here — use SetAgentEnabled for that,
+	// since a bool zero value cannot distinguish "not set" from "false".
 
 	agent.UpdatedAt = time.Now()
 
@@ -308,6 +309,30 @@ func (m *Manager) UpdateAgent(agentID string, updates *AgentUpdates) error {
 		"agent_id", truncateID(agentID),
 		"updates", fmt.Sprintf("%+v", updates),
 	)
+
+	return nil
+}
+
+// SetAgentEnabled explicitly enables or disables an agent. Disabling
+// an agent prevents new sessions from being created (CreateSession
+// returns an error for disabled agents). This is the correct way to
+// change the Enabled field — UpdateAgent intentionally does not touch
+// it because the bool zero value is false, making "unset" ambiguous.
+func (m *Manager) SetAgentEnabled(agentID string, enabled bool) error {
+	m.agentMu.Lock()
+	defer m.agentMu.Unlock()
+
+	agent, exists := m.agents[agentID]
+	if !exists {
+		return fmt.Errorf("agent not found: %s", agentID)
+	}
+
+	agent.Enabled = enabled
+	agent.UpdatedAt = time.Now()
+
+	m.logger.Info("agent enabled state changed",
+		"agent_id", truncateID(agentID),
+		"enabled", enabled)
 
 	return nil
 }

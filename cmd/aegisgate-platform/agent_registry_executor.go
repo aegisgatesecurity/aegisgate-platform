@@ -147,7 +147,7 @@ func (e *agentRegistryExecutor) Quarantine(ctx context.Context, agentID string) 
 	}
 
 	// Disable the agent to prevent new sessions.
-	if err := e.rbacMgr.UpdateAgent(agentID, &rbac.AgentUpdates{Enabled: false}); err != nil {
+	if err := e.rbacMgr.SetAgentEnabled(agentID, false); err != nil {
 		e.logger.Warn("Failed to disable agent in RBAC",
 			"agent_id", agentID, "error", err)
 		// Continue — agent may not exist in RBAC (could be A2A-only).
@@ -174,7 +174,7 @@ func (e *agentRegistryExecutor) Revoke(ctx context.Context, agentID string) erro
 	}
 
 	// Disable the agent to prevent any future access.
-	if err := e.rbacMgr.UpdateAgent(agentID, &rbac.AgentUpdates{Enabled: false}); err != nil {
+	if err := e.rbacMgr.SetAgentEnabled(agentID, false); err != nil {
 		e.logger.Warn("Failed to disable agent in RBAC during revocation",
 			"agent_id", agentID, "error", err)
 	}

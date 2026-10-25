@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 )
 
@@ -432,4 +433,374 @@ func TestRegistryStartStop(t *testing.T) {
 
 	// Double stop should be safe
 	reg.Stop()
+}
+// =====================================================================
+// Additional Discover tests — MCP sessions, A2A-only, correlation
+// =====================================================================
+
+// TestRegistryDiscoverWithMCPSessions verifies that MCP session activity
+// is correctly merged into agent records during discovery.
+func TestRegistryDiscoverWithMCPSessions(t *testing.T) {
+	originalNow := nowFunc
+	testTime := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return testTime }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	agent := &rbac.Agent{ID: "mcp-agent", Name: "MCP Agent", Role: rbac.AgentRoleStandard, Enabled: true}
+	_ = rbacMgr.RegisterAgent(agent)
+
+	// Create MCP session manager and a session
+	mcpSM := mcpserver.NewConnectionSessionManager(rbacMgr)
+	ctx := context.Background()
+	mcpSess, err := mcpSM.CreateSession(ctx, "conn-1", "mcp-agent")
+	if err != nil {
+		t.Fatalf("CreateSession: %v", err)
+	}
+	// Update activity to a known time
+	_ = mcpSM.UpdateActivity("conn-1")
+	_ = mcpSess
+
+	store := NewInMemoryStore()
+	reg, err := New(Config{
+		Store:       store,
+		RBAC:        rbacMgr,
+		MCPSessions: mcpSM,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	if err := reg.Discover(ctx); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+
+	record, err := reg.Get("mcp-agent")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !hasProtocol(record.Protocols, ProtocolMCP) {
+		t.Error("agent should have MCP protocol")
+	}
+	if !contains(record.DiscoverySources, "mcp") {
+		t.Error("agent should have mcp discovery source")
+	}
+	if record.ActiveSessions < 1 {
+		t.Errorf("ActiveSessions = %d, want >= 1", record.ActiveSessions)
+	}
+}
+
+// TestRegistryDiscoverA2AOnlyAgent verifies that an agent known only to
+// A2A (not registered in RBAC) is discovered and gets a minimal record.
+func TestRegistryDiscoverA2AOnlyAgent(t *testing.T) {
+	originalNow := nowFunc
+	testTime := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return testTime }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	// No agents registered in RBAC
+
+	a2aSource := &mockA2ASource{
+		agents: []A2AAgentInfo{
+			{AgentID: "a2a-only-agent", LastSeen: testTime.Add(-1 * time.Hour)},
+		},
+	}
+
+	store := NewInMemoryStore()
+	reg, err := New(Config{
+		Store:     store,
+		RBAC:      rbacMgr,
+		A2ASource: a2aSource,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	if err := reg.Discover(context.Background()); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+
+	record, err := reg.Get("a2a-only-agent")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !hasProtocol(record.Protocols, ProtocolA2A) {
+		t.Error("a2a-only agent should have A2A protocol")
+	}
+	if !contains(record.DiscoverySources, "a2a") {
+		t.Error("a2a-only agent should have a2a discovery source")
+	}
+	if record.Name != "a2a-only-agent" {
+		t.Errorf("Name = %q, want %q", record.Name, "a2a-only-agent")
+	}
+}
+
+// TestRegistryDiscoverCorrelationEnrichment verifies that correlation
+// event timestamps enrich LastActivity.
+func TestRegistryDiscoverCorrelationEnrichment(t *testing.T) {
+	originalNow := nowFunc
+	testTime := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return testTime }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "corr-agent", Name: "Corr Agent", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	// Mock correlation source that returns events with a recent timestamp
+	recentEventTime := testTime.Add(-30 * time.Minute)
+	corrSource := &mockCorrelationSourceWithEvents{
+		count:  15,
+		events: []CorrelationEventInfo{
+			{EventType: "tool_call", Timestamp: recentEventTime},
+		},
+	}
+
+	store := NewInMemoryStore()
+	reg, err := New(Config{
+		Store:       store,
+		RBAC:        rbacMgr,
+		Correlation: corrSource,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	if err := reg.Discover(context.Background()); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+
+	record, err := reg.Get("corr-agent")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if record.TotalEvents != 15 {
+		t.Errorf("TotalEvents = %d, want 15", record.TotalEvents)
+	}
+	if !contains(record.DiscoverySources, "correlation") {
+		t.Error("agent should have correlation discovery source")
+	}
+}
+
+// mockCorrelationSourceWithEvents extends mockCorrelationSource to return events.
+type mockCorrelationSourceWithEvents struct {
+	count  int64
+	events []CorrelationEventInfo
+}
+
+func (m *mockCorrelationSourceWithEvents) RecentEventsByAgent(_ string, _ time.Time) ([]CorrelationEventInfo, error) {
+	return m.events, nil
+}
+func (m *mockCorrelationSourceWithEvents) AgentEventCount(_ string) (int64, error) {
+	return m.count, nil
+}
+
+// TestRegistryDiscoverMCPOnlyAgent verifies that an agent known only to
+// MCP sessions (not registered in RBAC) is discovered as drift.
+func TestRegistryDiscoverMCPOnlyAgent(t *testing.T) {
+	originalNow := nowFunc
+	testTime := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return testTime }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	// Register the agent so MCP session can be created
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "mcp-drift-agent", Name: "Drift Agent", Role: rbac.AgentRoleRestricted, Enabled: true})
+
+	mcpSM := mcpserver.NewConnectionSessionManager(rbacMgr)
+	_, err := mcpSM.CreateSession(context.Background(), "conn-drift", "mcp-drift-agent")
+	if err != nil {
+		t.Fatalf("CreateSession: %v", err)
+	}
+
+	store := NewInMemoryStore()
+	reg, err := New(Config{
+		Store:       store,
+		RBAC:        rbacMgr,
+		MCPSessions: mcpSM,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	if err := reg.Discover(context.Background()); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+
+	record, err := reg.Get("mcp-drift-agent")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	// Agent should have both rbac and mcp discovery sources
+	if !contains(record.DiscoverySources, "rbac") {
+		t.Error("agent should have rbac discovery source")
+	}
+	if !contains(record.DiscoverySources, "mcp") {
+		t.Error("agent should have mcp discovery source")
+	}
+	if !hasProtocol(record.Protocols, ProtocolMCP) {
+		t.Error("agent should have MCP protocol")
+	}
+}
+
+// =====================================================================
+// Upsert Tests
+// =====================================================================
+
+// TestRegistryUpsert tests direct upsert of agent records.
+func TestRegistryUpsert(t *testing.T) {
+	originalNow := nowFunc
+	testTime := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return testTime }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	reg, err := New(Config{Store: NewInMemoryStore(), RBAC: rbacMgr})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	record := &AgentRecord{
+		ID:           "upsert-agent",
+		Name:         "Upsert Agent",
+		Status:       StatusActive,
+		StatusSince:  testTime,
+		Enabled:      true,
+		LastActivity: testTime,
+		CreatedAt:    testTime,
+	}
+	if err := reg.Upsert(record); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	got, err := reg.Get("upsert-agent")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Name != "Upsert Agent" {
+		t.Errorf("Name = %q, want %q", got.Name, "Upsert Agent")
+	}
+	// UpdatedAt should be set to nowFunc() since it was zero
+	if got.UpdatedAt != testTime {
+		t.Errorf("UpdatedAt = %v, want %v", got.UpdatedAt, testTime)
+	}
+}
+
+// TestRegistryUpsert_EmptyID verifies that upsert with empty ID fails.
+func TestRegistryUpsert_EmptyID(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(nil)
+	reg, err := New(Config{Store: NewInMemoryStore(), RBAC: rbacMgr})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	err = reg.Upsert(&AgentRecord{ID: ""})
+	if err == nil {
+		t.Error("Upsert with empty ID should return error")
+	}
+}
+
+// TestRegistryUpsert_PreservesUpdatedAt verifies that a non-zero
+// UpdatedAt is not overwritten.
+func TestRegistryUpsert_PreservesUpdatedAt(t *testing.T) {
+	originalNow := nowFunc
+	testTime := time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return testTime }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	reg, _ := New(Config{Store: NewInMemoryStore(), RBAC: rbacMgr})
+
+	customTime := testTime.Add(-48 * time.Hour)
+	record := &AgentRecord{
+		ID:        "preserve-agent",
+		Name:      "Preserve Agent",
+		Status:    StatusActive,
+		UpdatedAt: customTime,
+	}
+	if err := reg.Upsert(record); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	got, _ := reg.Get("preserve-agent")
+	if got.UpdatedAt != customTime {
+		t.Errorf("UpdatedAt = %v, want %v (should be preserved)", got.UpdatedAt, customTime)
+	}
+}
+
+// =====================================================================
+// refreshLoop Tests
+// =====================================================================
+
+// TestRegistryRefreshLoop_RunsPeriodically verifies that the background
+// refresh loop executes Discover on each tick.
+func TestRegistryRefreshLoop_RunsPeriodically(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "loop-agent", Name: "Loop Agent", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	reg, err := New(Config{
+		Store:           NewInMemoryStore(),
+		RBAC:            rbacMgr,
+		RefreshInterval: 50 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := reg.Start(ctx); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+
+	// Wait for at least 2 refresh cycles
+	time.Sleep(150 * time.Millisecond)
+	reg.Stop()
+
+	// Verify the agent was discovered
+	got, err := reg.Get("loop-agent")
+	if err != nil {
+		t.Fatalf("Get after refresh: %v", err)
+	}
+	if got.Name != "Loop Agent" {
+		t.Errorf("Name = %q, want %q", got.Name, "Loop Agent")
+	}
+}
+
+// TestRegistryRefreshLoop_ContextCancel verifies that the refresh loop
+// exits when the context is cancelled.
+func TestRegistryRefreshLoop_ContextCancel(t *testing.T) {
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "cancel-agent", Name: "Cancel", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	reg, err := reg_refreshLoopTest(t, rbacMgr)
+	if err != nil {
+		t.Fatalf("reg setup: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := reg.Start(ctx); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+
+	// Cancel context
+	cancel()
+	time.Sleep(100 * time.Millisecond)
+
+	// Stop should be safe (idempotent)
+	reg.Stop()
+}
+
+func reg_refreshLoopTest(t *testing.T, rbacMgr *rbac.Manager) (*Registry, error) {
+	t.Helper()
+	return New(Config{
+		Store:           NewInMemoryStore(),
+		RBAC:            rbacMgr,
+		RefreshInterval: 50 * time.Millisecond,
+	})
 }

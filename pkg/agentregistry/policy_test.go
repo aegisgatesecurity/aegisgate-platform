@@ -377,3 +377,395 @@ func TestParseTagTarget(t *testing.T) {
 		})
 	}
 }
+// =====================================================================
+// Additional executeAction tests — playbook, unknown action
+// =====================================================================
+
+// TestPolicyExecuteAction_Playbook tests the "playbook" action type.
+func TestPolicyExecuteAction_Playbook(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "pb-action-agent", Name: "PB Action", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	// Set agent to dormant to trigger the playbook action
+	record, _ := reg.Get("pb-action-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	_ = store.Upsert(context.Background(), record)
+
+	policy := &LifecyclePolicy{
+		ID:                "playbook-policy",
+		Name:              "Playbook Policy",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant: []PolicyAction{
+			{Type: "playbook", Target: "pb_dormant_agent_detected", Params: map[string]string{"severity": "high"}},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, err := engine.Enforce(context.Background())
+	if err != nil {
+		t.Fatalf("Enforce: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].Status != "executed" {
+		t.Errorf("status = %q, want %q", results[0].Status, "executed")
+	}
+	if len(executor.playbooks) != 1 {
+		t.Errorf("playbooks = %v, want 1 entry", executor.playbooks)
+	}
+	if executor.playbooks[0] != "pb-action-agent:pb_dormant_agent_detected" {
+		t.Errorf("playbook = %q, want %q", executor.playbooks[0], "pb-action-agent:pb_dormant_agent_detected")
+	}
+}
+
+// TestPolicyExecuteAction_UnknownActionType tests the default case
+// in executeAction's switch statement.
+func TestPolicyExecuteAction_UnknownActionType(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "unknown-agent", Name: "Unknown", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	record, _ := reg.Get("unknown-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	_ = store.Upsert(context.Background(), record)
+
+	policy := &LifecyclePolicy{
+		ID:                "unknown-action-policy",
+		Name:              "Unknown Action",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant: []PolicyAction{
+			{Type: "bogus_action_type"},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, err := engine.Enforce(context.Background())
+	if err != nil {
+		t.Fatalf("Enforce: %v", err)
+	}
+
+	// The unknown action should result in a failed result
+	found := false
+	for _, r := range results {
+		if r.Status == "failed" && r.Error != "" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected a failed result for unknown action type")
+	}
+}
+
+// TestPolicyExecuteAction_FailingAction tests error propagation when
+// an executor method returns an error.
+func TestPolicyExecuteAction_FailingAction(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "fail-agent", Name: "Fail", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	record, _ := reg.Get("fail-agent")
+	record.LastActivity = nowFunc().Add(-80 * 24 * time.Hour) // Exceeds quarantine
+	_ = store.Upsert(context.Background(), record)
+
+	policy := &LifecyclePolicy{
+		ID:                  "fail-policy",
+		Name:                "Fail Policy",
+		Enabled:             true,
+		DormancyThreshold:   24 * time.Hour,
+		QuarantineThreshold: 60 * 24 * time.Hour,
+		OnQuarantine: []PolicyAction{
+			{Type: "quarantine"},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	executor.failOnAction = "quarantine"
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, err := engine.Enforce(context.Background())
+	if err != nil {
+		t.Fatalf("Enforce: %v", err)
+	}
+
+	// The quarantine action should fail
+	foundFailed := false
+	for _, r := range results {
+		if r.Status == "failed" && r.Error == "mock error" {
+			foundFailed = true
+		}
+	}
+	if !foundFailed {
+		t.Error("expected a failed result for failing quarantine action")
+	}
+}
+
+// =====================================================================
+// Filter mismatch tests
+// =====================================================================
+
+// TestPolicyFilters_ProtocolMismatch verifies that policies filtered
+// by protocol don't match agents without that protocol.
+func TestPolicyFilters_ProtocolMismatch(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "proto-agent", Name: "Proto", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	// Make agent dormant
+	record, _ := reg.Get("proto-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	record.Protocols = []Protocol{ProtocolHTTP} // Only HTTP
+	_ = store.Upsert(context.Background(), record)
+
+	// Policy only matches A2A agents
+	policy := &LifecyclePolicy{
+		ID:                "a2a-only-policy",
+		Name:              "A2A Only",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant:         []PolicyAction{{Type: "notify"}},
+		Filters: &PolicyFilters{
+			Protocols: []Protocol{ProtocolA2A},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, err := engine.Enforce(context.Background())
+	if err != nil {
+		t.Fatalf("Enforce: %v", err)
+	}
+
+	// Should have no actions because the agent doesn't match the filter
+	if len(results) != 0 {
+		t.Errorf("expected 0 results (protocol mismatch), got %d", len(results))
+	}
+}
+
+// TestPolicyFilters_RoleMismatch verifies role-based filtering.
+func TestPolicyFilters_RoleMismatch(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "role-agent", Name: "Role", Role: rbac.AgentRoleRestricted, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	record, _ := reg.Get("role-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	_ = store.Upsert(context.Background(), record)
+
+	// Policy only matches privileged agents
+	policy := &LifecyclePolicy{
+		ID:                "privileged-policy",
+		Name:              "Privileged Only",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant:         []PolicyAction{{Type: "notify"}},
+		Filters: &PolicyFilters{
+			Roles: []string{string(rbac.AgentRolePrivileged)},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, _ := engine.Enforce(context.Background())
+	if len(results) != 0 {
+		t.Errorf("expected 0 results (role mismatch), got %d", len(results))
+	}
+}
+
+// TestPolicyFilters_TagMismatch verifies tag-based filtering.
+func TestPolicyFilters_TagMismatch(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "tag-agent", Name: "Tag", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	record, _ := reg.Get("tag-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	record.Tags = map[string]string{"env": "dev"}
+	_ = store.Upsert(context.Background(), record)
+
+	// Policy only matches prod agents
+	policy := &LifecyclePolicy{
+		ID:                "prod-policy",
+		Name:              "Prod Only",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant:         []PolicyAction{{Type: "notify"}},
+		Filters: &PolicyFilters{
+			Tags: map[string]string{"env": "prod"},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, _ := engine.Enforce(context.Background())
+	if len(results) != 0 {
+		t.Errorf("expected 0 results (tag mismatch), got %d", len(results))
+	}
+}
+
+// TestPolicyFilters_TenantIDMismatch verifies tenant-based filtering.
+func TestPolicyFilters_TenantIDMismatch(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "tenant-agent", Name: "Tenant", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	record, _ := reg.Get("tenant-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	record.TenantID = "tenant-a"
+	_ = store.Upsert(context.Background(), record)
+
+	policy := &LifecyclePolicy{
+		ID:                "tenant-b-policy",
+		Name:              "Tenant B Only",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant:         []PolicyAction{{Type: "notify"}},
+		Filters: &PolicyFilters{
+			TenantIDs: []string{"tenant-b"},
+		},
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, _ := engine.Enforce(context.Background())
+	if len(results) != 0 {
+		t.Errorf("expected 0 results (tenant mismatch), got %d", len(results))
+	}
+}
+
+// TestPolicyFilters_NilFilters verifies that a policy with nil filters
+// matches all agents.
+func TestPolicyFilters_NilFilters(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	rbacMgr, _ := rbac.NewManager(nil)
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "nil-filter-agent", Name: "NilFilter", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	store := NewInMemoryStore()
+	policyStore := NewInMemoryPolicyStore()
+	reg, _ := New(Config{Store: store, RBAC: rbacMgr})
+	_ = reg.Discover(context.Background())
+
+	record, _ := reg.Get("nil-filter-agent")
+	record.LastActivity = nowFunc().Add(-48 * time.Hour)
+	_ = store.Upsert(context.Background(), record)
+
+	policy := &LifecyclePolicy{
+		ID:                "no-filter-policy",
+		Name:              "No Filter",
+		Enabled:           true,
+		DormancyThreshold: 24 * time.Hour,
+		OnDormant:         []PolicyAction{{Type: "notify"}},
+		Filters:           nil, // No filters → match all
+	}
+	_ = policyStore.UpsertPolicy(context.Background(), policy)
+
+	executor := newMockExecutor()
+	dormancy := NewDormancyEngine(24*time.Hour, nil)
+	engine := NewPolicyEngine(reg, dormancy, executor, policyStore, nil)
+
+	results, _ := engine.Enforce(context.Background())
+	if len(results) != 1 {
+		t.Errorf("expected 1 result (nil filters match all), got %d", len(results))
+	}
+}
+
+// TestActionsForTransition_DefaultStatus verifies that transitions
+// to non-dormant/quarantine/revoke statuses return no actions.
+func TestActionsForTransition_DefaultStatus(t *testing.T) {
+	policy := &LifecyclePolicy{
+		OnDormant:    []PolicyAction{{Type: "notify"}},
+		OnQuarantine: []PolicyAction{{Type: "quarantine"}},
+		OnRevoke:     []PolicyAction{{Type: "revoke"}},
+	}
+
+	// Transition to active should return nil
+	actions := actionsForTransition(StatusDormant, StatusActive, policy)
+	if actions != nil {
+		t.Errorf("actionsForTransition(active) = %v, want nil", actions)
+	}
+}

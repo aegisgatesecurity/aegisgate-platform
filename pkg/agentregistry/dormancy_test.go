@@ -173,3 +173,43 @@ func TestDormancyClassify(t *testing.T) {
 		t.Errorf("Agents count = %d, want 4", len(report.Agents))
 	}
 }
+// =====================================================================
+// Edge case tests for NewDormancyEngine and inactiveDuration
+// =====================================================================
+
+// TestNewDormancyEngine_ZeroThreshold verifies that a zero threshold
+// defaults to 60 days.
+func TestNewDormancyEngine_ZeroThreshold(t *testing.T) {
+	engine := NewDormancyEngine(0, nil)
+	if engine.defaultThreshold != 60*24*time.Hour {
+		t.Errorf("defaultThreshold = %v, want %v", engine.defaultThreshold, 60*24*time.Hour)
+	}
+}
+
+// TestNewDormancyEngine_NilLogger verifies that nil logger is replaced.
+func TestNewDormancyEngine_NilLogger(t *testing.T) {
+	engine := NewDormancyEngine(24*time.Hour, nil)
+	if engine.logger == nil {
+		t.Error("logger should not be nil after defaulting")
+	}
+}
+
+// TestInactiveDuration_ZeroLastActivity verifies that an agent with no
+// activity returns 0 duration.
+func TestInactiveDuration_ZeroLastActivity(t *testing.T) {
+	originalNow := nowFunc
+	nowFunc = func() time.Time { return time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC) }
+	defer func() { nowFunc = originalNow }()
+
+	engine := NewDormancyEngine(24*time.Hour, nil)
+	record := &AgentRecord{
+		ID:           "zero-activity-agent",
+		Status:       StatusActive,
+		LastActivity: time.Time{}, // Zero value
+	}
+
+	duration := engine.inactiveDuration(record)
+	if duration != 0 {
+		t.Errorf("inactiveDuration with zero LastActivity = %v, want 0", duration)
+	}
+}
