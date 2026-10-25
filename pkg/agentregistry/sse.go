@@ -223,10 +223,31 @@ func (b *EventBroadcaster) HandleSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Disable the server-level WriteTimeout for this SSE connection.
+	// The dashboard server sets a 15s WriteTimeout to protect normal
+	// request handlers, but SSE connections must remain open
+	// indefinitely. http.ResponseController unwraps middleware response
+	// writers (metrics, tracing) to reach the underlying net.Conn and
+	// clear the write deadline. If unwrapping fails (e.g. an
+	// intermediate wrapper doesn't implement Unwrap), the connection
+	// will still work but may be terminated after WriteTimeout — log
+	// the issue but do not fail the request.
+	rc := http.NewResponseController(w)
+	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+		b.logger.Warn("Failed to clear SSE write deadline; connection may time out",
+			"error", err)
+	}
+
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
+
+	// Send an initial comment event to flush headers immediately.
+	// This lets the client know the connection is established without
+	// waiting for the first real event or heartbeat.
+	_, _ = fmt.Fprintf(w, ": connected\n\n")
+	flusher.Flush()
 
 	clientID := fmt.Sprintf("sse-%d-%d", time.Now().UnixNano(), b.eventSeq.Add(1))
 	ch := b.Subscribe(clientID)
