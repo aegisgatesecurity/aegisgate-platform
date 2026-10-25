@@ -169,7 +169,9 @@ type LifecyclePolicy struct {
 	// Filters narrow which agents the policy applies to.
 	Filters *PolicyFilters `json:"filters,omitempty"`
 
-	TenantID string `json:"tenant_id,omitempty"`
+	TenantID  string    `json:"tenant_id,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
 // PolicyAction is a single action to execute when a policy triggers.
