@@ -286,3 +286,397 @@ func TestPostgresPolicyStore_CRUD(t *testing.T) {
 		t.Errorf("GetPolicy after delete: got %v, want ErrNotFound", err)
 	}
 }
+
+// =====================================================================
+// PostgresStore — List with filters (owner, tenant, protocol, multi)
+// =====================================================================
+
+func TestPostgresStore_List_FilterByOwner(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Seed agents with different owners
+	r1 := newTestRecord("owner-a")
+	r1.Owner = "team-a"
+	r2 := newTestRecord("owner-b")
+	r2.Owner = "team-b"
+	for _, r := range []*AgentRecord{r1, r2} {
+		if err := store.Upsert(ctx, r); err != nil {
+			t.Fatalf("Upsert: %v", err)
+		}
+	}
+
+	filtered, err := store.List(ctx, &ListFilter{Owner: "team-a"})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(filtered) != 1 {
+		t.Fatalf("Expected 1 agent with owner team-a; got %d", len(filtered))
+	}
+	if filtered[0].Owner != "team-a" {
+		t.Errorf("Owner = %s; want team-a", filtered[0].Owner)
+	}
+}
+
+func TestPostgresStore_List_FilterByTenant(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	r1 := newTestRecord("tenant-x")
+	r1.TenantID = "tenant-x"
+	r2 := newTestRecord("tenant-y")
+	r2.TenantID = "tenant-y"
+	for _, r := range []*AgentRecord{r1, r2} {
+		if err := store.Upsert(ctx, r); err != nil {
+			t.Fatalf("Upsert: %v", err)
+		}
+	}
+
+	filtered, err := store.List(ctx, &ListFilter{TenantID: "tenant-x"})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(filtered) != 1 {
+		t.Fatalf("Expected 1 agent with tenant-x; got %d", len(filtered))
+	}
+}
+
+func TestPostgresStore_List_FilterByProtocol(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	r1 := newTestRecord("proto-mcp")
+	r1.Protocols = []Protocol{ProtocolMCP}
+	r2 := newTestRecord("proto-a2a")
+	r2.Protocols = []Protocol{ProtocolA2A}
+	for _, r := range []*AgentRecord{r1, r2} {
+		if err := store.Upsert(ctx, r); err != nil {
+			t.Fatalf("Upsert: %v", err)
+		}
+	}
+
+	filtered, err := store.List(ctx, &ListFilter{Protocol: ProtocolMCP})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(filtered) != 1 {
+		t.Fatalf("Expected 1 agent with MCP protocol; got %d", len(filtered))
+	}
+}
+
+func TestPostgresStore_List_MultiFilter(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	r1 := newTestRecord("multi-1")
+	r1.Owner = "team-a"
+	r1.TenantID = "tenant-x"
+	r1.Status = StatusActive
+	r1.Protocols = []Protocol{ProtocolMCP}
+
+	r2 := newTestRecord("multi-2")
+	r2.Owner = "team-b"
+	r2.TenantID = "tenant-x"
+	r2.Status = StatusActive
+	r2.Protocols = []Protocol{ProtocolMCP}
+
+	for _, r := range []*AgentRecord{r1, r2} {
+		if err := store.Upsert(ctx, r); err != nil {
+			t.Fatalf("Upsert: %v", err)
+		}
+	}
+
+	// Filter by status + owner + tenant + protocol — exercises joinStrings with >1 condition
+	filtered, err := store.List(ctx, &ListFilter{
+		Status:   StatusActive,
+		Owner:    "team-a",
+		TenantID: "tenant-x",
+		Protocol: ProtocolMCP,
+	})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(filtered) != 1 {
+		t.Fatalf("Expected 1 agent matching all filters; got %d", len(filtered))
+	}
+	if filtered[0].ID != "agent-multi-1" {
+		t.Errorf("ID = %s; want agent-multi-1", filtered[0].ID)
+	}
+}
+
+func TestPostgresStore_List_EmptyResult(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// No records inserted — should return empty slice, not nil
+	records, err := store.List(ctx, nil)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if records == nil {
+		t.Fatal("Expected non-nil empty slice; got nil")
+	}
+	if len(records) != 0 {
+		t.Errorf("Expected 0 records; got %d", len(records))
+	}
+}
+
+// =====================================================================
+// PostgresStore — Get with nullable/optional fields
+// =====================================================================
+
+func TestPostgresStore_Get_WithNullableFields(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Record with many optional fields unset (zero time)
+	record := &AgentRecord{
+		ID:               "minimal-agent",
+		Name:             "Minimal Agent",
+		Role:             "restricted",
+		Enabled:          true,
+		Status:           StatusProvisioned,
+		StatusSince:      time.Now().UTC(),
+		Protocols:        []Protocol{},
+		Tools:            []string{},
+		Tags:             map[string]string{},
+		DiscoverySources: []string{},
+		// LastActivity, DormantSince, CredentialExpiry, LastIntentAt,
+		// FirstSeen, LastSeen all zero (will be stored as NULL)
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	if err := store.Upsert(ctx, record); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	got, err := store.Get(ctx, record.ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Name != "Minimal Agent" {
+		t.Errorf("Name = %s; want Minimal Agent", got.Name)
+	}
+	// Nullable timestamps should be zero (not nil-panicked)
+	if !got.LastActivity.IsZero() {
+		t.Errorf("LastActivity = %v; want zero", got.LastActivity)
+	}
+	if !got.DormantSince.IsZero() {
+		t.Errorf("DormantSince = %v; want zero", got.DormantSince)
+	}
+	if !got.CredentialExpiry.IsZero() {
+		t.Errorf("CredentialExpiry = %v; want zero", got.CredentialExpiry)
+	}
+	if !got.LastIntentAt.IsZero() {
+		t.Errorf("LastIntentAt = %v; want zero", got.LastIntentAt)
+	}
+}
+
+func TestPostgresStore_Get_AllNullableFieldsSet(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+	record := &AgentRecord{
+		ID:               "full-agent",
+		Name:             "Full Agent",
+		Role:             "standard",
+		Enabled:          true,
+		Status:           StatusDormant,
+		StatusSince:      now,
+		Protocols:        []Protocol{ProtocolMCP, ProtocolHTTP, ProtocolA2A},
+		Tools:            []string{"tool:file:read", "tool:web:search"},
+		Tags:             map[string]string{"env": "prod", "region": "us-east"},
+		DiscoverySources: []string{"rbac", "mcp", "a2a", "correlation"},
+		LastActivity:     now.Add(-48 * time.Hour),
+		DormantSince:     now.Add(-24 * time.Hour),
+		CredentialExpiry: now.Add(30 * 24 * time.Hour),
+		LastIntentAt:     now.Add(-12 * time.Hour),
+		LastIntent:       "scan",
+		IntentCount:      5,
+		ActiveSessions:   2,
+		TotalEvents:      100,
+		InAIBOM:          true,
+		AIBOMDrift:       "version mismatch",
+		Owner:            "sec-team",
+		TenantID:         "tenant-1",
+		FirstSeen:        now.Add(-90 * 24 * time.Hour),
+		LastSeen:         now,
+		CreatedAt:        now.Add(-90 * 24 * time.Hour),
+		UpdatedAt:        now,
+	}
+
+	if err := store.Upsert(ctx, record); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	got, err := store.Get(ctx, record.ID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	// Verify all nullable fields are populated
+	if got.DormantSince.IsZero() {
+		t.Error("DormantSince should not be zero")
+	}
+	if got.CredentialExpiry.IsZero() {
+		t.Error("CredentialExpiry should not be zero")
+	}
+	if got.LastIntentAt.IsZero() {
+		t.Error("LastIntentAt should not be zero")
+	}
+	if got.FirstSeen.IsZero() {
+		t.Error("FirstSeen should not be zero")
+	}
+	if got.LastSeen.IsZero() {
+		t.Error("LastSeen should not be zero")
+	}
+	if got.LastIntent != "scan" {
+		t.Errorf("LastIntent = %s; want scan", got.LastIntent)
+	}
+	if got.IntentCount != 5 {
+		t.Errorf("IntentCount = %d; want 5", got.IntentCount)
+	}
+	if got.AIBOMDrift != "version mismatch" {
+		t.Errorf("AIBOMDrift = %s; want version mismatch", got.AIBOMDrift)
+	}
+}
+
+// =====================================================================
+// PostgresStore — List with nullable fields roundtrip
+// =====================================================================
+
+func TestPostgresStore_List_WithNullableFields(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Insert record with nullable fields set
+	now := time.Now().UTC()
+	record := &AgentRecord{
+		ID:               "nullable-list-agent",
+		Name:             "Nullable List Agent",
+		Role:             "standard",
+		Enabled:          true,
+		Status:           StatusActive,
+		StatusSince:      now,
+		Protocols:        []Protocol{ProtocolMCP},
+		Tools:            []string{"tool:file:read"},
+		Tags:             map[string]string{"env": "prod"},
+		DiscoverySources: []string{"rbac"},
+		LastActivity:     now.Add(-1 * time.Hour),
+		DormantSince:     now.Add(-30 * time.Minute),
+		CredentialExpiry: now.Add(60 * 24 * time.Hour),
+		LastIntentAt:     now.Add(-15 * time.Minute),
+		LastIntent:       "execute",
+		IntentCount:      3,
+		ActiveSessions:   1,
+		TotalEvents:      10,
+		InAIBOM:          false,
+		AIBOMDrift:       "",
+		Owner:            "team-x",
+		TenantID:         "tenant-y",
+		FirstSeen:        now.Add(-10 * 24 * time.Hour),
+		LastSeen:         now,
+		CreatedAt:        now.Add(-10 * 24 * time.Hour),
+		UpdatedAt:        now,
+	}
+	if err := store.Upsert(ctx, record); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	records, err := store.List(ctx, nil)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("Expected 1 record; got %d", len(records))
+	}
+	r := records[0]
+	if r.DormantSince.IsZero() {
+		t.Error("DormantSince should not be zero in List result")
+	}
+	if r.CredentialExpiry.IsZero() {
+		t.Error("CredentialExpiry should not be zero in List result")
+	}
+	if r.LastIntentAt.IsZero() {
+		t.Error("LastIntentAt should not be zero in List result")
+	}
+	if r.LastIntent != "execute" {
+		t.Errorf("LastIntent = %s; want execute", r.LastIntent)
+	}
+	if r.IntentCount != 3 {
+		t.Errorf("IntentCount = %d; want 3", r.IntentCount)
+	}
+}
+
+// =====================================================================
+// PostgresPolicyStore — additional edge cases
+// =====================================================================
+
+func TestPostgresPolicyStore_GetPolicy_NotFound(t *testing.T) {
+	_, policyStore, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	_, err := policyStore.GetPolicy(ctx, "nonexistent-policy")
+	if err != ErrNotFound {
+		t.Errorf("GetPolicy nonexistent: got %v, want ErrNotFound", err)
+	}
+}
+
+func TestPostgresPolicyStore_DeletePolicy_NotFound(t *testing.T) {
+	_, policyStore, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	err := policyStore.DeletePolicy(ctx, "nonexistent-policy")
+	if err != ErrNotFound {
+		t.Errorf("DeletePolicy nonexistent: got %v, want ErrNotFound", err)
+	}
+}
+
+func TestPostgresPolicyStore_ListPolicies_Empty(t *testing.T) {
+	_, policyStore, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	policies, err := policyStore.ListPolicies(ctx)
+	if err != nil {
+		t.Fatalf("ListPolicies: %v", err)
+	}
+	if policies == nil {
+		t.Fatal("Expected non-nil empty slice; got nil")
+	}
+	if len(policies) != 0 {
+		t.Errorf("Expected 0 policies; got %d", len(policies))
+	}
+}
+
+func TestPostgresPolicyStore_ListPolicies_Multiple(t *testing.T) {
+	_, policyStore, cleanup := setupPostgresStore(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	for _, suffix := range []string{"multi-1", "multi-2", "multi-3"} {
+		policy := newTestPolicy(suffix)
+		if err := policyStore.UpsertPolicy(ctx, policy); err != nil {
+			t.Fatalf("UpsertPolicy(%s): %v", suffix, err)
+		}
+	}
+
+	policies, err := policyStore.ListPolicies(ctx)
+	if err != nil {
+		t.Fatalf("ListPolicies: %v", err)
+	}
+	if len(policies) != 3 {
+		t.Errorf("Expected 3 policies; got %d", len(policies))
+	}
+}

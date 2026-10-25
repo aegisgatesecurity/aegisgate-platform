@@ -107,12 +107,13 @@ type SSEEvent struct {
 // registry events to all connected clients. It is safe for concurrent
 // use.
 type EventBroadcaster struct {
-	mu       sync.RWMutex
-	subs     map[string]chan *SSEEvent
-	logger   *slog.Logger
-	eventSeq atomic.Uint64
-	stopCh   chan struct{}
-	stopped  atomic.Bool
+	mu                sync.RWMutex
+	subs              map[string]chan *SSEEvent
+	logger            *slog.Logger
+	eventSeq          atomic.Uint64
+	stopCh            chan struct{}
+	stopped           atomic.Bool
+	heartbeatInterval time.Duration
 }
 
 // NewEventBroadcaster creates a new EventBroadcaster. The broadcaster
@@ -123,16 +124,26 @@ func NewEventBroadcaster(logger *slog.Logger) *EventBroadcaster {
 		logger = slog.Default().With("component", "agent-registry-sse")
 	}
 	return &EventBroadcaster{
-		subs:   make(map[string]chan *SSEEvent),
-		logger: logger,
-		stopCh: make(chan struct{}),
+		subs:              make(map[string]chan *SSEEvent),
+		logger:            logger,
+		stopCh:            make(chan struct{}),
+		heartbeatInterval: 15 * time.Second,
 	}
 }
 
 // Start launches the heartbeat goroutine. The heartbeat interval is
-// 15 seconds. Call Stop to terminate the goroutine.
+// 15 seconds by default; use SetHeartbeatInterval to change it before
+// calling Start. Call Stop to terminate the goroutine.
 func (b *EventBroadcaster) Start() {
 	go b.heartbeatLoop()
+}
+
+// SetHeartbeatInterval sets the interval between heartbeat events.
+// Must be called before Start. Default is 15 seconds.
+func (b *EventBroadcaster) SetHeartbeatInterval(d time.Duration) {
+	if d > 0 {
+		b.heartbeatInterval = d
+	}
 }
 
 // Stop terminates the heartbeat goroutine and closes all subscriber
@@ -287,10 +298,14 @@ func (b *EventBroadcaster) OnLifecycleEvent(event LifecycleEvent) {
 // Internal helpers
 // =====================================================================
 
-// heartbeatLoop sends a heartbeat event to all clients every 15
-// seconds until the broadcaster is stopped.
+// heartbeatLoop sends a heartbeat event to all clients at the configured
+// interval until the broadcaster is stopped.
 func (b *EventBroadcaster) heartbeatLoop() {
-	ticker := time.NewTicker(15 * time.Second)
+	interval := b.heartbeatInterval
+	if interval == 0 {
+		interval = 15 * time.Second
+	}
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {

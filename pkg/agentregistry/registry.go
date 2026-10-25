@@ -275,11 +275,19 @@ func (r *Registry) Discover(ctx context.Context) error {
 	}
 
 	// Persist all records
+	upsertErrors := 0
 	for _, record := range records {
 		if err := r.store.Upsert(ctx, record); err != nil {
 			r.logger.Warn("agentregistry: failed to upsert record",
 				"agent_id", record.ID, "error", err)
+			upsertErrors++
 		}
+	}
+
+	// If every single upsert failed, the store is likely broken —
+	// propagate the error so callers (Start, refreshLoop) can react.
+	if len(records) > 0 && upsertErrors == len(records) {
+		return fmt.Errorf("agentregistry: all upserts failed (%d records)", upsertErrors)
 	}
 
 	// Remove records for agents that no longer exist in RBAC or any source.
