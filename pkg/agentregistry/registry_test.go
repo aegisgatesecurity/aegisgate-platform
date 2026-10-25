@@ -197,7 +197,7 @@ func TestRegistryTransition(t *testing.T) {
 	}
 
 	// Transition to active
-	if err := reg.Transition("test-agent", StatusActive); err != nil {
+	if err := reg.Transition("test-agent", StatusActive, "test"); err != nil {
 		t.Fatalf("Transition to active failed: %v", err)
 	}
 	got, _ = reg.Get("test-agent")
@@ -206,7 +206,7 @@ func TestRegistryTransition(t *testing.T) {
 	}
 
 	// Transition to dormant
-	_ = reg.Transition("test-agent", StatusDormant)
+	_ = reg.Transition("test-agent", StatusDormant, "test")
 	got, _ = reg.Get("test-agent")
 	if got.Status != StatusDormant {
 		t.Errorf("status after transition = %q, want %q", got.Status, StatusDormant)
@@ -216,20 +216,20 @@ func TestRegistryTransition(t *testing.T) {
 	}
 
 	// Transition back to active should clear DormantSince
-	_ = reg.Transition("test-agent", StatusActive)
+	_ = reg.Transition("test-agent", StatusActive, "test")
 	got, _ = reg.Get("test-agent")
 	if !got.DormantSince.IsZero() {
 		t.Error("DormantSince should be cleared when transitioning to active")
 	}
 
 	// No-op transition (same status)
-	err := reg.Transition("test-agent", StatusActive)
+	err := reg.Transition("test-agent", StatusActive, "test")
 	if err != nil {
 		t.Errorf("same-status transition should be no-op, got error: %v", err)
 	}
 
 	// Transition non-existent agent
-	err = reg.Transition("nonexistent", StatusActive)
+	err = reg.Transition("nonexistent", StatusActive, "test")
 	if err == nil {
 		t.Error("Transition non-existent agent should fail")
 	}
@@ -261,9 +261,9 @@ func TestRegistryLifecycleEvent(t *testing.T) {
 		events = append(events, e)
 	})
 
-	_ = reg.Transition("test-agent", StatusActive)
-	_ = reg.Transition("test-agent", StatusDormant)
-	_ = reg.Transition("test-agent", StatusQuarantined)
+	_ = reg.Transition("test-agent", StatusActive, "test")
+	_ = reg.Transition("test-agent", StatusDormant, "test")
+	_ = reg.Transition("test-agent", StatusQuarantined, "test")
 
 	if len(events) != 3 {
 		t.Fatalf("expected 3 lifecycle events, got %d", len(events))
@@ -354,7 +354,7 @@ func TestRegistryListByStatus(t *testing.T) {
 	}
 
 	// Transition one to active
-	_ = reg.Transition("a1", StatusActive)
+	_ = reg.Transition("a1", StatusActive, "test")
 
 	active, _ := reg.ListByStatus(StatusActive)
 	if len(active) != 1 {

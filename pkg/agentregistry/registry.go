@@ -382,7 +382,7 @@ func (r *Registry) ListByStatus(status AgentStatus) ([]*AgentRecord, error) {
 
 // Transition manually changes an agent's lifecycle status. This emits
 // a LifecycleEvent if a callback is registered.
-func (r *Registry) Transition(agentID string, newStatus AgentStatus) error {
+func (r *Registry) Transition(agentID string, newStatus AgentStatus, reason string) error {
 	ctx := context.Background()
 	record, err := r.store.Get(ctx, agentID)
 	if err != nil {
@@ -415,13 +415,14 @@ func (r *Registry) Transition(agentID string, newStatus AgentStatus) error {
 		OldStatus: oldStatus,
 		NewStatus: newStatus,
 		Timestamp: now,
-		Reason:    "manual_transition",
+		Reason:    reason,
 	})
 
 	r.logger.Info("agentregistry: lifecycle transition",
 		"agent_id", agentID,
 		"old_status", oldStatus,
-		"new_status", newStatus)
+		"new_status", newStatus,
+		"reason", reason)
 
 	return nil
 }

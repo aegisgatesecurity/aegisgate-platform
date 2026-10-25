@@ -67,6 +67,26 @@ const (
 	StreamEventError StreamEventType = "timeline_error"
 	// StreamEventClose is sent when the stream is closing gracefully.
 	StreamEventClose StreamEventType = "timeline_close"
+
+	// StreamEventAgentLifecycle is sent when an agent's lifecycle
+	// status transitions (e.g., active → dormant, dormant → revoked).
+	StreamEventAgentLifecycle StreamEventType = "agent_lifecycle"
+
+	// StreamEventAgentDiscovered is sent when a new agent is found
+	// during discovery that was not previously in the registry.
+	StreamEventAgentDiscovered StreamEventType = "agent_discovered"
+
+	// StreamEventAgentDormant is sent when an agent crosses the
+	// dormancy threshold.
+	StreamEventAgentDormant StreamEventType = "agent_dormant"
+
+	// StreamEventAgentRevoked is sent when an agent's credentials
+	// are revoked (automatically by policy or manually).
+	StreamEventAgentRevoked StreamEventType = "agent_revoked"
+
+	// StreamEventAgentDrift is sent when AIBOM-to-runtime
+	// reconciliation detects drift.
+	StreamEventAgentDrift StreamEventType = "agent_drift"
 )
 
 // StreamEvent is a single SSE event sent to the client.

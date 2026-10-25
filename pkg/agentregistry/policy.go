@@ -92,7 +92,7 @@ func (p *PolicyEngine) Enforce(ctx context.Context) ([]PolicyEnforcementResult, 
 			}
 
 			// Transition the agent's status
-			if err := p.registry.Transition(record.ID, recommended); err != nil {
+			if err := p.registry.Transition(record.ID, recommended, "policy:"+policy.ID); err != nil {
 				p.logger.Warn("agentregistry: enforce: transition failed",
 					"agent_id", record.ID, "status", recommended, "error", err)
 				results = append(results, PolicyEnforcementResult{
