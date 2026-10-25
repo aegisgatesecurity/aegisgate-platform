@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/aegisgatesecurity/aegisgate-platform?style=flat&logo=github&label=Star&color=FFD700&labelColor=181717&logoColor=FFD700)](https://github.com/aegisgatesecurity/aegisgate-platform)
 **Found AegisGate useful? [Star the repo](https://github.com/aegisgatesecurity/aegisgate-platform) ⭐ and [tell a colleague](https://x.com/intent/tweet?text=Securing%20every%20AI%20interaction%20with%20AegisGate%20%E2%80%94%206%20pillars%2C%201%20gateway%2C%20zero%20dependencies%3A%20https%3A%2F%2Fgithub.com%2Faegisgatesecurity%2Faegisgate-platform) — it helps other teams discover AI security tooling.**
 
-[![Version](https://img.shields.io/badge/Version-v4.9.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v4.9.0)
+[![Version](https://img.shields.io/badge/Version-v5.0.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v5.0.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.27.2-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-11,654+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
@@ -207,6 +207,36 @@ flowchart LR
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
 | Response | `pkg/response/detectors/` | 216-pattern detection (secrets, XSS, PII, compliance) |
 | Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
+
+## Agent Registry (v5.0)
+
+The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pillars into a single queryable agent inventory with dormancy detection and automated credential revocation. It addresses the critical security gap where 76% of AI agents are dormant with live credentials (Arrakis Security finding).
+
+**Key capabilities:**
+- **Unified inventory** — discovers agents from RBAC, MCP, A2A, AIBOM, and Correlation Engine
+- **Lifecycle state machine** — `provisioned → active → dormant → quarantined → revoked` with sticky quarantine/revoked states
+- **Dormancy detection** — configurable thresholds for dormant/quarantine/revoke with waterfall evaluation
+- **Policy enforcement** — declarative lifecycle policies with filter matching and action execution (notify, playbook, quarantine, revoke, tag)
+- **AIBOM reconciliation** — drift detection between static AIBOM and live runtime agents
+- **SSE event streaming** — real-time lifecycle events at `/api/v1/agents/stream`
+- **PostgreSQL-backed** — Row-Level Security for tenant isolation, JSONB for complex fields
+
+**HTTP API** (10 endpoints, Professional tier):
+
+| Method | Endpoint | Permission | Description |
+|--------|----------|------------|-------------|
+| GET | `/api/v1/agents` | Read | List agents with optional filters (status, owner, tenant, protocol) |
+| GET | `/api/v1/agents/{id}` | Read | Get single agent record |
+| GET | `/api/v1/agents/stream` | Read | SSE lifecycle event stream |
+| GET | `/api/v1/agents/dormancy` | Read | Dormancy classification report |
+| GET | `/api/v1/agents/drift` | Read | AIBOM-to-runtime drift report |
+| POST | `/api/v1/agents/{id}/lifecycle` | Manage | Manual lifecycle transition |
+| POST | `/api/v1/agents/refresh` | Manage | Trigger immediate discovery refresh |
+| GET | `/api/v1/agent-policies` | Read | List lifecycle policies |
+| POST | `/api/v1/agent-policies` | Manage | Create/update lifecycle policy |
+| DELETE | `/api/v1/agent-policies/{id}` | Manage | Delete lifecycle policy |
+
+**Default playbook**: `pb_dormant_agent_detected` — 4-step automated response (notify → evidence → quarantine → attestation) mapped to NIST AI RMF MEASURE-2.7 and SOC2 CC6.2.
 
 ## Detection Engine
 

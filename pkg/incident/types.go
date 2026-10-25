@@ -44,6 +44,7 @@ const (
 	SourceSOC         IncidentSource = "soc"         // manual SOC analyst
 	SourceAutoRule    IncidentSource = "auto_rule"   // automated detection rule
 	SourceAPI         IncidentSource = "api"         // external API
+	SourceAgentRegistry IncidentSource = "agent_registry" // from agent registry lifecycle
 )
 
 // Incident represents a security incident.

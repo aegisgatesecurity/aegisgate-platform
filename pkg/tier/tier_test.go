@@ -213,6 +213,19 @@ func TestHasFeature(t *testing.T) {
 	if HasFeature(TierDeveloper, FeatureHSM) {
 		t.Error("Developer should NOT have HSM")
 	}
+	// v5.0: Agent Registry is Professional+
+	if HasFeature(TierCommunity, FeatureAgentRegistry) {
+		t.Error("Community should NOT have Agent Registry")
+	}
+	if HasFeature(TierDeveloper, FeatureAgentRegistry) {
+		t.Error("Developer should NOT have Agent Registry")
+	}
+	if !HasFeature(TierProfessional, FeatureAgentRegistry) {
+		t.Error("Professional should have Agent Registry")
+	}
+	if !HasFeature(TierEnterprise, FeatureAgentRegistry) {
+		t.Error("Enterprise should have Agent Registry")
+	}
 }
 
 func TestAllFeatures(t *testing.T) {

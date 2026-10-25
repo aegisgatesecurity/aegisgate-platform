@@ -74,6 +74,12 @@ type Config struct {
 	// webhook configuration. Sends incident alerts to PagerDuty, Jira,
 	// and ServiceNow for automated incident response.
 	SOAR SOARConfig `yaml:"soar"`
+
+	// Agent Registry (v5.0) configuration. The Agent Registry is a
+	// glue layer that unifies RBAC, MCP, A2A, AIBOM, and Correlation
+	// into a single queryable agent inventory with dormancy detection
+	// and automated lifecycle management. Gated behind Professional tier.
+	AgentRegistry AgentRegistryConfig `yaml:"agent_registry"`
 }
 
 // PlatformConfig holds platform-specific settings not in either upstream
@@ -798,4 +804,39 @@ func (c *Config) IsStandaloneMode(cliFlag bool) bool {
 		return true
 	}
 	return c.Platform.Mode == "standalone"
+}
+
+// AgentRegistryConfig holds Agent Registry (v5.0) configuration.
+// The Agent Registry unifies RBAC, MCP, A2A, AIBOM, and Correlation
+// into a single queryable agent inventory with dormancy detection
+// and automated lifecycle management.
+//
+// Tier gate: Professional+ (see pkg/tier.FeatureAgentRegistry).
+// Set Enabled=false to disable the registry entirely.
+type AgentRegistryConfig struct {
+	// Enabled controls whether the Agent Registry subsystem runs.
+	Enabled bool `yaml:"enabled"`
+
+	// RefreshInterval is how often the registry re-discovers agents
+	// from connected subsystems. Default: 5 minutes.
+	RefreshInterval time.Duration `yaml:"refresh_interval"`
+
+	// DormancyThreshold is the inactivity duration after which an
+	// agent is classified as dormant. Default: 24 hours.
+	DormancyThreshold time.Duration `yaml:"dormancy_threshold"`
+
+	// QuarantineThreshold is the inactivity duration after which an
+	// agent is quarantined. Default: 7 days. Zero disables auto-
+	// quarantine (dormant agents stay dormant until manual action).
+	QuarantineThreshold time.Duration `yaml:"quarantine_threshold"`
+
+	// RevokeThreshold is the inactivity duration after which an
+	// agent's credentials are revoked. Default: 30 days. Zero
+	// disables auto-revocation.
+	RevokeThreshold time.Duration `yaml:"revoke_threshold"`
+
+	// UsePostgreSQL controls whether to use PostgreSQL-backed stores
+	// (requires FeaturePostgreSQL). When false, in-memory stores are
+	// used (data is lost on restart).
+	UsePostgreSQL bool `yaml:"use_postgres"`
 }

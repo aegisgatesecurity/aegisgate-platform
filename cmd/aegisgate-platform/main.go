@@ -43,6 +43,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/abtest"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/acp"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/analytics"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/agentregistry"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/audit"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/bridge"
@@ -50,6 +51,7 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/cluster"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/compliancelive"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/dsar"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/grpc"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/i18n"
@@ -111,7 +113,7 @@ func (a *tsaSignerAdapter) Endpoints() []string {
 }
 
 var (
-	version    = "4.9.0"
+	version    = "5.0.0"
 	commit     = "unknown"
 	buildDate  = "unknown"
 	startTime  = time.Now()
@@ -1126,6 +1128,7 @@ func main() {
 	// Load A2A configuration from the platform config. If A2A is not enabled
 	// or the config file is missing, the A2A endpoints are disabled gracefully.
 	var a2aMiddleware http.Handler
+	var capsEnforcer *a2a.PersistentCapEnforcer
 	if cfg.A2A.Enabled {
 		a2aCfg, err := a2a.LoadConfig(cfg.A2A.ConfigFile)
 		if err != nil {
@@ -1134,7 +1137,7 @@ func main() {
 			// A2A Persistence: capabilities are stored in /data/a2a_caps.json
 			// so they survive pod restarts. On first startup, seed from the YAML config.
 			capsFile := filepath.Join(cfg.Persistence.DataDir, "a2a_caps.json")
-			capsEnforcer, err := a2a.NewPersistentCapEnforcer(capsFile)
+			capsEnforcer, err = a2a.NewPersistentCapEnforcer(capsFile)
 			if err != nil {
 				log.Printf("Warning: A2A persistent caps init failed (%v) — falling back to in-memory", err)
 				capsEnforcer, _ = a2a.NewPersistentCapEnforcer(capsFile)
@@ -2040,6 +2043,153 @@ func main() {
 	// auth. Assessment is read-only except POST /run.
 	wireAssessmentHandlers(dashMux, authMiddleware)
 	log.Printf("[ASSESSMENT] Posture Assessment HTTP API enabled at /api/v1/assessment/{run,current,history,trend}")
+
+	// Agent Registry HTTP endpoints (v5.0).
+	// Wires pkg/agentregistry as the unified agent inventory and
+	// lifecycle management subsystem. The registry discovers agents
+	// from RBAC, MCP, A2A, AIBOM, and Correlation, classifies
+	// dormancy, enforces lifecycle policies, and broadcasts SSE
+	// lifecycle events.
+	//
+	// Tier gate: Professional+ (FeatureAgentRegistry). Below
+	// Professional, the endpoints return 503 Service Unavailable.
+	if tier.HasFeature(platformTier, tier.FeatureAgentRegistry) {
+		var arStore agentregistry.Store
+		var arPolicyStore agentregistry.LifecyclePolicyStore
+
+		if cfg.AgentRegistry.UsePostgreSQL && pgStore != nil {
+			pgAgentStore, err := agentregistry.NewPostgresStore(pgStore.Pool())
+			if err != nil {
+				log.Printf("[AGENT-REGISTRY] PostgreSQL store init failed, using in-memory: %v", err)
+			} else {
+				arStore = pgAgentStore
+			}
+			pgPolicyStore, pErr := agentregistry.NewPostgresPolicyStore(pgStore.Pool())
+			if pErr == nil {
+				arPolicyStore = pgPolicyStore
+			} else {
+				log.Printf("[AGENT-REGISTRY] PostgreSQL policy store init failed, using in-memory: %v", pErr)
+			}
+		}
+
+		if arStore == nil {
+			arStore = agentregistry.NewInMemoryStore()
+		}
+		if arPolicyStore == nil {
+			arPolicyStore = agentregistry.NewInMemoryPolicyStore()
+		}
+
+		// Build adapters from available platform subsystems.
+		var a2aSource agentregistry.A2AAgentSource
+		if capsEnforcer != nil {
+			a2aSource = agentregistry.NewA2AAdapter(capsEnforcer)
+		}
+
+		// Correlation adapter — create a fresh engine (the platform's
+		// shared engine is per-request in v0.1; v0.2 will wire a
+		// singleton). A nil engine is acceptable; the registry treats
+		// nil sources as empty.
+		correlationEngine := correlation.NewEngine()
+		correlationSource := agentregistry.NewCorrelationAdapter(correlationEngine)
+
+		refreshInterval := cfg.AgentRegistry.RefreshInterval
+		if refreshInterval == 0 {
+			refreshInterval = 5 * time.Minute
+		}
+
+		registry, regErr := agentregistry.New(agentregistry.Config{
+			Store:           arStore,
+			PolicyStore:     arPolicyStore,
+			RBAC:            rbacMgr,
+			A2ASource:       a2aSource,
+			Correlation:     correlationSource,
+			RefreshInterval: refreshInterval,
+			Logger:          slog.Default().With("component", "agent-registry"),
+		})
+		if regErr != nil {
+			log.Printf("[AGENT-REGISTRY] Failed to create registry: %v — endpoints disabled", regErr)
+		} else {
+			// Create the event broadcaster for SSE streaming.
+			broadcaster := agentregistry.NewEventBroadcaster(
+				slog.Default().With("component", "agent-registry-sse"),
+			)
+			broadcaster.Start()
+			defer broadcaster.Stop()
+
+			// Wire the broadcaster as a lifecycle event callback.
+			registry.SetLifecycleEventCallback(broadcaster.OnLifecycleEvent)
+
+			// Create the dormancy engine with configurable thresholds.
+			dormancyThreshold := cfg.AgentRegistry.DormancyThreshold
+			if dormancyThreshold == 0 {
+				dormancyThreshold = 24 * time.Hour
+			}
+			dormancyEngine := agentregistry.NewDormancyEngine(
+				dormancyThreshold,
+				slog.Default().With("component", "agent-registry-dormancy"),
+			)
+
+			// Create the policy action executor wired to platform subsystems.
+			executor := newAgentRegistryExecutor(
+				soarMgr,
+				incidentEngine,
+				rbacMgr,
+				registry,
+				slog.Default().With("component", "agent-registry-executor"),
+			)
+
+			// Create the policy engine.
+			policyEngine := agentregistry.NewPolicyEngine(
+				registry,
+				dormancyEngine,
+				executor,
+				arPolicyStore,
+				slog.Default().With("component", "agent-registry-policy"),
+			)
+
+			// Start background refresh and discovery.
+			if err := registry.Start(ctx); err != nil {
+				log.Printf("[AGENT-REGISTRY] Failed to start background refresh: %v", err)
+			} else {
+				log.Printf("[AGENT-REGISTRY] Background discovery started (interval=%s)", refreshInterval)
+			}
+
+			// Wire HTTP handlers.
+			wireAgentRegistryHandlers(dashMux, authMiddleware, registry, policyEngine, dormancyEngine, broadcaster)
+			log.Printf("[AGENT-REGISTRY] Agent Registry HTTP API enabled at /api/v1/agents (Professional tier)")
+
+			// Seed a default lifecycle policy if none exist.
+			policies, _ := policyEngine.ListPolicies(ctx)
+			if len(policies) == 0 {
+				defaultPolicy := &agentregistry.LifecyclePolicy{
+					ID:               "default-dormancy",
+					Name:             "Default Dormancy Policy",
+					Description:      "Automatically quarantine agents inactive for 7 days and revoke at 30 days.",
+					Enabled:          true,
+					DormancyThreshold: 24 * time.Hour,
+					QuarantineThreshold: 7 * 24 * time.Hour,
+					AutoRevokeThreshold: 30 * 24 * time.Hour,
+					OnQuarantine: []agentregistry.PolicyAction{
+						{Type: "notify", Target: "security@example.com"},
+						{Type: "playbook", Target: "pb_dormant_agent_detected"},
+					},
+					OnRevoke: []agentregistry.PolicyAction{
+						{Type: "notify", Target: "security@example.com"},
+						{Type: "revoke"},
+					},
+				}
+				if qErr := policyEngine.AddPolicy(ctx, defaultPolicy); qErr != nil {
+					log.Printf("[AGENT-REGISTRY] Failed to seed default policy: %v", qErr)
+				} else {
+					log.Printf("[AGENT-REGISTRY] Seeded default dormancy policy (dormant=24h, quarantine=7d, revoke=30d)")
+				}
+			}
+		}
+	} else {
+		// Below Professional tier — register 503 fallback for all agent registry endpoints.
+		wireAgentRegistryHandlers(dashMux, authMiddleware, nil, nil, nil, nil)
+		log.Printf("[AGENT-REGISTRY] Agent Registry disabled (requires Professional tier, current: %s)", platformTier.String())
+	}
 
 	// Dashboard health endpoint — verifies proxy, persistence, license, certs, scanner, and A2A
 	dashMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

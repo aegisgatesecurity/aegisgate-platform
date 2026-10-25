@@ -380,6 +380,19 @@ func (r *Registry) ListByStatus(status AgentStatus) ([]*AgentRecord, error) {
 	return r.store.List(context.Background(), &ListFilter{Status: status})
 }
 
+// Upsert creates or updates an agent record in the store. This is
+// used by the PolicyActionExecutor to tag agents and by external
+// callers to inject records outside the normal discovery cycle.
+func (r *Registry) Upsert(record *AgentRecord) error {
+	if record.ID == "" {
+		return fmt.Errorf("agentregistry: upsert: empty agent ID")
+	}
+	if record.UpdatedAt.IsZero() {
+		record.UpdatedAt = nowFunc()
+	}
+	return r.store.Upsert(context.Background(), record)
+}
+
 // Transition manually changes an agent's lifecycle status. This emits
 // a LifecycleEvent if a callback is registered.
 func (r *Registry) Transition(agentID string, newStatus AgentStatus, reason string) error {

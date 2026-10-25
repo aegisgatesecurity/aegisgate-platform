@@ -122,6 +122,13 @@ func (p *PersistentCapEnforcer) Agents() []string {
 	return p.inner.Agents()
 }
 
+// GetCapabilities returns the capabilities for the given agent.
+func (p *PersistentCapEnforcer) GetCapabilities(agentID string) []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.inner.GetCapabilities(agentID)
+}
+
 // load reads capabilities from the JSON file into the in-memory store.
 func (p *PersistentCapEnforcer) load() error {
 	data, err := os.ReadFile(p.filePath) // #nosec G304 — path is validated by caller

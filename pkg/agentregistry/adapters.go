@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/aibom"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
@@ -69,12 +68,22 @@ type AIBOMSource interface {
 // ============================================================================
 
 // A2AAdapter wraps pkg/a2a.InMemoryCapEnforcer to satisfy A2AAgentSource.
+// A2ACapReader is the subset of the A2A capability enforcer interface
+// needed by the adapter. Both *a2a.InMemoryCapEnforcer and
+// *a2a.PersistentCapEnforcer satisfy this interface.
+type A2ACapReader interface {
+	Agents() []string
+	GetCapabilities(agentID string) []string
+}
+
 type A2AAdapter struct {
-	caps *a2a.InMemoryCapEnforcer
+	caps A2ACapReader
 }
 
 // NewA2AAdapter creates an adapter for the A2A capability enforcer.
-func NewA2AAdapter(caps *a2a.InMemoryCapEnforcer) *A2AAdapter {
+// Accepts any type satisfying A2ACapReader (InMemoryCapEnforcer or
+// PersistentCapEnforcer). Pass nil to disable A2A source.
+func NewA2AAdapter(caps A2ACapReader) *A2AAdapter {
 	return &A2AAdapter{caps: caps}
 }
 

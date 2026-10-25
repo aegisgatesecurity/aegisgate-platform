@@ -1,3 +1,51 @@
+## [5.0.0] - 2026-10-25 — Agent Inventory & Lifecycle Management
+
+> **v5.0.0** introduces the Agent Registry — a glue layer that unifies RBAC, MCP Session Manager, A2A, AIBOM, and Correlation Engine into a single queryable agent inventory with dormancy detection, automated credential revocation, and SSE lifecycle event streaming. Addresses the Arrakis Security finding: 76% of AI agents are dormant with live credentials. Gated behind Professional tier.
+
+### Agent Registry (`pkg/agentregistry/`)
+
+**New package** (~4,700 LOC including tests, 16 files):
+
+- **AgentRecord** — unified schema aggregating identity (RBAC), activity (MCP/A2A), provenance (AIBOM), and threat signals (Correlation)
+- **Lifecycle state machine** — `provisioned → active → dormant → quarantined → revoked` with sticky quarantine/revoked states
+- **DormancyEngine** — waterfall evaluation with configurable thresholds (dormant, quarantine, revoke)
+- **PolicyEngine** — declarative lifecycle policies with filter matching (protocols, roles, tags, tenants) and action execution (notify, playbook, quarantine, revoke, tag)
+- **AIBOM Reconciliation** — drift detection between static AIBOM and live runtime agents
+- **EventBroadcaster** — SSE lifecycle event streaming with heartbeat and back-pressure
+- **HTTP API** — 10 endpoints at `/api/v1/agents` with permission-based access control (RBAC `ResourceAgent` with `ActionRead`/`ActionManage`)
+- **In-memory store** — default for air-gap deployments
+- **PostgreSQL store** — with Row-Level Security (tenant isolation + admin bypass), JSONB for complex fields, GIN index for protocol containment queries
+
+### Platform Integration
+
+- **Tier gate**: `FeatureAgentRegistry` → Professional+ (`pkg/tier/tier.go`)
+- **Config**: `AgentRegistryConfig` in `pkg/platformconfig/config.go` (refresh interval, dormancy/quarantine/revoke thresholds, PostgreSQL toggle)
+- **Policy action executor**: wires policy actions to SOAR (PagerDuty/Jira/ServiceNow), Incident Engine (playbook trigger), and RBAC (agent disable + session invalidation)
+- **Default playbook**: `pb_dormant_agent_detected` — 4-step notify → evidence → quarantine → attestation (NIST AI RMF MEASURE-2.7, SOC2 CC6.2)
+- **RBAC permissions**: `ResourceAgent` with `ActionRead` (Viewer/Analyst/ComplianceOfficer) and `ActionManage` (Analyst/ComplianceOfficer)
+- **SSE events**: 5 new `StreamEventType` constants in `pkg/soc/stream.go`
+
+### Files Changed
+
+**New files (18):**
+- `pkg/agentregistry/` — 16 files (doc.go, types.go, store.go, memory_store.go, adapters.go, registry.go, dormancy.go, policy.go, sse.go, postgres_store.go + 6 test files)
+- `cmd/aegisgate-platform/agent_registry_http.go` — 10 HTTP endpoints
+- `cmd/aegisgate-platform/agent_registry_http_test.go` — 32 test cases
+- `cmd/aegisgate-platform/agent_registry_executor.go` — PolicyActionExecutor implementation
+
+**Modified files (7):**
+- `pkg/tier/tier.go` — FeatureAgentRegistry constant + RequiredTier + featureKeyMap
+- `pkg/platformconfig/config.go` — AgentRegistryConfig struct + Config field
+- `pkg/rbac/types.go` — ResourceAgent permissions in UserRolePermissions
+- pkg/soc/stream.go` — 5 new StreamEventType constants
+- `pkg/incident/playbooks.go` — DormantAgentDetectedPlaybook
+- `pkg/incident/types.go` — SourceAgentRegistry source constant
+- `pkg/a2a/caps_persistent.go` — GetCapabilities method
+- `pkg/agentregistry/adapters.go` — A2ACapReader interface for both enforcer types
+- `cmd/aegisgate-platform/main.go` — Agent registry wiring + v5.0.0 version bump
+
+---
+
 ## [4.9.0] - 2026-10-23 — Agent Instruction Poisoning Detection
 
 > **v4.9.0** adds 5 new regex detection patterns in a new `AgentPoisoning` category to `DefaultPatterns()`, targeting Warden Stealer and similar malware that poisons AI agent instruction files. Cross-product parity with Scanner v0.4.3 and Rampart v0.9.3.
