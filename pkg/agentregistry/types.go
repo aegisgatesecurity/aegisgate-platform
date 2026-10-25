@@ -17,7 +17,7 @@ const (
 	StatusActive AgentStatus = "active"
 
 	// StatusDormant indicates an agent with no activity beyond the
-	// dormancy threshold but not yet quarantined or revoked.
+	// dormancy threshold but not quarantined or revoked.
 	StatusDormant AgentStatus = "dormant"
 
 	// StatusQuarantined indicates an agent that has been isolated by

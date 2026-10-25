@@ -50,20 +50,7 @@ func (m *mockCorrelationSource) AgentEventCount(agentID string) (int64, error) {
 	return m.eventCounts[agentID], nil
 }
 
-// mockIntentSource is a test IntentSource.
-type mockIntentSource struct {
-	intents map[string]*IntentInfo
-	counts  map[string]int64
-}
-
-func (m *mockIntentSource) LatestIntent(agentID string) (*IntentInfo, error) {
-	return m.intents[agentID], nil
-}
-func (m *mockIntentSource) IntentCount(agentID string) (int64, error) {
-	return m.counts[agentID], nil
-}
-
-// TestRegistryDiscoverFromRBAC verifies that the Registry discovers
+// mockCorrelationSource is a test CorrelationSource.
 // agents from the RBAC manager as the identity baseline.
 func TestRegistryDiscoverFromRBAC(t *testing.T) {
 	// Save and restore nowFunc
@@ -127,12 +114,6 @@ func TestRegistryWithRealRBAC(t *testing.T) {
 		A2ASource:   &mockA2ASource{agents: []A2AAgentInfo{{AgentID: "research-agent"}}},
 		AIBOMSource: &mockAIBOMSource{names: []string{"research-agent", "code-agent"}},
 		Correlation: &mockCorrelationSource{eventCounts: map[string]int64{"research-agent": 42}},
-		IntentStore: &mockIntentSource{
-			intents: map[string]*IntentInfo{
-				"research-agent": {Intent: "search_web", SignedAt: testTime.Add(-1 * time.Hour)},
-			},
-			counts: map[string]int64{"research-agent": 10},
-		},
 	})
 	if err != nil {
 		t.Fatalf("New failed: %v", err)
@@ -162,12 +143,6 @@ func TestRegistryWithRealRBAC(t *testing.T) {
 	}
 	if got1.TotalEvents != 42 {
 		t.Errorf("TotalEvents = %d, want 42", got1.TotalEvents)
-	}
-	if got1.LastIntent != "search_web" {
-		t.Errorf("LastIntent = %q, want %q", got1.LastIntent, "search_web")
-	}
-	if got1.IntentCount != 10 {
-		t.Errorf("IntentCount = %d, want 10", got1.IntentCount)
 	}
 	if !contains(got1.DiscoverySources, "rbac") {
 		t.Error("research-agent should have rbac as discovery source")

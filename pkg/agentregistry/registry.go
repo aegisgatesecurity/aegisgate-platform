@@ -34,7 +34,6 @@ type Registry struct {
 	a2aSource   A2AAgentSource
 	aibomSource AIBOMSource
 	correlation CorrelationSource
-	intentStore IntentSource
 
 	// Callbacks (wired by PolicyEngine and SSE stream)
 	onLifecycleEvent func(event LifecycleEvent)
@@ -67,7 +66,6 @@ type Config struct {
 	A2ASource       A2AAgentSource
 	AIBOMSource     AIBOMSource
 	Correlation     CorrelationSource
-	IntentStore     IntentSource
 	RefreshInterval time.Duration
 	Logger          *slog.Logger
 }
@@ -99,7 +97,6 @@ func New(cfg Config) (*Registry, error) {
 		a2aSource:       cfg.A2ASource,
 		aibomSource:     cfg.AIBOMSource,
 		correlation:     cfg.Correlation,
-		intentStore:     cfg.IntentStore,
 		refreshInterval: cfg.RefreshInterval,
 		stopCh:          make(chan struct{}),
 		logger:          cfg.Logger,
@@ -122,11 +119,11 @@ func (r *Registry) SetLifecycleEventCallback(fn func(event LifecycleEvent)) {
 // Discovery proceeds in this order:
 //  1. RBAC ListAgents() — establishes the identity baseline
 //  2. MCP session activity — enriches with MCP protocol + last activity
-//  3. A2A known agents — enriches with A2A protocol + capabilities
-//  4. AIBOM reconciliation — marks InAIBOM flag
-//  5. Correlation events — enriches with total event count
-//  6. Intent signatures — enriches with last intent + count
-//  7. Compute lifecycle status (via DormancyEngine if wired)
+//  3. RBAC sessions — enriches with HTTP protocol + session activity
+//  4. A2A known agents — enriches with A2A protocol + capabilities
+//  5. AIBOM reconciliation — marks InAIBOM flag
+//  6. Correlation events — enriches with total event count + last activity
+//  7. Compute lifecycle status
 func (r *Registry) Discover(ctx context.Context) error {
 	r.logger.Debug("agentregistry: starting discovery")
 
@@ -143,6 +140,7 @@ func (r *Registry) Discover(ctx context.Context) error {
 
 	// Step 2: MCP session activity
 	mcpActivity := extractMCPActivity(r.mcpSessions)
+	r.logger.Debug("agentregistry: MCP activity extracted", "agents_with_mcp", len(mcpActivity))
 	for _, ma := range mcpActivity {
 		record, ok := records[ma.AgentID]
 		if !ok {
@@ -244,7 +242,7 @@ func (r *Registry) Discover(ctx context.Context) error {
 		r.logger.Debug("agentregistry: AIBOM agents reconciled", "count", len(aibomNames))
 	}
 
-	// Step 6: Correlation events (v1 best-effort)
+	// Step 6: Correlation events
 	if r.correlation != nil {
 		for id, record := range records {
 			count, _ := r.correlation.AgentEventCount(id)
@@ -254,20 +252,12 @@ func (r *Registry) Discover(ctx context.Context) error {
 					record.DiscoverySources = append(record.DiscoverySources, "correlation")
 				}
 			}
-		}
-	}
-
-	// Step 7: Intent signatures (v1 best-effort)
-	if r.intentStore != nil {
-		for id, record := range records {
-			intent, _ := r.intentStore.LatestIntent(id)
-			if intent != nil {
-				record.LastIntent = intent.Intent
-				record.LastIntentAt = intent.SignedAt
-			}
-			count, _ := r.intentStore.IntentCount(id)
-			if count > 0 {
-				record.IntentCount = count
+			// Enrich LastActivity with most recent correlation event
+			events, _ := r.correlation.RecentEventsByAgent(id, time.Time{})
+			for _, evt := range events {
+				if evt.Timestamp.After(record.LastActivity) {
+					record.LastActivity = evt.Timestamp
+				}
 			}
 		}
 	}
@@ -294,8 +284,8 @@ func (r *Registry) Discover(ctx context.Context) error {
 
 	// Remove records for agents that no longer exist in RBAC or any source.
 	// We do this by checking which stored records were NOT updated in this
-	// discovery cycle. For v1, we skip deletion — agents may be temporarily
-	// offline. Deletion is a manual operation via Delete().
+	// discovery cycle. Agents may be temporarily offline, so we do not
+	// auto-delete — removal is a manual operation via the Delete method.
 
 	r.logger.Info("agentregistry: discovery complete",
 		"total_agents", len(records))

@@ -1,6 +1,7 @@
 package agentregistry
 
 import (
+	"context"
 	"time"
 
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/a2a"
@@ -8,7 +9,6 @@ import (
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
-	"github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 )
 
 // ============================================================================
@@ -50,23 +50,6 @@ type CorrelationEventInfo struct {
 	Timestamp time.Time
 	Protocol  string
 	SessionID string
-}
-
-// IntentSource provides signed intent information for agents.
-type IntentSource interface {
-	// LatestIntent returns the most recent signed intent for the agent,
-	// or nil if none exists.
-	LatestIntent(agentID string) (*IntentInfo, error)
-	// IntentCount returns the total number of signed intents for the agent.
-	IntentCount(agentID string) (int64, error)
-}
-
-// IntentInfo is a simplified view of a signed intent tuple.
-type IntentInfo struct {
-	Intent        string
-	Justification string
-	ValidUntil    time.Time
-	SignedAt      time.Time
 }
 
 // AIBOMSource provides the static AI Bill of Materials for reconciliation.
@@ -114,9 +97,6 @@ func (a *A2AAdapter) KnownAgents() []A2AAgentInfo {
 
 // CorrelationAdapter wraps pkg/correlation.Engine to satisfy
 // CorrelationSource.
-//
-// The correlation engine stores events keyed by "agentID:sessionID".
-// This adapter iterates all event keys to find events for a given agent.
 type CorrelationAdapter struct {
 	engine *correlation.Engine
 }
@@ -126,57 +106,42 @@ func NewCorrelationAdapter(engine *correlation.Engine) *CorrelationAdapter {
 	return &CorrelationAdapter{engine: engine}
 }
 
-// RecentEventsByAgent returns recent correlation events for the agent.
-// This uses ListEventsBySession with a session wildcard approach —
-// since the engine keys events by agentID:sessionID, we query by
-// iterating available sessions.
-//
-// Note: In v1, this is a best-effort scan. The correlation engine's
-// internal event map is accessed via its public ListEventsBySession
-// method. A future enhancement could add a ListEventsByAgent method
-// to the engine directly.
+// RecentEventsByAgent returns recent correlation events for the agent
+// since the specified time, using the engine's ListEventsByAgent method.
 func (a *CorrelationAdapter) RecentEventsByAgent(agentID string, since time.Time) ([]CorrelationEventInfo, error) {
 	if a.engine == nil {
 		return nil, nil
 	}
-	// The correlation engine does not yet expose a ListEventsByAgent
-	// method. For v1, we return an empty list — the Registry will
-	// rely on MCP session activity and session tracker timestamps
-	// for LastActivity. This is a known limitation documented in
-	// the design spec (§5.1.1).
-	//
-	// When correlation.Engine gains a ListEventsByAgent method,
-	// this adapter will call it directly.
-	return nil, nil
+	events, err := a.engine.ListEventsByAgent(context.Background(), agentID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]CorrelationEventInfo, 0, len(events))
+	for _, evt := range events {
+		if evt.Timestamp.Before(since) {
+			continue
+		}
+		result = append(result, CorrelationEventInfo{
+			EventType: evt.EventType,
+			Severity:  evt.Severity,
+			Timestamp: evt.Timestamp,
+			Protocol:  evt.Protocol,
+			SessionID: evt.SessionID,
+		})
+	}
+	return result, nil
 }
 
 // AgentEventCount returns the total correlation events for the agent.
-// Same limitation as RecentEventsByAgent — returns 0 for v1.
 func (a *CorrelationAdapter) AgentEventCount(agentID string) (int64, error) {
 	if a.engine == nil {
 		return 0, nil
 	}
-	return 0, nil
-}
-
-// IntentAdapter is a stub for pkg/agentintentsign. The intent signer
-// does not yet expose a query API (it signs and verifies but does not
-// store intents for later retrieval). For v1, the adapter returns
-// empty results. When a persistent intent store is added, this adapter
-// will be updated.
-type IntentAdapter struct{}
-
-// NewIntentAdapter creates a new intent source adapter.
-func NewIntentAdapter() *IntentAdapter { return &IntentAdapter{} }
-
-// LatestIntent returns nil for v1 (no persistent intent store yet).
-func (a *IntentAdapter) LatestIntent(_ string) (*IntentInfo, error) {
-	return nil, nil
-}
-
-// IntentCount returns 0 for v1.
-func (a *IntentAdapter) IntentCount(_ string) (int64, error) {
-	return 0, nil
+	events, err := a.engine.ListEventsByAgent(context.Background(), agentID)
+	if err != nil {
+		return 0, err
+	}
+	return int64(len(events)), nil
 }
 
 // AIBOMAdapter wraps the AIBOM generator output to satisfy AIBOMSource.
@@ -216,7 +181,7 @@ func (a *AIBOMAdapter) AIBOMGeneratedAt() time.Time {
 // RBAC Adapter (inline — no separate interface needed)
 //
 // The Registry uses *rbac.Manager directly since it already exposes
-// ListAgents() and GetAgentSessions(). The adapter below normalizes
+// ListAgents() and GetAgentSessions(). The helper below normalizes
 // RBAC Agent fields into AgentRecord identity fields.
 // ============================================================================
 
@@ -230,20 +195,20 @@ func rbacAgentToRecord(agent *rbac.Agent) *AgentRecord {
 	}
 	now := nowFunc()
 	return &AgentRecord{
-		ID:          agent.ID,
-		Name:        agent.Name,
-		Description: agent.Description,
-		Role:        string(agent.Role),
-		Tools:       tools,
-		Enabled:     agent.Enabled,
-		TenantID:    agent.TenantID,
-		Tags:        agent.Tags,
-		Status:      StatusProvisioned,
-		StatusSince: now,
-		CreatedAt:   agent.CreatedAt,
-		UpdatedAt:   now,
-		FirstSeen:   now,
-		LastSeen:    now,
+		ID:               agent.ID,
+		Name:             agent.Name,
+		Description:      agent.Description,
+		Role:             string(agent.Role),
+		Tools:            tools,
+		Enabled:          agent.Enabled,
+		TenantID:         agent.TenantID,
+		Tags:             agent.Tags,
+		Status:           StatusProvisioned,
+		StatusSince:      now,
+		CreatedAt:        agent.CreatedAt,
+		UpdatedAt:        now,
+		FirstSeen:        now,
+		LastSeen:         now,
 		DiscoverySources: []string{"rbac"},
 	}
 }
@@ -299,24 +264,4 @@ func extractMCPProtocolCount(sm *mcpserver.ConnectionSessionManager, agentID str
 		}
 	}
 	return count
-}
-
-// scannerSessionActivity extracts the most recent session activity
-// for each agent from the session tracker.
-//
-// Note: The session tracker keys by SessionID, not AgentID. The
-// RBAC AgentSession provides the agent-to-session mapping. For v1,
-// we use the RBAC session's LastActivityTime as the primary activity
-// signal. The session tracker is consulted for additional multi-turn
-// session timestamps.
-func scannerSessionActivity(tracker *scanner.SessionTracker, sessions []*rbac.AgentSession) map[string]time.Time {
-	if tracker == nil {
-		return nil
-	}
-	// The session tracker does not expose a "list all sessions" method.
-	// For v1, we return nil — activity is derived from RBAC sessions
-	// and MCP sessions. When the session tracker gains an iteration
-	// method, this will be updated.
-	_ = sessions
-	return nil
 }

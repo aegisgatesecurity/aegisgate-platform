@@ -250,6 +250,26 @@ func (e *Engine) ListEventsBySession(_ context.Context, sessionID string) ([]*Ev
 	return result, nil
 }
 
+// ListEventsByAgent returns all correlation events for the given agent.
+// Events are keyed internally by "agentID:sessionID"; this method iterates
+// all keys and collects events matching the agentID.
+func (e *Engine) ListEventsByAgent(_ context.Context, agentID string) ([]*Event, error) {
+	if agentID == "" {
+		return nil, fmt.Errorf("correlation: ListEventsByAgent: agentID is required")
+	}
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	var result []*Event
+	for _, events := range e.events {
+		for _, evt := range events {
+			if evt.AgentID == agentID {
+				result = append(result, evt)
+			}
+		}
+	}
+	return result, nil
+}
+
 // matchPatterns matches events against threat patterns
 func (e *Engine) matchPatterns(events []*Event, result *CorrelationResult) {
 	for _, pattern := range e.patterns {
