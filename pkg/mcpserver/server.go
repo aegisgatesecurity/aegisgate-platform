@@ -53,13 +53,21 @@ func DefaultConfig() *Config {
 
 // EmbeddedServer wraps AegisGuard's MCP server for in-process use
 type EmbeddedServer struct {
-	config      *Config
-	server      *mcp.Server
-	handler     *mcp.RequestHandler
-	handlerFunc mcp.HandlerFunc // set by SetGuardrails, used by Start()
-	logger      *slog.Logger
-	ctx         context.Context
-	cancel      context.CancelFunc
+	config         *Config
+	server         *mcp.Server
+	handler        *mcp.RequestHandler
+	handlerFunc    mcp.HandlerFunc           // set by SetGuardrails, used by Start()
+	connSessionMgr *ConnectionSessionManager // wired by SetConnectionSessionManager
+	logger         *slog.Logger
+	ctx            context.Context
+	cancel         context.CancelFunc
+}
+
+// SetConnectionSessionManager wires the MCP session manager so that
+// MCP connections are tracked as RBAC sessions and visible to the
+// Agent Registry for discovery. This must be called before Start().
+func (es *EmbeddedServer) SetConnectionSessionManager(sm *ConnectionSessionManager) {
+	es.connSessionMgr = sm
 }
 
 // NewEmbeddedServer creates a new embedded MCP server

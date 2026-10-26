@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Registry - AegisGate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="agents.css">
+</head>
+<body>
+    <header class="dashboard-header">
+        <h1>🔒 AegisGate Security Gateway</h1>
+        <div class="status-indicator">
+            <span class="status-dot" id="conn-status"></span>
+            <span>Agent Registry</span>
+        </div>
+    </header>
+
+    <nav class="dashboard-nav">
+        <a href="index.html" class="nav-btn">🚀 Getting Started</a>
+        <a href="index.html#dashboard" class="nav-btn">📊 Dashboard</a>
+        <a href="index.html#compliance" class="nav-btn">✅ Compliance</a>
+        <a href="index.html#settings" class="nav-btn">⚙️ Configuration</a>
+        <a href="trust-dashboard.html" class="nav-btn">🤖 Agent Trust</a>
+        <a href="certificates.html" class="nav-btn">🔐 Certificates</a>
+        <a href="policy.html" class="nav-btn">📜 Policy</a>
+        <a href="agents.html" class="nav-btn active">📋 Agent Registry</a>
+    </nav>
+
+    <main class="dashboard-content">
+        <!-- Overview Cards -->
+        <section id="overview">
+            <h2>Agent Inventory Overview</h2>
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <span class="overview-value" id="stat-total">—</span>
+                    <span class="overview-label">Total Agents</span>
+                </div>
+                <div class="overview-card active-bg">
+                    <span class="overview-value" id="stat-active">—</span>
+                    <span class="overview-label">Active</span>
+                </div>
+                <div class="overview-card dormant-bg">
+                    <span class="overview-value" id="stat-dormant">—</span>
+                    <span class="overview-label">Dormant</span>
+                </div>
+                <div class="overview-card quarantine-bg">
+                    <span class="overview-value" id="stat-quarantined">—</span>
+                    <span class="overview-label">Quarantined</span>
+                </div>
+                <div class="overview-card revoked-bg">
+                    <span class="overview-value" id="stat-revoked">—</span>
+                    <span class="overview-label">Revoked</span>
+                </div>
+                <div class="overview-card provisioned-bg">
+                    <span class="overview-value" id="stat-provisioned">—</span>
+                    <span class="overview-label">Provisioned</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <button class="tab active" data-tab="agents">Agent List</button>
+            <button class="tab" data-tab="dormancy">Dormancy Report</button>
+            <button class="tab" data-tab="drift">AIBOM Drift</button>
+            <button class="tab" data-tab="policies">Lifecycle Policies</button>
+            <button class="tab" data-tab="federation">Federation</button>
+        </div>
+
+        <!-- Agent List Tab -->
+        <section id="agents-tab" class="tab-content active">
+            <div class="filter-bar">
+                <select id="filter-status" aria-label="Filter by status">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="dormant">Dormant</option>
+                    <option value="quarantined">Quarantined</option>
+                    <option value="revoked">Revoked</option>
+                    <option value="provisioned">Provisioned</option>
+                </select>
+                <select id="filter-protocol" aria-label="Filter by protocol">
+                    <option value="">All Protocols</option>
+                    <option value="http">HTTP</option>
+                    <option value="mcp">MCP</option>
+                    <option value="a2a">A2A</option>
+                    <option value="acp">ACP</option>
+                    <option value="anp">ANP</option>
+                </select>
+                <input type="text" id="filter-owner" placeholder="Filter by owner..." aria-label="Filter by owner">
+                <button id="btn-refresh" class="action-btn">🔄 Refresh</button>
+            </div>
+            <div class="agent-table-wrap">
+                <table class="agent-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Protocols</th>
+                            <th>Last Activity</th>
+                            <th>Sessions</th>
+                            <th>Owner</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agent-table-body">
+                        <tr><td colspan="8" class="empty-state">Loading agents...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Dormancy Tab -->
+        <section id="dormancy-tab" class="tab-content">
+            <h3>Dormancy Classification</h3>
+            <div id="dormancy-report" class="report-container">
+                <p class="empty-state">Loading dormancy report...</p>
+            </div>
+        </section>
+
+        <!-- AIBOM Drift Tab -->
+        <section id="drift-tab" class="tab-content">
+            <h3>AIBOM-to-Runtime Reconciliation</h3>
+            <div id="drift-report" class="report-container">
+                <p class="empty-state">Loading drift report...</p>
+            </div>
+        </section>
+
+        <!-- Policies Tab -->
+        <section id="policies-tab" class="tab-content">
+            <div class="section-header">
+                <h3>Lifecycle Policies</h3>
+                <button id="btn-new-policy" class="action-btn">➕ New Policy</button>
+            </div>
+            <div id="policy-list" class="policy-container">
+                <p class="empty-state">Loading policies...</p>
+            </div>
+
+            <!-- Policy Editor (hidden by default) -->
+            <div id="policy-editor" class="policy-editor hidden">
+                <h4 id="policy-editor-title">New Policy</h4>
+                <form id="policy-form">
+                    <input type="hidden" id="policy-id">
+                    <label>Name: <input type="text" id="policy-name" required></label>
+                    <label>Description: <input type="text" id="policy-desc"></label>
+                    <label>Enabled: <input type="checkbox" id="policy-enabled" checked></label>
+                    <fieldset>
+                        <legend>Thresholds</legend>
+                        <label>Dormancy: <input type="text" id="policy-dormancy" placeholder="24h"></label>
+                        <label>Quarantine: <input type="text" id="policy-quarantine" placeholder="168h"></label>
+                        <label>Revoke: <input type="text" id="policy-revoke" placeholder="720h"></label>
+                    </fieldset>
+                    <div class="form-actions">
+                        <button type="submit" class="action-btn">Save</button>
+                        <button type="button" id="btn-cancel-policy" class="action-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Federation Tab -->
+        <section id="federation-tab" class="tab-content">
+            <h3>Cross-Deployment Federation</h3>
+            <div class="federation-status" id="fed-status">
+                <p class="empty-state">Checking federation status...</p>
+            </div>
+            <div class="federation-actions">
+                <button id="btn-fed-export" class="action-btn">📦 Export Bundle</button>
+                <button id="btn-fed-drift" class="action-btn">📊 Cross-Deployment Drift</button>
+            </div>
+            <div id="fed-drift-report" class="report-container hidden"></div>
+        </section>
+
+        <!-- SSE Event Log -->
+        <section id="events-section">
+            <h3>🔄 Live Lifecycle Events</h3>
+            <div id="event-log" class="event-log">
+                <p class="empty-state">Connecting to event stream...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/agents-client.js"></script>
+</body>
+</html>

@@ -363,8 +363,8 @@ func TestInMemoryPlaybookStore_ListAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListPlaybooks: %v", err)
 	}
-	if len(results) != 14 {
-		t.Errorf("len(results) = %d; want 14", len(results))
+	if len(results) != 15 {
+		t.Errorf("len(results) = %d; want 15", len(results))
 	}
 }
 

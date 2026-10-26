@@ -195,6 +195,23 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
+// Flush implements http.Flusher, ensuring SSE and other streaming
+// responses work correctly through the tracing middleware. Without
+// this, outer wrappers that delegate Flush to the inner writer will
+// fail the type assertion and the flush becomes a no-op.
+func (w *statusWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+// Unwrap exposes the underlying http.ResponseWriter so that
+// http.ResponseController can reach the original connection to
+// set per-connection deadlines (e.g. disabling WriteTimeout for SSE).
+func (w *statusWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 // sanitizePath reduces high-cardinality paths for span names
 func sanitizePath(path string) string {
 	// Replace UUIDs

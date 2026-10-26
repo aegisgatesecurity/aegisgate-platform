@@ -100,6 +100,22 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
+// Flush implements http.Flusher, ensuring SSE and other streaming
+// responses work correctly through the metrics middleware. Without
+// this, downstream handlers that check w.(http.Flusher) will fail.
+func (rw *responseWriter) Flush() {
+	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+// Unwrap exposes the underlying http.ResponseWriter so that
+// http.ResponseController can reach the original connection to
+// set per-connection deadlines (e.g. disabling WriteTimeout for SSE).
+func (rw *responseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
+}
+
 // WrapHandler wraps an http.Handler with the metrics middleware.
 // The name parameter identifies the service component (e.g., "proxy", "dashboard").
 func WrapHandler(name string, handler http.Handler) http.Handler {

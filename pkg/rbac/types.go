@@ -503,6 +503,7 @@ var UserRolePermissions = map[UserRole][]Permission{
 		{Resource: ResourceMetrics, Action: ActionRead},
 		{Resource: ResourceAudit, Action: ActionRead},
 		{Resource: ResourceLicense, Action: ActionRead},
+		{Resource: ResourceAgent, Action: ActionRead},
 	},
 	UserRoleAnalyst: {
 		{Resource: ResourceDashboard, Action: ActionRead},
@@ -512,6 +513,7 @@ var UserRolePermissions = map[UserRole][]Permission{
 		{Resource: ResourceCompliance, Action: ActionExecute},
 		{Resource: ResourceLicense, Action: ActionRead},
 		{Resource: ResourceAgent, Action: ActionRead},
+		{Resource: ResourceAgent, Action: ActionManage},
 	},
 	UserRoleComplianceOfficer: {
 		{Resource: ResourceDashboard, Action: ActionRead},
@@ -523,6 +525,7 @@ var UserRolePermissions = map[UserRole][]Permission{
 		{Resource: ResourceCompliance, Action: ActionWrite},
 		{Resource: ResourceLicense, Action: ActionRead},
 		{Resource: ResourceAgent, Action: ActionRead},
+		{Resource: ResourceAgent, Action: ActionManage},
 		{Resource: ResourcePolicy, Action: ActionRead},
 	},
 	UserRoleAdmin: {

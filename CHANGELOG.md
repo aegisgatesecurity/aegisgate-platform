@@ -1,3 +1,55 @@
+## [5.0.0] - 2026-10-25 — Agent Inventory & Lifecycle Management
+
+> **v5.0.0** introduces the Agent Registry — a glue layer that unifies RBAC, MCP Session Manager, A2A, AIBOM, and Correlation Engine into a single queryable agent inventory with dormancy detection, automated credential revocation, and SSE lifecycle event streaming. Addresses the Arrakis Security finding: 76% of AI agents are dormant with live credentials. Gated behind Professional tier.
+
+### Agent Registry (`pkg/agentregistry/`)
+
+**New package** (~7,200 LOC including tests, 22 files):
+
+- **AgentRecord** — unified schema aggregating identity (RBAC), activity (MCP/A2A), provenance (AIBOM), and threat signals (Correlation)
+- **Lifecycle state machine** — `provisioned → active → dormant → quarantined → revoked` with sticky quarantine/revoked states
+- **DormancyEngine** — waterfall evaluation with configurable thresholds (dormant, quarantine, revoke)
+- **PolicyEngine** — declarative lifecycle policies with filter matching (protocols, roles, tags, tenants) and action execution (notify, playbook, quarantine, revoke, tag)
+- **AIBOM Reconciliation** — drift detection between static AIBOM and live runtime agents
+- **EventBroadcaster** — SSE lifecycle event streaming with heartbeat and back-pressure
+- **Federation** — cross-deployment agent inventory sharing via ECDSA P-256 signed attestation bundles; `FederationEngine` with background export loop, `FederatedStore` with LRU eviction (max 10,000), `CrossDeploymentDriftReport` for identifying agents dormant in one deployment but active in another. Air-gap by default, opt-in via config.
+- **HTTP API** — 13 endpoints at `/api/v1/agents` with permission-based access control (RBAC `ResourceAgent` with `ActionRead`/`ActionManage`)
+- **In-memory store** — default for air-gap deployments
+- **PostgreSQL store** — with Row-Level Security (tenant isolation + admin bypass), JSONB for complex fields, GIN index for protocol containment queries
+
+### Platform Integration
+
+- **Tier gate**: `FeatureAgentRegistry` → Professional+ (`pkg/tier/tier.go`)
+- **Config**: `AgentRegistryConfig` in `pkg/platformconfig/config.go` (refresh interval, dormancy/quarantine/revoke thresholds, PostgreSQL toggle, federation toggle + export interval + max federated agents)
+- **Policy action executor**: wires policy actions to SOAR (PagerDuty/Jira/ServiceNow), Incident Engine (playbook trigger), and RBAC (agent disable + session invalidation)
+- **Default playbook**: `pb_dormant_agent_detected` — 4-step notify → evidence → quarantine → attestation (NIST AI RMF MEASURE-2.7, SOC2 CC6.2)
+- **RBAC permissions**: `ResourceAgent` with `ActionRead` (Viewer/Analyst/ComplianceOfficer) and `ActionManage` (Analyst/ComplianceOfficer)
+- **SSE events**: 5 new `StreamEventType` constants in `pkg/soc/stream.go`
+- **Federation HTTP endpoints**: 3 routes for bundle export/import and cross-deployment drift report
+- **Dashboard UI**: `ui/frontend/agents.html` with 5 tabs (agent list, dormancy, AIBOM drift, policies, federation) + live SSE event log, auto-refresh, lifecycle action buttons, policy CRUD editor, bundle export
+
+### Files Changed
+
+**New files (20):**
+- `pkg/agentregistry/` — 18 files (doc.go, types.go, store.go, memory_store.go, adapters.go, registry.go, dormancy.go, policy.go, sse.go, postgres_store.go, federation.go + 7 test files)
+- `cmd/aegisgate-platform/agent_registry_http.go` — 13 HTTP endpoints (10 core + 3 federation)
+- `cmd/aegisgate-platform/agent_registry_http_test.go` — 32 test cases
+- `cmd/aegisgate-platform/agent_registry_executor.go` — PolicyActionExecutor implementation
+- `ui/frontend/agents.html` — Agent registry dashboard (5 tabs + live SSE event log)
+- `ui/frontend/agents.css` — Dashboard styles (cards, tables, badges, tabs)
+- `ui/frontend/js/agents-client.js` — Client logic (580 LOC)
+
+**Modified files (7):**
+- `pkg/tier/tier.go` — FeatureAgentRegistry constant + RequiredTier + featureKeyMap
+- `pkg/platformconfig/config.go` — AgentRegistryConfig struct + Config field + federation config fields
+- `pkg/rbac/types.go` — ResourceAgent permissions in UserRolePermissions
+- `pkg/soc/stream.go` — 5 new StreamEventType constants
+- `pkg/incident/playbooks.go` — DormantAgentDetectedPlaybook
+- `pkg/incident/types.go` — SourceAgentRegistry source constant
+- `cmd/aegisgate-platform/main.go` — Agent registry wiring + federation engine wiring + v5.0.0 version bump
+
+---
+
 ## [4.9.0] - 2026-10-23 — Agent Instruction Poisoning Detection
 
 > **v4.9.0** adds 5 new regex detection patterns in a new `AgentPoisoning` category to `DefaultPatterns()`, targeting Warden Stealer and similar malware that poisons AI agent instruction files. Cross-product parity with Scanner v0.4.3 and Rampart v0.9.3.
@@ -176,7 +228,7 @@ Compliance framework test coverage driven to industry-leading levels:
 ### Provisional Patent #7
 
 - **64/180,722** — Federated Detection Gap Analysis (filed Oct 20, 2026). Covers the cross-product federated IOC sharing and detection gap analysis methodology.
-- Brings total to **7 provisional patent applications** filed.
+- Brings total to **8 provisional patent applications** filed.
 
 ### Cross-Product State
 

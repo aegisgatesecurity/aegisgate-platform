@@ -606,9 +606,9 @@ func TestGetPermissionsForUserRole(t *testing.T) {
 		wantRead     bool
 		wantWildcard bool
 	}{
-		{UserRoleViewer, 4, true, false},
-		{UserRoleAnalyst, 7, true, false},
-		{UserRoleComplianceOfficer, 10, true, false},
+		{UserRoleViewer, 5, true, false},
+		{UserRoleAnalyst, 8, true, false},
+		{UserRoleComplianceOfficer, 11, true, false},
 		{UserRoleAdmin, 1, false, true},
 		{"unknown", 0, false, false},
 	}

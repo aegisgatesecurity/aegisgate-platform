@@ -1338,12 +1338,12 @@ func TestEscalationPolicy(t *testing.T) {
 // 12. Default Playbooks and Rules Integrity
 // =====================================================================
 
-// TestDefaultPlaybooksIntegrity verifies that all 14 default playbooks
+// TestDefaultPlaybooksIntegrity verifies that all 15 default playbooks
 // have valid IDs, steps, and compliance tags.
 func TestDefaultPlaybooksIntegrity(t *testing.T) {
 	playbooks := incident.DefaultPlaybooks()
-	if len(playbooks) != 14 {
-		t.Fatalf("expected 14 default playbooks, got %d", len(playbooks))
+	if len(playbooks) != 15 {
+		t.Fatalf("expected 15 default playbooks, got %d", len(playbooks))
 	}
 
 	expectedIDs := map[string]int{
@@ -1361,6 +1361,7 @@ func TestDefaultPlaybooksIntegrity(t *testing.T) {
 		"pb_atlas_plugin_exploitation": 4, // 4 steps
 		"pb_atlas_defense_evasion":     4, // 4 steps
 		"pb_atlas_elevation_abuse":     4, // 4 steps
+		"pb_dormant_agent_detected":    4, // 4 steps — Agent Registry v5.0
 	}
 
 	for _, pb := range playbooks {

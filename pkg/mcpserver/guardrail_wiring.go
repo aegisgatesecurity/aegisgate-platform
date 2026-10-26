@@ -101,6 +101,42 @@ func (es *EmbeddedServer) SetGuardrails(guardrails *GuardrailMiddleware, respons
 		}
 	}
 
+	// If a ConnectionSessionManager is wired, create an RBAC session
+	// when a client sends initialize. The agent ID is derived from
+	// clientInfo.name (MCP spec: client sends name + version), which
+	// is set by the inner handler's handleInitialize. The agent must
+	// already be registered in RBAC; if not, session creation is
+	// skipped with a warning — the MCP connection still works, but
+	// the Agent Registry won't discover it.
+	if es.connSessionMgr != nil {
+		innerRequestHandler := requestHandler
+		requestHandler = func(conn *mcp.Connection, req *mcp.JSONRPCRequest) *mcp.JSONRPCResponse {
+			resp := innerRequestHandler(conn, req)
+			// After successful initialize, create RBAC session.
+			if req.Method == "initialize" && resp != nil && resp.Error == nil && conn != nil {
+				agentID := ""
+				if conn.ClientInfo != nil {
+					agentID = conn.ClientInfo.Name
+				}
+				if agentID != "" && conn.Session != nil {
+					conn.Session.AgentID = agentID
+					connID := conn.ID
+					if _, err := es.connSessionMgr.GetOrCreateSession(context.Background(), connID, agentID); err != nil {
+						slog.Warn("Failed to create MCP session for agent",
+							"agent_id", agentID,
+							"conn_id", connID,
+							"error", err)
+					} else {
+						slog.Info("MCP session created for agent",
+							"agent_id", agentID,
+							"conn_id", connID)
+					}
+				}
+			}
+			return resp
+		}
+	}
+
 	// Wrap with response scanning
 	wrapped := func(conn *mcp.Connection, req *mcp.JSONRPCRequest) *mcp.JSONRPCResponse {
 		// Execute the request through guardrails + handler

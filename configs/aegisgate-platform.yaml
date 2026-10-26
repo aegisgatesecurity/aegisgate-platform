@@ -186,6 +186,26 @@ siem:
   platforms: []                  # Add SIEM platform configs (see SIEMPlatformConfig in pkg/platformconfig/config.go)
 
 
+# Agent Registry (v5.0) — unified AI agent inventory with lifecycle
+# management, dormancy detection, and automated credential revocation.
+# Gated behind Professional tier. Set enabled: false to disable entirely.
+agent_registry:
+  enabled: true
+  refresh_interval: 5m           # How often to re-discover agents from all sources
+  dormancy_threshold: 24h        # Inactivity duration before agent is classified dormant
+  quarantine_threshold: 168h     # 7 days — dormant agents are quarantined (sessions invalidated)
+  revoke_threshold: 720h         # 30 days — quarantined agents have credentials revoked
+  use_postgres: false            # Set true to use PostgreSQL-backed stores (requires FeaturePostgreSQL)
+
+  # Federation — cross-deployment agent inventory sharing via signed
+  # attestation bundles. Disabled by default (air-gap mode).
+  # When enabled, each instance signs attestations with its ECDSA P-256
+  # keyring and exchanges bundles with peer instances via the HTTP API.
+  enable_federation: false
+  federation_export_interval: 5m # How often to produce attestation bundles (0 = manual only)
+  max_federated_agents: 10000    # Max federated agent records retained from peers (LRU eviction)
+
+
 # =========================================================================
 # Legacy keys (deprecated) — kept here as commented examples
 # =========================================================================

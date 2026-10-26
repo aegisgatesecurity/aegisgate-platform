@@ -41,6 +41,7 @@ func DefaultPlaybooks() []*Playbook {
 		ATLASPluginExploitationPlaybook(),
 		ATLASDefenseEvasionPlaybook(),
 		ATLASElevationAbusePlaybook(),
+		DormantAgentDetectedPlaybook(),
 	}
 }
 
@@ -1130,6 +1131,98 @@ func ATLASElevationAbusePlaybook() *Playbook {
 				Parameters: map[string]string{
 					"framework": "ATLAS",
 					"control":   "T1548",
+				},
+				OnFailure: "continue",
+				Timeout:   30 * time.Second,
+				Required:  false,
+			},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
+// DormantAgentDetectedPlaybook returns the Agent Registry v5.0
+// dormant-agent detection playbook. This playbook is triggered when
+// the Agent Registry's dormancy engine classifies an agent as dormant
+// with live credentials. It:
+//  1. Notifies the security team about the dormant agent
+//  2. Collects evidence (agent record, last activity, credential status)
+//  3. Quarantines the agent (revokes live sessions, disables credentials)
+//  4. Creates an attestation envelope for the compliance audit trail
+//
+// Maps to NIST AI RMF MEASURE-2.7 (periodic review of AI system
+// permissions) and SOC2 CC6.2 (timely revocation of access).
+func DormantAgentDetectedPlaybook() *Playbook {
+	now := time.Now().UTC()
+	return &Playbook{
+		ID:   "pb_dormant_agent_detected",
+		Name: "Dormant Agent Detected — Credential Revocation",
+		Description: "Automated response when the Agent Registry " +
+			"detects a dormant agent with live credentials. " +
+			"Quarantines the agent and revokes credentials per " +
+			"NIST AI RMF MEASURE-2.7 and SOC2 CC6.2.",
+		Severity:    SeverityHigh,
+		Source:      SourceAgentRegistry,
+		Tags:        []string{"agent-registry", "dormant", "credential-revocation", "nist-ai-rmf", "soc2"},
+		AutoExecute: false, // requires human approval for quarantine
+		Steps: []*PlaybookStep{
+			{
+				ID:   "dormant_step1_notify",
+				Name: "Notify Security Team",
+				Description: "Send high-priority notification about " +
+					"a dormant agent with live credentials detected " +
+					"by the Agent Registry.",
+				Action: "notify",
+				Parameters: map[string]string{
+					"recipients": "security@example.com",
+					"priority":   "high",
+				},
+				OnFailure: "continue",
+				Timeout:   30 * time.Second,
+				Required:  true,
+			},
+			{
+				ID:   "dormant_step2_evidence",
+				Name: "Collect Agent Evidence",
+				Description: "Gather the agent record including " +
+					"last activity timestamp, credential status, " +
+					"protocols, and discovery sources for forensic " +
+					"analysis.",
+				Action: "collect_evidence",
+				Parameters: map[string]string{
+					"include_agent_record": "true",
+					"include_timeline":     "true",
+				},
+				OnFailure: "continue",
+				Timeout:   2 * time.Minute,
+				Required:  true,
+			},
+			{
+				ID:   "dormant_step3_quarantine",
+				Name: "Quarantine Agent",
+				Description: "Transition the agent to quarantined " +
+					"state, revoking live sessions and disabling " +
+					"credentials to prevent unauthorized use of " +
+					"dormant infrastructure.",
+				Action: "block_agent",
+				Parameters: map[string]string{
+					"target_state": "quarantined",
+				},
+				OnFailure: "stop",
+				Timeout:   1 * time.Minute,
+				Required:  true,
+			},
+			{
+				ID:   "dormant_step4_attestation",
+				Name: "Create Attestation",
+				Description: "Create a signed attestation envelope " +
+					"linking the dormancy detection and credential " +
+					"revocation to the compliance audit trail.",
+				Action: "create_attestation",
+				Parameters: map[string]string{
+					"framework": "NIST-AI-RMF",
+					"control":   "MEASURE-2.7",
 				},
 				OnFailure: "continue",
 				Timeout:   30 * time.Second,
