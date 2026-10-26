@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+// AegisGate Platform - Agent Registry — unified AI agent lifecycle management (v5.0)
+//
+
 // Package agentregistry provides a unified, live inventory of AI agents
 // across all AegisGate protocol layers (HTTP, MCP, A2A, ACP, ANP).
 //
