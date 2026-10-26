@@ -154,9 +154,6 @@ func registerAgentRegistryUnavailable(mux *http.ServeMux) {
 		"DELETE /api/v1/agent-policies/{id}",
 		"POST /api/v1/agents/refresh",
 		"GET /api/v1/agents/stream",
-		"GET /api/v1/agents/federation/bundle",
-		"POST /api/v1/agents/federation/bundle",
-		"GET /api/v1/agents/federation/drift",
 	}
 	for _, p := range patterns {
 		mux.HandleFunc(p, handler)

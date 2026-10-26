@@ -375,7 +375,7 @@ const (
 	FeatureSOCStream        Feature = "soc_stream"             // SOC operations (Professional)
 	FeatureTrustPortal      Feature = "trust_portal"           // Trust dashboard UI (Professional)
 	FeatureComputerUse      Feature = "computer_use_detection" // Computer use detection (Professional)
-	FeatureAgentRegistry    Feature = "agent_registry"          // Agent inventory & lifecycle (Professional)
+	FeatureAgentRegistry    Feature = "agent_registry"         // Agent inventory & lifecycle (Professional)
 	FeatureSLA              Feature = "sla_enforcement"        // SLA enforcement (Enterprise)
 	FeatureDataEncryption   Feature = "data_encryption"
 	FeatureAdminAdvanced    Feature = "admin_advanced"
@@ -540,7 +540,7 @@ var featureKeyMap = map[string]Feature{
 	"posture_assessment": FeaturePosture, "ciso_digest": FeatureDigest,
 	"agent_intent_signing": FeatureAgentIntentSign, "soc_stream": FeatureSOCStream,
 	"trust_portal": FeatureTrustPortal, "computer_use_detection": FeatureComputerUse,
-	"agent_registry": FeatureAgentRegistry,
+	"agent_registry":  FeatureAgentRegistry,
 	"sla_enforcement": FeatureSLA,
 	"data_encryption": FeatureDataEncryption,
 	"admin_advanced":  FeatureAdminAdvanced, "mcp_context_isolation": FeatureContextIsolation,

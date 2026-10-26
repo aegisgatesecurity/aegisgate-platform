@@ -2116,6 +2116,7 @@ func main() {
 		})
 		if regErr != nil {
 			log.Printf("[AGENT-REGISTRY] Failed to create registry: %v — endpoints disabled", regErr)
+			wireAgentRegistryHandlers(dashMux, authMiddleware, nil, nil, nil, nil)
 			wireAgentRegistryFederationHandlers(dashMux, authMiddleware, nil)
 		} else {
 			// Create the event broadcaster for SSE streaming.
