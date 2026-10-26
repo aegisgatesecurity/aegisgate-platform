@@ -147,3 +147,57 @@ func TestContainsPattern_Empty(t *testing.T) {
 		t.Error("containsPattern should return false on empty slice")
 	}
 }
+
+// TestListEventsByAgent_EmptyAgentID covers the "agentID is required"
+// defense path.
+func TestListEventsByAgent_EmptyAgentID(t *testing.T) {
+	e := NewEngine()
+	_, err := e.ListEventsByAgent(context.Background(), "")
+	if err == nil {
+		t.Error("ListEventsByAgent(\"\") should return an error")
+	}
+}
+
+// TestListEventsByAgent_NoEvents covers the "no events recorded" path.
+func TestListEventsByAgent_NoEvents(t *testing.T) {
+	e := NewEngine()
+	events, err := e.ListEventsByAgent(context.Background(), "agent-1")
+	if err != nil {
+		t.Fatalf("ListEventsByAgent: %v", err)
+	}
+	if len(events) != 0 {
+		t.Errorf("got %d events, want 0", len(events))
+	}
+}
+
+// TestListEventsByAgent_HappyPath covers the main path: record
+// events for multiple agents, then list one agent's events and
+// verify only those are returned.
+func TestListEventsByAgent_HappyPath(t *testing.T) {
+	e := NewEngine()
+
+	// Record events for two agents. Timestamps are within
+	// CorrelationWindow to avoid the first-call cleanup dropping them.
+	e.RecordEvent(context.Background(), NewEvent("mcp", "block", "agent-1", "sess-1"))
+	e.RecordEvent(context.Background(), NewEvent("a2a", "request", "agent-2", "sess-1"))
+	e.RecordEvent(context.Background(), NewEvent("mcp", "allow", "agent-1", "sess-2"))
+
+	events, err := e.ListEventsByAgent(context.Background(), "agent-1")
+	if err != nil {
+		t.Fatalf("ListEventsByAgent: %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("got %d events, want 2", len(events))
+	}
+	for _, evt := range events {
+		if evt.AgentID != "agent-1" {
+			t.Errorf("event AgentID = %s, want agent-1", evt.AgentID)
+		}
+	}
+
+	// Verify agent-2 has exactly one event.
+	events2, _ := e.ListEventsByAgent(context.Background(), "agent-2")
+	if len(events2) != 1 {
+		t.Errorf("agent-2: got %d events, want 1", len(events2))
+	}
+}

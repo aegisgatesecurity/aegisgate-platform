@@ -246,6 +246,37 @@ func TestManager_UnregisterAgent(t *testing.T) {
 	}
 }
 
+func TestManager_SetAgentEnabled(t *testing.T) {
+	m := testManager(t)
+	defer m.Close()
+
+	a := testAgent(AgentRoleStandard)
+	_ = m.RegisterAgent(a)
+
+	// Disable
+	if err := m.SetAgentEnabled(a.ID, false); err != nil {
+		t.Fatalf("SetAgentEnabled(false) error: %v", err)
+	}
+	got, _ := m.GetAgent(a.ID)
+	if got.Enabled {
+		t.Error("agent should be disabled after SetAgentEnabled(false)")
+	}
+
+	// Re-enable
+	if err := m.SetAgentEnabled(a.ID, true); err != nil {
+		t.Fatalf("SetAgentEnabled(true) error: %v", err)
+	}
+	got, _ = m.GetAgent(a.ID)
+	if !got.Enabled {
+		t.Error("agent should be enabled after SetAgentEnabled(true)")
+	}
+
+	// Nonexistent agent
+	if err := m.SetAgentEnabled("nonexistent", true); err == nil {
+		t.Error("SetAgentEnabled should error for nonexistent agent")
+	}
+}
+
 func TestManager_ListAgents(t *testing.T) {
 	m := testManager(t)
 	defer m.Close()
