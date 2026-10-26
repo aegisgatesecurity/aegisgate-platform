@@ -244,6 +244,8 @@ The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pil
 
 **Federation** is disabled by default (air-gap mode). Enable via `agent_registry.enable_federation: true` in the platform config. Each instance signs attestations with its ECDSA P-256 keyring and exchanges bundles with peers via the HTTP API. The cross-deployment drift report identifies agents that are dormant in one deployment but active in another, enabling coordinated credential revocation across clusters.
 
+**Dashboard UI**: The agent registry dashboard (`ui/frontend/agents.html`) provides a visual interface for the entire feature — overview cards, filterable agent list with lifecycle actions, dormancy report, AIBOM drift, lifecycle policy CRUD, federation status with bundle export, and a live SSE event log. Accessible from the main dashboard navigation.
+
 ## Detection Engine
 
 The `pkg/response/detectors/` package provides 216 regex patterns — the same detection engine that powers Lens and Rampart:

@@ -26,6 +26,7 @@
 - **RBAC permissions**: `ResourceAgent` with `ActionRead` (Viewer/Analyst/ComplianceOfficer) and `ActionManage` (Analyst/ComplianceOfficer)
 - **SSE events**: 5 new `StreamEventType` constants in `pkg/soc/stream.go`
 - **Federation HTTP endpoints**: 3 routes for bundle export/import and cross-deployment drift report
+- **Dashboard UI**: `ui/frontend/agents.html` with 5 tabs (agent list, dormancy, AIBOM drift, policies, federation) + live SSE event log, auto-refresh, lifecycle action buttons, policy CRUD editor, bundle export
 
 ### Files Changed
 
@@ -34,6 +35,9 @@
 - `cmd/aegisgate-platform/agent_registry_http.go` — 13 HTTP endpoints (10 core + 3 federation)
 - `cmd/aegisgate-platform/agent_registry_http_test.go` — 32 test cases
 - `cmd/aegisgate-platform/agent_registry_executor.go` — PolicyActionExecutor implementation
+- `ui/frontend/agents.html` — Agent registry dashboard (5 tabs + live SSE event log)
+- `ui/frontend/agents.css` — Dashboard styles (cards, tables, badges, tabs)
+- `ui/frontend/js/agents-client.js` — Client logic (580 LOC)
 
 **Modified files (7):**
 - `pkg/tier/tier.go` — FeatureAgentRegistry constant + RequiredTier + featureKeyMap
