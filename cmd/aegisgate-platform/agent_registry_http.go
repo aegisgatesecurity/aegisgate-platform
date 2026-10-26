@@ -106,6 +106,37 @@ func wireAgentRegistryHandlers(
 	}))
 }
 
+// wireAgentRegistryFederationHandlers registers the federation HTTP
+// routes for cross-deployment agent inventory sharing. If fedEngine
+// is nil or federation is not enabled, 503 handlers are registered.
+//
+// Endpoints:
+//   - GET  /api/v1/agents/federation/bundle  (export signed attestation bundle)
+//   - POST /api/v1/agents/federation/bundle  (import peer attestation bundle)
+//   - GET  /api/v1/agents/federation/drift   (cross-deployment drift report)
+func wireAgentRegistryFederationHandlers(
+	mux *http.ServeMux,
+	authMW *auth.Middleware,
+	fedEngine *agentregistry.FederationEngine,
+) {
+	if fedEngine == nil || !fedEngine.Enabled() {
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			writeAgentJSONError(w, http.StatusServiceUnavailable, "agent federation not enabled")
+		}
+		mux.HandleFunc("GET /api/v1/agents/federation/bundle", handler)
+		mux.HandleFunc("POST /api/v1/agents/federation/bundle", handler)
+		mux.HandleFunc("GET /api/v1/agents/federation/drift", handler)
+		return
+	}
+
+	readPerm := rbac.Permission{Resource: rbac.ResourceAgent, Action: rbac.ActionRead}
+	managePerm := rbac.Permission{Resource: rbac.ResourceAgent, Action: rbac.ActionManage}
+
+	mux.HandleFunc("GET /api/v1/agents/federation/bundle", authMW.RequirePermission(readPerm, fedEngine.ServeFederationBundle))
+	mux.HandleFunc("POST /api/v1/agents/federation/bundle", authMW.RequirePermission(managePerm, fedEngine.ReceiveFederationBundle))
+	mux.HandleFunc("GET /api/v1/agents/federation/drift", authMW.RequirePermission(readPerm, fedEngine.ServeCrossDeploymentReport))
+}
+
 // registerAgentRegistryUnavailable registers 503 handlers for all
 // agent registry endpoints when the registry is not initialized.
 func registerAgentRegistryUnavailable(mux *http.ServeMux) {
@@ -123,6 +154,9 @@ func registerAgentRegistryUnavailable(mux *http.ServeMux) {
 		"DELETE /api/v1/agent-policies/{id}",
 		"POST /api/v1/agents/refresh",
 		"GET /api/v1/agents/stream",
+		"GET /api/v1/agents/federation/bundle",
+		"POST /api/v1/agents/federation/bundle",
+		"GET /api/v1/agents/federation/drift",
 	}
 	for _, p := range patterns {
 		mux.HandleFunc(p, handler)

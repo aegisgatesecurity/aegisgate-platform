@@ -1205,7 +1205,7 @@ func DormantAgentDetectedPlaybook() *Playbook {
 					"state, revoking live sessions and disabling " +
 					"credentials to prevent unauthorized use of " +
 					"dormant infrastructure.",
-				Action:     "block_agent",
+				Action: "block_agent",
 				Parameters: map[string]string{
 					"target_state": "quarantined",
 				},

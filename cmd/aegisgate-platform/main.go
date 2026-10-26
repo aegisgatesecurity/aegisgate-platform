@@ -2116,6 +2116,7 @@ func main() {
 		})
 		if regErr != nil {
 			log.Printf("[AGENT-REGISTRY] Failed to create registry: %v — endpoints disabled", regErr)
+			wireAgentRegistryFederationHandlers(dashMux, authMiddleware, nil)
 		} else {
 			// Create the event broadcaster for SSE streaming.
 			broadcaster := agentregistry.NewEventBroadcaster(
@@ -2165,6 +2166,38 @@ func main() {
 			// Wire HTTP handlers.
 			wireAgentRegistryHandlers(dashMux, authMiddleware, registry, policyEngine, dormancyEngine, broadcaster)
 			log.Printf("[AGENT-REGISTRY] Agent Registry HTTP API enabled at /api/v1/agents (Professional tier)")
+
+			// Federation engine (optional — requires KeyRing for signing).
+			// Disabled by default (air-gap mode). When enabled, the
+			// engine periodically exports signed attestation bundles
+			// and accepts bundles from peer instances.
+			var fedEngine *agentregistry.FederationEngine
+			if cfg.AgentRegistry.EnableFederation && iocW != nil && iocW.KeyRing != nil {
+				fedCfg := agentregistry.FederationConfig{
+					EnableFederation:   true,
+					InstanceID:         iocInstanceID,
+					KeyRing:            iocW.KeyRing,
+					ExportInterval:     cfg.AgentRegistry.FederationExportInterval,
+					MaxFederatedAgents: cfg.AgentRegistry.MaxFederatedAgents,
+				}
+				if fedCfg.ExportInterval == 0 {
+					fedCfg.ExportInterval = 5 * time.Minute
+				}
+				if fedCfg.MaxFederatedAgents == 0 {
+					fedCfg.MaxFederatedAgents = 10000
+				}
+				fedEngine = agentregistry.NewFederationEngine(fedCfg, registry,
+					slog.Default().With("component", "agent-registry-federation"))
+				if err := fedEngine.Start(ctx); err != nil {
+					log.Printf("[AGENT-REGISTRY] Federation engine failed to start: %v", err)
+					fedEngine = nil
+				} else {
+					defer fedEngine.Stop()
+					log.Printf("[AGENT-REGISTRY] Federation enabled (instance=%s, export interval=%s)",
+						iocInstanceID, fedCfg.ExportInterval)
+				}
+			}
+			wireAgentRegistryFederationHandlers(dashMux, authMiddleware, fedEngine)
 
 			// Seed a default lifecycle policy if none exist.
 			policies, _ := policyEngine.ListPolicies(ctx)
@@ -2216,6 +2249,7 @@ func main() {
 	} else {
 		// Below Professional tier — register 503 fallback for all agent registry endpoints.
 		wireAgentRegistryHandlers(dashMux, authMiddleware, nil, nil, nil, nil)
+		wireAgentRegistryFederationHandlers(dashMux, authMiddleware, nil)
 		log.Printf("[AGENT-REGISTRY] Agent Registry disabled (requires Professional tier, current: %s)", platformTier.String())
 	}
 

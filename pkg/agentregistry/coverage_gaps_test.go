@@ -8,11 +8,15 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+	"unsafe"
 
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/correlation"
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/mcpserver"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/rbac"
 )
 
@@ -1094,3 +1098,242 @@ func TestRegistryList_WithFilter(t *testing.T) {
 
 var _ = io.Discard
 var _ = slog.New
+
+// =====================================================================
+// joinStrings coverage (postgres_store.go helper)
+// =====================================================================
+
+func TestJoinStrings(t *testing.T) {
+	tests := []struct {
+		name   string
+		parts  []string
+		sep    string
+		expect string
+	}{
+		{"empty", []string{}, ", ", ""},
+		{"single", []string{"a"}, ", ", "a"},
+		{"multiple", []string{"a", "b", "c"}, ", ", "a, b, c"},
+		{"semicolon sep", []string{"x", "y"}, ";", "x;y"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := joinStrings(tt.parts, tt.sep)
+			if got != tt.expect {
+				t.Errorf("joinStrings(%v, %q) = %q; want %q", tt.parts, tt.sep, got, tt.expect)
+			}
+		})
+	}
+}
+
+// =====================================================================
+// CorrelationAdapter error path coverage
+// =====================================================================
+
+func TestCorrelationAdapterRecentEventsByAgentError(t *testing.T) {
+	engine := correlation.NewEngine()
+	adapter := NewCorrelationAdapter(engine)
+
+	// Empty agentID triggers an error from the engine.
+	_, err := adapter.RecentEventsByAgent("", time.Time{})
+	if err == nil {
+		t.Error("RecentEventsByAgent should return error for empty agent ID")
+	}
+}
+
+// =====================================================================
+// heartbeatLoop default interval coverage
+// =====================================================================
+
+func TestEventBroadcaster_HeartbeatLoop_DefaultInterval(t *testing.T) {
+	b := NewEventBroadcaster(testSSELogger())
+	// Don't set a custom heartbeat interval — default 15s should be used.
+	b.Start()
+
+	// Give the goroutine time to start and execute the default interval path.
+	time.Sleep(100 * time.Millisecond)
+
+	b.Stop()
+
+	// Give the goroutine time to exit via stopCh.
+	time.Sleep(100 * time.Millisecond)
+}
+
+func TestExtractMCPActivity_DriftAgentNotInRBAC(t *testing.T) {
+	// Drift scenario: an MCP session exists for an agent NOT in RBAC.
+	sessions := []*mcpserver.MCPSession{
+		{
+			ConnectionID: "conn-drift",
+			Agent:        &rbac.Agent{ID: "ghost-agent", Name: "Ghost", Role: rbac.AgentRoleStandard, Enabled: true},
+			CreatedAt:    time.Now(),
+			LastActivity: time.Now(),
+		},
+	}
+	activity := extractMCPActivity(sessions)
+	if len(activity) != 1 {
+		t.Fatalf("len(activity) = %d, want 1", len(activity))
+	}
+	if activity[0].AgentID != "ghost-agent" {
+		t.Errorf("AgentID = %q, want %q", activity[0].AgentID, "ghost-agent")
+	}
+}
+
+// TestEventBroadcaster_HeartbeatLoop_ZeroInterval covers the default
+// interval path (line 306 in sse.go). NewEventBroadcaster sets
+// heartbeatInterval to 15s, so the if interval == 0 branch is never
+// taken via the public constructor. We construct an EventBroadcaster
+// directly with a zero heartbeatInterval to exercise this path.
+func TestEventBroadcaster_HeartbeatLoop_ZeroInterval(t *testing.T) {
+	b := &EventBroadcaster{
+		subs:   make(map[string]chan *SSEEvent),
+		logger: testSSELogger(),
+		stopCh: make(chan struct{}),
+		// heartbeatInterval left as zero value — triggers default 15s path
+	}
+	b.Start()
+
+	// Give the goroutine time to enter heartbeatLoop, execute the
+	// `if interval == 0 { interval = 15 * time.Second }` branch, and
+	// block on the select.
+	time.Sleep(100 * time.Millisecond)
+
+	b.Stop()
+	time.Sleep(100 * time.Millisecond)
+}
+
+// TestEventBroadcaster_HandleSSE_StopCh covers the stopCh branch in
+// HandleSSE's select loop (line 273 in sse.go). Other tests cover the
+// ctx.Done() and channel-closed branches; this one triggers b.Stop()
+// while a client is connected.
+func TestEventBroadcaster_HandleSSE_StopCh(t *testing.T) {
+	b := NewEventBroadcaster(testSSELogger())
+	b.Start()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/agents/stream", nil)
+	req = req.WithContext(ctx)
+	w := httptest.NewRecorder()
+
+	done := make(chan struct{})
+	go func() {
+		b.HandleSSE(w, req)
+		close(done)
+	}()
+
+	// Give the handler time to subscribe and enter the select loop.
+	time.Sleep(100 * time.Millisecond)
+
+	// Stop the broadcaster — heartbeatLoop and HandleSSE should both
+	// pick up stopCh and exit.
+	b.Stop()
+
+	select {
+	case <-done:
+		// Good — HandleSSE exited via stopCh
+	case <-time.After(2 * time.Second):
+		t.Fatal("HandleSSE did not exit after broadcaster Stop()")
+	}
+}
+
+// TestDiscover_MCPDrift_InjectedSession exercises the MCP drift path
+// in Discover() (lines 149-158 in registry.go) by injecting a session
+// with a valid RBACSession but an Agent.ID that is NOT in RBAC. This
+// simulates a scenario where the MCP session's cached Agent pointer
+// references an agent that was never registered (or was removed) from
+// RBAC. We use unsafe to access the private conns map since
+// CreateSession prevents this scenario and ListSessions filters by
+// RBACSession.IsValid().
+func TestDiscover_MCPDrift_InjectedSession(t *testing.T) {
+	rbacMgr, err := rbac.NewManager(nil)
+	if err != nil {
+		t.Fatalf("rbac.NewManager: %v", err)
+	}
+	// Register a "real" agent that will have a valid RBAC session.
+	_ = rbacMgr.RegisterAgent(&rbac.Agent{ID: "real-agent", Name: "Real", Role: rbac.AgentRoleStandard, Enabled: true})
+
+	sm := mcpserver.NewConnectionSessionManager(rbacMgr)
+	ctx := context.Background()
+
+	// Create a valid session for real-agent.
+	_, err = sm.CreateSession(ctx, "conn-real", "real-agent")
+	if err != nil {
+		t.Fatalf("CreateSession: %v", err)
+	}
+
+	// Now use unsafe to inject a second session into the private conns
+	// map. This session has a valid RBACSession (copied from the real
+	// session) but its Agent.ID is "ghost-agent" — NOT in RBAC. This
+	// triggers the drift path in Discover().
+	smVal := reflect.ValueOf(sm).Elem()
+	connsField := smVal.FieldByName("conns")
+
+	// Access the private conns map via unsafe pointer (reflect cannot
+	// SetMapIndex on unexported fields). We read the map pointer and
+	// manipulate the Go map directly.
+	connsPtr := unsafe.Pointer(connsField.UnsafeAddr())
+	connsMap := *(*map[string]*mcpserver.MCPSession)(connsPtr)
+
+	// Find an existing valid session to copy its RBACSession.
+	var validSession *mcpserver.MCPSession
+	for _, s := range connsMap {
+		if s.RBACSession != nil && s.RBACSession.IsValid() {
+			validSession = s
+			break
+		}
+	}
+	if validSession == nil {
+		t.Fatal("no valid session found to copy")
+	}
+
+	// Construct a drift session: valid RBACSession, but Agent.ID
+	// points to an agent NOT in RBAC.
+	driftSession := &mcpserver.MCPSession{
+		ConnectionID: "conn-drift",
+		RBACSession:  validSession.RBACSession,
+		Agent:        &rbac.Agent{ID: "ghost-agent", Name: "Ghost", Role: rbac.AgentRoleStandard, Enabled: true},
+		CreatedAt:    time.Now(),
+		LastActivity: time.Now(),
+	}
+
+	// Inject directly into the conns map.
+	connsMap["conn-drift"] = driftSession
+
+	// Build a registry and discover.
+	reg, err := New(Config{
+		Store:       NewInMemoryStore(),
+		RBAC:        rbacMgr,
+		MCPSessions: sm,
+		Logger:      testSSELogger(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	if err := reg.Discover(ctx); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+
+	records, err := reg.List(nil)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	var foundDrift, foundReal bool
+	for _, r := range records {
+		if r.ID == "ghost-agent" {
+			foundDrift = true
+			if !contains(r.DiscoverySources, "mcp") {
+				t.Errorf("ghost-agent DiscoverySources = %v; want 'mcp'", r.DiscoverySources)
+			}
+		}
+		if r.ID == "real-agent" {
+			foundReal = true
+		}
+	}
+	if !foundDrift {
+		t.Error("ghost-agent not found in records; drift path did not fire")
+	}
+	if !foundReal {
+		t.Error("real-agent not found in records")
+	}
+}

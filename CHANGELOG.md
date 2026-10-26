@@ -4,7 +4,7 @@
 
 ### Agent Registry (`pkg/agentregistry/`)
 
-**New package** (~4,700 LOC including tests, 16 files):
+**New package** (~7,200 LOC including tests, 22 files):
 
 - **AgentRecord** — unified schema aggregating identity (RBAC), activity (MCP/A2A), provenance (AIBOM), and threat signals (Correlation)
 - **Lifecycle state machine** — `provisioned → active → dormant → quarantined → revoked` with sticky quarantine/revoked states
@@ -12,37 +12,37 @@
 - **PolicyEngine** — declarative lifecycle policies with filter matching (protocols, roles, tags, tenants) and action execution (notify, playbook, quarantine, revoke, tag)
 - **AIBOM Reconciliation** — drift detection between static AIBOM and live runtime agents
 - **EventBroadcaster** — SSE lifecycle event streaming with heartbeat and back-pressure
-- **HTTP API** — 10 endpoints at `/api/v1/agents` with permission-based access control (RBAC `ResourceAgent` with `ActionRead`/`ActionManage`)
+- **Federation** — cross-deployment agent inventory sharing via ECDSA P-256 signed attestation bundles; `FederationEngine` with background export loop, `FederatedStore` with LRU eviction (max 10,000), `CrossDeploymentDriftReport` for identifying agents dormant in one deployment but active in another. Air-gap by default, opt-in via config.
+- **HTTP API** — 13 endpoints at `/api/v1/agents` with permission-based access control (RBAC `ResourceAgent` with `ActionRead`/`ActionManage`)
 - **In-memory store** — default for air-gap deployments
 - **PostgreSQL store** — with Row-Level Security (tenant isolation + admin bypass), JSONB for complex fields, GIN index for protocol containment queries
 
 ### Platform Integration
 
 - **Tier gate**: `FeatureAgentRegistry` → Professional+ (`pkg/tier/tier.go`)
-- **Config**: `AgentRegistryConfig` in `pkg/platformconfig/config.go` (refresh interval, dormancy/quarantine/revoke thresholds, PostgreSQL toggle)
+- **Config**: `AgentRegistryConfig` in `pkg/platformconfig/config.go` (refresh interval, dormancy/quarantine/revoke thresholds, PostgreSQL toggle, federation toggle + export interval + max federated agents)
 - **Policy action executor**: wires policy actions to SOAR (PagerDuty/Jira/ServiceNow), Incident Engine (playbook trigger), and RBAC (agent disable + session invalidation)
 - **Default playbook**: `pb_dormant_agent_detected` — 4-step notify → evidence → quarantine → attestation (NIST AI RMF MEASURE-2.7, SOC2 CC6.2)
 - **RBAC permissions**: `ResourceAgent` with `ActionRead` (Viewer/Analyst/ComplianceOfficer) and `ActionManage` (Analyst/ComplianceOfficer)
 - **SSE events**: 5 new `StreamEventType` constants in `pkg/soc/stream.go`
+- **Federation HTTP endpoints**: 3 routes for bundle export/import and cross-deployment drift report
 
 ### Files Changed
 
-**New files (18):**
-- `pkg/agentregistry/` — 16 files (doc.go, types.go, store.go, memory_store.go, adapters.go, registry.go, dormancy.go, policy.go, sse.go, postgres_store.go + 6 test files)
-- `cmd/aegisgate-platform/agent_registry_http.go` — 10 HTTP endpoints
+**New files (20):**
+- `pkg/agentregistry/` — 18 files (doc.go, types.go, store.go, memory_store.go, adapters.go, registry.go, dormancy.go, policy.go, sse.go, postgres_store.go, federation.go + 7 test files)
+- `cmd/aegisgate-platform/agent_registry_http.go` — 13 HTTP endpoints (10 core + 3 federation)
 - `cmd/aegisgate-platform/agent_registry_http_test.go` — 32 test cases
 - `cmd/aegisgate-platform/agent_registry_executor.go` — PolicyActionExecutor implementation
 
 **Modified files (7):**
 - `pkg/tier/tier.go` — FeatureAgentRegistry constant + RequiredTier + featureKeyMap
-- `pkg/platformconfig/config.go` — AgentRegistryConfig struct + Config field
+- `pkg/platformconfig/config.go` — AgentRegistryConfig struct + Config field + federation config fields
 - `pkg/rbac/types.go` — ResourceAgent permissions in UserRolePermissions
-- pkg/soc/stream.go` — 5 new StreamEventType constants
+- `pkg/soc/stream.go` — 5 new StreamEventType constants
 - `pkg/incident/playbooks.go` — DormantAgentDetectedPlaybook
 - `pkg/incident/types.go` — SourceAgentRegistry source constant
-- `pkg/a2a/caps_persistent.go` — GetCapabilities method
-- `pkg/agentregistry/adapters.go` — A2ACapReader interface for both enforcer types
-- `cmd/aegisgate-platform/main.go` — Agent registry wiring + v5.0.0 version bump
+- `cmd/aegisgate-platform/main.go` — Agent registry wiring + federation engine wiring + v5.0.0 version bump
 
 ---
 

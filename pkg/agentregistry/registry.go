@@ -139,7 +139,11 @@ func (r *Registry) Discover(ctx context.Context) error {
 	}
 
 	// Step 2: MCP session activity
-	mcpActivity := extractMCPActivity(r.mcpSessions)
+	var mcpSessions []*mcpserver.MCPSession
+	if r.mcpSessions != nil {
+		mcpSessions = r.mcpSessions.ListSessions()
+	}
+	mcpActivity := extractMCPActivity(mcpSessions)
 	r.logger.Debug("agentregistry: MCP activity extracted", "agents_with_mcp", len(mcpActivity))
 	for _, ma := range mcpActivity {
 		record, ok := records[ma.AgentID]

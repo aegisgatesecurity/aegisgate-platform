@@ -230,11 +230,13 @@ type mcpActivity struct {
 }
 
 // extractMCPActivity scans MCP sessions and returns per-agent activity.
-func extractMCPActivity(sm *mcpserver.ConnectionSessionManager) []mcpActivity {
-	if sm == nil {
+// It accepts a session slice (typically from ConnectionSessionManager.ListSessions)
+// so callers — and tests — can inject arbitrary session sets, including drift
+// scenarios (sessions bound to agents not present in RBAC).
+func extractMCPActivity(sessions []*mcpserver.MCPSession) []mcpActivity {
+	if len(sessions) == 0 {
 		return nil
 	}
-	sessions := sm.ListSessions()
 	byAgent := make(map[string]*mcpActivity)
 	for _, s := range sessions {
 		if s.Agent == nil {

@@ -839,4 +839,18 @@ type AgentRegistryConfig struct {
 	// (requires FeaturePostgreSQL). When false, in-memory stores are
 	// used (data is lost on restart).
 	UsePostgreSQL bool `yaml:"use_postgres"`
+
+	// EnableFederation controls whether the registry participates in
+	// cross-deployment federation. When false (the default), no
+	// federation data is produced or consumed (air-gap mode).
+	EnableFederation bool `yaml:"enable_federation"`
+
+	// FederationExportInterval is how often the registry produces a
+	// signed bundle of agent attestations for peer consumption.
+	// Default: 5 minutes. Zero means manual export only.
+	FederationExportInterval time.Duration `yaml:"federation_export_interval"`
+
+	// MaxFederatedAgents is the maximum number of federated agent
+	// records retained from peers. Default: 10,000.
+	MaxFederatedAgents int `yaml:"max_federated_agents"`
 }

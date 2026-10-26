@@ -219,9 +219,10 @@ The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pil
 - **Policy enforcement** — declarative lifecycle policies with filter matching and action execution (notify, playbook, quarantine, revoke, tag)
 - **AIBOM reconciliation** — drift detection between static AIBOM and live runtime agents
 - **SSE event streaming** — real-time lifecycle events at `/api/v1/agents/stream`
+- **Federation** — cross-deployment agent inventory sharing via signed attestation bundles (ECDSA P-256); air-gap by default, opt-in per instance
 - **PostgreSQL-backed** — Row-Level Security for tenant isolation, JSONB for complex fields
 
-**HTTP API** (10 endpoints, Professional tier):
+**HTTP API** (13 endpoints, Professional tier):
 
 | Method | Endpoint | Permission | Description |
 |--------|----------|------------|-------------|
@@ -235,8 +236,13 @@ The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pil
 | GET | `/api/v1/agent-policies` | Read | List lifecycle policies |
 | POST | `/api/v1/agent-policies` | Manage | Create/update lifecycle policy |
 | DELETE | `/api/v1/agent-policies/{id}` | Manage | Delete lifecycle policy |
+| GET | `/api/v1/agents/federation/bundle` | Read | Export signed attestation bundle for peer instances |
+| POST | `/api/v1/agents/federation/bundle` | Manage | Import attestation bundle from a peer instance |
+| GET | `/api/v1/agents/federation/drift` | Read | Cross-deployment drift report (local vs federated agents) |
 
 **Default playbook**: `pb_dormant_agent_detected` — 4-step automated response (notify → evidence → quarantine → attestation) mapped to NIST AI RMF MEASURE-2.7 and SOC2 CC6.2.
+
+**Federation** is disabled by default (air-gap mode). Enable via `agent_registry.enable_federation: true` in the platform config. Each instance signs attestations with its ECDSA P-256 keyring and exchanges bundles with peers via the HTTP API. The cross-deployment drift report identifies agents that are dormant in one deployment but active in another, enabling coordinated credential revocation across clusters.
 
 ## Detection Engine
 

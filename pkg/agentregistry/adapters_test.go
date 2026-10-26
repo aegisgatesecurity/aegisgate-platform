@@ -227,6 +227,38 @@ func TestExtractMCPActivity_Nil(t *testing.T) {
 	}
 }
 
+// TestExtractMCPActivity_NilAgent covers the defensive `s.Agent == nil`
+// continue branch — the only way to reach it is by directly injecting a
+// session with a nil Agent (CreateSession prevents this via RBAC lookup).
+func TestExtractMCPActivity_NilAgent(t *testing.T) {
+	// Construct a session list where one session has a nil Agent.
+	// This simulates a corrupt or hand-crafted MCPSession that would
+	// never arise via CreateSession (which validates the agent), but
+	// the defensive nil-check guards against it.
+	sessions := []*mcpserver.MCPSession{
+		{
+			ConnectionID: "conn-nil",
+			Agent:        nil, // defensive path
+			CreatedAt:    time.Now(),
+			LastActivity: time.Now(),
+		},
+		{
+			ConnectionID: "conn-ok",
+			Agent:        &rbac.Agent{ID: "nil-agent-test", Name: "NilAgentTest", Role: rbac.AgentRoleStandard, Enabled: true},
+			CreatedAt:    time.Now(),
+			LastActivity: time.Now(),
+		},
+	}
+
+	activity := extractMCPActivity(sessions)
+	if len(activity) != 1 {
+		t.Fatalf("len(activity) = %d, want 1 (nil-agent session skipped)", len(activity))
+	}
+	if activity[0].AgentID != "nil-agent-test" {
+		t.Errorf("AgentID = %q, want %q", activity[0].AgentID, "nil-agent-test")
+	}
+}
+
 func TestExtractMCPProtocolCount_Nil(t *testing.T) {
 	count := extractMCPProtocolCount(nil, "agent-x")
 	if count != 0 {
@@ -264,7 +296,7 @@ func TestExtractMCPActivity_WithSessions(t *testing.T) {
 		t.Fatalf("CreateSession(conn-b1): %v", err)
 	}
 
-	activity := extractMCPActivity(sm)
+	activity := extractMCPActivity(sm.ListSessions())
 	if len(activity) != 2 {
 		t.Fatalf("len(activity) = %d, want 2", len(activity))
 	}
@@ -294,7 +326,7 @@ func TestExtractMCPActivity_NoSessions(t *testing.T) {
 	rbacMgr, _ := rbac.NewManager(nil)
 	sm := mcpserver.NewConnectionSessionManager(rbacMgr)
 
-	activity := extractMCPActivity(sm)
+	activity := extractMCPActivity(sm.ListSessions())
 	if len(activity) != 0 {
 		t.Errorf("len(activity) = %d, want 0", len(activity))
 	}

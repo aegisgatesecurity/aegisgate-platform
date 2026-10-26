@@ -154,7 +154,10 @@ func (e *agentRegistryExecutor) Quarantine(ctx context.Context, agentID string) 
 	}
 
 	// Invalidate all existing sessions for this agent.
-	e.rbacMgr.InvalidateAgentSessions(agentID)
+	if err := e.rbacMgr.InvalidateAgentSessions(agentID); err != nil {
+		e.logger.Warn("Failed to invalidate agent sessions during quarantine",
+			"agent_id", agentID, "error", err)
+	}
 
 	e.logger.Info("Agent quarantined",
 		"agent_id", agentID,
@@ -180,7 +183,10 @@ func (e *agentRegistryExecutor) Revoke(ctx context.Context, agentID string) erro
 	}
 
 	// Invalidate all existing sessions.
-	e.rbacMgr.InvalidateAgentSessions(agentID)
+	if err := e.rbacMgr.InvalidateAgentSessions(agentID); err != nil {
+		e.logger.Warn("Failed to invalidate agent sessions during revocation",
+			"agent_id", agentID, "error", err)
+	}
 
 	e.logger.Info("Agent revoked",
 		"agent_id", agentID,

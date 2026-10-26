@@ -249,7 +249,6 @@ func (s *PostgresStore) List(ctx context.Context, filter *ListFilter) ([]*AgentR
 			conditions = append(conditions, fmt.Sprintf("protocols @> $%d::jsonb", argIdx))
 			protoJSON, _ := json.Marshal([]string{string(filter.Protocol)})
 			args = append(args, protoJSON)
-			argIdx++
 		}
 	}
 

@@ -21,9 +21,13 @@ package agentregistry
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/aegisgatesecurity/aegisgate-platform/pkg/auth"
 	"github.com/aegisgatesecurity/aegisgate-platform/pkg/testdb"
 )
 
@@ -678,5 +682,270 @@ func TestPostgresPolicyStore_ListPolicies_Multiple(t *testing.T) {
 	}
 	if len(policies) != 3 {
 		t.Errorf("Expected 3 policies; got %d", len(policies))
+	}
+}
+
+// =====================================================================
+// JSONB corruption tests — exercise json.Unmarshal error paths in
+// PostgresStore.Get and PostgresPolicyStore queries. These cover lines
+// 177, 180, 183, 186 in postgres_store.go (and the List/Policy
+// equivalents) by inserting wrong-type JSONB via raw SQL.
+// =====================================================================
+
+func adminCtx(ctx context.Context) context.Context {
+	return context.WithValue(ctx, auth.ContextKeyIsAdmin, true)
+}
+
+// corruptJSONB updates a JSONB column with wrong-type JSON so that
+// json.Unmarshal into the expected Go type fails.
+func corruptJSONB(t *testing.T, pool *pgxpool.Pool, agentID, column, badJSON string) {
+	t.Helper()
+	ctx := adminCtx(context.Background())
+	_, err := pool.Exec(ctx,
+		fmt.Sprintf("UPDATE agent_registry SET %s = $1::jsonb WHERE id = $2", column),
+		badJSON, agentID)
+	if err != nil {
+		t.Fatalf("corrupt %s: %v", column, err)
+	}
+}
+
+func TestPostgresStore_Get_CorruptTools(t *testing.T) {
+	store, pool, cleanup := setupPostgresStoreWithPool(t)
+	defer cleanup()
+	ctx := adminCtx(context.Background())
+
+	rec := newTestRecord("corrupt-tools")
+	if err := store.Upsert(ctx, rec); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	// tools expects []string — inject a JSON object instead.
+	corruptJSONB(t, pool, rec.ID, "tools", `{"not":"an_array"}`)
+
+	_, err := store.Get(ctx, rec.ID)
+	if err == nil {
+		t.Fatal("Get with corrupt tools: expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "unmarshal tools") {
+		t.Errorf("Get error = %v; want 'unmarshal tools'", err)
+	}
+}
+
+func TestPostgresStore_Get_CorruptTags(t *testing.T) {
+	store, pool, cleanup := setupPostgresStoreWithPool(t)
+	defer cleanup()
+	ctx := adminCtx(context.Background())
+
+	rec := newTestRecord("corrupt-tags")
+	if err := store.Upsert(ctx, rec); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	// tags expects map[string]string — inject a JSON array instead.
+	corruptJSONB(t, pool, rec.ID, "tags", `["not","an_object"]`)
+
+	_, err := store.Get(ctx, rec.ID)
+	if err == nil {
+		t.Fatal("Get with corrupt tags: expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "unmarshal tags") {
+		t.Errorf("Get error = %v; want 'unmarshal tags'", err)
+	}
+}
+
+func TestPostgresStore_Get_CorruptProtocols(t *testing.T) {
+	store, pool, cleanup := setupPostgresStoreWithPool(t)
+	defer cleanup()
+	ctx := adminCtx(context.Background())
+
+	rec := newTestRecord("corrupt-protos")
+	if err := store.Upsert(ctx, rec); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	// protocols expects []Protocol (string slice) — inject a JSON number.
+	corruptJSONB(t, pool, rec.ID, "protocols", `123`)
+
+	_, err := store.Get(ctx, rec.ID)
+	if err == nil {
+		t.Fatal("Get with corrupt protocols: expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "unmarshal protocols") {
+		t.Errorf("Get error = %v; want 'unmarshal protocols'", err)
+	}
+}
+
+func TestPostgresStore_Get_CorruptDiscoverySources(t *testing.T) {
+	store, pool, cleanup := setupPostgresStoreWithPool(t)
+	defer cleanup()
+	ctx := adminCtx(context.Background())
+
+	rec := newTestRecord("corrupt-disc")
+	if err := store.Upsert(ctx, rec); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	// discovery_sources expects []string — inject a JSON object.
+	corruptJSONB(t, pool, rec.ID, "discovery_sources", `{"not":"an_array"}`)
+
+	_, err := store.Get(ctx, rec.ID)
+	if err == nil {
+		t.Fatal("Get with corrupt discovery_sources: expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "unmarshal discovery_sources") {
+		t.Errorf("Get error = %v; want 'unmarshal discovery_sources'", err)
+	}
+}
+
+// setupPostgresStoreWithPool is like setupPostgresStore but also returns
+// the underlying *pgxpool.Pool for raw SQL operations (e.g. corrupting
+// JSONB columns to trigger unmarshal error paths).
+func setupPostgresStoreWithPool(t *testing.T) (*PostgresStore, *pgxpool.Pool, func()) {
+	t.Helper()
+	pgStore, cleanup := testdb.SetupTestDB(t)
+	pool := pgStore.Pool()
+	store, err := NewPostgresStore(pool)
+	if err != nil {
+		t.Fatalf("NewPostgresStore: %v", err)
+	}
+	return store, pool, cleanup
+}
+
+// =====================================================================
+// Cancelled-context tests — exercise query/exec error paths in
+// PostgresStore.List, Delete, ListPolicies, and DeletePolicy.
+// An already-cancelled context causes the query to fail immediately,
+// triggering the error return branches (lines 266, 407, 541, 636).
+// =====================================================================
+
+func TestPostgresStore_List_CancelledContext(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	_, err := store.List(ctx, nil)
+	if err == nil {
+		t.Fatal("List with cancelled context: expected error, got nil")
+	}
+}
+
+func TestPostgresStore_Delete_CancelledContext(t *testing.T) {
+	store, _, cleanup := setupPostgresStore(t)
+	defer cleanup()
+
+	// Insert a record first so the delete has something to target.
+	ctx := adminCtx(context.Background())
+	rec := newTestRecord("cancel-delete")
+	if err := store.Upsert(ctx, rec); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	// Cancel context before delete — exec should fail.
+	cancelCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := store.Delete(cancelCtx, rec.ID)
+	if err == nil {
+		t.Fatal("Delete with cancelled context: expected error, got nil")
+	}
+}
+
+func TestPostgresPolicyStore_ListPolicies_CancelledContext(t *testing.T) {
+	_, policyStore, cleanup := setupPostgresStore(t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := policyStore.ListPolicies(ctx)
+	if err == nil {
+		t.Fatal("ListPolicies with cancelled context: expected error, got nil")
+	}
+}
+
+func TestPostgresPolicyStore_DeletePolicy_CancelledContext(t *testing.T) {
+	_, policyStore, cleanup := setupPostgresStore(t)
+	defer cleanup()
+
+	// Insert a policy first.
+	ctx := adminCtx(context.Background())
+	pol := newTestPolicy("cancel-del-pol")
+	if err := policyStore.UpsertPolicy(ctx, pol); err != nil {
+		t.Fatalf("UpsertPolicy: %v", err)
+	}
+
+	// Cancel context before delete — exec should fail.
+	cancelCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := policyStore.DeletePolicy(cancelCtx, pol.ID)
+	if err == nil {
+		t.Fatal("DeletePolicy with cancelled context: expected error, got nil")
+	}
+}
+
+// =====================================================================
+// Scan error tests — exercise rows.Scan error paths in List and
+// ListPolicies (lines 286, 556). We ALTER a column type after inserting
+// data so the scan into the expected Go type fails.
+// =====================================================================
+
+func TestPostgresStore_List_ScanError(t *testing.T) {
+	store, pool, cleanup := setupPostgresStoreWithPool(t)
+	defer cleanup()
+
+	ctx := adminCtx(context.Background())
+	rec := newTestRecord("scan-err")
+	if err := store.Upsert(ctx, rec); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	// Alter active_sessions from INTEGER to TEXT so scanning into
+	// &record.ActiveSessions (int) fails.
+	_, err := pool.Exec(ctx,
+		"ALTER TABLE agent_registry ALTER COLUMN active_sessions TYPE TEXT USING active_sessions::TEXT")
+	if err != nil {
+		t.Fatalf("ALTER TABLE: %v", err)
+	}
+
+	_, err = store.List(ctx, nil)
+	if err == nil {
+		t.Fatal("List with altered schema: expected scan error, got nil")
+	}
+	if !strings.Contains(err.Error(), "scan row") {
+		t.Errorf("List error = %v; want 'scan row'", err)
+	}
+}
+
+func TestPostgresPolicyStore_ListPolicies_ScanError(t *testing.T) {
+	_, pool, cleanup := setupPostgresStoreWithPool(t)
+	defer cleanup()
+
+	ctx := adminCtx(context.Background())
+	policyStore, err := NewPostgresPolicyStore(pool)
+	if err != nil {
+		t.Fatalf("NewPostgresPolicyStore: %v", err)
+	}
+	pol := newTestPolicy("scan-err-pol")
+	if err := policyStore.UpsertPolicy(ctx, pol); err != nil {
+		t.Fatalf("UpsertPolicy: %v", err)
+	}
+
+	// Alter enabled from BOOLEAN to TEXT so scanning into
+	// &policy.Enabled (bool) fails.
+	_, err = pool.Exec(ctx,
+		"ALTER TABLE agent_lifecycle_policies ALTER COLUMN enabled TYPE TEXT USING enabled::TEXT")
+	if err != nil {
+		t.Fatalf("ALTER TABLE: %v", err)
+	}
+
+	_, err = policyStore.ListPolicies(ctx)
+	if err == nil {
+		t.Fatal("ListPolicies with altered schema: expected scan error, got nil")
+	}
+	if !strings.Contains(err.Error(), "scan policy row") {
+		t.Errorf("ListPolicies error = %v; want 'scan policy row'", err)
 	}
 }
