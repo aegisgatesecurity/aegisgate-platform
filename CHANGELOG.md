@@ -228,7 +228,7 @@ Compliance framework test coverage driven to industry-leading levels:
 ### Provisional Patent #7
 
 - **64/180,722** — Federated Detection Gap Analysis (filed Oct 20, 2026). Covers the cross-product federated IOC sharing and detection gap analysis methodology.
-- Brings total to **7 provisional patent applications** filed.
+- Brings total to **8 provisional patent applications** filed.
 
 ### Cross-Product State
 
