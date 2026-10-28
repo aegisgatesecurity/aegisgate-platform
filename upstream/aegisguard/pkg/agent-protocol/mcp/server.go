@@ -30,7 +30,7 @@ type Server struct {
 	config      *ServerConfig
 	listener    net.Listener
 	handler     *RequestHandler
-	handleFunc  HandlerFunc // if non-nil, overrides handler.HandleRequest
+	handleFunc  HandlerFunc   // if non-nil, overrides handler.HandleRequest
 	onClose     ConnCloseFunc // if non-nil, called when a connection closes
 	connections map[string]*Connection
 	connMu      sync.RWMutex
