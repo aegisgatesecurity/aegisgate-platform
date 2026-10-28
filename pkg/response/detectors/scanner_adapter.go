@@ -7,7 +7,7 @@
 // for detection patterns) with the detectors package API used by guard.go.
 //
 // The upstream scanner (github.com/aegisgatesecurity/aegisgate/pkg/scanner)
-// contains 200 pre-compiled patterns across 8 categories. The detectors
+// contains 303 pre-compiled patterns across 9 categories. The detectors
 // package wraps the scanner to maintain backward-compatible types (Match,
 // Severity) while eliminating duplicate pattern definitions.
 //
@@ -28,17 +28,17 @@ import (
 )
 
 // xssScanner is a scanner configured with only CategoryXSS patterns
-// (11 patterns). This avoids scanning all 200 patterns when we only
+// (12 patterns). This avoids scanning all 303 patterns when we only
 // need XSS detection.
 var xssScanner = newCategoryScanner(scannerpkg.CategoryXSS)
 
 // complianceScanner is a scanner configured with only CategoryCompliance
-// patterns (35 patterns). This avoids scanning all 200 patterns when we
+// patterns (57 patterns). This avoids scanning all 303 patterns when we
 // only need compliance detection.
 var complianceScanner = newCategoryScanner(scannerpkg.CategoryCompliance)
 
 // newCategoryScanner creates a scanner containing only patterns from
-// the specified category. This is more efficient than scanning all 200
+// the specified category. This is more efficient than scanning all 303
 // patterns and filtering.
 func newCategoryScanner(category scannerpkg.Category) *scannerpkg.Scanner {
 	var patterns []*scannerpkg.Pattern

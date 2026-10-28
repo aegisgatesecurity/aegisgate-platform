@@ -205,7 +205,7 @@ flowchart LR
 | MCP | `pkg/mcpserver/` | Model Context Protocol guardrails, tool poisoning detection (34 dangerous function patterns) |
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
-| Response | `pkg/response/detectors/` | 216-pattern detection (secrets, XSS, PII, compliance) |
+| Response | `pkg/response/detectors/` | 303-pattern detection (secrets, XSS, PII, compliance) |
 | Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
 
 ## Agent Registry (v5.0)
@@ -248,24 +248,26 @@ The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pil
 
 ## Detection Engine
 
-The `pkg/response/detectors/` package provides 216 regex patterns — the same detection engine that powers Lens and Rampart:
+The `pkg/response/detectors/` package provides 303 regex patterns — the same detection engine that powers Lens and Rampart:
 
 The `pkg/contracts` package defines canonical pattern and event contracts for cross-product interoperability. Platform serves patterns to FOSS products (Scanner, MCP, Rampart, Lens) via the telemetry endpoint (`GET /api/v1/patterns/latest`) with ETag caching.
 
 | Category | Patterns | What it catches |
 |----------|----------|-----------------|
-| **Secrets** | 45 | AWS keys, GitHub PATs, Stripe keys, JWTs, GitLab tokens, Twilio, SendGrid, private keys |
+| **PII** | 64 | SSN, phone, DOB, MRN, ZIP+4, email, IP addresses, passport, driver's license |
+| **Credentials** | 62 | AWS keys, GitHub PATs, Stripe keys, JWTs, GitLab tokens, Twilio, SendGrid |
+| **Financial** | 20 | Credit cards (Visa/MC/Amex/Discover), IBANs, SWIFT/BIC, routing numbers |
+| **Cryptographic** | 3 | RSA, EC, OpenSSH private keys |
+| **Network** | 32 | OT/ICS protocols (Modbus, DNP3, OPC UA, BACnet, S7comm, EtherCAT, Profinet) |
+| **Prompt Injection** | 48 | Instruction override, role-play, delimiter injection, base64 payloads, SSTI |
 | **XSS** | 12 | `<script>`, event handlers, `javascript:`, SVG-based, encoded variants |
-| **PII (US Core)** | 15 | SSN, phone, DOB, MRN, ZIP+4, full names with context |
-| **PII (Extended)** | 13 | Email, IP addresses, passport numbers, driver's licenses |
-| **PII (International)** | 9 | National IDs (NHS, SIN, TFN, IRD, BSN, CF, SSN-IT, NRIC, MyNumber) |
-| **PII (Financial)** | 24 | Credit cards, IBANs, SWIFT/BIC, routing numbers |
-| **Compliance** | 35 | GDPR data types, HIPAA PHI indicators, PCI-DSS card data, CCPA personal info |
+| **Compliance** | 57 | GDPR, HIPAA, PCI-DSS, CCPA, OWASP LLM Top 10, EU AI Act, MITRE ATLAS |
+| **Agent Poisoning** | 5 | Tool poisoning, memory poisoning, instruction injection via agent context |
 
 ```go
 import "github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
 
-// Scan all 216 patterns
+// Scan all 303 patterns
 matches := detectors.DetectAll(text)
 
 // Scan by category
