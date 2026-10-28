@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -97,11 +98,15 @@ func a2aErrorResponse(w http.ResponseWriter, code, message string, statusCode in
 func NewA2AMiddleware(next http.Handler, secret []byte, lm *license.Manager, caps CapabilityEnforcer) http.Handler {
 	// Use sensible defaults for rate limiting – these match the defaults used in the demo config.
 	limiter := NewTokenBucket(100, 10, time.Minute)
+	// Pre-auth IP limiter protects against DoS at the auth layer.
+	// Same capacity/refill as the per-agent limiter.
+	ipLimiter := NewTokenBucket(100, 10, time.Minute)
 	return &Middleware{
 		auth:       &MTLSAuth{},
 		integrity:  NewIntegrityVerifier(secret),
 		caps:       caps,
 		limiter:    limiter,
+		ipLimiter:  ipLimiter,
 		next:       next,
 		licenseMgr: lm,
 		logger:     slog.Default().With("component", "a2a-middleware"),
@@ -377,7 +382,8 @@ type Middleware struct {
 	auth       AuthProvider
 	integrity  *IntegrityVerifier
 	caps       CapabilityEnforcer
-	limiter    RateLimiter
+	limiter    RateLimiter // per-agent (post-auth)
+	ipLimiter  RateLimiter // per-IP (pre-auth, DoS protection)
 	next       http.Handler
 	licenseMgr *license.Manager
 	logger     *slog.Logger
@@ -395,6 +401,21 @@ func (m *Middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.StatusForbidden)
 		}
 	}()
+
+	// --- Guard 0: Pre-auth IP rate limiting (FAIL-CLOSED: deny on rate limit exceeded) ---
+	// This guard runs BEFORE authentication to prevent DoS at the auth layer.
+	// Without this, an attacker could spam unauthenticated requests and never
+	// be rate-limited, because the per-agent rate limiter (Guard 3) requires
+	// a valid agent ID from mTLS authentication.
+	ipAddr := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(ipAddr); err == nil {
+		ipAddr = host
+	}
+	if m.ipLimiter != nil && !m.ipLimiter.Allow(ipAddr) {
+		a2aErrorResponse(w, A2A_ERR_RATE_LIMITED,
+			"rate limit exceeded for IP: "+ipAddr, http.StatusTooManyRequests)
+		return
+	}
 
 	// --- Guard 1: License validation (if configured) ---
 	if m.licenseMgr != nil {

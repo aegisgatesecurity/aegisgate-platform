@@ -1073,3 +1073,43 @@ func TestHasFeatureHelper(t *testing.T) {
 		}
 	}
 }
+
+// TestSessionCounterLeakFix tests that OnSessionDestroy properly decrements
+// the active session counter, ensuring that closed connections free their
+// session slots. This is the fix for MCP-005 where the counter was never
+// decremented because CloseSession was never wired into the connection
+// lifecycle.
+func TestSessionCounterLeakFix(t *testing.T) {
+	cfg := DefaultGuardrailConfig(tier.TierCommunity)
+	g := NewGuardrailMiddleware(cfg, "test-server")
+
+	// Community tier: max_sessions=5
+	// Create 5 sessions (fill the limit)
+	for i := 0; i < 5; i++ {
+		sid := fmt.Sprintf("conn-%d", i)
+		if err := g.OnSessionCreate(sid, "agent", "test-client"); err != nil {
+			t.Fatalf("Failed to create session %d: %v", i, err)
+		}
+	}
+
+	// 6th session should be blocked
+	err := g.OnSessionCreate("conn-5", "agent", "test-client")
+	if err == nil {
+		t.Fatal("Expected 6th session to be blocked, but it was allowed")
+	}
+
+	// Close one session (simulating connection close)
+	g.OnSessionDestroy("conn-0")
+
+	// Now a new session should be allowed (slot freed)
+	err = g.OnSessionCreate("conn-6", "agent", "test-client")
+	if err != nil {
+		t.Fatalf("Expected new session to be allowed after closing one, got error: %v", err)
+	}
+
+	// Verify active count
+	stats := g.Stats()
+	if stats.ActiveSessions != 5 {
+		t.Errorf("Expected 5 active sessions, got %d", stats.ActiveSessions)
+	}
+}

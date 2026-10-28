@@ -412,6 +412,51 @@ func TestRateLimiting(t *testing.T) {
 	assertJSONField(t, w, "code", A2A_ERR_RATE_LIMITED)
 }
 
+// TestPreAuthIPRateLimiting tests that the pre-auth IP rate limiter blocks
+// unauthenticated requests (no mTLS cert) before they reach the auth guard.
+// This prevents DoS at the auth layer — without it, an attacker can spam
+// unauthenticated requests and never be rate-limited.
+func TestPreAuthIPRateLimiting(t *testing.T) {
+	secret := []byte("test-secret")
+	caps := NewInMemoryCapEnforcer()
+
+	// Tiny IP limiter: 2 tokens, refill 1 per minute
+	// Per-agent limiter: high capacity so it doesn't interfere
+	m := &Middleware{
+		auth:       &MTLSAuth{},
+		integrity:  NewIntegrityVerifier(secret),
+		caps:       caps,
+		limiter:    NewTokenBucket(1000, 100, time.Minute),
+		ipLimiter:  NewTokenBucket(2, 1, time.Minute),
+		next:       http.HandlerFunc(testEchoHandler),
+		licenseMgr: nil,
+		logger:     slog.Default().With("component", "a2a-middleware-test"),
+	}
+
+	// Requests without mTLS cert — these would normally fail at Guard 2 (auth),
+	// but the IP rate limiter (Guard 0) should kick in first after 2 requests.
+	makeReq := func() *http.Request {
+		req := httptest.NewRequest("POST", "/a2a/", bytes.NewReader([]byte(`{}`)))
+		req.RemoteAddr = "10.0.0.1:12345"
+		return req
+	}
+
+	// First two requests: IP limiter allows, but auth fails (no mTLS) → 401
+	w := httptest.NewRecorder()
+	m.ServeHTTP(w, makeReq())
+	assertCode(t, w, http.StatusUnauthorized)
+
+	w = httptest.NewRecorder()
+	m.ServeHTTP(w, makeReq())
+	assertCode(t, w, http.StatusUnauthorized)
+
+	// Third request: IP limiter denies → 429 (before auth check)
+	w = httptest.NewRecorder()
+	m.ServeHTTP(w, makeReq())
+	assertCode(t, w, http.StatusTooManyRequests)
+	assertJSONField(t, w, "code", A2A_ERR_RATE_LIMITED)
+}
+
 // TestA2AErrorResponse tests the a2aErrorResponse helper directly.
 func TestA2AErrorResponse(t *testing.T) {
 	w := httptest.NewRecorder()

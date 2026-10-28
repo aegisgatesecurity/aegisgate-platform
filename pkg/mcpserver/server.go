@@ -124,6 +124,19 @@ func (es *EmbeddedServer) Start() error {
 
 	es.server = mcp.NewServer(serverCfg)
 
+	// Wire connection close callback so that session state is cleaned up
+	// when connections end. This prevents activeSessions counter drift
+	// in the guardrail middleware.
+	if es.connSessionMgr != nil {
+		es.server.SetOnClose(func(connID string) {
+			if err := es.connSessionMgr.CloseSession(connID); err != nil {
+				// ErrSessionNotFound is expected for connections that never
+				// completed initialize (e.g., rate-limited). Log at debug only.
+				es.logger.Debug("MCP connection close cleanup", "conn_id", connID, "error", err)
+			}
+		})
+	}
+
 	es.logger.Info("Starting embedded MCP server", "address", es.config.Address)
 
 	if err := es.server.StartContext(es.ctx); err != nil {

@@ -21,11 +21,17 @@ import (
 // scanning, and other middleware without modifying the core handler logic.
 type HandlerFunc func(conn *Connection, req *JSONRPCRequest) *JSONRPCResponse
 
+// ConnCloseFunc is called when an MCP connection closes.
+// This allows the platform to clean up session state (e.g., decrement
+// active session counters in the guardrail middleware).
+type ConnCloseFunc func(connID string)
+
 type Server struct {
 	config      *ServerConfig
 	listener    net.Listener
 	handler     *RequestHandler
 	handleFunc  HandlerFunc // if non-nil, overrides handler.HandleRequest
+	onClose     ConnCloseFunc // if non-nil, called when a connection closes
 	connections map[string]*Connection
 	connMu      sync.RWMutex
 	ctx         context.Context
@@ -110,6 +116,13 @@ func (s *Server) SetHandleFunc(fn HandlerFunc) {
 	s.handleFunc = fn
 }
 
+// SetOnClose sets a callback that is invoked when an MCP connection closes.
+// This allows the platform to clean up session state (e.g., decrement
+// active session counters in the guardrail middleware) when connections end.
+func (s *Server) SetOnClose(fn ConnCloseFunc) {
+	s.onClose = fn
+}
+
 // Stop gracefully shuts down the server
 func (s *Server) Stop() error {
 	slog.Info("MCP server shutting down...")
@@ -185,6 +198,9 @@ func (s *Server) handleConnection(nc net.Conn) {
 		delete(s.connections, connID)
 		s.connMu.Unlock()
 		nc.Close()
+		if s.onClose != nil {
+			s.onClose(connID)
+		}
 	}()
 
 	slog.Info("MCP connection established", "conn_id", connID)
