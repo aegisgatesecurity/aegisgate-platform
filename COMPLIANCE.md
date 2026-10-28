@@ -21,9 +21,21 @@ All self-assessment documents are published on the AegisGate website:
 
 AegisGate's compliance posture is reinforced at runtime by the automated compliance engine in `pkg/compliance/`:
 
-- **24 frameworks** with 857+ automated CheckFuncs
+- **31 frameworks** with 2,116+ registered controls (automated CheckFuncs + evidence-mapped)
 - **153+ detection patterns** for real-time threat scanning
 - **Hash-chained audit logs** for tamper-evident compliance records
+
+### Framework Coverage by Tier
+
+| Tier | Frameworks | Controls |
+|------|-----------|----------|
+| Community (FOSS) | ATLAS, OWASP LLM Top 10, NIST AI RMF, OWASP Web Top 10 | 136 |
+| Developer | GDPR, CCPA/CPRA, HIPAA, PCI-DSS v4.0, SOC 2 Type II, ISO 27001:2022 | 468 |
+| Professional | CIS v8, NIST CSF 2.0, CSA STAR, ISO 42001, FIPS 140-2/3, EU AI Act, CJIS, FERPA, SOX, GLBA, NERC CIP, HITECH, FFIEC, TSA SD, ISO 21434, NIST AI 600-1 | 817 |
+| Enterprise | FedRAMP Moderate, CMMC Level 2, NIST SP 800-171, HITRUST CSF, TISAX AL2 | 695 |
+| **Total** | **31 frameworks** | **2,116 controls** |
+
+Additionally, the posture assessment module (`pkg/assessment/frameworks.go`) maps all 31 frameworks to OWASP LLM Top 10 categories across 6 structural tiers (Core Cybersecurity, US Government, Industry Standards, AI Governance, Privacy Regulations, Application Security).
 
 See the [compliance registry](pkg/compliance/framework-registry.go) and [framework mapping](pkg/compliance/framework_mapping.go) for implementation details.
 
