@@ -350,7 +350,7 @@ func TestPhase1aSaveLocked_EmptyPath(t *testing.T) {
 func TestPhase1aSaveLocked_TempPath(t *testing.T) {
 	p := &PersistentCapEnforcer{
 		inner:    NewInMemoryCapEnforcer(),
-		filePath: ".workingdirectory/test_caps_save.json",
+		filePath: filepath.Join(t.TempDir(), "test_caps_save.json"),
 		logger:   slog.Default(),
 	}
 	p.inner.SetCapabilities("agent-1", []string{"read", "write"})
@@ -365,7 +365,7 @@ func TestPhase1aSaveLocked_TempPath(t *testing.T) {
 // =====================================================================
 
 func TestPhase1aLoadCaps_NonExistentFile(t *testing.T) {
-	_, err := LoadCaps(".workingdirectory/nonexistent_caps.json")
+	_, err := LoadCaps("testdata/nonexistent_caps.json")
 	if err != nil {
 		t.Logf("LoadCaps with nonexistent file returned error (acceptable): %v", err)
 	}
@@ -395,7 +395,7 @@ func TestPhase1aLoadCaps_ValidFile(t *testing.T) {
 // =====================================================================
 
 func TestPhase1aLoadConfig_NonExistentFile(t *testing.T) {
-	_, err := LoadConfig(".workingdirectory/nonexistent_a2a_config.json")
+	_, err := LoadConfig("testdata/nonexistent_a2a_config.json")
 	if err == nil {
 		t.Log("LoadConfig with nonexistent file returned nil error (uses defaults)")
 	}
