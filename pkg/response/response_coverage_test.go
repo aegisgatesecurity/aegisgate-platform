@@ -718,13 +718,15 @@ func TestPIIScannerScanWithTimeout(t *testing.T) {
 		t.Error("should find email")
 	}
 
-	// Test timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	// Test timeout — use 1ms instead of 1ns to avoid CI flakiness
+	// under race detector load (goroutine can complete before 1ns
+	// context check fires).
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
 	time.Sleep(10 * time.Millisecond) // Let timeout expire
 
-	_, err = ScanWithTimeout(ctx, "test", 1*time.Nanosecond)
+	_, err = ScanWithTimeout(ctx, "test", 1*time.Millisecond)
 	if err == nil {
 		t.Error("should fail on timeout")
 	}
