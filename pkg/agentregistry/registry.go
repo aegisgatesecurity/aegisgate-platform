@@ -41,6 +41,7 @@ type Registry struct {
 	// Background refresh
 	refreshInterval time.Duration
 	stopCh          chan struct{}
+	doneCh          chan struct{} // closed when refreshLoop exits
 	running         bool
 
 	logger *slog.Logger
@@ -462,6 +463,8 @@ func (r *Registry) Start(ctx context.Context) error {
 	r.running = true
 	r.mu.Unlock()
 
+	r.doneCh = make(chan struct{})
+
 	// Initial discovery
 	if err := r.Discover(ctx); err != nil {
 		r.logger.Error("agentregistry: initial discovery failed", "error", err)
@@ -485,12 +488,15 @@ func (r *Registry) Stop() {
 	close(r.stopCh)
 	r.mu.Unlock()
 
+	<-r.doneCh // wait for refreshLoop to exit
+
 	r.logger.Info("agentregistry: background refresh stopped")
 }
 
 func (r *Registry) refreshLoop(ctx context.Context) {
 	ticker := time.NewTicker(r.refreshInterval)
 	defer ticker.Stop()
+	defer close(r.doneCh) // signal exit
 
 	for {
 		select {
