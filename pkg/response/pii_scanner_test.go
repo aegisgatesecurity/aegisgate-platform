@@ -615,15 +615,18 @@ func TestScanWithTimeout(t *testing.T) {
 }
 
 func TestScanWithTimeoutExceeded(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
-	defer cancel()
+	// Use a pre-cancelled context instead of racing a 1ns timeout
+	// against a fast scan. On fast CI runners, FindPII on a tiny string
+	// can complete before a 1ns context expires, causing a flaky pass.
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
 	text := "SSN: 123-45-6789"
 
 	_, err := ScanWithTimeout(ctx, text, 100*time.Millisecond)
 
 	if err == nil {
-		t.Error("expected context deadline exceeded error")
+		t.Error("expected context canceled error")
 	}
 }
 
