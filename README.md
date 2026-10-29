@@ -17,14 +17,14 @@
 [![EU AI Act](https://img.shields.io/badge/EU_AI_Act-120_controls-003399?logo=europeanunion)](docs/compliance/eu-ai-act.md)
 [![Patent Pending](https://img.shields.io/badge/IP-Patent_Pending-8B5CF6?logo=uspto)](https://github.com/aegisgatesecurity/aegisgate-platform#ip-notice)
 [![Published Research](https://img.shields.io/badge/Research-SSRN_Published-003399?logo=elsevier)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7652138)
-[![SIEM](https://img.shields.io/badge/SIEM-Pro+_only-9333ea?logo=splunk)](#tier-gated-features)
-[![ML Detection](https://img.shields.io/badge/ML_Detection-Pro+_only-22c55e?logo=tensorflow)](#tier-gated-features)
+[![SIEM](https://img.shields.io/badge/SIEM-Enterprise-9333ea?logo=splunk)](#enterprise-deployment)
+[![ML Detection](https://img.shields.io/badge/ML_Detection-Enterprise-22c55e?logo=tensorflow)](#enterprise-deployment)
 [![Lens](https://img.shields.io/badge/Lens-Browser_Extension-38bdf8?logo=googleslides&logoColor=white)](https://github.com/aegisgatesecurity/aegisgate-lens)
 [![CI](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/ci.yml)
 [![Security](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml/badge.svg)](https://github.com/aegisgatesecurity/aegisgate-platform/actions/workflows/security.yml)
 [![Security Policy](https://img.shields.io/badge/security-RFC%209116-blue.svg)](./SECURITY.md)
 
-[🌐 Website](https://aegisgatesecurity.io) · [🚀 Live Demo](https://demo.aegisgatesecurity.io/) · [📊 Pricing](https://aegisgatesecurity.io/pricing/) · [📚 Docs](https://aegisgatesecurity.io/docs/) · [🔒 Security](SECURITY.md) · [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
+[🌐 Website](https://aegisgatesecurity.io) · [🚀 Live Demo](https://demo.aegisgatesecurity.io/) · [📊 Enterprise](https://aegisgatesecurity.io/pricing/) · [📚 Docs](https://aegisgatesecurity.io/docs/) · [🔒 Security](SECURITY.md) · [💬 Discussions](https://github.com/aegisgatesecurity/aegisgate-platform/discussions)
 
 
 
@@ -206,7 +206,7 @@ flowchart LR
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
 | Response | `pkg/response/detectors/` | 303-pattern detection (secrets, XSS, PII, compliance) |
-| Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (Professional+: full trust scoring) |
+| Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (enterprise deployments: full trust scoring) |
 
 ## Agent Registry (v5.0)
 
@@ -222,7 +222,7 @@ The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pil
 - **Federation** — cross-deployment agent inventory sharing via signed attestation bundles (ECDSA P-256); air-gap by default, opt-in per instance
 - **PostgreSQL-backed** — Row-Level Security for tenant isolation, JSONB for complex fields
 
-**HTTP API** (13 endpoints, Professional tier):
+**HTTP API** (13 endpoints, enterprise deployments):
 
 | Method | Endpoint | Permission | Description |
 |--------|----------|------------|-------------|
@@ -282,12 +282,11 @@ result, _ := guard.Scan(ctx, text)
 // result.DetectedXSS, result.DetectedCompliance, result.DetectedPII, result.DetectedSecrets
 ```
 
-## Open-Core Model
+## Open-Source License
 
-AegisGate is **open-core**: the community edition is Apache 2.0 open source, and enterprise features are proprietary.
+AegisGate Platform is **open-source software** released under the Apache 2.0 license. All features are free to use, self-host, and modify. Enterprise support, compliance module mappings, and custom integrations are available by contacting sales@aegisgatesecurity.io.
 
 | Edition | License | Features |
 |---------|---------|----------|
+| **Community** | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 303 canonical detection patterns, 4 community compliance frameworks, in-memory + file persistence |
 
-| **Community** (free) | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 303 canonical detection patterns, 4 community compliance frameworks, in-memory + file persistence |
-=
