@@ -161,27 +161,31 @@ func (sm *ConnectionSessionManager) UpdateActivity(connID string) error {
 // and decrement the active sessions counter.
 func (sm *ConnectionSessionManager) CloseSession(connID string) error {
 	sm.mu.Lock()
-	defer sm.mu.Unlock()
 
 	session, ok := sm.conns[connID]
-	if !ok {
-		return ErrSessionNotFound
+	if ok {
+		// Invalidate RBAC session
+		if err := sm.manager.InvalidateSession(session.RBACSession.ID); err != nil {
+			slog.Default().Warn("failed to invalidate RBAC session on close", "sessionID", session.RBACSession.ID, "error", err)
+		}
+		// Remove from map
+		delete(sm.conns, connID)
 	}
+	// Unlock before calling OnSessionDestroy to avoid potential deadlock
+	// if guardrails callback needs to acquire another lock.
+	sm.mu.Unlock()
 
-	// Invalidate RBAC session
-	if err := sm.manager.InvalidateSession(session.RBACSession.ID); err != nil {
-		slog.Default().Warn("failed to invalidate RBAC session on close", "sessionID", session.RBACSession.ID, "error", err)
-	}
-
-	// Remove from map
-	delete(sm.conns, connID)
-
-	// Notify guardrail middleware to release session tracking state.
-	// This decrements the activeSessions counter and prevents counter drift.
+	// Always notify guardrail middleware to release session tracking state,
+	// even if the session was never fully created (e.g., agent registration
+	// failed). OnSessionCreate may have incremented the counter independently
+	// of the session manager's conns map, so we must always decrement.
 	if sm.guardrails != nil {
 		sm.guardrails.OnSessionDestroy(connID)
 	}
 
+	if !ok {
+		return ErrSessionNotFound
+	}
 	return nil
 }
 
