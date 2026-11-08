@@ -253,10 +253,11 @@ func TestToolDescriptionScanner_PatternCount(t *testing.T) {
 		t.Error("Expected promptPatterns to be populated — prompt leakage, RAG, and path traversal patterns should be wired up")
 	}
 
-	// Should have 16 (prompt leakage) + 19 (RAG) + 19 (path traversal) = 54 patterns
-	// RAG count updated in v4.7.0: 17 → 19 (rag_poison_embed_document, rag_retrieval_context_override)
-	if len(scanner.promptPatterns) != 54 {
-		t.Errorf("Expected 54 prompt patterns (16 leakage + 19 RAG + 19 traversal), got %d", len(scanner.promptPatterns))
+	// Should have 16 (prompt leakage) + 20 (RAG) + 21 (path traversal) = 57 patterns
+	// RAG count updated for v5.1.0: 17 → 20 (rag_poison_embed_document, rag_retrieval_context_override, rag_embedded_instruction_smuggling, rag_unauthorized_rag_access)
+	// Path traversal count updated for v5.1.0: 19 → 21 (added encoded double-dot variants)
+	if len(scanner.promptPatterns) != 57 {
+		t.Errorf("Expected 57 prompt patterns (16 leakage + 20 RAG + 21 traversal), got %d", len(scanner.promptPatterns))
 	}
 
 	// Verify all other pattern sets are still populated

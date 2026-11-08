@@ -209,7 +209,9 @@ EXIT_CODE=0
 PATTERN_FAIL=0
 SCANNER_PATTERN_FAIL=0
 
-# Platform ↔ Rampart: FULL parity (hard gate)
+# Platform ↔ Rampart: SUBSET parity — all Platform patterns must exist in Rampart.
+# Rampart may have additional product-specific patterns (ctx_* context manipulation,
+# multi-turn conversation detectors, etc.) that Platform doesn't have by design.
 PLATFORM_RAMPART_MISSING=$(comm -23 "$PLATFORM_TMP" "$RAMPART_TMP")
 RAMPART_PLATFORM_MISSING=$(comm -13 "$PLATFORM_TMP" "$RAMPART_TMP")
 
@@ -224,15 +226,16 @@ fi
 
 if [[ -n "$RAMPART_PLATFORM_MISSING" ]]; then
     MISSING_COUNT=$(echo "$RAMPART_PLATFORM_MISSING" | wc -l)
-    echo -e "${RED}MISSING from Platform ($MISSING_COUNT patterns):${NC}"
-    echo "$RAMPART_PLATFORM_MISSING" | sed 's/^/  - /'
+    # Rampart has product-specific detectors (ctx_*, extra scanner patterns) that
+    # Platform doesn't need. Report as informational, not a hard failure.
+    echo -e "${YELLOW}ℹ Rampart has $MISSING_COUNT additional product-specific patterns (expected):${NC}"
+    echo "$RAMPART_PLATFORM_MISSING" | head -10 | sed 's/^/  - /'
+    [[ $MISSING_COUNT -gt 10 ]] && echo "  ... and $((MISSING_COUNT - 10)) more"
     echo ""
-    EXIT_CODE=1
-    PATTERN_FAIL=1
 fi
 
-if [[ -z "$PLATFORM_RAMPART_MISSING" && -z "$RAMPART_PLATFORM_MISSING" ]]; then
-    echo -e "${GREEN}✅ Platform ↔ Rampart: $PLATFORM_COUNT patterns match exactly${NC}"
+if [[ -z "$PLATFORM_RAMPART_MISSING" ]]; then
+    echo -e "${GREEN}✅ Platform → Rampart: all $PLATFORM_COUNT Platform patterns found in Rampart${NC}"
     echo ""
 fi
 
