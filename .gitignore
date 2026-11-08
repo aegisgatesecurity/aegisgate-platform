@@ -309,3 +309,5 @@ cmd/gen-v10-data/
 # Proprietary documents - local only, not for remote
 docs/AegisGate-Leave-Behind.pdf
 plans/sbir-letter-support-pwc.md
+upstream/aegisgate-scanner/
+aegisgate-scanner-build

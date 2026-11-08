@@ -1,3 +1,72 @@
+## [5.1.0] - 2026-11-07 — Model v22b Retrain, NFKC Normalization, ATLAS L2 Patterns, MaxSeqLen 512
+
+> **v5.1.0** upgrades the ML threat detection model to v22b (attack-only supplements, 401 samples), adds NFKC Unicode normalization with regional indicator mapping, 6 new MITRE ATLAS L2 compliance patterns, fixes 2 L2 regex bugs, raises MaxSeqLen 256→512, and tightens Tier 1 threshold to 0.985.
+
+### ML Model v22b (1,596,034 params)
+- Warm-start fine-tuned from v21c with 401 attack-only adversarial supplements
+- 10K benchmark: 98.0% catch / 0.45% FP (was 96.6% / 0.16% at v20c)
+- Red Team: 98.1% catch / 0% FP (was 96.7% at v22b-l2v6, 4 missed)
+
+### NFKC Unicode Normalization + Regional Indicator Mapping
+- `MapRegionalIndicators()` converts flag emoji (U+1F1E6–U+1F1FF) to ASCII A-Z
+- Applied after NFKC, before lowercasing — closes Unicode homoglyph evasion gap
+
+### 6 New ATLAS L2 Compliance Patterns
+- T1552.005 Secret Disclosure, T1589.006 Model Architecture Extraction
+- T1548.004 Insider Threat, T1648.002 Malicious Code
+- T1498.004 Resource Exhaustion, T1535.003 Roleplay
+
+### L2 Regex Bug Fixes
+- T1552.005: Added "what are" verb + ordinal extraction ("first digit of")
+- T1648.002: Restructured "create" as top-level verb alongside "write"
+
+### Other Changes
+- MaxSeqLen 256→512 (matches model training parameter)
+- Tier 1 ML threshold raised 0.98→0.985
+- T1535.003 roleplay pattern tightened (removed "game")
+- Detection parity script: ATLAS MITRE ID→name mapping for cross-repo parity
+- Cross-product propagation: v22b model, NFKC, MapRegionalIndicators, ATLAS L2 to all 5 products
+
+
+> **v5.0.2** adds post-match false positive filters for benign content, excludes known public test keys from secret detection, and raises roleplay prompt injection to High severity. Verified: 488-prompt regression at 100% catch / 0% FP. Scale benchmark (3,157 prompts): 100% attack catch, 0.05% benign FP.
+
+### Post-Match False Positive Filters (`pkg/scanner/fp_filters.go`)
+
+New post-regex validation layer with `isBenignMatch()` dispatcher and 6 pattern-specific filters:
+- **secret_twilio_key**: Require ≥3 digits (real Twilio keys are hex; English word concatenation from space-removal normalization has 0 digits)
+- **toxicity_sexual**: Suppress institutional/refusal context ("Royal Commission", "trained to not", AI safety refusals)
+- **sqli_comment_evasion**: Skip Python `#` comments with non-SQL keywords
+- **exfil_external_transfer**: Skip benign S3/cloud architecture descriptions
+- **pii_id_generic_alphanumeric**: Skip placeholder tokens (PLACEHOLDER, EXAMPLE, SAMPLE, DUMMY)
+- **secret_labeled_credential**: Skip code patterns (`$_POST`, `getpass`, `os.environ`, `config.get`, including l33t normalization variants where `$` → `s`)
+
+Wired into both `Scan()` and `ScanFast()` in `scanner.go`. Response guard `secret_detector.go` updated with `isCodeCredentialPattern()` for `SECRET_PASSWORD` category.
+
+### Known Test Key Exclusion
+
+Excludes public Stripe, Twilio, AWS, GitHub, Slack, and other vendor test keys from secret detection via `isKnownTestKey()` check in scanner and response guard.
+
+### Other Changes
+
+- Untracked `aegisgate-scanner-build` symlink from git history via `git filter-repo`
+- Added `aegisgate-scanner-build` to `.gitignore`
+- Pattern count: 460
+
+---
+
+## [5.0.2] - 2026-11-04 — Post-Match FP Filters & Test Key Exclusion
+
+## [5.0.1] - 2026-10-28 — JWT Pattern Fix & SXC FP Investigation
+
+> **v5.0.1** fixes JWT token false positives by requiring `{20,}` minimum on the signature segment. Resolves SXC corpus FPs where short base64 strings triggered JWT detection.
+
+### JWT Pattern Fix
+
+- JWT regex signature segment minimum raised from `{6,}` to `{20,}` to avoid matching short base64 fragments
+- Applied to both scanner patterns and response guard
+
+---
+
 ## [5.0.0] - 2026-10-25 — Agent Inventory & Lifecycle Management
 
 > **v5.0.0** introduces the Agent Registry — a glue layer that unifies RBAC, MCP Session Manager, A2A, AIBOM, and Correlation Engine into a single queryable agent inventory with dormancy detection, automated credential revocation, and SSE lifecycle event streaming. Addresses the Arrakis Security finding: 76% of AI agents are dormant with live credentials. Gated behind Professional tier.
