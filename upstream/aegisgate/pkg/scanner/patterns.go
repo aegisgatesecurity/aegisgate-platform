@@ -80,7 +80,7 @@ func DefaultPatterns() []*Pattern {
 		// ADDITIONAL SECRET PATTERNS (Phase 3 gap fix — 2026-09-02)
 		{Name: "StripeAPIKey", Regex: regexp.MustCompile(`\b(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Stripe API key"},
 		{Name: "GoogleAPIKey", Regex: regexp.MustCompile(`\bAIza[0-9A-Za-z_\-]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Google API key"},
-		{Name: "SlackTokenV2", Regex: regexp.MustCompile(`\bxox[abprs]-[A-Za-z0-9-]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Slack token (relaxed format)"},
+		{Name: "SlackTokenV2", Regex: regexp.MustCompile(`\bxox[abprs]-[A-Za-z0-9-]{30,}\b`), Severity: High, Category: CategoryCredential, Description: "Slack token (relaxed format)"},
 		{Name: "GermanTaxID", Regex: regexp.MustCompile(`\b(?:Steuer-?ID|Steuernummer)[:\s]*\d{11}\b`), Severity: High, Category: CategoryPII, Description: "German tax identification number"},
 		{Name: "MastercardSpaced", Regex: regexp.MustCompile(`\b5[1-5]\d{2}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b`), Severity: Critical, Category: CategoryFinancial, Description: "Mastercard credit card (with separators)"},
 		{Name: "AmexSpaced", Regex: regexp.MustCompile(`\b3[47]\d{2}[\s-]?\d{6}[\s-]?\d{5}\b`), Severity: Critical, Category: CategoryFinancial, Description: "Amex credit card (with separators)"},

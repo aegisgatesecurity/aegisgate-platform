@@ -107,4 +107,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Single writable volume for audit logs, certificates, etc.
 VOLUME ["/data"]
 
+# Set working directory to the writable volume so cert/audit paths resolve
+WORKDIR /data
+
 ENTRYPOINT ["/usr/local/bin/aegisgate-platform"]

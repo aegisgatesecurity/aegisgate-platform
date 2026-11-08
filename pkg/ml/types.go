@@ -73,7 +73,7 @@ func DefaultDetectorConfig() DetectorConfig {
 		ShadowMode:        true,  // Shadow mode on by default
 		Threshold:         0.7,   // Will be calibrated
 		ModelPath:         "/opt/aegisgate-platform/models/threat_cnn_bilstm.onnx",
-		MaxSequenceLength: 256,
+		MaxSequenceLength: 512,
 		Timeout:           10,
 	}
 }

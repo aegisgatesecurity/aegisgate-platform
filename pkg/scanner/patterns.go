@@ -75,7 +75,7 @@ func DefaultPatterns() []*Pattern {
 		{Name: "SlackToken", Regex: regexp.MustCompile(`\bxox[baprs]-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*\b`), Severity: High, Category: CategoryCredential, Description: "Slack token"},
 
 		// ADDITIONAL SECRET PATTERNS (Phase 3 gap fix — 2026-09-02)
-		{Name: "SlackTokenV2", Regex: regexp.MustCompile(`\bxox[abprs]-[A-Za-z0-9-]{20,}\b`), Severity: High, Category: CategoryCredential, Description: "Slack token (relaxed format)"},
+		{Name: "SlackTokenV2", Regex: regexp.MustCompile(`\bxox[abprs]-[A-Za-z0-9-]{30,}\b`), Severity: High, Category: CategoryCredential, Description: "Slack token (relaxed format)"},
 		{Name: "pii_german_tax_id", Regex: regexp.MustCompile(`\b(?:Steuer-?ID|Steuernummer)[:\s]*\d{11}\b`), Severity: High, Category: CategoryPII, Description: "German tax identification number"},
 		{Name: "pii_credit_card_mastercard", Regex: regexp.MustCompile(`\b5[1-5]\d{2}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b`), Severity: Critical, Category: CategoryFinancial, Description: "Mastercard credit card (with separators)"},
 		{Name: "pii_credit_card_amex", Regex: regexp.MustCompile(`\b3[47]\d{2}[\s-]?\d{6}[\s-]?\d{5}\b`), Severity: Critical, Category: CategoryFinancial, Description: "Amex credit card (with separators)"},

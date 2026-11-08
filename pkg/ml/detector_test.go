@@ -28,8 +28,8 @@ func TestDefaultDetectorConfig(t *testing.T) {
 	if cfg.Threshold != 0.7 {
 		t.Errorf("expected default threshold 0.7, got %f", cfg.Threshold)
 	}
-	if cfg.MaxSequenceLength != 256 {
-		t.Errorf("expected max seq len 256, got %d", cfg.MaxSequenceLength)
+	if cfg.MaxSequenceLength != 512 {
+		t.Errorf("expected max seq len 512, got %d", cfg.MaxSequenceLength)
 	}
 	if cfg.Timeout != 10 {
 		t.Errorf("expected timeout 10ms, got %d", cfg.Timeout)
@@ -154,7 +154,7 @@ func TestThreatDetector_HeuristicDetection(t *testing.T) {
 		Enabled:           true,
 		ShadowMode:        false,
 		Threshold:         0.3,
-		MaxSequenceLength: 256,
+		MaxSequenceLength: 512,
 		Timeout:           10,
 	}
 	td := NewThreatDetector(cfg)
@@ -187,7 +187,7 @@ func TestThreatDetector_ShadowMode(t *testing.T) {
 		Enabled:           true,
 		ShadowMode:        true,
 		Threshold:         0.3,
-		MaxSequenceLength: 256,
+		MaxSequenceLength: 512,
 		Timeout:           10,
 	}
 	td := NewThreatDetector(cfg)
@@ -305,7 +305,7 @@ func TestThreatDetector_DetectAll(t *testing.T) {
 		Enabled:           true,
 		ShadowMode:        false,
 		Threshold:         0.3,
-		MaxSequenceLength: 256,
+		MaxSequenceLength: 512,
 		Timeout:           10,
 	}
 	td := NewThreatDetector(cfg)
@@ -345,7 +345,7 @@ func TestThreatDetector_LoadModel_HeuristicFallback(t *testing.T) {
 		Enabled:           true,
 		ShadowMode:        false,
 		Threshold:         0.3,
-		MaxSequenceLength: 256,
+		MaxSequenceLength: 512,
 		Timeout:           10,
 	}
 	td := NewThreatDetector(cfg)
@@ -477,7 +477,7 @@ func TestLoadModel_IntegrityCheck(t *testing.T) {
 		Enabled:           true,
 		ShadowMode:        false,
 		Threshold:         0.5,
-		MaxSequenceLength: 256,
+		MaxSequenceLength: 512,
 		Timeout:           10,
 	}
 	td := NewThreatDetector(cfg)
