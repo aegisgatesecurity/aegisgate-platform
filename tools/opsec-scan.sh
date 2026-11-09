@@ -119,6 +119,8 @@ for f in $FILES; do
         case "$f" in
             # Test regex definition files define patterns, not actual keys
             src/detectors/regex/secrets.js) continue ;;
+            # Test files that intentionally contain key markers for credential detection testing
+            pkg/ml/data_leakage_efficacy_test.go) continue ;;
         esac
         log_fail "$f contains a private key block"
         PK_FAIL=$((PK_FAIL+1))
