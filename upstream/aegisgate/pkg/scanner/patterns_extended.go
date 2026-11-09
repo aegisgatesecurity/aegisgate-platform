@@ -151,7 +151,7 @@ func AdditionalPatterns() []*Pattern {
 	}
 }
 
-// AllPatterns returns combined default and additional patterns
+// AllPatterns returns combined default, additional, and gap-closure patterns
 func AllPatterns() []*Pattern {
-	return append(DefaultPatterns(), AdditionalPatterns()...)
+	return append(append(DefaultPatterns(), AdditionalPatterns()...), GapClosurePatterns()...)
 }

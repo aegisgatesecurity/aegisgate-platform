@@ -228,8 +228,224 @@ func NormalizeForComparison(input string) string {
 //   - Homoglyph replacement (Cyrillic/Greek → Latin lookalikes)
 //   - Homoglyph + NormalizeText pipeline
 //   - Sliding ROT13 variants (up to 5, each with a different alphabetic run decoded)
+//   - Despaced (removes single-char spacing: "i g n o r e" → "ignore")
+//   - Aggressive l33t alt (alternative l33t mappings)
+//   - CamelCase split ("IgnoreAll" → "Ignore All")
+//   - Reversed (backwards text: "erongi" → "ignore")
+//   - No-spaces (all whitespace removed)
+//   - ROT3 / Caesar cipher shift 3 ("Ljqruh" → "Ignore")
+//   - Hex decode (hex-encoded attack strings ≥20 chars)
+//   - Unicode mathematical alphanumeric symbols (bold, italic, sans-serif, circled, regional indicators)
 //
 // Deduplication is applied — if a variant equals the original or already in list, it is omitted.
+
+// l33tMapAlt is an alternative l33t speak mapping (ported from Rampart).
+var l33tMapAlt = map[rune]rune{
+	'@': 'a', '4': 'a', '8': 'b', '(': 'c', '3': 'e', '6': 'g',
+	'9': 'g', '1': 'l', '|': 'l', '!': 'i', '0': 'o', '5': 's',
+	'$': 's', '7': 't', '+': 't', '2': 'z',
+}
+
+// NormalizeAggressiveL33tAlt applies an alternative l33t speak deobfuscation map.
+// This covers mappings not in the primary aggressive l33t map.
+func NormalizeAggressiveL33tAlt(input string) string {
+	runes := []rune(input)
+	result := make([]rune, len(runes))
+	for i, r := range runes {
+		if replacement, ok := l33tMapAlt[r]; ok {
+			result[i] = replacement
+		} else {
+			result[i] = r
+		}
+	}
+	return string(result)
+}
+
+// isAlphaNum returns true if r is an ASCII alphanumeric character.
+func isAlphaNum(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')
+}
+
+// NormalizeDespaced removes single-character spacing used for evasion.
+// Catches "i g n o r e" → "ignore" while preserving word boundaries (2+ spaces).
+func NormalizeDespaced(input string) string {
+	if len(input) < 5 {
+		return input
+	}
+	singleCharSpaced := 0
+	totalAlphaNum := 0
+	runes := []rune(input)
+	for i := 0; i < len(runes); i++ {
+		if isAlphaNum(runes[i]) {
+			totalAlphaNum++
+			if i+2 < len(runes) && (runes[i+1] == ' ' || runes[i+1] == '\t') && isAlphaNum(runes[i+2]) {
+				singleCharSpaced++
+			}
+		}
+	}
+	if totalAlphaNum < 4 || singleCharSpaced < totalAlphaNum*2/5 {
+		return input
+	}
+	var result strings.Builder
+	var currentWord strings.Builder
+	spaceRun := 0
+	for _, r := range input {
+		if r == ' ' || r == '\t' {
+			spaceRun++
+			if spaceRun >= 2 {
+				if currentWord.Len() > 0 {
+					result.WriteString(currentWord.String())
+					result.WriteRune(' ')
+					currentWord.Reset()
+				}
+			}
+		} else {
+			spaceRun = 0
+			currentWord.WriteRune(r)
+		}
+	}
+	if currentWord.Len() > 0 {
+		result.WriteString(currentWord.String())
+	}
+	despaced := result.String()
+	if despaced != input && despaced != "" {
+		return despaced
+	}
+	if totalAlphaNum > 0 && singleCharSpaced > totalAlphaNum/2 {
+		var b strings.Builder
+		for _, r := range input {
+			if r != ' ' && r != '\t' {
+				b.WriteRune(r)
+			}
+		}
+		return b.String()
+	}
+	return input
+}
+
+// NormalizeCamelCase splits CamelCase words by inserting spaces at word boundaries.
+// Catches "IgnoreAllPreviousInstructions" → "Ignore All Previous Instructions".
+func NormalizeCamelCase(input string) string {
+	runes := []rune(input)
+	if len(runes) < 4 {
+		return input
+	}
+	var b strings.Builder
+	b.Grow(len(runes) + 8)
+	for i, r := range runes {
+		if i > 0 && unicode.IsUpper(r) {
+			prev := runes[i-1]
+			if unicode.IsLower(prev) || (unicode.IsUpper(prev) && i+1 < len(runes) && unicode.IsLower(runes[i+1])) {
+				b.WriteRune(' ')
+			}
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// NormalizeReversed reverses the input string (for backwards-text evasion).
+// Only applies to text between 10-300 chars to avoid FPs on short/long text.
+func NormalizeReversed(input string) string {
+	if len(input) < 10 || len(input) > 300 {
+		return input
+	}
+	runes := []rune(input)
+	result := make([]rune, len(runes))
+	for i, r := range runes {
+		result[len(runes)-1-i] = r
+	}
+	return string(result)
+}
+
+// NormalizeNoSpaces removes all whitespace from the input.
+func NormalizeNoSpaces(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	for _, r := range input {
+		if !unicode.IsSpace(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// NormalizeROT3 decodes Caesar cipher shift 3 encoding.
+// Catches "Ljqruh" → "Ignore" (each letter shifted forward by 3).
+func NormalizeROT3(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	for _, r := range input {
+		switch {
+		case r >= 'a' && r <= 'z':
+			b.WriteRune((r-'a'+23)%26 + 'a')
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune((r-'A'+23)%26 + 'A')
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// isHexRune returns true if r is a hexadecimal digit.
+func isHexRune(r rune) bool {
+	return (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+}
+
+// decodeHexString decodes a hex string to ASCII, returning "" if any byte is non-printable.
+func decodeHexString(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) / 2)
+	for i := 0; i+1 < len(s); i += 2 {
+		hi := hexDigitVal(s[i])
+		lo := hexDigitVal(s[i+1])
+		if hi < 0 || lo < 0 {
+			return ""
+		}
+		c := byte(hi<<4 | lo)
+		if c >= 0x20 && c <= 0x7E {
+			b.WriteByte(c)
+		} else if c == '\n' || c == '\r' || c == '\t' {
+			b.WriteByte(' ')
+		} else {
+			return ""
+		}
+	}
+	return b.String()
+}
+
+// NormalizeHexDecode decodes hex-encoded attack strings (≥20 hex chars).
+// Catches "69676e6f726520616c6c..." → "ignore all..."
+func NormalizeHexDecode(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	runes := []rune(input)
+	i := 0
+	for i < len(runes) {
+		if isHexRune(runes[i]) {
+			start := i
+			for i < len(runes) && (isHexRune(runes[i]) || runes[i] == ' ') {
+				i++
+			}
+			hexRun := string(runes[start:i])
+			hexClean := strings.ReplaceAll(hexRun, " ", "")
+			if len(hexClean) >= 20 && len(hexClean)%2 == 0 {
+				decoded := decodeHexString(hexClean)
+				if decoded != "" {
+					b.WriteString(decoded)
+					continue
+				}
+			}
+			b.WriteString(hexRun)
+		} else {
+			b.WriteRune(runes[i])
+			i++
+		}
+	}
+	return b.String()
+}
+
 func NormalizeAllVariants(input string) []string {
 	normalized := NormalizeText(input)
 	keyboardWalk := NormalizeKeyboardWalk(input)
@@ -247,6 +463,34 @@ func NormalizeAllVariants(input string) []string {
 	variants := []string{input}
 	candidates := []string{normalized, keyboardWalk, rot13, repeatingChars, backslashEscapes, aggressiveL33t, newlineCollapse, multiPass, repeatingCharsAggressive, homoglyphs, homoglyphNormalized}
 	candidates = append(candidates, slidingROT13Variants...)
+
+	// Rampart parity normalizations
+	despaced := NormalizeDespaced(input)
+	candidates = append(candidates, despaced)
+	aggressiveL33tAlt := NormalizeAggressiveL33tAlt(input)
+	candidates = append(candidates, aggressiveL33tAlt)
+	camelCase := NormalizeCamelCase(input)
+	candidates = append(candidates, camelCase)
+	camelNorm := NormalizeText(camelCase)
+	candidates = append(candidates, camelNorm)
+	reversed := NormalizeReversed(input)
+	candidates = append(candidates, reversed)
+	reversedNorm := NormalizeText(reversed)
+	candidates = append(candidates, reversedNorm)
+	noSpaces := NormalizeNoSpaces(input)
+	candidates = append(candidates, noSpaces)
+
+	// Unicode mathematical alphanumeric symbol normalization
+	unicodeMath := NormalizeAllUnicodeMath(input)
+	candidates = append(candidates, unicodeMath)
+	unicodeNorm := NormalizeText(unicodeMath)
+	candidates = append(candidates, unicodeNorm)
+
+	// ROT3 (Caesar cipher shift 3) and hex decode
+	rot3 := NormalizeROT3(input)
+	candidates = append(candidates, rot3)
+	hexDecoded := NormalizeHexDecode(input)
+	candidates = append(candidates, hexDecoded)
 
 	for _, v := range candidates {
 		if v != input && v != "" {

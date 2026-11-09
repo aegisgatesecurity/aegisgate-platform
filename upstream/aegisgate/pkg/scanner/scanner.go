@@ -38,7 +38,7 @@ type Config struct {
 // DefaultConfig returns a default scanner configuration
 func DefaultConfig() *Config {
 	return &Config{
-		Patterns:       DefaultPatterns(),
+		Patterns:       AllPatterns(),
 		BlockThreshold: High, // GHSA-8c34-rfx7-frm4: was Critical (dead config). High matches the previous hardcoded ShouldBlock behavior.
 		LogFindings:    true,
 		IncludeContext: false,
