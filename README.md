@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/aegisgatesecurity/aegisgate-platform?style=flat&logo=github&label=Star&color=FFD700&labelColor=181717&logoColor=FFD700)](https://github.com/aegisgatesecurity/aegisgate-platform)
 **Found AegisGate useful? [Star the repo](https://github.com/aegisgatesecurity/aegisgate-platform) ⭐ and [tell a colleague](https://x.com/intent/tweet?text=Securing%20every%20AI%20interaction%20with%20AegisGate%20%E2%80%94%206%20pillars%2C%201%20gateway%2C%20zero%20dependencies%3A%20https%3A%2F%2Fgithub.com%2Faegisgatesecurity%2Faegisgate-platform) — it helps other teams discover AI security tooling.**
 
-[![Version](https://img.shields.io/badge/Version-v5.1.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v5.1.0)
+[![Version](https://img.shields.io/badge/Version-v5.2.0-blue?logo=semver)](https://github.com/aegisgatesecurity/aegisgate-platform/releases/tag/v5.2.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.27.2-00ADD8?logo=go)](https://golang.org/)
 [![Tests](https://img.shields.io/badge/Tests-11,654+_passing-brightgreen?logo=checkmarx)](https://github.com/aegisgatesecurity/aegisgate-platform/actions)
@@ -36,7 +36,7 @@
 
 > **🧩 Using AI without enterprise protections?** [AegisGate Lens](https://github.com/aegisgatesecurity/aegisgate-lens) is our free browser extension that brings detection patterns to everyday AI conversations — for the 95% of users who don't have a security gateway. [Install Lens →](https://github.com/aegisgatesecurity/aegisgate-lens)
 
-> **⚡ Building AI apps with Copilot, Cursor, or Claude Code?** [AegisGate Rampart](https://github.com/aegisgatesecurity/aegisgate-rampart) is our free local proxy that intercepts AI API calls in real-time — for developers who need protection before production. [Download Rampart →](https://github.com/aegisgatesecurity/aegisgate-rampart/releases/tag/v0.7.1)
+> **⚡ Building AI apps with Copilot, Cursor, or Claude Code?** [AegisGate Rampart](https://github.com/aegisgatesecurity/aegisgate-rampart) is our free local proxy that intercepts AI API calls in real-time — for developers who need protection before production. [Download Rampart →](https://github.com/aegisgatesecurity/aegisgate-rampart/releases/tag/v0.11.0)
 
 ---
 
@@ -65,7 +65,7 @@ AegisGate sits in front of all of it — one binary, zero dependencies, fail-clo
 - **Fail-closed.** If AegisGate can't scan a response, it blocks it. No silent failures, no pass-through on error.
 - **Self-hosted.** No API keys to rotate, no third-party to trust. Your data stays in your infrastructure.
 - **6 pillars, one gateway.** HTTP, MCP, A2A, ACP, Response, and Trust — no patchwork of point products.
-- **303 canonical detection patterns.** Secrets, XSS, PII, and compliance — wired into every response, every time. The same engine powers Lens and Rampart.
+- **820 detection patterns.** 303 canonical scanner patterns + 517 detector adapter patterns — secrets, XSS, PII, prompt injection, compliance, and adversarial attack detection wired into every request and response. The same engine powers Lens and Rampart.
 - **30+ compliance frameworks.** From community basics (OWASP LLM, ATLAS, NIST AI RMF) to enterprise certifications (FedRAMP, HITRUST, TISAX, CMMC L2).
 
 ## Security Posture
@@ -205,7 +205,7 @@ flowchart LR
 | MCP | `pkg/mcpserver/` | Model Context Protocol guardrails, tool poisoning detection (34 dangerous function patterns) |
 | A2A | `pkg/a2a/` | Agent-to-Agent protocol security |
 | ACP | `pkg/acp/` | Agent Capability Policy enforcement |
-| Response | `pkg/response/detectors/` | 303-pattern detection (secrets, XSS, PII, compliance) |
+| Response | `pkg/response/detectors/` | 820-pattern detection (secrets, XSS, PII, compliance, prompt injection) |
 | Trust Framework | `pkg/attestation/` | Cryptographic attestation, CISO posture digest (enterprise deployments: full trust scoring) |
 
 ## Agent Registry (v5.0)
@@ -248,7 +248,7 @@ The Agent Registry (`pkg/agentregistry/`) is a glue layer that unifies all 6 pil
 
 ## Detection Engine
 
-The `pkg/response/detectors/` package provides 303 regex patterns — the same detection engine that powers Lens and Rampart:
+The `pkg/response/detectors/` package provides 303 canonical regex patterns — the same detection engine that powers Lens and Rampart. The detector adapter (`pkg/scanner/detector_adapter.go`) adds 517 additional patterns from the standalone AegisGate Scanner, covering prompt injection, dangerous functions, data exfiltration, malware, social engineering, and more:
 
 The `pkg/contracts` package defines canonical pattern and event contracts for cross-product interoperability. Platform serves patterns to FOSS products (Scanner, MCP, Rampart, Lens) via the telemetry endpoint (`GET /api/v1/patterns/latest`) with ETag caching.
 
@@ -267,7 +267,7 @@ The `pkg/contracts` package defines canonical pattern and event contracts for cr
 ```go
 import "github.com/aegisgatesecurity/aegisgate-platform/pkg/response/detectors"
 
-// Scan all 303 patterns
+// Scan all 820 patterns (303 canonical + 517 detector adapter)
 matches := detectors.DetectAll(text)
 
 // Scan by category
@@ -288,5 +288,5 @@ AegisGate Platform is **open-source software** released under the Apache 2.0 lic
 
 | Edition | License | Features |
 |---------|---------|----------|
-| **Community** | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 303 canonical detection patterns, 4 community compliance frameworks, in-memory + file persistence |
+| **Community** | Apache 2.0 | HTTP/MCP/A2A/ACP/Response scanning, 820 detection patterns (303 canonical + 517 detector adapter), 4 community compliance frameworks, in-memory + file persistence |
 

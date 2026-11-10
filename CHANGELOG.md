@@ -1,3 +1,40 @@
+## [5.2.0] - 2026-11-10 — Detector Adapter, Red Team Expansion, FP Mitigations, Fullwidth Normalization
+
+> **v5.2.0** adds a detector adapter layer (517 patterns from AegisGate Scanner), expands the red team corpus to 50 attacks + 20 benign, fixes despaced text false positives, adds fullwidth Latin normalization, and resolves all code scanning alerts.
+
+### Detector Adapter (517 New Patterns)
+- `pkg/scanner/detector_adapter.go` — bridges the standalone AegisGate Scanner's detector engine into Platform
+- Adds 517 patterns across 21 categories: secrets (79), compliance (93), data exfiltration (36), PII (98), prompt injection (27), dangerous functions (34), XSS (22), path traversal (21), RAG attacks (20), evasion (15), malware (12), social engineering (11), OT/ICS (9), agent poisoning (5), context manipulation (7), injection (18), and more
+- Enabled by default (`DisableDetectorAdapter: false`)
+- 94.3% test coverage for `pkg/scanner` package
+- Total detection patterns: 303 canonical + 517 detector adapter = **820**
+
+### Red Team Corpus Expansion (30→50 attacks, 15→20 benign)
+- 20 new attack vectors across 8 categories: encoding chain evasion, adversarial suffix/noise, indirect prompt injection, language switching, markdown/format injection, payload smuggling, authority spoofing, semantic obfuscation
+- 5 new benign prompts: PCI DSS script, SQL injection explanation, honeypot config, JWT validation, Nuclei template
+- Multi-turn test isolation via `X-Conversation-ID` headers to prevent score accumulation across test cases
+- Detection: 47/50 (94.0%), 0/20 false positives (0%)
+
+### False Positive Mitigations
+- `PromptInjectionCodeExecution` regex: `on\w+` → `on\w{1,20}` to prevent matches on despaced text (60+ char word runs)
+- ML Tier 1 threshold lowered from 0.985 to 0.95 for improved catch rate
+- FP filters for detector adapter and ML Tier 1
+
+### Fullwidth Latin Normalization
+- `NormalizeFullwidth()` maps U+FF01–U+FF5E (fullwidth Latin) to ASCII equivalents
+- Closes fullwidth Unicode evasion gap (e.g., `Ｉｇｎｏｒｅ ａｌｌ` → `Ignore all`)
+
+### Security Posture
+- All code scanning alerts resolved (12 Trivy false positives dismissed, ignore rules added to `.trivy.yaml`)
+- 0 open alerts across all repos
+- E2E chained defense: 5/5 (100%), 0 FPs
+- Behavioral parity: 93.3% (195/209), 0 FPs
+
+### Other Changes
+- TLS production check re-enabled
+- Detector adapter enabled by default
+- E2E chained defense test with multi-turn attack sequences
+
 ## [5.1.0] - 2026-11-07 — Model v22b Retrain, NFKC Normalization, ATLAS L2 Patterns, MaxSeqLen 512
 
 > **v5.1.0** upgrades the ML threat detection model to v22b (attack-only supplements, 401 samples), adds NFKC Unicode normalization with regional indicator mapping, 6 new MITRE ATLAS L2 compliance patterns, fixes 2 L2 regex bugs, raises MaxSeqLen 256→512, and tightens Tier 1 threshold to 0.985.
