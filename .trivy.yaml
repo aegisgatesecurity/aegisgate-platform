@@ -17,6 +17,17 @@ vulnerability:
   types:
     - os
     - library
+  ignore-vulnerabilities:
+    - vulnerability-id: CVE-2026-76844
+      reason: "webpack-dev-middleware — no npm/webpack in repo, static HTML/CSS/JS frontend only"
+    - vulnerability-id: CVE-2026-84243
+      reason: "glibc LANGUAGE env var — Go binary uses own locale handling, not exploitable"
+    - vulnerability-id: CVE-2026-114690
+      reason: "gcc compiler CVE — runtime image has libstdc++6 only, no gcc compiler"
+    - vulnerability-id: CVE-2026-114691
+      reason: "gcc compiler CVE — runtime image has libstdc++6 only, no gcc compiler"
+    - vulnerability-id: CVE-2026-115456
+      reason: "gcc compiler CVE — runtime image has libstdc++6 only, no gcc compiler"
 
 # Ignore certain paths
 skip-dirs:
