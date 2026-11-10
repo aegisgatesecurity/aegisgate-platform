@@ -1551,11 +1551,10 @@ func main() {
 	// SECURITY: Refuse to start in production mode with TLS disabled.
 	// The platform must encrypt all traffic (tokens, API keys, passwords)
 	// at the application level, not just rely on a reverse proxy.
-	// NOTE: Temporarily disabled for test environment parity testing.
-	// if normalizedMode == "production" && !cfg.TLS.Enabled {
-	// 	log.Fatalf("🚨 SECURITY: TLS is disabled (tls.enabled=false) in production mode — refusing to start. " +
-	// 		"Set tls.enabled=true in config or use --profile production (which enables TLS with auto-generated certs).")
-	// }
+	if normalizedMode == "production" && !cfg.TLS.Enabled {
+		log.Fatalf("🚨 SECURITY: TLS is disabled (tls.enabled=false) in production mode — refusing to start. " +
+			"Set tls.enabled=true in config or use --profile production (which enables TLS with auto-generated certs).")
+	}
 
 	// Initialize SSO Manager with configuration from YAML file
 	var ssoManager *sso.Manager
