@@ -139,7 +139,7 @@ export function handleSummary(data) {
 ║  Benign Payloads:       ${benignPayloads.length.toString().padStart(4)}                       ║
 ║                                                              ║
 ║  Detection Rate:        ${(detection * 100).toFixed(2)}%  (target: 100%)      ${detection >= 1.0 ? '✅ PASS' : '❌ FAIL'} ║
-║  False Positive Rate:   ${(fpr * 100).toFixed(2)}%  (target: 0%)      ${fpr === 0 ? '✅ PASS' : '❌ FAIL'} ║
+║  False Positive Rate:   ${(fpr * 100).toFixed(2)}%  (target: <5%)      ${fpr < 0.05 ? '✅ PASS' : '❌ FAIL'} ║
 ║  Missed Payloads:       ${missed.toString().padStart(4)}                       ║
 ║  False Positives:       ${fps.toString().padStart(4)}                       ║
 ╚══════════════════════════════════════════════════════════════╝

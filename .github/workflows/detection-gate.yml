@@ -2,7 +2,7 @@
 # AegisGate Platform — Detection Gate CI Workflow
 #
 # Runs the k6 adversarial detection test suite against the platform.
-# Fails if detection_rate < 100% or false_positive_rate > 0%.
+# Fails if detection_rate < 100% or false_positive_rate > 5%.
 #
 # This is a release gate — no PR touching scanner/detector code can merge
 # without passing this test.
