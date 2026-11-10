@@ -35,6 +35,7 @@ import (
 	"strings"
 	"testing"
 
+	platformscanner "github.com/aegisgatesecurity/aegisgate-platform/pkg/scanner"
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate/pkg/ml"
 	scanner "github.com/aegisgatesecurity/aegisgate/pkg/scanner"
@@ -77,11 +78,12 @@ func loadCorpus(t *testing.T) []corpusItem {
 // 2. Scanner on normalization variants (evasion resistance)
 // 3. ATLAS compliance on original text (CheckFast + Critical severity)
 // 4. ATLAS compliance on normalization variants
-// 5. ML ThreatDetector heuristic (transposition, vowel deletion, reversed words)
+// 5. Vendored scanner detector adapter (516 patterns, 21 categories)
+// 6. ML ThreatDetector heuristic (transposition, vowel deletion, reversed words)
 //
 // This mirrors proxy.go lines ~658-890, excluding the ONNX model inference
 // which requires a model file not available in CI.
-func scanPayload(s *scanner.Scanner, atlas *compliance.ATLASFramework, td *ml.ThreatDetector, text string) bool {
+func scanPayload(s *scanner.Scanner, atlas *compliance.ATLASFramework, da *platformscanner.DetectorAdapter, td *ml.ThreatDetector, text string) bool {
 	// Layer 1: Scanner on original text
 	findings := s.ScanFast(text)
 	if s.ShouldBlock(findings) {
@@ -117,7 +119,20 @@ func scanPayload(s *scanner.Scanner, atlas *compliance.ATLASFramework, td *ml.Th
 		}
 	}
 
-	// Layer 5: ML ThreatDetector heuristic fallback
+	// Layer 5: Vendored scanner detector adapter (516 patterns)
+	// Covers: data_exfil, evasion, agent_poisoning, RAG, path_traversal,
+	// social_engineering, context_manipulation, prompt_leakage, injection,
+	// malware, dangerous_functions, xss_request, prompt_injection_request
+	// Uses ScanVariants which only runs attack categories on variants
+	// (data patterns like PII/secrets run on original only to avoid FPs)
+	if da != nil {
+		detectorBlocked, _ := da.ScanVariants(text, variants)
+		if detectorBlocked {
+			return true
+		}
+	}
+
+	// Layer 6: ML ThreatDetector heuristic fallback
 	// In production, the ONNX model runs. In CI, the heuristic fallback
 	// catches evasion patterns (transposition, vowel deletion, reversed words).
 	if td != nil {
@@ -176,6 +191,9 @@ func TestBehavioralParity(t *testing.T) {
 	// Get ATLAS framework (same singleton the proxy uses)
 	atlas := compliance.GetAtlas()
 
+	// Create vendored scanner detector adapter (516 patterns, 21 categories)
+	da := platformscanner.NewDetectorAdapter()
+
 	// Create ML ThreatDetector with heuristic fallback (no ONNX model in CI)
 	tdCfg := ml.DefaultDetectorConfig()
 	tdCfg.Enabled = true
@@ -187,7 +205,7 @@ func TestBehavioralParity(t *testing.T) {
 	// Run attacks
 	var misses []corpusItem
 	for _, item := range attacks {
-		blocked := scanPayload(s, atlas, td, item.Text)
+		blocked := scanPayload(s, atlas, da, td, item.Text)
 		if !blocked {
 			if _, isKnown := knownMisses[item.ID]; isKnown {
 				t.Logf("KNOWN MISS: %s [%s] — %s", item.ID, item.Category, knownMisses[item.ID])
@@ -200,7 +218,7 @@ func TestBehavioralParity(t *testing.T) {
 	// Run benign payloads
 	var falsePositives []corpusItem
 	for _, item := range benign {
-		blocked := scanPayload(s, atlas, td, item.Text)
+		blocked := scanPayload(s, atlas, da, td, item.Text)
 		if blocked {
 			falsePositives = append(falsePositives, item)
 		}
@@ -257,21 +275,35 @@ func TestBehavioralParity(t *testing.T) {
 	}
 }
 
-// TestPatternCount verifies that the expected number of patterns are loaded.
-// This catches the exact regression that occurred when patterns were lost
-// during Docker rebuild — the pattern count dropped silently.
+// TestPatternCount verifies that the expected number of patterns are loaded
+// across all detection layers. This catches the exact regression that occurred
+// when patterns were lost during Docker rebuild — the pattern count dropped silently.
 func TestPatternCount(t *testing.T) {
 	config := scanner.DefaultConfig()
-	count := len(config.Patterns)
+	scannerCount := len(config.Patterns)
+	detectorCount := platformscanner.TotalDetectorPatterns()
+	totalCount := scannerCount + detectorCount
 
-	// Baseline: 283 patterns (255 original + 20 gap-closure + 8 detector port)
-	const minPatterns = 280 // Allow small variance, catch major loss
+	// Baseline: 283 scanner + 516 detector = 799 total (plus 66 ATLAS = 865 pipeline total)
+	const minScannerPatterns = 280  // Allow small variance, catch major loss
+	const minDetectorPatterns = 500 // 516 baseline
+	const minTotalPatterns = 780    // 799 baseline
 
-	t.Logf("Pattern count: %d (minimum: %d)", count, minPatterns)
+	t.Logf("Scanner patterns: %d (minimum: %d)", scannerCount, minScannerPatterns)
+	t.Logf("Detector patterns: %d (minimum: %d)", detectorCount, minDetectorPatterns)
+	t.Logf("Total patterns (scanner + detector): %d (minimum: %d)", totalCount, minTotalPatterns)
+	t.Logf("ATLAS compliance patterns: 66 (not included in total — separate pipeline)")
 
-	if count < minPatterns {
-		t.Errorf("PATTERN COUNT GATE FAILED: %d < %d minimum. Patterns may have been lost.",
-			count, minPatterns)
+	if scannerCount < minScannerPatterns {
+		t.Errorf("SCANNER PATTERN COUNT GATE FAILED: %d < %d minimum. Patterns may have been lost.",
+			scannerCount, minScannerPatterns)
+	}
+	if detectorCount < minDetectorPatterns {
+		t.Errorf("DETECTOR PATTERN COUNT GATE FAILED: %d < %d minimum. Detector patterns may have been lost.",
+			detectorCount, minDetectorPatterns)
+	}
+	if totalCount < minTotalPatterns {
+		t.Errorf("TOTAL PATTERN COUNT GATE FAILED: %d < %d minimum.", totalCount, minTotalPatterns)
 	}
 }
 

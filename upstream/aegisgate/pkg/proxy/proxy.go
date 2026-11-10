@@ -88,6 +88,11 @@ type Options struct {
 	// MLModelPath is the path to the ONNX model file. If empty, uses default.
 	MLModelPath string
 
+	// EnableDetectorAdapter controls the vendored scanner detector adapter
+	// (514 patterns across 21 categories). Default: true. Set to false in
+	// tests that need to isolate the ML threat detector's behavior.
+	EnableDetectorAdapter bool
+
 	// ChainBlockingEnabled controls whether the P2 tool call chain analyzer
 	// blocks requests when escalation/exfil/recon chains are detected.
 	// Default: true (blocking enabled after P2 validation: 91.67% TPR, 0% FPR).
@@ -105,10 +110,12 @@ type TLSConfig struct {
 // scanCacheEntry holds cached scan results for a content hash.
 // This avoids re-scanning identical content across requests.
 type scanCacheEntry struct {
-	findings         []scanner.Finding
-	atlasFindings    []compliance.Finding
-	shouldBlock      bool
-	shouldBlockAtlas bool
+	findings             []scanner.Finding
+	atlasFindings        []compliance.Finding
+	shouldBlock          bool
+	shouldBlockAtlas     bool
+	shouldBlockDetector  bool
+	detectorPatternNames []string
 }
 
 // Proxy represents the reverse proxy
@@ -184,6 +191,12 @@ type Proxy struct {
 	// and flags volume spikes, off-hours access, geo shifts, new tools.
 	// Non-blocking in v4.5.0 (alert/log only).
 	anomalyDetector *platformanomaly.AnomalyDetector
+
+	// Vendored scanner detector adapter — 516 patterns across 21 categories
+	// from aegisgate-scanner/pkg/detectors. Covers attack categories not
+	// present in the upstream scanner (283) or ATLAS compliance (66):
+	// data_exfil, evasion, agent_poisoning, RAG, path_traversal, etc.
+	detectorAdapter *platformscanner.DetectorAdapter
 
 	// v4.5.0: Cleanup channel for P2/P4 periodic maintenance goroutine.
 	v450CleanupDone chan struct{}
@@ -356,6 +369,21 @@ func New(opts *Options) *Proxy {
 
 	// v4.5.0 P4: API key anomaly detector
 	p.anomalyDetector = platformanomaly.NewAnomalyDetector()
+
+	// Initialize vendored scanner detector adapter (516 patterns).
+	// Adds detection coverage for 21 categories including data_exfil,
+	// evasion, agent_poisoning, RAG, path_traversal, social_engineering,
+	// context_manipulation, prompt_leakage, injection, malware, etc.
+	// Enabled by default; can be disabled via EnableDetectorAdapter=false
+	// for tests that need to isolate specific detection layers.
+	if !opts.EnableDetectorAdapter {
+		slog.Info("vendored scanner detector adapter disabled by option")
+	} else {
+		p.detectorAdapter = platformscanner.NewDetectorAdapter()
+		slog.Info("vendored scanner detector adapter initialized",
+			"total_patterns", platformscanner.TotalDetectorPatterns(),
+		)
+	}
 
 	// Initialize cleanup channel for P2/P4 maintenance
 	p.v450CleanupDone = make(chan struct{})
@@ -648,6 +676,17 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					w.Write([]byte(fmt.Sprintf("Request blocked: MITRE ATLAS violation detected (%s)", strings.Join(techniqueIDs, ", "))))
 					return
 				}
+				if entry.shouldBlockDetector {
+					slog.Error("Request blocked (cached): scanner detector threat detected",
+						"client", req.RemoteAddr,
+						"path", req.URL.Path,
+						"patterns", strings.Join(entry.detectorPatternNames, ", "),
+					)
+					metrics.RecordSecurityBlock(metrics.ReasonSecrets)
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(fmt.Sprintf("Request blocked: threat detected (%s)", strings.Join(entry.detectorPatternNames, ", "))))
+					return
+				}
 				// Cache hit — findings were benign, continue to upstream
 			} else {
 				p.scanCacheMiss.Add(1)
@@ -730,6 +769,26 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 
+				// Vendored scanner detector patterns (516 patterns, 21 categories).
+				// Scans original content + normalization variants for attack
+				// categories not covered by the upstream scanner or ATLAS:
+				// data_exfil, evasion, agent_poisoning, RAG, path_traversal,
+				// social_engineering, context_manipulation, prompt_leakage, etc.
+				if p.detectorAdapter != nil {
+					detectorBlocked, detectorNames := p.detectorAdapter.ScanVariants(scanContent, variants)
+					if detectorBlocked {
+						slog.Error("Request blocked: scanner detector threat detected",
+							"client", req.RemoteAddr,
+							"path", req.URL.Path,
+							"patterns", strings.Join(detectorNames, ", "),
+						)
+						metrics.RecordSecurityBlock(metrics.ReasonSecrets)
+						w.WriteHeader(http.StatusForbidden)
+						w.Write([]byte(fmt.Sprintf("Request blocked: threat detected (%s)", strings.Join(detectorNames, ", "))))
+						return
+					}
+				}
+
 				// Check if request should be blocked
 				if blocked {
 					violationNames := p.scanner.GetViolationNames(requestFindings)
@@ -790,12 +849,16 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 
-				// Cache the scan result for future requests with the same content
+				// Cache the scan result for future requests with the same content.
+				// detectorBlocked is false here — if it were true, we would have
+				// returned above. We cache false so cache hits skip the detector scan.
 				p.scanCache.Store(cacheKey, &scanCacheEntry{
-					findings:         requestFindings,
-					atlasFindings:    atlasFindings,
-					shouldBlock:      blocked,
-					shouldBlockAtlas: atlasBlocked,
+					findings:             requestFindings,
+					atlasFindings:        atlasFindings,
+					shouldBlock:          blocked,
+					shouldBlockAtlas:     atlasBlocked,
+					shouldBlockDetector:  false,
+					detectorPatternNames: nil,
 				})
 
 				// Neural Network Threat Detector (Char CNN-BiLSTM)

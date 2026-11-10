@@ -102,6 +102,7 @@ func TestThreatDetectorIntegration_ShadowMode(t *testing.T) {
 		MLShadowMode:             true, // Shadow mode: log but never block
 		MLThreshold:              0.5,
 		MLModelPath:              modelPath,
+		EnableDetectorAdapter:    false, // Isolate ML threat detector tests from regex layers
 	}
 
 	p := New(opts)
@@ -282,6 +283,7 @@ func TestThreatDetectorIntegration_BlockingMode(t *testing.T) {
 		MLShadowMode:             false, // Blocking mode: block on threat detection
 		MLThreshold:              0.5,
 		MLModelPath:              modelPath,
+		EnableDetectorAdapter:    false, // Isolate ML threat detector tests from regex layers
 	}
 
 	p := New(opts)
@@ -383,6 +385,7 @@ func TestThreatDetectorIntegration_Disabled(t *testing.T) {
 		MLShadowMode:             false,
 		MLThreshold:              0.5,
 		MLModelPath:              modelPath,
+		EnableDetectorAdapter:    false, // Isolate ML threat detector tests from regex layers
 	}
 
 	p := New(opts)
@@ -462,6 +465,7 @@ func TestThreatDetector_TwoTierL3_HighConfidenceBlock(t *testing.T) {
 		MLShadowMode:             false,
 		MLThreshold:              0.50,
 		MLModelPath:              modelPath,
+		EnableDetectorAdapter:    false, // Isolate ML threat detector tests from regex layers
 	}
 
 	p := New(opts)
@@ -544,6 +548,7 @@ func TestThreatDetector_TwoTierL3_NumericBenignNoFP(t *testing.T) {
 		MLShadowMode:             false,
 		MLThreshold:              0.50,
 		MLModelPath:              modelPath,
+		EnableDetectorAdapter:    false, // Isolate ML threat detector tests from regex layers
 	}
 
 	p := New(opts)
