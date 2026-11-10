@@ -486,6 +486,12 @@ func NormalizeAllVariants(input string) []string {
 	unicodeNorm := NormalizeText(unicodeMath)
 	candidates = append(candidates, unicodeNorm)
 
+	// Fullwidth Latin normalization (U+FF01–U+FF5E → ASCII)
+	fullwidth := NormalizeFullwidth(input)
+	candidates = append(candidates, fullwidth)
+	fullwidthNorm := NormalizeText(fullwidth)
+	candidates = append(candidates, fullwidthNorm)
+
 	// ROT3 (Caesar cipher shift 3) and hex decode
 	rot3 := NormalizeROT3(input)
 	candidates = append(candidates, rot3)

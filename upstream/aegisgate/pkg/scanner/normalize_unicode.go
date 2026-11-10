@@ -157,5 +157,35 @@ func NormalizeAllUnicodeMath(input string) string {
 	result = NormalizeMathSansSerif(result)
 	result = NormalizeCircled(result)
 	result = NormalizeRegionalIndicators(result)
+	result = NormalizeFullwidth(result)
 	return result
+}
+
+// NormalizeFullwidth converts fullwidth Latin characters (U+FF01–U+FF5E)
+// to their ASCII equivalents. Catches: Ｉｇｎｏｒｅ → Ignore
+func NormalizeFullwidth(input string) string {
+	var b strings.Builder
+	b.Grow(len(input))
+	for _, r := range input {
+		switch {
+		// Fullwidth Capital A-Z: U+FF21–U+FF3A
+		case r >= 0xFF21 && r <= 0xFF3A:
+			b.WriteRune(rune(r - 0xFF21 + 'A'))
+		// Fullwidth Small a-z: U+FF41–U+FF5A
+		case r >= 0xFF41 && r <= 0xFF5A:
+			b.WriteRune(rune(r - 0xFF41 + 'a'))
+		// Fullwidth digits 0-9: U+FF10–U+FF19
+		case r >= 0xFF10 && r <= 0xFF19:
+			b.WriteRune(rune(r - 0xFF10 + '0'))
+		// Fullwidth space U+3000
+		case r == 0x3000:
+			b.WriteRune(' ')
+		// Fullwidth punctuation/symbols U+FF01–U+FF0F, U+FF1A–U+FF20, U+FF3B–U+FF40, U+FF5B–U+FF5E
+		case r >= 0xFF01 && r <= 0xFF5E:
+			b.WriteRune(rune(r - 0xFEE0)) // Offset to ASCII range
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
