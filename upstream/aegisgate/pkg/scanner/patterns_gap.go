@@ -77,5 +77,26 @@ func GapClosurePatterns() []*Pattern {
 
 		// === Insider Threat — Unauthorized Transfers ===
 		{Name: "gap_unauthorized_transfer", Regex: regexp.MustCompile(`(?i)(?:transfer\s+\$[\d,]+\s+from\s+(?:the\s+)?company\s+(?:account|funds?|bank)\s+to\s+(?:this\s+)?(?:iban|account|wallet|address)|move\s+\$[\d,]+\s+from\s+(?:the\s+)?company\s+(?:account|funds?)\s+to|wire\s+\$[\d,]+\s+from\s+(?:the\s+)?company|initiate\s+(?:a\s+)?(?:wire|transfer)\s+of\s+\$[\d,]+\s+from\s+(?:the\s+)?company)`), Severity: Critical, Category: GapClosureCategory, Description: "Unauthorized financial transfer requests"},
+
+		// === Detector patterns ported from aegisgate-scanner/pkg/detectors ===
+		// These patterns were present in the v22b-l2v7 production image but
+		// missing from the committed upstream scanner, causing a regression
+		// when the Docker image was rebuilt from clean source.
+
+		{Name: "evasion_disable_monitor", Regex: regexp.MustCompile(`(?i)\b(?:disable|turn\s+off|deactivate|stop|kill|terminate).{0,20}(?:Sysmon|AMSI|EDR|XDR|Windows\s+Defender|Windows\s+Security\s+Center|antivirus|anti-?virus|AppLocker|Gatekeeper|monitoring|detection)\b`), Severity: High, Category: CategoryCompliance, Description: "Security monitoring disable request"},
+
+		{Name: "malware_payload_download", Regex: regexp.MustCompile(`(?i)\b(?:download(?:s)?\s+(?:and\s+)?execut(?:e|es|ion)|payload\s+(?:download|execut|deploy)|(?:curl|wget|invoke-webrequest|iwr)\s+.{0,50}(?:\|\s*(?:sh|bash|python|perl|exec|eval)|;\s*(?:sh|bash)|&&\s*(?:chmod|sh|bash|\./))|(?:download|fetch).{0,30}(?:from|http|evil|attacker|c2).{0,30}execut)\b`), Severity: Critical, Category: CategoryCompliance, Description: "Payload download and execute"},
+
+		{Name: "xss_payload_request", Regex: regexp.MustCompile(`(?i)\b(?:cross.?site.?scripting|xss)\s*payload\b|(?i)\b(?:generate|create|write|build)\s+(?:a\s+)?(?:xss|cross.?site.?scripting)\s*payload\b`), Severity: Critical, Category: CategoryXSS, Description: "XSS payload generation request"},
+
+		{Name: "sqli_data_extraction", Regex: regexp.MustCompile(`(?i)\b(?:extract.{0,30}(?:credit\s*card|ssn|password|credential|personal|sensitive|private).{0,30}(?:from\s+)?(?:the\s+)?(?:database|db|table)|dump\s+(?:the\s+)?(?:database|db|table|users?|passwords)|exfiltrat\w*\s+data.{0,30}(?:database|sql|table))\b`), Severity: Critical, Category: CategoryCompliance, Description: "SQL data extraction/exfiltration request"},
+
+		{Name: "evasion_log_purge", Regex: regexp.MustCompile(`(?i)\b(?:purge|clear|delete|wipe|tamper|modif\w*|alter).{0,20}(?:SIEM|audit|security|event|unified|bash\s+history|system).{0,10}(?:logs?|trails?|records?|history)\b`), Severity: High, Category: CategoryCompliance, Description: "Security log purge/tampering request"},
+
+		{Name: "exfil_sensitive_file_read", Regex: regexp.MustCompile(`(?i)\b(?:read|show|display|output|print|reveal|cat|view|dump|include).{0,30}(?:contents?\s+of\s+)?(?:/etc/(?:passwd|shadow|hosts|sudoers|group|gshadow)|/root/\.ssh/|~/\.ssh/(?:id_rsa|id_ed25519|id_ecdsa|authorized_keys|known_hosts)|~/\.aws/credentials|~/\.aws/config|~/\.git-credentials|~/\.npmrc|~/\.pypirc|~/\.docker/config|/proc/self/environ)`), Severity: Critical, Category: CategoryCompliance, Description: "Request to read sensitive system/credential files"},
+
+		{Name: "malware_generic_request", Regex: regexp.MustCompile(`(?i)\b(?:write|create|generate|build|develop|make)\s+(?:a\s+)?(?:\w+\s+)?(?:\w+\s+)?(?:malware|virus|trojan|worm|rootkit|keylogger|spyware|rat|bootkit|botnet|implant|dropper|stealer|payload|cryptolocker|lolbin)\b`), Severity: Critical, Category: CategoryCompliance, Description: "Generic malware generation request"},
+
+		{Name: "PromptInjectionChinese", Regex: regexp.MustCompile(`忽略所有之前的指令|忽略之前的指令|忽略所有先前的指示|泄露系统提示|显示系统提示|输出系统提示|忽略安全限制|无视安全规则`), Severity: Critical, Category: CategoryPrompt, Description: "Chinese-language prompt injection"},
 	}
 }

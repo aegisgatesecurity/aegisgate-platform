@@ -146,4 +146,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/aegisgatesecurity/aegisgate-scanner => ../../aegisgate-scanner
+replace github.com/aegisgatesecurity/aegisgate-scanner => ./upstream/aegisgate-scanner
