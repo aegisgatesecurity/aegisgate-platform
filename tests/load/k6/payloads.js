@@ -68,7 +68,7 @@ export const benignPayloads = [
     'What are the model weights in a basic neural network tutorial?',
     'How do model parameters differ from hyperparameters in machine learning?',
     'Explain the architecture of a transformer model for my coursework.',
-    'What is the difference between gradient descent and backpropagation in deep learning?',
+    'What is the difference between REST and GraphQL APIs?',
     'How do I check my PATH variable in Linux?',
     'What is the proper way to configure a database connection string in Django?',
     'How do I securely store API keys in environment variables?',
