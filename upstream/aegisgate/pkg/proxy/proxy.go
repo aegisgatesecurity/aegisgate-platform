@@ -914,7 +914,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						hasCorroboratingEvidence := corroboratingCount > 0
 
 						// L3 Tier 1: High-confidence independent block
-						l3HighConfidenceThreshold := 0.985
+						l3HighConfidenceThreshold := 0.95
 						if threatResult.Score >= l3HighConfidenceThreshold {
 							slog.Error("Neural threat detector blocked request (high confidence, no corroboration required)",
 								"client", req.RemoteAddr,
