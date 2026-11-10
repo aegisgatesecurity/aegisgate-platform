@@ -178,7 +178,7 @@ func TestE2EChainedDefense(t *testing.T) {
 		Timeout:                  10 * time.Second,
 		RateLimit:                1000,
 		MLThreatDetectionEnabled: false, // No ONNX model in CI
-		EnableDetectorAdapter:    true,  // Test the new detector adapter
+		DisableDetectorAdapter:   false, // Test the new detector adapter
 	}
 
 	p := proxy.New(opts)
@@ -318,7 +318,7 @@ func TestChainedDefenseBenignOnly(t *testing.T) {
 		Timeout:                  10 * time.Second,
 		RateLimit:                1000,
 		MLThreatDetectionEnabled: false,
-		EnableDetectorAdapter:    true,
+		DisableDetectorAdapter:   false,
 	}
 
 	p := proxy.New(opts)
@@ -383,7 +383,7 @@ func TestSingleTurnDetection(t *testing.T) {
 		Timeout:                  10 * time.Second,
 		RateLimit:                1000,
 		MLThreatDetectionEnabled: false,
-		EnableDetectorAdapter:    true,
+		DisableDetectorAdapter:   false,
 	}
 
 	p := proxy.New(opts)

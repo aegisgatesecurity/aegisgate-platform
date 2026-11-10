@@ -88,10 +88,10 @@ type Options struct {
 	// MLModelPath is the path to the ONNX model file. If empty, uses default.
 	MLModelPath string
 
-	// EnableDetectorAdapter controls the vendored scanner detector adapter
-	// (514 patterns across 21 categories). Default: true. Set to false in
-	// tests that need to isolate the ML threat detector's behavior.
-	EnableDetectorAdapter bool
+	// DisableDetectorAdapter controls the vendored scanner detector adapter
+	// (514 patterns across 21 categories). Default: enabled. Set to true to
+	// disable (e.g., in tests that need to isolate the ML threat detector).
+	DisableDetectorAdapter bool
 
 	// ChainBlockingEnabled controls whether the P2 tool call chain analyzer
 	// blocks requests when escalation/exfil/recon chains are detected.
@@ -376,7 +376,7 @@ func New(opts *Options) *Proxy {
 	// context_manipulation, prompt_leakage, injection, malware, etc.
 	// Enabled by default; can be disabled via EnableDetectorAdapter=false
 	// for tests that need to isolate specific detection layers.
-	if !opts.EnableDetectorAdapter {
+	if opts.DisableDetectorAdapter {
 		slog.Info("vendored scanner detector adapter disabled by option")
 	} else {
 		p.detectorAdapter = platformscanner.NewDetectorAdapter()
