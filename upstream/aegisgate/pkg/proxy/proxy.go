@@ -29,6 +29,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"github.com/aegisgatesecurity/aegisgate/pkg/compliance"
 	"github.com/aegisgatesecurity/aegisgate/pkg/metrics"
@@ -777,6 +778,31 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				if p.detectorAdapter != nil {
 					detectorBlocked, detectorNames := p.detectorAdapter.ScanVariants(scanContent, variants)
 					if detectorBlocked {
+						// Educational context FP mitigation: if content is an
+						// educational/how-to question and ALL detector matches
+						// are from FP-prone patterns (e.g., dangerous function
+						// names that appear in questions about those functions),
+						// suppress the block. This prevents blocking benign
+						// questions like "How does eval() work in JavaScript?"
+						if isEducationalContent(scanContent) {
+							allExempt := true
+							for _, name := range detectorNames {
+								if !isEducationalExemptPattern(name) {
+									allExempt = false
+									break
+								}
+							}
+							if allExempt {
+								slog.Info("Detector educational context FP mitigation — suppressing block",
+									"client", req.RemoteAddr,
+									"path", req.URL.Path,
+									"patterns", strings.Join(detectorNames, ", "),
+								)
+								detectorBlocked = false
+							}
+						}
+					}
+					if detectorBlocked {
 						slog.Error("Request blocked: scanner detector threat detected",
 							"client", req.RemoteAddr,
 							"path", req.URL.Path,
@@ -913,9 +939,122 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						}
 						hasCorroboratingEvidence := corroboratingCount > 0
 
+						// FP mitigations for L3 Tier 1 high-confidence block.
+						// These suppress false positives that trigger high ML scores
+						// but are benign in context.
+						//
+						// 1. Non-English text suppression: char-level model maps
+						//    non-ASCII chars to UNK tokens, scoring ~1.0 on
+						//    non-English text.
+						// 2. Short-text suppression: very short benign messages can
+						//    trigger false high-confidence ML scores.
+						// 3. Educational context exemption: educational/how-to
+						//    questions with only FP-prone patterns are exempted.
+						suppressL3Block := false
+						if threatResult.Score >= 0.95 {
+							// FP mitigation 1: non-English text (>50% non-ASCII)
+							nonASCIICount := 0
+							for _, r := range scanContent {
+								if r > 127 {
+									nonASCIICount++
+								}
+							}
+							runeCount := utf8.RuneCountInString(scanContent)
+							isNonEnglish := runeCount > 0 && nonASCIICount*2 > runeCount
+							if isNonEnglish {
+								hasThresholdRegex := false
+								for _, f := range requestFindings {
+									if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+										hasThresholdRegex = true
+										break
+									}
+								}
+								if !hasThresholdRegex {
+									for _, f := range atlasFindings {
+										if f.Severity >= compliance.SeverityMedium {
+											hasThresholdRegex = true
+											break
+										}
+									}
+								}
+								if !hasThresholdRegex {
+									slog.Info("ML Tier 1 non-English FP mitigation — suppressing block",
+										"client", req.RemoteAddr,
+										"path", req.URL.Path,
+										"score", fmt.Sprintf("%.3f", threatResult.Score),
+										"non_ascii_pct", nonASCIICount*100/runeCount,
+									)
+									suppressL3Block = true
+								}
+							}
+
+							// FP mitigation 2: short text (< 20 chars)
+							if !suppressL3Block && runeCount < 20 {
+								hasThresholdRegex := false
+								for _, f := range requestFindings {
+									if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+										hasThresholdRegex = true
+										break
+									}
+								}
+								if !hasThresholdRegex {
+									for _, f := range atlasFindings {
+										if f.Severity >= compliance.SeverityMedium {
+											hasThresholdRegex = true
+											break
+										}
+									}
+								}
+								if !hasThresholdRegex {
+									slog.Info("ML Tier 1 short-text FP mitigation — suppressing block",
+										"client", req.RemoteAddr,
+										"path", req.URL.Path,
+										"score", fmt.Sprintf("%.3f", threatResult.Score),
+										"rune_count", runeCount,
+									)
+									suppressL3Block = true
+								}
+							}
+
+							// FP mitigation 3: educational context exemption
+							if !suppressL3Block && isEducationalContent(scanContent) {
+								allExemptable := true
+								hasThresholdDetection := false
+								for _, f := range requestFindings {
+									if f.Pattern == nil || f.Pattern.Severity < scanner.Medium {
+										continue
+									}
+									hasThresholdDetection = true
+									if !isEducationalExemptPattern(f.Pattern.Name) {
+										allExemptable = false
+										break
+									}
+								}
+								if hasThresholdDetection && allExemptable {
+									for _, f := range atlasFindings {
+										if f.Severity < compliance.SeverityMedium {
+											continue
+										}
+										if !isEducationalExemptPattern(f.Technique) {
+											allExemptable = false
+											break
+										}
+									}
+								}
+								if hasThresholdDetection && allExemptable {
+									slog.Info("ML Tier 1 educational context FP mitigation — suppressing block",
+										"client", req.RemoteAddr,
+										"path", req.URL.Path,
+										"score", fmt.Sprintf("%.3f", threatResult.Score),
+									)
+									suppressL3Block = true
+								}
+							}
+						}
+
 						// L3 Tier 1: High-confidence independent block
 						l3HighConfidenceThreshold := 0.95
-						if threatResult.Score >= l3HighConfidenceThreshold {
+						if !suppressL3Block && threatResult.Score >= l3HighConfidenceThreshold {
 							slog.Error("Neural threat detector blocked request (high confidence, no corroboration required)",
 								"client", req.RemoteAddr,
 								"path", req.URL.Path,
@@ -1987,4 +2126,81 @@ func iocFingerprintFromFinding(f scanner.Finding) string {
 	}
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
+}
+
+// isEducationalContent checks if the content is an educational/how-to question.
+// Used for FP mitigation: educational questions that only trigger FP-prone
+// patterns should not be blocked.
+func isEducationalContent(content string) bool {
+	trimmed := strings.TrimSpace(content)
+	// Extract text from JSON if needed (look for "content" field)
+	if strings.Contains(trimmed, "{") {
+		var parsed map[string]interface{}
+		if err := json.Unmarshal([]byte(trimmed), &parsed); err == nil {
+			if messages, ok := parsed["messages"].([]interface{}); ok && len(messages) > 0 {
+				if msg, ok := messages[0].(map[string]interface{}); ok {
+					if c, ok := msg["content"].(string); ok {
+						trimmed = c
+					}
+				}
+			}
+		}
+	}
+	if len(trimmed) > 80 {
+		trimmed = trimmed[:80]
+	}
+	lower := strings.ToLower(trimmed)
+	eduPatterns := []string{
+		"how do i ", "how to ", "how does ", "how should ", "how can i ",
+		"what is ", "what's ", "what are ", "what's the ", "what does ",
+		"explain ", "describe ",
+		"difference between ",
+		"best practices for ", "best practice for ",
+		"why is ", "why are ", "why do ",
+		"when should ", "when is ",
+	}
+	for _, p := range eduPatterns {
+		if strings.Contains(lower, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// educationalExemptPatterns are patterns that commonly trigger FPs on
+// educational/admin/DevOps questions. When in educational context, these
+// patterns alone (without other corroborating detections) won't block.
+var educationalExemptPatterns = map[string]bool{
+	"evasion_lolbin":                true,
+	"sensitive_file_ssh_key":        true,
+	"sensitive_file_env":            true,
+	"sensitive_file_aws_creds":      true,
+	"sensitive_file_hosts":          true,
+	"pii_icd10_patient_ctx":         true,
+	"pii_icd10_code":                true,
+	"pii_letter_only_id":            true,
+	"toxicity_self_harm":            true,
+	"toxicity_sexual":               true,
+	"toxicity":                      true,
+	"ml_threat":                     true,
+	"char_cnn_bilstm":               true,
+	"harmful_hacking_instructions":  true,
+	"harmful_violence_instructions": true,
+	// Dangerous function patterns — commonly appear in educational
+	// questions about how these functions work (e.g., "How does eval()
+	// work in JavaScript?"). These match function-name patterns that
+	// are FP-prone in educational/admin/DevOps contexts.
+	"dangerous_py_eval":                 true,
+	"dangerous_js_eval":                 true,
+	"dangerous_py_exec":                 true,
+	"dangerous_py_compile":              true,
+	"dangerous_py_os_system":            true,
+	"dangerous_py_subprocess_shell":     true,
+	"dangerous_py_os_popen":             true,
+	"dangerous_js_function_constructor": true,
+	"dangerous_js_child_process_exec":   true,
+}
+
+func isEducationalExemptPattern(pattern string) bool {
+	return educationalExemptPatterns[pattern]
 }
