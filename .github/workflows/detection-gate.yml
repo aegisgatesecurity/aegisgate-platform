@@ -94,6 +94,15 @@ jobs:
           fi
           echo "BEHAVIORAL PARITY TEST PASSED"
 
+      - name: Run E2E chained defense test
+        run: |
+          go test -v -count=1 -run "TestE2EChainedDefense|TestChainedDefenseBenignOnly|TestSingleTurnDetection" ./tests/adversarial/ 2>&1 | tee /tmp/e2e-results.txt
+          if grep -q "FAIL" /tmp/e2e-results.txt; then
+            echo "E2E CHAINED DEFENSE TEST FAILED"
+            exit 1
+          fi
+          echo "E2E CHAINED DEFENSE TEST PASSED"
+
       - name: Weekly audit — create issue on regression
         if: failure() && github.event_name == 'schedule'
         uses: actions/github-script@v9
