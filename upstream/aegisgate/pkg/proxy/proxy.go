@@ -699,18 +699,36 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 				// Scan all normalization variants for scanner findings.
 				// Use ScanFast for request-scoped blocking decisions.
+				// PERF: Scan original first, then parallelize remaining variants.
 				// Early exit: if original content triggers a block, skip remaining
 				// variants — we already have enough to block.
 				requestFindings = p.scanner.ScanFast(scanContent)
 				blocked := p.scanner.ShouldBlock(requestFindings)
 				if !blocked {
-					for _, v := range variants[1:] { // Skip [0] which is the original
-						if v != "" && v != scanContent {
-							additionalFindings := p.scanner.ScanFast(v)
-							requestFindings = mergeFindings(requestFindings, additionalFindings)
+					// Parallelize variant scanning — goroutine per variant
+					type variantResult struct {
+						findings []scanner.Finding
+					}
+					vResults := make([]variantResult, len(variants))
+					var wg sync.WaitGroup
+					for i, v := range variants[1:] {
+						if v == "" || v == scanContent {
+							continue
+						}
+						wg.Add(1)
+						go func(idx int, variant string) {
+							defer wg.Done()
+							vResults[idx].findings = p.scanner.ScanFast(variant)
+						}(i+1, v)
+					}
+					wg.Wait()
+					// Merge results, check for block after each merge
+					for i := 1; i < len(variants); i++ {
+						if vResults[i].findings != nil {
+							requestFindings = mergeFindings(requestFindings, vResults[i].findings)
 							if p.scanner.ShouldBlock(requestFindings) {
 								blocked = true
-								break // Early exit: found blocking violation
+								break
 							}
 						}
 					}
@@ -1412,15 +1430,30 @@ func (p *Proxy) modifyResponse(resp *http.Response) error {
 			findings := p.scanner.ScanFast(scanContent)
 			blocked := p.scanner.ShouldBlock(findings)
 
-			// Scan variants — early exit if we already found a block
+			// Scan variants — parallelized with goroutine per variant
 			if !blocked {
-				for _, v := range respVariants[1:] { // Skip [0] which is the original
-					if v != "" && v != scanContent {
-						vFindings := p.scanner.ScanFast(v)
-						findings = mergeFindings(findings, vFindings)
+				type respVariantResult struct {
+					findings []scanner.Finding
+				}
+				rvResults := make([]respVariantResult, len(respVariants))
+				var rvWg sync.WaitGroup
+				for i, v := range respVariants[1:] {
+					if v == "" || v == scanContent {
+						continue
+					}
+					rvWg.Add(1)
+					go func(idx int, variant string) {
+						defer rvWg.Done()
+						rvResults[idx].findings = p.scanner.ScanFast(variant)
+					}(i+1, v)
+				}
+				rvWg.Wait()
+				for i := 1; i < len(respVariants); i++ {
+					if rvResults[i].findings != nil {
+						findings = mergeFindings(findings, rvResults[i].findings)
 						if p.scanner.ShouldBlock(findings) {
 							blocked = true
-							break // Early exit: found blocking violation
+							break
 						}
 					}
 				}
