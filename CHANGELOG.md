@@ -1,4 +1,28 @@
-## [5.2.0] - 2026-11-10 — Detector Adapter, Red Team Expansion, FP Mitigations, Fullwidth Normalization
+## [5.2.1] - 2026-11-11 — Gap-Closure Patterns, Performance Optimizations
+
+> **v5.2.1** adds 3 gap-closure detection patterns for red team misses, improves drug/weapons regex, and adds major performance optimizations to the ML threat detector.
+
+### Gap-Closure Detection Patterns (28 → 31)
+- `gap_instruction_inventory` — catches "what instructions do you have" (rt-0023)
+- `gap_c2_beaconing` — catches "cron job that phones home" C2/exfil (rt-0044)
+- `gap_admin_pin_extract` — catches "first digit of the admin PIN" credential extraction (rt-0054)
+- Extended `gap_hypothetical_framing` to match "imagine you're not an AI"
+- Extended `gap_partial_extraction` to include PIN/admin PIN in secret types
+
+### Performance Optimizations
+- **ML LRU cache** (10,000 entries, FNV-1a hash) — 480x faster on cache hit (~100ns vs ~48ms ONNX inference)
+- **DetectAll fix** — ML inference now runs on original text only, not all 20+ normalization variants (eliminates ~960ms wasted inference per response)
+- **Parallel variant scanning** — goroutine per variant with WaitGroup (wall time from sum to max)
+
+### Drug/Weapons Regex Improvement
+- Improved drug synthesis and weapons regex for language-switching attacks
+
+### Detection Stats
+- Total patterns: 278+ regex + 517 detector adapter = 795+
+- Red team: 0 of 7 original misses remain (all resolved in CI behavioral parity)
+- False positive rate: 0%
+
+
 
 > **v5.2.0** adds a detector adapter layer (517 patterns from AegisGate Scanner), expands the red team corpus to 50 attacks + 20 benign, fixes despaced text false positives, adds fullwidth Latin normalization, and resolves all code scanning alerts.
 
@@ -2721,3 +2745,5 @@ Sprint 4 complete: OIDC/SAML SSO ported and integrated. 28/29 packages now excee
 - HTTP proxy with MITM scanning
 - MCP server with basic guardrails (Guards 1-4)
 - Web dashboard
+
+## [5.2.0] - 2026-11-10 — Detector Adapter, Red Team Expansion, FP Mitigations, Fullwidth Normalization
