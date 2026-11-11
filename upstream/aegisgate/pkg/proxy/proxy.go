@@ -963,23 +963,38 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 						//
 						// 1. Non-English text suppression: char-level model maps
 						//    non-ASCII chars to UNK tokens, scoring ~1.0 on
-						//    non-English text.
+						//    non-English text. Only applies when the text is
+						//    predominantly non-English (<10 ASCII alnum chars);
+						//    mixed-language attacks with >=10 ASCII alnum chars
+						//    are not suppressed.
 						// 2. Short-text suppression: very short benign messages can
 						//    trigger false high-confidence ML scores.
 						// 3. Educational context exemption: educational/how-to
 						//    questions with only FP-prone patterns are exempted.
 						suppressL3Block := false
 						if threatResult.Score >= 0.95 {
-							// FP mitigation 1: non-English text (>50% non-ASCII)
+							// FP mitigation 1: non-English text (>50% non-ASCII).
+							// The char-level model maps non-ASCII chars to UNK tokens,
+							// which can cause benign non-English text to score ~1.0.
+							//
+							// IMPORTANT: This mitigation only fires when the text is
+							// *predominantly* non-English (<10 ASCII alphanumeric chars).
+							// If the text contains >=10 ASCII alphanumeric characters,
+							// the model's high score is likely driven by meaningful
+							// English content (e.g., attack commands, encoded payloads)
+							// rather than UNK token noise, so we do NOT suppress.
 							nonASCIICount := 0
+							asciiAlnumCount := 0
 							for _, r := range scanContent {
 								if r > 127 {
 									nonASCIICount++
+								} else if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+									asciiAlnumCount++
 								}
 							}
 							runeCount := utf8.RuneCountInString(scanContent)
 							isNonEnglish := runeCount > 0 && nonASCIICount*2 > runeCount
-							if isNonEnglish {
+							if isNonEnglish && asciiAlnumCount < 10 {
 								hasThresholdRegex := false
 								for _, f := range requestFindings {
 									if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
@@ -1001,6 +1016,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 										"path", req.URL.Path,
 										"score", fmt.Sprintf("%.3f", threatResult.Score),
 										"non_ascii_pct", nonASCIICount*100/runeCount,
+										"ascii_alnum", asciiAlnumCount,
 									)
 									suppressL3Block = true
 								}
