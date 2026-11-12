@@ -904,225 +904,244 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					shouldBlockDetector:  false,
 					detectorPatternNames: nil,
 				})
+			}
 
-				// Neural Network Threat Detector (Char CNN-BiLSTM)
-				// Only run if threat detector is enabled and we had a cache miss.
-				// Disabled by default (cold-start). Enable via feature flag after
-				// 7-day shadow validation with 0% FPR.
-				//
-				// NOTE: We feed only the original scanContent to the ML model, not the
-				// normalization variants. The variants (ROT13, keyboard-walk, l33t, etc.)
-				// are designed for regex pattern matching, not neural network inference.
-				// The CharCNN-BiLSTM was trained on raw text and produces false positives
-				// on ROT13-transformed benign text. The model's own character-level
-				// normalization handles evasion patterns that the variant pipeline covers
-				// for regex.
-				if p.threatDetector != nil && p.threatDetector.IsEnabled() {
-					threatResult := p.threatDetector.Detect(scanContent)
-					if sac != nil {
-						sac.RecordPrediction(ShadowDetectorL3)
-					}
-					// In shadow mode, IsThreat is always false but Score has the real value.
-					// Record L3 shadow alert when score >= threshold (would block if not in shadow).
-					if sac != nil && !threatResult.IsThreat && threatResult.Score >= threatResult.Threshold {
-						sac.RecordAlert(ShadowDetectorL3)
-					}
-					if threatResult.IsThreat {
-						// Two-tier L3 blocking architecture:
-						//
-						// Tier 1 (High Confidence): score >= L3HighConfidenceThreshold (0.95)
-						//   → Block independently, no L1/L2 corroboration needed.
-						//   → The model is highly confident; these are character-level
-						//     evasions (transposition, vowel deletion, word reversal)
-						//     that regex and ATLAS cannot detect.
-						//
-						// Tier 2 (Standard): score >= threshold (0.50) but < 0.95
-						//   → Block only with L1/L2 corroboration (Medium+ severity).
-						//   → Prevents FPs on benign numeric strings (dates, UUIDs,
-						//     timestamps) that may score in this range.
-						//
-						// Tier 3 (Below threshold): log only, never block.
+			// Neural Network Threat Detector (Char CNN-BiLSTM)
+			// Always run if threat detector is enabled, regardless of scan cache
+			// state. The ML model has its own LRU cache for inference memoization,
+			// so repeated prompts are fast (~100ns cache hit vs ~48ms inference).
+			// CRITICAL: This must be OUTSIDE the scan cache if/else block —
+			// otherwise scan cache hits bypass ML detection entirely, causing
+			// attacks to pass through on repeated requests.
+			//
+			// NOTE: We feed only the original scanContent to the ML model, not the
+			// normalization variants. The variants (ROT13, keyboard-walk, l33t, etc.)
+			// are designed for regex pattern matching, not neural network inference.
+			// The CharCNN-BiLSTM was trained on raw text and produces false positives
+			// on ROT13-transformed benign text. The model's own character-level
+			// normalization handles evasion patterns that the variant pipeline covers
+			// for regex.
+			if p.threatDetector != nil && p.threatDetector.IsEnabled() {
+				threatResult := p.threatDetector.Detect(scanContent)
+				if sac != nil {
+					sac.RecordPrediction(ShadowDetectorL3)
+				}
+				// In shadow mode, IsThreat is always false but Score has the real value.
+				// Record L3 shadow alert when score >= threshold (would block if not in shadow).
+				if sac != nil && !threatResult.IsThreat && threatResult.Score >= threatResult.Threshold {
+					sac.RecordAlert(ShadowDetectorL3)
+				}
+				if threatResult.IsThreat {
+					// Two-tier L3 blocking architecture:
+					//
+					// Tier 1 (High Confidence): score >= L3HighConfidenceThreshold (0.95)
+					//   → Block independently, no L1/L2 corroboration needed.
+					//   → The model is highly confident; these are character-level
+					//     evasions (transposition, vowel deletion, word reversal)
+					//     that regex and ATLAS cannot detect.
+					//
+					// Tier 2 (Standard): score >= threshold (0.50) but < 0.95
+					//   → Block only with L1/L2 corroboration (Medium+ severity).
+					//   → Prevents FPs on benign numeric strings (dates, UUIDs,
+					//     timestamps) that may score in this range.
+					//
+					// Tier 3 (Below threshold): log only, never block.
 
-						// Count L1/L2 corroboration (Medium+ severity findings)
-						corroboratingCount := 0
-						for _, f := range requestFindings {
-							if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
-								corroboratingCount++
+					// Count L1/L2 corroboration (Medium+ severity findings)
+					corroboratingCount := 0
+					for _, f := range requestFindings {
+						if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+							corroboratingCount++
+						}
+					}
+					for _, f := range atlasFindings {
+						if f.Severity >= compliance.SeverityMedium {
+							corroboratingCount++
+						}
+					}
+					hasCorroboratingEvidence := corroboratingCount > 0
+
+					// FP mitigations for L3 Tier 1 high-confidence block.
+					// These suppress false positives that trigger high ML scores
+					// but are benign in context.
+					//
+					// 1. Non-English text suppression: char-level model maps
+					//    non-ASCII chars to UNK tokens, scoring ~1.0 on
+					//    non-English text. Only applies when the text is
+					//    predominantly non-English (<10 ASCII alnum chars);
+					//    mixed-language attacks with >=10 ASCII alnum chars
+					//    are not suppressed.
+					// 2. Short-text suppression: very short benign messages can
+					//    trigger false high-confidence ML scores.
+					// 3. Educational context exemption: educational/how-to
+					//    questions with only FP-prone patterns are exempted.
+					suppressL3Block := false
+					if threatResult.Score >= 0.95 {
+						// FP mitigation 1: non-English text (>50% non-ASCII).
+						// The char-level model maps non-ASCII chars to UNK tokens,
+						// which can cause benign non-English text to score ~1.0.
+						//
+						// IMPORTANT: This mitigation only fires when the text is
+						// *predominantly* non-English (<10 ASCII alphanumeric chars).
+						// If the text contains >=10 ASCII alphanumeric characters,
+						// the model's high score is likely driven by meaningful
+						// English content (e.g., attack commands, encoded payloads)
+						// rather than UNK token noise, so we do NOT suppress.
+						nonASCIICount := 0
+						asciiAlnumCount := 0
+						for _, r := range scanContent {
+							if r > 127 {
+								nonASCIICount++
+							} else if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+								asciiAlnumCount++
 							}
 						}
-						for _, f := range atlasFindings {
-							if f.Severity >= compliance.SeverityMedium {
-								corroboratingCount++
-							}
-						}
-						hasCorroboratingEvidence := corroboratingCount > 0
-
-						// FP mitigations for L3 Tier 1 high-confidence block.
-						// These suppress false positives that trigger high ML scores
-						// but are benign in context.
-						//
-						// 1. Non-English text suppression: char-level model maps
-						//    non-ASCII chars to UNK tokens, scoring ~1.0 on
-						//    non-English text.
-						// 2. Short-text suppression: very short benign messages can
-						//    trigger false high-confidence ML scores.
-						// 3. Educational context exemption: educational/how-to
-						//    questions with only FP-prone patterns are exempted.
-						suppressL3Block := false
-						if threatResult.Score >= 0.95 {
-							// FP mitigation 1: non-English text (>50% non-ASCII)
-							nonASCIICount := 0
-							for _, r := range scanContent {
-								if r > 127 {
-									nonASCIICount++
+						runeCount := utf8.RuneCountInString(scanContent)
+						isNonEnglish := runeCount > 0 && nonASCIICount*2 > runeCount
+						if isNonEnglish && asciiAlnumCount < 10 {
+							hasThresholdRegex := false
+							for _, f := range requestFindings {
+								if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+									hasThresholdRegex = true
+									break
 								}
 							}
-							runeCount := utf8.RuneCountInString(scanContent)
-							isNonEnglish := runeCount > 0 && nonASCIICount*2 > runeCount
-							if isNonEnglish {
-								hasThresholdRegex := false
-								for _, f := range requestFindings {
-									if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+							if !hasThresholdRegex {
+								for _, f := range atlasFindings {
+									if f.Severity >= compliance.SeverityMedium {
 										hasThresholdRegex = true
 										break
 									}
 								}
-								if !hasThresholdRegex {
-									for _, f := range atlasFindings {
-										if f.Severity >= compliance.SeverityMedium {
-											hasThresholdRegex = true
-											break
-										}
-									}
-								}
-								if !hasThresholdRegex {
-									slog.Info("ML Tier 1 non-English FP mitigation — suppressing block",
-										"client", req.RemoteAddr,
-										"path", req.URL.Path,
-										"score", fmt.Sprintf("%.3f", threatResult.Score),
-										"non_ascii_pct", nonASCIICount*100/runeCount,
-									)
-									suppressL3Block = true
+							}
+							if !hasThresholdRegex {
+								slog.Info("ML Tier 1 non-English FP mitigation — suppressing block",
+									"client", req.RemoteAddr,
+									"path", req.URL.Path,
+									"score", fmt.Sprintf("%.3f", threatResult.Score),
+									"non_ascii_pct", nonASCIICount*100/runeCount,
+									"ascii_alnum", asciiAlnumCount,
+								)
+								suppressL3Block = true
+							}
+						}
+
+						// FP mitigation 2: short text (< 20 chars)
+						if !suppressL3Block && runeCount < 20 {
+							hasThresholdRegex := false
+							for _, f := range requestFindings {
+								if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+									hasThresholdRegex = true
+									break
 								}
 							}
-
-							// FP mitigation 2: short text (< 20 chars)
-							if !suppressL3Block && runeCount < 20 {
-								hasThresholdRegex := false
-								for _, f := range requestFindings {
-									if f.Pattern != nil && f.Pattern.Severity >= scanner.Medium {
+							if !hasThresholdRegex {
+								for _, f := range atlasFindings {
+									if f.Severity >= compliance.SeverityMedium {
 										hasThresholdRegex = true
 										break
 									}
 								}
-								if !hasThresholdRegex {
-									for _, f := range atlasFindings {
-										if f.Severity >= compliance.SeverityMedium {
-											hasThresholdRegex = true
-											break
-										}
-									}
+							}
+							if !hasThresholdRegex {
+								slog.Info("ML Tier 1 short-text FP mitigation — suppressing block",
+									"client", req.RemoteAddr,
+									"path", req.URL.Path,
+									"score", fmt.Sprintf("%.3f", threatResult.Score),
+									"rune_count", runeCount,
+								)
+								suppressL3Block = true
+							}
+						}
+
+						// FP mitigation 3: educational context exemption
+						if !suppressL3Block && isEducationalContent(scanContent) {
+							allExemptable := true
+							hasThresholdDetection := false
+							for _, f := range requestFindings {
+								if f.Pattern == nil || f.Pattern.Severity < scanner.Medium {
+									continue
 								}
-								if !hasThresholdRegex {
-									slog.Info("ML Tier 1 short-text FP mitigation — suppressing block",
-										"client", req.RemoteAddr,
-										"path", req.URL.Path,
-										"score", fmt.Sprintf("%.3f", threatResult.Score),
-										"rune_count", runeCount,
-									)
-									suppressL3Block = true
+								hasThresholdDetection = true
+								if !isEducationalExemptPattern(f.Pattern.Name) {
+									allExemptable = false
+									break
 								}
 							}
-
-							// FP mitigation 3: educational context exemption
-							if !suppressL3Block && isEducationalContent(scanContent) {
-								allExemptable := true
-								hasThresholdDetection := false
-								for _, f := range requestFindings {
-									if f.Pattern == nil || f.Pattern.Severity < scanner.Medium {
+							if hasThresholdDetection && allExemptable {
+								for _, f := range atlasFindings {
+									if f.Severity < compliance.SeverityMedium {
 										continue
 									}
-									hasThresholdDetection = true
-									if !isEducationalExemptPattern(f.Pattern.Name) {
+									if !isEducationalExemptPattern(f.Technique) {
 										allExemptable = false
 										break
 									}
 								}
-								if hasThresholdDetection && allExemptable {
-									for _, f := range atlasFindings {
-										if f.Severity < compliance.SeverityMedium {
-											continue
-										}
-										if !isEducationalExemptPattern(f.Technique) {
-											allExemptable = false
-											break
-										}
-									}
-								}
-								if hasThresholdDetection && allExemptable {
-									slog.Info("ML Tier 1 educational context FP mitigation — suppressing block",
-										"client", req.RemoteAddr,
-										"path", req.URL.Path,
-										"score", fmt.Sprintf("%.3f", threatResult.Score),
-									)
-									suppressL3Block = true
-								}
+							}
+							if hasThresholdDetection && allExemptable {
+								slog.Info("ML Tier 1 educational context FP mitigation — suppressing block",
+									"client", req.RemoteAddr,
+									"path", req.URL.Path,
+									"score", fmt.Sprintf("%.3f", threatResult.Score),
+								)
+								suppressL3Block = true
 							}
 						}
+					}
 
-						// L3 Tier 1: High-confidence independent block
-						l3HighConfidenceThreshold := 0.95
-						if !suppressL3Block && threatResult.Score >= l3HighConfidenceThreshold {
-							slog.Error("Neural threat detector blocked request (high confidence, no corroboration required)",
-								"client", req.RemoteAddr,
-								"path", req.URL.Path,
-								"score", fmt.Sprintf("%.3f", threatResult.Score),
-								"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
-								"tier", "L3-high-confidence",
-								"variant", threatResult.Variant,
-								"model", threatResult.ModelVersion,
-								"l1_findings", len(requestFindings),
-								"l2_findings", len(atlasFindings),
-								"corroborating", corroboratingCount,
-							)
-							metrics.RecordSecurityBlock(metrics.ReasonMLThreatHigh)
-							w.WriteHeader(http.StatusForbidden)
-							w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f, high confidence)", threatResult.Score)))
-							return
-						}
-
-						// L3 Tier 2: Standard block with L1/L2 corroboration
-						if hasCorroboratingEvidence {
-							slog.Error("Neural threat detector blocked request (corroborated by L1/L2)",
-								"client", req.RemoteAddr,
-								"path", req.URL.Path,
-								"score", fmt.Sprintf("%.3f", threatResult.Score),
-								"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
-								"tier", "L3-corroborated",
-								"variant", threatResult.Variant,
-								"model", threatResult.ModelVersion,
-								"l1_findings", len(requestFindings),
-								"l2_findings", len(atlasFindings),
-							)
-							metrics.RecordSecurityBlock(metrics.ReasonMLThreat)
-							w.WriteHeader(http.StatusForbidden)
-							w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
-							return
-						}
-
-						// L3 fired but no corroboration and below high-confidence threshold
-						// — log as alert only
-						slog.Warn("Neural threat detected but below high-confidence threshold and no L1/L2 corroboration — allowing",
+					// L3 Tier 1: High-confidence independent block
+					l3HighConfidenceThreshold := 0.95
+					if !suppressL3Block && threatResult.Score >= l3HighConfidenceThreshold {
+						slog.Error("Neural threat detector blocked request (high confidence, no corroboration required)",
 							"client", req.RemoteAddr,
 							"path", req.URL.Path,
 							"score", fmt.Sprintf("%.3f", threatResult.Score),
 							"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
-							"high_confidence_threshold", fmt.Sprintf("%.2f", l3HighConfidenceThreshold),
+							"tier", "L3-high-confidence",
+							"variant", threatResult.Variant,
+							"model", threatResult.ModelVersion,
+							"l1_findings", len(requestFindings),
+							"l2_findings", len(atlasFindings),
+							"corroborating", corroboratingCount,
 						)
-						// Record L3 shadow alert for response header + metrics
-						if sac != nil {
-							sac.RecordAlert(ShadowDetectorL3)
-						}
+						metrics.RecordSecurityBlock(metrics.ReasonMLThreatHigh)
+						w.WriteHeader(http.StatusForbidden)
+						w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f, high confidence)", threatResult.Score)))
+						return
+					}
+
+					// L3 Tier 2: Standard block with L1/L2 corroboration
+					if hasCorroboratingEvidence {
+						slog.Error("Neural threat detector blocked request (corroborated by L1/L2)",
+							"client", req.RemoteAddr,
+							"path", req.URL.Path,
+							"score", fmt.Sprintf("%.3f", threatResult.Score),
+							"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+							"tier", "L3-corroborated",
+							"variant", threatResult.Variant,
+							"model", threatResult.ModelVersion,
+							"l1_findings", len(requestFindings),
+							"l2_findings", len(atlasFindings),
+						)
+						metrics.RecordSecurityBlock(metrics.ReasonMLThreat)
+						w.WriteHeader(http.StatusForbidden)
+						w.Write([]byte(fmt.Sprintf("Request blocked: neural threat detected (score: %.3f)", threatResult.Score)))
+						return
+					}
+
+					// L3 fired but no corroboration and below high-confidence threshold
+					// — log as alert only
+					slog.Warn("Neural threat detected but below high-confidence threshold and no L1/L2 corroboration — allowing",
+						"client", req.RemoteAddr,
+						"path", req.URL.Path,
+						"score", fmt.Sprintf("%.3f", threatResult.Score),
+						"threshold", fmt.Sprintf("%.3f", threatResult.Threshold),
+						"high_confidence_threshold", fmt.Sprintf("%.2f", l3HighConfidenceThreshold),
+					)
+					// Record L3 shadow alert for response header + metrics
+					if sac != nil {
+						sac.RecordAlert(ShadowDetectorL3)
 					}
 				}
 			}
