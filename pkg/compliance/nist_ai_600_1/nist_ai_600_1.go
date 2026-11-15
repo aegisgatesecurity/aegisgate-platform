@@ -13,7 +13,6 @@
 //   - Framework:   "nist_ai_600_1"
 //   - Version:     "1.0" (v3.x Tier 1, new module)
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: bundled with NIST AI RMF (no separate add-on)
 //
 // Architecture:
 //   - nist_ai_600_1.go:       module wiring, 12 RegisterControl calls,

@@ -277,7 +277,7 @@ func TestAPI_Report_FreeFrameworkAlwaysEnforced(t *testing.T) {
 	// Only the core free frameworks (ATLAS, OWASP LLM) are always enforced
 	// regardless of license. Other Community-tier frameworks (CIS, NIST CSF,
 	// OWASP Web, CSA STAR, NIST AI 600-1, CCPA, GDPR, NIST AI RMF) are
-	// $0 modules that still go through the module gating path.
+	// free modules that still go through the module gating path.
 	for _, fw := range []string{"atlas", "owasp"} {
 		t.Run(fw, func(t *testing.T) {
 			w := doRequest(api, "GET", "/api/v1/compliance/report?framework="+fw)

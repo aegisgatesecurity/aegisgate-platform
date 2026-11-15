@@ -35,9 +35,8 @@
 // plans/V3X-CLOSE-OUT-RELEVANCE-ANALYSIS-2026-07-21.md for the
 // out-of-scope justification.
 //
-// Tier & pricing:
-//   - Required tier:  Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price:  $99/mo (founder-locked 2026-06-04)
+// Tier:
+//   - Required tier:  Developer+ (gated via pkg/compliance/gating.go)
 //   - Module key:     "iso_27001"
 //
 // Reference: ISO/IEC 27001:2022 Annex A

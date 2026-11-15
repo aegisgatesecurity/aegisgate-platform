@@ -51,7 +51,7 @@ type FrameworkScanResult struct {
 	// Enforced is true if the customer's license authorizes this
 	// framework (own module + sufficient tier + valid license).
 	Enforced bool `json:"enforced"`
-	// Module is the billable module name (e.g., "hipaa"). Empty
+	// Module is the gated module name (e.g., "hipaa"). Empty
 	// for free frameworks like ATLAS, NIST AI RMF, OWASP.
 	Module string `json:"module,omitempty"`
 	// Score is the compliance score 0-100, computed by the
@@ -262,7 +262,7 @@ func (s *Scanner) ScanFramework(ctx context.Context, lic *license.ValidationResu
 	return nil, nil, fmt.Errorf("%w: %q", ErrUnknownFramework, framework)
 }
 
-// scanModule computes the FrameworkScanResult for a single billable module.
+// scanModule computes the FrameworkScanResult for a single gated module.
 func (s *Scanner) scanModule(ctx context.Context, modReq ModuleRequirement, lic *license.ValidationResult) FrameworkScanResult {
 	result := FrameworkScanResult{
 		Framework:           modReq.Module,

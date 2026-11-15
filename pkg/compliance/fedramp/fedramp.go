@@ -16,7 +16,6 @@
 //   - Framework:   "fedramp"
 //   - Version:     "2.0"  (Path C: full in-scope control coverage)
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $499/mo (founder-locked 2026-06-04)
 //   - Baseline:    FedRAMP Moderate (NIST SP 800-53 Rev. 5)
 //
 // IMPORTANT — Self-attested posture (same as EU AI Act + FIPS):

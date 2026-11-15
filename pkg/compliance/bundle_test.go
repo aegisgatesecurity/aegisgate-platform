@@ -77,38 +77,8 @@ func TestBundle_HasRequiredFields(t *testing.T) {
 			if len(b.Frameworks) == 0 {
 				t.Error("bundle has no frameworks")
 			}
-			if b.BundlePriceCents <= 0 {
-				t.Errorf("bundle %s has non-positive BundlePriceCents %d", b.ID, b.BundlePriceCents)
-			}
-			if b.IndividualPriceCents <= 0 {
-				t.Errorf("bundle %s has non-positive IndividualPriceCents %d", b.ID, b.IndividualPriceCents)
-			}
-			// v4.2.0: Privacy bundle has 0 discount (only paid item is ISO 27001)
-			if b.BundlePriceCents > b.IndividualPriceCents {
-				t.Errorf("bundle %s: bundle price ($%d) should not exceed individual ($%d)",
-					b.ID, b.BundlePriceCents/100, b.IndividualPriceCents/100)
-			}
-			if b.DiscountPercent < 0 || b.DiscountPercent > 90 {
-				t.Errorf("bundle %s: DiscountPercent = %d, want 0-90", b.ID, b.DiscountPercent)
-			}
 			if len(b.Industries) == 0 {
 				t.Errorf("bundle %s has no industry tags", b.ID)
-			}
-		})
-	}
-}
-
-// ---- Bundle pricing ----
-
-func TestBundle_DiscountMath(t *testing.T) {
-	for _, b := range AllBundles() {
-		t.Run(b.ID, func(t *testing.T) {
-			actualDiscount := 100 - (b.BundlePriceCents * 100 / b.IndividualPriceCents)
-			// Allow 2% rounding tolerance
-			diff := actualDiscount - b.DiscountPercent
-			if diff < -2 || diff > 2 {
-				t.Errorf("bundle %s: stated discount %d%% doesn't match actual %d%% (bundle=$%d, individual=$%d)",
-					b.ID, b.DiscountPercent, actualDiscount, b.BundlePriceCents/100, b.IndividualPriceCents/100)
 			}
 		})
 	}
@@ -217,73 +187,6 @@ func TestIsFrameworkIncludedInTier(t *testing.T) {
 	}
 }
 
-// ---- EffectiveBundlePrice ----
-
-func TestEffectiveBundlePrice_EnterpriseHealthcare(t *testing.T) {
-	// Enterprise includes both HIPAA and HITRUST. Healthcare bundle
-	// is HIPAA + HITRUST. Since both are already in Enterprise tier,
-	// the effective price is $0 — no additional purchase needed.
-	price, err := EffectiveBundlePrice("healthcare", tierpkg.TierEnterprise)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if price != 0 {
-		t.Errorf("Enterprise buying Healthcare: effective price = $%d, want $0 (both HIPAA and HITRUST already included)", price/100)
-	}
-}
-
-func TestEffectiveBundlePrice_DeveloperPrivacy(t *testing.T) {
-	// v4.2.0: Privacy bundle now requires Developer+ (not Community).
-	price, err := EffectiveBundlePrice("privacy", tierpkg.TierDeveloper)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Should be <= full bundle price ($149)
-	if price > 19900 {
-		t.Errorf("Developer buying Privacy: effective price = $%d, should be <= $149", price/100)
-	}
-}
-
-func TestEffectiveBundlePrice_DeveloperFinance(t *testing.T) {
-	// Developer tier buying Finance: SOC 2 is included in Developer,
-	// so they effectively pay for PCI + ISO 27001 only.
-	price, err := EffectiveBundlePrice("finance", tierpkg.TierDeveloper)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Should be less than full bundle price ($249)
-	if price >= 24900 {
-		t.Errorf("Developer buying Finance: effective price = $%d, should be < $249 (SOC 2 is included)", price/100)
-	}
-}
-
-func TestEffectiveBundlePrice_EnterpriseDefense(t *testing.T) {
-	// Enterprise tier buying Defense: all 5 frameworks are Enterprise or Professional.
-	// At Enterprise tier, all are included, so effective price should be 0 (nothing extra).
-	price, err := EffectiveBundlePrice("defense", tierpkg.TierEnterprise)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// At Enterprise, all defense frameworks are included, so effective price is 0
-	if price != 0 {
-		t.Errorf("Enterprise buying Defense: effective price = $%d, want $0 (all included)", price/100)
-	}
-}
-
-func TestEffectiveBundlePrice_UnknownBundle(t *testing.T) {
-	_, err := EffectiveBundlePrice("unknown", tierpkg.TierCommunity)
-	if err == nil {
-		t.Error("Expected error for unknown bundle")
-	}
-}
-
-func TestEffectiveBundlePrice_TierTooLow(t *testing.T) {
-	_, err := EffectiveBundlePrice("defense", tierpkg.TierProfessional)
-	if err == nil {
-		t.Error("Expected error: Professional tier cannot buy Defense bundle (requires Enterprise)")
-	}
-}
-
 // ---- BundleFrameworksMissing ----
 
 func TestBundleFrameworksMissing_EnterpriseHealthcare(t *testing.T) {
@@ -370,9 +273,9 @@ func TestUpgradePath_EnterpriseHealthcare(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Enterprise already includes all Healthcare frameworks, so the message
-	// should say "No additional purchase needed."
-	if !strings.Contains(msg, "No additional purchase") {
-		t.Errorf("UpgradePath for Enterprise Healthcare should say 'No additional purchase', got: %s", msg)
+	// should say they're already included.
+	if !strings.Contains(msg, "already included") {
+		t.Errorf("UpgradePath for Enterprise Healthcare should say 'already included', got: %s", msg)
 	}
 }
 

@@ -23,9 +23,8 @@
 //     is preserved for backward compatibility; this sub-package is the
 //     active implementation that the Compliance Scan Engine calls.
 //
-// Tier & pricing:
+// Tier:
 //   - Required tier:  Developer+ (gated via pkg/compliance/gating.go)
-//   - Monthly price:  $149/mo (founder-locked 2026-06-04)
 //   - Module key:     "soc2" (matches license.ModuleSOC2)
 //
 // To enable: customer purchases the SOC 2 module in the customer

@@ -14,7 +14,6 @@
 //   - Framework:   "nist800171"
 //   - Version:     "1.0"
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $399/mo
 //
 // IMPORTANT — Self-attested posture:
 //   AegisGate is NOT a CMMC Assessor or C3PAO. The NIST 800-171 module

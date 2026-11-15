@@ -19,7 +19,7 @@
 // Module metadata:
 //   - Framework:     "nist_csf"
 //   - Version:       "2.0"
-//   - Required tier: Professional ($79/mo)
+//   - Required tier: Professional+
 //   - Controls:      131 subcategories (23 automated, 108 manual)
 //   - Functions:     6 (GV, ID, PR, DE, RS, RC)
 //   - Categories:    22

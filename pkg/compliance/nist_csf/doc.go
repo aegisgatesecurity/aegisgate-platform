@@ -20,8 +20,8 @@
 //   - nist_csf_test.go:         unit tests
 //   - tier_coverage_test.go:    tier/framework tests
 //
-// Tier & pricing:
-//   - Required tier:  Professional ($79/mo)
+// Tier:
+//   - Required tier:  Professional+
 //   - Module key:     "nist_csf"
 //   - Version:        "2.0"
 //

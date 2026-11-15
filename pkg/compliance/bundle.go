@@ -2,22 +2,9 @@
 // AegisGate Platform - Vertical bundles (v3.7.0)
 //
 // bundle.go defines industry-specific accelerator packs that group compliance
-// frameworks at a ~25-35% discount vs. buying them individually. A bundle
-// sits ON TOP of a tier subscription — you can't buy a bundle without a tier,
-// because the tier provides the platform capability (API, multi-tenancy, etc.)
-// that the frameworks run on.
-//
-// Pricing model:
-//
-//	Tiers define PLATFORM capability + INCLUDED frameworks.
-//	Accelerators add frameworks from higher tiers at a bundled price.
-//	You never pay twice: frameworks included in your tier are free.
-//
-// Design principles:
-//   - Grow as you need: start at a tier, add accelerators, upgrade when natural.
-//   - No double-charging: tier-included frameworks are subtracted from accelerator cost.
-//   - 9 line items on the pricing page (4 tiers + 5 accelerators).
-//   - Simple enough to explain in 30 seconds, flexible enough for any org size.
+// frameworks by vertical. A bundle sits ON TOP of a tier — it groups
+// frameworks that an organization in a specific industry would typically
+// need together.
 
 package compliance
 
@@ -75,9 +62,9 @@ func IsFrameworkIncludedInTier(framework string, t tierpkg.Tier) bool {
 // Vertical accelerator bundles
 // ---------------------------------------------------------------------------
 
-// VerticalBundle groups compliance frameworks by industry vertical at a
-// discounted price. Think of it as an "industry pack" that a CISO can buy
-// instead of evaluating 15 individual module prices.
+// VerticalBundle groups compliance frameworks by industry vertical.
+// Think of it as an "industry pack" that groups frameworks an organization
+// in a specific sector would typically need.
 type VerticalBundle struct {
 	// ID is the canonical bundle identifier (e.g., "healthcare").
 	ID string `json:"id"`
@@ -85,34 +72,23 @@ type VerticalBundle struct {
 	// DisplayName is the human-readable name (e.g., "Healthcare Accelerator").
 	DisplayName string `json:"display_name"`
 
-	// Description is a one-line pitch for the pricing page.
+	// Description is a one-line summary of the bundle.
 	Description string `json:"description"`
 
 	// Frameworks lists the canonical module keys in this bundle.
 	// These are the license module constants (e.g., "hipaa", "hitrust").
 	Frameworks []string `json:"frameworks"`
 
-	// RequiredTier is the minimum tier required to purchase this bundle.
+	// RequiredTier is the minimum tier required to use this bundle.
 	// (You need platform capability to run the frameworks.)
 	RequiredTier tierpkg.Tier `json:"required_tier"`
 
-	// BundlePriceCents is the price of the full bundle in cents/month.
-	// This is already the discounted price.
-	BundlePriceCents int `json:"bundle_price_cents"`
-
-	// IndividualPriceCents is what these frameworks would cost if bought
-	// individually (without bundling). Shown on pricing page as strikethrough.
-	IndividualPriceCents int `json:"individual_price_cents"`
-
-	// DiscountPercent is the savings percentage (for display on pricing page).
-	DiscountPercent int `json:"discount_percent"`
-
-	// Industry tags for the pricing page filtering.
+	// Industry tags for filtering.
 	Industries []string `json:"industries"`
 }
 
 // verticalBundles is the canonical table of all accelerator bundles.
-// v4.2.0: 7 bundles per pricing unification plan.
+// v4.2.0: 7 bundles.
 var verticalBundles = map[string]VerticalBundle{
 	"privacy": {
 		ID:          "privacy",
@@ -123,11 +99,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleCCPA,
 			license.ModuleISO27001,
 		},
-		RequiredTier:         tierpkg.TierDeveloper,
-		BundlePriceCents:     14900, // $149/mo
-		IndividualPriceCents: 44700, // $149 + $149 + $149 = $447/mo
-		DiscountPercent:      67,
-		Industries:           []string{"privacy", "saas", "ecommerce", "adtech", "data"},
+		RequiredTier: tierpkg.TierDeveloper,
+		Industries:   []string{"privacy", "saas", "ecommerce", "adtech", "data"},
 	},
 	"saas_b2b": {
 		ID:          "saas_b2b",
@@ -138,11 +111,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleISO27001,
 			license.ModuleISO42001,
 		},
-		RequiredTier:         tierpkg.TierDeveloper,
-		BundlePriceCents:     19900, // $199/mo
-		IndividualPriceCents: 49700, // $149 + $149 + $199 = $497/mo
-		DiscountPercent:      60,
-		Industries:           []string{"saas", "technology", "startup", "b2b", "software"},
+		RequiredTier: tierpkg.TierDeveloper,
+		Industries:   []string{"saas", "technology", "startup", "b2b", "software"},
 	},
 	"finance": {
 		ID:          "finance",
@@ -156,11 +126,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleSOX,
 			license.ModuleFFIEC,
 		},
-		RequiredTier:         tierpkg.TierDeveloper,
-		BundlePriceCents:     24900,  // $249/mo
-		IndividualPriceCents: 104400, // $149 + $149 + $149 + $199 + $199 + $199 = $1,044/mo
-		DiscountPercent:      76,
-		Industries:           []string{"finance", "fintech", "banking", "insurance", "payments"},
+		RequiredTier: tierpkg.TierDeveloper,
+		Industries:   []string{"finance", "fintech", "banking", "insurance", "payments"},
 	},
 	"healthcare": {
 		ID:          "healthcare",
@@ -171,11 +138,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleHITECH,
 			license.ModuleHITRUST,
 		},
-		RequiredTier:         tierpkg.TierDeveloper,
-		BundlePriceCents:     19900, // $199/mo
-		IndividualPriceCents: 84700, // $149 + $199 + $499 = $847/mo
-		DiscountPercent:      77,
-		Industries:           []string{"healthcare", "medical", "pharma", "biotech", "hospital"},
+		RequiredTier: tierpkg.TierDeveloper,
+		Industries:   []string{"healthcare", "medical", "pharma", "biotech", "hospital"},
 	},
 	"eu_compliance": {
 		ID:          "eu_compliance",
@@ -186,11 +150,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleGDPR,
 			license.ModuleISO42001,
 		},
-		RequiredTier:         tierpkg.TierDeveloper, // Available at Developer — EU startups need this
-		BundlePriceCents:     14900,                 // $149/mo
-		IndividualPriceCents: 54700,                 // $199 + $149 + $199 = $547/mo
-		DiscountPercent:      73,
-		Industries:           []string{"eu", "europe", "privacy", "ai_governance"},
+		RequiredTier: tierpkg.TierDeveloper,
+		Industries:   []string{"eu", "europe", "privacy", "ai_governance"},
 	},
 	"energy": {
 		ID:          "energy",
@@ -201,11 +162,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleTSASD,
 			license.ModuleFIPS,
 		},
-		RequiredTier:         tierpkg.TierProfessional,
-		BundlePriceCents:     29900, // $299/mo
-		IndividualPriceCents: 59700, // $199 + $199 + $199 = $597/mo
-		DiscountPercent:      50,
-		Industries:           []string{"energy", "utilities", "oil_gas", "pipeline", "critical_infrastructure", "power"},
+		RequiredTier: tierpkg.TierProfessional,
+		Industries:   []string{"energy", "utilities", "oil_gas", "pipeline", "critical_infrastructure", "power"},
 	},
 	"defense": {
 		ID:          "defense",
@@ -218,11 +176,8 @@ var verticalBundles = map[string]VerticalBundle{
 			license.ModuleCJIS,
 			license.ModuleTSASD,
 		},
-		RequiredTier:         tierpkg.TierEnterprise, // Contains Enterprise-tier frameworks
-		BundlePriceCents:     119900,                 // $1,199/mo
-		IndividualPriceCents: 189500,                 // $499 + $499 + $499 + $199 + $199 = $1,895/mo
-		DiscountPercent:      37,
-		Industries:           []string{"defense", "aerospace", "government", "contracting", "dod", "law_enforcement"},
+		RequiredTier: tierpkg.TierEnterprise,
+		Industries:   []string{"defense", "aerospace", "government", "contracting", "dod", "law_enforcement"},
 	},
 }
 
@@ -230,7 +185,7 @@ var verticalBundles = map[string]VerticalBundle{
 var bundleOnce sync.Once
 
 // AllBundles returns all vertical accelerator bundles in display order
-// (sorted by RequiredTier, then by BundlePriceCents ascending).
+// (sorted by RequiredTier, then by ID alphabetically).
 func AllBundles() []VerticalBundle {
 	bundleOnce.Do(func() {
 		// No-op: bundles are statically defined above.
@@ -244,7 +199,7 @@ func AllBundles() []VerticalBundle {
 		if out[i].RequiredTier != out[j].RequiredTier {
 			return out[i].RequiredTier < out[j].RequiredTier
 		}
-		return out[i].BundlePriceCents < out[j].BundlePriceCents
+		return out[i].ID < out[j].ID
 	})
 	return out
 }
@@ -272,7 +227,7 @@ func BundlesForIndustry(industry string) []VerticalBundle {
 		}
 	}
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].BundlePriceCents < result[j].BundlePriceCents
+		return result[i].ID < result[j].ID
 	})
 	return result
 }
@@ -287,54 +242,9 @@ func BundlesForTier(t tierpkg.Tier) []VerticalBundle {
 		}
 	}
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].BundlePriceCents < result[j].BundlePriceCents
+		return result[i].ID < result[j].ID
 	})
 	return result
-}
-
-// EffectiveBundlePrice calculates what a customer actually pays for a bundle
-// given their current tier. Frameworks already included in the tier are
-// subtracted from the bundle price. This prevents double-charging.
-//
-// Example: An Enterprise customer buying the Healthcare accelerator already
-// has HITRUST included in their tier, so they only pay for HIPAA.
-func EffectiveBundlePrice(bundleID string, customerTier tierpkg.Tier) (int, error) {
-	b, ok := verticalBundles[bundleID]
-	if !ok {
-		return 0, fmt.Errorf("unknown bundle: %s", bundleID)
-	}
-
-	if customerTier < b.RequiredTier {
-		return 0, fmt.Errorf("tier %s does not meet bundle %s minimum tier %s",
-			customerTier, b.ID, b.RequiredTier)
-	}
-
-	// Count how many frameworks in this bundle are already included in the tier.
-	included := TierIncludedFrameworks(customerTier)
-	alreadyOwned := 0
-	for _, fw := range b.Frameworks {
-		for _, inc := range included {
-			if fw == inc {
-				alreadyOwned++
-				break
-			}
-		}
-	}
-
-	// If all frameworks are already included, the bundle costs $0.
-	if alreadyOwned == len(b.Frameworks) {
-		return 0, nil
-	}
-
-	// Proportional discount: reduce price by the fraction already owned.
-	// This ensures fairness — you don't pay for what you already have.
-	if alreadyOwned > 0 {
-		fractionOwned := float64(alreadyOwned) / float64(len(b.Frameworks))
-		reduction := int(float64(b.BundlePriceCents) * fractionOwned)
-		return b.BundlePriceCents - reduction, nil
-	}
-
-	return b.BundlePriceCents, nil
 }
 
 // BundleFrameworksMissing returns the list of frameworks in the bundle that
@@ -365,7 +275,7 @@ func BundleFrameworksMissing(bundleID string, customerTier tierpkg.Tier) ([]stri
 
 // UpgradePath returns a human-readable recommendation for the customer.
 // If the customer's tier already includes some bundle frameworks, it
-// explains what they'd gain and what they'd save.
+// explains what they'd gain.
 func UpgradePath(bundleID string, customerTier tierpkg.Tier) (string, error) {
 	b, ok := verticalBundles[bundleID]
 	if !ok {
@@ -389,20 +299,16 @@ func UpgradePath(bundleID string, customerTier tierpkg.Tier) (string, error) {
 		}
 	}
 
-	effectivePrice, _ := EffectiveBundlePrice(bundleID, customerTier)
-
 	switch {
 	case alreadyOwned == len(b.Frameworks):
-		return fmt.Sprintf("All %s frameworks are already included in your %s tier. No additional purchase needed.",
+		return fmt.Sprintf("All %s frameworks are already included in your %s tier.",
 			b.DisplayName, customerTier.DisplayName()), nil
 	case alreadyOwned > 0:
-		return fmt.Sprintf("%s adds %d frameworks (%v) not in your %s tier. %d of %d are already included. Effective price: $%d/mo (save %d%%).",
+		return fmt.Sprintf("%s adds %d frameworks (%v) not in your %s tier. %d of %d are already included.",
 			b.DisplayName, len(gained), gained, customerTier.DisplayName(),
-			alreadyOwned, len(b.Frameworks),
-			effectivePrice/100, b.DiscountPercent), nil
+			alreadyOwned, len(b.Frameworks)), nil
 	default:
-		return fmt.Sprintf("%s adds %d frameworks to your %s tier. Bundle price: $%d/mo (save %d%% vs. individual purchase).",
-			b.DisplayName, len(b.Frameworks), customerTier.DisplayName(),
-			b.BundlePriceCents/100, b.DiscountPercent), nil
+		return fmt.Sprintf("%s adds %d frameworks to your %s tier.",
+			b.DisplayName, len(b.Frameworks), customerTier.DisplayName()), nil
 	}
 }

@@ -19,9 +19,8 @@
 //   - ISO/IEC 42001:2023 AI Management Systems:
 //     https://www.iso.org/standard/81230.html
 //
-// Tier & pricing:
+// Tier:
 //   - Required tier:  Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price:  $79/mo (founder-locked 2026-06-04)
 //   - Module key:     "iso_42001" (matches license.ModuleISO42001)
 //
 // To enable: customer purchases the ISO 42001 module in the customer

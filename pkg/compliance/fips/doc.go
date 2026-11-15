@@ -26,9 +26,8 @@
 // and plans/V3X-CLOSE-OUT-RELEVANCE-ANALYSIS-2026-07-21.md for the
 // out-of-scope justification.
 //
-// Tier & pricing:
+// Tier:
 //   - Required tier:  Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price:  $299/mo (founder-locked 2026-06-04)
 //   - Module key:     "fips" (matches license.ModuleFIPS)
 //   - Version:        1.1 (v3.x Tier 1: 11/11 in-scope controls)
 //

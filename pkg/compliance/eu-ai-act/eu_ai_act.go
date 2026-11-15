@@ -30,7 +30,6 @@
 //   - Framework:   "eu_ai_act"
 //   - Version:     "1.1"  (v3.5.0+ bump for Phase 2 additions)
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $99/mo (founder-locked 2026-06-06)
 //
 // =========================================================================
 

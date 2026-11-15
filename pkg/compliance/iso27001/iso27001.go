@@ -14,7 +14,7 @@
 // Module metadata:
 //   - Framework:   "iso_27001"
 //   - Version:     "1.0"
-//   - Required tier: Developer (gated via pkg/compliance/gating.go, $149/mo)
+//   - Required tier: Developer (gated via pkg/compliance/gating.go)
 //
 // Architecture:
 //   - iso27001.go:       module wiring, pattern caches, 114 RegisterControl calls,

@@ -12,7 +12,7 @@
 // Module metadata:
 //   - Framework:     "iso21434"
 //   - Version:       "2.0"
-//   - Required tier: Professional ($499/mo)
+//   - Required tier: Professional+
 //   - Controls:      42 (22 automated, 20 manual)
 //   - Categories:    7
 //

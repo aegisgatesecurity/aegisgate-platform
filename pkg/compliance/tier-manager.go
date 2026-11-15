@@ -302,7 +302,7 @@ func (tm *TierManager) initializeDefaults() {
 		},
 	})
 
-	// Trust Framework (reserved, not yet billable)
+	// Trust Framework (reserved, not yet gated)
 	tm.RegisterFramework(FrameworkTier{
 		FrameworkID: "trust",
 		Name:        "Trust Framework (reserved)",

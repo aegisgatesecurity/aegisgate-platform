@@ -27,7 +27,7 @@
 // generated pen-test report template) but cannot perform human training,
 // vendor onboarding, or external pen testing.
 //
-// Tier & pricing:
+// Tier:
 //   - Required tier:  Community (free, bundled with the platform)
 //   - Module key:     "cis"
 //   - Version:        1.1 (v3.x Tier 1: 15/15 in-scope controls)

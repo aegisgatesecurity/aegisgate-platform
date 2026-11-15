@@ -42,7 +42,6 @@
 //   - Framework:    "nist800171"
 //   - Version:      "1.0"
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $399/mo
 //
 // Architecture (family-based file structure):
 //   - nist800171.go: module wiring, registerControls, Dependencies, pattern caches

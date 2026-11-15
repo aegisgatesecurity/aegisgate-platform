@@ -78,14 +78,14 @@ func TestScanner_Scan_CommunityNoModules(t *testing.T) {
 	if freeCount != 4 {
 		t.Errorf("free frameworks enforced = %d, want 4", freeCount)
 	}
-	// No non-Community (billable) modules should be enforced.
+	// No non-Community (gated) modules should be enforced.
 	for _, f := range rpt.Frameworks {
 		if f.Module == "" || !f.Enforced {
 			continue
 		}
 		req, known := RequiredTierForModule(f.Module)
 		if known && req != tier.TierCommunity {
-			t.Errorf("billable module %s enforced for community, want not enforced", f.Module)
+			t.Errorf("gated module %s enforced for community, want not enforced", f.Module)
 		}
 	}
 }
@@ -134,7 +134,7 @@ func TestScanner_Scan_ProfessionalWithAllModules(t *testing.T) {
 	enforcedModules := 0
 	for _, f := range rpt.Frameworks {
 		if f.Enforced && f.Module != "" {
-			// Count only billable (non-Community) modules
+			// Count only gated (non-Community) modules
 			req, known := RequiredTierForModule(f.Module)
 			if known && req != tier.TierCommunity {
 				enforcedModules++
@@ -142,7 +142,7 @@ func TestScanner_Scan_ProfessionalWithAllModules(t *testing.T) {
 		}
 	}
 	if enforcedModules != 5 {
-		t.Errorf("enforced billable modules = %d, want 5", enforcedModules)
+		t.Errorf("enforced gated modules = %d, want 5", enforcedModules)
 	}
 	// All 6 modules should be enforced; free frameworks also enforced.
 	// Score is 0 in this test because no frameworks are wired to the

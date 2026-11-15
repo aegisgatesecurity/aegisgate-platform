@@ -30,8 +30,7 @@
 //   CMVP-validated module. Customers who require CMVP-validated
 //   crypto (federal agencies, defense) must integrate a CMVP-validated
 //   module (e.g., via PKCS#11) and run AegisGate in a CMVP-validated
-//   execution environment. This is documented in the customer 1-pager
-//   and the pricing page disclaimer.
+//   execution environment. This is documented in the module docs.
 //
 // Coverage: 40 controls across 10 categories covering FIPS 140-2 and
 // FIPS 140-3 comprehensively. 25 controls are automated (config/scan

@@ -15,7 +15,7 @@
 // Coverage: 10 of 10 OWASP Top 10 Web categories (A01-A10) mapped to
 // AegisGate. Each control has at least 1 automated CheckFunc.
 //
-// Tier & pricing:
+// Tier:
 //   - Required tier:  Community (free, bundled with the platform)
 //   - Module key:     "owasp_web"
 //

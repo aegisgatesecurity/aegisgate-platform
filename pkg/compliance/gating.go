@@ -270,7 +270,7 @@ func AllModuleRequirements() []ModuleRequirement {
 
 // RequiredTierForModule returns the minimum tier required to own the given
 // module. The second return value is false if the module name is unknown
-// (typo, deprecated, or not yet billable).
+// (typo, deprecated, or not yet gated).
 func RequiredTierForModule(module string) (tierpkg.Tier, bool) {
 	r, ok := moduleRequirements[module]
 	if !ok {

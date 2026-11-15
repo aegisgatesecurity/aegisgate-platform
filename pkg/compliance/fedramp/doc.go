@@ -46,7 +46,6 @@
 //   - Framework:    "fedramp"
 //   - Version:      "2.0" (Path C: full in-scope coverage)
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $499/mo (founder-locked 2026-06-04)
 //
 // Architecture (family-based file structure):
 //   - fedramp.go:     module wiring, registerControls, Dependencies, pattern caches
