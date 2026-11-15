@@ -22,37 +22,31 @@ import (
 	tierpkg "github.com/aegisgatesecurity/aegisgate-platform/pkg/tier"
 )
 
-// ModuleRequirement describes a single billable module: the minimum tier
+// ModuleRequirement describes a single module: the minimum tier
 // required to own it, and a human-readable name for audit logs.
 type ModuleRequirement struct {
 	Module            string       // canonical name (e.g., "hipaa")
 	DisplayName       string       // human-readable (e.g., "HIPAA")
 	RequiredTier      tierpkg.Tier // minimum tier required to own
-	MinPriceCents     int          // locked list price in cents (for audit)
 	HasImplementation bool         // true if a sub-package exists (e.g., pkg/compliance/hipaa)
 }
 
 // moduleRequirements is the canonical table mapping module name to its
 // requirement. This is the SINGLE SOURCE OF TRUTH for all compliance
-// module tier/pricing decisions. Other files (bundle.go, mcp_compliance.go,
+// module tier decisions. Other files (bundle.go, mcp_compliance.go,
 // tier.go) DERIVE from this table — they do not maintain their own lists.
 //
 // v4.2.0: 31 compliance frameworks (Trust Framework is a platform feature
 // in tier.go, NOT a compliance module here).
 //
-// Pricing philosophy: price the PLATFORM, not the frameworks.
-// Frameworks are included with tier — they are the output format of the
-// SOC tool, not individual line items. À la carte prices reflect framework
-// complexity, not which tier unlocks them.
-//
 // Tier mapping:
-//   - Community (free):  OWASP LLM, OWASP Web, ATLAS, NIST AI RMF (4 modules)
-//   - Developer ($79):   HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR (6 modules)
-//   - Professional ($499): ISO 42001, EU AI Act, FIPS, CIS, NIST CSF,
+//   - Community:  OWASP LLM, OWASP Web, ATLAS, NIST AI RMF (4 modules)
+//   - Developer:  HIPAA, PCI, SOC 2, ISO 27001, CCPA, GDPR (6 modules)
+//   - Professional: ISO 42001, EU AI Act, FIPS, CIS, NIST CSF,
 //     CSA STAR, NIST AI 600-1, SOX, GLBA, CJIS,
 //     NERC CIP, FERPA, HITECH, FFIEC, TSA SD,
 //     ISO 21434 (16 modules)
-//   - Enterprise ($2000+): FedRAMP, CMMC L2, NIST 800-171, HITRUST,
+//   - Enterprise: FedRAMP, CMMC L2, NIST 800-171, HITRUST,
 //     TISAX (5 modules)
 //     Total: 31 compliance frameworks
 //     Total: 32 modules (31 compliance frameworks + 1 Trust pillar)
@@ -86,197 +80,170 @@ var moduleRequirements = map[string]ModuleRequirement{
 		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/nist_ai_rmf/ exists
 	},
-	// ── Developer tier ($79/mo: table-stakes regulatory) ──
+	// ── Developer tier: table-stakes regulatory ──
 	license.ModuleHIPAA: {
 		Module:            license.ModuleHIPAA,
 		DisplayName:       "HIPAA",
 		RequiredTier:      tierpkg.TierDeveloper,
-		MinPriceCents:     14900, // $149/mo (common regulatory)
-		HasImplementation: true,  // pkg/compliance/hipaa/ exists
+		HasImplementation: true, // pkg/compliance/hipaa/ exists
 	},
 	license.ModulePCI: {
 		Module:            license.ModulePCI,
 		DisplayName:       "PCI-DSS",
 		RequiredTier:      tierpkg.TierDeveloper,
-		MinPriceCents:     14900, // $149/mo (common regulatory)
-		HasImplementation: true,  // pkg/compliance/premium/pci/ exists
+		HasImplementation: true, // pkg/compliance/premium/pci/ exists
 	},
 	license.ModuleSOC2: {
 		Module:            license.ModuleSOC2,
 		DisplayName:       "SOC 2",
 		RequiredTier:      tierpkg.TierDeveloper,
-		MinPriceCents:     14900, // $149/mo (common regulatory)
-		HasImplementation: true,  // pkg/compliance/premium/soc2/ exists
+		HasImplementation: true, // pkg/compliance/premium/soc2/ exists
 	},
 	license.ModuleISO27001: {
 		Module:            license.ModuleISO27001,
 		DisplayName:       "ISO 27001",
 		RequiredTier:      tierpkg.TierDeveloper,
-		MinPriceCents:     14900, // $149/mo (common regulatory)
-		HasImplementation: true,  // pkg/compliance/iso27001/ exists
+		HasImplementation: true, // pkg/compliance/iso27001/ exists
 	},
 	license.ModuleCCPA: {
 		Module:            license.ModuleCCPA,
 		DisplayName:       "CCPA/CPRA",
 		RequiredTier:      tierpkg.TierDeveloper,
-		MinPriceCents:     14900, // $149/mo (common regulatory)
-		HasImplementation: true,  // pkg/compliance/ccpa/ exists
+		HasImplementation: true, // pkg/compliance/ccpa/ exists
 	},
 	license.ModuleGDPR: {
 		Module:            license.ModuleGDPR,
 		DisplayName:       "GDPR",
 		RequiredTier:      tierpkg.TierDeveloper,
-		MinPriceCents:     14900, // $149/mo (common regulatory)
-		HasImplementation: true,  // pkg/compliance/community/gdpr/ exists
+		HasImplementation: true, // pkg/compliance/community/gdpr/ exists
 	},
-	// ── Professional tier ($499/mo: industry-specific + SOC workflow) ──
+	// ── Professional tier: industry-specific + SOC workflow ──
 	license.ModuleISO42001: {
 		Module:            license.ModuleISO42001,
 		DisplayName:       "ISO 42001",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/iso42001/ exists
+		HasImplementation: true, // pkg/compliance/iso42001/ exists
 	},
 	license.ModuleEUAIAct: {
 		Module:            license.ModuleEUAIAct,
 		DisplayName:       "EU AI Act",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/eu_ai_act/ exists
+		HasImplementation: true, // pkg/compliance/eu_ai_act/ exists
 	},
 	license.ModuleFIPS: {
 		Module:            license.ModuleFIPS,
 		DisplayName:       "FIPS 140-2/140-3",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/fips/ exists
+		HasImplementation: true, // pkg/compliance/fips/ exists
 	},
 	license.ModuleCIS: {
 		Module:            license.ModuleCIS,
 		DisplayName:       "CIS Critical Security Controls",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900, // $79/mo (security foundation)
 		HasImplementation: true, // pkg/compliance/cis/ exists
 	},
 	license.ModuleNISTCSF: {
 		Module:            license.ModuleNISTCSF,
 		DisplayName:       "NIST Cybersecurity Framework",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900, // $79/mo (security foundation)
 		HasImplementation: true, // pkg/compliance/nist_csf/ exists
 	},
 	license.ModuleCSASTAR: {
 		Module:            license.ModuleCSASTAR,
 		DisplayName:       "CSA STAR",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900, // $79/mo (security foundation)
 		HasImplementation: true, // pkg/compliance/csa_star/ exists
 	},
 	license.ModuleNISTAI600: {
 		Module:            license.ModuleNISTAI600,
 		DisplayName:       "NIST AI 600-1",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     7900, // $79/mo (security foundation)
 		HasImplementation: true, // pkg/compliance/nist_ai_600_1/ exists
 	},
 	license.ModuleSOX: {
 		Module:            license.ModuleSOX,
 		DisplayName:       "SOX (Sarbanes-Oxley)",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/sox/ exists
+		HasImplementation: true, // pkg/compliance/sox/ exists
 	},
 	license.ModuleGLBA: {
 		Module:            license.ModuleGLBA,
 		DisplayName:       "GLBA (Gramm-Leach-Bliley)",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/glba/ exists
+		HasImplementation: true, // pkg/compliance/glba/ exists
 	},
 	license.ModuleCJIS: {
 		Module:            license.ModuleCJIS,
 		DisplayName:       "CJIS Security Policy",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/cjis/ exists
+		HasImplementation: true, // pkg/compliance/cjis/ exists
 	},
 	license.ModuleNERCCIP: {
 		Module:            license.ModuleNERCCIP,
 		DisplayName:       "NERC CIP",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/nerc_cip/ exists
+		HasImplementation: true, // pkg/compliance/nerc_cip/ exists
 	},
 	license.ModuleFERPA: {
 		Module:            license.ModuleFERPA,
 		DisplayName:       "FERPA",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/ferpa/ exists
+		HasImplementation: true, // pkg/compliance/ferpa/ exists
 	},
 	license.ModuleHITECH: {
 		Module:            license.ModuleHITECH,
 		DisplayName:       "HITECH Act",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/hitech/ exists
+		HasImplementation: true, // pkg/compliance/hitech/ exists
 	},
 	license.ModuleFFIEC: {
 		Module:            license.ModuleFFIEC,
 		DisplayName:       "FFIEC Banking Guidance",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/ffiec/ exists
+		HasImplementation: true, // pkg/compliance/ffiec/ exists
 	},
 	license.ModuleTSASD: {
 		Module:            license.ModuleTSASD,
 		DisplayName:       "TSA Security Directive",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/tsa_sd/ exists
+		HasImplementation: true, // pkg/compliance/tsa_sd/ exists
 	},
 	license.ModuleISO21434: {
 		Module:            license.ModuleISO21434,
 		DisplayName:       "ISO 21434 (Automotive)",
 		RequiredTier:      tierpkg.TierProfessional,
-		MinPriceCents:     19900, // $199/mo (industry-specific regulatory)
-		HasImplementation: true,  // pkg/compliance/iso21434/ exists
+		HasImplementation: true, // pkg/compliance/iso21434/ exists
 	},
-	// ── Enterprise tier ($2,000+/mo: heavy certification + dedicated support) ──
+	// ── Enterprise tier: heavy certification + dedicated support ──
 	license.ModuleFedRAMP: {
 		Module:            license.ModuleFedRAMP,
 		DisplayName:       "FedRAMP",
 		RequiredTier:      tierpkg.TierEnterprise,
-		MinPriceCents:     49900, // $499/mo (heavy certification)
-		HasImplementation: true,  // pkg/compliance/fedramp/ exists
+		HasImplementation: true, // pkg/compliance/fedramp/ exists
 	},
 	license.ModuleCMMCL2: {
 		Module:            license.ModuleCMMCL2,
 		DisplayName:       "CMMC Level 2",
 		RequiredTier:      tierpkg.TierEnterprise,
-		MinPriceCents:     49900, // $499/mo (heavy certification)
-		HasImplementation: true,  // pkg/compliance/cmmcl2/ exists
+		HasImplementation: true, // pkg/compliance/cmmcl2/ exists
 	},
 	license.ModuleNIST800171: {
 		Module:            license.ModuleNIST800171,
 		DisplayName:       "NIST 800-171",
 		RequiredTier:      tierpkg.TierEnterprise,
-		MinPriceCents:     49900, // $499/mo (heavy certification)
-		HasImplementation: true,  // pkg/compliance/nist_800_171/ exists
+		HasImplementation: true, // pkg/compliance/nist_800_171/ exists
 	},
 	license.ModuleHITRUST: {
 		Module:            license.ModuleHITRUST,
 		DisplayName:       "HITRUST CSF",
 		RequiredTier:      tierpkg.TierEnterprise,
-		MinPriceCents:     49900, // $499/mo (heavy certification)
-		HasImplementation: true,  // pkg/compliance/hitrust/ exists
+		HasImplementation: true, // pkg/compliance/hitrust/ exists
 	},
 	license.ModuleTISAX: {
 		Module:            license.ModuleTISAX,
 		DisplayName:       "TISAX AL2",
 		RequiredTier:      tierpkg.TierEnterprise,
-		MinPriceCents:     49900, // $499/mo (heavy certification)
-		HasImplementation: true,  // pkg/compliance/tisax/ exists
+		HasImplementation: true, // pkg/compliance/tisax/ exists
 	},
 }
 
@@ -333,7 +300,6 @@ const (
 	ReasonTierTooLow        GatingReason = "tier_too_low"
 	ReasonModuleNotOwned    GatingReason = "module_not_owned"
 	ReasonUnknownFramework  GatingReason = "unknown_framework"
-	ReasonReservedNoPrice   GatingReason = "module_reserved_no_price"
 	ReasonImplementationGap GatingReason = "implementation_missing"
 )
 

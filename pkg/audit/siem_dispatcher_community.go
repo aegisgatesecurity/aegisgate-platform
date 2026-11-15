@@ -25,7 +25,7 @@ import (
 // in the community edition. Callers should check for this error and
 // gracefully degrade (e.g., log a warning and continue with audit
 // logging only, no SIEM forwarding).
-var ErrSIEMEnterpriseOnly = errors.New("SIEM dispatcher requires enterprise license — see https://aegisgate.dev/pricing for details")
+var ErrSIEMEnterpriseOnly = errors.New("SIEM dispatcher requires enterprise license — see https://github.com/aegisgatesecurity for details")
 
 // SIEMDispatcher forwards audit events to external SIEM platforms.
 // In the community edition, the type exists for compilation compatibility

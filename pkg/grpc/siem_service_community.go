@@ -35,25 +35,25 @@ func NewSIEMService(_ SIEMBackend, _ *slog.Logger) *SIEMService {
 
 // GetConfig returns Unimplemented in the community edition.
 func (s *SIEMService) GetConfig(_ context.Context, _ *GetSIEMConfigRequest) (*GetSIEMConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://aegisgate.dev/pricing")
+	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://github.com/aegisgatesecurity")
 }
 
 // GetStats returns Unimplemented in the community edition.
 func (s *SIEMService) GetStats(_ context.Context, _ *GetSIEMStatsRequest) (*GetSIEMStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://aegisgate.dev/pricing")
+	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://github.com/aegisgatesecurity")
 }
 
 // GetEvents returns Unimplemented in the community edition.
 func (s *SIEMService) GetEvents(_ context.Context, _ *GetSIEMEventsRequest) (*GetSIEMEventsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://aegisgate.dev/pricing")
+	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://github.com/aegisgatesecurity")
 }
 
 // SendEvent returns Unimplemented in the community edition.
 func (s *SIEMService) SendEvent(_ context.Context, _ *SendSIEMEventRequest) (*SendSIEMEventResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://aegisgate.dev/pricing")
+	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://github.com/aegisgatesecurity")
 }
 
 // TestConnection returns Unimplemented in the community edition.
 func (s *SIEMService) TestConnection(_ context.Context, _ *TestSIEMConnectionRequest) (*TestSIEMConnectionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://aegisgate.dev/pricing")
+	return nil, status.Errorf(codes.Unimplemented, "SIEM service requires enterprise license — see https://github.com/aegisgatesecurity")
 }

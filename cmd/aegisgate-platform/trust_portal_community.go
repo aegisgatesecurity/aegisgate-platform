@@ -29,7 +29,7 @@ func wireTrustPortalHandlers(mux *http.ServeMux) {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status":  "enterprise_required",
-			"message": "Trust Framework requires enterprise license — see https://aegisgate.dev/pricing for details",
+			"message": "Trust Framework requires enterprise license — see https://github.com/aegisgatesecurity for details",
 		})
 	})
 }

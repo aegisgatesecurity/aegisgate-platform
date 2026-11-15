@@ -27,7 +27,7 @@ func TestErrEnterpriseOnly(t *testing.T) {
 	if ErrEnterpriseOnly.Error() == "" {
 		t.Fatal("ErrEnterpriseOnly should have a message")
 	}
-	expected := "feature requires enterprise license — see https://aegisgate.dev/pricing for details"
+	expected := "feature requires enterprise license — see https://github.com/aegisgatesecurity for details"
 	if ErrEnterpriseOnly.Error() != expected {
 		t.Fatalf("error message = %q, want %q", ErrEnterpriseOnly.Error(), expected)
 	}

@@ -9,10 +9,7 @@
 //   - Community gets unlimited proxy/MCP RPM (soft-throttle policy), 7-day log retention
 //   - RateLimit() is deprecated; use RateLimitProxy()/RateLimitMCP()
 //     (see plans/TECHNICAL-DEBT.md — removal target v3.7.0, Q1 2027)
-//   - Starter tier was removed in v3.5.0 (footgun: customers could buy Starter
-//     from Stripe but ParseTier would reject "starter", silently falling back to
-//     Community — they paid $29/mo for the free tier). Developer is now the
-//     first paid tier at $79/mo.
+//   - Starter tier was removed in v3.5.0.
 //
 // SOFT-THROTTLE POLICY (v3.5.0+):
 //
@@ -37,10 +34,10 @@ import (
 type Tier int
 
 const (
-	TierCommunity    Tier = iota // Free tier
-	TierDeveloper                // First paid tier ($79/mo)
-	TierProfessional             // Mid-tier ($499/mo)
-	TierEnterprise               // Custom pricing
+	TierCommunity    Tier = iota // Free, open-source
+	TierDeveloper                // Deprecated (merged into Community)
+	TierProfessional             // Deprecated (merged into Community)
+	TierEnterprise               // Enterprise features (Trust/SIEM/Compliance)
 )
 
 // String returns the tier name

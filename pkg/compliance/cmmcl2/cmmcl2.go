@@ -16,7 +16,6 @@
 //   - Framework:   "cmmcl2"
 //   - Version:     "1.0"
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $499/mo (founder-locked 2026-06-04)
 //   - Baseline:    CMMC Level 2 (NIST SP 800-171 Rev. 2)
 //
 // IMPORTANT — Self-attested posture:

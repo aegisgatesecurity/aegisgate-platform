@@ -49,7 +49,6 @@
 //   - Framework:    "cmmcl2"
 //   - Version:      "1.0"
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $499/mo (founder-locked 2026-06-04)
 //
 // Architecture (domain-based file structure):
 //   - cmmcl2.go:       module wiring, registerControls, Dependencies, pattern caches
@@ -63,8 +62,7 @@
 //                       System & Communications Protection + System & Information Integrity
 //   - cmmcl2_test.go:   unit tests (52 controls, 26 automated, 26 evidence-mapped)
 //
-// To enable: customer purchases the CMMC L2 module in the customer
-// portal; the Stripe webhook activates the module in their license.
+// To enable: the module is activated via the license system.
 // Until enabled, the CMMC L2 row in scan reports shows Enforced:
 // false with Reason: module_not_owned.
 //

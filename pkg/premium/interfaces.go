@@ -100,7 +100,7 @@ var ErrEnterpriseOnly = errEnterpriseOnly{}
 type errEnterpriseOnly struct{}
 
 func (errEnterpriseOnly) Error() string {
-	return "feature requires enterprise license — see https://aegisgate.dev/pricing for details"
+	return "feature requires enterprise license — see https://github.com/aegisgatesecurity for details"
 }
 
 // ========================================================================
@@ -254,6 +254,6 @@ func (noopTrustPortalHandler) Wire(mux *http.ServeMux) {
 	mux.HandleFunc("/trust", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"enterprise_required","message":"Trust Framework requires enterprise license — see https://aegisgate.dev/pricing for details"}`))
+		_, _ = w.Write([]byte(`{"status":"enterprise_required","message":"Trust Framework requires enterprise license — see https://github.com/aegisgatesecurity for details"}`))
 	})
 }
