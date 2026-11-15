@@ -26,7 +26,7 @@
     # === Stripe test placeholder constant ===
     # Reason: `sk_test_placeholder` is a deliberate literal placeholder used
     # in the platform's mock-mode detection. It is not a Stripe key. See
-    # pkg/billing/stripe.go line 224 for the named constant definition.
+    # (billing package removed)
     '''sk_test_placeholder''',
 
     # === MITRE ATLAS technique identifiers ===

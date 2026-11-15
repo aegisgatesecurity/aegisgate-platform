@@ -84,11 +84,11 @@ type LicensePayload struct {
 	MaxUsers     int       `json:"max_users"`              // Max users allowed
 }
 
-// v3.2.0 Phase 1: canonical names of the 6 billable compliance modules.
+// v3.2.0 Phase 1: canonical names of the 6 gated compliance modules.
 // These are the "modules" that a customer can purchase as add-ons to their
 // tier subscription. Prices are locked in aegisgate-pricing-decisions-locked-2026-06-04.
 // "trust" is reserved for a future Trust Framework module (Phase 4) and is
-// not yet billable.
+// not yet gated.
 const (
 	ModuleHIPAA      = "hipaa"
 	ModulePCI        = "pci"
@@ -109,7 +109,7 @@ const (
 	ModuleTrust      = "trust"       // Trust Framework (built, Professional+)
 	ModuleISO27001   = "iso27001"    // ISO 27001 (built, Developer+)
 
-	// v4.2.0: Previously orphaned frameworks (built but not billable).
+	// v4.2.0: Previously orphaned frameworks (built but not gated).
 	// Now registered in gating.go with tier gates and pricing.
 	ModuleSOX       = "sox"           // Sarbanes-Oxley Act
 	ModuleGLBA      = "glba"          // Gramm-Leach-Bliley Act
@@ -168,7 +168,7 @@ func IsValidBundle(name string) bool {
 	return false
 }
 
-// AllModules is the canonical list of billable module names, in display order.
+// AllModules is the canonical list of gated module names, in display order.
 // Used for validation when parsing Stripe webhook payloads.
 var AllModules = []string{
 	// Community tier (free: AI-focused, our differentiator)
@@ -177,7 +177,7 @@ var AllModules = []string{
 	ModuleATLAS,
 	ModuleNISTAIRMF,
 
-	// Developer tier ($79/mo: table-stakes regulatory)
+	// Developer tier (table-stakes regulatory)
 	ModuleHIPAA,
 	ModulePCI,
 	ModuleSOC2,
@@ -185,7 +185,7 @@ var AllModules = []string{
 	ModuleCCPA,
 	ModuleGDPR,
 
-	// Professional tier ($499/mo: industry-specific + SOC workflow)
+	// Professional tier (industry-specific + SOC workflow)
 	ModuleISO42001,
 	ModuleEUAIAct,
 	ModuleFIPS,
@@ -211,7 +211,7 @@ var AllModules = []string{
 	ModuleTISAX,
 }
 
-// IsValidModule returns true if the given module name is a known billable module.
+// IsValidModule returns true if the given module name is a known gated module.
 // Unknown module names (typos, old format, etc.) are rejected.
 func IsValidModule(name string) bool {
 	for _, m := range AllModules {
@@ -555,14 +555,14 @@ func (m *Manager) IsFeatureLicensed(result *ValidationResult, feature tier.Featu
 
 // HasModule checks if a specific compliance module is owned by the license.
 //
-// v3.2.0 Phase 1: modules are billable add-ons purchased via Stripe
-// (Q1: instant via webhook; Q2: locked in at purchase price forever).
+// v3.2.0 Phase 1: modules are gated add-ons purchased via Stripe
+//
 // A module is owned if its name appears in LicensePayload.Modules.
 //
 // Returns false if:
 //   - result is nil or invalid
 //   - the module name is not in the license's Modules list
-//   - the module name is not a known billable module (defense against typos)
+//   - the module name is not a known gated module (defense against typos)
 //
 // Examples:
 //

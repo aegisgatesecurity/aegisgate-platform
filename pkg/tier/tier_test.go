@@ -246,7 +246,7 @@ func TestAllFeatures(t *testing.T) {
 
 // TestStarterTierRejected verifies that "starter" is rejected by ParseTier.
 // The Starter tier was removed in v3.5.0 because it was a footgun: customers
-// could buy Starter from Stripe ($29/mo), but ParseTier would reject
+// could buy Starter, but ParseTier would reject
 // "starter", silently falling back to Community (free). They paid for
 // something they didn't receive.
 func TestStarterTierRejected(t *testing.T) {

@@ -99,7 +99,7 @@ func TestCalculateROI_Enterprise(t *testing.T) {
 	input := NewDefaultROIInput()
 	input.MonthlyLLMCalls = 10_000_000 // 10M calls
 	input.MonthlyLicenseCost = 499     // Professional tier
-	input.InfrastructureCost = 500     // $500/mo infra
+	input.InfrastructureCost = 500     // infra cost
 	input.AvgCostPerBreach = 150000    // Enterprise breach cost
 
 	result, err := CalculateROI(input)

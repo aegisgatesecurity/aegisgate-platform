@@ -144,7 +144,7 @@ jobs:
           # Exclude packages that require external services (Stripe, SMTP)
           # and stub packages from coverage calculation
           go test -coverprofile=coverage.out \
-            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/" | grep -v "/billing" | grep -v "/email" | grep -v "/stores") \
+            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/"  | grep -v "/email" | grep -v "/stores") \
             2>&1 | tee test-results.txt
 
       - name: Run race detector
@@ -157,7 +157,7 @@ jobs:
           CGO_ENABLED: 1
         run: |
           go test -race -count=1 \
-            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/" | grep -v "/billing" | grep -v "/email" | grep -v "/stores" | grep -v "/ml" | grep -v "/assessment") \
+            $(go list ./pkg/... | grep -v "/compliance" | grep -v "/upstream/"  | grep -v "/email" | grep -v "/stores" | grep -v "/ml" | grep -v "/assessment") \
             2>&1 | tee race-results.txt
           echo "✅ All packages pass race detector"
 

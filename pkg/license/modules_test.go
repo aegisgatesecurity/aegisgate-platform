@@ -2,9 +2,9 @@
 // AegisGate Platform - Module ownership tests (v3.2.0 Phase 1)
 //
 // Tests the HasModule, Modules, and IsValidModule helpers added in v3.2.0.
-// These helpers enable the 7 billable compliance modules (hipaa, pci, soc2,
+// These helpers enable the 7 gated compliance modules (hipaa, pci, soc2,
 // iso42001, fedramp, fips, eu_ai_act) to be checked on a LicensePayload.
-// v3.3.0 Phase 1 added eu_ai_act as the 7th billable module.
+// v3.3.0 Phase 1 added eu_ai_act as the 7th gated module.
 
 package license
 
@@ -40,7 +40,7 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{ModuleFIPS, true},
 		{ModuleEUAIAct, true}, // v3.3.0 Phase 1
 		// Reserved for future use (Trust Framework Phase 4).
-		{ModuleTrust, false}, // Trust is in tier.go, not a billable module
+		{ModuleTrust, false}, // Trust is in tier.go, not a gated module
 		// Unknown module names.
 		{"", false},
 		{"unknown", false},
@@ -49,7 +49,7 @@ func TestIsValidModule_AllKnownModules(t *testing.T) {
 		{"hipaa ", false},  // trailing space
 		{" hipaa", false},  // leading space
 		{"gdpr", true},     // v4.2.0: GDPR is now a Community-tier module (free)
-		{"iso27001", true}, // v4.2.0: ISO 27001 is now a billable module
+		{"iso27001", true}, // v4.2.0: ISO 27001 is now a gated module
 		{"soc2_type2", false},
 	}
 	for _, tc := range cases {
