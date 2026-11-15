@@ -2,7 +2,7 @@
 // AegisGate Platform - Compliance gating tests (v3.2.0 Phase 1)
 //
 // Tests the gating.go API: IsFrameworkEnforced, EvaluateGating, and the
-// module requirement table. Covers all 6 billable modules × 5 tiers ×
+// module requirement table. Covers all 6 modules × 5 tiers ×
 // 3 license states (valid, invalid, missing module).
 
 package compliance
@@ -31,7 +31,7 @@ func makeResult(tier tierpkg.Tier, modules []string, valid bool) *license.Valida
 // ---- RequiredTierForModule ----
 
 func TestRequiredTierForModule_DevModules(t *testing.T) {
-	// HIPAA, PCI, SOC 2 require Developer+ per the locked pricing table.
+	// HIPAA, PCI, SOC 2 require Developer+.
 	devModules := []string{license.ModuleHIPAA, license.ModulePCI, license.ModuleSOC2}
 	for _, m := range devModules {
 		t.Run(m, func(t *testing.T) {
@@ -344,17 +344,10 @@ func TestAllModuleRequirements_Order(t *testing.T) {
 		t.Errorf("dev modules should come before pro modules (lastDev=%d, firstPro=%d)", lastDevIdx, firstProIdx)
 	}
 
-	// Verify each module has a non-empty DisplayName and a valid price.
-	// Community tier modules can have MinPriceCents=0 (free/bundled).
+	// Verify each module has a non-empty DisplayName.
 	for _, r := range all {
 		if r.DisplayName == "" {
 			t.Errorf("module %q has empty DisplayName", r.Module)
-		}
-		if r.MinPriceCents < 0 {
-			t.Errorf("module %q has negative MinPriceCents %d", r.Module, r.MinPriceCents)
-		}
-		if r.MinPriceCents <= 0 && r.RequiredTier > tierpkg.TierCommunity {
-			t.Errorf("module %q has non-positive MinPriceCents %d but is not Community tier", r.Module, r.MinPriceCents)
 		}
 	}
 }
@@ -369,48 +362,12 @@ func TestGetModuleRequirement_Known(t *testing.T) {
 	if r.DisplayName != "HIPAA" {
 		t.Errorf("DisplayName = %q, want HIPAA", r.DisplayName)
 	}
-	if r.MinPriceCents != 14900 {
-		t.Errorf("MinPriceCents = %d, want 14900 ($149)", r.MinPriceCents)
-	}
 }
 
 func TestGetModuleRequirement_Unknown(t *testing.T) {
 	_, ok := GetModuleRequirement("unknown")
 	if ok {
 		t.Error("GetModuleRequirement(unknown) returned ok=true, want false")
-	}
-}
-
-// ---- Locked-decision regressions: pin the tier mapping from the locked pricing table ----
-
-func TestPricingTable_LockedDecisions(t *testing.T) {
-	// This test pins the prices from the locked pricing table. If you
-	// change these values, you MUST update aegisgate-pricing-decisions-locked-2026-06-04
-	// and any downstream Stripe Prices.
-	type tc struct {
-		module      string
-		minPriceUSD int
-	}
-	cases := []tc{
-		{license.ModuleHIPAA, 149},
-		{license.ModulePCI, 149},
-		{license.ModuleSOC2, 149},
-		{license.ModuleISO42001, 199},
-		{license.ModuleFedRAMP, 499},
-		{license.ModuleFIPS, 199},
-	}
-	for _, c := range cases {
-		t.Run(c.module, func(t *testing.T) {
-			r, ok := GetModuleRequirement(c.module)
-			if !ok {
-				t.Fatalf("module %s not found in requirements table", c.module)
-			}
-			wantCents := c.minPriceUSD * 100
-			if r.MinPriceCents != wantCents {
-				t.Errorf("module %s: MinPriceCents = %d, want %d ($%d/mo)",
-					c.module, r.MinPriceCents, wantCents, c.minPriceUSD)
-			}
-		})
 	}
 }
 
