@@ -12,7 +12,7 @@
 // Module metadata:
 //   - Framework:     "hipaa"
 //   - Version:       "2.2"
-//   - Required tier: Developer ($49/mo)
+//   - Required tier: Developer
 //   - Controls:      54 (35 automated, 19 manual)
 //   - Categories:    8
 //

@@ -17,7 +17,6 @@
 //   - Framework:   "hitrust"
 //   - Version:     "1.0"
 //   - Required tier: Enterprise+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $799/mo (founder-locked 2026-07-22)
 //   - Baseline:    HITRUST CSF v11.2
 //   - Controls:    200 (80 automated + 120 manual)
 //

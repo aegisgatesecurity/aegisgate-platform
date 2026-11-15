@@ -13,7 +13,6 @@
 //   - Framework:   "fips"
 //   - Version:     "2.0" (v4.x Tier 1: 40 controls, 25 automated, 15 manual)
 //   - Required tier: Professional+ (gated via pkg/compliance/gating.go)
-//   - Monthly price: $299/mo (founder-locked 2026-06-04)
 //
 // This module is a thin compliance wrapper around the existing FIPS
 // crypto engine in `upstream/aegisgate/pkg/crypto/fips/` (492 LOC,

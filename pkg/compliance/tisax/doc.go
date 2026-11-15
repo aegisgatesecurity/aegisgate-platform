@@ -36,7 +36,6 @@
 //   - Framework:    "tisax"
 //   - Version:      "1.0"
 //   - Required tier: Enterprise (gated via pkg/compliance/gating.go)
-//   - Monthly price: $599/mo (founder-locked 2026-07-22)
 //
 // Architecture (family-based file structure):
 //   - tisax.go:      module wiring, registerControls, Dependencies, pattern caches

@@ -10,7 +10,7 @@
 // with RegisterControl pattern. 27 controls are automated (CheckFunc) and
 // the remaining 72 are manual (evidence-mapped).
 //
-// Tier: Developer ($149/mo)
+// Tier: Developer
 // =========================================================================
 
 // Package gdpr provides GDPR (General Data Protection Regulation) compliance.

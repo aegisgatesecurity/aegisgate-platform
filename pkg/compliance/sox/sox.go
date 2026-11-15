@@ -11,7 +11,7 @@
 // Module metadata:
 //   - Framework:     "sox"
 //   - Version:       "2002"
-//   - Required tier: Professional ($199/mo)
+//   - Required tier: Professional
 //   - Controls:      80 (48 automated, 32 manual)
 //   - Categories:    15
 //

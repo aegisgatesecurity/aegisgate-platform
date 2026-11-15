@@ -14,7 +14,7 @@
 // Module metadata:
 //   - Framework:     "cjis"
 //   - Version:       "5.9.1"
-//   - Required tier: Professional ($199/mo)
+//   - Required tier: Professional
 //   - Controls:      64 (47 automated, 17 manual)
 //   - Categories:    13
 //
