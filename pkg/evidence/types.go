@@ -173,7 +173,7 @@ type FrameworkEvidence struct {
 	DisplayName string `json:"display_name"`
 	// Enforced is whether the framework is enforced for this license.
 	Enforced bool `json:"enforced"`
-	// Module is the billable module name (e.g., "hipaa").
+	// Module is the gated module name (e.g., "hipaa").
 	Module string `json:"module,omitempty"`
 	// Score is the compliance score 0-100.
 	Score float64 `json:"score"`

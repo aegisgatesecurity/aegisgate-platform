@@ -167,7 +167,7 @@ func BuildFrameworksSnapshot() FrameworksSnapshot {
 		// key, so we get a clean handoff.
 		//
 		// Two modules have key mismatches between the license
-		// package (which names the billable module) and the
+		// package (which names the gated module) and the
 		// mapping package (which uses the canonical framework
 		// key). We translate them here so the trust portal
 		// shows the same display name as the rest of the
