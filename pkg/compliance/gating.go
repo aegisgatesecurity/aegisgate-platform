@@ -56,28 +56,24 @@ var moduleRequirements = map[string]ModuleRequirement{
 		Module:            license.ModuleOWASP,
 		DisplayName:       "OWASP LLM Top 10",
 		RequiredTier:      tierpkg.TierCommunity,
-		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/owasp.go exists
 	},
 	license.ModuleOWASPWeb: {
 		Module:            license.ModuleOWASPWeb,
 		DisplayName:       "OWASP Web Top 10",
 		RequiredTier:      tierpkg.TierCommunity,
-		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/owasp_web/ exists
 	},
 	license.ModuleATLAS: {
 		Module:            license.ModuleATLAS,
 		DisplayName:       "MITRE ATLAS",
 		RequiredTier:      tierpkg.TierCommunity,
-		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/atlas.go exists
 	},
 	license.ModuleNISTAIRMF: {
 		Module:            license.ModuleNISTAIRMF,
 		DisplayName:       "NIST AI RMF 1.0",
 		RequiredTier:      tierpkg.TierCommunity,
-		MinPriceCents:     0,    // Community tier, free
 		HasImplementation: true, // pkg/compliance/nist_ai_rmf/ exists
 	},
 	// ── Developer tier: table-stakes regulatory ──
