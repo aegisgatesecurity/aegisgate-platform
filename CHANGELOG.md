@@ -1,3 +1,7 @@
+## [5.2.2] - 2026-11-23 — ML Withdrawn
+
+> All neural ML detection (CharCNN-BiLSTM, DeBERTa, RoBERTa, meta-classifiers) is hard-disabled and its model files removed from this repository. All prior detection-rate claims are void. Deterministic detection layers are unaffected. See docs/ML-WITHDRAWN.md.
+
 ## [5.2.1] - 2026-11-11 — Gap-Closure Patterns, Performance Optimizations
 
 > **v5.2.1** adds 3 gap-closure detection patterns for red team misses, improves drug/weapons regex, and adds major performance optimizations to the ML threat detector.

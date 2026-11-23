@@ -72,6 +72,19 @@ func NewThreatDetector(cfg DetectorConfig) *ThreatDetector {
 		cfg.Timeout = 10
 	}
 
+	// WITHDRAWN 2026-11-23 (AegisGate Security): all neural ML detection is
+	// hard-disabled. The CharCNN-BiLSTM ("v22b") and the DeBERTa/RoBERTa
+	// transformers were trained on a corpus whose labels failed audit
+	// (attack-side flip rate ~71%; see corpus-certification-2026-11-23.md).
+	// All published detection-rate claims are void. The code is retained for
+	// the retraining effort but cannot be enabled until a re-baselined model
+	// ships. Do NOT remove this override without the retraining GO.
+	if cfg.Enabled || cfg.ShadowMode {
+		slog.Warn("ML detection is WITHDRAWN and cannot be enabled: model lineage failed label audit; see docs/ML-WITHDRAWN.md")
+	}
+	cfg.Enabled = false
+	cfg.ShadowMode = false
+
 	td := &ThreatDetector{
 		config:     cfg,
 		normalizer: NewCharNormalizer(),

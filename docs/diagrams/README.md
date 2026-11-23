@@ -1,3 +1,5 @@
+> **⚠ WITHDRAWN 2026-11-23 — ML detection is disabled.** Every detection-rate/accuracy claim in this document was measured against a training corpus whose attack-side labels failed audit (~71% flip rate). Those numbers are void. Deterministic (non-ML) content stands. See docs/ML-WITHDRAWN.md.
+
 # AegisGate Architecture Diagrams
 
 This directory contains Mermaid source files for AegisGate architecture diagrams. All diagrams render on GitHub, in the Hugo website (via `{{< mermaid >}}`), and can be exported to PNG/SVG using the Mermaid CLI.

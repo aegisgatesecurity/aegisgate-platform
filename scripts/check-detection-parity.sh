@@ -535,6 +535,8 @@ rm -f "$PLATFORM_TMP" "$RAMPART_TMP" "$LENS_TMP" "$SCANNER_TMP"
 # ---------------------------------------------------------------------------
 echo ""
 echo "=== Phase 3: Model Hash Alignment ==="
+echo "  NOTE: Neural ML was WITHDRAWN 2026-11-23 (see docs/ML-WITHDRAWN.md)."
+echo "  Hash parity is moot until a retrained, re-audited model ships."
 
 PLATFORM_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$PLATFORM_DIR/pkg/ml/detector.go" 2>/dev/null | head -1)
 RAMPART_HASH=$(grep -oP 'ExpectedModelHash\s*=\s*"\K[^"]+' "$RAMPART_DIR/internal/ml/detector.go" 2>/dev/null | head -1)

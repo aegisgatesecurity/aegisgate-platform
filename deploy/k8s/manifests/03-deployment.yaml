@@ -67,11 +67,10 @@ spec:
           env:
             - name: AEGISGATE_DATA_DIR
               value: /data
-            # ML threat detection (v4.0.0): ONNX model path inside container.
-            # The model file is at /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
-            # and libonnxruntime.so is installed via the Alpine package manager.
-            - name: AEGISGATE_ML_MODEL_PATH
-              value: /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
+            # Neural ML detection WITHDRAWN 2026-11-23 (see docs/ML-WITHDRAWN.md).
+            # ML is hard-disabled in code; AEGISGATE_ML_MODEL_PATH is ignored.
+            # - name: AEGISGATE_ML_MODEL_PATH
+            #   value: /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
             # Removed 2026-07-20 (audit Finding #2): TIER=community is the
             # same deprecated path. Tier is license-derived; setting TIER
             # does not change behavior since D0.

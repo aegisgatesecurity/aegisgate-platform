@@ -121,10 +121,10 @@ persistence:
 # -- Environment variable overrides (applied to all containers)
 env:
   AEGISGATE_DATA_DIR: /data
-  # ML threat detection (v4.0.0): ONNX model path inside container.
-  # The model ships at /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
-  # and libonnxruntime.so is installed via Alpine package manager.
-  AEGISGATE_ML_MODEL_PATH: /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
+  # ML threat detection WITHDRAWN 2026-11-23: neural ML is hard-disabled in
+  # code; this variable is ignored. Left documented for a future retrained
+  # model (see docs/ML-WITHDRAWN.md). Do not mount a model here.
+  # AEGISGATE_ML_MODEL_PATH: /opt/aegisgate-platform/models/threat_cnn_bilstm.onnx
   # OPENAI_API_KEY: ""         # Set via secrets below
   # AEGISGATE_LICENSE_KEY: ""  # Set via secrets below
 

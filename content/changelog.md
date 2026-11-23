@@ -10,6 +10,9 @@
 
 ---
 
+> **2026-11-23 — ML withdrawn.** All neural ML detection is hard-disabled; model files removed; detection-rate claims void. Deterministic layers unaffected. See `docs/ML-WITHDRAWN.md`.
+
+
 ## [3.6.0] - 2026-08-01 - Security Hardening, ML Pipeline, ATLAS FPR Fix 🔒
 
 > **v3.6.0** is a hard version rebaseline: ATLAS false-positive rate eliminated (30.8%→0.0%), evasion-resistant detection normalization, ML pipeline foundation for v4, rule integrity verification, and 70% proxy overhead reduction.
