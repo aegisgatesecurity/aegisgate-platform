@@ -99,10 +99,12 @@ func TestPhase5_ThreatDetector_GetCalibrator(t *testing.T) {
 	}
 }
 
+// WITHDRAWN 2026-11-23: Enabled is forced false by NewThreatDetector regardless
+// of the requested config (see docs/ML-WITHDRAWN.md).
 func TestPhase5_ThreatDetector_IsEnabled(t *testing.T) {
 	td := NewThreatDetector(DetectorConfig{Enabled: true})
-	if !td.IsEnabled() {
-		t.Error("expected IsEnabled() to be true")
+	if td.IsEnabled() {
+		t.Error("IsEnabled() must be false: ML hard-disabled after withdrawal")
 	}
 
 	td2 := NewThreatDetector(DetectorConfig{Enabled: false})

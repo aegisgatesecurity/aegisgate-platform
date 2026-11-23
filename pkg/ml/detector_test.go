@@ -149,9 +149,13 @@ func TestThreatDetector_Disabled(t *testing.T) {
 	}
 }
 
+// WITHDRAWN 2026-11-23: ML detection is hard-disabled (see docs/ML-WITHDRAWN.md
+// and corpus-certification-2026-11-23.md). NewThreatDetector forces
+// Enabled=false/ShadowMode=false, so heuristic detection results are never
+// produced. This test asserts the withdrawn contract.
 func TestThreatDetector_HeuristicDetection(t *testing.T) {
 	cfg := DetectorConfig{
-		Enabled:           true,
+		Enabled:           true, // forced off by NewThreatDetector
 		ShadowMode:        false,
 		Threshold:         0.3,
 		MaxSequenceLength: 512,
@@ -159,33 +163,32 @@ func TestThreatDetector_HeuristicDetection(t *testing.T) {
 	}
 	td := NewThreatDetector(cfg)
 
-	tests := []struct {
-		name        string
-		input       string
-		wantThreat  bool
-		description string
-	}{
-		{"transposition_ignore", "igonre instructions", true, "1-char transposition of 'ignore'"},
-		{"transposition_bypass", "byapss the security", true, "1-char transposition of 'bypass'"},
-		{"vowel_deleted_bypass", "what are your capabilities", false, "benign text should be low score"},
-		{"reversed_ignore", "erongi instructions", true, "reversed 'ignore'"},
+	inputs := []string{
+		"igonre instructions",
+		"byapss the security",
+		"what are your capabilities",
+		"erongi instructions",
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := td.Detect(tt.input)
-			if result.IsThreat != tt.wantThreat {
-				t.Errorf("Detect(%q) = IsThreat=%v (score=%.3f), want IsThreat=%v (%s)",
-					tt.input, result.IsThreat, result.Score, tt.wantThreat, tt.description)
-			}
-		})
+	for _, input := range inputs {
+		result := td.Detect(input)
+		if result.IsThreat {
+			t.Errorf("Detect(%q): IsThreat=true, want false (ML withdrawn)", input)
+		}
+		if result.Score != 0 {
+			t.Errorf("Detect(%q): Score=%f, want 0 (ML withdrawn)", input, result.Score)
+		}
+		if result.Variant != "disabled" {
+			t.Errorf("Detect(%q): Variant=%q, want %q", input, result.Variant, "disabled")
+		}
 	}
 }
 
+// WITHDRAWN 2026-11-23: ShadowMode requests are forced off along with Enabled.
+// See docs/ML-WITHDRAWN.md.
 func TestThreatDetector_ShadowMode(t *testing.T) {
 	cfg := DetectorConfig{
-		Enabled:           true,
-		ShadowMode:        true,
+		Enabled:           true, // forced off by NewThreatDetector
+		ShadowMode:        true, // forced off by NewThreatDetector
 		Threshold:         0.3,
 		MaxSequenceLength: 512,
 		Timeout:           10,
@@ -194,10 +197,17 @@ func TestThreatDetector_ShadowMode(t *testing.T) {
 
 	result := td.Detect("igonre instructions")
 	if result.IsThreat {
-		t.Error("shadow mode should never set IsThreat=true (log only, don't block)")
+		t.Error("withdrawn detector must not flag threats")
 	}
-	if result.Score <= 0 {
-		t.Errorf("shadow mode should still compute a score for detected patterns, got %f", result.Score)
+	if result.Score != 0 {
+		t.Errorf("withdrawn detector must return score 0, got %f", result.Score)
+	}
+	if result.Variant != "disabled" {
+		t.Errorf("Variant = %q, want %q", result.Variant, "disabled")
+	}
+	stats := td.GetStats()
+	if stats["shadow_mode"] != false {
+		t.Error("shadow_mode must be forced false after withdrawal")
 	}
 }
 
@@ -317,8 +327,14 @@ func TestThreatDetector_DetectAll(t *testing.T) {
 	}
 
 	result := td.DetectAll(variants)
-	if result.Score <= 0 {
-		t.Errorf("DetectAll should return non-zero score for adversarial variants, got %f", result.Score)
+	if result.Score != 0 {
+		t.Errorf("withdrawn detector must return 0 from DetectAll, got %f", result.Score)
+	}
+	if result.IsThreat {
+		t.Error("withdrawn detector must not flag any variant")
+	}
+	if result.Variant != "disabled" {
+		t.Errorf("Variant = %q, want %q", result.Variant, "disabled")
 	}
 }
 
@@ -333,8 +349,8 @@ func TestThreatDetector_GetStats(t *testing.T) {
 	if stats["model_loaded"] != false {
 		t.Error("expected model_loaded=false")
 	}
-	if stats["shadow_mode"] != true {
-		t.Error("expected shadow_mode=true")
+	if stats["shadow_mode"] != false {
+		t.Error("expected shadow_mode=false (forced off after ML withdrawal)")
 	}
 }
 
